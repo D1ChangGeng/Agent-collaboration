@@ -9,7 +9,7 @@ This file is project-owned after first creation. ACHP upgrades preserve it.
 - Skill slug: agent-collaboration-setup
 - Primary branch: main (to be initialized)
 - Project type: existing source recovered from the v0.1.0 Skill archive
-- Current phase: v0.1.0 recovery, self-hosting, and first public-release preparation
+- Current phase: v0.1.0 published; post-release maintenance and v0.2 discovery
 
 ## Collaboration topology
 
@@ -35,10 +35,9 @@ normal collaboration runtime. Product and design authority is split between
 
 ## Current milestone
 
-Current milestone: establish the recovered v0.1.0 source as the
-`Agent-collaboration` repository, dogfood ACHP in this repository, initialize
-the project knowledge plane, validate the release, and publish when GitHub
-access is available.
+Current milestone: maintain the verified v0.1.0 baseline after source recovery,
+ACHP dogfooding, Knowledge Plane initialization, GitHub publication, and Release
+creation. Future changes must remain scoped and evidence-backed.
 
 ## Critical project-specific constraints
 
@@ -72,7 +71,9 @@ access is available.
 - Current version: v0.1.0 (`VERSION`)
 - Release identity: setup-only `agent-collaboration-setup` Skill, published from
   the `Agent-collaboration` source repository
-- Public GitHub owner, URL, remote, and Release state: pending live verification
+- Public GitHub owner: `D1ChangGeng`
+- Repository: `https://github.com/D1ChangGeng/Agent-collaboration`
+- Release: `v0.1.0` published with ZIP and tar.gz Skill artifacts
 
 ## Validation routes
 
@@ -86,7 +87,7 @@ git diff --check
 
 ## Current primary goal
 
-Complete the first verified local repository and, when credentials and network
-access permit, create/push the public `Agent-collaboration` repository and attach
-the correctly scoped v0.1.0 release artifacts. Do not expand into v0.2 runtime
-services or new Harness adapters during this initialization.
+Preserve the verified v0.1.0 setup/runtime boundary while evaluating only
+evidence-backed maintenance and future v0.2 work. Do not expand into runtime
+services, a broker/daemon, UI, or new Harness adapters without an explicitly
+accepted design and validation plan.
