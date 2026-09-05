@@ -1,0 +1,33 @@
+{
+  "managed_files": [
+    ".agents/README.md",
+    ".agents/protocol/CAPABILITIES.md",
+    ".agents/protocol/RELAY.md",
+    ".agents/protocol/GIT-SYNC.md",
+    ".agents/protocol/KNOWLEDGE.md",
+    ".agents/coordination/roles/coordinator.md",
+    ".agents/coordination/roles/executor.md",
+    ".agents/coordination/roles/reviewer.md",
+    ".agents/coordination/templates/TASK.md",
+    ".agents/coordination/templates/HANDOFF.md",
+    ".agents/coordination/templates/RELAY.txt",
+    ".agents/knowledge/README.md"
+  ],
+  "mode": "adopt",
+  "project_owned_files": [
+    ".agents/config.yaml",
+    ".agents/coordination/PROJECT.md",
+    ".agents/coordination/tasks/.gitkeep",
+    ".agents/coordination/handoffs/.gitkeep",
+    ".agents/knowledge/guides/.gitkeep",
+    ".agents/knowledge/decisions/.gitkeep",
+    ".agents/knowledge/observations/.gitkeep",
+    ".agents/knowledge/archive/.gitkeep",
+    ".agents/runtime/.gitkeep"
+  ],
+  "protocol": "ACHP",
+  "runtime_dependency_on_setup_skill": false,
+  "setup_skill": "agent-collaboration-setup",
+  "updated_at": "2026-09-05T09:26:21.378335+00:00",
+  "version": "0.1.0"
+}

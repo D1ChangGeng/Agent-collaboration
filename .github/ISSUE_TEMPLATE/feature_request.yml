@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a setup, portability, adapter, or protocol-installation improvement.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What setup/portability problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Layer
+      options:
+        - Setup Skill
+        - Runtime protocol scaffold
+        - Harness compatibility
+        - Installer
+        - Documentation
+        - Other
+    validations:
+      required: true

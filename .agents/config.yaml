@@ -1,0 +1,23 @@
+protocol:
+  name: ACHP
+  version: "0.1.0"
+
+collaboration:
+  topology: auto
+  manual_relay_fallback: true
+
+relay:
+  baseline: user-manual
+  automatic_only_when_verified: true
+  capability_unknown_means_unavailable: true
+
+repository:
+  vcs: git
+  remote: origin
+  branch: auto
+  require_sync_status_in_handoff: true
+
+knowledge:
+  root: .agents/knowledge
+  future_action_value_required: true
+  verify_material_claims: true
