@@ -1,6 +1,6 @@
 # agent-collaboration-setup
 
-这是一个 **只负责设置（setup-only）** 的 Harness-agnostic Agent Skill，用于把 **ACHP（Agent Collaboration & Handoff Protocol）** 安装、接管、升级或修复到任何空白项目或进行中项目。
+这是一个 **只负责设置（setup-only）** 的 Harness-agnostic Agent Skill，用于把 **ACHP（Agent Collaboration & Handoff Protocol）** 安装、接管、升级或修复到源码仓库或长期存在的 Project Collaboration Workspace。
 
 它最重要的边界是：
 
@@ -146,6 +146,41 @@ python3 scripts/install_skill.py --harness all --check
 
 不同 Harness 的显式调用语法可以不同，但以上自然语言意图是可移植的。
 
+## Project Collaboration Workspace 与 Route
+
+Workspace 是长期项目协作、架构管理、目标推进和状态理解的管理根。它可以与真实源码仓库、执行 Session 和执行 Host 分离，也允许本身不是 Git 仓库。
+
+```bash
+python3 scripts/project_setup.py workspace adopt --root /path/to/workspace --dry-run
+python3 scripts/project_setup.py workspace adopt --root /path/to/workspace
+python3 scripts/project_setup.py workspace validate --root /path/to/workspace
+python3 scripts/project_setup.py route list --workspace /path/to/workspace
+```
+
+新增 Route 时不复制 A/B 或其他路线：
+
+```bash
+python3 scripts/project_setup.py route create \
+  --workspace /path/to/workspace \
+  --path "C Route" \
+  --route-id c-route \
+  --display-name "C Route"
+```
+
+已有 Route 的 adopt 应在该 Route 自己的独立迁移阶段执行。工具会保留已有 `AGENTS.md`、`.agents/knowledge/`、架构资料和状态：
+
+```bash
+python3 scripts/project_setup.py route adopt \
+  --workspace /path/to/workspace \
+  --path "Existing Route"
+```
+
+Root registry 只保存稳定身份、路径、生命周期和指针；动态工程状态继续由 Route 自己拥有。Source Repository 与 Execution Endpoint 初始为 `unknown`，不能从历史路径或 Harness 名称推断。
+
+### Schema 0.2 当前操作边界
+
+Workspace 的 `bootstrap`、`adopt`、`upgrade`、`repair`、`validate` 已按用户提供的精确路径实现。`workspace uninstall` 当前处于安全保护状态：在形成经过审阅的 ownership plan 之前会直接拒绝，并且不会修改文件。Route 的 `rename` 只更新显示元数据，不移动 Route 目录，也不改变 registry path。拆分/合并、移动路径式重命名、Endpoint 替换、restore 和 rollback 仍属于未来迁移契约，必须有明确证据、审阅和可恢复方案后才能实现。
+
 ## 直接使用安装工具
 
 Skill 内置一个只使用 Python 标准库的确定性安装器：
@@ -177,9 +212,9 @@ python3 scripts/project_setup.py adopt --root /path/to/repo --dry-run
 python3 scripts/project_setup.py validate --root /path/to/repo
 ```
 
-卸载默认保留项目自己的 `.agents/knowledge/` 和 coordination 数据。
+源码仓库的卸载默认保留项目自己的 `.agents/knowledge/` 和 coordination 数据。Workspace 的 uninstall 是独立的安全保护路径，目前会拒绝执行且不产生文件变更。
 
-如果确实需要全部清除：
+如果确实需要清除源码仓库中的全部 ACHP 数据：
 
 ```bash
 python3 scripts/project_setup.py uninstall --root /path/to/repo --purge-data
@@ -283,7 +318,7 @@ python3 scripts/project_setup.py upgrade --root /path/to/project
 ```bash
 git init
 git add .
-git commit -m "Initial release of Agent-collaboration v0.1.0"
+git commit -m "Add Project Collaboration Workspace and Route support"
 git branch -M main
 git remote add origin git@github.com:D1ChangGeng/Agent-collaboration.git
 git push -u origin main

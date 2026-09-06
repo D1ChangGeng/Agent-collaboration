@@ -8,6 +8,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from typing import List, Optional
 
 SKILL_NAME = "agent-collaboration-setup"
 
@@ -16,12 +17,12 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
-def destinations(harnesses: list[str], scope: str, project: Path | None) -> list[Path]:
+def destinations(harnesses: List[str], scope: str, project: Optional[Path]) -> List[Path]:
     hs = set(harnesses)
     if "all" in hs:
         hs = {"codex", "opencode", "claude"}
 
-    out: list[Path] = []
+    out: List[Path] = []
     if scope == "user":
         home = Path.home()
         if {"codex", "opencode"} & hs:

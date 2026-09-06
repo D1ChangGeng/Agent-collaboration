@@ -14,12 +14,20 @@ Responsibilities:
 - upgrade;
 - repair;
 - validate;
-- uninstall;
+- repository uninstall where the ownership boundary is known;
 - route harness-specific persistent instruction entry points to the same runtime contract.
+
+For a schema 0.2 Project Collaboration Workspace, the corresponding command
+family is explicit and exact-path based. `workspace bootstrap`, `adopt`,
+`upgrade`, `repair`, and `validate` are implemented; `workspace uninstall` is
+currently guarded and refuses to change files until a reviewed ownership plan is
+available. This deliberate refusal is a safety boundary, not a second uninstall
+semantics.
 
 ### Runtime collaboration plane
 
-Installed into each target repository.
+Installed into each target repository, or into the Root/Route surfaces of a
+management Workspace.
 
 Responsibilities:
 - roles;
@@ -46,6 +54,25 @@ Git branch, commits, Push/Pull, exact baselines.
 
 ### Knowledge Plane
 Durable shared project knowledge under `.agents/knowledge/`.
+
+In a non-Git Workspace, the Repository State Plane is represented as explicit
+Source State Evidence and may remain `unknown`, `unverified`, or
+`not-measured`. A Workspace Root is a management/control surface, not an
+implicit execution checkout.
+
+## Schema 0.2 Route operation boundary
+
+The current Route CLI implements `create`, `adopt`, `list`, `validate`,
+`set-state`, and `rename`. `rename` updates display metadata only; it does not
+move a directory or rewrite Route-owned files. Endpoint bindings are pointers
+until independently evidenced, not a claim that Endpoint replacement is
+available.
+
+Path-moving rename, split/merge, Endpoint replacement, restore, rollback, and
+other ownership-changing lifecycle actions are documented future migration
+contracts. They require an explicit plan, evidence, dry-run, review, and
+reversible recovery before implementation; they are not implied by the current
+metadata commands.
 
 ## Transport abstraction
 

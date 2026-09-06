@@ -35,6 +35,32 @@ These are created if missing and then preserved during upgrades:
 - `.agents/knowledge/archive/*`
 - `.agents/runtime/*`
 
+For a Project Collaboration Workspace, the same distinction applies at the Root
+level:
+
+### Workspace setup-managed
+
+The Workspace setup may maintain the managed block in Root `AGENTS.md`, the thin
+`CLAUDE.md` route, the managed `.gitignore` block, `.agents/manifest.json`, the
+Root protocol files, `ROOT.md`, the handoff placeholder, and the Root knowledge
+README. These files are still subject to conflict checks and should be reviewed
+after a dry-run.
+
+### Workspace project-owned
+
+`PROJECT.md`, `ROOT-BASELINE.md`, and `routes.yaml` are Root-owned project files.
+Route directories, Route `AGENTS.md`, Route knowledge, references, and
+source-state records are Route-owned. Explicit Workspace/Route operations may
+reconcile stable registry entries in `routes.yaml`; that is a control-plane
+update, not permission to replace the file with a generic template or to rewrite
+Route content. The current `routes.yaml` file is deterministic JSON text with a
+`.yaml` name (JSON is a YAML 1.2 subset), and remains the single canonical
+registry.
+
+Workspace upgrades do not perform Route semantic migration. In particular, they
+must not move Route directories, merge or split Routes, replace Endpoint
+bindings, or reclassify Route knowledge as part of a generic upgrade.
+
 ## Upgrade steps
 
 1. Preview with `--dry-run`.
@@ -55,8 +81,24 @@ Breaking changes to:
 
 must be documented before release and should include a migration strategy.
 
+Schema 0.2 also keeps the following boundaries explicit:
+
+- Route `rename` changes display metadata only; path-moving rename is a future
+  migration operation.
+- Split/merge, Endpoint replacement, restore, and rollback are future migration
+  contracts, not current upgrade side effects.
+- A Workspace may be non-Git; missing source and endpoint facts remain explicit
+  `unknown`/`unverified` values.
+
 ## Uninstall
 
-Default uninstall removes only setup-managed files/blocks and preserves project-owned collaboration/knowledge data.
+For a source repository, default uninstall removes only setup-managed
+files/blocks and preserves project-owned collaboration/knowledge data.
+
+For a Project Collaboration Workspace, `workspace uninstall` currently refuses
+to run and makes no changes. A Workspace Root contains ownership and Route
+registry state that cannot be safely removed by the generic repository uninstall
+path. Removal, including any future purge mode, requires a separately reviewed
+ownership plan and an explicit migration implementation.
 
 `--purge-data` is intentionally explicit and destructive.

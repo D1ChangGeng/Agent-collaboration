@@ -13,7 +13,41 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "0.1.0"
+# Workspace/Route operations live in a separate module so the legacy
+# repository-oriented API remains stable.  Keep the sibling import available
+# both when this file is executed as a script and when tests load it by path.
+_SCRIPT_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+try:
+    from workspace_setup import (  # type: ignore
+        main as workspace_cli_main,
+        read_json as workspace_read_json,
+        route_operation as workspace_route_operation,
+        validate_workspace as workspace_validate,
+        workspace_install,
+    )
+    # Compatibility exports used by the existing test/API surface.
+    validate_workspace = workspace_validate
+    read_json = workspace_read_json
+except ImportError:
+    workspace_cli_main = None
+    workspace_read_json = None
+    workspace_route_operation = None
+    workspace_validate = None
+    workspace_install = None
+    validate_workspace = None
+    route_operation = None
+    read_json = None
+
+
+def route_operation(args):
+    """Compatibility wrapper for the workspace Route API."""
+    if workspace_route_operation is None:
+        raise RuntimeError("workspace/route support is unavailable")
+    return workspace_route_operation(args, Path(__file__).resolve().parents[1] / "assets" / "scaffold")
+
+VERSION = "0.2.0"
 AGENTS_BEGIN = "<!-- ACHP:BEGIN -->"
 AGENTS_END = "<!-- ACHP:END -->"
 CLAUDE_BEGIN = "<!-- ACHP-CLAUDE-ROUTER:BEGIN -->"
@@ -167,16 +201,33 @@ def install_or_upgrade(root: Path, mode: str, dry_run: bool) -> list[str]:
     for rel in CREATE_IF_MISSING:
         copy_asset(rel, root, dry_run, actions, overwrite=False)
 
-    # Manifest.
+    # Manifest. Keep its creation timestamp stable across repeated upgrades;
+    # dynamic per-run timestamps make the legacy repository mode noisy and
+    # defeat idempotent setup verification.
+    existing_manifest = {}
+    manifest_path = root / ".agents" / "manifest.json"
+    if manifest_path.exists() and manifest_path.is_file():
+        try:
+            parsed = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if isinstance(parsed, dict):
+                existing_manifest = parsed
+        except (OSError, json.JSONDecodeError):
+            existing_manifest = {}
     manifest = {
         "protocol": "ACHP",
         "version": VERSION,
         "setup_skill": "agent-collaboration-setup",
-        "mode": mode,
+        # Preserve the original setup mode as stable project metadata. The
+        # command used for a later upgrade is an operation, not a new project
+        # identity, so switching `adopt` to `upgrade` must not rewrite it.
+        "mode": existing_manifest.get("mode", mode),
         "managed_files": MANAGED_FILES,
         "project_owned_files": CREATE_IF_MISSING,
         "runtime_dependency_on_setup_skill": False,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": existing_manifest.get(
+            "created_at",
+            existing_manifest.get("updated_at", datetime.now(timezone.utc).isoformat()),
+        ),
     }
     manifest_text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     write_text(root / ".agents" / "manifest.json", manifest_text, dry_run, actions)
@@ -309,6 +360,13 @@ def print_git_summary(root: Path) -> None:
 
 
 def main() -> int:
+    # Explicit Workspace/Route commands use the new exact-path control plane.
+    # Legacy repository commands below remain unchanged.
+    if len(sys.argv) > 1 and sys.argv[1] in {"workspace", "route"}:
+        if workspace_cli_main is None:
+            print("[FAIL] workspace/route support is unavailable")
+            return 1
+        return workspace_cli_main(sys.argv[1:])
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=["bootstrap", "adopt", "upgrade", "repair", "validate", "uninstall"])
     parser.add_argument("--root", type=Path, default=Path.cwd())

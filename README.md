@@ -1,6 +1,8 @@
 # agent-collaboration-setup
 
-A **setup-only, harness-agnostic Agent Skill** that installs and maintains the **Agent Collaboration & Handoff Protocol (ACHP)** in any new or existing repository.
+A **setup-only, harness-agnostic Agent Skill** that installs and maintains the
+**Agent Collaboration & Handoff Protocol (ACHP)** in either a source repository
+or a long-lived Project Collaboration Workspace.
 
 After setup, the skill gets out of the way.
 
@@ -39,14 +41,12 @@ agent-collaboration-setup (this Skill)
         |
         | bootstrap / adopt / upgrade / repair
         v
-Project repository
-├── AGENTS.md                 <- runtime entry point
-├── CLAUDE.md                 <- thin Claude Code router, when needed
-└── .agents/
-    ├── protocol/
-    ├── coordination/
-    ├── knowledge/
-    └── runtime/              <- local, ephemeral
+Repository project                 Project Collaboration Workspace
+├── AGENTS.md                       ├── AGENTS.md       <- Root identity/router
+└── .agents/                        ├── .agents/        <- Root control plane
+                                    ├── Route A/        <- Route-owned state
+                                    ├── Route B/
+                                    └── Route N/
 ```
 
 Once installed, ordinary project sessions do **not** need to load this Skill.
@@ -146,6 +146,53 @@ Use agent-collaboration-setup to validate this repository's ACHP setup.
 
 Harness invocation syntax differs. For example, Codex can explicitly mention a Skill, Claude Code exposes Skills as slash commands, and OpenCode exposes them through its Skill system. The natural-language prompts above remain portable.
 
+## Project Collaboration Workspace and Routes
+
+A Workspace is a durable management/control root. It may be physically separate
+from the source repository and execution hosts, and it is allowed to remain
+non-Git.
+
+```bash
+python3 scripts/project_setup.py workspace adopt --root /path/to/workspace --dry-run
+python3 scripts/project_setup.py workspace adopt --root /path/to/workspace
+python3 scripts/project_setup.py workspace validate --root /path/to/workspace
+python3 scripts/project_setup.py route list --workspace /path/to/workspace
+```
+
+Create a new Route without copying an existing Route:
+
+```bash
+python3 scripts/project_setup.py route create \
+  --workspace /path/to/workspace \
+  --path "C Route" \
+  --route-id c-route \
+  --display-name "C Route"
+```
+
+Adopt an existing Route only from that Route's own migration phase. Adoption
+preserves its existing `AGENTS.md`, `.agents/knowledge/`, references, and state:
+
+```bash
+python3 scripts/project_setup.py route adopt \
+  --workspace /path/to/workspace \
+  --path "Existing Route"
+```
+
+The Root registry stores stable identity, path, lifecycle, and pointers. Dynamic
+engineering status remains Route-owned. Source Repository and Execution Endpoint
+fields start as `unknown`; historical paths or Harness names do not establish a
+current baseline.
+
+### Schema 0.2 operation boundary
+
+The Workspace commands `bootstrap`, `adopt`, `upgrade`, `repair`, and `validate`
+are implemented against the exact supplied path. `workspace uninstall` is
+currently guarded: it refuses to change files until a reviewed ownership plan is
+available. Route `rename` changes only the display metadata; it does not move the
+Route directory or alter its registry path. Split/merge, path-moving rename,
+Endpoint replacement, restore, and rollback remain future migration contracts
+requiring explicit evidence, review, and a reversible recovery plan.
+
 ## Deterministic repository setup CLI
 
 The Skill includes a standard-library-only Python setup tool:
@@ -177,7 +224,9 @@ Validate after installation:
 python3 scripts/project_setup.py validate --root /path/to/repo
 ```
 
-Uninstall preserves project-owned coordination/knowledge by default. To remove all ACHP data too:
+Repository uninstall preserves project-owned coordination/knowledge by default.
+The Workspace uninstall command is a separate guarded path and currently makes no
+changes. For a source repository, to remove all ACHP data too:
 
 ```bash
 python3 scripts/project_setup.py uninstall --root /path/to/repo --purge-data
@@ -216,20 +265,24 @@ The installer uses bounded managed blocks in `AGENTS.md`, `CLAUDE.md`, and `.git
 
 ## Runtime architecture
 
-ACHP separates four planes:
+ACHP separates durable collaboration identity from changing execution and source
+state:
 
 ```text
-Execution Plane
-    agents/sessions perform actual work
+Project Collaboration Root
+    stable project identity, Route registry, shared constraints
 
-Coordination Plane
-    roles, tasks, handoffs, relay envelopes
+Development Route Node
+    long-lived goal/architecture route and route-owned continuity
 
-Repository State Plane
-    branch, commit, push, pull, exact baseline
+Execution Endpoint
+    replaceable engineer/agent/session/host capacity
+
+Source Repository / Source State
+    explicit repository, branch, commit, tree, worktree, Push/Pull evidence
 
 Knowledge Plane
-    .agents/knowledge/
+    Root-wide knowledge plus Route-owned scoped knowledge
 ```
 
 Harness integrations are optional edges around these planes.
@@ -313,7 +366,7 @@ After editing the files:
 ```bash
 git init
 git add .
-git commit -m "Initial release of Agent-collaboration v0.1.0"
+git commit -m "Add Project Collaboration Workspace and Route support"
 git branch -M main
 git remote add origin git@github.com:D1ChangGeng/Agent-collaboration.git
 git push -u origin main
@@ -359,6 +412,7 @@ LICENSE
 scripts/
   install_skill.py
   project_setup.py
+  workspace_setup.py
   validate_skill.py
 assets/
   scaffold/
