@@ -1,0 +1,23 @@
+kind: unknown
+repository:
+  locator: unknown
+  provider: unknown
+  remote: unknown
+  branch: unknown
+  commit: unknown
+  tree: unknown
+  working_tree: unknown
+  push: unknown
+  receiver_sync: unknown
+execution_endpoint:
+  id: unknown
+  host: unknown
+  harness: unknown
+  session: unknown
+  status: unknown
+evidence:
+  class: unknown
+  source: unknown
+  observed_at: unknown
+  freshness: unknown
+  refresh_trigger: source or endpoint identity change

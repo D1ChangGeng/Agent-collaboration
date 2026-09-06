@@ -1,0 +1,21 @@
+protocol:
+  name: ACHP
+  version: "0.2.0"
+target:
+  kind: project-collaboration-workspace
+  management_root: true
+  execution_repository_required: false
+collaboration:
+  topology: explicit-per-task
+  manual_relay_fallback: true
+  sibling_sync: minimal-necessary
+relay:
+  automatic_only_when_verified: true
+  capability_unknown_means_unavailable: true
+repository_state:
+  source_state_required_for_claims: true
+  git_provider_optional: true
+knowledge:
+  root_owned: .agents/knowledge
+  route_owned: route-local .agents/knowledge
+  lifecycle_owner: self-evolution
