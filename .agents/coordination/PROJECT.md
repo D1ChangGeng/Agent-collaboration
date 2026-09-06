@@ -38,7 +38,9 @@ normal collaboration runtime. Product and design authority is split between
 Current milestone: extend the verified v0.1.0 setup-only baseline with an
 explicit non-Git Project Collaboration Workspace / Route control plane, while
 keeping the repository-oriented mode compatible and preserving the setup/runtime
-boundary. The v0.2.0 changes in this working tree are local and not published.
+boundary. The v0.2.0 Workspace/Route baseline is published from the verified
+main branch; subsequent persistence simplification is a separate v0.3 design
+and migration review.
 
 ## Critical project-specific constraints
 
@@ -78,7 +80,7 @@ boundary. The v0.2.0 changes in this working tree are local and not published.
   the `Agent-collaboration` source repository
 - Public GitHub owner: `D1ChangGeng`
 - Repository: `https://github.com/D1ChangGeng/Agent-collaboration`
-- Published release: `v0.1.0`; v0.2.0 is local and has not been pushed or released
+- Published releases: `v0.1.0`, `v0.2.0`
 
 ## Validation routes
 
