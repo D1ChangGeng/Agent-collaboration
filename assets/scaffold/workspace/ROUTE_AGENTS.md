@@ -18,4 +18,17 @@ contract into this file.
 
 Source Repository, Execution Endpoint, branch, commit, tree, and push state are
 unknown until recorded in `.agents/state/source-state.yaml` with evidence.
+
+## Always-on content boundary
+
+Keep this file focused on stable Route identity, ownership, topology, and other
+startup-critical invariants that must survive a new Route session. Promote a
+new Route rule only when real work shows that it is stable across future Route
+sessions and cannot be reliably supplied by retrieved knowledge. Current state,
+implementation details, decisions, reports, and temporary evidence belong in
+the Route's `.agents/knowledge/`, state, or authoritative source records.
+
+`self-evolution` owns knowledge discovery, capture, retrieval, correction,
+verification, and maintenance; this file does not reproduce that lifecycle or
+become a Route work log.
 <!-- ACHP-ROUTE:END -->

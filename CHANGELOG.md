@@ -11,6 +11,8 @@ Project Collaboration Workspace and Route baseline.
 - Explicit non-Git Project Collaboration Workspace setup and validation.
 - Stable Root manifest, Root↔Route baseline, Route registry, and source-state evidence schema.
 - Route create/adopt/list/validate/set-state/rename metadata operations.
+- Always-on `AGENTS.md` admission and natural-evolution boundaries propagated
+  across repository, Workspace, and Route scaffolds.
 - Initial baseline semantics with explicit unknown/unverified values.
 - Route-preserving, idempotent migration fixtures and ownership checks.
 - Workspace-scoped relay, Git-sync, capability, and knowledge-boundary scaffold.

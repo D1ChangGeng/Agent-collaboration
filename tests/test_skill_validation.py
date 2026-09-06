@@ -15,6 +15,19 @@ class SkillValidationTests(unittest.TestCase):
         )
         self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
 
+    def test_scaffolds_preserve_agents_admission_contract(self):
+        texts = [
+            (ROOT / "assets" / "scaffold" / "AGENTS_BLOCK.md").read_text(encoding="utf-8"),
+            (ROOT / "assets" / "scaffold" / "workspace" / "AGENTS_BLOCK.md").read_text(encoding="utf-8"),
+            (ROOT / "assets" / "scaffold" / "workspace" / "ROUTE_AGENTS.md").read_text(encoding="utf-8"),
+        ]
+        for text in texts:
+            self.assertIn("always-on", text.lower())
+            self.assertIn("self-evolution", text)
+            self.assertIn("work log", text.lower())
+        self.assertIn("startup-critical", texts[1])
+        self.assertIn("future Route", texts[2])
+
 
 if __name__ == "__main__":
     unittest.main()

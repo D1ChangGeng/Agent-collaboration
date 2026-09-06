@@ -35,6 +35,24 @@ assumed to be a Git repository or an execution checkout.
   topology and state boundaries.
 - `.agents/runtime/` is machine/session-local and must not become project truth.
 
+### AGENTS.md admission and natural evolution
+
+This Root file contains only always-on collaboration invariants: stable identity
+and role boundaries, Root/Route/Endpoint/Source-State separation, high-level
+topology and behavior rules, cross-session continuity, and recurring high-cost
+corrections that every related session must know before work begins.
+
+Promote a new rule here only when real work shows that it is stable across
+future sessions or Routes, startup-critical, and not reliably supplied by
+retrieved Root or Route knowledge. Current project state, implementation
+details, design rationale, task progress, engineer reports, and temporary
+evidence remain in their authoritative Route, state, knowledge, or source
+records.
+
+`self-evolution` owns knowledge discovery, capture, retrieval, correction,
+verification, and maintenance. The Root file does not duplicate that lifecycle
+and must not become a work log or a second source of truth.
+
 See `.agents/coordination/ROOT-BASELINE.md`, `.agents/protocol/RELAY.md`,
 `.agents/protocol/GIT-SYNC.md`, and `.agents/protocol/SOURCE-STATE.md` for the
 deeper contracts.

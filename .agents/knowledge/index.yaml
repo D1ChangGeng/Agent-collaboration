@@ -21,6 +21,18 @@ documents:
       - scripts/validate_skill.py
       - README.md
       - README.zh-CN.md
+  - path: decisions/adr-003-agents-admission-boundary.md
+    kind: decision
+    status: accepted
+    id: adr-003-agents-admission-boundary
+    date: 2026-09-06
+    scope:
+      - AGENTS.md
+      - assets/scaffold/AGENTS_BLOCK.md
+      - assets/scaffold/workspace/AGENTS_BLOCK.md
+      - assets/scaffold/workspace/ROUTE_AGENTS.md
+      - SKILL.md
+      - references/DESIGN.md
   - path: guides/architecture-and-state.md
     kind: guide
     status: active
