@@ -132,6 +132,22 @@ Therefore ACHP uses:
 - a minimal Claude compatibility import;
 - no duplicated runtime protocol bodies.
 
+### AGENTS admission and natural evolution
+
+`AGENTS.md` is a small always-on foundation, not a project journal. It should
+contain stable identity and role boundaries, collaboration topology, durable
+ownership and evidence boundaries, cross-session continuity rules, and
+high-cost corrections that every related session needs at startup.
+
+An observed rule is eligible for promotion only when it is stable across future
+sessions or Routes, startup-critical, and not reliably recoverable through
+retrieved knowledge. Current implementation state, design rationale, task
+progress, engineer reports, and temporary evidence remain in their authoritative
+Route, state, knowledge, or source records. `self-evolution` owns discovery,
+capture, retrieval, correction, verification, and maintenance; ACHP only keeps
+the boundary that lets those layers work together without a second lifecycle or
+source of truth.
+
 ## Knowledge philosophy
 
 The knowledge plane should remain sparse.
