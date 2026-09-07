@@ -10,7 +10,6 @@ import os
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 # Workspace/Route operations live in a separate module so the legacy
@@ -47,7 +46,7 @@ def route_operation(args):
         raise RuntimeError("workspace/route support is unavailable")
     return workspace_route_operation(args, Path(__file__).resolve().parents[1] / "assets" / "scaffold")
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 AGENTS_BEGIN = "<!-- ACHP:BEGIN -->"
 AGENTS_END = "<!-- ACHP:END -->"
 CLAUDE_BEGIN = "<!-- ACHP-CLAUDE-ROUTER:BEGIN -->"
@@ -79,7 +78,6 @@ CREATE_IF_MISSING = [
     ".agents/knowledge/decisions/.gitkeep",
     ".agents/knowledge/observations/.gitkeep",
     ".agents/knowledge/archive/.gitkeep",
-    ".agents/runtime/.gitkeep",
 ]
 
 
@@ -112,6 +110,7 @@ def find_repo_root(start: Path) -> Path:
 
 
 def replace_block(text: str, begin: str, end: str, block: str) -> str:
+    validate_marker_pair(text, begin, end, "managed file")
     block = block.strip() + "\n"
     if begin in text and end in text:
         left, rest = text.split(begin, 1)
@@ -123,6 +122,36 @@ def replace_block(text: str, begin: str, end: str, block: str) -> str:
     if text.strip():
         return text.rstrip() + "\n\n" + block
     return block
+
+
+def validate_marker_pair(text: str, begin: str, end: str, label: str) -> None:
+    """Require a managed block to be absent or exactly one well-ordered pair."""
+    begin_count = text.count(begin)
+    end_count = text.count(end)
+    if (begin_count, end_count) == (0, 0):
+        return
+    if (begin_count, end_count) != (1, 1):
+        raise ValueError(
+            f"{label} managed block markers must occur as 0/0 or 1/1 "
+            f"(found {begin_count}/{end_count})"
+        )
+    if text.index(begin) >= text.index(end):
+        raise ValueError(f"{label} managed block begin marker must precede end marker")
+
+
+def validate_existing_managed_blocks(root: Path) -> None:
+    """Validate all existing managed files before any setup write occurs."""
+    for filename, begin, end in (
+        ("AGENTS.md", AGENTS_BEGIN, AGENTS_END),
+        ("CLAUDE.md", CLAUDE_BEGIN, CLAUDE_END),
+        (".gitignore", GITIGNORE_BEGIN, GITIGNORE_END),
+    ):
+        path = root / filename
+        if not path.exists():
+            continue
+        if not path.is_file():
+            raise ValueError(f"managed target is not a file: {path}")
+        validate_marker_pair(path.read_text(encoding="utf-8"), begin, end, filename)
 
 
 def remove_block(text: str, begin: str, end: str) -> str:
@@ -159,6 +188,7 @@ def sha256(path: Path) -> str:
 
 def install_or_upgrade(root: Path, mode: str, dry_run: bool) -> list[str]:
     actions: list[str] = []
+    validate_existing_managed_blocks(root)
 
     # Managed AGENTS block.
     agents_path = root / "AGENTS.md"
@@ -201,33 +231,17 @@ def install_or_upgrade(root: Path, mode: str, dry_run: bool) -> list[str]:
     for rel in CREATE_IF_MISSING:
         copy_asset(rel, root, dry_run, actions, overwrite=False)
 
-    # Manifest. Keep its creation timestamp stable across repeated upgrades;
-    # dynamic per-run timestamps make the legacy repository mode noisy and
-    # defeat idempotent setup verification.
-    existing_manifest = {}
+    # The repository manifest records setup ownership and integrity metadata.
+    # Keep stable protocol/ownership boundaries in new manifests; legacy fields
+    # remain readable for compatibility but are not emitted by new writers.
     manifest_path = root / ".agents" / "manifest.json"
-    if manifest_path.exists() and manifest_path.is_file():
-        try:
-            parsed = json.loads(manifest_path.read_text(encoding="utf-8"))
-            if isinstance(parsed, dict):
-                existing_manifest = parsed
-        except (OSError, json.JSONDecodeError):
-            existing_manifest = {}
     manifest = {
         "protocol": "ACHP",
         "version": VERSION,
         "setup_skill": "agent-collaboration-setup",
-        # Preserve the original setup mode as stable project metadata. The
-        # command used for a later upgrade is an operation, not a new project
-        # identity, so switching `adopt` to `upgrade` must not rewrite it.
-        "mode": existing_manifest.get("mode", mode),
         "managed_files": MANAGED_FILES,
         "project_owned_files": CREATE_IF_MISSING,
         "runtime_dependency_on_setup_skill": False,
-        "created_at": existing_manifest.get(
-            "created_at",
-            existing_manifest.get("updated_at", datetime.now(timezone.utc).isoformat()),
-        ),
     }
     manifest_text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     write_text(root / ".agents" / "manifest.json", manifest_text, dry_run, actions)
@@ -237,6 +251,10 @@ def install_or_upgrade(root: Path, mode: str, dry_run: bool) -> list[str]:
 
 def validate(root: Path) -> tuple[bool, list[str]]:
     problems: list[str] = []
+    try:
+        validate_existing_managed_blocks(root)
+    except (OSError, ValueError) as exc:
+        problems.append(f"managed block markers invalid: {exc}")
 
     agents = root / "AGENTS.md"
     if not agents.exists():
@@ -286,6 +304,7 @@ def validate(root: Path) -> tuple[bool, list[str]]:
 
 def uninstall(root: Path, dry_run: bool, purge_data: bool) -> list[str]:
     actions: list[str] = []
+    validate_existing_managed_blocks(root)
 
     for filename, begin, end in [
         ("AGENTS.md", AGENTS_BEGIN, AGENTS_END),
@@ -389,9 +408,17 @@ def main() -> int:
         return 1
 
     if args.mode == "uninstall":
-        actions = uninstall(root, args.dry_run, args.purge_data)
+        try:
+            actions = uninstall(root, args.dry_run, args.purge_data)
+        except (OSError, ValueError) as exc:
+            print(f"[FAIL] {exc}")
+            return 1
     else:
-        actions = install_or_upgrade(root, args.mode, args.dry_run)
+        try:
+            actions = install_or_upgrade(root, args.mode, args.dry_run)
+        except (OSError, ValueError) as exc:
+            print(f"[FAIL] {exc}")
+            return 1
 
     prefix = "[DRY-RUN]" if args.dry_run else "[APPLIED]"
     if actions:

@@ -9,7 +9,8 @@ This file is project-owned after first creation. ACHP upgrades preserve it.
 - Skill slug: agent-collaboration-setup
 - Primary branch: `main`
 - Project type: existing source recovered from the v0.1.0 Skill archive
-- Current phase: v0.2.0 Workspace/Route architecture upgrade and local validation
+- Current phase: v0.3.0 Workspace schema 0.3 persistence simplification
+  released and maintained
 
 ## Collaboration topology
 
@@ -35,12 +36,11 @@ normal collaboration runtime. Product and design authority is split between
 
 ## Current milestone
 
-Current milestone: extend the verified v0.1.0 setup-only baseline with an
-explicit non-Git Project Collaboration Workspace / Route control plane, while
-keeping the repository-oriented mode compatible and preserving the setup/runtime
-boundary. The v0.2.0 Workspace/Route baseline is published from the verified
-main branch; subsequent persistence simplification is a separate v0.3 design
-and migration review.
+Current milestone: maintain the verified setup-only baseline and the explicit
+non-Git Project Collaboration Workspace / Route control plane while preserving
+the setup/runtime boundary. The v0.3.0 Workspace/Route persistence model is
+published from the verified main branch; future changes require their own
+reviewed migration boundary.
 
 ## Critical project-specific constraints
 
@@ -51,14 +51,19 @@ and migration review.
 - Treat manual user relay as a first-class transport and automatic relay as a
   capability-verified enhancement only.
 - Keep message relay state independent from Git repository synchronization.
-- Keep `.agents/runtime/` machine/session-local and ignored; `.agents/knowledge/`
-  is the durable project Knowledge Plane.
+- Keep Harness/session capability observations in the current execution context;
+  `.agents/knowledge/` is the durable project Knowledge Plane.
 - Preserve project-owned profile, tasks, handoffs, and knowledge during setup
   upgrades and default uninstall.
 - Keep management Workspaces distinct from source repositories and execution
   endpoints; missing source-state facts remain `unknown` or `unverified`.
 - Treat the Root registry as stable control-plane metadata, not a per-turn
   shared status log; Route knowledge and dynamic state remain Route-owned.
+- The existing repository-mode `.agents/config.yaml` is project-owned legacy
+  configuration and may retain its original `protocol.version: "0.1.0"` during
+  Skill upgrades; it is not the Skill release identity. Fresh repository
+  scaffolds use the current release version, and Workspace scaffolds use the
+  current Workspace protocol release.
 
 ## Authoritative routes
 
@@ -75,12 +80,12 @@ and migration review.
 
 ## Version and release identity
 
-- Current version: v0.2.0 (`VERSION`)
+- Current version: v0.3.0 (`VERSION`)
 - Release identity: setup-only `agent-collaboration-setup` Skill, published from
   the `Agent-collaboration` source repository
 - Public GitHub owner: `D1ChangGeng`
 - Repository: `https://github.com/D1ChangGeng/Agent-collaboration`
-- Published releases: `v0.1.0`, `v0.2.0`
+- Published releases: `v0.1.0`, `v0.2.0`, `v0.3.0`
 
 ## Validation routes
 
@@ -96,8 +101,7 @@ git diff --check
 
 ## Current primary goal
 
-Complete and review the v0.2.0 Workspace/Route setup baseline, validate the
-dogfood Root at `D:\Chatgpt\Agent`, and keep A/B Route semantic migration as an
-independent later phase. Do not expand into runtime services, a broker/daemon,
-UI, or new Harness adapters without an explicitly accepted design and
-validation plan.
+Maintain the released Workspace schema 0.3 persistence model, keep validation
+and upgrade behavior fail-closed, and preserve the independent task boundary
+for Root, A Route, and B Route work. Product or Route changes require their own
+task and evidence; they are not implied by the Skill release.

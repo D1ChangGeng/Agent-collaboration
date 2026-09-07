@@ -17,12 +17,13 @@ Responsibilities:
 - repository uninstall where the ownership boundary is known;
 - route harness-specific persistent instruction entry points to the same runtime contract.
 
-For a schema 0.2 Project Collaboration Workspace, the corresponding command
-family is explicit and exact-path based. `workspace bootstrap`, `adopt`,
-`upgrade`, `repair`, and `validate` are implemented; `workspace uninstall` is
-currently guarded and refuses to change files until a reviewed ownership plan is
-available. This deliberate refusal is a safety boundary, not a second uninstall
-semantics.
+For the current Workspace schema 0.3, the corresponding command family is
+explicit and exact-path based. `workspace bootstrap`, `adopt`, `upgrade`,
+`repair`, and `validate` are implemented; `workspace uninstall` is currently
+guarded and refuses to change files until a reviewed ownership plan is
+available. Schema 0.2 input remains readable, while new writers emit the
+minimal stable shape. This deliberate refusal is a safety boundary, not a
+second uninstall semantics.
 
 ### Runtime collaboration plane
 
@@ -60,13 +61,18 @@ Source State Evidence and may remain `unknown`, `unverified`, or
 `not-measured`. A Workspace Root is a management/control surface, not an
 implicit execution checkout.
 
-## Schema 0.2 Route operation boundary
+## Schema 0.3 Route operation boundary
 
 The current Route CLI implements `create`, `adopt`, `list`, `validate`,
-`set-state`, and `rename`. `rename` updates display metadata only; it does not
-move a directory or rewrite Route-owned files. Endpoint bindings are pointers
-until independently evidenced, not a claim that Endpoint replacement is
-available.
+`upgrade`, `set-state`, and `rename`. Route metadata stores identity and the
+explicit Root contract pointer. Lifecycle and display name are authoritative in
+the Root registry; `set-state` and `rename` write that registry only. `route
+upgrade` is the explicit metadata migration boundary and preserves unrecognized
+extension fields. Verified Source Repository facts may use an optional
+Route-owned `.agents/state/source-state.yaml` record when they need durable
+cross-Session value; new Routes do not receive an empty record. The Root
+registry does not store these fields. Harness, Session, and live Endpoint status
+remain current-context observations, not Source State.
 
 Path-moving rename, split/merge, Endpoint replacement, restore, rollback, and
 other ownership-changing lifecycle actions are documented future migration
@@ -107,19 +113,14 @@ It is:
 
 This gives ACHP a portable baseline.
 
-## Why runtime capability is not durable project knowledge
+## Runtime capability belongs to current session context
 
-A capability observation belongs to a specific:
-- harness;
-- version;
-- host;
-- session;
-- permission set;
-- installed tool set.
-
-Committing that as project truth creates false assumptions on another machine.
-
-Therefore runtime observations belong in `.agents/runtime/`, which is ignored by Git.
+A capability observation is scoped to the harness, version, host, session,
+permission set, and installed tool set that produced it. Keep those observations
+with the current Harness/session context. Installer metadata records setup
+integrity; Git or Route Source State records source identity; self-evolution
+manages durable knowledge. The setup Skill configures these boundaries and does
+not own Session execution recovery.
 
 ## Why `AGENTS.md` is canonical
 

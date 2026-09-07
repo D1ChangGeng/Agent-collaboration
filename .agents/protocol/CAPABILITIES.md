@@ -54,15 +54,12 @@ Read is not send.
 Discovery is not send.
 Same-host is not cross-host.
 
-## Runtime record
+## Observation boundary
 
-Machine/session-local observations may be recorded at:
-
-```text
-.agents/runtime/capabilities.yaml
-```
-
-Do not commit this as universal project truth.
+Capability observations belong to the current Harness/session context. The
+setup scaffold does not require a persisted record, and a local observation
+must not be promoted to universal project truth without separately verified
+evidence.
 
 ## Selection
 

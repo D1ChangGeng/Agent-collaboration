@@ -2,7 +2,8 @@
 
 This file is a concise route into the full Root contract. The authoritative
 Root↔Route migration and lifecycle rules are in `ROOT-BASELINE.md`; stable Route
-identity is in `routes.yaml`; changing route state stays Route-owned.
+identity and lifecycle status are in `routes.yaml`; durable Route goals,
+decisions, knowledge, and source evidence remain in the Route.
 
 Root responsibilities:
 
@@ -13,5 +14,5 @@ Root responsibilities:
   inventing facts;
 - provide a reviewable, idempotent migration path for legacy Routes.
 
-Root is not a replacement for A/B Route knowledge and is not a source-code
-execution node.
+Root is not a replacement for Route knowledge and is not a source-code
+execution node. Live Session progress remains in the current Harness context.
