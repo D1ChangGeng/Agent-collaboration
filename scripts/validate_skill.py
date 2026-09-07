@@ -105,6 +105,26 @@ def main() -> int:
         except Exception as exc:
             problems.append(str(exc))
 
+    # Both new scaffold modes carry the same ACHP release identity.  Check
+    # them against VERSION so a freshly installed project cannot inherit a
+    # stale protocol release marker.
+    try:
+        version_file = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        for rel in (
+            "assets/scaffold/.agents/config.yaml",
+            "assets/scaffold/workspace/.agents/config.yaml",
+        ):
+            config_text = (ROOT / rel).read_text(encoding="utf-8")
+            match = re.search(r'(?m)^\s*version:\s*["\']([^"\']+)["\']\s*$', config_text)
+            if not match:
+                problems.append(f"{rel} is missing protocol version")
+            elif match.group(1) != version_file:
+                problems.append(
+                    f"{rel} protocol version '{match.group(1)}' does not match VERSION '{version_file}'"
+                )
+    except Exception as exc:
+        problems.append(f"scaffold version check failed: {exc}")
+
     agents_block = ROOT / "assets/scaffold/AGENTS_BLOCK.md"
     if agents_block.exists():
         text = agents_block.read_text(encoding="utf-8")
@@ -136,6 +156,26 @@ def main() -> int:
     source_state = ROOT / "assets/scaffold/workspace/.agents/protocol/SOURCE-STATE.md"
     if source_state.exists() and "unknown" not in source_state.read_text(encoding="utf-8"):
         problems.append("workspace source-state contract must define explicit unknown values")
+
+    # The Route source-state asset is an opt-in example, not a default runtime
+    # record. Keep the packaged template from regressing into a fabricated
+    # baseline or a second Harness/session status surface.
+    route_source_template = ROOT / "assets/scaffold/workspace/.agents/state/source-state.yaml"
+    if route_source_template.exists():
+        text = route_source_template.read_text(encoding="utf-8")
+        if "Do not copy this file unchanged" not in text:
+            problems.append("Route source-state template must be explicitly opt-in")
+        for forbidden in (
+            "execution_endpoint:",
+            "harness:",
+            "session:",
+            "freshness:",
+            "refresh_trigger:",
+        ):
+            if re.search(rf"(?m)^\s*(?!#).*{re.escape(forbidden)}", text):
+                problems.append(
+                    f"Route source-state template must not persist runtime field: {forbidden[:-1]}"
+                )
 
     if problems:
         print("Validation failed:")

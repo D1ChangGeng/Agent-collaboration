@@ -1,13 +1,13 @@
 # Root Collaboration Baseline and Route Migration Contract
 
-Status: adopted Root baseline for ACHP Workspace schema 0.3.
+Status: adopted Root baseline for ACHP workspace schema 0.2.
 
 ## Entities
 
 - **Project Collaboration Root** — durable management/control workspace for
   project identity, Route registry, shared constraints, and coordination.
 - **Development Route Node** — long-lived architecture/goal route with its own
-  identity metadata, durable goals, decisions, knowledge, and source evidence.
+  identity, state, knowledge, and execution relationships.
 - **Execution Endpoint** — replaceable engineer/agent/session/host capacity;
   Route↔Endpoint is not a permanent 1:1 identity.
 - **Source Repository / Repository State** — implementation location and
@@ -18,11 +18,8 @@ Status: adopted Root baseline for ACHP Workspace schema 0.3.
 
 Root owns stable project identity, registry, migration contract, and minimal
 cross-route coordination. A Route owns its goals, route-specific AGENTS,
-knowledge, decisions, and durable source evidence. The Root
-registry is the single authority for Route lifecycle status and display name;
-route metadata is identity-only. Harness, Session, and live Endpoint facts stay
-in the current execution context; Source State Evidence is the durable claim
-boundary for independently verified source identity.
+knowledge, state, and engineer-facing continuity. Endpoint facts are runtime
+records; Source State Evidence is the claim boundary.
 
 Routes must explicitly read this contract. Do not assume a Harness will inherit a
 parent `AGENTS.md` from a non-Git management tree. Do not copy this contract or
@@ -35,16 +32,15 @@ route router. `route adopt` registers an existing Route and preserves its
 `AGENTS.md`, `.agents/knowledge/`, references, and state. A Root operation must
 not recursively run repository adopt against a Route.
 
-Registry writes are limited to stable identity, path, display name, and
-lifecycle status. Per-turn status, current work, and live execution observations
-remain in the current Harness context; durable Route decisions and source facts
-remain in their existing Route-owned authorities.
+Registry writes are limited to stable identity, path, lifecycle, and pointers.
+Per-turn status, engineer reports, and dynamic evidence remain Route-owned; any
+Root aggregate is a generated view, not a second source of truth.
 
 The canonical registry path is `routes.yaml`. In the current standard-library
 implementation its contents are deterministic JSON text (also valid YAML 1.2),
 so there is one registry and one spelling rather than parallel JSON/YAML sources.
 
-### Schema 0.3 implementation boundary
+### Schema 0.2 implementation boundary
 
 The currently implemented Workspace operations are `bootstrap`, `adopt`,
 `upgrade`, `repair`, and `validate`. They use the exact supplied Workspace path;
@@ -53,25 +49,23 @@ guarded and currently returns a refusal without changing files until a reviewed
 ownership plan exists. It is not an implemented removal workflow.
 
 The currently implemented Route operations are `create`, `adopt`, `list`,
-`validate`, `upgrade`, `set-state`, and `rename`. Route `rename` changes only the stable
+`validate`, `set-state`, and `rename`. Route `rename` changes only the stable
 display metadata; it does not move the Route directory, change its registry path,
 or rewrite Route-owned content. The Route path is therefore immutable in the
-current schema 0.3 implementation.
+current schema 0.2 implementation.
 
-Source Repository evidence may be stored in the optional Route-owned
-`.agents/state/source-state.yaml` record when verified facts need to survive
-across Sessions. Route creation does not create an empty record. The Root
-registry does not store these fields. Unbound values remain `unknown`,
-`unverified`, or `not-measured` until separately evidenced. Harness, Session,
-and live Endpoint status are not Source State fields.
+Source Repository and Execution Endpoint fields are metadata pointers only at
+this stage. They remain `unknown` until separately evidenced; their presence in
+the registry does not mean that a binding or replacement operation exists.
 
 ## Source State Evidence and initial baseline
 
-For a consequential source action, use current Git/source evidence or a still
-applicable durable record. Collect only the repository, remote, branch, commit,
-tree, worktree, push, receiver-sync, and evidence fields needed by the next
-action. Missing values remain `unknown`, `unverified`, or `not-measured`.
-Historical paths and reports do not establish current source identity.
+At first Route↔Endpoint contact, reuse a valid recorded baseline. If it is
+missing, stale, or conflicts with reality, collect the targeted repository,
+remote, branch, commit, tree, worktree, push, receiver-sync, endpoint, and
+observed-at fields needed for the next action. Missing values remain `unknown`,
+`unverified`, or `not-measured`. Historical paths and reports do not establish
+current execution identity.
 
 ## Communication
 
@@ -84,18 +78,16 @@ capability; manual user forwarding is always valid.
 ## AGENTS and knowledge migration
 
 Preserve existing Route `AGENTS.md`, self-evolution settings, Guides, Decisions,
-Observations, references, and Source State records until the Route's own session accepts a
+Observations, references, and state until the Route's own session accepts a
 migration. Root `AGENTS.md` remains concise and does not duplicate Route bodies.
 Collaboration defines scope and ownership; self-evolution defines knowledge
 capture, retrieval, correction, indexing, and maintenance.
 
 ## Lifecycle
 
-The implemented metadata lifecycle is: create, adopt, validate, explicit
-metadata upgrade, display rename, and state updates for `discovered`, `active`,
-`paused`, `completed`, or `archived`. Lifecycle status and display name are
-authoritative in the Root registry; route metadata contains identity and the
-Root contract pointer. An `archived` value is a registry/metadata
+The implemented metadata lifecycle is: create, adopt, validate, display rename,
+and explicit state updates for `discovered`, `active`, `paused`, `completed`,
+`archived`, or `legacy-unmigrated`. An `archived` value is a registry/metadata
 state, not a filesystem archive operation. Returning to another state is also a
 metadata edit; it is not, by itself, a restore or rollback workflow.
 

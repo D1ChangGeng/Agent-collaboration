@@ -3,7 +3,7 @@
 ## Identity
 
 - Project:
-- Root ID: `agent-collaboration-root`
+- Root ID: see `.agents/manifest.json`; its `root_id` is authoritative
 - Root kind: Project Collaboration Workspace
 - Management path:
 - Source repository: unknown until bound by Source State Evidence
@@ -23,10 +23,12 @@
 
 ## Ownership
 
-Root owns stable project identity, registry, and cross-route coordination.
-Routes own route identity, goals, dynamic state, route knowledge, and engineer
-continuity. Execution Endpoints are replaceable. Self-evolution owns knowledge
-lifecycle; it is not reimplemented by this protocol.
+Root owns stable project identity, the Route registry, lifecycle status, display
+names, and cross-route coordination. Routes own route identity metadata, durable
+goals, decisions, knowledge, and verified source evidence. Execution Endpoints
+are replaceable; live Session progress remains in Harness context.
+Self-evolution owns knowledge lifecycle; it is not reimplemented by this
+protocol.
 
 ## Evidence boundary
 

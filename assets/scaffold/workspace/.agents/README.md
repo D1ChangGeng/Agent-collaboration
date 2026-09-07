@@ -10,7 +10,8 @@ This is the control-plane state for a Project Collaboration Root.
   boundaries.
 - `knowledge/` holds only Root-owned durable knowledge. Route knowledge remains
   in each Route directory and is referenced by the registry.
-- `runtime/` is machine/session-local and ignored.
+- Harness/session context and capability observations stay local to the running
+  environment; setup does not create or maintain a `runtime/` project surface.
 
 The `agent-collaboration-setup` Skill initializes and validates this state but is
 not required for normal collaboration after setup.

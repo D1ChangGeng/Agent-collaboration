@@ -6,7 +6,7 @@ Possible transports include:
 - user copy/paste;
 - same-host session messaging;
 - cross-host session messaging;
-- future broker/adapter transports.
+- harness-provided transports when their exact capability is verified.
 
 ## Baseline
 

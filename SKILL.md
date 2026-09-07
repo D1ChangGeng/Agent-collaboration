@@ -4,7 +4,7 @@ description: Install, bootstrap, adopt, repair, upgrade, validate, or safely man
 license: MIT
 compatibility: Agent Skills compatible harness with filesystem read/write access; Git is optional for management workspaces; Python 3.9+ is recommended for deterministic setup scripts.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   scope: "setup-only"
   protocol: "ACHP"
 ---
@@ -27,23 +27,38 @@ Its job is to install or maintain the ACHP project scaffold so future sessions c
 - `validate`: verify the ACHP installation and routing.
 - `uninstall`: remove ACHP-managed repository setup while preserving project
   knowledge by default. The Workspace form is currently guarded; see the
-  schema 0.2 boundary below.
+  Workspace schema boundary below.
 
 For a management workspace, use the explicit command families:
 
 - `workspace bootstrap|adopt|upgrade|repair|validate|uninstall`;
-- `route create|adopt|list|validate|set-state|rename`.
+- `route create|adopt|upgrade|list|validate|set-state|rename`.
 
 Workspace commands use the exact supplied path and never climb to a Git root.
 Route adoption registers and minimally annotates a Route while preserving its
 existing `AGENTS.md`, `.agents/knowledge/`, references, and state.
 
-Schema 0.2 boundaries are intentional: `workspace uninstall` currently refuses
-to change files until a reviewed ownership plan exists. `route rename` updates
-only the Route display metadata; it does not move the Route directory or rewrite
-its path and content. Path-moving rename, split/merge, Endpoint replacement,
-restore, and rollback are future migration contracts, not operations implied by
-the current command list.
+The current Workspace schema is 0.3, released as v0.3.0.
+Readers remain compatible with schema 0.2 input. New writers use the smallest
+stable shape: Root identity and registry location in the manifest, Route
+identity in `route.yaml`, and Route lifecycle in the Root registry. Older
+derived fields are read for compatibility but are not written again. Validation,
+adopt, and repair may continue to read an existing schema 0.2 Workspace or
+perform an idempotent no-op; adding a new Route to a schema 0.2 registry first
+requires the explicit Workspace upgrade boundary.
+
+`workspace uninstall` currently refuses to change files until a reviewed
+ownership plan exists. `route upgrade` is the explicit metadata migration
+boundary; it canonicalizes the Route metadata and Root registry while
+preserving unrecognized extension fields. `route set-state` and `route rename`
+write the Root registry only. Path-moving rename, split/merge, Endpoint
+replacement, restore, and rollback are future migration contracts, not
+operations implied by the current command list.
+
+Installer ownership hashes and preflight checks are optional setup-integrity
+metadata. They do not represent Session progress, checkpoints, or a recovery
+cursor. Session/context continuity remains the responsibility of the Harness,
+Git/source state, and the durable knowledge system.
 
 Do **not** use this skill merely because a project already uses ACHP.
 
@@ -72,7 +87,8 @@ The installed runtime must satisfy all of these:
    - verified capability + addressable destination -> automatic forwarding is allowed.
 5. Manual user forwarding is a first-class transport, not an error.
 6. Repository synchronization is independent from message transport. Handoffs involving repository changes must state branch, commit, push state, and receiver sync action.
-7. Runtime capability observations stay local under `.agents/runtime/` and are not committed as universal truth.
+7. Runtime capability observations stay in the current Harness/session context;
+   they are not required project files or universal project truth.
 8. Harness-specific compatibility is thin:
    - Codex/OpenCode can use `AGENTS.md` directly.
    - Claude Code gets a minimal `CLAUDE.md` import/router to `AGENTS.md`.
@@ -80,13 +96,17 @@ The installed runtime must satisfy all of these:
 10. The setup skill itself is not referenced by runtime instructions.
 11. A Project Collaboration Workspace may be non-Git; source-state and endpoint
     claims remain explicit `unknown`/`unverified` until evidence is bound.
-12. Root registry writes contain stable identity, lifecycle, and pointers only;
-    dynamic Route state remains Route-owned.
+12. Root registry writes contain stable Route identity, display name, path, and
+    lifecycle status only; dynamic/current Route state remains Route-owned.
 13. `AGENTS.md` contains only startup-critical, always-on invariants. New
     material is admitted there only after real work demonstrates stable,
     cross-session value that cannot be reliably supplied by retrieved knowledge;
     concrete state and knowledge lifecycle remain in their authoritative
     Route/state/knowledge surfaces.
+14. Route creation does not emit an empty Source State record. A Route creates
+    `.agents/state/source-state.yaml` only for verified source facts that need
+    durable cross-Session value; live Harness/Session/Endpoint observations stay
+    in the current execution context.
 
 ## Preferred deterministic workflow
 

@@ -62,7 +62,7 @@ agent-collaboration-setup
     ├── protocol/
     ├── coordination/
     ├── knowledge/
-    └── runtime/
+    └── （Harness/Session context） # 本地运行上下文，不是安装目录
 ```
 
 正常开发期间：
@@ -175,11 +175,20 @@ python3 scripts/project_setup.py route adopt \
   --path "Existing Route"
 ```
 
-Root registry 只保存稳定身份、路径、生命周期和指针；动态工程状态继续由 Route 自己拥有。Source Repository 与 Execution Endpoint 初始为 `unknown`，不能从历史路径或 Harness 名称推断。
+Root registry 只保存 Route 的 canonical 四字段：ID、path、display name 和 lifecycle status。当前 Session 进度留在 Harness context。只有当已经核验的 Source Repository 事实确实需要跨 Session 保留时，Route 才按需创建可选的 `.agents/state/source-state.yaml`；Route 初始化不再创建全为 `unknown` 的空记录。不能从历史路径或 Harness 名称推断当前 baseline。
 
-### Schema 0.2 当前操作边界
+### Workspace schema 0.3 当前操作边界
 
-Workspace 的 `bootstrap`、`adopt`、`upgrade`、`repair`、`validate` 已按用户提供的精确路径实现。`workspace uninstall` 当前处于安全保护状态：在形成经过审阅的 ownership plan 之前会直接拒绝，并且不会修改文件。Route 的 `rename` 只更新显示元数据，不移动 Route 目录，也不改变 registry path。拆分/合并、移动路径式重命名、Endpoint 替换、restore 和 rollback 仍属于未来迁移契约，必须有明确证据、审阅和可恢复方案后才能实现。
+Workspace 的 `bootstrap`、`adopt`、`upgrade`、`repair`、`validate` 按用户提供的精确路径运行。`workspace uninstall` 当前处于安全保护状态：在形成经过审阅的 ownership plan 之前会直接拒绝，并且不会修改文件。读取器继续兼容 schema 0.2；新写入只保留最小稳定结构：Root manifest 中的身份与 registry 位置、Root registry 中的 Route 身份与生命周期、Route metadata 中的身份与显式 Root contract 指针。旧版派生字段只读兼容，不再继续写入。
+
+`route upgrade` 是显式 metadata 迁移边界，会同时规范 Route metadata 和 Root registry，并保留未识别的扩展字段。`route set-state` 与 `route rename` 只更新 Root registry，不在 `route.yaml` 中制造第二份生命周期真相。拆分/合并、移动路径式重命名、Endpoint 替换、restore 和 rollback 仍属于未来迁移契约，必须有明确证据、审阅和可恢复方案后才能实现。
+
+Schema 0.2 数据仍可读取、验证或执行幂等 no-op；如果旧 registry 需要新增 Route，工具会先拒绝写入并要求显式完成 Workspace upgrade，避免旧 registry 中混入新版 Route 条目结构。
+
+安装器 ownership hash 和 preflight 检查记录 setup 完整性。Live execution
+continuity 由 Harness/session context 负责；source identity 由 Git 或 Route
+Source State 负责；durable knowledge 由 self-evolution 负责。setup Skill
+负责配置这些边界，不承担 Session execution recovery。
 
 ## 直接使用安装工具
 
@@ -246,7 +255,7 @@ CLAUDE.md
 │   ├── decisions/
 │   ├── observations/
 │   └── archive/
-└── runtime/
+└── （Harness/Session context） # 本地运行上下文，不由安装器创建
 ```
 
 安装器不会粗暴覆盖原来的 `AGENTS.md`、`CLAUDE.md` 或 `.gitignore`，而是维护带边界标记的 managed block。
@@ -351,12 +360,12 @@ python3 -m unittest discover -s tests -v
 ## 设计原则
 
 - Skill 只负责设置，不承担运行时职责。
-- Runtime 协议必须 Harness-agnostic。
+- 协作协议必须 Harness-agnostic。
 - Capability 按实际运行时验证，不能通过产品名猜测。
 - Manual relay 是完全合法的标准模式。
 - Harness Adapter 只能做增强，不能成为项目真相来源。
 - Git 同步和消息 Relay 必须分离。
-- `.agents/runtime/` 不保存为跨机器公共事实。
+- Harness/Session 能力观察保留在当前运行上下文，不写入跨机器公共项目事实。
 - `.agents/knowledge/` 只保存高价值长期知识。
 - 对已有项目优先复用权威文档，而不是复制。
 - 协议升级必须显式执行、可审查、可回滚。

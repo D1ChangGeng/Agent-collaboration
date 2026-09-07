@@ -1,5 +1,5 @@
 # ACHP-WORKSPACE:BEGIN
-# Machine/session-local observations are not shared project truth.
+# Legacy local capability records are not shared project truth; setup does not
+# create or maintain this optional path.
 .agents/runtime/*
-!.agents/runtime/.gitkeep
 # ACHP-WORKSPACE:END

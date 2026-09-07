@@ -69,6 +69,24 @@ Persist a finding only when it plausibly changes a future action/decision and is
 
 See `.agents/protocol/KNOWLEDGE.md` and `.agents/knowledge/README.md` when durable knowledge maintenance is relevant.
 
+### AGENTS.md admission and natural evolution
+
+`AGENTS.md` is the always-on foundation: keep only stable identity and role
+boundaries, collaboration topology, high-level behavior invariants,
+cross-session continuity rules, and recurring high-cost corrections that every
+related session must know before work begins.
+
+Promote a new rule here only when real work shows that it is stable across
+future sessions or routes, startup-critical, and not reliably supplied by
+retrieved project knowledge. Concrete project state, implementation details,
+design rationale, task progress, engineer reports, and temporary evidence stay
+in their authoritative knowledge, state, or source records.
+
+The `self-evolution` system owns knowledge discovery, capture, retrieval,
+correction, verification, and maintenance. This file may briefly explain a
+startup-critical boundary, but it must not become a work log or a second
+knowledge lifecycle. Keep one authoritative source for each scope.
+
 ### Handoff completion
 
 When another Agent/session will continue, use the templates under `.agents/coordination/templates/` and create a durable handoff under `.agents/coordination/handoffs/` when appropriate.

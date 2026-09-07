@@ -1,23 +1,23 @@
-kind: unknown
-repository:
-  locator: unknown
-  provider: unknown
-  remote: unknown
-  branch: unknown
-  commit: unknown
-  tree: unknown
-  working_tree: unknown
-  push: unknown
-  receiver_sync: unknown
-execution_endpoint:
-  id: unknown
-  host: unknown
-  harness: unknown
-  session: unknown
-  status: unknown
-evidence:
-  class: unknown
-  source: unknown
-  observed_at: unknown
-  freshness: unknown
-  refresh_trigger: source or endpoint identity change
+# Optional Route-owned Source State Evidence template.
+#
+# Do not copy this file unchanged during Route creation or adoption. Create a
+# real record only after independently verifying source facts that have enough
+# cross-Session value to justify durable storage. Keep live Harness/Session and
+# Endpoint observations in the current execution context.
+#
+# Example shape (uncomment and fill only the fields supported by actual
+# evidence):
+# kind: git | non-git
+# repository:
+#   locator: <verified locator>
+#   provider: <verified provider or unknown>
+#   remote: <verified remote or unknown>
+#   branch: <verified branch or unknown>
+#   commit: <verified commit or unknown>
+#   tree: <verified tree or unknown>
+#   working_tree: <verified working-tree state or unknown>
+#   push: <verified push result or unknown>
+#   receiver_sync: <verified receiver-sync state or unknown>
+# evidence:
+#   class: direct | reported | external | baseline
+#   source: <evidence source>

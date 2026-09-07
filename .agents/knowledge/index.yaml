@@ -33,16 +33,27 @@ documents:
       - assets/scaffold/workspace/ROUTE_AGENTS.md
       - SKILL.md
       - references/DESIGN.md
+  - path: decisions/adr-004-minimal-collaboration-persistence.md
+    kind: decision
+    status: accepted
+    id: adr-004-minimal-collaboration-persistence
+    date: 2026-09-06
+    scope:
+      - scripts/workspace_setup.py
+      - scripts/project_setup.py
+      - assets/scaffold/**
+      - SKILL.md
+      - README.md
+      - README.zh-CN.md
+      - references/**
   - path: guides/architecture-and-state.md
     kind: guide
     status: active
     scope:
       - .agents/manifest.json
       - .agents/config.yaml
-      - .agents/runtime/**
       - assets/scaffold/.agents/README.md
       - assets/scaffold/.agents/config.yaml
-      - assets/scaffold/.agents/runtime/**
     use_when:
       - changing ACHP runtime semantics
       - designing a handoff, relay, or repository synchronization flow

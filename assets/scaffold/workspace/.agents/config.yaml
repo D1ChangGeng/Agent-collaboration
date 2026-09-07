@@ -1,6 +1,7 @@
 protocol:
   name: ACHP
-  version: "0.2.0"
+  # Protocol release identity is separate from the Workspace schema.
+  version: "0.3.0"
 target:
   kind: project-collaboration-workspace
   management_root: true
@@ -13,6 +14,8 @@ relay:
   automatic_only_when_verified: true
   capability_unknown_means_unavailable: true
 repository_state:
+  # Claims require verified source evidence; an optional Route record is only
+  # one durable form, not a file-presence requirement for every Route.
   source_state_required_for_claims: true
   git_provider_optional: true
 knowledge:

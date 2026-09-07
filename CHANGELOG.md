@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented here.
 
+## 0.3.0 - 2026-09-07
+
+Minimal Workspace persistence model and compatibility release.
+
+### Changed
+
+- Root registry writes now keep only Route identity, canonical path, display
+  name, and lifecycle status; Route metadata keeps stable identity and its
+  explicit Root contract.
+- Route Source State is created only when independently verified source facts
+  have durable cross-Session value; fresh Routes no longer receive an empty
+  unknown record.
+- Harness, Session, live Endpoint, process-liveness, and temporary capability
+  observations remain in the current execution context, while Git/source state
+  and durable knowledge retain their own authoritative facts.
+- Schema 0.2 input remains readable, and explicit upgrade is the boundary for
+  canonicalizing legacy metadata and managed blocks.
+- Validation now enforces strict schema, JSON, path, marker, ownership, and
+  compatibility boundaries for the reduced state model.
+
+### Verification
+
+- 67 unit tests passed, together with Skill validation, compilation checks,
+  repository setup validation, knowledge index/check validation, and a clean
+  diff check.
+
 ## 0.2.0 - 2026-09-06
 
 Project Collaboration Workspace and Route baseline.

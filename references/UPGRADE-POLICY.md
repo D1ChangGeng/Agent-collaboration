@@ -4,6 +4,18 @@
 
 Skill updates and project protocol upgrades are intentionally separate.
 
+Schema 0.2 remains a read-compatible input, not a target for new schema 0.3
+records. If `workspace adopt` or `workspace repair` discovers an unregistered
+Route, or `route create` / `route adopt` would add canonical Route metadata or a
+registry entry, the operation stops and requires an explicit Workspace upgrade
+before writing. Read-only validation and no-op handling of already registered,
+fully initialized legacy Routes remain available.
+
+The same boundary applies to the Root registry itself: a schema 0.2 registry is
+not extended with a schema 0.3-shaped entry. The upgrade operation must first
+canonicalize the control-plane data, after which new Route writes use the
+schema 0.3 shape.
+
 Pulling a new version of this Skill must never silently rewrite projects that already use ACHP.
 
 ## Managed vs project-owned files
@@ -33,7 +45,13 @@ These are created if missing and then preserved during upgrades:
 - `.agents/knowledge/decisions/*`
 - `.agents/knowledge/observations/*`
 - `.agents/knowledge/archive/*`
-- `.agents/runtime/*`
+
+The repository-mode `config.yaml` is project-owned protocol configuration. Its
+version may remain at an older project value when an existing installation is
+upgraded; it is not rewritten as a Skill release marker. New repository
+scaffolds use the current Skill release identity, while Workspace scaffolds use
+the current Workspace protocol release.
+- Harness/session capability observations (local context; no project file)
 
 For a Project Collaboration Workspace, the same distinction applies at the Root
 level:
@@ -49,8 +67,10 @@ after a dry-run.
 ### Workspace project-owned
 
 `PROJECT.md`, `ROOT-BASELINE.md`, and `routes.yaml` are Root-owned project files.
-Route directories, Route `AGENTS.md`, Route knowledge, references, and
-source-state records are Route-owned. Explicit Workspace/Route operations may
+Route directories, Route `AGENTS.md`, Route knowledge, references, and any
+existing Source State records are Route-owned. New Routes create Source State
+only when verified source facts require a durable Route record. Explicit
+Workspace/Route operations may
 reconcile stable registry entries in `routes.yaml`; that is a control-plane
 update, not permission to replace the file with a generic template or to rewrite
 Route content. The current `routes.yaml` file is deterministic JSON text with a
@@ -59,7 +79,11 @@ registry.
 
 Workspace upgrades do not perform Route semantic migration. In particular, they
 must not move Route directories, merge or split Routes, replace Endpoint
-bindings, or reclassify Route knowledge as part of a generic upgrade.
+bindings, or reclassify Route knowledge as part of a generic upgrade. The
+explicit `route upgrade` command is the narrow metadata migration boundary: it
+projects recognized schema-0.2 fields into the schema-0.3 identity shape,
+preserves unrecognized extension fields, and leaves Route-owned content alone.
+`set-state` and `rename` then update the Root registry only.
 
 ## Upgrade steps
 
@@ -81,7 +105,7 @@ Breaking changes to:
 
 must be documented before release and should include a migration strategy.
 
-Schema 0.2 also keeps the following boundaries explicit:
+Schema 0.3 also keeps the following boundaries explicit:
 
 - Route `rename` changes display metadata only; path-moving rename is a future
   migration operation.
@@ -89,6 +113,10 @@ Schema 0.2 also keeps the following boundaries explicit:
   contracts, not current upgrade side effects.
 - A Workspace may be non-Git; missing source and endpoint facts remain explicit
   `unknown`/`unverified` values.
+- Manifest ownership inventories and hashes are optional setup-integrity
+  metadata. They are not collaboration lifecycle or Session recovery state.
+- A missing baseline pointer can be derived from the fixed Root contract path;
+  a present non-default pointer is rejected rather than redirected.
 
 ## Uninstall
 
