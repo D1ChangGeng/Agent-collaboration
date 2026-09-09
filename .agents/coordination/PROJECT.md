@@ -9,8 +9,8 @@ This file is project-owned after first creation. ACHP upgrades preserve it.
 - Skill slug: agent-collaboration-setup
 - Primary branch: `main`
 - Project type: existing source recovered from the v0.1.0 Skill archive
-- Current phase: v0.4.0 release candidate for the user-journey safety baseline
-  on the minimal Workspace schema 0.3 model
+- Current phase: v0.4.0 released user-journey safety baseline on the minimal
+  Workspace schema 0.3 model
 
 ## Collaboration topology
 
@@ -85,7 +85,7 @@ operation guidance without adding runtime recovery state.
   the `Agent-collaboration` source repository
 - Public GitHub owner: `D1ChangGeng`
 - Repository: `https://github.com/D1ChangGeng/Agent-collaboration`
-- Published releases: `v0.1.0`, `v0.2.0`, `v0.3.0`
+- Published releases: `v0.1.0`, `v0.2.0`, `v0.3.0`, `v0.4.0`
 
 ## Validation routes
 
