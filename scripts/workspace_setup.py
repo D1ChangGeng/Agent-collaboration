@@ -9,6 +9,7 @@ import json
 import math
 import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -71,6 +72,7 @@ MANIFEST_DEPRECATED_FIELDS = {
 DEFAULT_REGISTRY_PATH = ".agents/coordination/routes.yaml"
 DEFAULT_BASELINE_PATH = ".agents/coordination/ROOT-BASELINE.md"
 DEFAULT_SOURCE_STATE_PATH = ".agents/protocol/SOURCE-STATE.md"
+_REPARSE_POINT = 0x400
 
 WORKSPACE_ASSETS = {
     ".agents/README.md": "workspace/.agents/README.md",
@@ -95,6 +97,28 @@ WORKSPACE_CREATE = [
     ".agents/knowledge/observations/.gitkeep",
     ".agents/knowledge/archive/.gitkeep",
 ]
+ROUTE_REQUIRED_FILES = [
+    "AGENTS.md",
+    ".agents/route.yaml",
+    ".agents/settings.yaml",
+    ".agents/knowledge/index.yaml",
+]
+ROUTE_REQUIRED_DIRS = [
+    ".agents/knowledge/guides",
+    ".agents/knowledge/decisions",
+    ".agents/knowledge/observations",
+    ".agents/knowledge/archive",
+]
+ROUTE_SCAFFOLD_FILES = [
+    "AGENTS.md",
+    ".agents/route.yaml",
+    ".agents/settings.yaml",
+    ".agents/knowledge/index.yaml",
+    ".agents/knowledge/guides/.gitkeep",
+    ".agents/knowledge/decisions/.gitkeep",
+    ".agents/knowledge/observations/.gitkeep",
+    ".agents/knowledge/archive/.gitkeep",
+]
 AGENTS_BEGIN = "<!-- ACHP-WORKSPACE:BEGIN -->"
 AGENTS_END = "<!-- ACHP-WORKSPACE:END -->"
 CLAUDE_BEGIN = "<!-- ACHP-CLAUDE-ROUTER:BEGIN -->"
@@ -109,6 +133,50 @@ def _skill_root() -> Path:
 
 def _asset(rel: str) -> str:
     return (_skill_root() / "assets" / "scaffold" / rel).read_text(encoding="utf-8")
+
+
+def _is_reparse(path: Path) -> bool:
+    """Detect symlink/junction/reparse entries without following them."""
+    try:
+        if path.is_symlink():
+            return True
+        is_junction = getattr(path, "is_junction", None)
+        if callable(is_junction) and is_junction():
+            return True
+        if os.name == "nt" and path.exists():
+            attrs = getattr(os.lstat(path), "st_file_attributes", 0)
+            return bool(attrs & _REPARSE_POINT)
+    except OSError as exc:
+        raise ValueError(f"cannot inspect reparse state for {path}: {exc}") from exc
+    return False
+
+
+def _exact_root(path: Path, label: str) -> Path:
+    """Return an absolute spelling while refusing redirected path components."""
+    raw = Path(os.path.abspath(os.fspath(path.expanduser())))
+    current = raw
+    while True:
+        if _is_reparse(current):
+            raise ValueError(
+                f"{label} must not use a symlink, junction, or reparse point: {path}"
+            )
+        if current == current.parent:
+            return raw
+        current = current.parent
+
+
+def _path_has_reparse(root: Path, candidate: Path) -> bool:
+    """Check existing components between root and candidate for redirection."""
+    try:
+        relative = candidate.relative_to(root)
+    except ValueError:
+        return True
+    current = root
+    for part in relative.parts:
+        current = current / part
+        if _is_reparse(current):
+            return True
+    return False
 
 
 def stable_json(value: Any) -> str:
@@ -414,7 +482,10 @@ def _safe_path(root: Path, relative: Any) -> Optional[Path]:
     raw = relative.replace("\\", "/")
     if any(part in {"", ".", ".."} for part in raw.split("/")):
         return None
-    candidate = (root / relative).resolve()
+    raw_candidate = root / relative
+    if _path_has_reparse(root, raw_candidate):
+        return None
+    candidate = raw_candidate.resolve()
     if not _contained(root, candidate):
         return None
     try:
@@ -439,8 +510,11 @@ def _canonical_route(root: Path, relative: Any) -> Path:
         raise ValueError(f"route path escapes workspace: {relative}")
     if any(part in {"", "."} for part in parts):
         raise ValueError(f"route path is not canonical: {relative}")
-    root = root.resolve()
-    candidate = root.joinpath(*parts).resolve()
+    root = _exact_root(root, "workspace path")
+    raw_candidate = root.joinpath(*parts)
+    if _path_has_reparse(root, raw_candidate):
+        raise ValueError(f"route path uses a symlink or reparse point: {relative}")
+    candidate = raw_candidate.resolve()
     if not _contained(root, candidate):
         raise ValueError(f"route path escapes workspace: {relative}")
     if candidate == root:
@@ -483,6 +557,8 @@ def _validate_existing_managed_blocks(root: Path) -> None:
         path = root / filename
         if not path.exists():
             continue
+        if _is_reparse(path):
+            raise ValueError(f"managed target uses a symlink or reparse point: {path}")
         if not path.is_file():
             raise ValueError(f"managed target is not a file: {path}")
         _validate_marker_pair(path.read_text(encoding="utf-8"), begin, end, filename)
@@ -645,6 +721,47 @@ def _legacy_managed_block_bodies(filename: str, current_body: str) -> set[str]:
     return bodies
 
 
+def _workspace_block_is_upgrade_owned(
+    text: str, filename: str, input_schema: str
+) -> bool:
+    """Return whether an existing Workspace managed block may be refreshed.
+
+    A schema-0.3 Workspace has no block ownership ledger.  A valid block that
+    differs from the current scaffold is therefore project content and must be
+    preserved until a human explicitly reviews it.  Schema-0.2 is a known
+    compatibility input whose legacy block bodies are intentionally migrated by
+    the explicit Workspace upgrade operation.
+    """
+    begin, end = {
+        "AGENTS.md": (AGENTS_BEGIN, AGENTS_END),
+        "CLAUDE.md": (CLAUDE_BEGIN, CLAUDE_END),
+        ".gitignore": (GITIGNORE_BEGIN, GITIGNORE_END),
+    }[filename]
+    if begin not in text and end not in text:
+        return True
+    current = _extract_block(text, begin, end)
+    if current is None:
+        # Marker shape is checked before this helper; retain a defensive
+        # refusal if a future caller bypasses that preflight.
+        return False
+    expected = _extract_block(
+        _asset(
+            {
+                "AGENTS.md": "workspace/AGENTS_BLOCK.md",
+                "CLAUDE.md": "CLAUDE_BLOCK.md",
+                ".gitignore": "workspace/GITIGNORE_BLOCK.txt",
+            }[filename]
+        ),
+        begin,
+        end,
+    )
+    if current == expected:
+        return True
+    if input_schema == "0.2":
+        return current in _legacy_managed_block_bodies(filename, expected or "")
+    return False
+
+
 def _write(path: Path, content: str, dry_run: bool, actions: List[str]) -> None:
     if path.exists() and path.is_dir():
         raise ValueError(f"target is a directory, expected a file: {path}")
@@ -653,7 +770,55 @@ def _write(path: Path, content: str, dry_run: bool, actions: List[str]) -> None:
     actions.append(f"write {path}")
     if not dry_run:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
+        fd, temporary = tempfile.mkstemp(
+            prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
+        )
+        temp_path = Path(temporary)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp_path, path)
+        except Exception:
+            try:
+                temp_path.unlink()
+            except FileNotFoundError:
+                pass
+            raise
+
+
+def _action_label(action: str, dry_run: bool) -> str:
+    """Return a truthful CLI label for a planned/applied action.
+
+    ``workspace_install`` deliberately returns terse, machine-inspectable
+    action strings.  The CLI is responsible for presenting those facts to a
+    person; in particular, an error or ownership conflict must never be shown
+    as an applied write.
+    """
+    if action.startswith("error "):
+        return "[FAIL]"
+    if action.startswith("preserve-conflict "):
+        return "[CONFLICT]"
+    if action.startswith("refused "):
+        return "[REFUSED]"
+    if action.startswith("candidate "):
+        return "[CANDIDATE]"
+    if action.startswith("warning "):
+        return "[WARNING]"
+    return "[DRY-RUN]" if dry_run else "[APPLIED]"
+
+
+def _print_actions(actions: List[str], dry_run: bool) -> None:
+    for action in actions:
+        print(f"{_action_label(action, dry_run)} {action}")
+
+
+def _actions_failed(actions: List[str]) -> bool:
+    return any(
+        action.startswith(("error ", "preserve-conflict ", "refused "))
+        for action in actions
+    )
 
 
 def _slug(value: str) -> str:
@@ -830,10 +995,16 @@ def validate_registry(
 
 
 def _discover(
-    workspace: Path, expected_root_id: str = "agent-collaboration-root"
+    workspace: Path,
+    expected_root_id: str = "agent-collaboration-root",
+    include_paths: Optional[set[str]] = None,
+    exclude_paths: Optional[set[str]] = None,
+    strict_metadata: bool = True,
 ) -> List[Dict[str, Any]]:
+    """Inspect top-level Route candidates without making them authoritative."""
     result: List[Dict[str, Any]] = []
     used: set[str] = set()
+    exclude_paths = exclude_paths or set()
     if not workspace.exists():
         return result
     for child in sorted(workspace.iterdir(), key=lambda p: p.name.lower()):
@@ -842,6 +1013,10 @@ def _discover(
         if not ((child / "AGENTS.md").exists() or (child / ".agents").exists()):
             continue
         rel = child.relative_to(workspace).as_posix()
+        if rel in exclude_paths:
+            continue
+        if include_paths is not None and rel not in include_paths:
+            continue
         rid = route_id(child)
         if rid in used:
             rid += "-" + hashlib.sha1(rel.encode()).hexdigest()[:8]
@@ -849,28 +1024,38 @@ def _discover(
         route_meta = child / ".agents" / "route.yaml"
         existing_meta: Optional[Dict[str, Any]] = None
         meta_version: Optional[str] = None
+        inspection_error: Optional[str] = None
         if route_meta.exists():
-            existing_meta = read_json(route_meta)
-            validate_route_metadata(
-                existing_meta,
-                child,
-                workspace,
-                expected_root_id=expected_root_id,
-            )
-            meta_version = schema_version(existing_meta)
-            rid = existing_meta["route_id"]
+            try:
+                existing_meta = read_json(route_meta)
+                validate_route_metadata(
+                    existing_meta,
+                    child,
+                    workspace,
+                    expected_root_id=expected_root_id,
+                )
+                meta_version = schema_version(existing_meta)
+                rid = existing_meta["route_id"]
+            except (OSError, ValueError) as exc:
+                if strict_metadata:
+                    raise
+                existing_meta = None
+                inspection_error = str(exc)
         existing_status = normalize_route_status(
             existing_meta.get("state", "discovered"),
             allow_legacy=meta_version == "0.2",
         ) if existing_meta else "discovered"
         if existing_status not in STATES:
             existing_status = "discovered"
-        result.append({
+        candidate = {
             "id": rid,
             "display_name": existing_meta.get("display_name", child.name) if existing_meta else child.name,
             "path": rel,
             "status": existing_status,
-        })
+        }
+        if inspection_error is not None:
+            candidate["inspection_error"] = inspection_error
+        result.append(candidate)
     return result
 
 
@@ -950,16 +1135,149 @@ def _validate_route_surfaces(
     root: Path,
     expected_root_id: str,
     skip_paths: Optional[set[str]] = None,
+    require_scaffold: bool = True,
 ) -> None:
-    """Validate Route metadata against canonical registry identity without writing."""
+    """Validate registered Route metadata and, by default, the full scaffold."""
     skip_paths = skip_paths or set()
     for entry in registry.get("routes", []):
         if entry.get("path") in skip_paths:
             continue
         route = _canonical_route(root, entry["path"])
+        if require_scaffold:
+            _validate_route_scaffold(route)
         route_meta = route / ".agents/route.yaml"
         if route_meta.exists():
             validate_route_metadata(read_json(route_meta), route, root, entry, expected_root_id)
+
+
+def _route_scaffold_problems(route: Path) -> List[str]:
+    problems: List[str] = []
+    if _is_reparse(route):
+        return ["route directory uses a symlink or reparse point"]
+    for rel in ROUTE_REQUIRED_FILES:
+        path = route / rel
+        if _path_has_reparse(route, path) or _is_reparse(path):
+            problems.append(f"symlink or reparse point {rel}")
+        elif not path.exists():
+            problems.append(f"missing file {rel}")
+        elif not path.is_file():
+            problems.append(f"expected file {rel}")
+    for rel in ROUTE_REQUIRED_DIRS:
+        path = route / rel
+        if _path_has_reparse(route, path) or _is_reparse(path):
+            problems.append(f"symlink or reparse point {rel}")
+        elif not path.exists():
+            problems.append(f"missing directory {rel}")
+        elif not path.is_dir():
+            problems.append(f"expected directory {rel}")
+    return problems
+
+
+def _validate_route_scaffold(route: Path) -> None:
+    problems = _route_scaffold_problems(route)
+    if problems:
+        raise ValueError("route scaffold incomplete: " + "; ".join(problems))
+
+
+def _route_missing_scaffold(route: Path) -> List[str]:
+    """Return only missing canonical Route scaffold entries."""
+    problems = _route_scaffold_problems(route)
+    unexpected = [
+        item
+        for item in problems
+        if not item.startswith(("missing file ", "missing directory "))
+    ]
+    if unexpected:
+        raise ValueError("route scaffold is not safely repairable: " + "; ".join(unexpected))
+    missing: List[str] = []
+    for rel in ROUTE_SCAFFOLD_FILES:
+        path = route / rel
+        if not path.exists():
+            missing.append(rel)
+    return missing
+
+
+def _write_route_scaffold(
+    route: Path,
+    workspace: Path,
+    rid: str,
+    display: str,
+    root_id: str,
+    dry_run: bool,
+    actions: List[str],
+) -> None:
+    """Create only missing Route setup surfaces; never replace existing files."""
+    if not route.exists() and not dry_run:
+        route.mkdir(parents=True)
+    root_contract = _route_pointer(
+        route, workspace / ".agents/coordination/ROOT-BASELINE.md"
+    )
+    agents = route / "AGENTS.md"
+    if not agents.exists():
+        _write(
+            agents,
+            _asset("workspace/ROUTE_AGENTS.md")
+            .replace("{{ROUTE_ID}}", rid)
+            .replace("{{ROUTE_NAME}}", display)
+            .replace("{{ROOT_CONTRACT}}", root_contract),
+            dry_run,
+            actions,
+        )
+    route_meta = route / ".agents/route.yaml"
+    if not route_meta.exists():
+        _write(
+            route_meta,
+            stable_json(_route_metadata_payload(route, workspace, rid, root_id)),
+            dry_run,
+            actions,
+        )
+    for rel in ROUTE_SCAFFOLD_FILES:
+        if rel in {"AGENTS.md", ".agents/route.yaml"}:
+            continue
+        path = route / rel
+        if path.exists():
+            continue
+        if rel.endswith("settings.yaml"):
+            content = _asset("workspace/.agents/settings.yaml")
+        elif rel.endswith("index.yaml"):
+            content = 'schema_version: "2.0"\ndocuments: []\n'
+        else:
+            content = ""
+        _write(path, content, dry_run, actions)
+
+
+def _validate_projected_route(
+    route: Path,
+    workspace: Path,
+    entry: Dict[str, Any],
+    rid: str,
+    root_id: str,
+) -> None:
+    """Validate the Route identity and the scaffold that a plan will create.
+
+    Dry-run must be useful for an existing partial Route even though the
+    planned files are intentionally not written.  Validate every existing
+    component, reject unsafe/non-missing conflicts, and validate a synthetic
+    metadata document for a missing ``route.yaml``.
+    """
+    _route_missing_scaffold(route)
+    route_meta = route / ".agents/route.yaml"
+    if route_meta.exists():
+        validate_route_metadata(
+            read_json(route_meta),
+            route,
+            workspace,
+            entry,
+            root_id,
+        )
+    else:
+        validate_route_metadata(
+            _route_metadata_payload(route, workspace, rid, root_id),
+            route,
+            workspace,
+            entry,
+            root_id,
+        )
 
 
 def _workspace_manifest(
@@ -1044,7 +1362,7 @@ def _preflight_file_targets(root: Path, extra_paths: Optional[List[str]] = None)
     """Reject file/directory collisions before any workspace write."""
     targets = ["AGENTS.md", "CLAUDE.md", ".gitignore"] + list(WORKSPACE_ASSETS) + list(WORKSPACE_CREATE) + [".agents/manifest.json"]
     targets.extend(extra_paths or [])
-    root = root.resolve()
+    root = _exact_root(root, "workspace path")
     seen = set()
     for rel in targets:
         if rel in seen:
@@ -1066,8 +1384,11 @@ def _preflight_file_targets(root: Path, extra_paths: Optional[List[str]] = None)
 
 def _preflight_route_targets(workspace: Path, route: Path) -> None:
     """Reject route file/directory collisions before route writes."""
-    workspace = workspace.resolve()
-    route = route.resolve()
+    workspace = _exact_root(workspace, "workspace path")
+    route = route if route.is_absolute() else workspace / route
+    if _is_reparse(route):
+        raise ValueError(f"route target uses a symlink or reparse point: {route}")
+    route = Path(os.path.abspath(os.fspath(route)))
     if route.exists() and not route.is_dir():
         raise ValueError(f"route target is not a directory: {route}")
     if route.exists() and not _contained(workspace, route.resolve()):
@@ -1077,16 +1398,7 @@ def _preflight_route_targets(workspace: Path, route: Path) -> None:
         if parent.exists() and not parent.is_dir():
             raise ValueError(f"route parent is a file, expected a directory: {parent}")
         parent = parent.parent
-    for rel in [
-        "AGENTS.md",
-        ".agents/route.yaml",
-        ".agents/settings.yaml",
-        ".agents/knowledge/index.yaml",
-        ".agents/knowledge/guides/.gitkeep",
-        ".agents/knowledge/decisions/.gitkeep",
-        ".agents/knowledge/observations/.gitkeep",
-        ".agents/knowledge/archive/.gitkeep",
-    ]:
+    for rel in ROUTE_SCAFFOLD_FILES:
         path = route / rel
         if path.exists() and not _contained(route, path.resolve()):
             raise ValueError(f"route target resolves outside route: {rel}")
@@ -1164,9 +1476,30 @@ def _route_metadata_payload(route: Path, workspace: Path, rid: str, root_id: str
     }
 
 
-def workspace_install(root: Path, mode: str, dry_run: bool) -> List[str]:
+def _requested_route_paths(root: Path, include_routes: Optional[List[str]]) -> set[str]:
+    requested: set[str] = set()
+    for value in include_routes or []:
+        route = _canonical_route(root, value)
+        rel = route.relative_to(root).as_posix()
+        if "/" in rel:
+            raise ValueError(
+                f"included Route must be a top-level candidate: {value}"
+            )
+        requested.add(rel)
+    return requested
+
+
+def workspace_install(
+    root: Path,
+    mode: str,
+    dry_run: bool,
+    include_routes: Optional[List[str]] = None,
+) -> List[str]:
     actions: List[str] = []
-    root = root.expanduser().resolve()
+    try:
+        root = _exact_root(root, "workspace path")
+    except ValueError as exc:
+        return [f"error {exc}"]
     if root.exists() and not root.is_dir():
         return [f"error workspace target is not a directory: {root}"]
     try:
@@ -1252,6 +1585,7 @@ def workspace_install(root: Path, mode: str, dry_run: bool) -> List[str]:
         _preflight_file_targets(root, [path for path in manifest_paths if isinstance(path, str)])
     except ValueError as exc:
         return [f"error {exc}"]
+    input_schema = schema_version(old) if old is not None else schema_version(registry)
     hashes = (old or {}).get("managed_hashes", {})
     if not isinstance(hashes, dict):
         hashes = {}
@@ -1275,28 +1609,109 @@ def workspace_install(root: Path, mode: str, dry_run: bool) -> List[str]:
                 )
             else:
                 conflict = (
-                    mode in {"adopt", "bootstrap"}
-                    and normalized_digest != scaffold_hash
+                    normalized_digest != scaffold_hash
+                    and mode in {"adopt", "bootstrap"}
+                ) or (
+                    normalized_digest != scaffold_hash
+                    and mode == "upgrade"
+                    and input_schema == SCHEMA
                 )
             if conflict:
                 actions.append(f"preserve-conflict {path}")
+    # A fresh schema-0.3 Workspace intentionally omits an integrity ledger.
+    # During explicit upgrade, an existing setup-managed file that is not the
+    # current scaffold therefore has no ownership proof and must not be
+    # replaced.  This is the same fail-closed rule used by repository setup.
+    if mode == "upgrade":
+        for filename, begin, end, _asset_name in (
+            ("AGENTS.md", AGENTS_BEGIN, AGENTS_END, "workspace/AGENTS_BLOCK.md"),
+            ("CLAUDE.md", CLAUDE_BEGIN, CLAUDE_END, "CLAUDE_BLOCK.md"),
+            (".gitignore", GITIGNORE_BEGIN, GITIGNORE_END, "workspace/GITIGNORE_BLOCK.txt"),
+        ):
+            path = root / filename
+            if not path.exists():
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+                owned = _workspace_block_is_upgrade_owned(text, filename, input_schema)
+            except (OSError, UnicodeError, ValueError):
+                owned = False
+            if not owned:
+                actions.append(f"preserve-conflict {path}")
     if any(action.startswith("preserve-conflict ") for action in actions):
         return actions
+    expected_root_id = (old or {}).get("root_id", "agent-collaboration-root")
+    registered_paths = {
+        entry.get("path")
+        for entry in registry.get("routes", [])
+        if isinstance(entry, dict) and isinstance(entry.get("path"), str)
+    }
     try:
-        discovered = _discover(
-            root, (old or {}).get("root_id", "agent-collaboration-root")
-        )
+        requested_paths = _requested_route_paths(root, include_routes)
+        # Candidate discovery is advisory.  A Route-like directory becomes
+        # authoritative only when explicitly selected with --include-route;
+        # malformed or partial unselected candidates must not block Root setup.
+        candidates = _discover(root, expected_root_id, strict_metadata=False)
     except (OSError, ValueError) as exc:
         return [f"error discovered route: {exc}"]
-    if (
-        mode in {"adopt", "repair"}
-        and schema_version(registry) == "0.2"
-    ):
-        registered_paths = {
-            entry.get("path")
+    candidate_by_path = {item["path"]: item for item in candidates}
+    missing_requested = sorted(
+        path
+        for path in requested_paths
+        if path not in registered_paths and path not in candidate_by_path
+    )
+    if missing_requested:
+        return [
+            "error included Route is not a discovered top-level candidate: "
+            + ", ".join(missing_requested)
+        ]
+    discovered = [
+        candidate_by_path[path]
+        for path in sorted(requested_paths - registered_paths)
+    ]
+    invalid_selected = sorted(
+        f"{item['path']}: {item['inspection_error']}"
+        for item in discovered
+        if item.get("inspection_error")
+    )
+    if invalid_selected:
+        return [
+            "error included Route candidate is invalid: "
+            + "; ".join(invalid_selected)
+        ]
+
+    # Legacy schema migration remains fail-closed when an unregistered
+    # candidate already aliases a durable Route ID. The candidate is still not
+    # registered; the explicit migration must resolve the ambiguity first.
+    if mode == "upgrade" and schema_version(registry) == "0.2":
+        ids = {
+            entry.get("id"): entry.get("path")
             for entry in registry.get("routes", [])
-            if isinstance(entry, dict) and isinstance(entry.get("path"), str)
+            if isinstance(entry, dict) and isinstance(entry.get("id"), str)
         }
+        for candidate in candidates:
+            old_path = ids.get(candidate["id"])
+            if old_path is not None and old_path != candidate["path"]:
+                return [
+                    "error merged registry: unregistered Route candidate ID "
+                    f"collision: {candidate['id']} ({old_path}, {candidate['path']})"
+                ]
+    if mode in {"adopt", "repair"} and schema_version(registry) == "0.2":
+        # Keep the v0.2 migration boundary fail-closed.  v0.2 registries
+        # cannot safely accept a newly discovered v0.3 Route entry during an
+        # ordinary adopt/repair, even though v0.3 Workspaces now leave
+        # unregistered candidates untouched by default.
+        legacy_unregistered = sorted(
+            item["path"]
+            for item in candidates
+            if item.get("path") not in registered_paths
+        )
+        if legacy_unregistered:
+            return [
+                "error Workspace schema 0.2 cannot register newly discovered "
+                "Routes during adopt/repair; run explicit workspace upgrade first: "
+                + ", ".join(legacy_unregistered)
+            ]
         new_paths = sorted(
             item["path"]
             for item in discovered
@@ -1320,8 +1735,8 @@ def workspace_install(root: Path, mode: str, dry_run: bool) -> List[str]:
     # closed instead of leaving an invalid registry for post-validation to
     # report after the write has already happened.
     try:
-        validate_registry(merged, root, (old or {}).get("root_id", "agent-collaboration-root"))
-        _validate_route_surfaces(merged, root, (old or {}).get("root_id", "agent-collaboration-root"))
+        validate_registry(merged, root, expected_root_id)
+        _validate_route_surfaces(merged, root, expected_root_id)
     except (OSError, ValueError) as exc:
         return [f"error merged registry: {exc}"]
     if not dry_run:
@@ -1383,7 +1798,10 @@ def workspace_install(root: Path, mode: str, dry_run: bool) -> List[str]:
 
 
 def validate_workspace(root: Path) -> Tuple[bool, List[str]]:
-    root = root.expanduser().resolve()
+    try:
+        root = _exact_root(root, "workspace path")
+    except (OSError, ValueError) as exc:
+        return False, [str(exc)]
     errors: List[str] = []
     manifest_path = root / ".agents" / "manifest.json"
     try:
@@ -1500,97 +1918,183 @@ def validate_workspace(root: Path) -> Tuple[bool, List[str]]:
                 errors.append(f"managed file hash mismatch: {rel}")
     for entry in registry.get("routes", []):
         route = _canonical_route(root, entry["path"])
+        try:
+            _validate_route_scaffold(route)
+        except (OSError, ValueError) as exc:
+            errors.append(f"route scaffold invalid for {entry['id']}: {exc}")
+            continue
         route_meta = route / ".agents/route.yaml"
-        if route_meta.exists():
-            try:
-                meta = read_json(route_meta)
-                validate_route_metadata(meta, route, root, entry, expected_root_id)
-            except (OSError, ValueError) as exc:
-                errors.append(f"route metadata invalid for {entry['id']}: {exc}")
-        elif entry["status"] in {"active", "paused", "completed", "archived"}:
-            errors.append(f"active route scaffold incomplete: {entry['id']}")
-        if entry["status"] in {"active", "paused", "completed", "archived"}:
-            if not (route / "AGENTS.md").exists() or not (route / ".agents/knowledge").is_dir() or not route_meta.exists():
-                errors.append(f"active route scaffold incomplete: {entry['id']}")
+        try:
+            validate_route_metadata(
+                read_json(route_meta), route, root, entry, expected_root_id
+            )
+        except (OSError, ValueError) as exc:
+            errors.append(f"route metadata invalid for {entry['id']}: {exc}")
     return not errors, errors
 
 
 def route_operation(args: Any, asset_root: Path) -> int:
-    workspace = args.workspace.expanduser().resolve()
+    """Operate on one Route without sibling coupling or identity guessing."""
+    try:
+        workspace = _exact_root(args.workspace, "workspace path")
+    except (OSError, ValueError) as exc:
+        print(f"[FAIL] {exc}")
+        return 1
+
+    root_id = "agent-collaboration-root"
     try:
         manifest = read_json(workspace / ".agents/manifest.json")
         validate_manifest(manifest, workspace)
+        root_id = manifest.get("root_id", root_id)
         registry_path = _safe_path(workspace, manifest.get("registry_path"))
         if registry_path is None:
             raise ValueError("registry_path escapes workspace")
         registry = read_json(registry_path)
-        validate_registry(registry, workspace, manifest.get("root_id", "agent-collaboration-root"))
+        # Route operations are target-scoped.  The selected Route is validated
+        # below, while a missing or incomplete sibling remains a Workspace-wide
+        # validation concern rather than blocking unrelated work here.
+        validate_registry(registry, workspace, root_id, require_route_dirs=False)
     except (OSError, ValueError) as exc:
         print(f"[FAIL] {exc}")
         return 1
+
     if args.action == "list":
-        for entry in registry["routes"]:
-            print(f"{entry['id']}\t{entry['status']}\t{entry['path']}")
+        for item in registry["routes"]:
+            print(f"{item['id']}\t{item['status']}\t{item['path']}")
         return 0
-    try:
-        _validate_route_surfaces(
-            registry,
-            workspace,
-            manifest.get("root_id", "agent-collaboration-root"),
+
+    if args.route_id is not None and (
+        not isinstance(args.route_id, str) or not args.route_id.strip()
+    ):
+        print("[FAIL] route id must be a non-empty string")
+        return 1
+    if args.display_name is not None and (
+        not isinstance(args.display_name, str) or not args.display_name.strip()
+    ):
+        print("[FAIL] display name must be a non-empty string")
+        return 1
+
+    entry_by_id = None
+    if args.route_id is not None:
+        entry_by_id = next(
+            (item for item in registry["routes"] if item.get("id") == args.route_id),
+            None,
         )
-    except (OSError, ValueError) as exc:
-        print(f"[FAIL] existing route surface invalid: {exc}")
-        return 1
-    entry = next((item for item in registry["routes"] if item["id"] == args.route_id), None) if args.route_id else None
-    try:
-        route = _canonical_route(workspace, args.path) if args.path else (_canonical_route(workspace, entry["path"]) if entry else None)
-    except ValueError as exc:
-        print(f"[FAIL] {exc}")
-        return 1
-    path_entry = next((item for item in registry["routes"] if route and item["path"] == route.relative_to(workspace).as_posix()), None) if route else None
-    if path_entry and entry and path_entry["id"] != entry["id"]:
+
+    route: Optional[Path] = None
+    path_entry: Optional[Dict[str, Any]] = None
+    if args.path:
+        try:
+            route = _canonical_route(workspace, args.path)
+        except (OSError, ValueError) as exc:
+            print(f"[FAIL] {exc}")
+            return 1
+        route_rel = route.relative_to(workspace).as_posix()
+        path_entry = next(
+            (item for item in registry["routes"] if item.get("path") == route_rel),
+            None,
+        )
+    elif entry_by_id is not None:
+        try:
+            route = _canonical_route(workspace, entry_by_id["path"])
+        except (OSError, ValueError) as exc:
+            print(f"[FAIL] {exc}")
+            return 1
+
+    if path_entry is not None and entry_by_id is not None:
+        if path_entry.get("id") != entry_by_id.get("id"):
+            print("[FAIL] route id/path mismatch")
+            return 1
+    elif args.path and entry_by_id is not None:
+        # An explicitly supplied Route ID already identifies another path.
+        # Never let a create/adopt request silently reuse that identity for a
+        # different path, which would otherwise create an orphaned directory
+        # or mutate the wrong Route.
         print("[FAIL] route id/path mismatch")
         return 1
-    if args.action in {"create", "adopt"} and route is not None and entry is not None:
-        requested_path = route.relative_to(workspace).as_posix()
-        if entry.get("path") != requested_path:
-            print("[FAIL] route id/path mismatch")
+
+    entry: Optional[Dict[str, Any]] = path_entry or entry_by_id
+    if route is None:
+        print("[FAIL] route path is required")
+        return 1
+
+    route_meta = route / ".agents/route.yaml"
+    meta: Optional[Dict[str, Any]] = None
+    if route_meta.exists():
+        try:
+            meta = read_json(route_meta)
+            # Validate the Route's own identity before using it to fill an
+            # unregistered path.  This preserves custom IDs during adoption.
+            validate_route_metadata(meta, route, workspace, None, root_id)
+        except (OSError, ValueError) as exc:
+            print(f"[FAIL] {exc}")
             return 1
-    if args.action in {"create", "adopt"} and path_entry is not None and args.route_id is not None:
-        if args.route_id != path_entry["id"]:
-            print("[FAIL] route id/path mismatch")
-            return 1
+
+    metadata_id = meta.get("route_id") if meta else None
+    if entry is not None and metadata_id is not None and metadata_id != entry.get("id"):
+        print("[FAIL] route metadata route_id does not match registry")
+        return 1
+
+    if args.action not in {"create", "adopt"} and entry is None:
+        print("[FAIL] route id not found")
+        return 1
+
+    rid = (
+        args.route_id
+        or (entry.get("id") if entry else None)
+        or metadata_id
+        or route_id(route, args.display_name)
+    )
+    if args.route_id is not None and args.route_id != rid:
+        print("[FAIL] route id/path mismatch")
+        return 1
+    if any(item.get("id") == rid and item is not entry for item in registry["routes"]):
+        print("[FAIL] route id already belongs to another route")
+        return 1
+
+    display = (
+        args.display_name
+        or (entry.get("display_name") if entry else None)
+        or (meta.get("display_name") if meta else None)
+        or route.name
+    )
+
     if args.action in {"create", "adopt"}:
-        if args.route_id is not None and (
-            not isinstance(args.route_id, str) or not args.route_id.strip()
-        ):
-            print("[FAIL] route id must be a non-empty string")
+        exists = route.exists()
+        if exists and not route.is_dir():
+            print("[FAIL] route target is not a directory")
             return 1
-        if args.display_name is not None and (
-            not isinstance(args.display_name, str) or not args.display_name.strip()
-        ):
-            print("[FAIL] display name must be a non-empty string")
-            return 1
-    entry = path_entry or entry
-    if args.action in {"create", "adopt"}:
-        if route is None or (args.action == "adopt" and not route.is_dir()) or (route.exists() and not route.is_dir()):
+        if args.action == "adopt" and not exists:
             print("[FAIL] route target is invalid or missing")
             return 1
-        route_meta = route / ".agents/route.yaml"
+        # Create establishes a new path.  Existing unregistered work belongs
+        # to adopt; an already registered complete Route remains idempotent.
+        if args.action == "create" and exists and path_entry is None:
+            print("[FAIL] route path already exists; use route adopt")
+            return 1
+
+        route_rel = route.relative_to(workspace).as_posix()
         needs_registry_entry = entry is None
-        route_scaffold = [
-            route / "AGENTS.md",
-            route_meta,
-            route / ".agents/settings.yaml",
-            route / ".agents/knowledge/index.yaml",
-            route / ".agents/knowledge/guides/.gitkeep",
-            route / ".agents/knowledge/decisions/.gitkeep",
-            route / ".agents/knowledge/observations/.gitkeep",
-            route / ".agents/knowledge/archive/.gitkeep",
-        ]
-        needs_route_write = not route.exists() or any(
-            not path.exists() for path in route_scaffold
-        )
+        if needs_registry_entry:
+            entry = {
+                "id": rid,
+                "display_name": display,
+                "path": route_rel,
+                "status": "active" if args.action == "create" else "discovered",
+            }
+        else:
+            rid = entry["id"]
+            display = entry.get("display_name") or display
+
+        try:
+            missing = _route_missing_scaffold(route)
+            _preflight_route_targets(workspace, route)
+            _validate_projected_route(route, workspace, entry, rid, root_id)
+        except (OSError, ValueError) as exc:
+            print(f"[FAIL] route plan rejected: {exc}")
+            return 1
+        needs_route_write = bool(missing)
+
         if schema_version(registry) == "0.2" and (
             needs_registry_entry or needs_route_write
         ):
@@ -1599,146 +2103,95 @@ def route_operation(args: Any, asset_root: Path) -> int:
                 "run explicit workspace upgrade first"
             )
             return 1
-        rid = args.route_id or (entry["id"] if entry else route_id(route, args.display_name))
-        if any(item["id"] == rid and item is not entry for item in registry["routes"]):
-            print("[FAIL] route id already belongs to another route")
+        if args.action == "create" and path_entry is not None and needs_route_write:
+            print("[FAIL] registered Route is incomplete; use route adopt")
             return 1
-        display = args.display_name or (entry["display_name"] if entry else route.name)
-        if entry is None:
-            route_rel = route.relative_to(workspace).as_posix()
-            entry = {
-                "id": rid,
-                "display_name": display,
-                "path": route_rel,
-                "status": "active" if args.action == "create" else "discovered",
-            }
+
+        if not needs_route_write and not needs_registry_entry:
+            print("[OK] Route already exists and is unchanged")
+            return 0
+
+        if needs_registry_entry:
             registry["routes"].append(entry)
-        route_is_virtual = args.dry_run and not route.exists()
-        if route_is_virtual:
-            try:
-                validate_route_metadata(
-                    _route_metadata_payload(
-                        route,
-                        workspace,
-                        rid,
-                        manifest.get("root_id", "agent-collaboration-root"),
-                    ),
-                    route,
-                    workspace,
-                    entry,
-                    manifest.get("root_id", "agent-collaboration-root"),
-                )
-            except ValueError as exc:
-                print(f"[FAIL] planned route metadata invalid: {exc}")
-                return 1
-        if route_meta.exists():
-            try:
-                meta = read_json(route_meta)
-                validate_route_metadata(meta, route, workspace, entry, manifest.get("root_id", "agent-collaboration-root"))
-            except (OSError, ValueError) as exc:
-                print(f"[FAIL] {exc}")
-                return 1
-        try:
-            _preflight_route_targets(workspace, route)
-        except ValueError as exc:
-            print(f"[FAIL] {exc}")
-            return 1
         actions: List[str] = []
-        if not route.exists() and not args.dry_run:
-            route.mkdir(parents=True)
-        root_contract = _route_pointer(route, workspace / ".agents/coordination/ROOT-BASELINE.md")
-        if not (route / "AGENTS.md").exists():
-            _write(route / "AGENTS.md", _asset("workspace/ROUTE_AGENTS.md").replace("{{ROUTE_ID}}", rid).replace("{{ROUTE_NAME}}", display).replace("{{ROOT_CONTRACT}}", root_contract), args.dry_run, actions)
-        if not route_meta.exists():
-            _write(route_meta, stable_json(_route_metadata_payload(route, workspace, rid, manifest["root_id"])), args.dry_run, actions)
-        for rel in [".agents/settings.yaml", ".agents/knowledge/index.yaml", ".agents/knowledge/guides/.gitkeep", ".agents/knowledge/decisions/.gitkeep", ".agents/knowledge/observations/.gitkeep", ".agents/knowledge/archive/.gitkeep"]:
-            path = route / rel
-            if path.exists():
-                continue
-            content = _asset("workspace/.agents/settings.yaml") if rel.endswith("settings.yaml") else ('schema_version: "2.0"\ndocuments: []\n' if rel.endswith("index.yaml") else "")
-            _write(path, content, args.dry_run, actions)
         try:
+            _write_route_scaffold(
+                route,
+                workspace,
+                rid,
+                display,
+                root_id,
+                args.dry_run,
+                actions,
+            )
+            # Validate registry identity and path invariants without coupling
+            # this target operation to the physical presence of sibling Routes.
+            # The selected Route scaffold is validated independently below.
             validate_registry(
                 registry,
                 workspace,
-                manifest.get("root_id", "agent-collaboration-root"),
-                require_route_dirs=not route_is_virtual,
+                root_id,
+                require_route_dirs=False,
             )
-            _validate_route_surfaces(
-                registry,
-                workspace,
-                manifest.get("root_id", "agent-collaboration-root"),
-                skip_paths={entry["path"]} if route_is_virtual else None,
-            )
-            registry_text = stable_json(registry)
-        except (OSError, TypeError, ValueError) as exc:
-            print(f"[FAIL] registry update rejected: {exc}")
-            return 1
-        try:
+            if args.dry_run:
+                validate_route_metadata(
+                    _route_metadata_payload(route, workspace, rid, root_id),
+                    route,
+                    workspace,
+                    entry,
+                    root_id,
+                )
+            else:
+                _validate_route_scaffold(route)
+                validate_route_metadata(
+                    read_json(route_meta), route, workspace, entry, root_id
+                )
             if needs_registry_entry:
-                _write(registry_path, registry_text, args.dry_run, actions)
+                _write(registry_path, stable_json(registry), args.dry_run, actions)
         except (OSError, TypeError, ValueError) as exc:
             print(f"[FAIL] route write rejected: {exc}")
             return 1
-        for action in actions:
-            print(("[DRY-RUN] " if args.dry_run else "[APPLIED] ") + action)
+        _print_actions(actions, args.dry_run)
         return 0
+
+    # Remaining operations validate only the selected Route.  A broken sibling
+    # is reported by workspace-wide validation, not coupled into this action.
     if entry is None:
         print("[FAIL] route id not found")
         return 1
-    try:
-        route = _canonical_route(workspace, entry["path"])
-    except ValueError as exc:
-        print(f"[FAIL] {exc}")
-        return 1
-    route_meta = route / ".agents/route.yaml"
     if not route.is_dir() or not route_meta.exists():
         print("[FAIL] route metadata or directory missing")
         return 1
     try:
-        meta = read_json(route_meta)
-        validate_route_metadata(meta, route, workspace, entry, manifest.get("root_id", "agent-collaboration-root"))
+        _validate_route_scaffold(route)
+        if meta is None:
+            meta = read_json(route_meta)
+        validate_route_metadata(meta, route, workspace, entry, root_id)
     except (OSError, ValueError) as exc:
         print(f"[FAIL] {exc}")
         return 1
+
     actions: List[str] = []
     if args.action == "upgrade":
         try:
-            canonical = _route_upgrade_payload(
-                meta,
-                route,
-                workspace,
-                entry["id"],
-                manifest.get("root_id", "agent-collaboration-root"),
-            )
-            # The explicit Route upgrade also moves the Root registry to the
-            # canonical schema in the same reviewed operation.  Validate both
-            # outputs before writing either file.
+            canonical = _route_upgrade_payload(meta, route, workspace, entry["id"], root_id)
             upgraded_registry = _canonicalize_registry(registry)
             validate_registry(
                 upgraded_registry,
                 workspace,
-                manifest.get("root_id", "agent-collaboration-root"),
+                root_id,
+                require_route_dirs=False,
             )
-            validate_route_metadata(
-                canonical,
-                route,
-                workspace,
-                next(
-                    item for item in upgraded_registry["routes"]
-                    if item["id"] == entry["id"]
-                ),
-                manifest.get("root_id", "agent-collaboration-root"),
+            upgraded_entry = next(
+                item for item in upgraded_registry["routes"] if item["id"] == entry["id"]
             )
-            route_text = stable_json(canonical)
-            registry_text = stable_json(upgraded_registry)
-            _write(route_meta, route_text, args.dry_run, actions)
-            _write(registry_path, registry_text, args.dry_run, actions)
+            validate_route_metadata(canonical, route, workspace, upgraded_entry, root_id)
+            _write(route_meta, stable_json(canonical), args.dry_run, actions)
+            _write(registry_path, stable_json(upgraded_registry), args.dry_run, actions)
         except (OSError, TypeError, ValueError, StopIteration) as exc:
             print(f"[FAIL] route upgrade rejected: {exc}")
             return 1
-        for action in actions:
-            print(("[DRY-RUN] " if args.dry_run else "[APPLIED] ") + action)
+        _print_actions(actions, args.dry_run)
         return 0
     if args.action == "validate":
         print("[OK] route metadata and preserved route surface are valid")
@@ -1766,19 +2219,14 @@ def route_operation(args: Any, asset_root: Path) -> int:
         validate_registry(
             registry,
             workspace,
-            manifest.get("root_id", "agent-collaboration-root"),
+            root_id,
+            require_route_dirs=False,
         )
-        registry_text = stable_json(registry)
-    except (OSError, TypeError, ValueError) as exc:
-        print(f"[FAIL] registry update rejected: {exc}")
-        return 1
-    try:
-        _write(registry_path, registry_text, args.dry_run, actions)
+        _write(registry_path, stable_json(registry), args.dry_run, actions)
     except (OSError, TypeError, ValueError) as exc:
         print(f"[FAIL] registry write rejected: {exc}")
         return 1
-    for action in actions:
-        print(("[DRY-RUN] " if args.dry_run else "[APPLIED] ") + action)
+    _print_actions(actions, args.dry_run)
     return 0
 
 
@@ -1791,7 +2239,40 @@ def main(argv: List[str]) -> int:
         parser.add_argument("--root", type=Path, required=True)
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--purge-data", action="store_true")
+        parser.add_argument(
+            "--include-route",
+            action="append",
+            default=[],
+            metavar="PATH",
+            help="explicitly include a discovered top-level Route (repeatable)",
+        )
+        parser.add_argument(
+            "--list-candidates",
+            action="store_true",
+            help="list discovered top-level Route candidates without writing",
+        )
         args = parser.parse_args(argv[1:])
+        if args.list_candidates:
+            if args.action != "adopt":
+                parser.error("--list-candidates is only valid with workspace adopt")
+            try:
+                candidates = _discover(
+                    _exact_root(args.root, "workspace path"), strict_metadata=False
+                )
+            except (OSError, ValueError) as exc:
+                print(f"[FAIL] candidate discovery rejected: {exc}")
+                return 1
+            for candidate in candidates:
+                suffix = (
+                    f"\t{candidate['inspection_error']}"
+                    if candidate.get("inspection_error")
+                    else ""
+                )
+                print(
+                    f"{candidate['id']}\t{candidate['status']}\t"
+                    f"{candidate['path']}{suffix}"
+                )
+            return 0
         if args.action == "validate":
             ok, problems = validate_workspace(args.root)
             print("[OK] Project Collaboration Root validated." if ok else "[FAIL] " + "; ".join(problems))
@@ -1799,10 +2280,14 @@ def main(argv: List[str]) -> int:
         if args.action == "uninstall":
             print("[FAIL] workspace uninstall requires a reviewed ownership plan")
             return 1
-        actions = workspace_install(args.root, args.action, args.dry_run)
-        for action in actions:
-            print(("[DRY-RUN] " if args.dry_run else "[APPLIED] ") + action)
-        if any(action.startswith(("error ", "preserve-conflict ")) for action in actions):
+        actions = workspace_install(
+            args.root,
+            args.action,
+            args.dry_run,
+            include_routes=args.include_route,
+        )
+        _print_actions(actions, args.dry_run)
+        if _actions_failed(actions):
             return 1
         if not args.dry_run:
             ok, problems = validate_workspace(args.root)

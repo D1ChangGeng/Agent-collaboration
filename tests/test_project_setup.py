@@ -1,6 +1,9 @@
+import contextlib
 import importlib.util
 import hashlib
+import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -13,6 +16,46 @@ SPEC = importlib.util.spec_from_file_location("project_setup", ROOT / "scripts" 
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader
 SPEC.loader.exec_module(mod)
+
+
+def file_snapshot(root: Path):
+    return {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+
+
+def route_args(workspace: Path, action: str, **overrides):
+    values = {
+        "workspace": workspace,
+        "action": action,
+        "path": None,
+        "route_id": None,
+        "display_name": None,
+        "state": None,
+        "dry_run": False,
+    }
+    values.update(overrides)
+    return type("Args", (), values)()
+
+
+def make_directory_alias(alias: Path, target: Path) -> None:
+    try:
+        alias.symlink_to(target, target_is_directory=True)
+        return
+    except (OSError, NotImplementedError):
+        pass
+    if os.name == "nt":
+        completed = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(alias), str(target)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if completed.returncode == 0:
+            return
+    raise unittest.SkipTest("directory alias creation is unavailable")
 
 
 class ProjectSetupTests(unittest.TestCase):
@@ -103,6 +146,46 @@ class ProjectSetupTests(unittest.TestCase):
                 profile.read_text(encoding="utf-8"),
                 "# My project profile\nDO NOT OVERWRITE\n",
             )
+
+    def test_adopt_does_not_claim_existing_custom_managed_asset(self):
+        """Adopt must not mint ownership proof for pre-existing custom bytes."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            managed = root / ".agents" / "protocol" / "CAPABILITIES.md"
+            managed.parent.mkdir(parents=True)
+            managed.write_text("PROJECT-OWNED CONTENT\n", encoding="utf-8")
+
+            mod.install_or_upgrade(root, "adopt", False)
+            manifest = mod.read_repository_manifest(root, required=True)
+            self.assertNotIn(".agents/protocol/CAPABILITIES.md", manifest["managed_hashes"])
+            self.assertEqual(managed.read_text(encoding="utf-8"), "PROJECT-OWNED CONTENT\n")
+
+            before = managed.read_bytes()
+            with self.assertRaises(ValueError):
+                mod.install_or_upgrade(root, "upgrade", False)
+            self.assertEqual(before, managed.read_bytes())
+
+    def test_adopt_does_not_claim_custom_managed_block(self):
+        """Adopt must not make a custom marked block eligible for overwrite."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            custom = (
+                "HEADER\n"
+                + mod.AGENTS_BEGIN
+                + "\nCUSTOM PROJECT GUIDANCE\n"
+                + mod.AGENTS_END
+                + "\nTAIL\n"
+            )
+            (root / "AGENTS.md").write_text(custom, encoding="utf-8")
+
+            mod.install_or_upgrade(root, "adopt", False)
+            manifest = mod.read_repository_manifest(root, required=True)
+            self.assertNotIn("AGENTS.md", manifest["managed_block_hashes"])
+            self.assertEqual((root / "AGENTS.md").read_text(encoding="utf-8"), custom)
+
+            with self.assertRaises(ValueError):
+                mod.install_or_upgrade(root, "upgrade", False)
+            self.assertEqual((root / "AGENTS.md").read_text(encoding="utf-8"), custom)
 
     def test_legacy_manifest_is_idempotent(self):
         with tempfile.TemporaryDirectory() as td:
@@ -609,7 +692,7 @@ class ProjectSetupTests(unittest.TestCase):
             self.assertEqual(mod.route_operation(args), 0)
             self.assertFalse((root / "New Route").exists())
 
-    def test_route_create_preflights_existing_route_surfaces(self):
+    def test_route_create_is_target_scoped_when_sibling_is_malformed(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             mod.workspace_install(root, "adopt", False)
@@ -627,22 +710,98 @@ class ProjectSetupTests(unittest.TestCase):
             existing_meta.write_text("{bad", encoding="utf-8")
             before = (root / ".agents" / "coordination" / "routes.yaml").read_bytes()
 
-            for dry_run in (True, False):
-                new_args = type("Args", (), {
-                    "workspace": root,
-                    "action": "create",
-                    "path": "New Route",
-                    "route_id": "new-route",
-                    "display_name": "New Route",
-                    "state": None,
-                    "dry_run": dry_run,
-                })()
-                self.assertEqual(mod.route_operation(new_args), 1)
-                self.assertFalse((root / "New Route").exists())
+            dry_args = type("Args", (), {
+                "workspace": root,
+                "action": "create",
+                "path": "New Route",
+                "route_id": "new-route",
+                "display_name": "New Route",
+                "state": None,
+                "dry_run": True,
+            })()
+            self.assertEqual(mod.route_operation(dry_args), 0)
+            self.assertFalse((root / "New Route").exists())
+            self.assertEqual(
+                before,
+                (root / ".agents" / "coordination" / "routes.yaml").read_bytes(),
+            )
+
+            apply_args = type("Args", (), {
+                "workspace": root,
+                "action": "create",
+                "path": "New Route",
+                "route_id": "new-route",
+                "display_name": "New Route",
+                "state": None,
+                "dry_run": False,
+            })()
+            self.assertEqual(mod.route_operation(apply_args), 0)
+            self.assertTrue((root / "New Route").exists())
+            self.assertEqual("{bad", existing_meta.read_text(encoding="utf-8"))
+
+    def test_route_operations_ignore_missing_sibling_but_workspace_validate_reports_it(self):
+        """Target Route work remains usable while Root validation stays global."""
+        import shutil
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            mod.workspace_install(root, "adopt", False)
+
+            for name, rid in (("A Route", "a-route"), ("B Route", "b-route")):
                 self.assertEqual(
-                    before,
-                    (root / ".agents" / "coordination" / "routes.yaml").read_bytes(),
+                    mod.route_operation(
+                        route_args(
+                            root,
+                            "create",
+                            path=name,
+                            route_id=rid,
+                            display_name=name,
+                        )
+                    ),
+                    0,
                 )
+
+            shutil.rmtree(root / "B Route")
+
+            self.assertEqual(
+                mod.route_operation(
+                    route_args(
+                        root,
+                        "set-state",
+                        path="A Route",
+                        route_id="a-route",
+                        state="paused",
+                    )
+                ),
+                0,
+            )
+            registry_path = root / ".agents" / "coordination" / "routes.yaml"
+            registry = mod.read_json(registry_path)
+            self.assertEqual(
+                next(item for item in registry["routes"] if item["id"] == "a-route")["status"],
+                "paused",
+            )
+
+            # A second target-scoped write must also proceed despite the
+            # missing sibling; the global Workspace validator still reports it.
+            self.assertEqual(
+                mod.route_operation(
+                    route_args(
+                        root,
+                        "create",
+                        path="C Route",
+                        route_id="c-route",
+                        display_name="C Route",
+                    )
+                ),
+                0,
+            )
+            ok, problems = mod.validate_workspace(root)
+            self.assertFalse(ok)
+            self.assertTrue(
+                any("route directory missing: B Route" in problem for problem in problems),
+                problems,
+            )
 
     def test_workspace_route_scaffold_carries_agents_evolution_boundary(self):
         with tempfile.TemporaryDirectory() as td:
@@ -960,19 +1119,263 @@ class ProjectSetupTests(unittest.TestCase):
             self.assertEqual(mod.route_operation(args), 1)
             self.assertEqual(before, (root / ".agents" / "coordination" / "routes.yaml").read_text(encoding="utf-8"))
 
-    def test_workspace_adopt_rejects_malformed_discovered_route_before_root_write(self):
+    def test_workspace_adopt_treats_unselected_malformed_candidate_as_advisory(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td) / "workspace"
             route = root / "Bad Route"
             (route / ".agents").mkdir(parents=True)
             (route / "AGENTS.md").write_text("# Existing\n", encoding="utf-8")
             (route / ".agents" / "route.yaml").write_text("{bad", encoding="utf-8")
+            candidate_before = file_snapshot(route)
 
             actions = mod.workspace_install(root, "adopt", False)
 
-            self.assertTrue(any(action.startswith("error discovered route:") for action in actions), actions)
-            self.assertFalse((root / "AGENTS.md").exists())
+            self.assertFalse(any(action.startswith("error ") for action in actions), actions)
+            self.assertTrue((root / "AGENTS.md").exists())
+            self.assertTrue((root / ".agents" / "manifest.json").exists())
+            registry = mod.read_json(root / ".agents" / "coordination" / "routes.yaml")
+            self.assertEqual(registry["routes"], [])
+            self.assertEqual(candidate_before, file_snapshot(route))
+
+    def test_workspace_include_malformed_candidate_fails_without_write(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "workspace"
+            route = root / "Bad Route"
+            (route / ".agents").mkdir(parents=True)
+            (route / "AGENTS.md").write_text("# Existing\n", encoding="utf-8")
+            (route / ".agents" / "route.yaml").write_text("{bad", encoding="utf-8")
+            before = file_snapshot(root)
+
+            actions = mod.workspace_install(
+                root, "adopt", False, include_routes=["Bad Route"]
+            )
+
+            self.assertTrue(
+                any(action.startswith("error included Route candidate is invalid:") for action in actions),
+                actions,
+            )
+            self.assertEqual(before, file_snapshot(root))
             self.assertFalse((root / ".agents" / "manifest.json").exists())
+
+    def test_workspace_candidate_listing_surfaces_inspection_error(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "workspace"
+            route = root / "Bad Route"
+            (route / ".agents").mkdir(parents=True)
+            (route / "AGENTS.md").write_text("# Existing\n", encoding="utf-8")
+            (route / ".agents" / "route.yaml").write_text("{bad", encoding="utf-8")
+            before = file_snapshot(root)
+            output = io.StringIO()
+
+            with contextlib.redirect_stdout(output):
+                result = mod.workspace_cli_main(
+                    [
+                        "workspace",
+                        "adopt",
+                        "--root",
+                        str(root),
+                        "--list-candidates",
+                    ]
+                )
+
+            self.assertEqual(result, 0, output.getvalue())
+            self.assertIn("Bad Route", output.getvalue())
+            self.assertIn("invalid JSON-compatible YAML", output.getvalue())
+            self.assertEqual(before, file_snapshot(root))
+
+    def test_route_adopt_path_only_uses_existing_custom_route_id(self):
+        """Adoption must preserve an existing Route identity from route.yaml."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "workspace"
+            mod.workspace_install(root, "adopt", False)
+            route = root / "Custom Route"
+            (route / ".agents" / "knowledge").mkdir(parents=True)
+            (route / "AGENTS.md").write_text("# Existing route\n", encoding="utf-8")
+            metadata = {
+                "schema_version": "0.3",
+                "kind": "development-route",
+                "route_id": "custom-route-id",
+                "root_id": "agent-collaboration-root",
+                "path": "Custom Route",
+                "root_contract": Path(
+                    os.path.relpath(
+                        root / ".agents" / "coordination" / "ROOT-BASELINE.md",
+                        route,
+                    )
+                ).as_posix(),
+            }
+            (route / ".agents" / "route.yaml").write_text(
+                json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            (route / ".agents" / "settings.yaml").write_text(
+                'schema_version: "2.0"\nrouting: {}\n', encoding="utf-8"
+            )
+            (route / ".agents" / "knowledge" / "index.yaml").write_text(
+                'schema_version: "2.0"\ndocuments: []\n', encoding="utf-8"
+            )
+            for directory in ("guides", "decisions", "observations", "archive"):
+                (route / ".agents" / "knowledge" / directory).mkdir()
+
+            result = mod.route_operation(
+                route_args(root, "adopt", path="Custom Route", display_name=None)
+            )
+
+            self.assertEqual(result, 0)
+            registry = mod.read_json(root / ".agents" / "coordination" / "routes.yaml")
+            self.assertEqual(
+                [(item["id"], item["path"]) for item in registry["routes"]],
+                [("custom-route-id", "Custom Route")],
+            )
+            self.assertEqual(
+                mod.read_json(route / ".agents" / "route.yaml")["route_id"],
+                "custom-route-id",
+            )
+
+    def test_route_create_refuses_existing_unregistered_path(self):
+        """Create is for a new path; existing work must use explicit adopt."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "workspace"
+            mod.workspace_install(root, "adopt", False)
+            route = root / "Existing Route"
+            route.mkdir()
+            keep = route / "project.txt"
+            keep.write_text("keep\n", encoding="utf-8")
+            before = file_snapshot(root)
+
+            result = mod.route_operation(
+                route_args(
+                    root,
+                    "create",
+                    path="Existing Route",
+                    route_id="existing-route",
+                    display_name="Existing Route",
+                )
+            )
+
+            self.assertEqual(result, 1)
+            self.assertEqual(before, file_snapshot(root))
+            self.assertEqual(keep.read_text(encoding="utf-8"), "keep\n")
+
+    def test_partial_route_adopt_dry_run_previews_and_apply_fills_scaffold(self):
+        """Partial Route adoption should preview without writes, then complete safely."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "workspace"
+            mod.workspace_install(root, "adopt", False)
+            route = root / "Partial Route"
+            route.mkdir()
+            agents = route / "AGENTS.md"
+            agents.write_text("# Keep this route\n", encoding="utf-8")
+            before = file_snapshot(root)
+
+            dry_output = io.StringIO()
+            with contextlib.redirect_stdout(dry_output):
+                dry_result = mod.route_operation(
+                    route_args(
+                        root,
+                        "adopt",
+                        path="Partial Route",
+                        route_id="partial-route",
+                        display_name="Partial Route",
+                        dry_run=True,
+                    )
+                )
+
+            self.assertEqual(dry_result, 0, dry_output.getvalue())
+            self.assertIn("[DRY-RUN]", dry_output.getvalue())
+            self.assertEqual(before, file_snapshot(root))
+
+            apply_result = mod.route_operation(
+                route_args(
+                    root,
+                    "adopt",
+                    path="Partial Route",
+                    route_id="partial-route",
+                    display_name="Partial Route",
+                )
+            )
+
+            self.assertEqual(apply_result, 0)
+            self.assertEqual(agents.read_text(encoding="utf-8"), "# Keep this route\n")
+            for relative in (
+                "AGENTS.md",
+                ".agents/route.yaml",
+                ".agents/settings.yaml",
+                ".agents/knowledge/index.yaml",
+                ".agents/knowledge/guides/.gitkeep",
+                ".agents/knowledge/decisions/.gitkeep",
+                ".agents/knowledge/observations/.gitkeep",
+                ".agents/knowledge/archive/.gitkeep",
+            ):
+                self.assertTrue((route / relative).exists(), relative)
+            registry = mod.read_json(root / ".agents" / "coordination" / "routes.yaml")
+            self.assertEqual(registry["routes"][0]["id"], "partial-route")
+
+    def test_workspace_repair_refuses_registered_partial_route_without_mutation(self):
+        """Root repair must not silently take ownership of a Route-owned gap."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "workspace"
+            mod.workspace_install(root, "adopt", False)
+            create_result = mod.route_operation(
+                route_args(
+                    root,
+                    "create",
+                    path="Registered Route",
+                    route_id="registered-route",
+                    display_name="Registered Route",
+                )
+            )
+            self.assertEqual(create_result, 0)
+            missing = root / "Registered Route" / ".agents" / "settings.yaml"
+            missing.unlink()
+            before = file_snapshot(root)
+
+            actions = mod.workspace_install(root, "repair", False)
+
+            self.assertTrue(
+                any(action.startswith("error merged registry:") for action in actions),
+                actions,
+            )
+            self.assertEqual(before, file_snapshot(root))
+            self.assertFalse(missing.exists())
+
+    def test_workspace_read_and_route_commands_refuse_directory_alias(self):
+        """Every Workspace entrypoint must honor the exact non-reparse path."""
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            real = base / "real-workspace"
+            alias = base / "workspace-alias"
+            mod.workspace_install(real, "adopt", False)
+            make_directory_alias(alias, real)
+
+            ok, problems = mod.validate_workspace(alias)
+            self.assertFalse(ok)
+            self.assertTrue(
+                any("symlink" in problem.lower() or "reparse" in problem.lower() for problem in problems),
+                problems,
+            )
+
+            route_output = io.StringIO()
+            with contextlib.redirect_stdout(route_output):
+                route_result = mod.workspace_cli_main(
+                    ["route", "list", "--workspace", str(alias)]
+                )
+            self.assertEqual(route_result, 1, route_output.getvalue())
+            self.assertRegex(route_output.getvalue().lower(), r"symlink|reparse|alias")
+
+            candidate_output = io.StringIO()
+            with contextlib.redirect_stdout(candidate_output):
+                candidate_result = mod.workspace_cli_main(
+                    [
+                        "workspace",
+                        "adopt",
+                        "--root",
+                        str(alias),
+                        "--list-candidates",
+                    ]
+                )
+            self.assertEqual(candidate_result, 1, candidate_output.getvalue())
+            self.assertRegex(candidate_output.getvalue().lower(), r"symlink|reparse|alias")
 
     def test_workspace_validate_checks_existing_route_metadata(self):
         with tempfile.TemporaryDirectory() as td:
@@ -1116,6 +1519,24 @@ class ProjectSetupTests(unittest.TestCase):
                 any(action.startswith("preserve-conflict ") for action in actions),
                 actions,
             )
+
+    def test_workspace_upgrade_refuses_unowned_custom_managed_asset(self):
+        """A fresh Workspace must not overwrite a managed file without proof."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "workspace"
+            mod.workspace_install(root, "adopt", False)
+            managed = root / ".agents" / "protocol" / "CAPABILITIES.md"
+            managed.write_text("CUSTOM WORKSPACE CONTENT\n", encoding="utf-8")
+            before = managed.read_bytes()
+
+            for dry_run in (True, False):
+                with self.subTest(dry_run=dry_run):
+                    actions = mod.workspace_install(root, "upgrade", dry_run)
+                    self.assertTrue(
+                        any(action.startswith("preserve-conflict ") for action in actions),
+                        actions,
+                    )
+                    self.assertEqual(before, managed.read_bytes())
 
     def test_workspace_upgrade_preserves_manifest_extension(self):
         with tempfile.TemporaryDirectory() as td:

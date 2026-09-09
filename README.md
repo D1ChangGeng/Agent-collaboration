@@ -116,6 +116,40 @@ If creating symlinks is not permitted, `--mode auto` falls back to a copy. Rerun
 
 Invoke it only when setting up or maintaining ACHP.
 
+### Agent operating model
+
+If the user does not use the internal command names, start with
+[the Agent Collaboration Operating Guide](references/OPERATING-GUIDE.md).
+The guide tells an Agent what to observe first, which facts can be inferred,
+when a question is necessary, and how to map a request to `bootstrap`, `adopt`,
+`repair`, `upgrade`, `validate`, or a Route operation. It keeps semantic
+decisions in the Agent and bounded file changes in the deterministic scripts.
+
+Use the [Capability Matrix](references/CAPABILITY-MATRIX.md) to distinguish a
+narrow tested CLI path from a protocol-level policy, an unverified environment
+capability, and an operation that this Skill does not provide. Use the
+[Scenario Matrix](references/SCENARIO-MATRIX.md) for representative journey
+and regression coverage.
+
+The normal sequence is:
+
+```text
+user intent
+  → inspect the exact target and existing collaboration files
+  → classify Root/Route state
+  → infer only safe facts
+  → ask only behavior-changing unknowns
+  → preview the deterministic operation
+  → apply and read back
+  → validate the resulting invariant
+```
+
+Do not create a new Route because a Session, Engineer window, machine, or
+Execution Endpoint changed. Session attach, Endpoint replacement, SSH source
+access, direct relay, and collaboration migration remain explicitly
+unverified/unsupported by this setup Skill unless a separate implementation and
+evidence package establishes them.
+
 Examples:
 
 ### New repository
@@ -146,6 +180,11 @@ Use agent-collaboration-setup to validate this repository's ACHP setup.
 
 Harness invocation syntax differs. For example, Codex can explicitly mention a Skill, Claude Code exposes Skills as slash commands, and OpenCode exposes them through its Skill system. The natural-language prompts above remain portable.
 
+The prompts above express setup intent; they do not imply that the Python CLI
+parses arbitrary language. When a request is ambiguous, the Agent should use
+the operating guide and inspect the target before asking for internal schema or
+topology fields.
+
 ## Project Collaboration Workspace and Routes
 
 A Workspace is a durable management/control root. It may be physically separate
@@ -157,6 +196,17 @@ python3 scripts/project_setup.py workspace adopt --root /path/to/workspace --dry
 python3 scripts/project_setup.py workspace adopt --root /path/to/workspace
 python3 scripts/project_setup.py workspace validate --root /path/to/workspace
 python3 scripts/project_setup.py route list --workspace /path/to/workspace
+```
+
+If the Workspace contains Route-like directories that are not registered, view
+the candidates first. They are advisory until the intended Route is explicitly
+included; ordinary Workspace adoption does not silently claim every directory.
+
+```bash
+python3 scripts/project_setup.py workspace adopt \
+  --root /path/to/workspace --list-candidates
+python3 scripts/project_setup.py workspace adopt \
+  --root /path/to/workspace --include-route "C Route" --dry-run
 ```
 
 Create a new Route without copying an existing Route:
@@ -248,6 +298,12 @@ changes. For a source repository, to remove all ACHP data too:
 ```bash
 python3 scripts/project_setup.py uninstall --root /path/to/repo --purge-data
 ```
+
+For populated repositories, use `adopt` and review its preview. Reserve
+`bootstrap` for a genuinely new/empty repository. `repair` restores only a
+provably managed missing component; an existing content drift or ownership
+conflict must be surfaced for review. `upgrade` is the explicit operation that
+refreshes setup-managed protocol content.
 
 ## What gets installed into a project
 
@@ -393,11 +449,14 @@ This keeps setup changes reviewable.
 
 ## Publishing your fork/repository to GitHub
 
-After editing the files:
+After editing the files, review the complete change and stage only the files
+intended for publication:
 
 ```bash
 git init
-git add .
+git status --short
+git add <intended-files>
+git diff --cached --check
 git commit -m "Add Project Collaboration Workspace and Route support"
 git branch -M main
 git remote add origin git@github.com:D1ChangGeng/Agent-collaboration.git

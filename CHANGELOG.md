@@ -2,6 +2,55 @@
 
 All notable changes to this project will be documented here.
 
+## 0.4.0 - 2026-09-09
+
+Agent-readable lifecycle guidance and safety hardening.
+
+### Added
+
+- Operating Guide, Capability Matrix, and Scenario Matrix references for
+  observe-before-ask decisions, natural-language intent interpretation, and
+  conservative capability reporting.
+- Read-only Workspace Route candidate listing and explicit repeatable
+  `--include-route` selection; unregistered candidates are no longer silently
+  claimed by ordinary Workspace adoption.
+
+### Changed
+
+- Repository setup uses the exact supplied path by default; containing Git-root
+  discovery is opt-in with `--git-root`.
+- Repository bootstrap, adopt, repair, upgrade, and validation now enforce
+  clearer ownership boundaries, managed-content drift checks, and safer
+  atomic file replacement.
+- Workspace and Route validation require the complete Route scaffold and report
+  failures, conflicts, dry-runs, and applied writes truthfully.
+- Route creation now refuses existing unregistered paths; Route adoption
+  preserves existing metadata identity, previews partial scaffolds, and creates
+  only missing canonical setup files.
+- Route-targeted operations validate the selected Route independently; a
+  missing sibling remains visible to Workspace-wide validation without
+  blocking unrelated Route work.
+- Workspace, Route, and candidate-listing entry points reject symlink,
+  junction, and reparse aliases instead of following them.
+- Repository, Workspace, and personal Skill upgrades refuse unproven or drifted
+  managed content and preserve project-owned bytes for review.
+- Skill installation uses an explicit payload, ownership marker, content digest,
+  staging replacement, and fail-closed handling for unknown destinations.
+
+### Boundary
+
+- v0.4.0 does not add Session attach, Endpoint replacement, SSH adapters,
+  direct relay, collaboration migration, checkpoints, or runtime recovery
+  state. Those remain outside the current setup Skill.
+
+### Verification
+
+- 93 unit tests passed; four Windows symlink tests were skipped because the
+  current process lacks symlink-creation privilege.
+- Skill validation, quick validation, Python compilation, repository setup
+  validation, knowledge index/check validation, and diff validation passed for
+  this release candidate.
+
 ## 0.3.0 - 2026-09-07
 
 Minimal Workspace persistence model and compatibility release.

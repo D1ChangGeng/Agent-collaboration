@@ -17,6 +17,12 @@ REQUIRED_FILES = [
     "README.zh-CN.md",
     "LICENSE",
     "VERSION",
+    "references/OPERATING-GUIDE.md",
+    "references/CAPABILITY-MATRIX.md",
+    "references/SCENARIO-MATRIX.md",
+    "references/DESIGN.md",
+    "references/HARNESS-COMPATIBILITY.md",
+    "references/UPGRADE-POLICY.md",
     "scripts/install_skill.py",
     "scripts/project_setup.py",
     "scripts/workspace_setup.py",
@@ -104,6 +110,18 @@ def main() -> int:
                 problems.append(f"SKILL metadata version '{metadata_version}' does not match VERSION '{version_file}'")
         except Exception as exc:
             problems.append(str(exc))
+
+    try:
+        skill_text = SKILL.read_text(encoding="utf-8")
+        for rel in (
+            "references/OPERATING-GUIDE.md",
+            "references/CAPABILITY-MATRIX.md",
+            "references/SCENARIO-MATRIX.md",
+        ):
+            if rel not in skill_text:
+                problems.append(f"SKILL.md does not route to {rel}")
+    except OSError as exc:
+        problems.append(f"SKILL.md read failed: {exc}")
 
     # Both new scaffold modes carry the same ACHP release identity.  Check
     # them against VERSION so a freshly installed project cannot inherit a

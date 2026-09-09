@@ -116,6 +116,39 @@ python3 scripts/install_skill.py --harness all --check
 
 ## 使用方式
 
+### Agent 的使用决策模型
+
+如果用户没有直接使用 `bootstrap`、`adopt`、`repair`、`upgrade` 或
+`validate` 这些内部命令名，应先阅读
+[Agent 使用与决策指南](references/OPERATING-GUIDE.md)。该指南规定 Agent
+应先观察什么、哪些事实可以安全推导、什么时候才需要提问，以及如何把
+用户表达映射为 Root / Route 生命周期操作。语义判断由 Agent 完成，脚本
+只负责确定性的文件操作和客观验证。
+
+需要精确查看能力边界时，阅读
+[能力矩阵](references/CAPABILITY-MATRIX.md)；需要检查代表性用户旅程和回归
+场景时，阅读[场景矩阵](references/SCENARIO-MATRIX.md)。矩阵中的
+`supported`、`partial`、`unverified`、`architecture-allowed` 和
+`unsupported` 不可相互替换。
+
+推荐顺序是：
+
+```text
+用户意图
+  → 检查精确目标路径和已有协作文件
+  → 分类 Root / Route 当前状态
+  → 只做安全推导
+  → 只询问会改变下一步行为的未知事实
+  → 先 dry-run 预览
+  → 执行并回读
+  → 验证结果不变量
+```
+
+不要因为 Session、工程师窗口、机器或 Execution Endpoint 发生变化就创建
+新的 Route。Session attach、Endpoint 替换、SSH 源码访问、direct relay 和
+协作配置迁移目前不是本 Skill 已实现并验证的运行时操作；应保留原有身份，
+如实报告 `unverified` 或 `unsupported` 边界。
+
 ### 空白项目
 
 对 Agent 说：
@@ -146,6 +179,10 @@ python3 scripts/install_skill.py --harness all --check
 
 不同 Harness 的显式调用语法可以不同，但以上自然语言意图是可移植的。
 
+以上示例表达的是 setup 意图，并不表示 Python CLI 会解析任意自然语言。
+遇到含糊请求时，Agent 应先依据使用指南检查目标，再决定是否提问，不应先
+询问内部 schema 字段或凭 Harness 名称猜测拓扑能力。
+
 ## Project Collaboration Workspace 与 Route
 
 Workspace 是长期项目协作、架构管理、目标推进和状态理解的管理根。它可以与真实源码仓库、执行 Session 和执行 Host 分离，也允许本身不是 Git 仓库。
@@ -155,6 +192,17 @@ python3 scripts/project_setup.py workspace adopt --root /path/to/workspace --dry
 python3 scripts/project_setup.py workspace adopt --root /path/to/workspace
 python3 scripts/project_setup.py workspace validate --root /path/to/workspace
 python3 scripts/project_setup.py route list --workspace /path/to/workspace
+```
+
+如果 Workspace 中存在尚未登记、但看起来像 Route 的目录，应先只读查看候选。
+候选不会因为被发现就自动写入 registry；只有用户明确选择后，才使用可重复的
+`--include-route` 纳入登记：
+
+```bash
+python3 scripts/project_setup.py workspace adopt \
+  --root /path/to/workspace --list-candidates
+python3 scripts/project_setup.py workspace adopt \
+  --root /path/to/workspace --include-route "C Route" --dry-run
 ```
 
 新增 Route 时不复制 A/B 或其他路线：
@@ -228,6 +276,11 @@ python3 scripts/project_setup.py validate --root /path/to/repo
 ```bash
 python3 scripts/project_setup.py uninstall --root /path/to/repo --purge-data
 ```
+
+已有内容的源码仓库应使用 `adopt` 并先审阅 dry-run；`bootstrap` 只用于真正
+新的或空的仓库。`repair` 只补回能够证明属于 setup-managed 且缺失的组件；
+如果内容发生漂移或 ownership 有冲突，应停止并交由 Review。只有显式的
+`upgrade` 才负责刷新 setup-managed 协议内容。
 
 ## 项目中最终安装的内容
 
@@ -334,11 +387,13 @@ python3 scripts/project_setup.py upgrade --root /path/to/project
 
 ## 创建你自己的 GitHub 仓库
 
-文件准备完成后：
+文件准备完成后，先检查完整变更，只暂存准备公开的文件：
 
 ```bash
 git init
-git add .
+git status --short
+git add <准备提交的文件>
+git diff --cached --check
 git commit -m "Add Project Collaboration Workspace and Route support"
 git branch -M main
 git remote add origin git@github.com:D1ChangGeng/Agent-collaboration.git

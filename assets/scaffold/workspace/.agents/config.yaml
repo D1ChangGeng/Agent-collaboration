@@ -1,7 +1,7 @@
 protocol:
   name: ACHP
   # Protocol release identity is separate from the Workspace schema.
-  version: "0.3.0"
+  version: "0.4.0"
 target:
   kind: project-collaboration-workspace
   management_root: true
