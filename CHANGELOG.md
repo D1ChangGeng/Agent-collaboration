@@ -49,7 +49,7 @@ Agent-readable lifecycle guidance and safety hardening.
   current process lacks symlink-creation privilege.
 - Skill validation, quick validation, Python compilation, repository setup
   validation, knowledge index/check validation, and diff validation passed for
-  this release candidate.
+  the release.
 
 ## 0.3.0 - 2026-09-07
 
