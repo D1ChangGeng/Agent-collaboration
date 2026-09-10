@@ -11,14 +11,26 @@ CREATE TABLE IF NOT EXISTS work_items (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS runtime_schema_metadata (
+    schema_name TEXT PRIMARY KEY,
+    schema_version TEXT NOT NULL,
+    schema_checksum TEXT NOT NULL,
+    adopted_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS command_dedup (
     tenant_id TEXT NOT NULL,
     idempotency_key TEXT NOT NULL,
+    command_id TEXT NOT NULL,
     payload_hash TEXT NOT NULL,
     result_json JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (tenant_id, idempotency_key)
 );
+ALTER TABLE command_dedup ADD COLUMN IF NOT EXISTS command_id TEXT;
+UPDATE command_dedup SET command_id = idempotency_key WHERE command_id IS NULL;
+ALTER TABLE command_dedup ALTER COLUMN command_id SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS command_dedup_command_id ON command_dedup(tenant_id, command_id);
 
 CREATE TABLE IF NOT EXISTS authority_instances (
     authority_id TEXT NOT NULL, authority_incarnation TEXT NOT NULL,
@@ -48,9 +60,14 @@ CREATE TABLE IF NOT EXISTS attempts (
 CREATE TABLE IF NOT EXISTS accepted_state_revisions (
     tenant_id TEXT NOT NULL, work_item_id TEXT NOT NULL, revision INTEGER NOT NULL,
     baseline_ref TEXT NOT NULL, evidence_refs JSONB NOT NULL, review_ref TEXT NOT NULL,
-    effect_refs JSONB NOT NULL, readback_refs JSONB NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    effect_refs JSONB NOT NULL, readback_refs JSONB NOT NULL, accepted_by TEXT, policy_version TEXT, parent_revision INTEGER, scope_id TEXT, valid_from TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (tenant_id, work_item_id, revision)
 );
+ALTER TABLE accepted_state_revisions ADD COLUMN IF NOT EXISTS accepted_by TEXT;
+ALTER TABLE accepted_state_revisions ADD COLUMN IF NOT EXISTS policy_version TEXT;
+ALTER TABLE accepted_state_revisions ADD COLUMN IF NOT EXISTS parent_revision INTEGER;
+ALTER TABLE accepted_state_revisions ADD COLUMN IF NOT EXISTS scope_id TEXT;
+ALTER TABLE accepted_state_revisions ADD COLUMN IF NOT EXISTS valid_from TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS domain_events (
     event_id BIGSERIAL PRIMARY KEY,
@@ -110,9 +127,19 @@ CREATE TABLE IF NOT EXISTS leases (
     generation BIGINT NOT NULL,
     fencing_token TEXT NOT NULL,
     grant_ref TEXT NOT NULL,
+    command_id TEXT,
+    idempotency_key TEXT,
+    scope_id TEXT NOT NULL DEFAULT 'local-scope',
+    request_hash TEXT,
     expires_at TIMESTAMPTZ NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('granted','released','expired','revoked'))
 );
+ALTER TABLE leases ADD COLUMN IF NOT EXISTS command_id TEXT;
+ALTER TABLE leases ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
+ALTER TABLE leases ADD COLUMN IF NOT EXISTS scope_id TEXT DEFAULT 'local-scope';
+ALTER TABLE leases ADD COLUMN IF NOT EXISTS request_hash TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS leases_command_identity ON leases(tenant_id, command_id) WHERE command_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS leases_idempotency_identity ON leases(tenant_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS leases_one_live_resource
     ON leases (tenant_id, resource_id) WHERE status = 'granted';
@@ -153,4 +180,16 @@ CREATE TABLE IF NOT EXISTS reviews (
     evidence_ref TEXT NOT NULL,
     baseline_ref TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS reviewer_assignments (
+    tenant_id TEXT NOT NULL,
+    work_item_id TEXT NOT NULL,
+    reviewer_ref TEXT NOT NULL,
+    reviewer_grant_ref TEXT NOT NULL,
+    assigned_by TEXT NOT NULL,
+    scope_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('active','revoked')),
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (tenant_id, work_item_id, reviewer_ref)
 );

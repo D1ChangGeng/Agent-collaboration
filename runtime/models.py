@@ -29,6 +29,7 @@ class AuthenticatedContext:
     authority_incarnation: str
     principal_ref: str
     grant_ref: str
+    credential_hash: str = ""
 
 
 type PayloadValue = str | int | bool | None | tuple[str, ...]
@@ -94,6 +95,9 @@ class LeaseRequest(BaseModel):
     owner_runtime_id: str = Field(min_length=1, max_length=256)
     grant_ref: str = Field(min_length=1, max_length=256)
     authority_incarnation: str = Field(min_length=1, max_length=256)
+    scope_id: str = Field(default="local-scope", min_length=1, max_length=256)
+    mode: Literal["exclusive", "shared"] = "exclusive"
+    work_item_id: str | None = Field(default=None, max_length=256)
     ttl_seconds: int = Field(gt=0, le=3600)
 
 

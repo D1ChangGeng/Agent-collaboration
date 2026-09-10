@@ -4,10 +4,11 @@ import hashlib
 import json
 import uuid
 from collections.abc import Iterable
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import ClassVar
 
 import psycopg
-from psycopg.sql import SQL
 
 from runtime.errors import (
     AcceptanceGuardFailed,
@@ -16,7 +17,9 @@ from runtime.errors import (
     InvalidTransition,
     NotFound,
     RevisionConflict,
+    SchemaAdoptionError,
 )
+from runtime.lease_authority import LeaseAuthority
 from runtime.models import (
     AuthenticatedContext,
     CommandEnvelope,
@@ -28,141 +31,200 @@ from runtime.models import (
 
 
 class DomainAuthority:
+    SCHEMA_NAME = "acs-p1-runtime"
+    SCHEMA_VERSION = "1.2"
+    _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.0", "415c76f2778e1b1b33aa2533f14140511cb7c00bd0ebbd47ff8fb3a007578a87"),
+        ("1.1", "ea0097e39fb023c5130cb924d0faf34429f2f6968056b00a72042af1d78cdd92"),
+    }
     def __init__(self, dsn: str, context: AuthenticatedContext | None = None) -> None:
         self._dsn = dsn
         self.context = context or AuthenticatedContext("local-tenant", "acs-p1-authority", "local-1", "agent:engineer", "grant:p1")
+
+    @property
+    def leases(self) -> LeaseAuthority:
+        return LeaseAuthority(self)
+
+    @property
+    def tenant_id(self) -> str:
+        return self.context.tenant_id
+
+    @property
+    def authority_id(self) -> str:
+        return self.context.authority_id
 
     def _connect(self) -> psycopg.Connection:
         return psycopg.connect(self._dsn)
 
     def initialize(self) -> None:
         schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
+        checksum = hashlib.sha256(schema.encode("utf-8")).hexdigest()
         with self._connect() as connection, connection.cursor() as cursor:
-            cursor.execute(SQL(schema))
+            cursor.execute(schema.encode("utf-8"))
+            cursor.execute("SELECT schema_version,schema_checksum FROM runtime_schema_metadata WHERE schema_name=%s FOR UPDATE", (self.SCHEMA_NAME,))
+            metadata = cursor.fetchone()
+            if metadata is None:
+                cursor.execute("INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) VALUES (%s,%s,%s)", (self.SCHEMA_NAME, self.SCHEMA_VERSION, checksum))
+            elif metadata[0] == self.SCHEMA_VERSION and metadata[1] == checksum:
+                pass
+            elif (str(metadata[0]), str(metadata[1])) in self._KNOWN_SCHEMA_MIGRATIONS:
+                cursor.execute("UPDATE runtime_schema_metadata SET schema_version=%s,schema_checksum=%s,adopted_at=now() WHERE schema_name=%s", (self.SCHEMA_VERSION, checksum, self.SCHEMA_NAME))
+            else:
+                mismatch = SchemaAdoptionError(self.SCHEMA_NAME, checksum, str(metadata[1]))
+                connection.rollback()
+                raise mismatch
             cursor.execute("INSERT INTO authority_instances(authority_id,authority_incarnation,status) VALUES (%s,%s,'active') ON CONFLICT DO NOTHING", (self.context.authority_id, self.context.authority_incarnation))
             cursor.execute("INSERT INTO scopes(scope_id,tenant_id,policy,status) VALUES ('local-scope',%s,'{}','active') ON CONFLICT DO NOTHING", (self.context.tenant_id,))
             cursor.execute("INSERT INTO agent_slots(agent_slot_id,tenant_id,scope_id,status) VALUES ('local-slot',%s,'local-scope','active') ON CONFLICT DO NOTHING", (self.context.tenant_id,))
-            cursor.execute("INSERT INTO grants(grant_ref,tenant_id,principal_ref,authority_id,authority_incarnation,scope_id,permissions,expires_at) VALUES (%s,%s,%s,%s,%s,'local-scope',%s,now()+interval '365 days') ON CONFLICT DO NOTHING", (self.context.grant_ref, self.context.tenant_id, self.context.principal_ref, self.context.authority_id, self.context.authority_incarnation, json.dumps(["work_item.create", "work_item.transition", "evidence.record", "review.record", "lease.acquire"])))
 
-    def _authorize(self, command: CommandEnvelope, cursor: psycopg.Cursor, permission: str) -> None:
-        expected = self.context
-        if (command.tenant_id, command.authority_id, command.authority_incarnation, command.principal_ref, command.grant_ref) != (expected.tenant_id, expected.authority_id, expected.authority_incarnation, expected.principal_ref, expected.grant_ref):
+    def bootstrap_local_grant(self, permissions: tuple[str, ...] = ("work_item.create", "work_item.transition", "evidence.record", "review.record", "lease.acquire", "work_item.read")) -> None:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO grants(grant_ref,tenant_id,principal_ref,authority_id,authority_incarnation,scope_id,permissions,expires_at,revoked_at) "
+                "VALUES (%s,%s,%s,%s,%s,'local-scope',%s,now()+interval '365 days',NULL) "
+                "ON CONFLICT (grant_ref) DO UPDATE SET tenant_id=EXCLUDED.tenant_id, "
+                "principal_ref=EXCLUDED.principal_ref, authority_id=EXCLUDED.authority_id, "
+                "authority_incarnation=EXCLUDED.authority_incarnation, scope_id=EXCLUDED.scope_id, "
+                "permissions=EXCLUDED.permissions, expires_at=EXCLUDED.expires_at, revoked_at=NULL",
+                (self.context.grant_ref, self.context.tenant_id, self.context.principal_ref,
+                 self.context.authority_id, self.context.authority_incarnation, json.dumps(permissions)),
+            )
+
+    def _authorize(self, command: CommandEnvelope, cursor: psycopg.Cursor | None = None, permission: str = "work_item.read", scope_id: str | None = None) -> None:
+        if cursor is None:
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
-        cursor.execute("SELECT permissions FROM grants g JOIN authority_instances a USING(authority_id,authority_incarnation) JOIN scopes s ON s.scope_id=g.scope_id WHERE g.grant_ref=%s AND g.tenant_id=%s AND g.principal_ref=%s AND a.status='active' AND s.status='active' AND g.revoked_at IS NULL AND g.expires_at>now()", (expected.grant_ref, expected.tenant_id, expected.principal_ref))
+        now = datetime.now(UTC)
+        c = self.context
+        if command.issued_at.tzinfo is None or command.deadline.tzinfo is None or command.deadline <= now or command.issued_at > now:
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+        if (command.tenant_id, command.authority_id, command.authority_incarnation, command.principal_ref, command.grant_ref) != (c.tenant_id, c.authority_id, c.authority_incarnation, c.principal_ref, c.grant_ref):
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+        cursor.execute("SELECT g.scope_id,g.permissions FROM grants g JOIN authority_instances a ON a.authority_id=g.authority_id AND a.authority_incarnation=g.authority_incarnation JOIN scopes s ON s.scope_id=g.scope_id WHERE g.grant_ref=%s AND g.tenant_id=%s AND g.principal_ref=%s AND g.authority_id=%s AND g.authority_incarnation=%s AND a.status='active' AND s.tenant_id=%s AND s.status='active' AND g.revoked_at IS NULL AND g.expires_at>%s FOR UPDATE", (c.grant_ref, c.tenant_id, c.principal_ref, c.authority_id, c.authority_incarnation, c.tenant_id, now))
         row = cursor.fetchone()
-        if row is None or permission not in list(row[0]):
+        if row is None or permission not in tuple(row[1]) or (scope_id is not None and row[0] != scope_id):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
     @staticmethod
     def _hash(command: CommandEnvelope, extra: dict[str, object]) -> str:
-        value = json.dumps({"command_type": command.command_type, "target_kind": command.target_kind, "target_id": command.target_id, "expected_revision": command.expected_revision, "payload": command.payload, "extra": extra}, sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(value.encode()).hexdigest()
+        value = {"command_id": command.command_id, "command_type": command.command_type, "idempotency_key": command.idempotency_key, "correlation_id": command.correlation_id, "tenant_id": command.tenant_id, "authority_id": command.authority_id, "authority_incarnation": command.authority_incarnation, "principal_ref": command.principal_ref, "grant_ref": command.grant_ref, "target_kind": command.target_kind, "target_id": command.target_id, "expected_revision": command.expected_revision, "issued_at": command.issued_at.isoformat(), "deadline": command.deadline.isoformat(), "payload": command.payload, "extra": extra}
+        return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
     def _dedup(self, cursor: psycopg.Cursor, command: CommandEnvelope, result: CommandResult, extra: dict[str, object]) -> CommandResult | None:
         digest = self._hash(command, extra)
-        cursor.execute("INSERT INTO command_dedup(tenant_id,idempotency_key,payload_hash,result_json) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING", (self.context.tenant_id, command.idempotency_key, digest, result.model_dump_json()))
-        if cursor.rowcount == 1:
-            return None
-        cursor.execute("SELECT payload_hash,result_json FROM command_dedup WHERE tenant_id=%s AND idempotency_key=%s FOR UPDATE", (self.context.tenant_id, command.idempotency_key))
-        row = cursor.fetchone()
-        if row is None or row[0] != digest:
-            raise IdempotencyConflict(command.idempotency_key)
-        return CommandResult.model_validate(row[1]).model_copy(update={"duplicate": True})
-
-    @staticmethod
-    def _op() -> str:
-        return f"op-{uuid.uuid4()}"
+        cursor.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (f"acs-p1-command:{command.tenant_id}:{command.idempotency_key}",))
+        cursor.execute("SELECT payload_hash,result_json FROM command_dedup WHERE tenant_id=%s AND idempotency_key=%s FOR UPDATE", (command.tenant_id, command.idempotency_key)); row = cursor.fetchone()
+        if row is None:
+            cursor.execute("SELECT payload_hash,result_json FROM command_dedup WHERE tenant_id=%s AND command_id=%s FOR UPDATE", (command.tenant_id, command.command_id)); row = cursor.fetchone()
+        if row is not None:
+            if row[0] != digest: raise IdempotencyConflict(command.idempotency_key)
+            return CommandResult.model_validate(row[1]).model_copy(update={"duplicate": True})
+        cursor.execute("INSERT INTO command_dedup(tenant_id,idempotency_key,command_id,payload_hash,result_json) VALUES (%s,%s,%s,%s,%s)", (command.tenant_id, command.idempotency_key, command.command_id, digest, result.model_dump_json()))
+        return None
 
     def create_work_item(self, command: CommandEnvelope, scope_id: str, agent_slot_id: str, source_baseline: str) -> CommandResult:
-        result = CommandResult(command_id=command.command_id, operation_id=self._op(), target_id=command.target_id, revision=0, state=WorkItemState.CANDIDATE)
+        result = CommandResult(command_id=command.command_id, operation_id=f"op-{uuid.uuid4()}", target_id=command.target_id, revision=0, state=WorkItemState.CANDIDATE)
         with self._connect() as connection, connection.cursor() as cursor:
-            self._authorize(command, cursor, "work_item.create")
+            self._authorize(command, cursor, "work_item.create", scope_id)
             duplicate = self._dedup(cursor, command, result, {"scope_id": scope_id, "agent_slot_id": agent_slot_id, "source_baseline": source_baseline})
-            if duplicate is not None:
-                return duplicate
-            cursor.execute("SELECT 1 FROM scopes s JOIN agent_slots a ON a.scope_id=s.scope_id WHERE s.scope_id=%s AND a.agent_slot_id=%s AND s.tenant_id=%s AND s.status='active' AND a.status='active'", (scope_id, agent_slot_id, self.context.tenant_id))
-            if cursor.fetchone() is None:
-                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
-            cursor.execute("INSERT INTO work_items(work_item_id,tenant_id,scope_id,agent_slot_id,state,execution_status,source_baseline,created_by) VALUES (%s,%s,%s,%s,'candidate','ready',%s,%s)", (command.target_id, self.context.tenant_id, scope_id, agent_slot_id, source_baseline, self.context.principal_ref))
-            self._record(cursor, command, None, WorkItemState.CANDIDATE, 0, ())
-            self._operation(cursor, command, result.operation_id)
-            self._outbox(cursor, command, result.operation_id, "work_item.created", {"state": "candidate"})
+            if duplicate is not None: return duplicate
+            cursor.execute("SELECT 1 FROM scopes s JOIN agent_slots a ON a.scope_id=s.scope_id WHERE s.scope_id=%s AND a.agent_slot_id=%s AND s.tenant_id=%s AND a.tenant_id=%s AND s.status='active' AND a.status='active'", (scope_id, agent_slot_id, self.context.tenant_id, self.context.tenant_id))
+            if cursor.fetchone() is None: raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            cursor.execute("INSERT INTO work_items(work_item_id,tenant_id,scope_id,agent_slot_id,state,execution_status,source_baseline,created_by) VALUES (%s,%s,%s,%s,'candidate','ready',%s,%s)", (command.target_id, self.context.tenant_id, scope_id, agent_slot_id, source_baseline, self.context.principal_ref)); self._record(cursor, command, None, WorkItemState.CANDIDATE, 0, ()); self._operation(cursor, command, result.operation_id); self._outbox(cursor, command, result.operation_id, "work_item.created", {"state": "candidate"})
         return result
 
     def transition_work_item(self, command: CommandEnvelope, transition: TransitionRequest) -> CommandResult:
         with self._connect() as connection, connection.cursor() as cursor:
-            self._authorize(command, cursor, "work_item.transition")
-            result = CommandResult(command_id=command.command_id, operation_id=self._op(), target_id=command.target_id, revision=command.expected_revision + 1, state=transition.to_state)
+            cursor.execute("SELECT scope_id FROM work_items WHERE tenant_id=%s AND work_item_id=%s", (command.tenant_id, command.target_id)); scope = cursor.fetchone()
+            if scope is None: raise NotFound("work_item", command.target_id)
+            self._authorize(command, cursor, "work_item.transition", str(scope[0]))
+            result = CommandResult(command_id=command.command_id, operation_id=f"op-{uuid.uuid4()}", target_id=command.target_id, revision=command.expected_revision + 1, state=transition.to_state)
             duplicate = self._dedup(cursor, command, result, {"transition": transition.model_dump(mode="json")})
-            if duplicate is not None:
-                return duplicate
-            cursor.execute("SELECT state,revision,source_baseline FROM work_items WHERE tenant_id=%s AND work_item_id=%s FOR UPDATE", (self.context.tenant_id, command.target_id))
-            row = cursor.fetchone()
-            if row is None:
-                raise NotFound("work_item", command.target_id)
-            current = WorkItemState(row[0])
-            revision = int(row[1])
-            if revision != command.expected_revision:
-                raise RevisionConflict(command.target_id, command.expected_revision, revision)
-            self._guard(cursor, command.target_id, current, transition, row[2])
-            next_revision = revision + 1
-            cursor.execute("UPDATE work_items SET state=%s,revision=%s,updated_at=now() WHERE tenant_id=%s AND work_item_id=%s", (transition.to_state, next_revision, self.context.tenant_id, command.target_id))
-            self._record(cursor, command, current, transition.to_state, next_revision, transition.evidence_refs)
+            if duplicate is not None: return duplicate
+            cursor.execute("SELECT state,revision,source_baseline,scope_id FROM work_items WHERE tenant_id=%s AND work_item_id=%s FOR UPDATE", (self.context.tenant_id, command.target_id)); row = cursor.fetchone()
+            if row is None: raise NotFound("work_item", command.target_id)
+            current, revision = WorkItemState(row[0]), int(row[1])
+            if revision != command.expected_revision: raise RevisionConflict(command.target_id, command.expected_revision, revision)
+            self._guard(cursor, command, current, transition, str(row[2]), str(row[3])); next_revision = revision + 1
+            cursor.execute("UPDATE work_items SET state=%s,revision=%s,updated_at=now() WHERE tenant_id=%s AND work_item_id=%s", (transition.to_state, next_revision, self.context.tenant_id, command.target_id)); self._record(cursor, command, current, transition.to_state, next_revision, transition.evidence_refs)
             if transition.to_state is WorkItemState.ACCEPTED:
-                cursor.execute("INSERT INTO accepted_state_revisions(tenant_id,work_item_id,revision,baseline_ref,evidence_refs,review_ref,effect_refs,readback_refs) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", (self.context.tenant_id, command.target_id, next_revision, row[2], json.dumps(transition.evidence_refs), transition.review_ref, json.dumps(transition.effect_refs), json.dumps(transition.readback_refs)))
-            self._operation(cursor, command, result.operation_id)
-            self._outbox(cursor, command, result.operation_id, f"work_item.{transition.to_state}", {"state": transition.to_state})
-            return result.model_copy(update={"revision": next_revision})
+                cursor.execute("INSERT INTO accepted_state_revisions(tenant_id,work_item_id,revision,baseline_ref,evidence_refs,review_ref,effect_refs,readback_refs,accepted_by,policy_version,parent_revision,scope_id,valid_from) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,now())", (self.context.tenant_id, command.target_id, next_revision, row[2], json.dumps(transition.evidence_refs), transition.review_ref, json.dumps(transition.effect_refs), json.dumps(transition.readback_refs), self.context.principal_ref, "1", revision, row[3]))
+            elif transition.to_state is WorkItemState.ACCEPTANCE_READY:
+                cursor.execute("INSERT INTO accepted_state_revisions(tenant_id,work_item_id,revision,baseline_ref,evidence_refs,review_ref,effect_refs,readback_refs,accepted_by,policy_version,parent_revision,scope_id,valid_from) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,NULL,%s,%s,%s,now())", (self.context.tenant_id, command.target_id, next_revision, row[2], json.dumps(transition.evidence_refs), transition.review_ref, json.dumps(()), json.dumps(()), "1", revision, row[3]))
+            self._operation(cursor, command, result.operation_id); self._outbox(cursor, command, result.operation_id, f"work_item.{transition.to_state}", {"state": str(transition.to_state)}); return result.model_copy(update={"revision": next_revision})
 
-    @staticmethod
-    def _guard(cursor: psycopg.Cursor, work_item_id: str, current: WorkItemState, transition: TransitionRequest, baseline: str) -> None:
+    def _guard(self, cursor: psycopg.Cursor, command: CommandEnvelope, current: WorkItemState, transition: TransitionRequest, baseline: str, scope_id: str) -> None:
         if current is WorkItemState.CANDIDATE and transition.to_state is WorkItemState.ACCEPTANCE_READY:
-            if not transition.evidence_refs or transition.review_ref is None:
-                raise AcceptanceGuardFailed("evidence and review are required")
-            cursor.execute("SELECT count(*) AS n FROM evidence WHERE work_item_id=%s AND baseline_ref=%s AND evidence_id=ANY(%s)", (work_item_id, baseline, list(transition.evidence_refs)))
-            count_row = cursor.fetchone()
-            if count_row is None or int(count_row[0]) != len(transition.evidence_refs):
-                raise AcceptanceGuardFailed("baseline-bound evidence is missing")
-            cursor.execute("SELECT 1 FROM reviews r JOIN grants g ON g.grant_ref=r.reviewer_grant_ref WHERE r.work_item_id=%s AND r.review_id=%s AND r.verdict='pass' AND r.baseline_ref=%s AND g.revoked_at IS NULL AND g.expires_at>now()", (work_item_id, transition.review_ref, baseline))
-            if cursor.fetchone() is None:
-                raise AcceptanceGuardFailed("independent review is missing")
+            if not transition.evidence_refs or transition.review_ref is None: raise AcceptanceGuardFailed("evidence and review are required")
+            if len(transition.evidence_refs) != 1: raise AcceptanceGuardFailed("current review API binds exactly one evidence reference")
+            cursor.execute("SELECT source_class FROM evidence WHERE tenant_id=%s AND work_item_id=%s AND baseline_ref=%s AND evidence_id=ANY(%s)", (self.context.tenant_id, command.target_id, baseline, list(transition.evidence_refs))); evidence = cursor.fetchall()
+            if len(evidence) != len(transition.evidence_refs) or any(r[0] in ("not_run", "mocked") for r in evidence): raise AcceptanceGuardFailed("admissible evidence is missing")
+            cursor.execute("SELECT r.reviewer_ref,w.created_by,g.permissions FROM reviews r JOIN work_items w ON w.tenant_id=r.tenant_id AND w.work_item_id=r.work_item_id JOIN reviewer_assignments a ON a.tenant_id=r.tenant_id AND a.work_item_id=r.work_item_id AND a.reviewer_ref=r.reviewer_ref AND a.reviewer_grant_ref=r.reviewer_grant_ref AND a.status='active' JOIN grants g ON g.grant_ref=r.reviewer_grant_ref AND g.tenant_id=r.tenant_id AND g.principal_ref=r.reviewer_ref AND g.scope_id=a.scope_id WHERE r.tenant_id=%s AND r.work_item_id=%s AND r.review_id=%s AND r.verdict='pass' AND r.baseline_ref=%s AND r.evidence_ref=ANY(%s) AND g.revoked_at IS NULL AND g.expires_at>now()", (self.context.tenant_id, command.target_id, transition.review_ref, baseline, list(transition.evidence_refs))); review = cursor.fetchone()
+            if review is None or review[0] == review[1] or "review.record" not in tuple(review[2]): raise AcceptanceGuardFailed("independent assigned authorized review is missing")
             return
         if current is WorkItemState.ACCEPTANCE_READY and transition.to_state is WorkItemState.ACCEPTED:
-            cursor.execute("SELECT count(*) AS n FROM effects WHERE work_item_id=%s AND effect_id=ANY(%s) AND status='verified' AND readback_ref=ANY(%s)", (work_item_id, list(transition.effect_refs), list(transition.readback_refs)))
-            effect_count = cursor.fetchone()
-            if not transition.effect_refs or not transition.readback_refs or effect_count is None or int(effect_count[0]) != len(transition.effect_refs):
-                raise AcceptanceGuardFailed("verified effect readback is missing")
+            self._authorize(command, cursor, "acceptance.finalize", scope_id)
+            if not transition.review_ref or not transition.evidence_refs or not transition.effect_refs or not transition.readback_refs: raise AcceptanceGuardFailed("sealed readiness references are required")
+            cursor.execute("SELECT baseline_ref,evidence_refs,review_ref,scope_id FROM accepted_state_revisions WHERE tenant_id=%s AND work_item_id=%s ORDER BY revision DESC LIMIT 1", (self.context.tenant_id, command.target_id)); snap = cursor.fetchone()
+            if snap is None or snap[0] != baseline or snap[2] != transition.review_ref: raise AcceptanceGuardFailed("readiness snapshot mismatch")
+            if str(snap[3]) != scope_id or tuple(snap[1] or ()) != tuple(transition.evidence_refs): raise AcceptanceGuardFailed("readiness evidence snapshot mismatch")
+            cursor.execute("SELECT r.reviewer_ref,w.created_by,g.permissions FROM reviews r JOIN work_items w ON w.tenant_id=r.tenant_id AND w.work_item_id=r.work_item_id JOIN reviewer_assignments a ON a.tenant_id=r.tenant_id AND a.work_item_id=r.work_item_id AND a.reviewer_ref=r.reviewer_ref AND a.reviewer_grant_ref=r.reviewer_grant_ref AND a.status='active' JOIN grants g ON g.grant_ref=r.reviewer_grant_ref AND g.tenant_id=r.tenant_id AND g.principal_ref=r.reviewer_ref AND g.scope_id=a.scope_id WHERE r.tenant_id=%s AND r.work_item_id=%s AND r.review_id=%s AND r.verdict='pass' AND r.baseline_ref=%s AND r.evidence_ref=ANY(%s) AND g.revoked_at IS NULL AND g.expires_at>now()", (self.context.tenant_id, command.target_id, transition.review_ref, baseline, list(transition.evidence_refs))); review = cursor.fetchone()
+            if review is None or review[0] == review[1] or "review.record" not in tuple(review[2]): raise AcceptanceGuardFailed("sealed independent assigned review is no longer valid")
+            cursor.execute("SELECT count(*) FROM effects WHERE tenant_id=%s AND work_item_id=%s AND effect_id=ANY(%s) AND status='verified' AND readback_ref=ANY(%s)", (self.context.tenant_id, command.target_id, list(transition.effect_refs), list(transition.readback_refs))); count = cursor.fetchone()
+            if count is None or int(count[0]) != len(transition.effect_refs): raise AcceptanceGuardFailed("verified effect readback is missing")
             return
         raise InvalidTransition(current, transition.to_state)
 
-    def record_evidence(self, command: CommandEnvelope, evidence: EvidenceRecord) -> None:
+    def record_evidence(self, command: CommandEnvelope, evidence: EvidenceRecord) -> CommandResult:
         with self._connect() as connection, connection.cursor() as cursor:
-            self._authorize(command, cursor, "evidence.record")
-            cursor.execute("SELECT 1 FROM work_items WHERE tenant_id=%s AND work_item_id=%s FOR UPDATE", (self.context.tenant_id, evidence.work_item_id))
-            if cursor.fetchone() is None:
-                raise NotFound("work_item", evidence.work_item_id)
-            result = CommandResult(command_id=command.command_id, operation_id=self._op(), target_id=evidence.work_item_id, revision=0, state="evidence")
-            if self._dedup(cursor, command, result, {"evidence": evidence.model_dump(mode="json")}) is not None:
-                return
-            cursor.execute("INSERT INTO evidence(evidence_id,tenant_id,work_item_id,observer_ref,source_class,baseline_ref,artifact_sha256,summary) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING", (evidence.evidence_id, self.context.tenant_id, evidence.work_item_id, evidence.observer_ref, evidence.source_class, evidence.baseline_ref, evidence.artifact_sha256, evidence.summary))
-            if cursor.rowcount != 1:
-                raise IdempotencyConflict(evidence.evidence_id)
+            if command.target_id != evidence.work_item_id:
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            cursor.execute("SELECT scope_id,state FROM work_items WHERE tenant_id=%s AND work_item_id=%s FOR UPDATE", (self.context.tenant_id, evidence.work_item_id)); row = cursor.fetchone()
+            if row is None: raise NotFound("work_item", evidence.work_item_id)
+            self._authorize(command, cursor, "evidence.record", str(row[0])); result = CommandResult(command_id=command.command_id, operation_id=f"op-{uuid.uuid4()}", target_id=evidence.work_item_id, revision=0, state="evidence")
+            duplicate = self._dedup(cursor, command, result, {"evidence": evidence.model_dump(mode="json")})
+            if duplicate is not None: return duplicate
+            cursor.execute("INSERT INTO evidence(evidence_id,tenant_id,work_item_id,observer_ref,source_class,baseline_ref,artifact_sha256,summary) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", (evidence.evidence_id, self.context.tenant_id, evidence.work_item_id, evidence.observer_ref, evidence.source_class, evidence.baseline_ref, evidence.artifact_sha256, evidence.summary))
+            self._record(cursor, command, WorkItemState(row[1]), WorkItemState(row[1]), 0, (evidence.evidence_id,))
+            self._operation(cursor, command, result.operation_id)
+            self._outbox(cursor, command, result.operation_id, "evidence.recorded", {"evidence_id": evidence.evidence_id})
+            return result
 
-    def record_review(self, command: CommandEnvelope, review_id: str, work_item_id: str, verdict: str, evidence_ref: str, baseline_ref: str) -> None:
+    def record_review(self, command: CommandEnvelope, review_id: str, work_item_id: str, verdict: str, evidence_ref: str, baseline_ref: str) -> CommandResult:
         with self._connect() as connection, connection.cursor() as cursor:
-            self._authorize(command, cursor, "review.record")
-            result = CommandResult(command_id=command.command_id, operation_id=self._op(), target_id=work_item_id, revision=0, state="review")
-            if self._dedup(cursor, command, result, {"review_id": review_id, "work_item_id": work_item_id, "verdict": verdict, "evidence_ref": evidence_ref, "baseline_ref": baseline_ref}) is not None:
-                return
-            cursor.execute("INSERT INTO reviews(review_id,tenant_id,work_item_id,reviewer_ref,reviewer_grant_ref,verdict,evidence_ref,baseline_ref) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING", (review_id, self.context.tenant_id, work_item_id, self.context.principal_ref, self.context.grant_ref, verdict, evidence_ref, baseline_ref))
-            if cursor.rowcount != 1:
-                raise IdempotencyConflict(review_id)
+            if command.target_id != work_item_id:
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            cursor.execute("SELECT scope_id,state FROM work_items WHERE tenant_id=%s AND work_item_id=%s FOR UPDATE", (self.context.tenant_id, work_item_id)); row = cursor.fetchone()
+            if row is None: raise NotFound("work_item", work_item_id)
+            self._authorize(command, cursor, "review.record", str(row[0])); cursor.execute("SELECT baseline_ref FROM evidence WHERE tenant_id=%s AND work_item_id=%s AND evidence_id=%s", (self.context.tenant_id, work_item_id, evidence_ref)); evidence = cursor.fetchone()
+            if evidence is None or evidence[0] != baseline_ref: raise AcceptanceGuardFailed("review evidence is not bound")
+            result = CommandResult(command_id=command.command_id, operation_id=f"op-{uuid.uuid4()}", target_id=work_item_id, revision=0, state="review")
+            duplicate = self._dedup(cursor, command, result, {"review_id": review_id, "work_item_id": work_item_id, "verdict": verdict, "evidence_ref": evidence_ref, "baseline_ref": baseline_ref})
+            if duplicate is not None: return duplicate
+            cursor.execute("INSERT INTO reviews(review_id,tenant_id,work_item_id,reviewer_ref,reviewer_grant_ref,verdict,evidence_ref,baseline_ref) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", (review_id, self.context.tenant_id, work_item_id, self.context.principal_ref, self.context.grant_ref, verdict, evidence_ref, baseline_ref))
+            self._record(cursor, command, WorkItemState(row[1]), WorkItemState(row[1]), 0, (review_id, evidence_ref))
+            self._operation(cursor, command, result.operation_id)
+            self._outbox(cursor, command, result.operation_id, "review.recorded", {"review_id": review_id, "evidence_id": evidence_ref})
+            return result
+
+    def assign_reviewer(self, command: CommandEnvelope, work_item_id: str, reviewer_ref: str, reviewer_grant_ref: str) -> None:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute("SELECT scope_id,created_by FROM work_items WHERE tenant_id=%s AND work_item_id=%s FOR UPDATE", (self.context.tenant_id, work_item_id))
+            row = cursor.fetchone()
+            if row is None:
+                raise NotFound("work_item", work_item_id)
+            if command.target_id != work_item_id or reviewer_ref == row[1]:
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            self._authorize(command, cursor, "review.record", str(row[0]))
+            cursor.execute("SELECT 1 FROM grants g JOIN authority_instances a ON a.authority_id=g.authority_id AND a.authority_incarnation=g.authority_incarnation WHERE g.grant_ref=%s AND g.tenant_id=%s AND g.principal_ref=%s AND g.scope_id=%s AND g.authority_id=%s AND g.authority_incarnation=%s AND a.status='active' AND g.revoked_at IS NULL AND g.expires_at>now()", (reviewer_grant_ref, self.context.tenant_id, reviewer_ref, row[0], self.context.authority_id, self.context.authority_incarnation))
+            if cursor.fetchone() is None:
+                raise AuthorizationDenied(reviewer_ref, reviewer_grant_ref)
+            cursor.execute("INSERT INTO reviewer_assignments(tenant_id,work_item_id,reviewer_ref,reviewer_grant_ref,assigned_by,scope_id,status) VALUES (%s,%s,%s,%s,%s,%s,'active') ON CONFLICT (tenant_id,work_item_id,reviewer_ref) DO UPDATE SET reviewer_grant_ref=EXCLUDED.reviewer_grant_ref,assigned_by=EXCLUDED.assigned_by,scope_id=EXCLUDED.scope_id,status='active'", (self.context.tenant_id, work_item_id, reviewer_ref, reviewer_grant_ref, self.context.principal_ref, row[0]))
 
     def get_work_item(self, work_item_id: str) -> dict[str, str | int] | None:
         with self._connect() as connection, connection.cursor() as cursor:
-            cursor.execute("SELECT work_item_id,state,execution_status,revision,source_baseline FROM work_items WHERE tenant_id=%s AND work_item_id=%s", (self.context.tenant_id, work_item_id))
-            row = cursor.fetchone()
-            return None if row is None else {"work_item_id": row[0], "state": row[1], "execution_status": row[2], "revision": row[3], "source_baseline": row[4]}
+            cursor.execute("SELECT scope_id,work_item_id,state,execution_status,revision,source_baseline FROM work_items WHERE tenant_id=%s AND work_item_id=%s", (self.context.tenant_id, work_item_id)); row = cursor.fetchone()
+            if row is None: return None
+            now = datetime.now(UTC); read = CommandEnvelope(command_id=f"read-{uuid.uuid4()}", command_type="work_item.read", idempotency_key=f"read-{uuid.uuid4()}", correlation_id="read", tenant_id=self.context.tenant_id, authority_id=self.context.authority_id, authority_incarnation=self.context.authority_incarnation, principal_ref=self.context.principal_ref, grant_ref=self.context.grant_ref, target_kind="work_item", target_id=work_item_id, expected_revision=0, issued_at=now, deadline=now + timedelta(minutes=1)); self._authorize(read, cursor, "work_item.read", str(row[0])); return {"work_item_id": row[1], "state": row[2], "execution_status": row[3], "revision": row[4], "source_baseline": row[5]}
 
     @staticmethod
     def _record(cursor: psycopg.Cursor, command: CommandEnvelope, before: WorkItemState | None, after: WorkItemState, revision: int, refs: Iterable[str]) -> None:
@@ -174,4 +236,4 @@ class DomainAuthority:
 
     @staticmethod
     def _outbox(cursor: psycopg.Cursor, command: CommandEnvelope, operation_id: str, topic: str, payload: dict[str, str]) -> None:
-        cursor.execute("INSERT INTO outbox(tenant_id,message_id,operation_id,topic,payload) VALUES (%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING", (command.tenant_id, f"msg-{command.command_id}", operation_id, topic, json.dumps(payload)))
+        cursor.execute("INSERT INTO outbox(tenant_id,message_id,operation_id,topic,payload) VALUES (%s,%s,%s,%s,%s)", (command.tenant_id, f"msg-{command.command_id}", operation_id, topic, json.dumps(payload)))

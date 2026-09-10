@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import os
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
-try:
-    from temporalio import activity, workflow
-    from temporalio.client import Client
-    from temporalio.common import RetryPolicy
-    from temporalio.worker import Worker
-except ImportError:
-    activity = workflow = None  # type: ignore[assignment]
-    Client = RetryPolicy = Worker = None  # type: ignore[assignment,misc]
+from temporalio import activity, workflow
+from temporalio.client import Client
+from temporalio.common import RetryPolicy, WorkflowIDConflictPolicy, WorkflowIDReusePolicy
+from temporalio.exceptions import WorkflowAlreadyStartedError
+from temporalio.service import RPCError
+from temporalio.worker import Worker
 
-TEMPORAL_SDK_AVAILABLE = activity is not None
+TEMPORAL_SDK_AVAILABLE = True
 
 
 class TemporalUnavailable(RuntimeError):
@@ -29,6 +29,11 @@ class TemporalOperation:
     run_id: str
     status: str
     result: dict[str, Any]
+
+
+def canonical_payload_hash(payload: dict[str, Any]) -> str:
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 if TEMPORAL_SDK_AVAILABLE:
@@ -102,7 +107,7 @@ class TemporalAdapter:
                 )
                 self._worker_task = asyncio.create_task(self._worker.run())
                 await asyncio.sleep(0)
-        except Exception as exc:
+        except (RPCError, RuntimeError, TypeError, ValueError) as exc:
             await self.close()
             raise TemporalUnavailable(f"unable to connect to Temporal at {self.endpoint}") from exc
 
@@ -115,19 +120,34 @@ class TemporalAdapter:
     ) -> TemporalOperation | Any:
         if not operation_id:
             raise ValueError("operation_id must not be empty")
+        payload_copy = dict(payload)
+        payload_hash = canonical_payload_hash(payload_copy)
+        memo = {"acs_p1_payload_hash": payload_hash}
         try:
             handle = await self.client.start_workflow(
                 SubmittedOperationWorkflow.run,
-                dict(payload),
+                payload_copy,
                 id=operation_id,
                 task_queue=self.task_queue,
                 execution_timeout=timedelta(minutes=5),
+                id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+                id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
                 retry_policy=RetryPolicy(maximum_attempts=1),
+                memo=memo,
             )
+        except WorkflowAlreadyStartedError:
+            handle = await self._existing_handle(operation_id, payload_hash)
+        except (RPCError, RuntimeError, TypeError, ValueError) as exc:
+            raise TemporalUnavailable(f"Temporal operation {operation_id} failed to start") from exc
+        try:
             if not wait:
                 return handle
             result = await handle.result()
-            run_id = getattr(handle, "result_run_id", None) or getattr(handle, "first_execution_run_id", None)
+            run_id = (
+                getattr(handle, "result_run_id", None)
+                or getattr(handle, "first_execution_run_id", None)
+                or getattr(handle, "run_id", None)
+            )
             if not run_id:
                 raise TemporalUnavailable("Temporal returned no run identifier")
             return TemporalOperation(
@@ -139,23 +159,43 @@ class TemporalAdapter:
             )
         except TemporalUnavailable:
             raise
-        except Exception as exc:
+        except (RuntimeError, TypeError, ValueError) as exc:
             raise TemporalUnavailable(f"Temporal operation {operation_id} failed") from exc
+
+    async def _existing_handle(self, operation_id: str, payload_hash: str) -> Any:
+        try:
+            description = await self.client.get_workflow_handle(operation_id).describe()
+            memo = await description.memo()
+        except (RPCError, RuntimeError, TypeError, ValueError) as exc:
+            raise TemporalUnavailable(f"Temporal operation {operation_id} cannot be recovered") from exc
+        existing_hash = memo.get("acs_p1_payload_hash")
+        if not isinstance(existing_hash, str) or existing_hash != payload_hash:
+            raise TemporalUnavailable(f"Temporal operation {operation_id} conflicts with existing input")
+        return self.client.get_workflow_handle(operation_id, run_id=description.run_id)
 
     async def readback(self, operation_id: str) -> dict[str, Any]:
         try:
             handle = self.client.get_workflow_handle(operation_id)
             return dict(await handle.query("state"))
-        except Exception as exc:
-            raise TemporalUnavailable(f"Temporal operation {operation_id} is unavailable") from exc
+        except (RPCError, RuntimeError):
+            try:
+                description = await self.client.get_workflow_handle(operation_id).describe()
+                completed = self.client.get_workflow_handle(operation_id, run_id=description.run_id)
+                result = await completed.result()
+                return dict(result)
+            except (RPCError, RuntimeError, TypeError, ValueError) as result_exc:
+                raise TemporalUnavailable(f"Temporal operation {operation_id} is unavailable") from result_exc
 
     async def close(self) -> None:
-        if self._worker_task is not None:
-            self._worker_task.cancel()
-            try:
-                await self._worker_task
-            except asyncio.CancelledError:
-                return
-            self._worker_task = None
+        worker = self._worker
+        task = self._worker_task
         self._worker = None
+        self._worker_task = None
         self._client = None
+        if worker is not None:
+            await worker.shutdown()
+        if task is not None:
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
