@@ -14,3 +14,8 @@ agent-collaboration-setup-v0.1.0.tar.gz
 # create or maintain this optional path.
 .agents/runtime/*
 # ACHP:END
+
+# ACHP-NESTED:agent-collabration:BEGIN
+# Machine-local capability records.
+/agent-collabration/.agents/runtime/*
+# ACHP-NESTED:agent-collabration:END

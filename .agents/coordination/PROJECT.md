@@ -36,9 +36,10 @@ normal collaboration runtime. Product and design authority is split between
 
 ## Current milestone
 
-Current milestone: maintain the verified setup-only baseline and the explicit
-non-Git Project Collaboration Workspace / Route control plane while preserving
-the setup/runtime boundary. The v0.3.0 Workspace/Route persistence model remains
+Current milestone: maintain the verified setup-only baseline and the nested
+Project Collaboration Workspace / Route layout in the product Git repository,
+with standalone compatibility and the setup/runtime boundary preserved.
+The v0.3.0 Workspace/Route persistence model remains
 the published schema baseline; v0.4.0 hardens lifecycle safety and Agent-facing
 operation guidance without adding runtime recovery state.
 
@@ -55,8 +56,10 @@ operation guidance without adding runtime recovery state.
   `.agents/knowledge/` is the durable project Knowledge Plane.
 - Preserve project-owned profile, tasks, handoffs, and knowledge during setup
   upgrades and default uninstall.
-- Keep management Workspaces distinct from source repositories and execution
-  endpoints; missing source-state facts remain `unknown` or `unverified`.
+- Keep management, source-state, and execution responsibilities logically
+  distinct within the shared project Git repository. Local and remote clones
+  retain the same nested management layout; missing source-state facts remain
+  `unknown` or `unverified`.
 - Treat the Root registry as stable control-plane metadata, not a per-turn
   shared status log; Route knowledge and dynamic state remain Route-owned.
 - The existing repository-mode `.agents/config.yaml` is project-owned legacy

@@ -1,8 +1,16 @@
 # Source State Evidence
 
-The management workspace may describe a product without being its source
-repository. Every implementation claim must identify the Source State Evidence
-it relies on.
+The primary layout nests the Management Root in the project's Source Checkout
+Root, with management documents, knowledge, Routes, and product code tracked in
+the same Git repository. Management ownership, Source Repository state, and
+Execution Endpoint identity remain logically separate. Every implementation
+claim must identify the Source State Evidence it relies on.
+
+Local and remote clones preserve the same repository-relative layout while
+their absolute paths may differ. Inspect the relevant clone before binding
+branch, commit, tree, worktree, push, or receiver-sync evidence. A shared layout
+does not establish synchronized contents. Standalone management workspaces
+remain a compatibility deployment and bind source evidence explicitly.
 
 Do not create an empty Route state file merely to reserve the shape. When
 verified source facts need to survive across Sessions, a Route may create the

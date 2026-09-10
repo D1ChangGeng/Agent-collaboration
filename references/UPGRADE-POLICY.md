@@ -56,13 +56,48 @@ the current Workspace protocol release.
 For a Project Collaboration Workspace, the same distinction applies at the Root
 level:
 
+The default v0.4.0 layout places the management root in the same project Git
+repository as product code:
+
+```text
+Project Git Repository / Source Checkout Root
+├── Product code
+├── ...
+└── Nested Management Root
+    ├── AGENTS.md
+    ├── .agents/
+    └── Route directories
+```
+
+Management documents, knowledge, and Routes share project Git commits with
+product code. Local and remote clones retain the same relative layout and
+require explicit Git synchronization. The manifest records
+`collaboration_root_mode`; Git carries the layout. Standalone Workspaces remain
+supported for compatibility.
+
+Legacy manifests missing the mode remain unchanged during `adopt`/`repair`.
+Explicit `workspace upgrade` inside Git migrates a known setup-only child
+ignore to the repository-root `.gitignore`. Custom child rules require reviewed
+manual consolidation; the operation refuses writes until that is resolved.
+
 ### Workspace setup-managed
 
-The Workspace setup may maintain the managed block in Root `AGENTS.md`, the thin
-`CLAUDE.md` route, the managed `.gitignore` block, `.agents/manifest.json`, the
-Root protocol files, `ROOT.md`, the handoff placeholder, and the Root knowledge
-README. These files are still subject to conflict checks and should be reviewed
-after a dry-run.
+The Workspace setup may maintain Root `AGENTS.md`, the thin `CLAUDE.md` route,
+`.agents/manifest.json`, Root protocol files, `ROOT.md`, the handoff placeholder,
+and the Root knowledge README. The CLI keeps the exact management root; its only
+parent write is scoped runtime exclusions between
+`# ACHP-NESTED:<relative path>:BEGIN` and `# ACHP-NESTED:<relative path>:END` in
+repository-root `.gitignore`. Preserve every existing parent block and rule.
+Nested roots have no child `.gitignore`, and parent repository scaffolding is
+not required. Compatibility standalone roots keep their own ignore boundary.
+Review ownership conflicts before any write.
+
+Nested Management Root `AGENTS.md` also carries an
+`ACHP-SOURCE-CHECKOUT` managed block. Setup renders the source checkout path
+relative to the management directory and sets the effective working directory
+for Git synchronization, pull, staging, and commits to that source checkout.
+Repair may add a missing block while preserving existing guidance. A changed
+or stale block requires review before any setup writes.
 
 ### Workspace project-owned
 
@@ -111,8 +146,8 @@ Schema 0.3 also keeps the following boundaries explicit:
   migration operation.
 - Split/merge, Endpoint replacement, restore, and rollback are future migration
   contracts, not current upgrade side effects.
-- A Workspace may be non-Git; missing source and endpoint facts remain explicit
-  `unknown`/`unverified` values.
+- Standalone non-Git Workspaces remain supported for compatibility; missing
+  source and endpoint facts remain explicit `unknown`/`unverified` values.
 - Manifest ownership inventories and hashes are optional setup-integrity
   metadata. They are not collaboration lifecycle or Session recovery state.
 - A missing baseline pointer can be derived from the fixed Root contract path;

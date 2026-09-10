@@ -33,6 +33,7 @@ REQUIRED_FILES = [
     "assets/scaffold/.agents/protocol/GIT-SYNC.md",
     "assets/scaffold/.agents/protocol/KNOWLEDGE.md",
     "assets/scaffold/workspace/AGENTS_BLOCK.md",
+    "assets/scaffold/workspace/SOURCE_CHECKOUT_BLOCK.md",
     "assets/scaffold/workspace/GITIGNORE_BLOCK.txt",
     "assets/scaffold/workspace/ROUTE_AGENTS.md",
     "assets/scaffold/workspace/.agents/README.md",
@@ -164,7 +165,7 @@ def main() -> int:
         text = workspace_agents.read_text(encoding="utf-8")
         for needle in [
             "Project Collaboration Root",
-            "not\nassumed to be a Git repository or an execution checkout",
+            "Management Root inside the Source Checkout Root",
             "Do not assume this file is automatically inherited",
             "SOURCE-STATE.md",
         ]:

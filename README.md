@@ -41,12 +41,13 @@ agent-collaboration-setup (this Skill)
         |
         | bootstrap / adopt / upgrade / repair
         v
-Repository project                 Project Collaboration Workspace
-├── AGENTS.md                       ├── AGENTS.md       <- Root identity/router
-└── .agents/                        ├── .agents/        <- Root control plane
-                                    ├── Route A/        <- durable Route goals/knowledge
-                                    ├── Route B/
-                                    └── Route N/
+Project Git Repository / Source Checkout Root
+├── Product code
+├── ...
+└── Nested Management Root
+    ├── AGENTS.md
+    ├── .agents/
+    └── Route directories
 ```
 
 Once installed, ordinary project sessions do **not** need to load this Skill.
@@ -187,9 +188,33 @@ topology fields.
 
 ## Project Collaboration Workspace and Routes
 
-A Workspace is a durable management/control root. It may be physically separate
-from the source repository and execution hosts, and it is allowed to remain
-non-Git.
+A Workspace is a durable management/control root. The default v0.4.0 model
+places it inside the same project Git repository as the product code:
+
+```text
+Project Git Repository / Source Checkout Root
+├── Product code
+├── ...
+└── Nested Management Root
+    ├── AGENTS.md
+    ├── .agents/
+    └── Route directories
+```
+
+Management documents, knowledge, and Routes are tracked in the same project Git
+commits as product code. Local and remote checkouts are separate clones with
+the same relative layout; Git synchronization is explicit, not automatic.
+The manifest records the mode `nested-repository`, while Git carries the layout.
+
+The CLI keeps the exact nested root as its target. Its only parent write is a
+scoped runtime exclusion block in the repository-root `.gitignore`, marked by
+`# ACHP-NESTED:<relative path>:BEGIN` / `# ACHP-NESTED:<relative path>:END`.
+Existing parent blocks and rules are preserved; no child `.gitignore` or
+repository scaffold at the parent is required. Standalone Workspaces remain
+supported for compatibility. Legacy manifests without the mode stay unchanged
+during `adopt`/`repair`; explicit `workspace upgrade` inside Git migrates known
+setup-only child ignores. Custom child rules require reviewed manual
+consolidation before writes can proceed.
 
 ```bash
 python3 scripts/project_setup.py workspace adopt --root /path/to/workspace --dry-run
@@ -334,7 +359,9 @@ CLAUDE.md                     # only a thin @AGENTS.md compatibility route
 └── (Harness/session context)  # local execution context; not installed state
 ```
 
-The installer uses bounded managed blocks in `AGENTS.md`, `CLAUDE.md`, and `.gitignore`. Existing content outside those blocks is preserved.
+The installer uses bounded managed blocks in `AGENTS.md`, `CLAUDE.md`, and
+`.gitignore`. Nested management roots use their own scoped block in the parent
+repository-root `.gitignore`; all existing parent blocks and rules are preserved.
 
 ## Runtime architecture
 

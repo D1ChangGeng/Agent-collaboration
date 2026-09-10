@@ -22,7 +22,8 @@ plan, code, review, hand off, synchronize Git, or maintain knowledge.
 The Skill can currently provide a bounded, deterministic lifecycle for:
 
 - repository setup and validation;
-- non-Git management Workspace setup and validation;
+- nested management Workspace setup in the same project Git repository;
+- standalone Workspace setup for compatibility;
 - Route identity and registry operations;
 - explicit schema/metadata upgrades;
 - selected ownership, marker, path, dry-run, and idempotency checks.
@@ -30,6 +31,36 @@ The Skill can currently provide a bounded, deterministic lifecycle for:
 It does not, by itself, provide a Session broker, Endpoint manager, SSH
 driver, direct message relay, source synchronizer, or durable execution
 recovery service.
+
+### Workspace placement
+
+Default to a management root inside the same project Git repository as product
+code. Standalone Workspaces remain supported for compatibility.
+
+```text
+Project Git Repository / Source Checkout Root
+├── Product code
+├── ...
+└── Nested Management Root
+    ├── AGENTS.md
+    ├── .agents/
+    └── Route directories
+```
+
+Track management documents, knowledge, and Routes in project Git commits with
+product code. Local and remote clones retain the same relative layout, but Git
+synchronization requires explicit operations. The manifest records
+`collaboration_root_mode`, while Git carries the layout.
+
+Keep the supplied nested root as the CLI target. The only parent write is its
+scoped runtime exclusions in repository-root `.gitignore`, between
+`# ACHP-NESTED:<relative path>:BEGIN` and
+`# ACHP-NESTED:<relative path>:END`. Preserve all pre-existing parent rules and
+blocks; parent repository scaffolding is not required. Nested roots have no
+child `.gitignore`. For legacy manifests missing the mode, `adopt`/`repair`
+preserve the manifest; explicit `workspace upgrade` inside Git migrates only a
+known setup-only child ignore. Custom child rules require reviewed manual
+consolidation and cause writes to be refused.
 
 ## 2. Core mental model
 
@@ -222,7 +253,7 @@ the user's semantic intent for you.
 | Change managed repository templates | `project_setup.py upgrade --root <repo>` | Explicit migration; preserve project-owned knowledge |
 | Restore a missing managed repository file | `project_setup.py repair --root <repo>` | Verify ownership and avoid replacing intentional edits |
 | Check a repository | `project_setup.py validate --root <repo>` | Report validator scope; do not claim runtime support |
-| Adopt or initialize a management Workspace | `project_setup.py workspace <mode> --root <workspace>` | Every command rejects symlink/junction/reparse aliases and uses the exact supplied Root |
+| Adopt or initialize a management Workspace | `project_setup.py workspace <mode> --root <workspace>` | Use the exact supplied management root; nested mode may update only its scoped block in the repository-root `.gitignore` outside that root |
 | Create a new Route | `project_setup.py route create --workspace <workspace> ...` | The path must be absent unless the same complete Route is already registered as an idempotent no-op; use `route adopt` for existing work |
 | Adopt an existing Route | `project_setup.py route adopt --workspace <workspace> --path <route> [--route-id <id>]` | Preserve Route-owned files and state; a valid existing `route.yaml` supplies its durable custom `route_id` when the CLI ID is omitted |
 | Canonicalize Route metadata | `project_setup.py route upgrade ...` | Metadata migration only |

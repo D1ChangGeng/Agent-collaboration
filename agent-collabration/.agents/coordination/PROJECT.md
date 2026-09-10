@@ -2,13 +2,13 @@
 
 ## Identity
 
-- Project:
+- Project: Agent-collaboration
 - Root ID: see `.agents/manifest.json`; its `root_id` is authoritative
 - Root kind: Project Collaboration Workspace
-- Management path:
-- Source repository: unknown until bound by Source State Evidence
+- Management path: `agent-collabration/`, relative to the project source checkout
+- Source repository: the containing `Agent-collaboration` Git repository
 - Execution endpoints: unknown until bound by endpoint evidence
-- Primary branch: not applicable at Root level
+- Primary branch: use current evidence from the containing source checkout
 
 ## Authoritative routes
 
@@ -32,5 +32,9 @@ protocol.
 
 ## Evidence boundary
 
-The Root is allowed to remain non-Git. Missing source, endpoint, branch, commit,
-tree, push, and receiver-sync fields are explicitly `unknown` or `unverified`.
+This Management Root, its knowledge, and its Route directories are tracked with
+product code in the containing Git repository. Local and remote clones retain
+the same relative layout and synchronize explicitly through Git. Ignore rules
+for local temporary data and secrets belong to the source checkout's root
+`.gitignore`. Missing endpoint, branch, commit, tree, push, and receiver-sync
+facts remain `unknown` or `unverified` until checked in the relevant clone.
