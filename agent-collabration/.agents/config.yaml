@@ -5,7 +5,7 @@ protocol:
 target:
   kind: project-collaboration-workspace
   management_root: true
-  execution_repository_required: false
+  execution_repository_required: true
 collaboration:
   topology: explicit-per-task
   manual_relay_fallback: true
