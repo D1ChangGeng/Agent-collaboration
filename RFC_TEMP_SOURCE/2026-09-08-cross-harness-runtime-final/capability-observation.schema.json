@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agent-collaboration:proposed:capability-observation:2.0-draft",
+  "title": "Proposed scoped capability observation",
+  "$comment": "Documented capability alone cannot be confirmed for a runtime. TTL and scope changes must be checked by Core, not just JSON Schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0-draft"
+    },
+    "observation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "capability": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "state": {
+      "enum": [
+        "confirmed",
+        "unavailable",
+        "unknown"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "machine_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "node_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "node_incarnation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "harness_type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "harness_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "runtime_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "credential_scope_fingerprint": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "direction": {
+          "enum": [
+            "inbound",
+            "outbound",
+            "bidirectional",
+            "not_applicable"
+          ]
+        },
+        "scope_fingerprint": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "machine_id",
+        "node_id",
+        "node_incarnation",
+        "harness_type",
+        "harness_version",
+        "credential_scope_fingerprint",
+        "direction",
+        "scope_fingerprint"
+      ]
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "basis": {
+      "enum": [
+        "official_documentation",
+        "user_report",
+        "runtime_probe",
+        "validated_driver_e2e",
+        "local_inspection"
+      ]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "probe_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "probe_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "result_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "probe_id",
+        "probe_version",
+        "result_ref"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recheck_after": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schema_version",
+    "observation_id",
+    "capability",
+    "state",
+    "scope",
+    "observed_at",
+    "expires_at",
+    "basis",
+    "evidence_refs",
+    "reason"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "confirmed"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "basis": {
+            "enum": [
+              "runtime_probe",
+              "validated_driver_e2e"
+            ]
+          },
+          "evidence_refs": {
+            "minItems": 1
+          }
+        },
+        "required": [
+          "probe"
+        ]
+      }
+    }
+  ]
+}

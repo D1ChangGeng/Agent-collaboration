@@ -1,0 +1,107 @@
+{
+  "status": "research_snapshot_not_product_support",
+  "research_date": "2026-09-08",
+  "timezone": "Asia/Shanghai",
+  "inputs": [
+    {
+      "id": "D1",
+      "path": "C:/Users/D26FO/Downloads/Agent-Collaboration-System-Canonical-Spec.md",
+      "sha256": "b3e72592eecf4984d4cee71b68d5cbd0bd7e499c51f596db94de20740231b75c",
+      "role": "accepted semantic baseline"
+    },
+    {
+      "id": "D2",
+      "path": "C:/Users/D26FO/Downloads/taskquay_cross_harness_architecture_cn.md",
+      "sha256": "e7b35f8c143859d7db4b06328ec92d49517c66e8758550b927aa06cd238c0858",
+      "role": "architecture analysis and recommendations"
+    },
+    {
+      "id": "D3",
+      "path": "C:/Users/D26FO/.codex/attachments/56089ffe-2cbb-4304-95a4-1f2e80954b82/pasted-text.txt",
+      "sha256": "aaeff0d231cc7aad00265430dba07aa6de0215640b29dc2439613293f343b133",
+      "role": "user design brief and acceptance target"
+    },
+    {
+      "id": "D4",
+      "path": "D:/Chatgpt/Agent-collaboration/RFC_TEMP_SOURCE/Architecture-RFC.zh-CN.md",
+      "sha256": "694139236299808bb390512cf8ca2c379eb8d1c7a0db9aaff4bae7482bab0e04",
+      "role": "prior proposed research package input"
+    }
+  ],
+  "repository_baseline": {
+    "path": "D:/Chatgpt/Agent-collaboration",
+    "head": "2b992a49b1349de0902443de215ee3bf2b975679",
+    "branch_observed_at_final_validation": "codex/v04-user-journey",
+    "working_tree_observation": "branch and tracked-file state changed during the research window outside this package; final validation records the then-current branch and leaves all non-package work untouched",
+    "local_validation": {
+      "unittest": "67 passed",
+      "validate_skill": "passed",
+      "project_validate": "passed",
+      "git_diff_check": "passed"
+    },
+    "scope": "setup/metadata tests only; no runtime or cross-machine proof"
+  },
+  "official_pages_rechecked_2026_09_08": [
+    {
+      "source_id": "S01",
+      "url": "https://modelcontextprotocol.io/specification/2026-07-28",
+      "http_status": 200,
+      "retrieved_utf8_bytes": 292333,
+      "sha256": "5dca16b89a6e0a57f3e5674aa7db2a51f3b1768d581f6f5c63c257c77c503f94",
+      "observed": "base protocol describes stateless self-contained requests and extensions"
+    },
+    {
+      "source_id": "S03",
+      "url": "https://modelcontextprotocol.io/extensions/tasks/overview",
+      "http_status": 200,
+      "retrieved_utf8_bytes": 348833,
+      "sha256": "5a8c30d0d8308141f19554fbc035098302dd2d40063f75bba912ea0a310c9851",
+      "observed": "durable task handle, polling, input update and cooperative cancellation; client/server support is explicit"
+    },
+    {
+      "source_id": "S04",
+      "url": "https://a2a-protocol.org/latest/specification/",
+      "http_status": 200,
+      "retrieved_utf8_bytes": 617214,
+      "sha256": "4805254c10d8cbde59a82f6767598c37b051d7c3cdf9d5ce636dba287cd6ab2b",
+      "observed": "page contains v1.0.0 references and Task/Artifact/AgentCard/stream/push/subscribe operations"
+    },
+    {
+      "source_id": "S11",
+      "url": "https://docs.temporal.io/encyclopedia/architecture/how-temporal-works",
+      "http_status": 200,
+      "retrieved_utf8_bytes": 62881,
+      "sha256": "014c724a1357778f7ca0ca70f0758b4cff05fe5e396b71eae8e965891f253efd",
+      "observed": "Client/Server/Worker separation, event history and task queues"
+    },
+    {
+      "source_id": "S19",
+      "url": "https://docs.langchain.com/oss/python/langgraph/durable-execution",
+      "http_status": 200,
+      "retrieved_utf8_bytes": 823942,
+      "sha256": "7fe4ec3ba35a86ee64b57c9b29e927c4c919fbae527d03e9a9d6b78d086f743d",
+      "observed": "persistence/checkpointer documentation page retrieved; classified as external Agent technology background and excluded from Collaboration System core or implementation dependency"
+    },
+    {
+      "source_id": "S06",
+      "url": "https://agentclientprotocol.com/protocol/v1/overview",
+      "http_status": 200,
+      "retrieved_utf8_bytes": 364710,
+      "sha256": "8b216a78e257d0acc78b5cdaeb698e8e04ebdcc0c1bf728ebff1a7398acccb51",
+      "observed": "session/new, session/prompt, optional session/load, session/cancel and update notifications"
+    }
+  ],
+  "source_id_mapping": {
+    "rule": "IDs are stable and follow sources-2026-09-07-snapshot.json; this ledger records only the pages actually re-fetched on 2026-09-08.",
+    "rechecked_ids": ["S01", "S03", "S04", "S06", "S11", "S19"],
+    "inherited_snapshot_ids": ["S02", "S05", "S07", "S08", "S09", "S10", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S20", "S21", "S22", "S23", "S24", "S25", "S26", "S27", "S28", "S29", "S30", "S31", "S32", "S33", "S34", "S35", "S36", "S37", "S38", "S39", "S40", "S41", "S42", "S43", "S44", "S45", "S46", "S47", "S48"],
+    "important": "An inherited snapshot entry is not represented as a 2026-09-08 re-fetch and remains subject to version/URL pinning before implementation."
+  },
+  "evidence_limits": [
+    "Mutable latest/main URLs are snapshots, not immutable adoption pins.",
+    "Official protocol expression does not prove a particular Harness deployment can invoke it.",
+    "JSON schema validation does not prove authentication, authorization, delivery, fencing, side-effect idempotency or crash recovery.",
+    "No cross-machine fault injection or real two-Harness E2E run was executed in this research turn.",
+    "No source code, Skill, AGENTS.md, database, credential, remote machine or service was changed by this package generation."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "validator": "validate_boundary_surfaces.py",
+  "date": "2026-09-09",
+  "checks": [
+    {"name": "agent hierarchy is external", "result": "passed"},
+    {"name": "system owns horizontal collaboration infrastructure", "result": "passed"},
+    {"name": "durable provider limited to submitted operations", "result": "passed"},
+    {"name": "no internal reasoning component", "result": "passed"},
+    {"name": "scope model validates", "result": "passed"},
+    {"name": "referenced delivery surfaces retain boundary language", "result": "passed"}
+  ],
+  "real_runtime_tests": "not_run"
+}

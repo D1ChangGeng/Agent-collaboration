@@ -1,0 +1,21 @@
+{
+  "schema_version": "2.0-draft",
+  "command_id": "fixture_command",
+  "command_type": "task.cancel",
+  "idempotency_key": "fixture_cancel_key",
+  "tenant_id": "fixture_tenant",
+  "authority_id": "fixture_authority",
+  "authority_incarnation": "fixture_incarnation_2",
+  "principal_ref": "fixture_authenticated_principal",
+  "grant_ref": "fixture_cancel_grant",
+  "target": {
+    "kind": "task",
+    "id": "fixture_task",
+    "expected_revision": 7
+  },
+  "issued_at": "2026-09-07T12:00:00Z",
+  "deadline": "2026-09-07T12:05:00Z",
+  "payload": {
+    "reason": "Synthetic cancellation request; actual stopping requires reconciliation."
+  }
+}

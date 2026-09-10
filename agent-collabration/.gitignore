@@ -1,0 +1,5 @@
+# ACHP-WORKSPACE:BEGIN
+# Legacy local capability records are not shared project truth; setup does not
+# create or maintain this optional path.
+.agents/runtime/*
+# ACHP-WORKSPACE:END
