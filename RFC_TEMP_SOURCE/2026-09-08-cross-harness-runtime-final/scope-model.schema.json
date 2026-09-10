@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agent-collaboration:accepted:scope-model:1.0",
+  "title": "Accepted Scope and ScopeBinding model",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "scope_id": {"type": "string", "minLength": 1},
+    "kind": {"enum": ["root", "route", "engineer_source"]},
+    "parent_scope_id": {"type": ["string", "null"]},
+    "identity_ref": {"type": "string", "minLength": 1},
+    "knowledge_refs": {"type": "array", "items": {"type": "string"}},
+    "policy_refs": {"type": "array", "items": {"type": "string"}},
+    "source_binding_ref": {"type": ["string", "null"]},
+    "collaboration_state_ref": {"type": "string", "minLength": 1},
+    "created_by": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "bindings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/scopeBinding"}
+    }
+  },
+  "required": ["scope_id", "kind", "parent_scope_id", "identity_ref", "knowledge_refs", "policy_refs", "source_binding_ref", "collaboration_state_ref", "created_by", "created_at", "bindings"],
+  "$defs": {
+    "scopeBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "binding_id": {"type": "string", "minLength": 1},
+        "scope_id": {"type": "string", "minLength": 1},
+        "agent_slot_id": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1},
+        "authority": {"type": "string", "minLength": 1},
+        "location_ref": {"type": ["string", "null"]},
+        "valid_from": {"type": "string", "format": "date-time"},
+        "valid_until": {"type": ["string", "null"], "format": "date-time"},
+        "status": {"enum": ["active", "suspended", "retired"]}
+      },
+      "required": ["binding_id", "scope_id", "agent_slot_id", "role", "authority", "location_ref", "valid_from", "valid_until", "status"]
+    }
+  }
+}

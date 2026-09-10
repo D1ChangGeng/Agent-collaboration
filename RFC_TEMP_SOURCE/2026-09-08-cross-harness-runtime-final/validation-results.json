@@ -1,0 +1,91 @@
+{
+  "scope": "JSON Schema, synthetic fixtures and external-agent boundary contract validation; real runtime validation remains pending",
+  "checks": [
+    {
+      "name": "packet: schema and synthetic example",
+      "result": "passed"
+    },
+    {
+      "name": "capability: schema and synthetic example",
+      "result": "passed"
+    },
+    {
+      "name": "command: schema and synthetic example",
+      "result": "passed"
+    },
+    {
+      "name": "transport state excluded from logical packet",
+      "result": "passed",
+      "meaning": "invalid synthetic instance rejected"
+    },
+    {
+      "name": "accepted-state context required",
+      "result": "passed",
+      "meaning": "invalid synthetic instance rejected"
+    },
+    {
+      "name": "unknown packet type rejected",
+      "result": "passed",
+      "meaning": "invalid synthetic instance rejected"
+    },
+    {
+      "name": "docs-only claim cannot be runtime-confirmed",
+      "result": "passed",
+      "meaning": "invalid synthetic instance rejected"
+    },
+    {
+      "name": "runtime tri-state separate from product support status",
+      "result": "passed",
+      "meaning": "invalid synthetic instance rejected"
+    },
+    {
+      "name": "invalid expected revision rejected",
+      "result": "passed",
+      "meaning": "invalid synthetic instance rejected"
+    },
+    {
+      "name": "mutation idempotency key required",
+      "result": "passed",
+      "meaning": "invalid synthetic instance rejected"
+    },
+    {
+      "name": "external agent boundary contract",
+      "result": "passed",
+      "meaning": "system-owned infrastructure responsibilities are separated from external Agent reasoning, planning, delegation and team composition"
+    },
+    {
+      "name": "durable provider role boundary",
+      "result": "passed",
+      "meaning": "provider processes are limited to submitted-operation timer, retry, wait, outbox and reconciliation semantics"
+    },
+    {
+      "name": "state transition command lineage",
+      "result": "passed",
+      "meaning": "all 8 state-machine objects and every transition carry initiated_by and lineage_mode; external decision transitions identify required command types"
+    },
+    {
+      "name": "architecture and acceptance inventory",
+      "result": "passed",
+      "meaning": "12 ADRs, 34 E2E scenarios and 8 state-machine objects are present in the frozen package"
+    },
+    {
+      "name": "final package manifest integrity",
+      "result": "passed",
+      "meaning": "24 non-manifest files match recorded byte counts and SHA-256 digests; manifest is self-excluded"
+    },
+    {
+      "name": "not_run product fact contract",
+      "result": "passed",
+      "meaning": "not_run is defined as a scoped evidence state with explicit user-visible boundaries, P0-P4 verification gates and supported promotion criteria"
+    },
+    {
+      "name": "not_run product artifact presence",
+      "result": "passed",
+      "meaning": "not-run-product-facts.zh-CN.md is included in the final package and linked from the implementation plan and package README"
+    }
+  ],
+  "real_harness_tests": "not_run",
+  "cross_machine_tests": "not_run",
+  "authorization_cryptography_and_effect_safety": "not_proven_by_json_schema",
+  "real_boundary_review": "passed"
+}

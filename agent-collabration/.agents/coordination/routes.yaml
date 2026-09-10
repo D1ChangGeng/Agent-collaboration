@@ -1,0 +1,12 @@
+{
+  "root_id": "agent-collaboration-root",
+  "routes": [
+    {
+      "display_name": "Collaboration Runtime / Control Plane",
+      "id": "collaboration-runtime",
+      "path": "routes/collaboration-runtime",
+      "status": "active"
+    }
+  ],
+  "schema_version": "0.3"
+}

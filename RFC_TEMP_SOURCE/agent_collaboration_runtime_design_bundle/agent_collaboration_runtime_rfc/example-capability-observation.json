@@ -1,0 +1,24 @@
+{
+  "schema_version": "2.0-draft",
+  "observation_id": "fixture_observation_docs_only",
+  "capability": "harness.session.resume",
+  "state": "unknown",
+  "scope": {
+    "machine_id": "fixture_machine",
+    "node_id": "fixture_node",
+    "node_incarnation": "fixture_boot",
+    "harness_type": "fixture_harness",
+    "harness_version": "unprobed",
+    "credential_scope_fingerprint": "fixture_not_a_credential",
+    "direction": "not_applicable",
+    "scope_fingerprint": "fixture_unprobed_scope"
+  },
+  "observed_at": "2026-09-07T12:00:00Z",
+  "expires_at": "2026-09-07T12:10:00Z",
+  "basis": "official_documentation",
+  "evidence_refs": [
+    "S40"
+  ],
+  "reason": "Synthetic example: documentation exists, but this runtime has not been probed.",
+  "recheck_after": "2026-09-07T12:01:00Z"
+}
