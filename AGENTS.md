@@ -119,3 +119,12 @@ Do not load all collaboration files by default. Read only what the current work 
 - Templates: `.agents/coordination/templates/`
 - Durable knowledge: `.agents/knowledge/`
 <!-- ACHP:END -->
+
+## Collaboration Runtime implementation
+
+For Runtime / Control Plane work, read `docs/runtime/UPGRADE-CONTRACT.md` and
+the registered `collaboration-runtime` Route under `agent-collabration/`.
+That adopted contract governs Runtime Domain authority, external Agent decisions,
+incident-based Human Bridge and acceptance. The v0.4.0 setup profile and its
+Workspace schema remain independently versioned. Preserve existing Root/Route
+identity and knowledge when adopting Runtime features.
