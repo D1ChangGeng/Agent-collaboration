@@ -203,6 +203,8 @@ class DomainAuthority:
             if row is None: raise NotFound("work_item", work_item_id)
             self._authorize(command, cursor, "review.record", str(row[0])); cursor.execute("SELECT baseline_ref FROM evidence WHERE tenant_id=%s AND work_item_id=%s AND evidence_id=%s", (self.context.tenant_id, work_item_id, evidence_ref)); evidence = cursor.fetchone()
             if evidence is None or evidence[0] != baseline_ref: raise AcceptanceGuardFailed("review evidence is not bound")
+            cursor.execute("SELECT 1 FROM reviewer_assignments a JOIN grants g ON g.grant_ref=a.reviewer_grant_ref AND g.tenant_id=a.tenant_id AND g.principal_ref=a.reviewer_ref AND g.scope_id=a.scope_id AND g.authority_id=%s AND g.authority_incarnation=%s WHERE a.tenant_id=%s AND a.work_item_id=%s AND a.reviewer_ref=%s AND a.reviewer_grant_ref=%s AND a.status='active' AND g.revoked_at IS NULL AND g.expires_at>now()", (self.context.authority_id, self.context.authority_incarnation, self.context.tenant_id, work_item_id, self.context.principal_ref, self.context.grant_ref))
+            if cursor.fetchone() is None: raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
             result = CommandResult(command_id=command.command_id, operation_id=f"op-{uuid.uuid4()}", target_id=work_item_id, revision=0, state="review")
             duplicate = self._dedup(cursor, command, result, {"review_id": review_id, "work_item_id": work_item_id, "verdict": verdict, "evidence_ref": evidence_ref, "baseline_ref": baseline_ref})
             if duplicate is not None: return duplicate
