@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS leases (
     resource_id TEXT NOT NULL,
     owner_attempt_id TEXT NOT NULL,
     owner_runtime_id TEXT NOT NULL,
+    authority_id TEXT NOT NULL DEFAULT 'acs-p1-authority',
     authority_incarnation TEXT NOT NULL,
     generation BIGINT NOT NULL,
     fencing_token TEXT NOT NULL,
@@ -138,6 +139,7 @@ ALTER TABLE leases ADD COLUMN IF NOT EXISTS command_id TEXT;
 ALTER TABLE leases ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
 ALTER TABLE leases ADD COLUMN IF NOT EXISTS scope_id TEXT DEFAULT 'local-scope';
 ALTER TABLE leases ADD COLUMN IF NOT EXISTS request_hash TEXT;
+ALTER TABLE leases ADD COLUMN IF NOT EXISTS authority_id TEXT DEFAULT 'acs-p1-authority';
 CREATE UNIQUE INDEX IF NOT EXISTS leases_command_identity ON leases(tenant_id, command_id) WHERE command_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS leases_idempotency_identity ON leases(tenant_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 
@@ -152,6 +154,7 @@ CREATE TABLE IF NOT EXISTS effects (
     baseline_ref TEXT NOT NULL,
     lease_id TEXT NOT NULL,
     fencing_token TEXT NOT NULL,
+    generation BIGINT NOT NULL DEFAULT 0,
     status TEXT NOT NULL CHECK (status IN ('prepared','authorized','dispatched','uncertain','verified','failed')),
     readback_ref TEXT,
     grant_ref TEXT NOT NULL,

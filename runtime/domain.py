@@ -36,6 +36,7 @@ class DomainAuthority:
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
         ("1.0", "415c76f2778e1b1b33aa2533f14140511cb7c00bd0ebbd47ff8fb3a007578a87"),
         ("1.1", "ea0097e39fb023c5130cb924d0faf34429f2f6968056b00a72042af1d78cdd92"),
+        ("1.2", "95e952142fc3d55d4eda3211852dee823e48aad6d793890716dc2365d2cbdd84"),
     }
     def __init__(self, dsn: str, context: AuthenticatedContext | None = None) -> None:
         self._dsn = dsn
@@ -164,19 +165,23 @@ class DomainAuthority:
         if current is WorkItemState.ACCEPTANCE_READY and transition.to_state is WorkItemState.ACCEPTED:
             self._authorize(command, cursor, "acceptance.finalize", scope_id)
             if not transition.review_ref or not transition.evidence_refs or not transition.effect_refs or not transition.readback_refs: raise AcceptanceGuardFailed("sealed readiness references are required")
+            if len(transition.effect_refs) != len(transition.readback_refs): raise AcceptanceGuardFailed("effect and readback references must pair one-to-one")
             cursor.execute("SELECT baseline_ref,evidence_refs,review_ref,scope_id FROM accepted_state_revisions WHERE tenant_id=%s AND work_item_id=%s ORDER BY revision DESC LIMIT 1", (self.context.tenant_id, command.target_id)); snap = cursor.fetchone()
             if snap is None or snap[0] != baseline or snap[2] != transition.review_ref: raise AcceptanceGuardFailed("readiness snapshot mismatch")
             if str(snap[3]) != scope_id or tuple(snap[1] or ()) != tuple(transition.evidence_refs): raise AcceptanceGuardFailed("readiness evidence snapshot mismatch")
             cursor.execute("SELECT r.reviewer_ref,w.created_by,g.permissions FROM reviews r JOIN work_items w ON w.tenant_id=r.tenant_id AND w.work_item_id=r.work_item_id JOIN reviewer_assignments a ON a.tenant_id=r.tenant_id AND a.work_item_id=r.work_item_id AND a.reviewer_ref=r.reviewer_ref AND a.reviewer_grant_ref=r.reviewer_grant_ref AND a.status='active' JOIN grants g ON g.grant_ref=r.reviewer_grant_ref AND g.tenant_id=r.tenant_id AND g.principal_ref=r.reviewer_ref AND g.scope_id=a.scope_id WHERE r.tenant_id=%s AND r.work_item_id=%s AND r.review_id=%s AND r.verdict='pass' AND r.baseline_ref=%s AND r.evidence_ref=ANY(%s) AND g.revoked_at IS NULL AND g.expires_at>now()", (self.context.tenant_id, command.target_id, transition.review_ref, baseline, list(transition.evidence_refs))); review = cursor.fetchone()
             if review is None or review[0] == review[1] or "review.record" not in tuple(review[2]): raise AcceptanceGuardFailed("sealed independent assigned review is no longer valid")
-            cursor.execute("SELECT count(*) FROM effects WHERE tenant_id=%s AND work_item_id=%s AND effect_id=ANY(%s) AND status='verified' AND readback_ref=ANY(%s)", (self.context.tenant_id, command.target_id, list(transition.effect_refs), list(transition.readback_refs))); count = cursor.fetchone()
-            if count is None or int(count[0]) != len(transition.effect_refs): raise AcceptanceGuardFailed("verified effect readback is missing")
+            for effect_id, readback_ref in zip(transition.effect_refs, transition.readback_refs, strict=True):
+                cursor.execute("SELECT e.effect_id,e.readback_ref,e.baseline_ref,e.grant_ref,e.generation,l.authority_incarnation,l.status,l.expires_at,g.revoked_at,g.expires_at,a.status FROM effects e JOIN leases l ON l.lease_id=e.lease_id AND l.tenant_id=e.tenant_id AND l.resource_id=e.resource_id AND l.fencing_token=e.fencing_token AND l.generation=e.generation JOIN grants g ON g.grant_ref=e.grant_ref AND g.tenant_id=e.tenant_id JOIN authority_instances a ON a.authority_id=l.authority_id AND a.authority_incarnation=l.authority_incarnation WHERE e.tenant_id=%s AND e.work_item_id=%s AND e.effect_id=%s AND e.readback_ref=%s AND e.baseline_ref=%s AND e.status='verified'", (self.context.tenant_id, command.target_id, effect_id, readback_ref, baseline)); effect = cursor.fetchone()
+                if effect is None or effect[1] != readback_ref or effect[2] != baseline or effect[3] != self.context.grant_ref or effect[5] != self.context.authority_incarnation or effect[6] != "granted" or effect[7] <= datetime.now(UTC) or effect[8] is not None or effect[9] <= datetime.now(UTC) or effect[10] != "active": raise AcceptanceGuardFailed("verified effect readback is missing or no longer authorized")
             return
         raise InvalidTransition(current, transition.to_state)
 
     def record_evidence(self, command: CommandEnvelope, evidence: EvidenceRecord) -> CommandResult:
         with self._connect() as connection, connection.cursor() as cursor:
             if command.target_id != evidence.work_item_id:
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            if evidence.observer_ref != self.context.principal_ref:
                 raise AuthorizationDenied(command.principal_ref, command.grant_ref)
             cursor.execute("SELECT scope_id,state FROM work_items WHERE tenant_id=%s AND work_item_id=%s FOR UPDATE", (self.context.tenant_id, evidence.work_item_id)); row = cursor.fetchone()
             if row is None: raise NotFound("work_item", evidence.work_item_id)
