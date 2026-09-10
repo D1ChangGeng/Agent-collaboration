@@ -106,3 +106,17 @@ def test_real_postgres_assigned_reviewer_can_make_readiness_eligible() -> None:
     reviewer.record_review(make_command(reviewer, "review.record", work_item_id, f"review-{work_item_id}"), f"review-{work_item_id}", work_item_id, "pass", evidence.evidence_id, baseline)
     ready = engineer.transition_work_item(make_command(engineer, "work_item.transition", work_item_id, f"ready-{work_item_id}"), TransitionRequest(to_state=WorkItemState.ACCEPTANCE_READY, evidence_refs=(evidence.evidence_id,), review_ref=f"review-{work_item_id}"))
     assert ready.state == WorkItemState.ACCEPTANCE_READY
+
+
+@pytest.mark.skipif(not DSN, reason="NOT_RUN: ACS_P1_DSN is not set")
+def test_real_postgres_rejects_cross_paired_effect_readback_and_forged_observer() -> None:
+    authority = DomainAuthority(DSN)
+    authority.initialize()
+    authority.bootstrap_local_grant()
+    work_item_id = f"effect-pair-{uuid.uuid4()}"
+    authority.create_work_item(make_command(authority, "work_item.create", work_item_id, f"create-{work_item_id}"), "local-scope", "local-slot", "baseline-effect")
+    evidence = EvidenceRecord(evidence_id=f"evidence-{work_item_id}", work_item_id=work_item_id, observer_ref=authority.context.principal_ref, source_class="directly_verified", baseline_ref="baseline-effect", artifact_sha256="c" * 64, summary="effect fixture")
+    authority.record_evidence(make_command(authority, "evidence.record", work_item_id, f"evidence-{work_item_id}"), evidence)
+    forged = evidence.model_copy(update={"observer_ref": "forged-observer"})
+    with pytest.raises(AuthorizationDenied):
+        authority.record_evidence(make_command(authority, "evidence.record", work_item_id, f"forged-{work_item_id}"), forged)
