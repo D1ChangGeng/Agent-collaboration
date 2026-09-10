@@ -1,9 +1,12 @@
 <!-- ACHP-WORKSPACE:BEGIN -->
 ## ACHP Project Collaboration Root
 
-This directory is a Project Collaboration Root: a durable management workspace
-for project identity, routes, coordination, and source-state evidence. It is not
-assumed to be a Git repository or an execution checkout.
+This directory is a Project Collaboration Root: a durable Management Root for
+project identity, routes, coordination, and source-state evidence. The primary
+layout places this Management Root inside the Source Checkout Root. Product
+code, management documents, knowledge, and Route directories are tracked in the
+same Git repository. Standalone management workspaces remain a compatibility
+deployment.
 
 ### Startup
 
@@ -15,9 +18,10 @@ assumed to be a Git repository or an execution checkout.
    knowledge.
 4. Read `.agents/protocol/SOURCE-STATE.md` before making claims about code,
    branches, endpoints, or execution status.
-5. For a management-workspace task, do not invent branch, commit, or working
-   tree facts. Use `unknown`, `unverified`, or `not-measured` until evidence is
-   bound to a specific Source State.
+5. Inspect the containing source checkout's Git state when the task involves
+   tracked management or source files. Bind branch, commit, and working-tree
+   claims to that checkout; use `unknown`, `unverified`, or `not-measured` for
+   facts that have not been established.
 
 ### Scope and ownership
 
@@ -28,8 +32,14 @@ assumed to be a Git repository or an execution checkout.
   display name; live Session progress remains in the current Harness context.
 - An Execution Endpoint is replaceable runtime capacity, not a permanent Route
   identity.
-- A Source Repository and its Repository State are separate from this
-  management workspace.
+- Management, Source Repository state, and Execution Endpoint responsibilities
+  remain logically separate when their files share one Git repository.
+- Local and remote hosts use distinct clones with the same repository-relative
+  Management Root and Route layout. Absolute paths may differ; synchronization
+  requires explicit Git operations.
+- In the nested layout, the Source Checkout Root's `.gitignore` owns scoped
+  rules for transient files and secrets; the Management Root has no child
+  `.gitignore`.
 - Do not assume this file is automatically inherited by a child Route. Harness
   discovery is runtime-specific; use the explicit Root contract path.
 - `self-evolution` owns durable-knowledge lifecycle; ACHP owns collaboration
@@ -75,3 +85,19 @@ deeper contracts.
 - Keep management file paths relative to this workspace when editing them, but
   use the source-repository root for all Git synchronization and publication
   operations.
+
+<!-- ACHP-SOURCE-CHECKOUT:BEGIN -->
+## Local source checkout and Git working directory
+
+- Local source checkout relative to this Management Root: `..`.
+  Resolve this path from the directory containing this `AGENTS.md`, then use
+  the resolved source checkout as the repository working directory.
+- Run repository synchronization, `fetch`, `pull`, `status`, `diff`, `add`,
+  `commit`, `merge`, and `push` with the working directory set to that local
+  source checkout. This also applies when the Agent session starts in the
+  Management Root. Change the command working directory or use
+  `git -C <resolved-source-checkout> ...` explicitly.
+- The Management Root scopes coordination and knowledge files; the containing
+  source checkout scopes Git operations for both product and management files.
+  Verify branch, HEAD, working-tree state, and upstream before synchronization.
+<!-- ACHP-SOURCE-CHECKOUT:END -->

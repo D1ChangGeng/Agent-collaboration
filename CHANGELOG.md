@@ -6,6 +6,24 @@ All notable changes to this project will be documented here.
 
 Agent-readable lifecycle guidance and safety hardening.
 
+### In-place refresh - 2026-09-11
+
+- The default project layout keeps product code and a nested Management Root in
+  one Git repository. Root documents, knowledge, and Route directories travel
+  with the same repository-relative layout across local and remote clones.
+- Nested Workspace setup maintains scoped runtime exclusions in the repository
+  root `.gitignore`. Explicit Workspace upgrade consolidates known setup-only
+  child ignore files while preserving user rules and existing identities.
+- Management Root `AGENTS.md` includes a generated source-checkout binding. The
+  relative path follows the actual nesting depth, and Git synchronization,
+  pulling, staging, and commits use the source checkout as working directory.
+- Setup preserves user guidance when adding the binding; malformed or changed
+  bindings require review before writes. Legacy standalone adoption and repair
+  retain their existing layout.
+- Version remains `0.4.0` and Workspace schema remains `0.3`. The `v0.4.0` tag
+  and release archives are refreshed together. Existing archive installations
+  need a fresh download and reinstall to receive these changes.
+
 ### Added
 
 - Operating Guide, Capability Matrix, and Scenario Matrix references for
@@ -45,11 +63,12 @@ Agent-readable lifecycle guidance and safety hardening.
 
 ### Verification
 
-- 93 unit tests passed; four Windows symlink tests were skipped because the
-  current process lacks symlink-creation privilege.
-- Skill validation, quick validation, Python compilation, repository setup
-  validation, knowledge index/check validation, and diff validation passed for
-  the release.
+- Current Windows suite: 111 tests, 106 passed and five symlink-related tests
+  skipped because the process lacks the required creation privilege.
+- Skill, quick, repository, Workspace, Route, and diff validation passed.
+- Nested-layout tests cover real Git clones and linked worktrees, source-path
+  resolution, ignore behavior, migration, dry-run, idempotence, and preservation
+  of user-authored instruction text.
 
 ## 0.3.0 - 2026-09-07
 

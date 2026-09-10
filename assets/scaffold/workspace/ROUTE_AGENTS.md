@@ -20,8 +20,13 @@ discovery may not load the parent Root `AGENTS.md`. Read the explicit Root
 contract above when the task crosses Root/Route boundaries; do not copy the Root
 contract into this file.
 
+In the primary layout, this Route, its Management Root, and product code are
+tracked in the same Git repository. Local and remote clones preserve this
+repository-relative layout; their absolute paths may differ. Read the Root Git
+sync contract when Route changes cross clones.
+
 Source Repository, branch, commit, tree, worktree, push, and receiver-sync claims
-remain unknown until independently evidenced. Create
+remain unknown until independently evidenced in the relevant checkout. Create
 `.agents/state/source-state.yaml` only when verified source facts need a durable
 Route-owned record. Harness, Session, and live Endpoint observations stay in the
 current execution context unless a specific long-term fact passes the normal

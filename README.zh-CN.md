@@ -55,14 +55,13 @@ agent-collaboration-setup
         │
         │ 只负责 bootstrap / adopt / upgrade / repair
         ▼
-目标项目
-├── AGENTS.md                 <- 后续协作的统一入口
-├── CLAUDE.md                 <- Claude Code 的极薄兼容路由
-└── .agents/
-    ├── protocol/
-    ├── coordination/
-    ├── knowledge/
-    └── （Harness/Session context） # 本地运行上下文，不是安装目录
+Project Git Repository / Source Checkout Root
+├── Product code
+├── ...
+└── Nested Management Root
+    ├── AGENTS.md
+    ├── .agents/
+    └── Route directories
 ```
 
 正常开发期间：
@@ -185,7 +184,31 @@ python3 scripts/install_skill.py --harness all --check
 
 ## Project Collaboration Workspace 与 Route
 
-Workspace 是长期项目协作、架构管理、目标推进和状态理解的管理根。它可以与真实源码仓库、执行 Session 和执行 Host 分离，也允许本身不是 Git 仓库。
+Workspace 是长期项目协作、架构管理、目标推进和状态理解的管理根。v0.4.0
+默认将它放在产品代码所在的同一个项目 Git 仓库内部：
+
+```text
+Project Git Repository / Source Checkout Root
+├── Product code
+├── ...
+└── Nested Management Root
+    ├── AGENTS.md
+    ├── .agents/
+    └── Route directories
+```
+
+管理文档、知识和 Route 与产品代码由同一个项目 Git 提交跟踪。本地与远端
+是独立 clone，保留相同的相对布局；Git 同步需要显式执行。Manifest 记录
+`nested-repository` 模式，相对布局由 Git 保存。
+
+CLI 始终以用户提供的精确 nested 管理根为目标。唯一的父级写入是在仓库根
+`.gitignore` 中维护当前管理根的 runtime 忽略规则，使用
+`# ACHP-NESTED:<relative path>:BEGIN` / `# ACHP-NESTED:<relative path>:END`
+独立标记，保留父级全部既有块和规则。Nested 管理根不创建子 `.gitignore`，
+父仓库也不必预先安装 repository scaffold。Standalone Workspace 继续兼容；
+缺少模式字段的旧 manifest 在 `adopt`/`repair` 时保持原样，仓库内的显式
+`workspace upgrade` 才迁移已知、仅含 setup 内容的子 ignore。自定义子规则
+需要经审阅后手动合并，否则拒绝写入。
 
 ```bash
 python3 scripts/project_setup.py workspace adopt --root /path/to/workspace --dry-run
@@ -311,7 +334,9 @@ CLAUDE.md
 └── （Harness/Session context） # 本地运行上下文，不由安装器创建
 ```
 
-安装器不会粗暴覆盖原来的 `AGENTS.md`、`CLAUDE.md` 或 `.gitignore`，而是维护带边界标记的 managed block。
+安装器维护 `AGENTS.md`、`CLAUDE.md` 和 `.gitignore` 中的 managed block。
+Nested 管理根使用父仓库根 `.gitignore` 中属于自身的独立块，并保留父级全部
+既有块与规则。
 
 ## Claude Code 兼容
 
