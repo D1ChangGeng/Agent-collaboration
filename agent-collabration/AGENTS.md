@@ -59,3 +59,19 @@ See `.agents/coordination/ROOT-BASELINE.md`, `.agents/protocol/RELAY.md`,
 `.agents/protocol/GIT-SYNC.md`, and `.agents/protocol/SOURCE-STATE.md` for the
 deeper contracts.
 <!-- ACHP-WORKSPACE:END -->
+
+## Source repository and Git working directory
+
+- The formal local source repository is `D:\Chatgpt\Agent-collaboration`.
+- This management workspace is `D:\Chatgpt\Agent-collaboration\agent-collabration`.
+- The management workspace is tracked content inside the source repository; it
+  is not a separate Git checkout and does not own a competing repository state.
+- Run repository-level `status`, `branch`, `fetch`, `pull`, `merge`, `commit`,
+  `push`, tag, and release commands with the working directory set to
+  `D:\Chatgpt\Agent-collaboration`.
+- When operating on the remote engineering checkout, use
+  `/home/changgeng/Agent-collaboration` as its Git working directory. Confirm
+  its branch, HEAD, working-tree state, and upstream before synchronization.
+- Keep management file paths relative to this workspace when editing them, but
+  use the source-repository root for all Git synchronization and publication
+  operations.
