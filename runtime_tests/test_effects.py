@@ -14,11 +14,11 @@ class Fence:
         self.calls.append((lease_id, resource_id, generation, fencing_token))
 
 
-def test_effect_gateway_fails_closed_after_fence_without_reader() -> None:
+def test_effect_gateway_fails_closed_without_configured_reader() -> None:
     fence = Fence()
     gateway = EffectGateway(fence)
 
     with pytest.raises(EffectUnavailable):
         gateway.verify_and_readback("lease-1", "resource-1", 2, "token-1", "caller-supplied")
 
-    assert fence.calls == [("lease-1", "resource-1", 2, "token-1")]
+    assert fence.calls == []
