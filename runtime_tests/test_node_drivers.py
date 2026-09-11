@@ -10,7 +10,7 @@ from runtime.drivers import (
     DriverCapabilities,
     DriverInvocation,
     DriverReceipt,
-    OpenCodeDriver,
+    EndpointDriverAdapter,
 )
 from runtime.node import JournalOperation, NodeJournal, OperationIdentityConflict
 from runtime.provider import (
@@ -82,15 +82,15 @@ def test_node_journal_rejects_operation_id_reuse_with_different_identity(tmp_pat
 
 
 @pytest.mark.parametrize(
-    ("driver_type", "harness"),
-    [(CodexDriver, "codex"), (OpenCodeDriver, "opencode")],
+    "harness",
+    ["codex", "opencode"],
 )
-def test_harness_driver_reports_only_native_invocation_receipt(
-    driver_type: type[CodexDriver | OpenCodeDriver], harness: str
+def test_explicit_endpoint_adapter_preserves_its_receipt(
+    harness: str
 ) -> None:
-    # Given: a thin driver bound to an explicit native endpoint.
+    # An explicit synthetic endpoint exercises adapter identity, not native conformance.
     endpoint = RecordingDriverEndpoint()
-    driver = driver_type(endpoint)
+    driver = EndpointDriverAdapter(harness, endpoint)
     invocation = DriverInvocation(
         operation_id="op-1",
         command_id="cmd-1",
@@ -98,11 +98,11 @@ def test_harness_driver_reports_only_native_invocation_receipt(
         agent_slot_id="engineer-runtime-1302",
     )
 
-    # When: the Node invokes the enrolled Harness through the driver boundary.
+    # The adapter forwards the call to this test endpoint.
     receipt = driver.invoke(invocation)
 
     # Then: capability and receipt name only the observed driver layer.
-    assert driver.capabilities() == DriverCapabilities(harness=harness, actions=("invoke", "inspect"))
+    assert driver.capabilities() == DriverCapabilities(harness=harness, actions=("invoke",))
     assert endpoint.invocations == [(harness, invocation)]
     assert receipt.receipt_layer == "accepted_by_driver"
     assert receipt.operation_id == invocation.operation_id
@@ -145,3 +145,9 @@ def test_temporal_reference_provider_rejects_uncommitted_operation() -> None:
         provider.submit(uncommitted)
 
     # Then: no workflow reference can be created from an uncommitted command.
+
+
+def test_public_codex_driver_uses_native_app_server_implementation():
+    from runtime.codex_driver import CodexAppServerDriver
+
+    assert CodexDriver is CodexAppServerDriver
