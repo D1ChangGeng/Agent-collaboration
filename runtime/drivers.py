@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 
+from runtime.codex_driver import CodexAppServerDriver
+
 
 @dataclass(frozen=True, slots=True)
 class DriverCapabilities:
@@ -34,22 +36,18 @@ class DriverEndpoint(Protocol):
     def invoke(self, harness: str, invocation: DriverInvocation) -> DriverReceipt: ...
 
 
-class HarnessDriver:
-    harness: str
+class EndpointDriverAdapter:
+    """Explicit endpoint adapter; it is not native lifecycle conformance."""
 
-    def __init__(self, endpoint: DriverEndpoint) -> None:
+    def __init__(self, harness: str, endpoint: DriverEndpoint) -> None:
+        self.harness = harness
         self._endpoint = endpoint
 
     def capabilities(self) -> DriverCapabilities:
-        return DriverCapabilities(self.harness, ("invoke", "inspect"))
+        return DriverCapabilities(self.harness, ("invoke",))
 
     def invoke(self, invocation: DriverInvocation) -> DriverReceipt:
         return self._endpoint.invoke(self.harness, invocation)
 
 
-class CodexDriver(HarnessDriver):
-    harness = "codex"
-
-
-class OpenCodeDriver(HarnessDriver):
-    harness = "opencode"
+CodexDriver = CodexAppServerDriver
