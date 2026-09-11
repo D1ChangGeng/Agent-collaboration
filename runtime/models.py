@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import hashlib
+import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
@@ -39,6 +42,9 @@ class CommandEnvelope(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     schema_version: Literal["1.0"] = "1.0"
+    # v2 seals complete command input, including causation. v1 remains
+    # readable by migration/replay code for pre-hardening rows.
+    hash_version: Literal["v1", "v2"] = "v2"
     command_id: str = Field(min_length=1, max_length=256)
     command_type: str = Field(min_length=1, max_length=128)
     idempotency_key: str = Field(min_length=1, max_length=256)
@@ -63,6 +69,39 @@ class CommandEnvelope(BaseModel):
         if isinstance(issued_at, datetime) and value < issued_at:
             raise ValueError("deadline must not precede issued_at")
         return value
+
+    def canonical_input(self, extra: Mapping[str, Any] | None = None) -> dict[str, Any]:
+        value = self.model_dump(mode="json")
+        if extra:
+            value["extra"] = dict(extra)
+        return value
+
+    def canonical_hash(self, extra: Mapping[str, Any] | None = None) -> str:
+        payload = json.dumps(self.canonical_input(extra), sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def legacy_hash(self, extra: Mapping[str, Any] | None = None) -> str:
+        """Hash the pre-v2 domain._hash input exactly."""
+        value = {
+            "command_id": self.command_id,
+            "command_type": self.command_type,
+            "idempotency_key": self.idempotency_key,
+            "correlation_id": self.correlation_id,
+            "tenant_id": self.tenant_id,
+            "authority_id": self.authority_id,
+            "authority_incarnation": self.authority_incarnation,
+            "principal_ref": self.principal_ref,
+            "grant_ref": self.grant_ref,
+            "target_kind": self.target_kind,
+            "target_id": self.target_id,
+            "expected_revision": self.expected_revision,
+            "issued_at": self.issued_at.isoformat(),
+            "deadline": self.deadline.isoformat(),
+            "payload": self.payload,
+            "extra": dict(extra or {}),
+        }
+        payload = json.dumps(value, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 class CommandResult(BaseModel):
@@ -136,6 +175,94 @@ class ArtifactRef(BaseModel):
 ArtifactReference = ArtifactRef
 
 
+class ExecutionReceipt(BaseModel):
+    """Typed execution facts; incomplete/unsupported observations stay candidates."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    schema_version: Literal["acs-execution-receipt/1"] = "acs-execution-receipt/1"
+    receipt_id: str = Field(min_length=1, max_length=256)
+    work_item_id: str = Field(min_length=1, max_length=256)
+    attempt_id: str = Field(min_length=1, max_length=256)
+    runtime_id: str = Field(min_length=1, max_length=256)
+    provider: str = Field(min_length=1, max_length=256)
+    command_id: str = Field(min_length=1, max_length=256)
+    operation_id: str = Field(min_length=1, max_length=256)
+    event_id: str = Field(min_length=1, max_length=256)
+    source_baseline: str = Field(min_length=1, max_length=512)
+    candidate_ref: str = Field(min_length=1, max_length=512)
+    source_commit: str = Field(min_length=1, max_length=256)
+    source_tree: str = Field(min_length=1, max_length=256)
+    source_diff: ArtifactRef | None = None
+    untracked_manifest: ArtifactRef | None = None
+    test_commands: tuple[str, ...] = ()
+    test_exit_codes: tuple[int, ...] = ()
+    test_exit_code: int | None = None
+    os: str = Field(min_length=1, max_length=256)
+    toolchain: str = Field(min_length=1, max_length=512)
+    lockfile_digest: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    artifact_refs: tuple[ArtifactRef, ...] = ()
+    readback_refs: tuple[ArtifactRef, ...] = ()
+    source_sync: str = Field(min_length=1, max_length=256)
+    usage: dict[str, Any] | None = None
+    unresolved_items: tuple[str, ...] = ()
+    status: Literal["succeeded", "failed", "cancelled", "uncertain", "unsupported", "incomplete"] = "incomplete"
+    observed_at: datetime
+
+    @property
+    def is_complete(self) -> bool:
+        return (
+            self.status == "succeeded"
+            and bool(self.source_baseline and self.candidate_ref and self.source_commit and self.source_tree)
+            and bool(self.test_commands)
+            and bool(self.test_exit_codes or self.test_exit_code is not None)
+            and (not self.test_exit_codes or len(self.test_exit_codes) == len(self.test_commands))
+            and all(code == 0 for code in self.test_exit_codes)
+            and (self.test_exit_code is None or self.test_exit_code == 0)
+            and bool(self.artifact_refs)
+            and all(ref.immutable for ref in self.artifact_refs)
+            and bool(self.source_sync)
+            and not self.unresolved_items
+        )
+
+
+class EvidenceBundle(BaseModel):
+    """Candidate output plus complete, source-bound execution facts."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    schema_version: Literal["acs-evidence-bundle/1"] = "acs-evidence-bundle/1"
+    evidence_id: str = Field(min_length=1, max_length=256)
+    work_item_id: str = Field(min_length=1, max_length=256)
+    source_baseline: str = Field(min_length=1, max_length=512)
+    candidate_ref: str = Field(min_length=1, max_length=512)
+    producer_ref: str = Field(min_length=1, max_length=256)
+    observer_ref: str = Field(min_length=1, max_length=256)
+    source_class: Literal["directly_verified", "endpoint_reported", "mocked", "not_run", "unsupported", "stale", "uncertain"]
+    evidence_state: Literal["complete", "incomplete", "uncertain", "stale", "not_run"] = "incomplete"
+    execution_receipt: ExecutionReceipt
+    artifact_refs: tuple[ArtifactRef, ...] = ()
+    readback_refs: tuple[ArtifactRef, ...] = ()
+    command_id: str = Field(min_length=1, max_length=256)
+    operation_id: str = Field(min_length=1, max_length=256)
+    event_id: str = Field(min_length=1, max_length=256)
+    observed_at: datetime
+    expires_at: datetime | None = None
+    unresolved_items: tuple[str, ...] = ()
+
+    @property
+    def is_complete(self) -> bool:
+        return (
+            self.source_class == "directly_verified"
+            and self.evidence_state == "complete"
+            and not self.unresolved_items
+            and self.execution_receipt.source_baseline == self.source_baseline
+            and self.execution_receipt.candidate_ref == self.candidate_ref
+            and self.execution_receipt.is_complete
+            and bool(self.artifact_refs or self.execution_receipt.artifact_refs)
+        )
+
+
 class EvidenceRecord(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -146,6 +273,19 @@ class EvidenceRecord(BaseModel):
     baseline_ref: str = Field(min_length=1, max_length=256)
     artifact_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     summary: str = Field(min_length=1)
+    # Optional for legacy records; readiness must require EvidenceBundle.
+    bundle_ref: str | None = Field(default=None, max_length=512)
+    candidate_ref: str | None = Field(default=None, max_length=512)
+    execution_receipt_ref: str | None = Field(default=None, max_length=512)
+    evidence_state: Literal["complete", "incomplete", "uncertain", "stale", "not_run"] = "incomplete"
+    producer_ref: str | None = Field(default=None, max_length=256)
+    attempt_id: str | None = Field(default=None, max_length=256)
+    command_id: str | None = Field(default=None, max_length=256)
+    operation_id: str | None = Field(default=None, max_length=256)
+    event_id: str | None = Field(default=None, max_length=256)
+    test_exit_code: int | None = None
+    artifact_refs: tuple[ArtifactRef, ...] = ()
+    readback_refs: tuple[ArtifactRef, ...] = ()
 
 
 class EffectReadback(BaseModel):
@@ -156,3 +296,9 @@ class EffectReadback(BaseModel):
     resource_id: str = Field(min_length=1, max_length=256)
     status: Literal["verified"]
     readback_ref: str = Field(min_length=1, max_length=256)
+    sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    size_bytes: int = Field(ge=0, strict=True)
+    operation_id: str = Field(min_length=1, max_length=256)
+    intent_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    completion_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    completion_state: Literal["completed"]
