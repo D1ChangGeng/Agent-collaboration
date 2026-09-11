@@ -40,9 +40,10 @@ class DomainAuthority:
     """PostgreSQL Domain authority for the local Runtime profile."""
 
     SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.4"
+    SCHEMA_VERSION = "1.5"
 
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.4", "8f12aa29f385194b436f930422d5dafebc432d15bdf1a4bafe94294d8f744deb"),
         ("1.3", "0e3600dc7ed3b7fac727670f5c8fec0b00c6e100063e63a3f149661631dccea4"),
         (
             "1.0",
@@ -70,6 +71,7 @@ class DomainAuthority:
         *,
         authority_binding: tuple[str, str] = ("acs-p1-authority", "local-1"),
         effect_readback_verifier: Any | None = None,
+        effect_registration_gateway: Any | None = None,
     ) -> None:
         self._dsn = dsn
         self._authority_binding = authority_binding
@@ -82,6 +84,25 @@ class DomainAuthority:
         )
         self._artifact_store = artifact_store
         self._effect_readback_verifier = effect_readback_verifier
+        self._effect_registration_gateway = effect_registration_gateway
+
+    def register_effect(
+        self, command: CommandEnvelope, *, effect_id: str, lease_id: str,
+        resource_id: str, readback_ref: str, operation_id: str,
+    ) -> CommandResult:
+        from runtime.effect_domain import EffectDomain
+
+        return EffectDomain(self, self._effect_registration_gateway).register_effect(
+            command, effect_id=effect_id, lease_id=lease_id, resource_id=resource_id,
+            readback_ref=readback_ref, operation_id=operation_id,
+        )
+
+    def reconcile_effect(self, command: CommandEnvelope, *, effect_id: str) -> CommandResult:
+        from runtime.effect_domain import EffectDomain
+
+        return EffectDomain(self, self._effect_registration_gateway).reconcile_effect(
+            command, effect_id=effect_id,
+        )
 
     @property
     def leases(self) -> LeaseAuthority:
