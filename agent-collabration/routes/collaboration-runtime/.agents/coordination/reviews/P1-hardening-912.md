@@ -62,7 +62,19 @@ The independent reviewer also verified logic counterexamples using actual-method
 AST extraction and memory fixtures. The migration example used the real UPDATE
 against a SQLite memory fixture plus old/new hash comparison. Those observations
 are source/logic evidence; they are not PostgreSQL migration or Temporal restart
-proof. The next repair must add real old-schema/data migration regression using
+proof.
+
+Management subsequently reproduced R912-08 on real isolated PostgreSQL using
+exact `e55d9d7ef35e4ac626529652337be62a8676b398` schema and a synthetic legacy
+command row, followed by the exact candidate schema. Migration changed
+`command_id` to the retained idempotency key while `result_json.command_id`
+retained the different original command identity. The legacy payload hash was
+unchanged. The probe ran in a new schema within an always-rollback transaction;
+read-back confirmed that schema was absent afterward. This proves the migration
+identity defect on PostgreSQL, not successful replay or complete data recovery.
+Private raw evidence: `review-912/migration-identity-probe.json`.
+
+The next repair must add real old-schema/data migration regression using
 the preserved database checkpoint or an equivalent isolated legacy fixture.
 
 ## Required regression coverage
