@@ -101,6 +101,41 @@ class LeaseRequest(BaseModel):
     ttl_seconds: int = Field(gt=0, le=3600)
 
 
+class ArtifactRef(BaseModel):
+    """Immutable reference to bytes in an authorized artifact store."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    path: str = Field(min_length=1, max_length=1024)
+    sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    size_bytes: int = Field(ge=0)
+    media_type: str = Field(default="application/octet-stream", min_length=1, max_length=256)
+    kind: Literal["source", "output", "test", "readback", "manifest", "other"] = "other"
+    scope_id: str = Field(default="local-scope", min_length=1, max_length=256)
+    immutable: bool = True
+
+    @field_validator("path")
+    @classmethod
+    def relative_path(cls, value: str) -> str:
+        if not value or "\x00" in value or any(ord(ch) < 0x20 for ch in value):
+            raise ValueError("artifact path must be relative and NUL/control-free")
+        if value.startswith(("/", "\\", "//", "\\\\")):
+            raise ValueError("artifact path must be relative")
+        if len(value) >= 2 and value[1] == ":":
+            raise ValueError("drive/device paths are not allowed")
+        if value.startswith(("\\\\?\\", "\\\\.\\", "\\??\\")):
+            raise ValueError("device paths are not allowed")
+        if ":" in value:
+            raise ValueError("ADS/colon paths are not allowed")
+        parts = value.replace("\\", "/").split("/")
+        if any(part in ("", ".", "..") for part in parts):
+            raise ValueError("artifact path contains traversal or empty segments")
+        return "/".join(parts)
+
+
+ArtifactReference = ArtifactRef
+
+
 class EvidenceRecord(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
