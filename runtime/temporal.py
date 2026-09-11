@@ -75,11 +75,13 @@ class TemporalAdapter:
         namespace: str | None = None,
         task_queue: str = "acs-p1-operations",
         worker_identity: str = "acs-p1-runtime",
+        delivery_dispatcher: Any | None = None,
     ) -> None:
         self.endpoint = endpoint or os.getenv("ACS_P1_TEMPORAL_ENDPOINT", "")
         self.namespace = namespace or os.getenv("ACS_P1_TEMPORAL_NAMESPACE", "")
         self.task_queue = task_queue
         self.worker_identity = worker_identity
+        self._delivery_dispatcher = delivery_dispatcher
         self._client: Any = None
         self._worker: Any = None
         self._worker_task: asyncio.Task[None] | None = None
@@ -106,11 +108,21 @@ class TemporalAdapter:
         try:
             self._client = await Client.connect(self.endpoint, namespace=self.namespace)
             if start_worker:
+                workflows = [SubmittedOperationWorkflow]
+                activities = [submitted_operation_activity]
+                if self._delivery_dispatcher is not None:
+                    from runtime.delivery_temporal import (
+                        CommittedDeliveryWorkflow,
+                        DeliveryActivities,
+                    )
+
+                    workflows.append(CommittedDeliveryWorkflow)
+                    activities.append(DeliveryActivities(self._delivery_dispatcher).attempt)
                 self._worker = Worker(
                     self._client,
                     task_queue=self.task_queue,
-                    workflows=[SubmittedOperationWorkflow],
-                    activities=[submitted_operation_activity],
+                    workflows=workflows,
+                    activities=activities,
                     identity=self.worker_identity,
                 )
                 self._worker_task = asyncio.create_task(self._worker.run())
@@ -172,6 +184,15 @@ class TemporalAdapter:
             raise
         except (RuntimeError, TypeError, ValueError) as exc:
             raise TemporalUnavailable(f"Temporal operation {operation_id} failed") from exc
+
+    async def submit_delivery(self, identity: dict[str, str]) -> Any:
+        from runtime.delivery_temporal import submit_delivery
+
+        if self._delivery_dispatcher is None:
+            raise TemporalUnavailable("delivery dispatcher is not configured")
+        return await submit_delivery(
+            self.client, self.task_queue, self._delivery_dispatcher, identity,
+        )
 
     async def _existing_handle(self, operation_id: str, payload_hash: str) -> Any:
         try:
