@@ -86,6 +86,8 @@ RPC/native correlation, acceptance and external-effect read-back retain distinct
 
 ## Delegation, source and sandbox isolation
 
+Apply the [Source and Sandbox contract](SANDBOX-CONTRACT.md) for the conditional Reference Profile, exact permission fields and real isolation conformance.
+
 Launch Codex with `--disable multi_agent --disable multi_agent_v2`; capture both
 effective features as false, prevent overrides and verify native child creation is disabled.
 Launch OpenCode with `--pure`; apply agent `permission.task="deny"` and final session
