@@ -12,6 +12,7 @@ from typing import Any, Protocol
 import psycopg
 
 from runtime.errors import (
+    AcceptanceGuardFailed,
     AuthorizationDenied,
     FencingRejected,
     IdempotencyConflict,
@@ -22,6 +23,9 @@ from runtime.models import AuthenticatedContext, CommandEnvelope, LeaseRequest
 
 
 class LeaseStore(Protocol):
+    @property
+    def enrollment(self) -> Any: ...
+
     tenant_id: str
     authority_id: str
     context: AuthenticatedContext
@@ -91,6 +95,10 @@ class LeaseAuthority:
         )
 
     def _owner_row(self, cursor: psycopg.Cursor, request: LeaseRequest) -> tuple[Any, ...] | None:
+        try:
+            self._store.enrollment.current_attempt_binding(cursor, request.owner_attempt_id)
+        except (AcceptanceGuardFailed, AuthorizationDenied):
+            return None
         cursor.execute(
             "SELECT a.attempt_id,a.work_item_id,a.agent_slot_id,a.status,a.runtime_id,"
             "a.scope_id,a.grant_ref,a.authority_id,a.authority_incarnation,w.scope_id,"

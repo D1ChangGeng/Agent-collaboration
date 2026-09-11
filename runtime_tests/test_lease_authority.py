@@ -25,6 +25,7 @@ from runtime.errors import (
     RevisionConflict,
 )
 from runtime.models import CommandEnvelope, LeaseRequest
+from runtime_tests.enrollment_fixture import raw_ledger_counts, register_execution_fixture
 
 PERMISSIONS = ("lease.acquire", "lease.renew", "lease.release", "lease.revoke", "lease.inspect", "effect.write", "effect.read")
 
@@ -46,11 +47,11 @@ def authority():
         execute(domain, "INSERT INTO work_items(work_item_id,tenant_id,scope_id,agent_slot_id,state,source_baseline,created_by) "
                 "VALUES ('w-1',%s,'local-scope','local-slot','candidate','baseline',%s)",
                 (domain.tenant_id, domain.context.principal_ref))
-        execute(domain, "INSERT INTO attempts(attempt_id,tenant_id,work_item_id,agent_slot_id,status,producer_ref,"
-                "runtime_id,scope_id,grant_ref,authority_id,authority_incarnation) "
-                "VALUES ('a-1',%s,'w-1','local-slot','running',%s,'runtime-1','local-scope',%s,%s,%s)",
-                (domain.tenant_id, domain.context.principal_ref, domain.context.grant_ref,
-                 domain.context.authority_id, domain.context.authority_incarnation))
+        domain._fixture_enrollment = register_execution_fixture(
+            domain, work_item_id="w-1", runtime_id="runtime-1", attempt_id="a-1")
+        # Signed setup creates real command/event/operation/outbox entries. The
+        # lease tests below assert deltas from this measured setup baseline.
+        domain._fixture_enrollment_ledger_baseline = raw_ledger_counts(domain)
         yield domain
     finally:
         with psycopg.connect(base, autocommit=True) as conn:
@@ -64,8 +65,9 @@ def execute(domain, statement, params=()):
 
 
 def counts(domain):
-    return tuple(execute(domain, f"SELECT count(*) FROM {table}")[0][0]
-                 for table in ("command_dedup", "domain_events", "operations", "outbox"))
+    current = raw_ledger_counts(domain)
+    baseline = domain._fixture_enrollment_ledger_baseline
+    return tuple(value - initial for value, initial in zip(current, baseline, strict=True))
 
 
 def command(domain, operation="acquire", resource="resource-1", **changes):
@@ -508,4 +510,3 @@ def test_shared_historical_verification_rechecks_uncommitted_current_authorizati
         with pytest.raises(FencingRejected):
             lease_authority.verify_historical_readback_in_transaction(cursor, **history_args(authority, result))
     assert counts(authority) == (1, 1, 1, 1)
-

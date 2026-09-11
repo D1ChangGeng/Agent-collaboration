@@ -21,6 +21,7 @@ from runtime.effects import LocalFileEffectGateway
 from runtime.errors import EffectUnavailable, FencingRejected
 from runtime.lease_authority import LeaseAuthority
 from runtime_tests import test_lease_authority as lease_suite
+from runtime_tests.enrollment_fixture import register_execution_fixture
 from runtime_tests.test_lease_authority import (
     PERMISSIONS,
     acquire,
@@ -188,19 +189,7 @@ def test_real_prepared_operation_resumes_with_new_lease_and_records_executor(
             ),
         )
         replacement.bootstrap_local_grant(PERMISSIONS)
-        execute(
-            replacement,
-            "INSERT INTO attempts(attempt_id,tenant_id,work_item_id,agent_slot_id,status,producer_ref,"
-            "runtime_id,scope_id,grant_ref,authority_id,authority_incarnation) "
-            "VALUES ('a-2',%s,'w-1','local-slot','running',%s,'runtime-2','local-scope',%s,%s,%s)",
-            (
-                replacement.tenant_id,
-                replacement.context.principal_ref,
-                replacement.context.grant_ref,
-                replacement.context.authority_id,
-                replacement.context.authority_incarnation,
-            ),
-        )
+        register_execution_fixture(replacement, work_item_id="w-1", runtime_id="runtime-2", attempt_id="a-2")
         new_lease = replacement.leases.acquire_lease(
             command(replacement),
             request(replacement, owner_attempt_id="a-2", owner_runtime_id="runtime-2"),
