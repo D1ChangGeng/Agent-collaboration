@@ -220,11 +220,61 @@ class GateValidator:
                 if actual != expected:
                     self.fail(where, "BOOTSTRAP raw version/baseline read-back mismatch")
 
-    def topology(self, binding, gate, where):
+    def machine_versions(self, binding, component, where):
+        """Normalize uniform legacy pins and explicit per-Machine pins."""
+        machines, value = binding.get("machines"), binding.get(component)
+        if not strings(machines):
+            return {}
+        if isinstance(value, dict) and "by_machine" in value:
+            versions = value["by_machine"]
+            if set(value) != {"by_machine"} or not isinstance(versions, dict) or set(versions) != set(machines):
+                self.fail(where, f"binding.{component}.by_machine must cover binding machines exactly")
+                return {}
+        else:
+            versions = {machine: value for machine in machines}
+        result = {}
+        for machine, pins in versions.items():
+            if (not isinstance(pins, dict) or not known(pins)
+                    or any(not isinstance(k, str) or not isinstance(v, str) for k, v in pins.items())):
+                self.fail(where, f"binding.{component} requires named pinned versions for {machine}")
+            else:
+                result[machine] = pins
+        if not {"codex", "opencode"} <= {h for pins in result.values() for h in pins}:
+            self.fail(where, f"{component} must pin Codex and OpenCode")
+        return result
+
+    def compatible_scope(self, earlier, later, where):
+        """An earlier Gate constrains retained tuples, never proves new ones."""
+        before, after = earlier["binding"], later["binding"]
+        for field in ("machines", "nodes"):
+            old, new = before.get(field), after.get(field)
+            if strings(old) and strings(new) and not set(old) <= set(new):
+                self.fail(where, f"dependent Gate omits prerequisite {field}")
+        for machine, data in earlier["observations"].items():
+            current = later["observations"].get(machine)
+            if current is not None and any(data.get(k) != current.get(k) for k in
+                                           ("machine_id", "node_id", "profile", "host_fingerprint", "os")):
+                self.fail(where, "prerequisite machine OS/Node/physical observation mismatch")
+        for component in ("harness", "driver"):
+            for machine, pins in earlier["versions"][component].items():
+                current = later["versions"][component].get(machine, {})
+                for harness, version in pins.items():
+                    if current.get(harness) != version:
+                        self.fail(where, f"prerequisite {component} version/scope mismatch for {machine}/{harness}")
+        old_tuples = {(m, h) for m, pins in earlier["versions"]["harness"].items() for h in pins}
+        new_tuples = {(m, h) for m, pins in later["versions"]["harness"].items() for h in pins} - old_tuples
+        if not new_tuples <= later["sessions"]:
+            self.fail(where, "new Machine/Harness tuples require dependent Gate session evidence")
+
+    def topology(self, binding, gate, where, versions):
+        scope = {"binding": binding, "versions": versions, "observations": {}, "sessions": set()}
         machines, nodes = binding.get("machines"), binding.get("nodes")
         if not strings(machines) or not strings(nodes):
             self.fail(where, "distinct machine and node IDs required")
-            return
+            return scope
+        for machine in machines:
+            if set(versions["harness"].get(machine, {})) != set(versions["driver"].get(machine, {})):
+                self.fail(where, "Harness/Driver tuple coverage must match for each machine")
         if gate.startswith("P2") and len(machines) < 2:
             self.fail(where, "P2 requires two distinct observed machines")
         os_versions = binding.get("os")
@@ -234,13 +284,14 @@ class GateValidator:
         machine_refs = binding.get("machine_evidence")
         if not isinstance(machine_refs, dict) or set(machine_refs) != set(machines):
             self.fail(where, "machine observation references must cover binding exactly")
-            return
+            return scope
         fingerprints, observed_nodes, machine_nodes = [], [], {}
         for machine, ref in machine_refs.items():
             result = self.reference(ref, where + ".machine_evidence", structured=True)
             if not result:
                 continue
             data = result[1]
+            scope["observations"][machine] = data
             if data.get("schema_version") != "acs-machine-observation/1" or data.get("machine_id") != machine or data.get("node_id") not in nodes or data.get("profile") != binding.get("profile") or data.get("evidence_class") != "directly_verified":
                 self.fail(where, "machine observation identity/Profile mismatch")
             if not isinstance(data.get("host_fingerprint"), str) or not known(data["host_fingerprint"]) or not known(data.get("os")):
@@ -254,12 +305,10 @@ class GateValidator:
             self.reference(data.get("evidence"), where + ".machine_evidence.raw")
         if not strings(fingerprints) or not strings(observed_nodes) or set(observed_nodes) != set(nodes):
             self.fail(where, "duplicate host fingerprint or mismatched observed Nodes")
-        if not gate.startswith("P2"):
-            return
-        refs = binding.get("session_evidence")
-        if not isinstance(refs, list) or len(refs) < 2:
+        refs = binding.get("session_evidence", [])
+        if not isinstance(refs, list) or (gate.startswith("P2") and len(refs) < 2):
             self.fail(where, "P2 requires observed cross-session topology")
-            return
+            return scope
         sessions, participants = [], []
         for ref in refs:
             result = self.reference(ref, where + ".session_evidence", structured=True)
@@ -270,25 +319,31 @@ class GateValidator:
             if not isinstance(harness, str) or not isinstance(machine, str):
                 self.fail(where, "invalid session Harness/machine")
                 continue
-            versions, drivers = binding.get("harness"), binding.get("driver")
+            harness_pins = versions["harness"].get(machine, {})
+            driver_pins = versions["driver"].get(machine, {})
             if (data.get("schema_version") != "acs-session-observation/1" or data.get("profile") != binding.get("profile")
                     or machine not in machines or data.get("node_id") != machine_nodes.get(machine)
-                    or data.get("evidence_class") != "directly_verified" or not isinstance(versions, dict)
-                    or data.get("harness_version") != versions.get(harness) or not isinstance(drivers, dict)
-                    or data.get("driver_version") != drivers.get(harness)):
+                    or data.get("evidence_class") != "directly_verified" or harness not in harness_pins or harness not in driver_pins
+                    or data.get("harness_version") != harness_pins.get(harness)
+                    or data.get("driver_version") != driver_pins.get(harness)):
                 self.fail(where, "session topology/version/Profile mismatch")
+            else:
+                scope["sessions"].add((machine, harness))
             sessions.append(data.get("session_id"))
             participants.append((harness, machine))
             self.interval(data, where + ".session_evidence")
             self.reference(data.get("evidence"), where + ".session_evidence.raw")
-        if not strings(sessions):
+        if not strings(sessions, nonempty=gate.startswith("P2")):
             self.fail(where, "session IDs missing or duplicated")
+        if not gate.startswith("P2"):
+            return scope
         required = {"codex"} if gate == "P2-CODEX" else {"codex", "opencode"}
         usable = [(h, m) for h, m in participants if h in required]
         if not required <= {h for h, _ in usable} or len({m for _, m in usable}) < 2:
             self.fail(where, "required Harnesses on distinct machines not evidenced")
+        return scope
 
-    def gate(self, record, where="record", expected_gate=None, parent=None, depth=0):
+    def gate(self, record, where="record", expected_gate=None, parent=None, depth=0, parent_scope=None):
         if not isinstance(record, dict):
             self.fail(where, "Gate record must be an object")
             return
@@ -341,7 +396,7 @@ class GateValidator:
         if parent:
             if parent.get("source_baseline") != baseline or parent["binding"].get("profile") != binding.get("profile"):
                 self.fail(where, "prerequisite baseline/Profile mismatch")
-            for key in ("core", "provider", "driver", "harness", "database", "protocol", "credential_scope", "policy"):
+            for key in ("core", "provider", "database", "protocol", "credential_scope", "policy"):
                 if parent["binding"].get(key) != binding.get(key):
                     self.fail(where, f"prerequisite {key} version/scope mismatch")
             earlier = [stamp(s.get("observed_at")) for s in passing]
@@ -351,17 +406,17 @@ class GateValidator:
         for component in ("core", "protocol", "credential_scope", "policy", "profile", "direction"):
             if not isinstance(binding.get(component), str) or not known(binding[component]):
                 self.fail(where, f"binding.{component} must be pinned text")
-        for component in ("provider", "database", "driver", "harness"):
+        for component in ("provider", "database"):
             if not isinstance(binding.get(component), dict) or not known(binding[component]) or any(not isinstance(v, str) for v in binding[component].values()):
                 self.fail(where, f"binding.{component} requires named pinned versions")
         if not isinstance(binding.get("provider"), dict) or "temporal" not in binding["provider"]:
             self.fail(where, "reference Profile requires Temporal version evidence")
         if not isinstance(binding.get("database"), dict) or "postgresql" not in binding["database"]:
             self.fail(where, "reference Profile requires PostgreSQL version evidence")
-        for component in ("driver", "harness"):
-            if not isinstance(binding.get(component), dict) or not {"codex", "opencode"} <= binding[component].keys():
-                self.fail(where, f"{component} must pin Codex and OpenCode")
-        self.topology(binding, gate, where)
+        versions = {component: self.machine_versions(binding, component, where) for component in ("driver", "harness")}
+        scope = self.topology(binding, gate, where, versions)
+        if parent_scope is not None:
+            self.compatible_scope(scope, parent_scope, where)
         for scenario in passing:
             location = where + "." + str(scenario.get("scenario_id"))
             if scenario.get("source_baseline") != baseline or scenario.get("binding_sha256") != binding_digest(binding):
@@ -406,7 +461,7 @@ class GateValidator:
                     self.bootstrap(ref, path, data, location)
                     actual_status = data.get("gate")
                 else:
-                    self.gate(data, location, expected_gate=required, parent=record, depth=depth + 1)
+                    self.gate(data, location, expected_gate=required, parent=record, depth=depth + 1, parent_scope=scope)
                     actual_status = data.get("status")
                 self.active.remove(path)
                 if actual_status not in ("passed", "supported") or ("status" in ref and ref["status"] != actual_status):
