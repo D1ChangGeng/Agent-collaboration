@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Protocol
 
 from runtime.codex_driver import CodexAppServerDriver
+from runtime.opencode_driver import OpenCodeNativeDriver
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,3 +52,4 @@ class EndpointDriverAdapter:
 
 
 CodexDriver = CodexAppServerDriver
+OpenCodeDriver = OpenCodeNativeDriver
