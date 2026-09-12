@@ -12,11 +12,11 @@ import sqlite3
 import stat
 import subprocess
 import sys
-import time
 from collections.abc import Callable
 from contextlib import closing
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, ClassVar
 
 import psycopg
@@ -29,7 +29,7 @@ if str(SOURCE_ROOT) not in sys.path:
 
 from runtime.delivery import DeliveryDispatcher, DeliveryService
 from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
-from runtime.delivery_node import LocalNodeEndpoint
+from runtime.delivery_node import DeliveryTransportError, LocalNodeEndpoint
 from runtime.domain import DomainAuthority
 from runtime.errors import IdempotencyConflict
 from runtime.models import CommandEnvelope
@@ -62,7 +62,10 @@ class ProbeRejected(RuntimeError):
 
 
 class ScenarioCatalog:
-    LINEAGE_BOUND: ClassVar[frozenset[str]] = frozenset({"P1-DOMAIN-TRANSACTION"})
+    LINEAGE_BOUND: ClassVar[frozenset[str]] = frozenset({
+        "P1-DOMAIN-TRANSACTION", "P1-COMMAND-DEDUP", "P1-INBOX-ACK-LOSS",
+        "P1-AUTH-REVOCATION", "P1-CORE-RESTART",
+    })
     TESTS: ClassVar[dict[str, tuple[str, ...]]] = {
         "P1-DOMAIN-TRANSACTION": (
             "runtime_tests/test_postgres_integration.py::test_real_postgres_retry_revocation_and_incomplete_evidence_guards",
@@ -395,6 +398,120 @@ def _domain_command(authority: DomainAuthority, command_type: str, target_kind: 
     )
 
 
+def _private_json(path: Path, value: dict[str, Any]) -> bytes:
+    data = _canonical(value)
+    try:
+        descriptor = os.open(
+            path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC, 0o600,
+        )
+    except FileExistsError:
+        if path.read_bytes() != data:
+            raise ProbeRejected("private fault context identity changed") from None
+        return data
+    try:
+        os.write(descriptor, data)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    return data
+
+
+def _core_crash_child(profile_path: Path, context_path: Path, expected_hash: str) -> None:
+    profile, _digest, _secrets = _secure_profile(profile_path)
+    data = context_path.read_bytes()
+    if _sha(data) != expected_hash:
+        raise ProbeRejected("Core crash context digest changed")
+    context = json.loads(data)
+    if set(context) != {"pg_schema", "identity", "endpoint_id", "descriptor"}:
+        raise ProbeRejected("Core crash context fields changed")
+    schema = context["pg_schema"]
+    if not re.fullmatch(r"p1_probe_[0-9a-f]{24}", schema):
+        raise ProbeRejected("Core crash schema identity changed")
+    authority = DomainAuthority(make_conninfo(
+        profile["postgres_dsn"], options=f"-c search_path={schema}",
+    ))
+    endpoint = SimpleNamespace(descriptor=lambda: context["descriptor"])
+    dispatcher = DeliveryDispatcher(DeliveryService(
+        authority, {context["endpoint_id"]: endpoint},
+    ))
+    dispatcher.after_claim = lambda _identity: os._exit(83)
+    dispatcher.dispatch(context["identity"])
+    raise ProbeRejected("Core crash seam was not reached")
+
+
+def _core_restart(
+    profile: dict[str, Any], ledger: ProbeLedger, pg_schema: str,
+    service: DeliveryService, endpoint: LocalNodeEndpoint,
+    identity: dict[str, str], message_id: str, operation_id: str,
+    node: NodeJournal, driver: FixtureDriver,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    context_path = ledger.root / "P1-CORE-RESTART-context.json"
+    context = {
+        "pg_schema": pg_schema, "identity": identity,
+        "endpoint_id": next(iter(service.endpoints)),
+        "descriptor": endpoint.descriptor(),
+    }
+    context_digest = _sha(_private_json(context_path, context))
+    proof_path = ledger.root / "P1-CORE-RESTART-crash.json"
+    if proof_path.exists():
+        proof = json.loads(proof_path.read_text())
+        if proof.get("context_digest") != context_digest or proof.get("exit_code") != 83:
+            raise ProbeRejected("Core crash proof identity changed")
+    else:
+        environment = {}
+        for key in ("PATH", "HOME", "LANG", "LC_ALL", "TZ"):
+            value = os.environ.get(key)
+            if value is not None:
+                environment[key] = value
+        environment["PYTHONNOUSERSITE"] = "1"
+        process = subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "core-crash",
+             "--profile", profile["_profile_path"], "--context", str(context_path),
+             "--context-sha256", context_digest],
+            cwd=ledger.root, env=environment,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        try:
+            exit_code = process.wait(timeout=20)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+            raise ProbeRejected("Core crash child did not exit on its bounded seam") from None
+        if exit_code != 83 or Path(f"/proc/{process.pid}").exists():
+            raise ProbeRejected("Core crash child did not stop at the prepared attempt")
+        with service.authority._connect() as connection:
+            prepared = connection.execute(
+                "SELECT attempt_id,status,finished_at FROM delivery_attempts "
+                "WHERE message_id=%s AND ordinal=1", (message_id,),
+            ).fetchone()
+            inbox_count = connection.execute(
+                "SELECT count(*) FROM inbox_messages WHERE message_id=%s",
+                (message_id,),
+            ).fetchone()[0]
+        if (prepared is None or prepared[1:] != ("prepared", None)
+                or inbox_count != 0 or node.get_message(message_id) is not None
+                or driver.calls):
+            raise ProbeRejected("Core crash crossed the native/Node boundary")
+        proof = {
+            "context_digest": context_digest,
+            "child_pid": process.pid, "exit_code": exit_code,
+            "prepared_attempt_id": prepared[0], "node_before": 0,
+            "driver_before": 0,
+        }
+        _private_json(proof_path, proof)
+    delivered = DeliveryDispatcher(service, worker_id="replacement-core").dispatch(identity)
+    if delivered["status"] != "delivered":
+        raise ProbeRejected("replacement Core did not resume the prepared attempt")
+    with service.authority._connect() as connection:
+        attempts = connection.execute(
+            "SELECT ordinal,attempt_id,status FROM delivery_attempts WHERE message_id=%s",
+            (message_id,),
+        ).fetchall()
+    if attempts != [(1, proof["prepared_attempt_id"], "delivered")]:
+        raise ProbeRejected("replacement Core did not retain the prepared attempt")
+    return delivered, proof
+
+
 def _run_domain_transaction(
     profile: dict[str, Any], scenario: str, ledger: ProbeLedger,
     commit: str, tree: str, run_id: str, suffix: str, issued_at: datetime,
@@ -444,7 +561,7 @@ def _run_domain_transaction(
     packet = DeliveryPacket(
         work_item_id=work_id, target_scope_id="local-scope",
         target_agent_slot_id="local-slot", accepted_revision=0,
-        goal="P1 Domain transaction probe", accepted_state_summary="revision zero",
+        goal=f"{scenario} lineage probe", accepted_state_summary="revision zero",
         request="Return the fixed fixture response", source_baseline=commit,
         expected_response="layered receipt", activation="invoke",
         deadline=send.deadline,
@@ -455,7 +572,6 @@ def _run_domain_transaction(
         "message_id": message_id,
         "operation_id": sent.operation_id,
     }
-    delivered = DeliveryDispatcher(service).dispatch(identity)
     replay = service.send_message(send, packet, endpoint_id=endpoint_id, binding_revision=1)
     changed_packet = packet.model_copy(update={"request": "changed conflicting request"})
     try:
@@ -464,10 +580,66 @@ def _run_domain_transaction(
         conflict_rejected = True
     else:
         conflict_rejected = False
-    if not replay.duplicate or delivered["status"] != "delivered":
-        raise ProbeRejected("Domain delivery transaction/replay result is incomplete")
+    if not replay.duplicate or replay.operation_id != sent.operation_id:
+        raise ProbeRejected("Domain exact command replay did not retain its identity")
     if not conflict_rejected:
         raise ProbeRejected("Domain command conflict was not rejected")
+    ack_loss_observed = False
+    core_crash_proof = None
+    if scenario == "P1-AUTH-REVOCATION":
+        with authority._connect() as connection:
+            connection.execute(
+                "UPDATE grants SET revoked_at=clock_timestamp() WHERE grant_ref=%s",
+                (authority.context.grant_ref,),
+            )
+        delivered = DeliveryDispatcher(service).dispatch(identity)
+        if delivered["status"] != "blocked":
+            raise ProbeRejected("revoked Grant still dispatched the queued command")
+    elif scenario == "P1-CORE-RESTART":
+        delivered, core_crash_proof = _core_restart(
+            profile, ledger, pg_schema, service, endpoint, identity,
+            message_id, sent.operation_id, node, driver,
+        )
+    elif scenario == "P1-INBOX-ACK-LOSS":
+        original_deliver = endpoint.deliver
+        first_delivery = True
+
+        def lose_ack(*args: Any, **kwargs: Any) -> dict[str, Any]:
+            nonlocal first_delivery
+            observation = original_deliver(*args, **kwargs)
+            if first_delivery:
+                first_delivery = False
+                raise DeliveryTransportError("injected ACK loss after Node commit")
+            return observation
+
+        endpoint.deliver = lose_ack
+        first_result = DeliveryDispatcher(service).dispatch(identity)
+        endpoint.deliver = original_deliver
+        with authority._connect() as connection:
+            interim_inbox_count = connection.execute(
+                "SELECT count(*) FROM inbox_messages WHERE message_id=%s",
+                (message_id,),
+            ).fetchone()[0]
+        node_after_loss = node.get_message(message_id)
+        ack_loss_observed = (
+            first_result["status"] == "retry_wait" and interim_inbox_count == 0
+            and node_after_loss is not None
+            and node_after_loss.state == "response_received"
+        )
+        if not ack_loss_observed:
+            raise ProbeRejected("ACK loss did not separate Node commit from Core projection")
+        with authority._connect() as connection:
+            connection.execute(
+                "UPDATE delivery_messages SET next_attempt_at=clock_timestamp() "
+                "WHERE message_id=%s", (message_id,),
+            )
+        delivered = DeliveryDispatcher(service).dispatch(identity)
+        if delivered["status"] != "delivered":
+            raise ProbeRejected("ACK loss retry did not project the same Node response")
+    else:
+        delivered = DeliveryDispatcher(service).dispatch(identity)
+        if delivered["status"] != "delivered":
+            raise ProbeRejected("Domain delivery did not reach its terminal receipt")
     with node._transaction() as connection:
         connection.execute(
             "CREATE TABLE IF NOT EXISTS p1_driver_calls(operation_id TEXT PRIMARY KEY)"
@@ -479,15 +651,17 @@ def _run_domain_transaction(
                 "SELECT operation_id FROM p1_driver_calls ORDER BY operation_id"
             )
         ]
-    if driver_calls != [sent.operation_id]:
+    expected_driver_calls = [] if scenario == "P1-AUTH-REVOCATION" else [sent.operation_id]
+    if driver_calls != expected_driver_calls:
         raise ProbeRejected("Driver call lineage is incomplete")
     if fault is not None:
         fault("after_domain_dispatch")
     with authority._connect() as connection:
-        attempt = connection.execute(
-            "SELECT attempt_id,dispatch_id FROM delivery_attempts WHERE message_id=%s",
+        attempts = connection.execute(
+            "SELECT ordinal,attempt_id,dispatch_id,status FROM delivery_attempts "
+            "WHERE message_id=%s ORDER BY ordinal",
             (message_id,),
-        ).fetchone()
+        ).fetchall()
         receipts = connection.execute(
             "SELECT receipt_id,layer FROM delivery_receipts WHERE message_id=%s ORDER BY observed_at",
             (message_id,),
@@ -496,24 +670,90 @@ def _run_domain_transaction(
             "SELECT event_id FROM domain_events WHERE command_id=%s ORDER BY event_id",
             (send.command_id,),
         ).fetchall()
-    if attempt is None or attempt[1] is None or not receipts or not events:
+        message_state = connection.execute(
+            "SELECT state,last_error FROM delivery_messages WHERE message_id=%s",
+            (message_id,),
+        ).fetchone()
+        inbox_count = connection.execute(
+            "SELECT count(*) FROM inbox_messages WHERE message_id=%s", (message_id,),
+        ).fetchone()[0]
+        grant_revoked = connection.execute(
+            "SELECT revoked_at IS NOT NULL FROM grants WHERE grant_ref=%s",
+            (authority.context.grant_ref,),
+        ).fetchone()[0]
+        dedup_details = connection.execute(
+            "SELECT canonical_hash,hash_version FROM command_dedup WHERE command_id=%s",
+            (send.command_id,),
+        ).fetchone()
+        operation_details = connection.execute(
+            "SELECT status,provider FROM operations WHERE operation_id=%s",
+            (sent.operation_id,),
+        ).fetchone()
+        outbox_details = connection.execute(
+            "SELECT topic,delivered_at IS NOT NULL FROM outbox WHERE operation_id=%s",
+            (sent.operation_id,),
+        ).fetchone()
+        message_hashes = connection.execute(
+            "SELECT canonical_hash,envelope_hash FROM delivery_messages WHERE message_id=%s",
+            (message_id,),
+        ).fetchone()
+        event_hashes = connection.execute(
+            "SELECT canonical_hash FROM domain_events WHERE command_id=%s ORDER BY event_id",
+            (send.command_id,),
+        ).fetchall()
+        operation_count = connection.execute(
+            "SELECT count(*) FROM operations WHERE command_id=%s",
+            (send.command_id,),
+        ).fetchone()[0]
+        outbox_count = connection.execute(
+            "SELECT count(*) FROM outbox WHERE operation_id=%s",
+            (sent.operation_id,),
+        ).fetchone()[0]
+    if (not receipts or not events or any(item[2] is None for item in attempts)
+            or (scenario == "P1-AUTH-REVOCATION" and attempts)
+            or (scenario != "P1-AUTH-REVOCATION" and not attempts)):
         raise ProbeRejected("Domain delivery lineage rows are incomplete")
+    expected_state = "blocked" if scenario == "P1-AUTH-REVOCATION" else "delivered"
+    if message_state[0] != expected_state or grant_revoked != (scenario == "P1-AUTH-REVOCATION"):
+        raise ProbeRejected("scenario authority state disagrees with the expected fault")
+    if inbox_count != (0 if scenario == "P1-AUTH-REVOCATION" else 1):
+        raise ProbeRejected("scenario Inbox projection count changed")
+    if (not all((dedup_details, operation_details, outbox_details, message_hashes))
+            or len(events) != 1 or operation_count != 1 or outbox_count != 1):
+        raise ProbeRejected("Domain command/operation/outbox hashes are incomplete")
+    if scenario == "P1-INBOX-ACK-LOSS" and (
+        len(attempts) != 2 or [item[3] for item in attempts] != ["retry_wait", "delivered"]
+    ):
+        raise ProbeRejected("ACK loss did not retain both delivery attempts")
     workflow_id, temporal_run_id = asyncio.run(
         _temporal_marker(profile, sent.operation_id + ":temporal", scenario),
     )
     lineage = {
-        "tenant_id": authority.tenant_id, "command_id": send.command_id,
+        "tenant_id": authority.tenant_id, "grant_ref": authority.context.grant_ref,
+        "command_id": send.command_id,
         "message_id": message_id, "operation_id": sent.operation_id,
-        "attempt_id": attempt[0], "dispatch_id": attempt[1],
+        "attempt_id": attempts[-1][1] if attempts else None,
+        "dispatch_id": attempts[-1][2] if attempts else None,
+        "attempts": [{"ordinal": item[0], "attempt_id": item[1],
+                      "dispatch_id": item[2], "status": item[3]} for item in attempts],
         "event_ids": [str(item[0]) for item in events],
         "receipts": [{"receipt_id": item[0], "layer": item[1]} for item in receipts],
         "driver_calls": driver_calls, "node_journal": scenario + "-node.sqlite",
-        "conflict_rejected": conflict_rejected,
+        "conflict_rejected": conflict_rejected, "exact_replay": replay.duplicate,
+        "dispatch_status": delivered["status"], "message_state": message_state[0],
+        "last_error": message_state[1], "inbox_count": inbox_count,
+        "grant_revoked": grant_revoked, "ack_loss_observed": ack_loss_observed,
+        "core_crash_proof": core_crash_proof,
+        "dedup_details": list(dedup_details),
+        "operation_details": list(operation_details),
+        "outbox_details": list(outbox_details),
+        "message_hashes": list(message_hashes),
+        "event_hashes": [item[0] for item in event_hashes],
     }
     raw = ledger.root / (scenario + "-runtime.json")
     raw.write_bytes(_canonical({
         "scenario_id": scenario, "lineage": lineage,
-        "result": "passed", "fault": "exact replay and conflicting identity guarded",
+        "result": "passed", "fault": scenario,
     }))
     raw.chmod(0o600)
     value = {
@@ -532,74 +772,17 @@ def _run_domain_transaction(
 
 
 def _run_tests(profile: dict[str, Any], scenario: str, ledger: ProbeLedger,
-               commit: str, tree: str, secrets: tuple[bytes, ...],
+               commit: str, tree: str,
                fault: Callable[[str], None] | None = None) -> dict[str, Any]:
     if ledger.get(scenario) is not None:
         return ledger.get(scenario)
     run_id = os.environ.get("ACS_GATE_RUN_ID", "standalone-" + _sha(os.urandom(16))[:24])
     suffix, issued_at = ledger.claim(scenario, run_id)
-    if scenario == "P1-DOMAIN-TRANSACTION":
-        return _run_domain_transaction(
-            profile, scenario, ledger, commit, tree, run_id, suffix, issued_at, fault,
-        )
-    tests = ScenarioCatalog.TESTS[scenario]
-    command = [profile["python"], "-m", "pytest", "-o", "addopts=", "-q", *tests]
-    environment = dict(os.environ)
-    environment.update({
-        "ACS_P1_DSN": profile["postgres_dsn"],
-        "ACS_P1_TEMPORAL_ENDPOINT": profile["temporal_endpoint"],
-        "ACS_P1_TEMPORAL_NAMESPACE": profile["temporal_namespace"],
-        "ACS_SURFACE_TEST_PYTHON": profile["python"],
-    })
-    started = time.monotonic()
-    result = subprocess.run(
-        command, cwd=profile["source_root"], env=environment, capture_output=True,
-        timeout=900, check=False,
+    if scenario not in ScenarioCatalog.LINEAGE_BOUND:
+        raise ProbeUnavailable("scenario has no real Runtime lineage adapter")
+    return _run_domain_transaction(
+        profile, scenario, ledger, commit, tree, run_id, suffix, issued_at, fault,
     )
-    output = result.stdout + b"\n" + result.stderr
-    _no_secret(output, secrets)
-    if result.returncode or b" skipped" in output or b" failed" in output:
-        raise ProbeUnavailable("scenario tests did not produce complete real evidence")
-    operation_id = f"p1-probe-operation:{suffix}"
-    message_id = f"p1-probe-message:{suffix}"
-    event_id = f"p1-probe-event:{suffix}"
-    receipt_id = f"p1-probe-receipt:{suffix}"
-    pg_schema = "p1_probe_" + suffix.replace("-", "_")
-    with psycopg.connect(profile["postgres_dsn"], autocommit=True) as connection:
-        connection.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(pg_schema)))
-        ledger.reserve_schema(pg_schema)
-        connection.execute(sql.SQL(
-            "CREATE TABLE {}.scenario_evidence(scenario_id TEXT PRIMARY KEY,operation_id TEXT,"
-            "message_id TEXT,event_id TEXT,receipt_id TEXT,test_digest TEXT,elapsed_ms BIGINT)"
-        ).format(sql.Identifier(pg_schema)))
-        connection.execute(sql.SQL(
-            "INSERT INTO {}.scenario_evidence VALUES (%s,%s,%s,%s,%s,%s,%s)"
-        ).format(sql.Identifier(pg_schema)), (
-            scenario, operation_id, message_id, event_id, receipt_id,
-            _sha(output), int((time.monotonic() - started) * 1000),
-        ))
-    workflow_id, temporal_run_id = asyncio.run(
-        _temporal_marker(profile, operation_id + ":temporal", scenario),
-    )
-    raw = ledger.root / (scenario + "-pytest.json")
-    raw_value = {
-        "scenario_id": scenario, "argv": command[1:], "exit_code": result.returncode,
-        "stdout_sha256": _sha(result.stdout), "stderr_sha256": _sha(result.stderr),
-        "output_sha256": _sha(output), "tests": tests,
-    }
-    raw.write_bytes(_canonical(raw_value))
-    raw.chmod(0o600)
-    value = {
-        "scenario_id": scenario, "run_id": run_id, "operation_id": operation_id,
-        "message_id": message_id, "event_id": event_id, "receipt_id": receipt_id,
-        "test_digest": _sha(output), "raw_path": raw.name, "pg_schema": pg_schema,
-        "temporal_workflow_id": workflow_id, "temporal_run_id": temporal_run_id,
-        "lineage_json": "{}",
-        "source_commit": commit, "source_tree": tree, "status": "passed",
-        "created_at": datetime.now(UTC).isoformat(),
-    }
-    ledger.put(value)
-    return value
 
 
 def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
@@ -607,53 +790,118 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
     lineage = json.loads(row["lineage_json"])
     required_lineage = {
         "tenant_id", "command_id", "message_id", "operation_id", "attempt_id",
-        "dispatch_id", "event_ids", "receipts", "driver_calls", "node_journal",
+        "dispatch_id", "attempts", "event_ids", "receipts", "driver_calls",
+        "node_journal", "grant_ref", "message_state", "inbox_count", "grant_revoked",
+        "ack_loss_observed", "exact_replay", "conflict_rejected",
+        "core_crash_proof",
+        "dedup_details", "operation_details", "outbox_details", "message_hashes",
+        "event_hashes",
     }
     if set(lineage) < required_lineage:
         raise ProbeRejected("marker-only evidence is not an actual Runtime lineage")
+    expected_auth_failure = scenario == "P1-AUTH-REVOCATION"
+    if (
+        lineage["message_state"] != ("blocked" if expected_auth_failure else "delivered")
+        or lineage["inbox_count"] != (0 if expected_auth_failure else 1)
+        or lineage["grant_revoked"] != expected_auth_failure
+        or lineage["driver_calls"] != ([] if expected_auth_failure else [lineage["operation_id"]])
+        or not lineage["exact_replay"] or not lineage["conflict_rejected"]
+        or lineage["ack_loss_observed"] != (scenario == "P1-INBOX-ACK-LOSS")
+        or (lineage["core_crash_proof"] is not None) != (scenario == "P1-CORE-RESTART")
+    ):
+        raise ProbeRejected("scenario lineage does not prove its required fault")
+    if scenario == "P1-CORE-RESTART":
+        proof = lineage["core_crash_proof"]
+        if (
+            not isinstance(proof, dict) or proof.get("exit_code") != 83
+            or proof.get("node_before") != 0 or proof.get("driver_before") != 0
+            or len(lineage["attempts"]) != 1
+            or proof.get("prepared_attempt_id") != lineage["attempts"][0]["attempt_id"]
+            or lineage["attempts"][0]["status"] != "delivered"
+        ):
+            raise ProbeRejected("Core crash recovery lineage is incomplete")
     if kind == "postgresql":
         scoped = make_conninfo(
             profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
         )
         with psycopg.connect(scoped) as connection:
             command_row = connection.execute(
-                "SELECT command_id FROM command_dedup WHERE command_id=%s",
+                "SELECT command_id,canonical_hash,hash_version FROM command_dedup "
+                "WHERE command_id=%s",
                 (lineage["command_id"],),
             ).fetchone()
             operation_row = connection.execute(
-                "SELECT operation_id FROM operations WHERE operation_id=%s",
+                "SELECT operation_id,status,provider FROM operations WHERE operation_id=%s",
                 (lineage["operation_id"],),
             ).fetchone()
             event_rows = connection.execute(
-                "SELECT event_id FROM domain_events WHERE command_id=%s ORDER BY event_id",
+                "SELECT event_id,canonical_hash FROM domain_events WHERE command_id=%s "
+                "ORDER BY event_id",
                 (lineage["command_id"],),
             ).fetchall()
             outbox_row = connection.execute(
-                "SELECT operation_id FROM outbox WHERE operation_id=%s",
+                "SELECT operation_id,topic,delivered_at IS NOT NULL FROM outbox "
+                "WHERE operation_id=%s",
                 (lineage["operation_id"],),
             ).fetchone()
             message_row = connection.execute(
-                "SELECT operation_id FROM delivery_messages WHERE message_id=%s",
+                "SELECT operation_id,canonical_hash,envelope_hash FROM delivery_messages "
+                "WHERE message_id=%s",
                 (lineage["message_id"],),
             ).fetchone()
-            attempt_row = connection.execute(
-                "SELECT attempt_id,dispatch_id FROM delivery_attempts WHERE message_id=%s",
+            attempt_rows = connection.execute(
+                "SELECT ordinal,attempt_id,dispatch_id,status FROM delivery_attempts "
+                "WHERE message_id=%s ORDER BY ordinal",
                 (lineage["message_id"],),
-            ).fetchone()
+            ).fetchall()
             receipt_rows = connection.execute(
                 "SELECT receipt_id,layer FROM delivery_receipts WHERE message_id=%s "
                 "ORDER BY observed_at",
                 (lineage["message_id"],),
             ).fetchall()
+            message_state = connection.execute(
+                "SELECT state,last_error FROM delivery_messages WHERE message_id=%s",
+                (lineage["message_id"],),
+            ).fetchone()
+            inbox_count = connection.execute(
+                "SELECT count(*) FROM inbox_messages WHERE message_id=%s",
+                (lineage["message_id"],),
+            ).fetchone()[0]
+            grant_revoked = connection.execute(
+                "SELECT revoked_at IS NOT NULL FROM grants WHERE grant_ref=%s",
+                (lineage["grant_ref"],),
+            ).fetchone()[0]
+            dedup_count = connection.execute(
+                "SELECT count(*) FROM command_dedup WHERE command_id=%s",
+                (lineage["command_id"],),
+            ).fetchone()[0]
+            operation_count = connection.execute(
+                "SELECT count(*) FROM operations WHERE command_id=%s",
+                (lineage["command_id"],),
+            ).fetchone()[0]
+            outbox_count = connection.execute(
+                "SELECT count(*) FROM outbox WHERE operation_id=%s",
+                (lineage["operation_id"],),
+            ).fetchone()[0]
         expected_receipts = [(item["receipt_id"], item["layer"]) for item in lineage["receipts"]]
+        expected_attempts = [
+            (item["ordinal"], item["attempt_id"], item["dispatch_id"], item["status"])
+            for item in lineage["attempts"]
+        ]
         if (
-            command_row != (lineage["command_id"],)
-            or operation_row != (lineage["operation_id"],)
+            operation_row != (lineage["operation_id"], *lineage["operation_details"])
             or [str(item[0]) for item in event_rows] != lineage["event_ids"]
-            or outbox_row != (lineage["operation_id"],)
-            or message_row != (lineage["operation_id"],)
-            or attempt_row != (lineage["attempt_id"], lineage["dispatch_id"])
+            or [item[1] for item in event_rows] != lineage["event_hashes"]
+            or outbox_row != (lineage["operation_id"], *lineage["outbox_details"])
+            or message_row != (lineage["operation_id"], *lineage["message_hashes"])
+            or command_row != (lineage["command_id"], *lineage["dedup_details"])
+            or attempt_rows != expected_attempts
             or receipt_rows != expected_receipts
+            or message_state != (lineage["message_state"], lineage["last_error"])
+            or inbox_count != lineage["inbox_count"]
+            or grant_revoked != lineage["grant_revoked"]
+            or dedup_count != 1
+            or operation_count != 1 or outbox_count != 1 or len(event_rows) != 1
         ):
             raise ProbeRejected("PostgreSQL Runtime lineage changed")
         return {"postgresql_readback": True, "lineage_digest": _sha(_canonical(lineage))}
@@ -675,8 +923,11 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 "SELECT receipt_id FROM lifecycle_receipts WHERE operation_id=?",
                 (lineage["operation_id"],),
             ).fetchall()
-        if (journal != (lineage["command_id"], lineage["message_id"])
-                or mailbox != (lineage["operation_id"],) or not node_receipts):
+        if expected_auth_failure:
+            if journal is not None or mailbox is not None or node_receipts:
+                raise ProbeRejected("revoked command reached the Node")
+        elif (journal != (lineage["command_id"], lineage["message_id"])
+              or mailbox != (lineage["operation_id"],) or not node_receipts):
             raise ProbeRejected("SQLite Node lineage changed")
         return {"sqlite_readback": True, "journal_sha256": _sha(node_path.read_bytes()),
                 "node_receipt_ids": [item[0] for item in node_receipts]}
@@ -691,7 +942,12 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             finally:
                 await adapter.close()
         value = asyncio.run(read())
-        if value.get("status") != "committed":
+        if (
+            value.get("status") != "committed"
+            or row["temporal_workflow_id"] != lineage["operation_id"] + ":temporal"
+            or value.get("payload", {}).get("operation_id") != row["temporal_workflow_id"]
+            or value.get("payload", {}).get("scenario_id") != scenario
+        ):
             raise ProbeRejected("Temporal scenario marker changed")
         return {"temporal_readback": True, "workflow_id": row["temporal_workflow_id"],
                 "run_id": row["temporal_run_id"]}
@@ -699,12 +955,23 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         raw = ledger.root / row["raw_path"]
         value = json.loads(raw.read_text())
         if (value.get("lineage") != lineage
-                or lineage["driver_calls"] != [lineage["operation_id"]]
                 or _sha(raw.read_bytes()) != row["test_digest"]):
             raise ProbeRejected("Driver/raw test evidence changed")
         return {"driver_readback": True, "driver_calls": lineage["driver_calls"],
                 "raw_sha256": _sha(raw.read_bytes())}
     if kind == "os":
+        if scenario == "P1-CORE-RESTART":
+            proof = lineage["core_crash_proof"]
+            context_path = ledger.root / "P1-CORE-RESTART-context.json"
+            proof_path = ledger.root / "P1-CORE-RESTART-crash.json"
+            if (
+                Path(f"/proc/{proof['child_pid']}").exists()
+                or _sha(context_path.read_bytes()) != proof["context_digest"]
+                or json.loads(proof_path.read_text()) != proof
+                or any((path.stat().st_mode & 0o777) != 0o600
+                       for path in (context_path, proof_path))
+            ):
+                raise ProbeRejected("Core crash process is not conclusively stopped")
         systemd = subprocess.run(
             ["systemctl", "--user", "show-environment"], capture_output=True,
             timeout=10, check=False,
@@ -772,6 +1039,7 @@ def execute(
     if scenario not in ScenarioCatalog.TESTS or kind not in KINDS:
         raise ProbeRejected("unknown P1 scenario or evidence kind")
     profile, profile_digest, secrets = _secure_profile(profile_path)
+    profile["_profile_path"] = str(profile_path)
     root = Path(os.environ.get("ACS_GATE_SOURCE_SNAPSHOT", profile["source_root"])).resolve(
         strict=True,
     )
@@ -793,7 +1061,7 @@ def execute(
         "node_id": profile["node_id"], "versions": profile["versions"],
     })))
     ledger = ProbeLedger(output)
-    row = _run_tests(profile, scenario, ledger, commit, tree, secrets, fault) \
+    row = _run_tests(profile, scenario, ledger, commit, tree, fault) \
         if kind == "command_output" else ledger.get(scenario)
     if row is None or row["status"] != "passed":
         raise ProbeUnavailable("scenario command evidence has not completed")
@@ -831,8 +1099,15 @@ def main(argv: list[str] | None = None) -> int:
     clean = commands.add_parser("cleanup")
     clean.add_argument("--profile", type=Path, required=True)
     clean.add_argument("--output", type=Path, required=True)
+    crash = commands.add_parser("core-crash")
+    crash.add_argument("--profile", type=Path, required=True)
+    crash.add_argument("--context", type=Path, required=True)
+    crash.add_argument("--context-sha256", required=True)
     args = parser.parse_args(argv)
     try:
+        if args.command == "core-crash":
+            _core_crash_child(args.profile, args.context, args.context_sha256)
+            raise ProbeRejected("Core crash child returned unexpectedly")
         if args.command == "run":
             value = execute(args.profile, args.scenario, args.kind, args.output)
         else:
