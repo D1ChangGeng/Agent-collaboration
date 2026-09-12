@@ -680,6 +680,22 @@ class DeliveryDispatcher:
                             raise DeliveryRejected("dispatch_marker_conflict", "uncertain")
 
                 endpoint = None
+                def read_dispatch_marker(invocation):
+                    with self.service.authority._connect() as observed_connection, observed_connection.cursor() as observed_cursor:
+                        self._load(observed_cursor, identity)
+                        observed_cursor.execute(
+                            "SELECT receipt_id,attempt_id,dispatch_id FROM delivery_receipts "
+                            "WHERE tenant_id=%s AND message_id=%s AND layer='runtime_dispatched'",
+                            (identity["tenant_id"], identity["message_id"]),
+                        )
+                        recorded = observed_cursor.fetchone()
+                        if recorded is None:
+                            return False
+                        if recorded != (invocation.runtime_dispatched_receipt_id, invocation.attempt_id,
+                                        invocation.dispatch_id):
+                            raise DeliveryRejected("dispatch_marker_identity_changed", "uncertain")
+                        return True
+
                 try:
                     with self.service.authority._connect() as read_connection, read_connection.cursor() as read_cursor:
                         row = self._load(read_cursor, identity)
@@ -692,6 +708,7 @@ class DeliveryDispatcher:
                     observation = endpoint.deliver(
                         envelope, authorize_selected, invocation=invocation,
                         mark_dispatched=mark_dispatched if invocation is not None else None,
+                        read_dispatch_marker=read_dispatch_marker if invocation is not None else None,
                     )
                     with self.service.authority._connect() as final_connection, final_connection.cursor() as final_cursor:
                         row = self._load(final_cursor, identity)

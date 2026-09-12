@@ -8,6 +8,8 @@ version = "0.1.0"
 description = "Local durable collaboration runtime vertical slice"
 requires-python = ">=3.12"
 dependencies = [
+  "mcp==2.2.0",
+  "mcp-types==2.2.0",
   "cryptography==50.0.1",
   "PyNaCl==1.6.2",
   "fastapi>=0.115,<1",
@@ -17,6 +19,9 @@ dependencies = [
   "typer>=0.15,<1",
   "uvicorn>=0.34,<1",
 ]
+
+[project.scripts]
+acs-runtime = "runtime.surface_entry:main"
 
 [dependency-groups]
 dev = [
@@ -39,6 +44,9 @@ target-version = "py312"
 
 [tool.ruff.lint]
 extend-select = ["B", "I", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["runtime", "runtime_tests"]
 
 [tool.ruff.lint.per-file-ignores]
 "runtime_tests/*" = ["S101"]

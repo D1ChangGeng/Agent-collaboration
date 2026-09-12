@@ -160,7 +160,7 @@ class OpenCodeNativeDriver:
         self.check_current, self.supervisor = check_current, supervisor
         self.http_timeout, self.readback_attempts = http_timeout, readback_attempts
         self._lock = threading.RLock()
-        self._claim_fd = journal.claim(binding_id)
+        self._claim_journal = journal
         self.client = self.owned = self.session_id = None
         self.ownership = "unbound"
         self._active_message = None
@@ -174,6 +174,7 @@ class OpenCodeNativeDriver:
         self._diag_bytes = 0
         self._diag_hash = hashlib.sha256()
         self._diag_lock = threading.Lock()
+        self._claim_fd, self._claim_token = journal.claim_ownership(binding_id)
 
     def _auth(self, operation: AuthorizedOperation):
         operation.validate()
@@ -221,7 +222,7 @@ class OpenCodeNativeDriver:
                 self.journal.finish(operation.operation_id, state, {"error_type": type(error).__name__})
                 raise
 
-    def _http(self, operation, method, path, payload=None, *, max_bytes=4 * 1024 * 1024):
+    def _http(self, operation, method, path, payload=None, *, max_bytes=4 * 1024 * 1024, on_dispatch=None):
         self._auth(operation)
         if self.client is None:
             raise OutcomeUncertain("native endpoint is not bound")
@@ -237,6 +238,11 @@ class OpenCodeNativeDriver:
             "binding": self._identity,
             "endpoint": self.client.endpoint,
         }
+        def dispatch():
+            if on_dispatch is not None:
+                on_dispatch()
+            self.journal.event(operation.operation_id, "http_dispatch", dispatch_evidence)
+
         status, value = self.client.request(
             method,
             path,
@@ -244,11 +250,7 @@ class OpenCodeNativeDriver:
             timeout=min(self.http_timeout, remaining),
             max_bytes=max_bytes,
             before_send=lambda: self._auth(operation),
-            on_dispatch=lambda: self.journal.event(
-                operation.operation_id,
-                "http_dispatch",
-                dispatch_evidence,
-            ),
+            on_dispatch=dispatch,
         )
         self.journal.event(operation.operation_id, "http_response",
                            {"method": method, "path": path, "status": status, "body_digest": digest(value)})
@@ -544,7 +546,7 @@ class OpenCodeNativeDriver:
             raise DriverRejected("native message readback differs from the exact authorized input")
         return value
 
-    def invoke(self, operation, text):
+    def invoke(self, operation, text, *, on_dispatch=None):
         if not isinstance(text, str) or not text or len(text.encode()) > 1024 * 1024:
             raise DriverRejected("only bounded plain text is admitted")
         with self._lock:
@@ -573,7 +575,7 @@ class OpenCodeNativeDriver:
                     "messageID": message_id, "agent": self.profile.agent,
                     "model": {"providerID": self.profile.provider_id, "modelID": self.profile.model_id},
                     "parts": [{"type": "text", "text": text}],
-                })
+                }, on_dispatch=on_dispatch)
                 if code != 204:
                     raise OutcomeUncertain("native asynchronous scheduling ACK was not observed")
                 for _ in range(self.readback_attempts):
@@ -756,6 +758,7 @@ class OpenCodeNativeDriver:
             self.session_id = None
             self.owned = None
             self.ownership = "unbound"
-            if self._claim_fd is not None:
-                os.close(self._claim_fd)
+            if self._claim_token is not None:
+                self._claim_journal.release_claim(self._claim_token)
+                self._claim_token = None
                 self._claim_fd = None

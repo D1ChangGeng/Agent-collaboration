@@ -23,11 +23,195 @@ from runtime.codex_driver import (
     DriverRejected,
     LaunchProfile,
     OutcomeUncertain,
+    OwnedProcess,
     file_digest,
 )
 from runtime.codex_jsonrpc import JsonRpcClient, RpcDisconnected, RpcError, RpcTimeout
+from runtime.delivery_node import InvocationPreCallRejected
 
 OMIT = object()
+
+
+@pytest.mark.parametrize("rejection", [DriverRejected, InvocationPreCallRejected])
+def test_first_dispatch_rejection_preserves_fresh_authorized_initial_turn(native, monkeypatch, rejection):
+    driver = native.driver
+    driver.spawn(operation("spawn-first-callback-rejection"))
+    missing_rollout_reply(native, monkeypatch)
+    first = operation("first-callback-rejected")
+
+    def reject():
+        raise rejection("fixture deterministic refusal before turn bytes")
+
+    with pytest.raises(DriverRejected):
+        driver.invoke(first, "first rejected fixture", on_dispatch=reject)
+    assert not driver._turn_start_attempted and not driver._turn_start_dispatched
+    assert native.state["turn_calls"] == 0 and driver.journal.read(first.operation_id)["state"] == "rejected"
+    with driver.journal._connect() as connection:
+        evidence = connection.execute("SELECT body FROM driver_events WHERE operation_id=? AND kind='rpc_dispatch'",
+                                      (first.operation_id,)).fetchall()
+    assert all(json.loads(row[0]).get("method") != "turn/start" for row in evidence)
+    second = operation("fresh-authorized-first-turn")
+    observed = driver.invoke(second, "second fixture", on_dispatch=lambda: None)
+    assert observed["receipt_layer"] == "runtime_acknowledged"
+    assert native.state["turn_calls"] == 1
+    turns = [frame for frame in native.peer.requests if frame["method"] == "turn/start"]
+    assert [frame["params"]["clientUserMessageId"] for frame in turns] == [second.message_id]
+
+
+@pytest.mark.parametrize("unknown", [OSError, OutcomeUncertain])
+def test_unknown_dispatch_callback_keeps_initial_guard_closed_and_never_retries(native, monkeypatch, unknown):
+    driver = native.driver
+    driver.spawn(operation("spawn-unknown-callback"))
+    missing_rollout_reply(native, monkeypatch)
+    original = operation("unknown-callback")
+    calls = []
+
+    def uncertain():
+        calls.append(True)
+        raise unknown("fixture marker commit result unavailable")
+
+    with pytest.raises(unknown):
+        driver.invoke(original, "uncertain fixture", on_dispatch=uncertain)
+    assert driver._turn_start_attempted and not driver._turn_start_dispatched
+    assert driver.journal.read(original.operation_id)["state"] == "uncertain"
+    with pytest.raises(OutcomeUncertain):
+        driver.invoke(original, "uncertain fixture", on_dispatch=uncertain)
+    with pytest.raises(OutcomeUncertain, match="unresolved operation"):
+        driver.invoke(operation("fresh-cannot-bypass-unknown-initial-state"), "fixture", on_dispatch=uncertain)
+    assert len(calls) == 1 and native.state["turn_calls"] == 0
+
+
+def unmaterialized_reply(native, monkeypatch, *, code=-32600, message=None):
+    original = native.peer.handler
+
+    def handler(peer, frame):
+        if frame.get("method") == "thread/turns/list":
+            return RpcError({"code": code, "message": message or (
+                "thread thread-1 is not materialized yet; "
+                "thread/turns/list is unavailable before first user message")})
+        return original(peer, frame)
+
+    monkeypatch.setattr(native.peer, "handler", handler)
+
+
+def test_unmaterialized_idle_context_inspection_never_submits_a_turn(native, monkeypatch):
+    native.driver.spawn(operation("spawn-unmaterialized"))
+    unmaterialized_reply(native, monkeypatch)
+    assert native.driver.inspect(operation("inspect-unmaterialized"))["turns"] == []
+    assert native.driver.inspect(operation("inspect-unmaterialized-again"))["turns"] == []
+    assert native.state["turn_calls"] == 0
+    assert not any(frame["method"] == "turn/start" for frame in native.peer.requests)
+
+
+def test_unmaterialized_context_allows_the_explicit_first_fixture_turn(native, monkeypatch):
+    native.driver.spawn(operation("spawn-first-fixture-turn"))
+    unmaterialized_reply(native, monkeypatch)
+    result = native.driver.invoke(operation("explicit-first-fixture-turn"), "fixture text")
+    assert result["receipt_layer"] == "runtime_acknowledged" and native.state["turn_calls"] == 1
+    # A prior native mutation makes the same error meaningful uncertainty.
+    native.state["turns"] = []
+    with pytest.raises(RpcError):
+        native.driver.inspect(operation("inspect-after-native-dispatch"))
+
+
+@pytest.mark.parametrize("case", ["wrong_code", "wrong_message", "not_idle", "prior_history_read"])
+def test_other_turn_history_errors_are_not_swallowed(native, monkeypatch, case):
+    native.driver.spawn(operation("spawn-history-error"))
+    if case == "prior_history_read":
+        native.driver.inspect(operation("history-was-already-materialized"))
+    if case == "not_idle":
+        native.state["turns"] = [{"id": "fixture-busy", "status": "inProgress", "items": []}]
+    unmaterialized_reply(native, monkeypatch, code=-32601 if case == "wrong_code" else -32600,
+                         message="unrelated history service failure" if case == "wrong_message" else None)
+    with pytest.raises(RpcError):
+        native.driver.inspect(operation("inspect-history-error"))
+    assert native.state["turn_calls"] == 0
+
+
+def test_live_owned_codex_capacity_cannot_detach_without_verified_termination(native):
+    driver = native.driver
+    driver.spawn(operation("spawn-owned-for-detach"))
+    with pytest.raises(DriverRejected, match="terminated before detach"):
+        driver.detach_transport()
+    assert driver._claim_fd is not None and not native.peer.closed
+    assert driver.terminate(operation("terminate-before-detach"))["receipt_layer"] == "process_tree_terminated"
+    driver.detach_transport()
+    assert driver._claim_fd is None
+
+
+def test_spawn_auth_rejection_after_intent_has_zero_launches(native, monkeypatch):
+    driver = native.driver
+    original = driver.check_current
+
+    def check(op, binding):
+        original(op, binding)
+        with driver.journal._connect() as connection:
+            if connection.execute("SELECT 1 FROM driver_events WHERE operation_id=? AND kind='process_intent'",
+                                  (op.operation_id,)).fetchone():
+                raise DriverRejected("fixture current authorization revoked before launch")
+
+    monkeypatch.setattr(driver, "check_current", check)
+    op = operation("pre-launch-denial")
+    with pytest.raises(DriverRejected):
+        driver.spawn(op)
+    assert native.launches == [] and driver.journal.read(op.operation_id)["state"] == "rejected"
+
+
+def missing_rollout_reply(native, monkeypatch, *, code=-32600, thread_id="thread-1"):
+    unmaterialized_reply(native, monkeypatch)
+    original = native.peer.handler
+
+    def handler(peer, frame):
+        if frame.get("method") == "thread/read":
+            return RpcError({"code": code, "message": f"no rollout found for thread id {thread_id}"})
+        return original(peer, frame)
+
+    monkeypatch.setattr(native.peer, "handler", handler)
+
+
+def test_missing_rollout_uses_only_verified_initial_thread_snapshot(native, monkeypatch):
+    native.driver.spawn(operation("spawn-initial-cache"))
+    missing_rollout_reply(native, monkeypatch)
+    observed = native.driver.inspect(operation("inspect-initial-cache"))
+    assert observed["thread"]["id"] == "thread-1" and observed["turns"] == []
+    assert native.state["turn_calls"] == 0
+    assert not any(frame["method"] == "turn/start" for frame in native.peer.requests)
+
+
+@pytest.mark.parametrize("missing_read", [False, True])
+def test_unmaterialized_resume_observes_context_without_native_resume_or_turn(native, monkeypatch, missing_read):
+    native.driver.spawn(operation("spawn-before-empty-resume"))
+    if missing_read:
+        missing_rollout_reply(native, monkeypatch)
+    else:
+        unmaterialized_reply(native, monkeypatch)
+    result = native.driver.resume(operation("resume-before-first-message"))
+    assert result["receipt_layer"] == "context_resumed"
+    assert result["native_context"] == "unmaterialized_initial" and result["native_mutation"] is False
+    assert not any(frame["method"] in {"thread/resume", "turn/start"} for frame in native.peer.requests)
+
+
+def test_materialized_context_resume_keeps_actual_native_rpc(native):
+    native.driver.spawn(operation("spawn-materialized-resume"))
+    assert native.driver.inspect(operation("read-materialized-history"))["turns"] == []
+    native.driver.resume(operation("resume-materialized"))
+    assert any(frame["method"] == "thread/resume" for frame in native.peer.requests)
+
+
+@pytest.mark.parametrize("case", ["wrong_code", "wrong_id", "missing_cache", "changed_session", "after_turn"])
+def test_missing_rollout_other_states_remain_errors(native, monkeypatch, case):
+    driver = native.driver
+    driver.spawn(operation("spawn-no-rollout-errors"))
+    if case == "after_turn":
+        driver.invoke(operation("first-real-fixture-turn"), "synthetic fixture")
+    if case == "missing_cache":
+        driver._initial_thread_snapshot = None
+    if case == "changed_session":
+        driver._initial_thread_snapshot["sessionId"] = "different-native-session"
+    missing_rollout_reply(native, monkeypatch, code=-32601 if case == "wrong_code" else -32600,
+                          thread_id="other-thread" if case == "wrong_id" else "thread-1")
+    with pytest.raises(RpcError):
+        driver.inspect(operation("inspect-no-rollout-errors"))
 
 
 def test_request_ids_remain_reserved_after_timeout():
@@ -253,6 +437,18 @@ def native(tmp_path, profile, monkeypatch):
         launches.append((argv, kwargs))
         return peer
 
+    class SupervisorFixture:
+        def launch(self, argv, **kwargs):
+            return OwnedProcess(launch(argv, **kwargs), "fixture-birth", "fixture-containment")
+
+        def inspect(self, owned):
+            return {"verified": True, "birth_ref": owned.birth_ref, "containment_id": owned.containment_id,
+                    "root_exited": peer.closed, "remaining_pids": [] if peer.closed else [peer.pid]}
+
+        def terminate_tree(self, owned):
+            peer.close()
+            return self.inspect(owned)
+
     monkeypatch.setattr(driver_module.subprocess, "Popen", launch)
     identity = BindingIdentity("node", "boot-1", "runtime-1", "attempt-1", "slot", 1)
     authorizations = []
@@ -260,12 +456,14 @@ def native(tmp_path, profile, monkeypatch):
     def check(op, binding):
         authorizations.append((op.operation_id, binding.node_boot_id))
 
+    supervisor = SupervisorFixture()
     driver = CodexAppServerDriver(
         "binding-1",
         profile,
         DriverJournal(tmp_path / "journal.db"),
         identity=identity,
         check_current=check,
+        supervisor=supervisor,
         rpc_timeout=0.2,
     )
     try:
@@ -278,8 +476,9 @@ def native(tmp_path, profile, monkeypatch):
             authorizations=authorizations,
         )
     finally:
-        driver.detach_transport()
         peer.close()
+        driver.supervisor = supervisor
+        driver.detach_transport()
 
 
 def test_real_python_stdio_jsonl_transport():
@@ -450,11 +649,13 @@ def test_busy_invoke_never_implicitly_steers(native):
     assert native.state["turn_calls"] == 1
 
 
-def test_terminate_without_supervisor_fails_closed(native):
+def test_terminate_without_supervisor_fails_closed(native, monkeypatch):
     d = native.driver
     d.spawn(operation("spawn"))
-    with pytest.raises(DriverRejected, match="containment"):
-        d.terminate(operation("terminate"))
+    with monkeypatch.context() as context:
+        context.setattr(d, "supervisor", None)
+        with pytest.raises(DriverRejected, match="containment"):
+            d.terminate(operation("terminate"))
     assert not native.peer.closed
 
 

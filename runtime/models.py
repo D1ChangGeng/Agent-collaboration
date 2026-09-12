@@ -8,7 +8,9 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, ValidationInfo, field_validator
+
+from runtime.json_payload import bounded_payload
 
 
 class WorkItemState(StrEnum):
@@ -35,7 +37,7 @@ class AuthenticatedContext:
     credential_hash: str = ""
 
 
-type PayloadValue = str | int | bool | None | tuple[str, ...]
+type PayloadValue = JsonValue
 
 
 class CommandEnvelope(BaseModel):
@@ -61,6 +63,11 @@ class CommandEnvelope(BaseModel):
     issued_at: datetime
     deadline: datetime
     payload: dict[str, PayloadValue] = Field(default_factory=dict)
+
+    @field_validator("payload", mode="before")
+    @classmethod
+    def bounded_json_payload(cls, value):
+        return bounded_payload(value)
 
     @field_validator("deadline")
     @classmethod

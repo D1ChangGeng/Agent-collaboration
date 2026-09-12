@@ -206,6 +206,7 @@ class LocalNodeEndpoint:
         authorize: Callable[[], DeliveryEnvelope],
         invocation: InvocationRequest | None = None,
         mark_dispatched: Callable[[InvocationRequest, dict], None] | None = None,
+        read_dispatch_marker: Callable[[InvocationRequest], bool] | None = None,
     ):
         envelope = DeliveryEnvelope.model_validate_json(envelope.model_dump_json(), strict=True)
         self._commit_inbox(envelope, authorize)
@@ -280,21 +281,54 @@ class LocalNodeEndpoint:
                 "accepted_state_digest": invocation.accepted_state_digest,
                 "source": self.driver.evidence_class,
             }
-            if mark_dispatched is not None:
-                mark_dispatched(invocation, dispatch_evidence)
-            self._receipt(
-                connection,
-                envelope,
-                "runtime_dispatched",
-                dispatch_evidence,
-                receipt_id=invocation.runtime_dispatched_receipt_id,
-            )
-            connection.execute(
-                "UPDATE delivery_invocations SET state='runtime_dispatched' WHERE operation_id=?",
-                (envelope.operation_id,),
-            )
+            marker_attempted = False
+            marked = False
+
+            def at_native_boundary():
+                nonlocal marker_attempted, marked
+                if marker_attempted:
+                    raise ValueError("dispatch callback cannot be repeated")
+                try:
+                    self._check(envelope, authorize)
+                except (RuntimeError, ValueError) as error:
+                    raise InvocationPreCallRejected("delivery_authorization_changed_before_native_call") from error
+                marker_attempted = True
+                if mark_dispatched is not None:
+                    from runtime.delivery import DeliveryRejected
+                    from runtime.errors import AuthorizationDenied
+                    try:
+                        mark_dispatched(invocation, dispatch_evidence)
+                    except (AuthorizationDenied, DeliveryRejected) as error:
+                        if getattr(error, "state", "blocked") not in {"blocked", "expired"}:
+                            raise
+                        # A deterministic refusal is pre-call only if a fresh
+                        # authoritative read confirms no committed marker.
+                        try:
+                            absent = read_dispatch_marker is not None and read_dispatch_marker(invocation) is False
+                        except Exception:  # noqa: BLE001 -- unknown commit/readback outcome remains uncertain
+                            absent = False
+                        if absent:
+                            marker_attempted = False
+                            raise InvocationPreCallRejected("domain_rejected_before_native_dispatch") from error
+                        raise RuntimeError("domain_dispatch_marker_outcome_uncertain") from error
+                marked = True
+                self._receipt(connection, envelope, "runtime_dispatched", dispatch_evidence,
+                              receipt_id=invocation.runtime_dispatched_receipt_id)
+                connection.execute(
+                    "UPDATE delivery_invocations SET state='runtime_dispatched' WHERE operation_id=?",
+                    (envelope.operation_id,),
+                )
+
             try:
-                observed = self.driver.invoke(invocation)
+                if getattr(self.driver, "dispatch_at_native_boundary", False):
+                    if mark_dispatched is None:
+                        raise InvocationPreCallRejected("domain_dispatch_callback_required")
+                    observed = self.driver.invoke(invocation, on_dispatch=at_native_boundary)
+                    if not marked:
+                        raise InvocationPreCallRejected("native_driver_did_not_cross_dispatch_boundary")
+                else:
+                    at_native_boundary()
+                    observed = self.driver.invoke(invocation)
                 observation = InvocationObservation.model_validate_json(
                     observed.model_dump_json(), strict=True,
                 )
@@ -307,10 +341,20 @@ class LocalNodeEndpoint:
                     raise ValueError("Driver observation identity differs")
                 if len(observation.model_dump_json().encode()) > 65536:
                     raise ValueError("Driver observation exceeds bound")
+            except InvocationPreCallRejected:
+                if not marker_attempted:
+                    connection.execute(
+                        "UPDATE delivery_invocations SET state='pre_call_rejected' WHERE operation_id=?",
+                        (envelope.operation_id,),
+                    )
+                    connection.execute("COMMIT")
+                    raise
+                connection.execute("UPDATE delivery_invocations SET state='uncertain' WHERE operation_id=?",
+                                   (envelope.operation_id,))
             except (OSError, RuntimeError, TypeError, ValueError):
                 connection.execute(
                     "UPDATE delivery_invocations SET state='uncertain' "
-                    "WHERE operation_id=? AND state='runtime_dispatched'",
+                    "WHERE operation_id=? AND state IN ('prepared','runtime_dispatched')",
                     (envelope.operation_id,),
                 )
             else:
