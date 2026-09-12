@@ -40,9 +40,10 @@ class DomainAuthority:
     """PostgreSQL Domain authority for the local Runtime profile."""
 
     SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.9"
+    SCHEMA_VERSION = "1.10"
 
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.9", "7eec78fd9d54b81d20724327e13f3a2237f95a9d5a2bc35f7799ebd3d30b5b9b"),
         ("1.8", "b8554614d9923ae43a653371c4445c33fdfe189c219b3376f29e23c476ee7614"),
         ("1.7", "a3eb11f7afdccfedab5e7f7c41c861f3b9d8f4853460cdd948b8fc77e23d8132"),
         ("1.6", "89400be6a5c44f419ef73fe6661f907c858c11a397407662270fe0a79e169c73"),
@@ -165,6 +166,11 @@ class DomainAuthority:
 
     def register_attempt(self, command, request, proof):
         return self.enrollment.register_attempt(command, request, proof)
+
+    @property
+    def harness_sessions(self):
+        from runtime.harness_sessions import HarnessSessionAuthority
+        return HarnessSessionAuthority(self)
 
     @property
     def leases(self) -> LeaseAuthority:

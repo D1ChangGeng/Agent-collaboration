@@ -126,6 +126,7 @@ def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scen
 
 
 @pytest.mark.parametrize("scenario,expected_state,driver_count,attempt_count", [
+    ("P1-DOMAIN-TRANSACTION", "delivered", 1, 1),
     ("P1-AUTH-REVOCATION", "blocked", 0, 0),
     ("P1-COMMAND-DEDUP", "delivered", 1, 1),
     ("P1-INBOX-ACK-LOSS", "delivered", 1, 2),
@@ -139,6 +140,8 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
     profile = _profile(tmp_path)
     output = tmp_path / "output"
     monkeypatch.setenv("ACS_GATE_RUN_ID", "p1-fixed-" + uuid.uuid4().hex)
+    gate_machine = "machine-" + uuid.uuid4().hex[:20]
+    monkeypatch.setenv("ACS_GATE_MACHINE_ID", gate_machine)
     scoped = None
     schema = None
     try:
@@ -154,6 +157,10 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
         row = ledger.get(scenario)
         assert row is not None
         lineage = json.loads(row["lineage_json"])
+        assert {item["machine_id"] for item in results} == {lineage["machine_id"]}
+        assert lineage["machine_id"] == gate_machine
+        assert lineage["node_id"] == results[0]["node_id"]
+        assert all(item["selection_machine"] == gate_machine for item in lineage["attempts"])
         assert lineage["message_state"] == expected_state
         assert len(lineage["driver_calls"]) == driver_count
         assert len(lineage["attempts"]) == attempt_count
@@ -204,6 +211,24 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
             json.loads(profile.read_text())["postgres_dsn"],
             options=f"-c search_path={schema}",
         )
+        if scenario == "P1-COMMAND-DEDUP":
+            with psycopg.connect(scoped) as connection:
+                selected = connection.execute(
+                    "SELECT selection_json FROM delivery_attempts WHERE message_id=%s",
+                    (lineage["message_id"],),
+                ).fetchone()[0]
+                connection.execute(
+                    "UPDATE delivery_attempts SET selection_json=%s WHERE message_id=%s",
+                    (json.dumps({**selected, "machine_id": "forged-machine"}),
+                     lineage["message_id"]),
+                )
+            with pytest.raises(probe.ProbeRejected, match="PostgreSQL Runtime lineage changed"):
+                probe.execute(profile, scenario, "postgresql", output)
+            with psycopg.connect(scoped) as connection:
+                connection.execute(
+                    "UPDATE delivery_attempts SET selection_json=%s WHERE message_id=%s",
+                    (json.dumps(selected), lineage["message_id"]),
+                )
         with psycopg.connect(scoped) as connection:
             if scenario == "P1-AUTH-REVOCATION":
                 connection.execute(
