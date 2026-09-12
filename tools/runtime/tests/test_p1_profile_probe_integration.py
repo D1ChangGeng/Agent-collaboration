@@ -71,6 +71,10 @@ def _profile(tmp_path: Path) -> Path:
     ("P1-DOMAIN-TRANSACTION", "after_schema_reserved"),
     ("P1-DOMAIN-TRANSACTION", "after_domain_dispatch"),
     ("P1-CORE-RESTART", "after_domain_dispatch"),
+    ("P1-NODE-RESTART", "after_domain_dispatch"),
+    ("P1-NODE-RESTART", "after_node_child_result"),
+    ("P1-PROVIDER-RESTART", "after_provider_crash_record"),
+    ("P1-PROVIDER-RESTART", "after_provider_child_result"),
 ])
 def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scenario, stage):
     profile = _profile(tmp_path)
@@ -100,9 +104,14 @@ def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scen
         row = ledger.get(scenario)
         assert row is not None
         lineage = json.loads(row["lineage_json"])
-        assert lineage["driver_calls"] == [lineage["operation_id"]]
+        assert lineage["driver_calls"] == (
+            [] if scenario in ("P1-NODE-RESTART", "P1-PROVIDER-RESTART")
+            else [lineage["operation_id"]]
+        )
         with sqlite3.connect(output / lineage["node_journal"]) as connection:
-            assert connection.execute("SELECT count(*) FROM p1_driver_calls").fetchone() == (1,)
+            assert connection.execute("SELECT count(*) FROM p1_driver_calls").fetchone() == (
+                0 if scenario in ("P1-NODE-RESTART", "P1-PROVIDER-RESTART") else 1,
+            )
     finally:
         if output.exists():
             probe.cleanup(profile, output)
@@ -121,6 +130,8 @@ def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scen
     ("P1-COMMAND-DEDUP", "delivered", 1, 1),
     ("P1-INBOX-ACK-LOSS", "delivered", 1, 2),
     ("P1-CORE-RESTART", "delivered", 1, 1),
+    ("P1-NODE-RESTART", "delivered", 0, 2),
+    ("P1-PROVIDER-RESTART", "delivered", 0, 1),
 ])
 def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
     tmp_path, monkeypatch, scenario, expected_state, driver_count, attempt_count,
@@ -158,6 +169,26 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
             with pytest.raises(probe.ProbeRejected, match="Core crash process"):
                 probe.execute(profile, scenario, "os", output)
             context.write_bytes(original)
+        if scenario == "P1-NODE-RESTART":
+            proof = lineage["node_restart_proof"]
+            assert proof["old_boot"] != proof["new_boot"]
+            assert [item["selection_revision"] for item in lineage["attempts"]] == [1, 2]
+            context = output / "P1-NODE-RESTART-context.json"
+            original = context.read_bytes()
+            context.write_bytes(original + b" ")
+            with pytest.raises(probe.ProbeRejected, match="Node replacement process"):
+                probe.execute(profile, scenario, "os", output)
+            context.write_bytes(original)
+        if scenario == "P1-PROVIDER-RESTART":
+            proof = lineage["provider_restart_proof"]
+            assert proof["crash_exit"] == 84 and proof["recovery_exit"] == 0
+            assert proof["workflow_id"] == row["temporal_workflow_id"]
+            context = output / "P1-PROVIDER-RESTART-context.json"
+            original = context.read_bytes()
+            context.write_bytes(original + b" ")
+            with pytest.raises(probe.ProbeRejected, match="Temporal Worker processes"):
+                probe.execute(profile, scenario, "os", output)
+            context.write_bytes(original)
         assert (output.stat().st_mode & 0o777) == 0o700
         for private_file in output.iterdir():
             if private_file.is_file():
@@ -184,11 +215,16 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
                     "UPDATE command_dedup SET canonical_hash=%s WHERE command_id=%s",
                     ("0" * 64, lineage["command_id"]),
                 )
-            elif scenario == "P1-INBOX-ACK-LOSS":
+            elif scenario in ("P1-INBOX-ACK-LOSS", "P1-NODE-RESTART"):
                 connection.execute(
-                    "UPDATE delivery_attempts SET status='delivered' "
+                    "UPDATE delivery_attempts SET status='blocked' "
                     "WHERE message_id=%s AND ordinal=1",
                     (lineage["message_id"],),
+                )
+            elif scenario == "P1-PROVIDER-RESTART":
+                connection.execute(
+                    "UPDATE operations SET provider_run_id=%s WHERE operation_id=%s",
+                    ("changed-run", lineage["operation_id"]),
                 )
             else:
                 connection.execute(
