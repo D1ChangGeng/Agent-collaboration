@@ -14,12 +14,15 @@ import subprocess
 import sys
 from collections.abc import Callable
 from contextlib import closing
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, ClassVar
 
 import psycopg
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
@@ -32,8 +35,17 @@ from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
 from runtime.delivery_node import DeliveryTransportError, LocalNodeEndpoint
 from runtime.delivery_temporal import submit_delivery
 from runtime.domain import DomainAuthority
-from runtime.errors import IdempotencyConflict
-from runtime.models import CommandEnvelope
+from runtime.effects import LocalFileEffectGateway
+from runtime.enrollment import EnrollmentAuthority
+from runtime.enrollment_models import (
+    AttemptRegistration,
+    NodeChallengeRequest,
+    NodeCommandProof,
+    NodeEnrollment,
+    RuntimeRegistration,
+)
+from runtime.errors import FencingRejected, IdempotencyConflict
+from runtime.models import CommandEnvelope, LeaseRequest
 from runtime.node import NodeJournal
 from runtime.temporal import TemporalAdapter
 from runtime_tests.test_delivery import FixtureDriver
@@ -66,7 +78,7 @@ class ScenarioCatalog:
     LINEAGE_BOUND: ClassVar[frozenset[str]] = frozenset({
         "P1-DOMAIN-TRANSACTION", "P1-COMMAND-DEDUP", "P1-INBOX-ACK-LOSS",
         "P1-AUTH-REVOCATION", "P1-CORE-RESTART", "P1-NODE-RESTART",
-        "P1-PROVIDER-RESTART",
+        "P1-PROVIDER-RESTART", "P1-LEASE-FENCING",
     })
     TESTS: ClassVar[dict[str, tuple[str, ...]]] = {
         "P1-DOMAIN-TRANSACTION": (
@@ -921,6 +933,456 @@ def _provider_restart(
     return {"status": "delivered"}, proof, workflow_id, run_id
 
 
+def _register_lease_execution(
+    authority: DomainAuthority, node: NodeJournal, work_id: str,
+    commit: str, tree: str, suffix: str, issued_at: datetime,
+) -> tuple[dict[str, str], DomainAuthority, Callable[[CommandEnvelope, Any, str], NodeCommandProof]]:
+    node_id = node.node_id
+    runtime_id = "lease-runtime-" + suffix
+    attempt_id = "lease-attempt-" + suffix
+    operator = DomainAuthority(authority._dsn, context=replace(
+        authority.context,
+        principal_ref="p1-enrollment-operator:" + suffix,
+        grant_ref="grant:p1-enrollment-operator:" + suffix,
+    ))
+    observer = DomainAuthority(authority._dsn, context=replace(
+        authority.context,
+        principal_ref="p1-node-observer:" + suffix,
+        grant_ref="grant:p1-node-observer:" + suffix,
+    ))
+    operator.bootstrap_local_grant(("enrollment.manage", "work_item.read"))
+    observer.bootstrap_local_grant((
+        "runtime.register", "attempt.register", "execution.record", "work_item.read",
+    ))
+    private = Ed25519PrivateKey.generate()
+    public = private.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw,
+    ).hex()
+    enroll = _domain_command(
+        operator, "node.enroll", "node", node_id, suffix + ":node-enroll", issued_at,
+    )
+    operator.enroll_node(enroll, NodeEnrollment(
+        scope_id="local-scope", agent_slot_id="local-slot",
+        observer_grant_ref=observer.context.grant_ref,
+        machine_id=node.machine_id, boot_incarnation=node.boot_incarnation,
+        public_key=public, expires_at=issued_at + timedelta(hours=1),
+    ))
+
+    def signed(command: CommandEnvelope, request: Any, purpose: str) -> NodeCommandProof:
+        input_value = {"request": request.model_dump(mode="json")}
+        challenge_command = _domain_command(
+            observer, "node.challenge", "node", node_id,
+            suffix + ":challenge:" + purpose, issued_at, revision=1,
+        )
+        challenge = observer.challenge_node(
+            challenge_command,
+            NodeChallengeRequest(
+                purpose=command.command_type,
+                purpose_command_id=command.command_id,
+                purpose_hash=EnrollmentAuthority.signing_hash(command, input_value),
+                ttl_seconds=300,
+            ),
+        )
+        return NodeCommandProof(
+            challenge_id=challenge.challenge_id,
+            signature=private.sign(bytes.fromhex(challenge.message_hex)).hex(),
+        )
+
+    runtime_command = _domain_command(
+        observer, "runtime.register", "runtime", runtime_id,
+        suffix + ":runtime-register", issued_at,
+    )
+    runtime_request = RuntimeRegistration(
+        node_id=node_id, node_binding_revision=1,
+        provider="p1-local-lease-probe",
+        producer_grant_ref=authority.context.grant_ref,
+        expires_at=issued_at + timedelta(minutes=45),
+    )
+    observer.register_runtime(
+        runtime_command, runtime_request, signed(runtime_command, runtime_request, "runtime"),
+    )
+    with observer._connect() as connection:
+        observed_started_at = connection.execute("SELECT clock_timestamp()").fetchone()[0]
+    attempt_command = _domain_command(
+        observer, "attempt.register", "attempt", attempt_id,
+        suffix + ":attempt-register", issued_at,
+    )
+    attempt_request = AttemptRegistration(
+        runtime_id=runtime_id, work_item_id=work_id,
+        expected_work_item_revision=0, source_baseline=commit,
+        source_commit=commit, source_tree=tree,
+        candidate_ref="p1-candidate-" + suffix,
+        observed_started_at=observed_started_at,
+    )
+    observer.register_attempt(
+        attempt_command, attempt_request, signed(attempt_command, attempt_request, "attempt"),
+    )
+    owner = {
+        "node_id": node_id, "runtime_id": runtime_id, "attempt_id": attempt_id,
+        "operator_grant_ref": operator.context.grant_ref,
+        "observer_grant_ref": observer.context.grant_ref,
+    }
+    return owner, observer, signed
+
+
+def _register_replacement_lease_owner(
+    authority: DomainAuthority, observer: DomainAuthority,
+    signed: Callable[[CommandEnvelope, Any, str], NodeCommandProof],
+    node: NodeJournal, work_id: str, commit: str, tree: str,
+    suffix: str, issued_at: datetime,
+) -> tuple[DomainAuthority, dict[str, str]]:
+    producer = DomainAuthority(authority._dsn, context=replace(
+        authority.context,
+        principal_ref="p1-lease-replacement:" + suffix,
+        grant_ref="grant:p1-lease-replacement:" + suffix,
+    ))
+    producer.bootstrap_local_grant((
+        "lease.acquire", "lease.release", "lease.inspect",
+        "effect.write", "effect.read", "work_item.read",
+    ))
+    runtime_id = "lease-replacement-runtime-" + suffix
+    attempt_id = "lease-replacement-attempt-" + suffix
+    runtime_command = _domain_command(
+        observer, "runtime.register", "runtime", runtime_id,
+        suffix + ":replacement-runtime-register", issued_at,
+    )
+    runtime_request = RuntimeRegistration(
+        node_id=node.node_id, node_binding_revision=1,
+        provider="p1-local-lease-replacement",
+        producer_grant_ref=producer.context.grant_ref,
+        expires_at=issued_at + timedelta(minutes=45),
+    )
+    observer.register_runtime(
+        runtime_command, runtime_request,
+        signed(runtime_command, runtime_request, "replacement-runtime"),
+    )
+    with observer._connect() as connection:
+        observed_started_at = connection.execute("SELECT clock_timestamp()").fetchone()[0]
+    attempt_command = _domain_command(
+        observer, "attempt.register", "attempt", attempt_id,
+        suffix + ":replacement-attempt-register", issued_at,
+    )
+    attempt_request = AttemptRegistration(
+        runtime_id=runtime_id, work_item_id=work_id,
+        expected_work_item_revision=0, source_baseline=commit,
+        source_commit=commit, source_tree=tree,
+        candidate_ref="p1-candidate-replacement-" + suffix,
+        observed_started_at=observed_started_at,
+    )
+    observer.register_attempt(
+        attempt_command, attempt_request,
+        signed(attempt_command, attempt_request, "replacement-attempt"),
+    )
+    return producer, {"runtime_id": runtime_id, "attempt_id": attempt_id,
+                      "grant_ref": producer.context.grant_ref,
+                      "principal_ref": producer.context.principal_ref}
+
+
+
+def _effect_marker_digest(effect_root: Path) -> str:
+    marker_root = effect_root / LocalFileEffectGateway.MARKER_DIR
+    entries = []
+    for path in sorted(marker_root.rglob("*")):
+        if path.is_file() and path.name != "lock":
+            info = path.stat(follow_symlinks=False)
+            entries.append([
+                str(path.relative_to(marker_root)), _sha(path.read_bytes()),
+                info.st_dev, info.st_ino, info.st_uid,
+                info.st_mode & 0o777, info.st_nlink,
+            ])
+    return _sha(_canonical(entries))
+
+
+def _lease_fencing(
+    authority: DomainAuthority, node: NodeJournal, ledger: ProbeLedger,
+    work_id: str, delivery_operation_id: str,
+    commit: str, tree: str, suffix: str, issued_at: datetime,
+) -> dict[str, Any]:
+    proof_path = ledger.root / "P1-LEASE-FENCING-proof.json"
+    if proof_path.exists():
+        proof = json.loads(proof_path.read_text())
+        if proof.get("delivery_operation_id") != delivery_operation_id:
+            raise ProbeRejected("Lease fence proof belongs to another delivery operation")
+        return proof
+    owner, node_observer, sign_node_command = _register_lease_execution(
+        authority, node, work_id, commit, tree, suffix, issued_at,
+    )
+    resource_id = "lease-resource-" + suffix
+    acquire_command = _domain_command(
+        authority, "lease.acquire", "lease", resource_id, suffix + ":lease-acquire",
+        issued_at,
+    )
+    request = LeaseRequest(
+        resource_id=resource_id, owner_attempt_id=owner["attempt_id"],
+        owner_runtime_id=owner["runtime_id"], grant_ref=authority.context.grant_ref,
+        authority_incarnation=authority.context.authority_incarnation,
+        scope_id="local-scope", work_item_id=work_id, ttl_seconds=300,
+    )
+    lease = authority.leases.acquire_lease(acquire_command, request)
+    args = {
+        "lease_id": lease["lease_id"], "resource_id": resource_id,
+        "generation": lease["generation"], "fencing_token": lease["fencing_token"],
+        "caller": authority.context, "attempt_id": owner["attempt_id"],
+        "runtime_id": owner["runtime_id"], "scope_id": "local-scope",
+        "grant_ref": authority.context.grant_ref,
+        "authority_incarnation": authority.context.authority_incarnation,
+    }
+    effect_root = ledger.root / "P1-LEASE-FENCING-effects"
+    effect_operation_id = "file-effect:" + delivery_operation_id
+    payload = ("P1 lease file effect for " + delivery_operation_id).encode()
+    with LocalFileEffectGateway(
+        authority.leases, effect_root, scope_id="local-scope",
+        resource_paths={resource_id: "output.txt"},
+    ) as writer:
+        result = writer.write(
+            **args, relative_path="output.txt", payload=payload,
+            operation_id=effect_operation_id,
+        )
+        release_command = _domain_command(
+            authority, "lease.release", "lease", resource_id,
+            suffix + ":lease-release", issued_at,
+        )
+        released = authority.leases.release_lease(
+            release_command, lease["lease_id"], resource_id,
+            lease["generation"], lease["fencing_token"],
+        )
+        try:
+            writer.write(
+                **args, relative_path="output.txt", payload=b"forbidden stale owner write",
+                operation_id="stale:" + delivery_operation_id,
+            )
+        except FencingRejected:
+            stale_rejected = True
+        else:
+            stale_rejected = False
+    reader = DomainAuthority(authority._dsn, context=replace(
+        authority.context,
+        principal_ref="p1-effect-reader:" + suffix,
+        grant_ref="grant:p1-effect-reader:" + suffix,
+    ))
+    reader.bootstrap_local_grant(("effect.read",))
+    with LocalFileEffectGateway(
+        reader.leases, effect_root, scope_id="local-scope",
+        resource_paths={resource_id: "output.txt"},
+    ) as observer:
+        historical = observer.historical_readback(
+            lease["lease_id"], resource_id, lease["generation"],
+            lease["fencing_token"], "output.txt",
+            caller=reader.context, scope_id="local-scope",
+            grant_ref=reader.context.grant_ref,
+            authority_incarnation=reader.context.authority_incarnation,
+            expected_operation_id=effect_operation_id,
+        )
+    output = effect_root / "output.txt"
+    if (released["status"] != "released" or not stale_rejected
+            or historical["status"] != "verified"
+            or historical["sha256"] != result["sha256"]
+            or historical["completion_state"] != "completed"
+            or not historical["completion_sha256"]
+            or output.read_bytes() != payload):
+        raise ProbeRejected("released Lease did not fence stale writer and retain file effect")
+    replacement, next_owner = _register_replacement_lease_owner(
+        authority, node_observer, sign_node_command, node,
+        work_id, commit, tree, suffix, issued_at,
+    )
+    acquire_replacement = _domain_command(
+        replacement, "lease.acquire", "lease", resource_id,
+        suffix + ":replacement-lease-acquire", issued_at,
+    )
+    replacement_request = LeaseRequest(
+        resource_id=resource_id, owner_attempt_id=next_owner["attempt_id"],
+        owner_runtime_id=next_owner["runtime_id"],
+        grant_ref=replacement.context.grant_ref,
+        authority_incarnation=replacement.context.authority_incarnation,
+        scope_id="local-scope", work_item_id=work_id, ttl_seconds=300,
+    )
+    next_lease = replacement.leases.acquire_lease(
+        acquire_replacement, replacement_request,
+    )
+    if (next_lease["generation"] != lease["generation"] + 1
+            or next_owner["attempt_id"] == owner["attempt_id"]
+            or next_owner["grant_ref"] == authority.context.grant_ref):
+        raise ProbeRejected("replacement owner did not acquire the next Lease generation")
+    next_args = {
+        "lease_id": next_lease["lease_id"], "resource_id": resource_id,
+        "generation": next_lease["generation"],
+        "fencing_token": next_lease["fencing_token"],
+        "caller": replacement.context, "attempt_id": next_owner["attempt_id"],
+        "runtime_id": next_owner["runtime_id"], "scope_id": "local-scope",
+        "grant_ref": replacement.context.grant_ref,
+        "authority_incarnation": replacement.context.authority_incarnation,
+    }
+    next_effect_operation_id = "file-effect-replacement:" + delivery_operation_id
+    next_payload = ("P1 replacement lease file effect for " + delivery_operation_id).encode()
+    with LocalFileEffectGateway(
+        replacement.leases, effect_root, scope_id="local-scope",
+        resource_paths={resource_id: "output.txt"},
+    ) as next_writer:
+        next_effect = next_writer.write(
+            **next_args, relative_path="output.txt", payload=next_payload,
+            operation_id=next_effect_operation_id,
+        )
+    with LocalFileEffectGateway(
+        reader.leases, effect_root, scope_id="local-scope",
+        resource_paths={resource_id: "output.txt"},
+    ) as pre_late_observer:
+        pre_late_readback = pre_late_observer.historical_readback(
+            next_lease["lease_id"], resource_id, next_lease["generation"],
+            next_lease["fencing_token"], "output.txt",
+            caller=reader.context, scope_id="local-scope",
+            grant_ref=reader.context.grant_ref,
+            authority_incarnation=reader.context.authority_incarnation,
+            expected_operation_id=next_effect_operation_id,
+        )
+    if (pre_late_readback["status"] != "verified"
+            or pre_late_readback["sha256"] != next_effect["sha256"]
+            or pre_late_readback["completion_state"] != "completed"
+            or not pre_late_readback["completion_sha256"]
+            or output.read_bytes() != next_payload):
+        raise ProbeRejected("replacement owner effect was not independently verified before late write")
+
+    def effect_snapshot() -> dict[str, Any]:
+        info = output.stat(follow_symlinks=False)
+        with authority._connect() as connection:
+            lease_rows = connection.execute(
+                "SELECT lease_id,resource_id,generation,fencing_token,status,"
+                "owner_attempt_id,owner_runtime_id,grant_ref,command_id,scope_id,"
+                "authority_incarnation FROM leases "
+                "WHERE tenant_id=%s AND resource_id=%s ORDER BY generation",
+                (authority.tenant_id, resource_id),
+            ).fetchall()
+        if len(lease_rows) != 2:
+            raise ProbeRejected("replacement Lease rows are incomplete")
+        return {
+            "file_sha256": _sha(output.read_bytes()),
+            "file_identity": [info.st_dev, info.st_ino, info.st_uid,
+                              info.st_mode & 0o777, info.st_nlink],
+            "marker_sha256": _effect_marker_digest(effect_root),
+            "pg_lease_identity_sha256": _sha(_canonical([list(item) for item in lease_rows])),
+        }
+
+    before_late = effect_snapshot()
+    with LocalFileEffectGateway(
+        authority.leases, effect_root, scope_id="local-scope",
+        resource_paths={resource_id: "output.txt"},
+    ) as late_writer:
+        try:
+            late_writer.write(
+                **args, relative_path="output.txt", payload=b"late old owner overwrite",
+                operation_id="late-old-owner:" + delivery_operation_id,
+            )
+        except FencingRejected:
+            late_old_owner_rejected = True
+        else:
+            late_old_owner_rejected = False
+    after_late = effect_snapshot()
+    if not late_old_owner_rejected or before_late != after_late:
+        raise ProbeRejected("old owner changed replacement file, marker or PG Lease")
+    release_replacement = _domain_command(
+        replacement, "lease.release", "lease", resource_id,
+        suffix + ":replacement-lease-release", issued_at,
+    )
+    next_released = replacement.leases.release_lease(
+        release_replacement, next_lease["lease_id"], resource_id,
+        next_lease["generation"], next_lease["fencing_token"],
+    )
+    with LocalFileEffectGateway(
+        reader.leases, effect_root, scope_id="local-scope",
+        resource_paths={resource_id: "output.txt"},
+    ) as next_observer:
+        next_historical = next_observer.historical_readback(
+            next_lease["lease_id"], resource_id, next_lease["generation"],
+            next_lease["fencing_token"], "output.txt",
+            caller=reader.context, scope_id="local-scope",
+            grant_ref=reader.context.grant_ref,
+            authority_incarnation=reader.context.authority_incarnation,
+            expected_operation_id=next_effect_operation_id,
+        )
+    if (next_released["status"] != "released"
+            or next_historical["status"] != "verified"
+            or next_historical["sha256"] != pre_late_readback["sha256"]
+            or next_historical["intent_sha256"] != pre_late_readback["intent_sha256"]
+            or next_historical["completion_sha256"] != pre_late_readback["completion_sha256"]
+            or next_historical["sha256"] != next_effect["sha256"]
+            or next_historical["completion_state"] != "completed"
+            or not next_historical["completion_sha256"]
+            or output.read_bytes() != next_payload):
+        raise ProbeRejected("replacement Lease did not fence late old owner and commit new effect")
+    output_stat = output.stat(follow_symlinks=False)
+    with authority._connect() as connection:
+        lease_events = connection.execute(
+            "SELECT command_id,event_id,canonical_hash FROM domain_events "
+            "WHERE command_id IN (%s,%s,%s,%s) ORDER BY event_id",
+            (acquire_command.command_id, release_command.command_id,
+             acquire_replacement.command_id, release_replacement.command_id),
+        ).fetchall()
+        lease_dedup = connection.execute(
+            "SELECT command_id,canonical_hash FROM command_dedup "
+            "WHERE command_id IN (%s,%s,%s,%s) ORDER BY command_id",
+            (acquire_command.command_id, release_command.command_id,
+             acquire_replacement.command_id, release_replacement.command_id),
+        ).fetchall()
+    if len(lease_events) != 4 or len(lease_dedup) != 4:
+        raise ProbeRejected("two-owner Lease Domain journal is incomplete")
+    proof = {
+        "delivery_operation_id": delivery_operation_id,
+        "work_item_id": work_id, "source_commit": commit, "source_tree": tree,
+        "node_id": node.node_id, "node_boot": node.boot_incarnation,
+        "machine_id": node.machine_id,
+        "runtime_id": owner["runtime_id"], "attempt_id": owner["attempt_id"],
+        "acquire_command_id": acquire_command.command_id,
+        "acquire_operation_id": lease["operation_id"],
+        "release_command_id": release_command.command_id,
+        "release_operation_id": released["operation_id"],
+        "lease_id": lease["lease_id"], "resource_id": resource_id,
+        "generation": lease["generation"],
+        "fencing_token_sha256": _sha(lease["fencing_token"].encode()),
+        "original_effect_operation_id": effect_operation_id,
+        "original_effect_sha256": result["sha256"],
+        "original_effect_intent_sha256": historical["intent_sha256"],
+        "original_effect_completion_sha256": historical["completion_sha256"],
+        "effect_operation_id": next_effect_operation_id,
+        "effect_sha256": next_effect["sha256"],
+        "effect_size": len(next_payload),
+        "effect_file_identity": [output_stat.st_dev, output_stat.st_ino,
+                                 output_stat.st_uid, output_stat.st_mode & 0o777,
+                                 output_stat.st_nlink],
+        "effect_intent_sha256": next_historical["intent_sha256"],
+        "effect_completion_sha256": next_historical["completion_sha256"],
+        "lease_events": [
+            {"command_id": item[0], "event_id": str(item[1]),
+             "canonical_hash": item[2]} for item in lease_events
+        ],
+        "lease_dedup": [
+            {"command_id": item[0], "canonical_hash": item[1]}
+            for item in lease_dedup
+        ],
+        "historical_readback": next_historical["status"],
+        "original_historical_readback": historical["status"],
+        "stale_fence_rejected": stale_rejected,
+        "late_old_owner_rejected": late_old_owner_rejected,
+        "replacement_readback_before_late": pre_late_readback["status"] == "verified",
+        "pre_late_snapshot": before_late,
+        "post_late_snapshot": after_late,
+        "replacement_runtime_id": next_owner["runtime_id"],
+        "replacement_attempt_id": next_owner["attempt_id"],
+        "replacement_producer_grant_ref": next_owner["grant_ref"],
+        "replacement_producer_principal_ref": next_owner["principal_ref"],
+        "replacement_lease_id": next_lease["lease_id"],
+        "replacement_generation": next_lease["generation"],
+        "replacement_fencing_token_sha256": _sha(next_lease["fencing_token"].encode()),
+        "replacement_acquire_command_id": acquire_replacement.command_id,
+        "replacement_acquire_operation_id": next_lease["operation_id"],
+        "replacement_release_command_id": release_replacement.command_id,
+        "replacement_release_operation_id": next_released["operation_id"],
+        "reader_grant_ref": reader.context.grant_ref,
+        "reader_principal_ref": reader.context.principal_ref,
+        "producer_grant_ref": authority.context.grant_ref,
+    }
+    _private_json(proof_path, proof)
+    return proof
+
+
 def _run_domain_transaction(
     profile: dict[str, Any], scenario: str, ledger: ProbeLedger,
     commit: str, tree: str, run_id: str, suffix: str, issued_at: datetime,
@@ -939,7 +1401,8 @@ def _run_domain_transaction(
     authority.initialize()
     authority.bootstrap_local_grant((
         "work_item.create", "delivery.manage", "message.send", "message.read",
-        "runtime.invoke",
+        "runtime.invoke", "lease.acquire", "lease.release", "lease.inspect",
+        "effect.write", "effect.read",
     ))
     work_id = "work-" + suffix
     create = _domain_command(
@@ -1021,6 +1484,7 @@ def _run_domain_transaction(
     node_restart_proof = None
     provider_restart_proof = None
     provider_workflow = None
+    lease_proof = None
     if scenario == "P1-AUTH-REVOCATION":
         with authority._connect() as connection:
             connection.execute(
@@ -1085,6 +1549,11 @@ def _run_domain_transaction(
         delivered = DeliveryDispatcher(service).dispatch(identity)
         if delivered["status"] != "delivered":
             raise ProbeRejected("Domain delivery did not reach its terminal receipt")
+    if scenario == "P1-LEASE-FENCING":
+        lease_proof = _lease_fencing(
+            authority, node, ledger, work_id, sent.operation_id,
+            commit, tree, suffix, issued_at,
+        )
     with node._transaction() as connection:
         connection.execute(
             "CREATE TABLE IF NOT EXISTS p1_driver_calls(operation_id TEXT PRIMARY KEY)"
@@ -1224,6 +1693,7 @@ def _run_domain_transaction(
         "core_crash_proof": core_crash_proof,
         "node_restart_proof": node_restart_proof,
         "provider_restart_proof": provider_restart_proof,
+        "lease_proof": lease_proof,
         "dedup_details": list(dedup_details),
         "operation_details": list(operation_details),
         "provider_refs": list(provider_refs),
@@ -1266,6 +1736,227 @@ def _run_tests(profile: dict[str, Any], scenario: str, ledger: ProbeLedger,
     )
 
 
+def _lease_pg_readback(profile: dict[str, Any], row: dict[str, Any], proof: dict[str, Any]) -> dict[str, Any]:
+    scoped = make_conninfo(
+        profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
+    )
+    with psycopg.connect(scoped) as connection:
+        node = connection.execute(
+            "SELECT machine_id,boot_incarnation,status FROM enrolled_node_bindings "
+            "WHERE node_id=%s AND binding_revision=1", (proof["node_id"],),
+        ).fetchone()
+        runtime = connection.execute(
+            "SELECT node_id,node_boot_incarnation,status,producer_grant_ref "
+            "FROM enrolled_runtimes WHERE runtime_id=%s", (proof["runtime_id"],),
+        ).fetchone()
+        attempt = connection.execute(
+            "SELECT work_item_id,runtime_id,source_baseline,source_commit,source_tree,status,"
+            "enrollment_boot_incarnation FROM attempts WHERE attempt_id=%s",
+            (proof["attempt_id"],),
+        ).fetchone()
+        replacement_runtime = connection.execute(
+            "SELECT node_id,node_boot_incarnation,status,producer_grant_ref "
+            "FROM enrolled_runtimes WHERE runtime_id=%s",
+            (proof["replacement_runtime_id"],),
+        ).fetchone()
+        replacement_attempt = connection.execute(
+            "SELECT work_item_id,runtime_id,source_baseline,source_commit,source_tree,status,"
+            "enrollment_boot_incarnation FROM attempts WHERE attempt_id=%s",
+            (proof["replacement_attempt_id"],),
+        ).fetchone()
+        lease = connection.execute(
+            "SELECT resource_id,generation,fencing_token,status,owner_attempt_id,"
+            "owner_runtime_id,command_id FROM leases WHERE lease_id=%s",
+            (proof["lease_id"],),
+        ).fetchone()
+        replacement_lease = connection.execute(
+            "SELECT resource_id,generation,fencing_token,status,owner_attempt_id,"
+            "owner_runtime_id,command_id,grant_ref FROM leases WHERE lease_id=%s",
+            (proof["replacement_lease_id"],),
+        ).fetchone()
+        events = connection.execute(
+            "SELECT command_id,event_id,canonical_hash FROM domain_events "
+            "WHERE command_id IN (%s,%s,%s,%s) ORDER BY event_id",
+            (proof["acquire_command_id"], proof["release_command_id"],
+             proof["replacement_acquire_command_id"],
+             proof["replacement_release_command_id"]),
+        ).fetchall()
+        dedup = connection.execute(
+            "SELECT command_id,canonical_hash FROM command_dedup "
+            "WHERE command_id IN (%s,%s,%s,%s) ORDER BY command_id",
+            (proof["acquire_command_id"], proof["release_command_id"],
+             proof["replacement_acquire_command_id"],
+             proof["replacement_release_command_id"]),
+        ).fetchall()
+        operations = connection.execute(
+            "SELECT command_id,operation_id,provider,status FROM operations "
+            "WHERE command_id IN (%s,%s,%s,%s) ORDER BY command_id",
+            (proof["acquire_command_id"], proof["release_command_id"],
+             proof["replacement_acquire_command_id"],
+             proof["replacement_release_command_id"]),
+        ).fetchall()
+        outboxes = connection.execute(
+            "SELECT operation_id,topic FROM outbox "
+            "WHERE operation_id IN (%s,%s,%s,%s) ORDER BY topic,operation_id",
+            (proof["acquire_operation_id"], proof["release_operation_id"],
+             proof["replacement_acquire_operation_id"],
+             proof["replacement_release_operation_id"]),
+        ).fetchall()
+        work = connection.execute(
+            "SELECT source_baseline FROM work_items WHERE work_item_id=%s",
+            (proof["work_item_id"],),
+        ).fetchone()
+    expected_events = [
+        (item["command_id"], item["event_id"], item["canonical_hash"])
+        for item in proof["lease_events"]
+    ]
+    expected_dedup = [
+        (item["command_id"], item["canonical_hash"]) for item in proof["lease_dedup"]
+    ]
+    expected_operations = sorted([
+        (proof["acquire_command_id"], proof["acquire_operation_id"], "local-lease", "committed"),
+        (proof["release_command_id"], proof["release_operation_id"], "local-lease", "committed"),
+        (proof["replacement_acquire_command_id"], proof["replacement_acquire_operation_id"],
+         "local-lease", "committed"),
+        (proof["replacement_release_command_id"], proof["replacement_release_operation_id"],
+         "local-lease", "committed"),
+    ])
+    expected_outboxes = sorted([
+        (proof["acquire_operation_id"], "lease.acquired"),
+        (proof["release_operation_id"], "lease.release"),
+        (proof["replacement_acquire_operation_id"], "lease.acquired"),
+        (proof["replacement_release_operation_id"], "lease.release"),
+    ], key=lambda item: (item[1], item[0]))
+    if (
+        node != (proof["machine_id"], proof["node_boot"], "active")
+        or runtime != (proof["node_id"], proof["node_boot"], "active",
+                       proof["producer_grant_ref"])
+        or attempt != (
+            proof["work_item_id"], proof["runtime_id"], proof["source_commit"],
+            proof["source_commit"], proof["source_tree"], "running", proof["node_boot"],
+        )
+        or replacement_runtime != (
+            proof["node_id"], proof["node_boot"], "active",
+            proof["replacement_producer_grant_ref"],
+        )
+        or replacement_attempt != (
+            proof["work_item_id"], proof["replacement_runtime_id"],
+            proof["source_commit"], proof["source_commit"], proof["source_tree"],
+            "running", proof["node_boot"],
+        )
+        or lease is None
+        or lease[0:2] != (proof["resource_id"], proof["generation"])
+        or _sha(lease[2].encode()) != proof["fencing_token_sha256"]
+        or lease[3:] != (
+            "released", proof["attempt_id"], proof["runtime_id"],
+            proof["acquire_command_id"],
+        )
+        or replacement_lease is None
+        or replacement_lease[0:2] != (
+            proof["resource_id"], proof["replacement_generation"],
+        )
+        or _sha(replacement_lease[2].encode()) != proof["replacement_fencing_token_sha256"]
+        or replacement_lease[3:] != (
+            "released", proof["replacement_attempt_id"],
+            proof["replacement_runtime_id"], proof["replacement_acquire_command_id"],
+            proof["replacement_producer_grant_ref"],
+        )
+        or proof["replacement_generation"] != proof["generation"] + 1
+        or proof["replacement_attempt_id"] == proof["attempt_id"]
+        or [(item[0], str(item[1]), item[2]) for item in events] != expected_events
+        or dedup != expected_dedup
+        or operations != expected_operations
+        or outboxes != expected_outboxes
+        or work != (proof["source_commit"],)
+    ):
+        raise ProbeRejected("Lease PG authority/enrollment/fence lineage changed")
+    return {"lease_pg_readback": True, "lease_id": proof["lease_id"],
+            "lease_event_ids": [item["event_id"] for item in proof["lease_events"]]}
+
+
+def _lease_effect_readback(
+    profile: dict[str, Any], ledger: ProbeLedger,
+    row: dict[str, Any], proof: dict[str, Any],
+) -> dict[str, Any]:
+    effect_root = ledger.root / "P1-LEASE-FENCING-effects"
+    output = effect_root / "output.txt"
+    info = output.stat(follow_symlinks=False)
+    identity = [info.st_dev, info.st_ino, info.st_uid, info.st_mode & 0o777, info.st_nlink]
+    if (identity != proof["effect_file_identity"]
+            or _sha(output.read_bytes()) != proof["effect_sha256"]
+            or info.st_size != proof["effect_size"]):
+        raise ProbeRejected("Lease file effect identity/content changed")
+    if (_effect_marker_digest(effect_root)
+            != proof["pre_late_snapshot"]["marker_sha256"]):
+        raise ProbeRejected("Lease file effect marker history changed")
+    scoped = make_conninfo(
+        profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
+    )
+    authority = DomainAuthority(scoped)
+    with authority._connect() as connection:
+        old_token_row = connection.execute(
+            "SELECT fencing_token FROM leases WHERE lease_id=%s", (proof["lease_id"],),
+        ).fetchone()
+        new_token_row = connection.execute(
+            "SELECT fencing_token FROM leases WHERE lease_id=%s",
+            (proof["replacement_lease_id"],),
+        ).fetchone()
+    if (old_token_row is None or new_token_row is None
+            or _sha(old_token_row[0].encode()) != proof["fencing_token_sha256"]
+            or _sha(new_token_row[0].encode()) != proof["replacement_fencing_token_sha256"]):
+        raise ProbeRejected("Lease token digest changed")
+    reader = DomainAuthority(scoped, context=replace(
+        authority.context,
+        principal_ref=proof["reader_principal_ref"],
+        grant_ref=proof["reader_grant_ref"],
+    ))
+    with LocalFileEffectGateway(
+        reader.leases, effect_root, scope_id="local-scope",
+        resource_paths={proof["resource_id"]: "output.txt"},
+    ) as observer:
+        old_key = _sha(proof["original_effect_operation_id"].encode())
+        old_intent = observer._load(observer._ops, old_key + ".intent")
+        old_completion = observer._load(observer._ops, old_key + ".completed")
+        if (old_intent is None or old_completion is None
+                or old_intent["new"]["sha256"] != proof["original_effect_sha256"]
+                or observer._digest(observer._encode(old_intent))
+                != proof["original_effect_intent_sha256"]
+                or observer._digest(observer._encode(old_completion))
+                != proof["original_effect_completion_sha256"]):
+            raise ProbeRejected("original owner file effect marker history changed")
+        observed = observer.historical_readback(
+            proof["replacement_lease_id"], proof["resource_id"],
+            proof["replacement_generation"], new_token_row[0], "output.txt",
+            caller=reader.context, scope_id="local-scope",
+            grant_ref=reader.context.grant_ref,
+            authority_incarnation=reader.context.authority_incarnation,
+            expected_operation_id=proof["effect_operation_id"],
+        )
+    if (
+        observed["status"] != "verified"
+        or observed["sha256"] != proof["effect_sha256"]
+        or observed["intent_sha256"] != proof["effect_intent_sha256"]
+        or observed["completion_sha256"] != proof["effect_completion_sha256"]
+        or observed["completion_state"] != "completed"
+    ):
+        raise ProbeRejected("historical file effect readback changed")
+    try:
+        authority.leases.verify_fence(
+            proof["lease_id"], proof["resource_id"], proof["generation"],
+            old_token_row[0], caller=authority.context,
+            attempt_id=proof["attempt_id"], runtime_id=proof["runtime_id"],
+            scope_id="local-scope", grant_ref=authority.context.grant_ref,
+            authority_incarnation=authority.context.authority_incarnation,
+        )
+    except FencingRejected:
+        pass
+    else:
+        raise ProbeRejected("released Lease still grants a current write fence")
+    return {"lease_effect_readback": True, "effect_sha256": observed["sha256"],
+            "completion_sha256": observed["completion_sha256"],
+            "original_marker_verified": True, "late_old_owner_fenced": True}
+
+
 def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 ledger: ProbeLedger, row: dict[str, Any]) -> dict[str, Any]:
     lineage = json.loads(row["lineage_json"])
@@ -1276,15 +1967,18 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         "inbox_count", "grant_revoked",
         "ack_loss_observed", "exact_replay", "conflict_rejected",
         "core_crash_proof", "node_restart_proof", "provider_restart_proof",
+        "lease_proof",
         "dedup_details", "operation_details", "outbox_details", "message_hashes",
         "event_hashes", "provider_refs",
     }
     if set(lineage) < required_lineage:
         raise ProbeRejected("marker-only evidence is not an actual Runtime lineage")
-    if (lineage["machine_id"] != profile["machine_id"]
-            or lineage["node_id"] != profile["node_id"]
-            or any(item["selection_machine"] != lineage["machine_id"]
-                   for item in lineage["attempts"])):
+    if (
+        lineage["machine_id"] != profile["machine_id"]
+        or lineage["node_id"] != profile["node_id"]
+        or any(item["selection_machine"] != lineage["machine_id"]
+               for item in lineage["attempts"])
+    ):
         raise ProbeRejected("Node/Attempt machine identity differs from Gate Machine")
     expected_auth_failure = scenario == "P1-AUTH-REVOCATION"
     if (
@@ -1303,6 +1997,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         or (lineage["node_restart_proof"] is not None) != (scenario == "P1-NODE-RESTART")
         or (lineage["provider_restart_proof"] is not None)
         != (scenario == "P1-PROVIDER-RESTART")
+        or (lineage["lease_proof"] is not None) != (scenario == "P1-LEASE-FENCING")
     ):
         raise ProbeRejected("scenario lineage does not prove its required fault")
     if scenario == "P1-CORE-RESTART":
@@ -1342,6 +2037,29 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             or lineage["provider_refs"] != [proof["workflow_id"], proof["run_id"]]
         ):
             raise ProbeRejected("Temporal worker replacement lineage is incomplete")
+    if scenario == "P1-LEASE-FENCING":
+        proof = lineage["lease_proof"]
+        if (
+            proof.get("delivery_operation_id") != lineage["operation_id"]
+            or proof.get("source_commit") != row["source_commit"]
+            or proof.get("source_tree") != row["source_tree"]
+            or proof.get("machine_id") != profile["machine_id"]
+            or proof.get("node_id") != profile["node_id"]
+            or proof.get("historical_readback") != "verified"
+            or proof.get("original_historical_readback") != "verified"
+            or proof.get("stale_fence_rejected") is not True
+            or proof.get("late_old_owner_rejected") is not True
+            or proof.get("replacement_readback_before_late") is not True
+            or not isinstance(proof.get("pre_late_snapshot"), dict)
+            or proof.get("pre_late_snapshot") != proof.get("post_late_snapshot")
+            or proof["pre_late_snapshot"].get("file_sha256") != proof.get("effect_sha256")
+            or proof["pre_late_snapshot"].get("file_identity")
+            != proof.get("effect_file_identity")
+            or proof.get("replacement_generation") != proof.get("generation", -1) + 1
+            or proof.get("replacement_attempt_id") == proof.get("attempt_id")
+            or not proof.get("effect_completion_sha256")
+        ):
+            raise ProbeRejected("Lease fence source/Node/effect lineage is incomplete")
     if kind == "postgresql":
         scoped = make_conninfo(
             profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
@@ -1432,7 +2150,12 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             or operation_count != 1 or outbox_count != 1 or len(event_rows) != 1
         ):
             raise ProbeRejected("PostgreSQL Runtime lineage changed")
-        return {"postgresql_readback": True, "lineage_digest": _sha(_canonical(lineage))}
+        extra = (
+            _lease_pg_readback(profile, row, lineage["lease_proof"])
+            if scenario == "P1-LEASE-FENCING" else {}
+        )
+        return {"postgresql_readback": True, "lineage_digest": _sha(_canonical(lineage)),
+                **extra}
     if kind == "sqlite":
         replay = ledger.get(scenario)
         if replay != row:
@@ -1459,6 +2182,13 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 "SELECT boot_incarnation,machine_id,node_id FROM node_boots "
                 "ORDER BY started_at,boot_incarnation",
             ).fetchall()
+            lease_node = (
+                connection.execute(
+                    "SELECT machine_id,node_id,boot_incarnation FROM journal "
+                    "WHERE operation_id=?", (lineage["operation_id"],),
+                ).fetchone()
+                if scenario == "P1-LEASE-FENCING" else None
+            )
         if not boot_rows or any(
             (item[1], item[2]) != (lineage["machine_id"], lineage["node_id"])
             for item in boot_rows
@@ -1480,6 +2210,12 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                     or _sha(_canonical(_node_receipts(node_path, lineage["operation_id"])))
                     != proof["node_receipt_digest"]):
                 raise ProbeRejected("SQLite Node boot/receipt lineage changed")
+        if scenario == "P1-LEASE-FENCING" and lease_node != (
+            lineage["lease_proof"]["machine_id"],
+            lineage["lease_proof"]["node_id"],
+            lineage["lease_proof"]["node_boot"],
+        ):
+            raise ProbeRejected("SQLite Node differs from signed Lease execution owner")
         return {"sqlite_readback": True, "journal_sha256": _sha(node_path.read_bytes()),
                 "node_receipt_ids": [item[0] for item in node_receipts]}
     if kind == "temporal":
@@ -1527,8 +2263,12 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         if (value.get("lineage") != lineage
                 or _sha(raw.read_bytes()) != row["test_digest"]):
             raise ProbeRejected("Driver/raw test evidence changed")
+        extra = (
+            _lease_effect_readback(profile, ledger, row, lineage["lease_proof"])
+            if scenario == "P1-LEASE-FENCING" else {}
+        )
         return {"driver_readback": True, "driver_calls": lineage["driver_calls"],
-                "raw_sha256": _sha(raw.read_bytes())}
+                "raw_sha256": _sha(raw.read_bytes()), **extra}
     if kind == "os":
         if scenario == "P1-CORE-RESTART":
             proof = lineage["core_crash_proof"]
@@ -1617,10 +2357,18 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             current_commit, current_tree = _source_identity(Path(profile["source_root"]))
         if (current_commit, current_tree) != (row["source_commit"], row["source_tree"]):
             raise ProbeRejected("source identity changed during scenario evidence")
+        extra = (
+            _lease_effect_readback(profile, ledger, row, lineage["lease_proof"])
+            if scenario == "P1-LEASE-FENCING" else {}
+        )
         return {"os_readback": True, "platform": platform.platform(),
-                "systemd_user_exit": systemd_exit}
+                "systemd_user_exit": systemd_exit, **extra}
     raw = ledger.root / row["raw_path"]
-    if _sha(raw.read_bytes()) != row["test_digest"] or not lineage["conflict_rejected"]:
+    if (_sha(raw.read_bytes()) != row["test_digest"] or not lineage["conflict_rejected"]
+            or (scenario == "P1-LEASE-FENCING" and (
+                not lineage["lease_proof"]["stale_fence_rejected"]
+                or not lineage["lease_proof"]["late_old_owner_rejected"]
+            ))):
         raise ProbeRejected("command output does not bind the Runtime transaction")
     return {"command_output": True, "test_digest": row["test_digest"],
             "lineage_digest": _sha(_canonical(lineage))}
@@ -1631,6 +2379,8 @@ def _runner_result(profile: dict[str, Any], scenario: str, kind: str,
     now = datetime.now(UTC)
     facts = {"layer": layer}
     fields = EVIDENCE_FIELDS[kind]
+    lineage = json.loads(row["lineage_json"])
+    lease = lineage.get("lease_proof")
     if "fault_injection" in fields:
         facts["fault_injected"] = True
     if "source_readback" in fields:
@@ -1657,8 +2407,15 @@ def _runner_result(profile: dict[str, Any], scenario: str, kind: str,
         "versions": json.loads(os.environ.get("ACS_GATE_VERSIONS_JSON", json.dumps(profile["versions"]))),
         "observed_at": now.isoformat(),
         "expires_at": os.environ.get("ACS_GATE_EXPIRES_AT", (now + timedelta(minutes=5)).isoformat()),
-        "operation_ids": [row["operation_id"], row["temporal_workflow_id"]],
-        "message_ids": [row["message_id"]], "event_ids": [row["event_id"]],
+        "operation_ids": [row["operation_id"], row["temporal_workflow_id"]]
+        + ([
+            lease["acquire_operation_id"], lease["release_operation_id"],
+            lease["replacement_acquire_operation_id"],
+            lease["replacement_release_operation_id"],
+        ] if lease else []),
+        "message_ids": [row["message_id"]],
+        "event_ids": [row["event_id"]]
+        + ([item["event_id"] for item in lease["lease_events"]] if lease else []),
         "receipt_ids": [row["receipt_id"]], "observer": "p1-profile-probe",
         "owner": "runtime-domain", "facts": facts,
     }

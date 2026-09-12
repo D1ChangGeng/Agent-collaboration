@@ -67,6 +67,50 @@ def _profile(tmp_path: Path) -> Path:
     return path
 
 
+@pytest.mark.parametrize("mutated_layer", ["file", "marker", "postgresql"])
+def test_replacement_readback_precedes_old_owner_and_late_mutation_is_fenced(
+    tmp_path, monkeypatch, mutated_layer,
+):
+    profile = _profile(tmp_path)
+    output = tmp_path / "output"
+    run_id = "late-fence-negative-" + uuid.uuid4().hex
+    monkeypatch.setenv("ACS_GATE_RUN_ID", run_id)
+    original_write = probe.LocalFileEffectGateway.write
+
+    def compromised_late_write(self, *args, **kwargs):
+        if str(kwargs.get("operation_id", "")).startswith("late-old-owner:"):
+            effect_root = output / "P1-LEASE-FENCING-effects"
+            if mutated_layer == "file":
+                (effect_root / "output.txt").write_bytes(b"forged late bytes")
+            elif mutated_layer == "marker":
+                marker = next((effect_root / ".acs-effect-markers" / "current").glob("*.json"))
+                marker.write_bytes(marker.read_bytes() + b" ")
+            else:
+                suffix = probe._sha(f"{run_id}:P1-LEASE-FENCING".encode())[:24]
+                scoped = make_conninfo(
+                    json.loads(profile.read_text())["postgres_dsn"],
+                    options=f"-c search_path=p1_probe_{suffix}",
+                )
+                with psycopg.connect(scoped) as connection:
+                    connection.execute(
+                        "UPDATE leases SET owner_runtime_id=%s "
+                        "WHERE resource_id=%s AND generation=2",
+                        ("forged-replacement-runtime", kwargs["resource_id"]),
+                    )
+            raise probe.FencingRejected(kwargs["resource_id"])
+        return original_write(self, *args, **kwargs)
+
+    monkeypatch.setattr(probe.LocalFileEffectGateway, "write", compromised_late_write)
+    try:
+        with pytest.raises(
+            probe.ProbeRejected, match="old owner changed replacement file, marker or PG Lease",
+        ):
+            probe.execute(profile, "P1-LEASE-FENCING", "command_output", output)
+    finally:
+        if output.exists():
+            probe.cleanup(profile, output)
+
+
 @pytest.mark.parametrize("scenario,stage", [
     ("P1-DOMAIN-TRANSACTION", "after_schema_reserved"),
     ("P1-DOMAIN-TRANSACTION", "after_domain_dispatch"),
@@ -75,6 +119,7 @@ def _profile(tmp_path: Path) -> Path:
     ("P1-NODE-RESTART", "after_node_child_result"),
     ("P1-PROVIDER-RESTART", "after_provider_crash_record"),
     ("P1-PROVIDER-RESTART", "after_provider_child_result"),
+    ("P1-LEASE-FENCING", "after_domain_dispatch"),
 ])
 def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scenario, stage):
     profile = _profile(tmp_path)
@@ -133,6 +178,7 @@ def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scen
     ("P1-CORE-RESTART", "delivered", 1, 1),
     ("P1-NODE-RESTART", "delivered", 0, 2),
     ("P1-PROVIDER-RESTART", "delivered", 0, 1),
+    ("P1-LEASE-FENCING", "delivered", 1, 1),
 ])
 def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
     tmp_path, monkeypatch, scenario, expected_state, driver_count, attempt_count,
@@ -196,6 +242,35 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
             with pytest.raises(probe.ProbeRejected, match="Temporal Worker processes"):
                 probe.execute(profile, scenario, "os", output)
             context.write_bytes(original)
+        if scenario == "P1-LEASE-FENCING":
+            proof = lineage["lease_proof"]
+            assert proof["delivery_operation_id"] == lineage["operation_id"]
+            assert proof["machine_id"] == lineage["machine_id"]
+            assert proof["stale_fence_rejected"]
+            assert proof["late_old_owner_rejected"]
+            assert proof["replacement_readback_before_late"]
+            assert proof["pre_late_snapshot"] == proof["post_late_snapshot"]
+            assert proof["pre_late_snapshot"]["file_sha256"] == proof["effect_sha256"]
+            assert proof["pre_late_snapshot"]["file_identity"] == proof["effect_file_identity"]
+            assert proof["replacement_generation"] == proof["generation"] + 1
+            assert proof["replacement_attempt_id"] != proof["attempt_id"]
+            assert proof["replacement_producer_grant_ref"] != proof["producer_grant_ref"]
+            assert len(results[0]["operation_ids"]) == 6
+            effect_file = output / "P1-LEASE-FENCING-effects" / "output.txt"
+            original = effect_file.read_bytes()
+            effect_file.write_bytes(b"tampered file effect")
+            with pytest.raises(probe.ProbeRejected, match="Lease file effect identity/content"):
+                probe.execute(profile, scenario, "driver", output)
+            effect_file.write_bytes(original)
+            marker = next(
+                (output / "P1-LEASE-FENCING-effects" / ".acs-effect-markers"
+                 / "current").glob("*.json")
+            )
+            marker_original = marker.read_bytes()
+            marker.write_bytes(marker_original + b" ")
+            with pytest.raises(probe.ProbeRejected, match="Lease file effect marker history"):
+                probe.execute(profile, scenario, "driver", output)
+            marker.write_bytes(marker_original)
         assert (output.stat().st_mode & 0o777) == 0o700
         for private_file in output.iterdir():
             if private_file.is_file():
@@ -204,23 +279,23 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
             json.loads(profile.read_text())["postgres_dsn"]
         )["password"].encode()
         assert not any(
-            secret in path.read_bytes() for path in output.iterdir() if path.is_file()
+            secret in path.read_bytes() for path in output.rglob("*") if path.is_file()
         )
         schema = row["pg_schema"]
         scoped = make_conninfo(
             json.loads(profile.read_text())["postgres_dsn"],
             options=f"-c search_path={schema}",
         )
-        if scenario == "P1-COMMAND-DEDUP":
+        if scenario in ("P1-COMMAND-DEDUP", "P1-LEASE-FENCING"):
             with psycopg.connect(scoped) as connection:
                 selected = connection.execute(
                     "SELECT selection_json FROM delivery_attempts WHERE message_id=%s",
                     (lineage["message_id"],),
                 ).fetchone()[0]
+                changed = {**selected, "machine_id": "forged-machine"}
                 connection.execute(
                     "UPDATE delivery_attempts SET selection_json=%s WHERE message_id=%s",
-                    (json.dumps({**selected, "machine_id": "forged-machine"}),
-                     lineage["message_id"]),
+                    (json.dumps(changed), lineage["message_id"]),
                 )
             with pytest.raises(probe.ProbeRejected, match="PostgreSQL Runtime lineage changed"):
                 probe.execute(profile, scenario, "postgresql", output)
@@ -229,6 +304,21 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
                     "UPDATE delivery_attempts SET selection_json=%s WHERE message_id=%s",
                     (json.dumps(selected), lineage["message_id"]),
                 )
+            if scenario == "P1-LEASE-FENCING":
+                with psycopg.connect(scoped) as connection:
+                    connection.execute(
+                        "UPDATE leases SET owner_attempt_id=%s WHERE lease_id=%s",
+                        ("forged-replacement-attempt",
+                         lineage["lease_proof"]["replacement_lease_id"]),
+                    )
+                with pytest.raises(probe.ProbeRejected, match="Lease PG authority/enrollment/fence"):
+                    probe.execute(profile, scenario, "postgresql", output)
+                with psycopg.connect(scoped) as connection:
+                    connection.execute(
+                        "UPDATE leases SET owner_attempt_id=%s WHERE lease_id=%s",
+                        (lineage["lease_proof"]["replacement_attempt_id"],
+                         lineage["lease_proof"]["replacement_lease_id"]),
+                    )
         with psycopg.connect(scoped) as connection:
             if scenario == "P1-AUTH-REVOCATION":
                 connection.execute(
@@ -251,13 +341,23 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
                     "UPDATE operations SET provider_run_id=%s WHERE operation_id=%s",
                     ("changed-run", lineage["operation_id"]),
                 )
+            elif scenario == "P1-LEASE-FENCING":
+                connection.execute(
+                    "UPDATE leases SET status='granted' WHERE lease_id=%s",
+                    (lineage["lease_proof"]["lease_id"],),
+                )
             else:
                 connection.execute(
                     "UPDATE delivery_attempts SET status='interrupted' "
                     "WHERE message_id=%s AND ordinal=1",
                     (lineage["message_id"],),
                 )
-        with pytest.raises(probe.ProbeRejected, match="PostgreSQL Runtime lineage changed"):
+        error = (
+            "Lease PG authority/enrollment/fence lineage changed"
+            if scenario == "P1-LEASE-FENCING"
+            else "PostgreSQL Runtime lineage changed"
+        )
+        with pytest.raises(probe.ProbeRejected, match=error):
             probe.execute(profile, scenario, "postgresql", output)
     finally:
         if output.exists():
