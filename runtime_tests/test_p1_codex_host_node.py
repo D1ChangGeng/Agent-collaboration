@@ -42,8 +42,6 @@ from runtime.p1_codex_host_node import (
 from runtime.systemd_supervisor import SystemdUserSupervisor
 from runtime_tests.test_delivery import command, query
 
-pytest_plugins = ("runtime_tests.test_delivery",)
-
 
 def _scope_policy_hash(setup):
     value = query(setup, "SELECT policy FROM scopes WHERE scope_id='local-scope'")[0][0]
