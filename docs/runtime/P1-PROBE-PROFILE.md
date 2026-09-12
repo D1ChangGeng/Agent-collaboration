@@ -72,8 +72,9 @@ model lifecycle scenarios are complete.
 
 The Gate runner's `runtime_profile` provisions a digest-pinned, read-only
 profile at `/run/acs-p1/profile.json` and a reviewed Runtime Python environment
-at the profile's `sandbox_python` path. It mounts only the verified user-bus
-socket needed for `systemctl --user` readback. The formal source, Gate tree,
+at the profile's `sandbox_python` path. The host runner verifies the user-bus
+peer and mounts a digest-bound read-only OS attestation; the bus socket stays
+outside the sandbox. The formal source, Gate tree,
 run root and HMAC key remain hidden. No DSN value is copied into source, plan,
 argv or ordinary environment. A runnable Gate still needs an independently
 reviewed plan and real run on the target Machine; this harness's isolated
