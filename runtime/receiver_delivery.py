@@ -40,14 +40,22 @@ class ReceiverDeployment:
 class ReceiverNativeDeliveryBridge:
     """Recover the immutable prepared invocation and enter a NativeDeliveryAdapter once."""
 
-    def __init__(self, ledger_path: str, native_adapter, *, read_domain_marker):
+    def __init__(
+        self,
+        ledger_path: str,
+        native_adapter,
+        *,
+        read_domain_marker,
+        response_collector=None,
+    ):
         if not callable(read_domain_marker):
             raise TypeError("authoritative Domain marker readback is required")
         self.ledger_path = ledger_path
         self.native_adapter = native_adapter
         self.read_domain_marker = read_domain_marker
+        self.response_collector = response_collector
 
-    def __call__(self, admission):
+    def _invocation(self, admission):
         with sqlite3.connect(self.ledger_path) as connection:
             row = connection.execute(
                 "SELECT body_json FROM receiver_requests WHERE operation_id=? AND attempt_id=? "
@@ -64,6 +72,10 @@ class ReceiverNativeDeliveryBridge:
                 admission.operation_id, admission.attempt_id, admission.dispatch_id,
                 admission.message_id, admission.command_id):
             raise RuntimeError("receiver native invocation lineage differs")
+        return invocation
+
+    def __call__(self, admission):
+        invocation = self._invocation(admission)
         self.native_adapter.prepare(invocation)
 
         def dispatch_readback():
@@ -74,6 +86,18 @@ class ReceiverNativeDeliveryBridge:
         if observation.native_ack_ref is None:
             raise RuntimeError("native result is uncertain")
         return {"native_observation": observation.model_dump(mode="json")}
+
+    def collect_response(self, admission):
+        """Project a delayed terminal response without invoking or resuming native work."""
+        if self.response_collector is None:
+            raise RuntimeError("receiver response collector is unavailable")
+        invocation = self._invocation(admission)
+        result = self.response_collector.collect_and_project(invocation)
+        return {
+            "projection_id": result.projection_id,
+            "canonical_digest": result.canonical_digest,
+            "disposition": result.disposition,
+        }
 
 
 class RemoteNodeEndpointAdapter:

@@ -273,6 +273,12 @@ class NodeJournal:
             raise
         return connection
 
+    def response_outbox(self):
+        """Open the recovery observation Outbox in this Node-owned SQLite journal."""
+        from runtime.recovery import NodeResponseOutbox
+
+        return NodeResponseOutbox(self._path)
+
     @contextmanager
     def _transaction(
         self,

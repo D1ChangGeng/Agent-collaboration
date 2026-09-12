@@ -59,7 +59,7 @@ class CommandEnvelope(BaseModel):
     grant_ref: str = Field(min_length=1, max_length=256)
     target_kind: Literal[
         "work_item", "message", "lease", "effect", "node", "runtime", "attempt",
-        "authority_transport_key", "connection", "endpoint",
+        "authority_transport_key", "connection", "endpoint", "recovery", "projection",
     ]
     target_id: str = Field(min_length=1, max_length=256)
     expected_revision: int = Field(ge=0)

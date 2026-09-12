@@ -40,9 +40,10 @@ class DomainAuthority:
     """PostgreSQL Domain authority for the local Runtime profile."""
 
     SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.8"
+    SCHEMA_VERSION = "1.9"
 
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.8", "b8554614d9923ae43a653371c4445c33fdfe189c219b3376f29e23c476ee7614"),
         ("1.7", "a3eb11f7afdccfedab5e7f7c41c861f3b9d8f4853460cdd948b8fc77e23d8132"),
         ("1.6", "89400be6a5c44f419ef73fe6661f907c858c11a397407662270fe0a79e169c73"),
         ("1.5", "c5faeecc4a9a6b152eb288f8f5d6cf3a1b4492d464f10d931535d3f737421fee"),

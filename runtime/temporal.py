@@ -76,12 +76,18 @@ class TemporalAdapter:
         task_queue: str = "acs-p1-operations",
         worker_identity: str = "acs-p1-runtime",
         delivery_dispatcher: Any | None = None,
+        response_collector: Any | None = None,
+        human_bridge_dispatcher: Any | None = None,
+        incident_expirer: Any | None = None,
     ) -> None:
         self.endpoint = endpoint or os.getenv("ACS_P1_TEMPORAL_ENDPOINT", "")
         self.namespace = namespace or os.getenv("ACS_P1_TEMPORAL_NAMESPACE", "")
         self.task_queue = task_queue
         self.worker_identity = worker_identity
         self._delivery_dispatcher = delivery_dispatcher
+        self._response_collector = response_collector
+        self._human_bridge_dispatcher = human_bridge_dispatcher
+        self._incident_expirer = incident_expirer
         self._client: Any = None
         self._worker: Any = None
         self._worker_task: asyncio.Task[None] | None = None
@@ -118,6 +124,23 @@ class TemporalAdapter:
 
                     workflows.append(CommittedDeliveryWorkflow)
                     activities.append(DeliveryActivities(self._delivery_dispatcher).attempt)
+                if any((self._response_collector, self._human_bridge_dispatcher,
+                        self._incident_expirer)):
+                    from runtime.recovery_temporal import (
+                        HumanBridgeProviderWorkflow,
+                        RecoveryActivities,
+                        RecoveryIncidentTimerWorkflow,
+                        ResponseProjectionWorkflow,
+                    )
+
+                    recovery = RecoveryActivities(
+                        self._response_collector,
+                        self._human_bridge_dispatcher,
+                        self._incident_expirer,
+                    )
+                    workflows.extend((ResponseProjectionWorkflow, HumanBridgeProviderWorkflow,
+                                      RecoveryIncidentTimerWorkflow))
+                    activities.extend((recovery.project, recovery.provider, recovery.expire))
                 self._worker = Worker(
                     self._client,
                     task_queue=self.task_queue,
@@ -192,6 +215,64 @@ class TemporalAdapter:
             raise TemporalUnavailable("delivery dispatcher is not configured")
         return await submit_delivery(
             self.client, self.task_queue, self._delivery_dispatcher, identity,
+        )
+
+    async def _submit_recovery(self, workflow_type: Any, workflow_id: str,
+                               identity: dict[str, Any], memo_key: str) -> Any:
+        payload = dict(identity)
+        payload_hash = canonical_payload_hash(payload)
+        try:
+            return await self.client.start_workflow(
+                workflow_type.run,
+                payload,
+                id=workflow_id,
+                task_queue=self.task_queue,
+                execution_timeout=timedelta(minutes=10),
+                id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+                id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
+                memo={memo_key: payload_hash},
+            )
+        except WorkflowAlreadyStartedError:
+            description = await self.client.get_workflow_handle(workflow_id).describe()
+            memo = await description.memo()
+            if memo.get(memo_key) != payload_hash:
+                raise TemporalUnavailable("recovery Workflow identity conflicts") from None
+            return self.client.get_workflow_handle(workflow_id, run_id=description.run_id)
+
+    async def submit_response_projection(self, projection_id: str) -> Any:
+        from runtime.recovery_temporal import ResponseProjectionWorkflow
+
+        if self._response_collector is None:
+            raise TemporalUnavailable("response projection collector is not configured")
+        return await self._submit_recovery(
+            ResponseProjectionWorkflow,
+            "acs-response-projection/" + projection_id,
+            {"projection_id": projection_id},
+            "acs_response_projection_hash",
+        )
+
+    async def submit_human_bridge_effect(self, request_id: str, identity: dict[str, Any]) -> Any:
+        from runtime.recovery_temporal import HumanBridgeProviderWorkflow
+
+        if self._human_bridge_dispatcher is None:
+            raise TemporalUnavailable("Human Bridge provider is not configured")
+        return await self._submit_recovery(
+            HumanBridgeProviderWorkflow,
+            "acs-human-bridge/" + request_id,
+            identity,
+            "acs_human_bridge_effect_hash",
+        )
+
+    async def submit_incident_timer(self, incident_id: str, identity: dict[str, Any]) -> Any:
+        from runtime.recovery_temporal import RecoveryIncidentTimerWorkflow
+
+        if self._incident_expirer is None:
+            raise TemporalUnavailable("recovery incident expiry is not configured")
+        return await self._submit_recovery(
+            RecoveryIncidentTimerWorkflow,
+            "acs-recovery-incident/" + incident_id,
+            identity,
+            "acs_recovery_incident_hash",
         )
 
     async def _existing_handle(self, operation_id: str, payload_hash: str) -> Any:
