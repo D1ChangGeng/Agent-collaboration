@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/acs/p1-loopback-probe-profile-1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "profile", "source_root", "python", "sandbox_python",
+    "postgres_dsn", "temporal_endpoint", "temporal_namespace", "versions",
+    "node_id", "direction", "codex_model_evidence", "opencode_model_evidence"
+  ],
+  "properties": {
+    "schema_version": {"const": "acs-p1-loopback-probe-profile/1"},
+    "profile": {"const": "p1-loopback-provider"},
+    "source_root": {"type": "string", "minLength": 1},
+    "python": {"type": "string", "minLength": 1},
+    "sandbox_python": {"type": "string", "minLength": 1},
+    "postgres_dsn": {"type": "string", "minLength": 1},
+    "temporal_endpoint": {"const": "127.0.0.1:7239"},
+    "temporal_namespace": {"type": "string", "minLength": 1},
+    "versions": {
+      "type": "object",
+      "required": ["core", "provider", "database", "protocol", "harness", "driver", "os"]
+    },
+    "node_id": {"type": "string", "minLength": 1},
+    "direction": {"type": "string", "minLength": 1},
+    "codex_model_evidence": {"type": ["string", "null"]},
+    "opencode_model_evidence": {"type": ["string", "null"]}
+  }
+}

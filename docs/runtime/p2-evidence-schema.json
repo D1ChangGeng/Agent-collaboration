@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/acs/p2-execution-plan-1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "execution_order", "machines", "gates"],
+  "properties": {
+    "schema_version": {"const": "acs-p2-execution-plan/1"},
+    "status": {"enum": ["not_run", "blocked"]},
+    "execution_order": {"const": ["P1", "P2-CODEX", "P2-OPENCODE"]},
+    "machines": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["machine_id", "host_fingerprint_sha256", "node_id", "source_commit", "source_tree", "os", "harness", "driver"],
+        "properties": {
+          "machine_id": {"type": "string", "minLength": 1},
+          "host_fingerprint_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "node_id": {"type": "string", "minLength": 1},
+          "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "source_tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "os": {"type": "string", "minLength": 1},
+          "harness": {"type": "object"},
+          "driver": {"type": "object"}
+        }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["P2-CODEX", "P2-OPENCODE"],
+      "properties": {
+        "P2-CODEX": {"$ref": "#/$defs/gate"},
+        "P2-OPENCODE": {"$ref": "#/$defs/gate"}
+      }
+    }
+  },
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "required": ["status", "prerequisite", "scenarios"],
+      "properties": {
+        "status": {"enum": ["not_run", "blocked"]},
+        "prerequisite": {"type": "string"},
+        "scenarios": {
+          "type": "array", "minItems": 8, "maxItems": 8,
+          "items": {
+            "type": "object",
+            "required": ["scenario_id", "status", "fault_injection", "evidence"],
+            "properties": {
+              "scenario_id": {"type": "string"},
+              "status": {"enum": ["not_run", "blocked"]},
+              "fault_injection": {"type": "string"},
+              "evidence": {"type": "object"}
+            }
+          }
+        }
+      }
+    }
+  }
+}
