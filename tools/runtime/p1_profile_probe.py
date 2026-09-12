@@ -425,6 +425,11 @@ def _probe_child_env() -> dict[str, str]:
         if value is not None:
             environment[key] = value
     environment["PYTHONNOUSERSITE"] = "1"
+    if os.environ.get("ACS_GATE_RUNTIME_ROOT") == "/run/acs-p1/runtime":
+        reviewed_site = "/run/acs-p1/runtime/site"
+        if os.environ.get("PYTHONPATH") != reviewed_site:
+            raise ProbeRejected("reviewed runtime site is unavailable to child")
+        environment["PYTHONPATH"] = reviewed_site
     return environment
 
 
