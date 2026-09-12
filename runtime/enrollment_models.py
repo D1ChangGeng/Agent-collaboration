@@ -34,7 +34,16 @@ class NodeRevocation(EnrollmentInput):
 
 
 class NodeChallengeRequest(EnrollmentInput):
-    purpose: Literal["runtime.register", "attempt.register", "execution.record"]
+    purpose: Literal[
+        "runtime.register",
+        "attempt.register",
+        "execution.record",
+        "endpoint.register",
+        "delivery.prepare",
+        "delivery.dispatch",
+        "delivery.readback",
+        "delivery.recover",
+    ]
     purpose_command_id: str = Field(min_length=1, max_length=256)
     purpose_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     ttl_seconds: int = Field(default=120, ge=1, le=300, strict=True)

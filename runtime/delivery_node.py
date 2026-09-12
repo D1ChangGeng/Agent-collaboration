@@ -39,7 +39,9 @@ class InvocationDriver(Protocol):
 
 
 def canonical(value) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False,
+    )
 
 
 def logical_payload(envelope):
