@@ -319,6 +319,32 @@ def _owner_directory(path: Path) -> int:
         raise
 
 
+def _private_evidence_directory(run_dir: Path, scenario_id: str, command_id: str) -> Path:
+    parts = ("evidence", scenario_id, digest(command_id))
+    descriptor = _owner_directory(run_dir)
+    try:
+        for part in parts:
+            try:
+                os.mkdir(part, mode=0o700, dir_fd=descriptor)
+            except FileExistsError:
+                pass
+            following = os.open(
+                part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                dir_fd=descriptor,
+            )
+            info = os.fstat(following)
+            if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid():
+                os.close(following)
+                raise SandboxUnavailable("host evidence directory identity is invalid")
+            if stat.S_IMODE(info.st_mode) != 0o700:
+                os.fchmod(following, 0o700)
+            os.close(descriptor)
+            descriptor = following
+    finally:
+        os.close(descriptor)
+    return run_dir / "evidence" / scenario_id / digest(command_id)
+
+
 def _member_file(root_fd: int, name: str, expected: dict[str, Any]) -> None:
     parts = Path(name).parts
     directory = os.dup(root_fd)
@@ -360,7 +386,11 @@ def _member_file(root_fd: int, name: str, expected: dict[str, Any]) -> None:
 
 
 @contextmanager
-def pinned_runtime_mounts(plan: dict[str, Any]):
+def pinned_runtime_mounts(
+    plan: dict[str, Any], *, state: dict[str, Any] | None = None,
+    scenario_id: str | None = None, command: dict[str, Any] | None = None,
+    run_dir: Path | None = None,
+):
     configured = plan.get("runtime_profile")
     if configured is None:
         yield {}, ()
@@ -370,6 +400,7 @@ def pinned_runtime_mounts(plan: dict[str, Any]):
     root_path = Path(configured["runtime_environment_root"])
     bus_parent = Path(f"/run/user/{os.geteuid()}")
     descriptors: list[int] = []
+    bus_parent_fd: int | None = None
     try:
         profile_parent_fd = _owner_directory(profile_path.parent)
         descriptors.append(profile_parent_fd)
@@ -381,7 +412,6 @@ def pinned_runtime_mounts(plan: dict[str, Any]):
         root_fd = _owner_directory(root_path)
         descriptors.append(root_fd)
         bus_parent_fd = _owner_directory(bus_parent)
-        descriptors.append(bus_parent_fd)
         bus_info = os.stat("bus", dir_fd=bus_parent_fd, follow_symlinks=False)
         if not stat.S_ISSOCK(bus_info.st_mode) or bus_info.st_uid != os.geteuid():
             raise SandboxUnavailable("reviewed user bus is unavailable")
@@ -403,11 +433,60 @@ def pinned_runtime_mounts(plan: dict[str, Any]):
         sources = {
             "profile": f"/proc/self/fd/{profile_fd}",
             "environment": f"/proc/self/fd/{root_fd}",
-            "bus": f"/proc/self/fd/{bus_parent_fd}/bus",
+            "_bus_parent_fd": bus_parent_fd,
             "bus_identity": (bus_info.st_dev, bus_info.st_ino),
         }
+        if command is not None and command.get("kind") == "os":
+            if state is None or scenario_id is None or run_dir is None:
+                raise SandboxUnavailable("host OS readback requires runner identity")
+            uid = os.geteuid()
+            host_environment = {
+                "PATH": "/usr/bin:/bin", "XDG_RUNTIME_DIR": f"/run/user/{uid}",
+                "DBUS_SESSION_BUS_ADDRESS": f"unix:path=/run/user/{uid}/bus",
+            }
+            try:
+                systemd = subprocess.run(
+                    ["/usr/bin/systemctl", "--user", "show-environment"],
+                    env=host_environment, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    timeout=10, check=False,
+                )
+            except (OSError, subprocess.TimeoutExpired) as error:
+                raise SandboxUnavailable("host user-manager readback is unavailable") from error
+            if systemd.returncode:
+                raise SandboxUnavailable("host user-manager readback failed")
+            host_path = _private_evidence_directory(
+                run_dir, scenario_id, command["command_id"],
+            ) / "host-os.json"
+            write_json(host_path, {
+                "schema_version": "acs-p1-host-os-attestation/1",
+                "run_id": state["run_id"], "scenario_id": scenario_id,
+                "command_id": command["command_id"],
+                "source_commit": state["source_commit"],
+                "source_tree": state["source_tree"],
+                "binding_sha256": state["binding_sha256"],
+                "host_uid": uid, "bus_peer_uid": peer_uid,
+                "systemd_user_exit": systemd.returncode,
+                "observed_at": now_text(),
+            })
+            host_ref = file_ref(host_path, run_dir)
+            host_parent_fd = _owner_directory(host_path.parent)
+            descriptors.append(host_parent_fd)
+            host_fd = os.open(
+                host_path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                dir_fd=host_parent_fd,
+            )
+            descriptors.append(host_fd)
+            if hashlib.sha256(host_path.read_bytes()).hexdigest() != host_ref["sha256"]:
+                raise SandboxUnavailable("host OS attestation changed before mount")
+            sources.update({
+                "host_os": f"/proc/self/fd/{host_fd}",
+                "host_os_ref": host_ref,
+                "host_os_path": host_path,
+            })
         yield sources, tuple(descriptors)
     finally:
+        if bus_parent_fd is not None:
+            os.close(bus_parent_fd)
         for descriptor in reversed(descriptors):
             os.close(descriptor)
 
@@ -422,7 +501,6 @@ def assert_runtime_mounts_unchanged(
     roots = (
         (profile_path.parent, descriptors[0]),
         (Path(configured["runtime_environment_root"]), descriptors[2]),
-        (Path(f"/run/user/{os.geteuid()}"), descriptors[3]),
     )
     for path, held in roots:
         fresh = _owner_directory(path)
@@ -437,9 +515,19 @@ def assert_runtime_mounts_unchanged(
     held_profile = os.fstat(descriptors[1])
     if (profile.st_dev, profile.st_ino) != (held_profile.st_dev, held_profile.st_ino):
         raise SandboxUnavailable("runtime profile file changed before mount")
-    bus = os.stat("bus", dir_fd=descriptors[3], follow_symlinks=False)
+    bus = os.stat("bus", dir_fd=sources["_bus_parent_fd"], follow_symlinks=False)
     if (bus.st_dev, bus.st_ino) != tuple(sources["bus_identity"]):
         raise SandboxUnavailable("user bus socket changed before mount")
+    if "host_os" in sources:
+        host_path = sources["host_os_path"]
+        current = os.stat(host_path.name, dir_fd=descriptors[3], follow_symlinks=False)
+        held = os.fstat(descriptors[4])
+        if ((current.st_dev, current.st_ino) != (held.st_dev, held.st_ino)
+                or not stat.S_ISREG(current.st_mode) or current.st_uid != os.geteuid()
+                or stat.S_IMODE(current.st_mode) != 0o600 or current.st_nlink != 1
+                or hashlib.sha256(host_path.read_bytes()).hexdigest()
+                != sources["host_os_ref"]["sha256"]):
+            raise SandboxUnavailable("host OS attestation changed before mount")
 
 
 def validate_runtime_profile(value: object) -> dict[str, Any] | None:
@@ -1020,17 +1108,17 @@ def sandbox_command(
     runtime_profile = validate_runtime_profile(plan.get("runtime_profile"))
     runtime_mounts: list[str] = []
     if runtime_profile is not None:
-        uid = os.geteuid()
         if mount_sources is None:
             raise SandboxUnavailable("runtime mounts require held descriptors")
         runtime_mounts = [
-            "--perms", "0700", "--dir", "/run/user",
-            "--perms", "0700", "--dir", f"/run/user/{uid}",
-            "--bind", mount_sources["bus"], f"/run/user/{uid}/bus",
             "--perms", "0700", "--dir", "/run/acs-p1",
             "--ro-bind", mount_sources["profile"], "/run/acs-p1/profile.json",
             "--ro-bind", mount_sources["environment"], "/run/acs-p1/runtime",
         ]
+        if "host_os" in mount_sources:
+            runtime_mounts.extend((
+                "--ro-bind", mount_sources["host_os"], "/run/acs-p1/host-os.json",
+            ))
     argv = [
         sandbox["path"], "--ro-bind", "/", "/", "--tmpfs", "/home", "--tmpfs", "/root",
         "--tmpfs", "/tmp", "--tmpfs", "/opt", "--tmpfs", "/run",
@@ -1373,10 +1461,6 @@ def probe_environment(state: dict[str, Any], scenario_id: str, command: dict[str
         environment["ACS_GATE_RUNTIME_PROFILE"] = "/run/acs-p1/profile.json"
         environment["ACS_GATE_RUNTIME_ROOT"] = "/run/acs-p1/runtime"
         environment["ACS_GATE_NETWORK_MODE"] = "host_loopback_providers"
-        environment["XDG_RUNTIME_DIR"] = f"/run/user/{os.geteuid()}"
-        environment["DBUS_SESSION_BUS_ADDRESS"] = (
-            f"unix:path=/run/user/{os.geteuid()}/bus"
-        )
     return environment
 
 
@@ -1444,7 +1528,12 @@ def execute_command(
     if os.name == "posix":
         environment["PATH"] = "/usr/bin:/bin"
     environment.update(probe_environment(state, scenario_id, command))
-    with pinned_runtime_mounts(plan) as (mount_sources, pass_fds):
+    with pinned_runtime_mounts(
+        plan, state=state, scenario_id=scenario_id, command=command, run_dir=run_dir,
+    ) as (mount_sources, pass_fds):
+        if "host_os" in mount_sources:
+            environment["ACS_GATE_HOST_OS_ATTESTATION"] = "/run/acs-p1/host-os.json"
+            environment["ACS_GATE_HOST_OS_SHA256"] = mount_sources["host_os_ref"]["sha256"]
         wrapped_argv, output = sandbox_command(
             state, plan, run_dir, scenario_id, command, environment, mount_sources,
         )
@@ -1486,7 +1575,7 @@ def execute_command(
     output_path = run_dir / "evidence" / scenario_id / evidence_directory / "stdout.json"
     write_atomic(output_path, result.stdout)
     output_ref = file_ref(output_path, run_dir)
-    return {
+    result_record = {
         "status": "passed", "kind": command["kind"],
         "evidence_fields": command["evidence_fields"], "argv_sha256": digest(command["argv"]),
         "output": output_ref, "observed_at": probe["observed_at"],
@@ -1495,6 +1584,9 @@ def execute_command(
         "event_ids": probe["event_ids"], "receipt_ids": probe.get("receipt_ids", []),
         "observer": probe.get("observer"), "owner": probe.get("owner"),
     }
+    if "host_os" in mount_sources:
+        result_record["host_os_attestation"] = mount_sources["host_os_ref"]
+    return result_record
 
 
 def scenario_record(state: dict[str, Any], scenario_id: str) -> dict[str, Any]:
@@ -1506,6 +1598,9 @@ def scenario_record(state: dict[str, Any], scenario_id: str) -> dict[str, Any]:
     if len(observers) != 1 or len(owners) != 1 or not all(known_text(v) for v in (*observers, *owners)):
         raise EvidenceError("scenario observer/owner identity is inconsistent")
     output_refs = [item["output"] for item in commands]
+    output_refs.extend(
+        item["host_os_attestation"] for item in commands if item.get("host_os_attestation")
+    )
     record: dict[str, Any] = {
         "scenario_id": scenario_id,
         "status": "passed",
@@ -1554,6 +1649,38 @@ def audit_commands(state: dict[str, Any], plan: dict[str, Any], run_dir: Path) -
                     or value.get("source_tree") != state["source_tree"]
                     or value.get("binding_sha256") != state["binding_sha256"]):
                 raise EvidenceError("stored evidence no longer binds this run")
+            if command["kind"] == "os" and state.get("runtime_profile") is not None:
+                host_ref = result.get("host_os_attestation")
+                host_path = validate_ref(host_ref, run_dir)
+                expected_host_path = (
+                    Path("evidence") / scenario_id / digest(command_id) / "host-os.json"
+                ).as_posix()
+                host = strict_json(host_path.read_bytes())
+                host_parent_fd = _owner_directory(host_path.parent)
+                try:
+                    host_info = os.stat(
+                        host_path.name, dir_fd=host_parent_fd, follow_symlinks=False,
+                    )
+                    if (not stat.S_ISREG(host_info.st_mode)
+                            or host_info.st_uid != os.geteuid()
+                            or stat.S_IMODE(host_info.st_mode) != 0o600
+                            or host_info.st_nlink != 1):
+                        raise EvidenceError("host OS attestation file mode changed")
+                finally:
+                    os.close(host_parent_fd)
+                if (host_ref.get("path") != expected_host_path
+                        or not isinstance(host, dict)
+                        or host.get("schema_version") != "acs-p1-host-os-attestation/1"
+                        or host.get("run_id") != state["run_id"]
+                        or host.get("scenario_id") != scenario_id
+                        or host.get("command_id") != command_id
+                        or host.get("source_commit") != state["source_commit"]
+                        or host.get("source_tree") != state["source_tree"]
+                        or host.get("binding_sha256") != state["binding_sha256"]
+                        or host.get("host_uid") != os.geteuid()
+                        or host.get("bus_peer_uid") != os.geteuid()
+                        or host.get("systemd_user_exit") != 0):
+                    raise EvidenceError("host OS attestation no longer binds command")
 
 
 def invoke_validator(record_path: Path, run_dir: Path, source_root: Path, require_passed: bool) -> dict[str, Any]:

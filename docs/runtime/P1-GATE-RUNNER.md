@@ -60,9 +60,17 @@ loopback ports. The profile requires an owner `0700` parent and is an owner
 `0600`, single-link regular file. The runtime environment is owner `0700`; its
 owner `0600` manifest lists the exact path, mode and SHA-256 of every file.
 The sandbox sees these inputs only at `/run/acs-p1/profile.json` and
-`/run/acs-p1/runtime`. It verifies the owner user-bus socket and peer UID,
-then mounts only that socket at `/run/user/<uid>/bus` for the OS readback.
-Probe arguments, environment and output contain no host path or credential.
+`/run/acs-p1/runtime`. The host runner verifies the owner user-bus socket and
+peer UID, performs one fixed read-only user-manager observation without
+retaining the manager environment, and mounts a digest-bound `host-os.json`
+attestation read-only for the OS probe. The user-bus socket and its parent
+descriptor are never passed into the sandbox. Probe arguments, environment
+and output contain no formal source path or credential value.
+
+The former raw user-bus mount admitted a broader host-control capability than
+the P1 probe profile. Earlier private Gate runs therefore do not establish the
+strict isolation claim; they remain historical diagnostic evidence. A fresh
+run on the corrected exact source is required before P1 status can advance.
 Plans without this field receive no runtime mounts.
 
 `tools/runtime/gate_runtime_provision.py` copies an already reviewed Python
@@ -70,10 +78,11 @@ dependency directory plus the tracked P1 probe into a private sibling stage,
 writes the complete environment manifest, performs the same runner validation,
 and atomically publishes the destination. A postflight failure removes the
 published destination, so it cannot be adopted by a later plan. The frozen
-`p1_profile_plan` generates the Domain transaction command set; provisioning
-attaches the exact runtime profile without changing the 18-scenario order.
-Only `P1-DOMAIN-TRANSACTION` has a real lineage adapter. The other 17 remain
-`NOT_RUN` until independently implemented and reviewed.
+`p1_profile_plan` generates commands only for reviewed lineage adapters;
+provisioning attaches the exact runtime profile without changing the
+18-scenario order. Current adapter availability is recorded in
+`P1-PROBE-PROFILE.md`. Every gap remains `NOT_RUN` until independently
+implemented, executed and reviewed.
 
 Potential secret material is rejected before successful stdout is persisted.
 Only a redacted failure artifact and a redaction event may remain. The final
