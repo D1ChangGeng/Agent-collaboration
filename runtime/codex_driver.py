@@ -649,7 +649,75 @@ class CodexAppServerDriver:
             **values,
         }
 
-    def _inspect(self, operation):
+    def _complete_fallback_turns(self, operation, original_thread, collection):
+        """Read one acknowledged turn when the paged read API is unavailable.
+
+        This is a read-only observation of the same native thread. It never
+        resumes a thread, starts a turn, or infers a terminal result.
+        """
+        response = self._rpc(
+            operation, "thread/read", {"threadId": self.thread_id, "includeTurns": True}
+        )
+        if not isinstance(response, dict) or set(response) != {"thread"}:
+            raise OutcomeUncertain("fallback thread/read top-level shape is not exact")
+        thread = self._native_thread(response)
+        if (thread.get("id"), thread.get("sessionId")) != (
+            original_thread.get("id"), original_thread.get("sessionId")
+        ):
+            raise DriverRejected("fallback read replaced the native thread/session")
+        if any(thread.get(name) not in (None, "") for name in (
+            "turnsBackwardsCursor", "itemsBackwardsCursor", "nextCursor",
+        )):
+            raise OutcomeUncertain("fallback native history is paginated or incomplete")
+        turns = thread.get("turns")
+        if not isinstance(turns, list) or not 0 < len(turns) <= 2000:
+            raise OutcomeUncertain("fallback native turn array is unavailable or outside bound")
+        ids = []
+        item_count = 0
+        for turn in turns:
+            if (not isinstance(turn, dict) or not isinstance(turn.get("id"), str)
+                    or not turn["id"] or turn.get("itemsView") != "full"
+                    or not isinstance(turn.get("items"), list)):
+                raise OutcomeUncertain("fallback native turns are not complete full-item records")
+            ids.append(turn["id"])
+            item_count += len(turn["items"])
+            if item_count > 20000 or any(not isinstance(item, dict) for item in turn["items"]):
+                raise OutcomeUncertain("fallback native item array is incomplete or outside bound")
+        if len(ids) != len(set(ids)):
+            raise DriverRejected("fallback native turn identities are duplicated")
+        target = [turn for turn in turns if turn["id"] == collection["turn_id"]]
+        if len(target) != 1:
+            if any(
+                item.get("type") == "userMessage"
+                and item.get("clientId") == collection["message_id"]
+                for turn in turns for item in turn["items"]
+            ):
+                raise DriverRejected("fallback client message belongs to another turn")
+            raise OutcomeUncertain("acknowledged native turn is not yet materialized")
+        users = [item for item in target[0]["items"] if item.get("type") == "userMessage"]
+        if not users:
+            raise OutcomeUncertain("acknowledged user message is not yet materialized")
+        if (len(users) != 1 or users[0].get("clientId") != collection["message_id"]
+                or users[0].get("content") != [{
+                    "type": "text", "text": collection["text"], "text_elements": [],
+                }]):
+            raise DriverRejected("fallback native user message changed identity or content")
+        if any(
+            item.get("type") == "userMessage"
+            and item.get("clientId") == collection["message_id"]
+            for turn in turns if turn["id"] != collection["turn_id"]
+            for item in turn["items"]
+        ):
+            raise DriverRejected("fallback client message is duplicated across turns")
+        if target[0].get("status") == "completed" and not any(
+            item.get("type") == "agentMessage"
+            and isinstance(item.get("text"), str) and item["text"]
+            for item in target[0]["items"]
+        ):
+            raise OutcomeUncertain("completed fallback turn lacks an actual assistant message")
+        return thread, turns
+
+    def _inspect(self, operation, *, collection=None):
         try:
             response = self._rpc(
                 operation, "thread/read", {"threadId": self.thread_id, "includeTurns": False}
@@ -677,6 +745,14 @@ class CodexAppServerDriver:
             try:
                 page = self._rpc(operation, "thread/turns/list", params)
             except RpcError as error:
+                if (collection is not None and cursor is None and not turns
+                        and error.error.get("code") == -32601
+                        and error.error.get("message") == "list_turns is not supported yet"):
+                    thread, turns = self._complete_fallback_turns(
+                        operation, thread, collection,
+                    )
+                    self._history_observed = True
+                    break
                 expected = (f"thread {self.thread_id} is not materialized yet; "
                             "thread/turns/list is unavailable before first user message")
                 if (cursor is not None or turns or self._history_observed or self._turn_start_attempted or self._turn_start_dispatched
@@ -889,8 +965,41 @@ class CodexAppServerDriver:
                 or record["input"]["payload"].get("binding") != asdict(self.identity)
             ):
                 raise DriverRejected("invocation is not bound to this Node boot/Runtime/Attempt")
-            view = self.inspect(operation)
             body = record["input"]
+            acknowledged = (record["result"] or {}) if record["state"] == "acknowledged" else {}
+            if acknowledged and (
+                acknowledged.get("thread_id") != self.thread_id
+                or acknowledged.get("session_id") != self.session_id
+            ):
+                raise DriverRejected("acknowledged invocation thread/session changed")
+            turn_id = acknowledged.get("turn_id")
+            collection = (
+                {"turn_id": turn_id, "message_id": body["message_id"],
+                 "text": body["payload"]["text"]}
+                if isinstance(turn_id, str) and turn_id and self.thread_id and self.session_id
+                else None
+            )
+            if self.client is None or self.thread_id is None:
+                raise OutcomeUncertain("no positively bound native thread for collection")
+            try:
+                view = self._inspect(operation, collection=collection)
+            except RpcError as error:
+                missing_rollout = (
+                    error.error.get("code") == -32600
+                    and error.error.get("message") == (
+                        f"no rollout found for thread id {self.thread_id}"
+                    )
+                )
+                missing_turns = (
+                    error.error.get("code") == -32600
+                    and error.error.get("message") == (
+                        f"thread {self.thread_id} is not materialized yet; "
+                        "thread/turns/list is unavailable before first user message"
+                    )
+                )
+                if missing_rollout or missing_turns:
+                    raise OutcomeUncertain("acknowledged native history is not yet materialized") from error
+                raise
             matches = self._matching_turns(view, body["message_id"], body["payload"]["text"])
             if len(matches) != 1:
                 raise OutcomeUncertain("terminal output lacks unique native message correlation")
