@@ -6,6 +6,7 @@ from runtime.models import (
     ExecutionStatus,
     WorkItemState,
 )
+from runtime.systemd_supervisor import SystemdUserSupervisor
 
 __all__ = [
     "AuthenticatedContext",
@@ -13,5 +14,6 @@ __all__ = [
     "CommandResult",
     "DomainAuthority",
     "ExecutionStatus",
+    "SystemdUserSupervisor",
     "WorkItemState",
 ]
