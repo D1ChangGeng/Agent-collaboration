@@ -520,7 +520,8 @@ def collect_and_project_bounded(
             remaining = budget.max_elapsed_seconds - (clock() - started)
             if remaining <= 0:
                 raise OutcomeUncertain("Codex terminal readback exceeded the scene deadline")
-            pause(min(2.0, remaining))
+            reads_left = budget.max_collect_reads - index - 1
+            pause(min(remaining / reads_left, remaining))
     raise OutcomeUncertain("original Codex turn has no bounded terminal readback")
 
 
