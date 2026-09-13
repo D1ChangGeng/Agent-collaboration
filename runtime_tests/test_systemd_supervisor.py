@@ -238,6 +238,25 @@ def test_owner_private_per_run_environment_directory_and_symlink_rejection():
         shutil.rmtree(run_root)
 
 
+def test_opencode_owner_private_per_run_environment_directory_is_admitted():
+    if not sys.platform.startswith("linux") or os.geteuid() == 0:
+        pytest.skip("non-root Linux user manager is required")
+    base = Path(f"/run/user/{os.geteuid()}/acs-p1-opencode")
+    base.mkdir(mode=0o700, exist_ok=True)
+    run_root = base / ("p1-run-" + uuid.uuid4().hex)
+    run_root.mkdir(mode=0o700)
+    directory = run_root / "systemd-env"
+    directory.mkdir(mode=0o700)
+    supervisor = None
+    try:
+        supervisor = SystemdUserSupervisor(environment_directory=directory)
+        assert supervisor._environment_directory() == directory
+    finally:
+        if supervisor is not None:
+            supervisor.close()
+        shutil.rmtree(run_root)
+
+
 @pytest.mark.parametrize(
     "change",
     [
