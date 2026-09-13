@@ -123,6 +123,8 @@ class RecoveryBody(FrozenModel):
     new_endpoint_revision: int = Field(ge=1, strict=True)
     old_runtime_revision: int = Field(ge=1, strict=True)
     new_runtime_revision: int = Field(ge=1, strict=True)
+    old_runtime_id: str | None = Field(default=None, min_length=1, max_length=256)
+    new_runtime_id: str | None = Field(default=None, min_length=1, max_length=256)
 
 
 class SignedRequest(FrozenModel):

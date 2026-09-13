@@ -310,6 +310,12 @@ class ReceiverService:
             "runtime_revision": (recovery.old_runtime_revision, recovery.new_runtime_revision),
             "journal_generation": (original.journal_generation, recovery.journal_generation),
         }
+        if (
+            recovery.old_runtime_id != original.runtime_id
+            or recovery.new_runtime_id != admission.runtime_id
+            or recovery.old_runtime_id == recovery.new_runtime_id
+        ):
+            raise ReceiverRejected("boot recovery Runtime identity transition rejected")
         for field, (old, new) in transitions.items():
             if expected[field] != old or actual[field] != new:
                 raise ReceiverRejected("boot recovery identity transition rejected")
