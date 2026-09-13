@@ -374,6 +374,30 @@ def _copy_pinned(source: Path, target: Path, *, expected_sha256: str,
                 or signature(before) != signature(current)
                 or digest.hexdigest() != expected_sha256):
             raise NativeInventoryRejected("reviewed native source changed during copy")
+        # A mutable source can be atomically replaced after the initial path
+        # check while the original descriptor still points at the old inode.
+        # Reopen the authorized pathname and hash the current object before
+        # accepting the private copy; descriptor-only checks cannot see this.
+        verify_fd = os.open(
+            source, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK,
+        )
+        try:
+            verify_info = os.fstat(verify_fd)
+            verify_digest = hashlib.sha256()
+            verify_size = 0
+            while block := os.read(verify_fd, 1 << 20):
+                verify_size += len(block)
+                verify_digest.update(block)
+            verify_current = source.stat(follow_symlinks=False)
+            if (
+                signature(verify_info) != signature(verify_current)
+                or signature(verify_info) != signature(before)
+                or verify_size != before.st_size
+                or verify_digest.hexdigest() != expected_sha256
+            ):
+                raise NativeInventoryRejected("reviewed native source path changed during copy")
+        finally:
+            os.close(verify_fd)
     except BaseException:
         if target_fd is not None:
             os.close(target_fd)
