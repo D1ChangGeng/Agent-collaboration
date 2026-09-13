@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 from tools.runtime.gate_runner import (
+    _owner_directory,
     remove_private_stage,
     strict_json,
     validate_runtime_profile,
@@ -29,11 +30,55 @@ def sha256(path: Path) -> str:
     return value.hexdigest()
 
 
-def provision(source_site: Path, destination: Path, profile: Path) -> dict[str, object]:
+def owner_file_sha256(path: Path) -> str:
+    """Hash a small owner-only reference through its pinned POSIX parent."""
+    parent_fd = _owner_directory(path.parent)
+    try:
+        descriptor = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=parent_fd)
+        try:
+            before = os.fstat(descriptor)
+            if (
+                not stat.S_ISREG(before.st_mode)
+                or before.st_uid != os.geteuid()
+                or stat.S_IMODE(before.st_mode) != 0o600
+                or before.st_nlink != 1
+                or before.st_size > 100_000
+            ):
+                raise RuntimeError("Codex owner reference is not a bounded 0600 file")
+            data = bytearray()
+            while chunk := os.read(descriptor, min(65536, 100_001 - len(data))):
+                data.extend(chunk)
+                if len(data) > 100_000:
+                    break
+            after = os.stat(path.name, dir_fd=parent_fd, follow_symlinks=False)
+            if len(data) > 100_000 or (after.st_dev, after.st_ino) != (before.st_dev, before.st_ino):
+                raise RuntimeError("Codex owner reference changed during read")
+            return hashlib.sha256(data).hexdigest()
+        finally:
+            os.close(descriptor)
+    finally:
+        os.close(parent_fd)
+
+
+def provision(
+    source_site: Path,
+    destination: Path,
+    profile: Path,
+    *,
+    codex_scene_profile: Path | None = None,
+    budget_decision: Path | None = None,
+) -> dict[str, object]:
     if os.name != "posix":
         raise RuntimeError("P1 runtime environment provisioning is POSIX-only")
     if not source_site.is_absolute() or not destination.is_absolute() or not profile.is_absolute():
         raise RuntimeError("provision paths must be absolute")
+    if (codex_scene_profile is None) != (budget_decision is None):
+        raise RuntimeError("Codex scene profile and budget decision must be paired")
+    if any(
+        path is not None and not path.is_absolute()
+        for path in (codex_scene_profile, budget_decision)
+    ):
+        raise RuntimeError("Codex owner file paths must be absolute")
     if destination.exists():
         raise RuntimeError("runtime environment destination already exists")
     files = [path for path in source_site.rglob("*") if path.is_file()]
@@ -87,6 +132,15 @@ def provision(source_site: Path, destination: Path, profile: Path) -> dict[str, 
             "postgresql_endpoint": "127.0.0.1:54329",
             "temporal_endpoint": "127.0.0.1:7239",
         }
+        if codex_scene_profile is not None and budget_decision is not None:
+            validation["codex_scene_profile"] = {
+                "path": str(codex_scene_profile),
+                "sha256": owner_file_sha256(codex_scene_profile),
+            }
+            validation["budget_decision"] = {
+                "path": str(budget_decision),
+                "sha256": owner_file_sha256(budget_decision),
+            }
         validate_runtime_profile(validation)
         os.replace(stage, destination)
         published = True
@@ -119,6 +173,9 @@ def attach_plan(plan_path: Path, provisioned: dict[str, object]) -> None:
             "postgresql_endpoint", "temporal_endpoint",
         )
     }
+    for name in ("codex_scene_profile", "budget_decision"):
+        if name in provisioned:
+            plan["runtime_profile"][name] = provisioned[name]
     write_atomic(
         plan_path,
         json.dumps(plan, indent=2, ensure_ascii=False).encode("utf-8") + b"\n",
@@ -131,9 +188,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--destination", type=Path, required=True)
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--plan", type=Path)
+    parser.add_argument("--codex-scene-profile", type=Path)
+    parser.add_argument("--budget-decision", type=Path)
     args = parser.parse_args(argv)
     try:
-        result = provision(args.source_site, args.destination, args.profile)
+        result = provision(
+            args.source_site,
+            args.destination,
+            args.profile,
+            codex_scene_profile=args.codex_scene_profile,
+            budget_decision=args.budget_decision,
+        )
         if args.plan is not None:
             attach_plan(args.plan, result)
         print(json.dumps({"status": "provisioned", **result}, sort_keys=True))

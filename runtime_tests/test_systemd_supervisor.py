@@ -7,13 +7,14 @@ import shutil
 import subprocess
 import sys
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Event
 
 import pytest
 
-from runtime.supervisor import OwnedProcess, OwnershipMismatch
+from runtime.supervisor import ContainmentUnavailable, OwnedProcess, OwnershipMismatch
 from runtime.systemd_supervisor import SystemdUserSupervisor
 
 HERE = Path(__file__).resolve().parent
@@ -41,8 +42,9 @@ def wait_for(predicate, timeout=5):
 def supervisor():
     if not sys.platform.startswith("linux") or os.geteuid() == 0:
         pytest.skip("real systemd --user test requires a non-root Linux user")
-    value = SystemdUserSupervisor(tasks_max=16, memory_max=134_217_728,
-                                  cpu_quota_percent=50, termination_timeout=5)
+    value = SystemdUserSupervisor(
+        tasks_max=16, memory_max=134_217_728, cpu_quota_percent=50, termination_timeout=5
+    )
     yield value
     value.close()
 
@@ -61,10 +63,14 @@ def test_bidirectional_stdio_grandchild_root_exit_and_isolated_cleanup(superviso
         assert error == {"kind": "stderr", "value": "round-trip"}
         spawned = request(target, {"command": "spawn"})
         before = supervisor.inspect(target)
-        assert before["verified"] and {before["main_pid"], spawned["pid"]} <= set(before["remaining_pids"])
+        assert before["verified"] and {before["main_pid"], spawned["pid"]} <= set(
+            before["remaining_pids"]
+        )
         exiting = request(target, {"command": "exit-root"})
         assert exiting["child_pid"] == spawned["pid"]
-        after = wait_for(lambda: (proof if (proof := supervisor.inspect(target))["root_exited"] else None))
+        after = wait_for(
+            lambda: proof if (proof := supervisor.inspect(target))["root_exited"] else None
+        )
         assert spawned["pid"] in after["remaining_pids"]
         assert not after["wrapper_exited"] and after["active_state"] == "active"
         terminated = supervisor.terminate_tree(target)
@@ -91,23 +97,29 @@ def test_forged_handle_is_rejected(supervisor):
 def test_secret_is_imported_by_name_without_cmdline_or_record_exposure(supervisor):
     secret = "fixture-secret-" + os.urandom(16).hex()
     environment = {**ENV, "FIXTURE_SERVER_PASSWORD": secret}
-    owned = supervisor.launch([sys.executable, str(FIXTURE)], cwd=str(HERE), env=environment,
-                              label="secret-environment")
+    owned = supervisor.launch(
+        [sys.executable, str(FIXTURE)], cwd=str(HERE), env=environment, label="secret-environment"
+    )
     try:
         proof = supervisor.inspect(owned)
         wrapper_cmdline = Path(f"/proc/{owned.process.transport_pid}/cmdline").read_bytes()
         wrapper_environment = Path(f"/proc/{owned.process.transport_pid}/environ").read_bytes()
         exec_start = subprocess.run(
             ["/usr/bin/systemctl", "--user", "show", proof["unit"], "--property=ExecStart"],
-            check=True, capture_output=True,
+            check=True,
+            capture_output=True,
         ).stdout
         journal = subprocess.run(
             ["/usr/bin/journalctl", "--user-unit", proof["unit"], "--no-pager", "--output=cat"],
-            check=False, capture_output=True,
+            check=False,
+            capture_output=True,
         ).stdout
         transient = Path(f"/run/user/{os.geteuid()}/systemd/transient/{proof['unit']}")
         recorded = transient.read_bytes() if transient.exists() else b""
-        assert secret.encode() not in wrapper_cmdline + wrapper_environment + exec_start + journal + recorded
+        assert (
+            secret.encode()
+            not in wrapper_cmdline + wrapper_environment + exec_start + journal + recorded
+        )
         assert b"FIXTURE_SERVER_PASSWORD" not in wrapper_environment
         assert b"--setenv=FIXTURE_SERVER_PASSWORD" not in wrapper_cmdline
         assert b"EnvironmentFile=/run/user/" in wrapper_cmdline
@@ -124,10 +136,24 @@ def test_terminate_accepts_collected_unit_only_after_empty_cgroup_and_wrapper_ex
     proof = supervisor.inspect(owned)
     assert request(owned, {"command": "exit-clean"})["kind"] == "root-exiting-clean"
     owned.process.wait(timeout=5)
-    wait_for(lambda: subprocess.run(
-        ["/usr/bin/systemctl", "--user", "show", proof["unit"], "--property=LoadState", "--value"],
-        check=True, capture_output=True, text=True,
-    ).stdout.strip() == "not-found")
+    wait_for(
+        lambda: (
+            subprocess.run(
+                [
+                    "/usr/bin/systemctl",
+                    "--user",
+                    "show",
+                    proof["unit"],
+                    "--property=LoadState",
+                    "--value",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            == "not-found"
+        )
+    )
     terminated = supervisor.terminate_tree(owned)
     assert terminated["verified"] and terminated["load_state"] == "not-found"
     assert terminated["remaining_pids"] == [] and terminated["wrapper_exited"]
@@ -137,8 +163,10 @@ def test_launch_error_does_not_echo_environment_values(supervisor, tmp_path):
     secret = "error-secret-" + os.urandom(16).hex()
     with pytest.raises(ValueError) as caught:
         supervisor.launch(
-            [sys.executable, str(FIXTURE)], cwd=str(tmp_path / "missing"),
-            env={**ENV, "FIXTURE_SERVER_PASSWORD": secret}, label="secret-error",
+            [sys.executable, str(FIXTURE)],
+            cwd=str(tmp_path / "missing"),
+            env={**ENV, "FIXTURE_SERVER_PASSWORD": secret},
+            label="secret-error",
         )
     assert secret not in str(caught.value)
 
@@ -146,8 +174,10 @@ def test_launch_error_does_not_echo_environment_values(supervisor, tmp_path):
 def test_environment_file_escaping_round_trips_without_residue(supervisor):
     value = 'spaces " quotes \\ slash $ dollar ` tick and 世界'
     owned = supervisor.launch(
-        [sys.executable, str(FIXTURE)], cwd=str(HERE),
-        env={**ENV, "FIXTURE_COMPLEX_VALUE": value}, label="environment-escaping",
+        [sys.executable, str(FIXTURE)],
+        cwd=str(HERE),
+        env={**ENV, "FIXTURE_COMPLEX_VALUE": value},
+        label="environment-escaping",
     )
     try:
         received = request(owned, {"command": "env-digest", "name": "FIXTURE_COMPLEX_VALUE"})
@@ -157,16 +187,72 @@ def test_environment_file_escaping_round_trips_without_residue(supervisor):
         supervisor.terminate_tree(owned)
 
 
-@pytest.mark.parametrize("change", [
-    {"BAD-NAME": "value"},
-    {"GOOD_NAME": "line1\nline2"},
-    {"GOOD_NAME": "tab\tvalue"},
-    {"GOOD_NAME": "control\x7fvalue"},
-])
+def test_owner_private_per_run_environment_directory_and_symlink_rejection():
+    if not sys.platform.startswith("linux") or os.geteuid() == 0:
+        pytest.skip("non-root Linux user manager is required")
+    base = Path(f"/run/user/{os.geteuid()}/acs-p1-codex")
+    base.mkdir(mode=0o700, exist_ok=True)
+    run_root = base / ("p1-run-" + uuid.uuid4().hex)
+    run_root.mkdir(mode=0o700)
+    directory = run_root / "systemd-env"
+    directory.mkdir(mode=0o700)
+    alias = base / ("p1-run-" + uuid.uuid4().hex)
+    supervisor = None
+    try:
+        supervisor = SystemdUserSupervisor(
+            tasks_max=16,
+            memory_max=134_217_728,
+            cpu_quota_percent=50,
+            termination_timeout=5,
+            environment_directory=directory,
+        )
+        assert supervisor._environment_directory() == directory
+        owned = launch(supervisor, "run-env")
+        try:
+            assert request(owned, {"command": "ping", "value": "private"})["kind"] == "pong"
+        finally:
+            assert supervisor.terminate_tree(owned)["remaining_pids"] == []
+        assert list(directory.iterdir()) == []
+        supervisor.close()
+        supervisor = None
+        directory.chmod(0o755)
+        rejected = SystemdUserSupervisor(environment_directory=directory)
+        try:
+            with pytest.raises(ContainmentUnavailable):
+                rejected._environment_directory()
+        finally:
+            rejected.close()
+        directory.chmod(0o700)
+        alias.symlink_to(run_root, target_is_directory=True)
+        rejected = SystemdUserSupervisor(environment_directory=alias / "systemd-env")
+        try:
+            with pytest.raises(ContainmentUnavailable):
+                rejected._environment_directory()
+        finally:
+            rejected.close()
+    finally:
+        if supervisor is not None:
+            supervisor.close()
+        alias.unlink(missing_ok=True)
+        assert run_root.resolve(strict=True).parent == base.resolve(strict=True)
+        shutil.rmtree(run_root)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"BAD-NAME": "value"},
+        {"GOOD_NAME": "line1\nline2"},
+        {"GOOD_NAME": "tab\tvalue"},
+        {"GOOD_NAME": "control\x7fvalue"},
+    ],
+)
 def test_environment_file_rejects_invalid_names_and_controls(supervisor, change):
     with pytest.raises(ValueError):
         supervisor.launch(
-            [sys.executable, str(FIXTURE)], cwd=str(HERE), env={**ENV, **change},
+            [sys.executable, str(FIXTURE)],
+            cwd=str(HERE),
+            env={**ENV, **change},
             label="invalid-environment",
         )
     assert list(supervisor._environment_directory().iterdir()) == []
@@ -178,8 +264,10 @@ def test_post_creation_launch_failure_removes_environment_file(supervisor, tmp_p
     secret = "failure-secret-" + os.urandom(16).hex()
     with pytest.raises(Exception) as caught:
         supervisor.launch(
-            [str(executable)], cwd=str(tmp_path),
-            env={**ENV, "FIXTURE_SERVER_PASSWORD": secret}, label="failed-exec",
+            [str(executable)],
+            cwd=str(tmp_path),
+            env={**ENV, "FIXTURE_SERVER_PASSWORD": secret},
+            label="failed-exec",
         )
     assert secret not in str(caught.value)
     assert list(supervisor._environment_directory().iterdir()) == []
@@ -195,13 +283,14 @@ def test_ld_preload_constructor_runs_only_in_owned_service(supervisor, tmp_path)
     source.write_text(
         "#include <fcntl.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\n"
         "__attribute__((constructor)) static void loaded(void) {"
-        "const char *p=getenv(\"PRELOAD_MARKER\"); if(!p)return; "
-        "int f=open(p,O_WRONLY|O_CREAT|O_APPEND,0600); if(f>=0){dprintf(f,\"%d\\n\",getpid());close(f);}}\n",
+        'const char *p=getenv("PRELOAD_MARKER"); if(!p)return; '
+        'int f=open(p,O_WRONLY|O_CREAT|O_APPEND,0600); if(f>=0){dprintf(f,"%d\\n",getpid());close(f);}}\n',
         encoding="utf-8",
     )
     subprocess.run([compiler, "-shared", "-fPIC", "-o", str(library), str(source)], check=True)
     owned = supervisor.launch(
-        [sys.executable, str(FIXTURE)], cwd=str(HERE),
+        [sys.executable, str(FIXTURE)],
+        cwd=str(HERE),
         env={**ENV, "LD_PRELOAD": str(library), "PRELOAD_MARKER": str(marker)},
         label="preload-constructor",
     )
@@ -262,8 +351,17 @@ def test_close_continues_after_identity_conflict_and_reports_summary(supervisor,
     supervisor.terminate_tree(conflicted)
 
 
-@pytest.mark.parametrize("field", ["Id", "InvocationID", "MainPID", "ControlGroup",
-                                    "ExecMainStartTimestampMonotonic", "WorkingDirectory"])
+@pytest.mark.parametrize(
+    "field",
+    [
+        "Id",
+        "InvocationID",
+        "MainPID",
+        "ControlGroup",
+        "ExecMainStartTimestampMonotonic",
+        "WorkingDirectory",
+    ],
+)
 def test_each_pinned_systemd_identity_replacement_is_rejected(supervisor, monkeypatch, field):
     owned = launch(supervisor, "identity-replacement")
     original = supervisor._show
@@ -284,14 +382,31 @@ def test_real_same_unit_replacement_rejects_old_handle(supervisor):
     unit = supervisor.inspect(owned)["unit"]
     subprocess.run(["/usr/bin/systemctl", "--user", "stop", unit], check=True)
     owned.process.wait(timeout=5)
-    subprocess.run([
-        "/usr/bin/systemd-run", "--user", f"--unit={unit}", "--service-type=exec", "--collect",
-        "--quiet", "--property=ExitType=cgroup", "--", "/bin/sleep", "30",
-    ], check=True)
+    subprocess.run(
+        [
+            "/usr/bin/systemd-run",
+            "--user",
+            f"--unit={unit}",
+            "--service-type=exec",
+            "--collect",
+            "--quiet",
+            "--property=ExitType=cgroup",
+            "--",
+            "/bin/sleep",
+            "30",
+        ],
+        check=True,
+    )
     try:
-        wait_for(lambda: subprocess.run(
-            ["/usr/bin/systemctl", "--user", "is-active", "--quiet", unit], check=False,
-        ).returncode == 0)
+        wait_for(
+            lambda: (
+                subprocess.run(
+                    ["/usr/bin/systemctl", "--user", "is-active", "--quiet", unit],
+                    check=False,
+                ).returncode
+                == 0
+            )
+        )
         with pytest.raises(OwnershipMismatch, match="InvocationID changed"):
             supervisor.inspect(owned)
     finally:

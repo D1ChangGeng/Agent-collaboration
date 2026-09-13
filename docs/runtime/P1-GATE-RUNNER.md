@@ -67,11 +67,24 @@ attestation read-only for the OS probe. The user-bus socket and its parent
 descriptor are never passed into the sandbox. Probe arguments, environment
 and output contain no formal source path or credential value.
 
-The former raw user-bus mount admitted a broader host-control capability than
-the P1 probe profile. Earlier private Gate runs therefore do not establish the
-strict isolation claim; they remain historical diagnostic evidence. A fresh
-run on the corrected exact source is required before P1 status can advance.
-Plans without this field receive no runtime mounts.
+The optional P1 Codex lifecycle profile uses schema `/2` and pins separate
+owner-0600 scene and one-turn budget files. Their SHA-256 values, source
+commit/tree and fixed decision ID are checked at initialization, resume and
+the host native boundary. For that scenario, the runner constructs one private
+host-owned Node/Driver capacity with a run-specific Systemd EnvironmentFile
+directory and a fixed Host Node socket. The guest receives only read-only
+scene, budget and readiness files and `/run/acs-p1/codex-host.sock`. The plan
+admits only the six fixed `p1_profile_probe.py run` commands. The guest submits
+an authenticated, committed delivery identity; the host retains the native
+process, Temporal worker, response collector and current-authority checks.
+Guest dispatch drops its socket response once and obtains the result only by
+readback of the same original attempt. The runner's host postflight records
+the run-labelled unit/cgroup and any unresolved boot intent. Its proof is
+required by the scenario record and a prior interrupted host cannot be
+restarted for another native call.
+
+P1 Codex may advance only from a fresh run bound to the exact reviewed source,
+scene profile, budget decision, and six matching host readbacks.
 
 `tools/runtime/gate_runtime_provision.py` copies an already reviewed Python
 dependency directory plus the tracked P1 probe into a private sibling stage,
@@ -83,6 +96,8 @@ provisioning attaches the exact runtime profile without changing the
 18-scenario order. Current adapter availability is recorded in
 `P1-PROBE-PROFILE.md`. Every gap remains `NOT_RUN` until independently
 implemented, executed and reviewed.
+For the `/2` Codex profile, provisioning requires paired
+`--codex-scene-profile` and `--budget-decision` owner-file references.
 
 Potential secret material is rejected before successful stdout is persisted.
 Only a redacted failure artifact and a redaction event may remain. The final
