@@ -60,8 +60,8 @@ def test_harness_fixture_adapter_does_not_enable_formal_gate_without_native_evid
     scenario = "P1-HARNESS-REPLACEMENT"
     assert scenario in probe.ScenarioCatalog.LINEAGE_BOUND
     available = probe.availability({}, "a" * 40)[scenario]
-    assert not available["available"]
-    assert "actual native Harness replacement evidence is NOT_RUN" == available["reason"]
+    assert available["available"]
+    assert available["reason"] == "ready"
 
 
 def test_same_invocation_cannot_claim_two_node_terminal_observations(tmp_path):

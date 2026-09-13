@@ -21,8 +21,11 @@ else:
  journal.release_claim(token)
  print('acquired')
 """
+    source = str(Path(__file__).resolve().parents[1])
+    inherited = os.environ.get("PYTHONPATH")
+    pythonpath = source if not inherited else source + os.pathsep + inherited
     result = subprocess.run([sys.executable, "-c", script, str(path)], cwd=Path(__file__).resolve().parents[1],
-                            env=dict(os.environ, PYTHONPATH=str(Path(__file__).resolve().parents[1])),
+                            env=dict(os.environ, PYTHONPATH=pythonpath),
                             capture_output=True, timeout=10, check=True)
     return result.stdout.decode().strip()
 
