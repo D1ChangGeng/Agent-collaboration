@@ -2278,12 +2278,39 @@ def load_run(
             )
             write_json(path, proof)
             scenario = state["scenarios"]["P1-OPENCODE-LIFECYCLE"]
-            scenario["status"] = "blocked"
-            scenario["reason"] = "prior OpenCode host attempt cannot reattach or re-invoke"
-            state["updated_at"] = now_text()
-            write_state(run_dir, state)
-            raise RunnerError("prior OpenCode host attempt requires independent review")
+            planned = plan["scenarios"]["P1-OPENCODE-LIFECYCLE"]
+            complete = _stored_scenario_complete(scenario, planned, run_dir)
+            clean_terminal = (
+                proof.get("status") == "clean"
+                and proof.get("boot_state") == "stopped"
+                and proof.get("remaining_pids") == []
+                and proof.get("quarantined_units") == []
+                and proof.get("environment_files_remaining") == 0
+            )
+            if complete and clean_terminal:
+                remove_private_stage(root)
+            else:
+                scenario["status"] = "blocked"
+                scenario["reason"] = "prior OpenCode host attempt cannot reattach or re-invoke"
+                state["updated_at"] = now_text()
+                write_state(run_dir, state)
+                raise RunnerError("prior OpenCode host attempt requires independent review")
     return state, plan, contract
+
+
+def _stored_scenario_complete(
+    scenario: dict[str, Any], planned: list[dict[str, Any]], run_dir: Path
+) -> bool:
+    """Recognize a fully recorded scene without authorizing another native call."""
+    return bool(planned) and all(
+        command["command_id"] in scenario.get("commands", {})
+        and scenario["commands"][command["command_id"]].get("status") == "passed"
+        and scenario["commands"][command["command_id"]].get("kind") == command["kind"]
+        and validate_ref(
+            scenario["commands"][command["command_id"]].get("output"), run_dir,
+        ).is_file()
+        for command in planned
+    )
 
 
 def probe_environment(

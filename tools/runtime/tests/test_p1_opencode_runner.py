@@ -169,6 +169,24 @@ def test_unmounted_open_code_ready_and_budget_fail_closed(monkeypatch):
                              "p1-run-" + "c" * 32)
 
 
+def test_completed_saved_scene_is_recognized_without_native_reinvoke(tmp_path):
+    planned = []
+    commands = {}
+    for kind in ("command_output", "postgresql", "sqlite", "temporal", "driver", "os"):
+        command_id = "opencode:" + kind
+        path = tmp_path / (kind + ".json")
+        path.write_text("{}", encoding="utf-8")
+        planned.append({"command_id": command_id, "kind": kind})
+        commands[command_id] = {
+            "status": "passed", "kind": kind,
+            "output": runner.file_ref(path, tmp_path),
+        }
+    scenario = {"status": "running", "commands": commands}
+    assert runner._stored_scenario_complete(scenario, planned, tmp_path)
+    commands["opencode:os"]["status"] = "blocked"
+    assert not runner._stored_scenario_complete(scenario, planned, tmp_path)
+
+
 def test_integrated_acceptance_requires_two_same_run_six_layer_records(tmp_path):
     state = {
         "runtime_profile": {
