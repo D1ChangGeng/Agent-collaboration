@@ -90,6 +90,19 @@ class OpenCodeHostNodeEndpoint(CodexHostNodeEndpoint):
         ):
             raise HostNodeRejected("host OpenCode profile differs from pinned native artifacts")
 
+    def handle(self, request):
+        """Accept the public OpenCode request while reusing the shared core.
+
+        ``OpenCodeHostUnixServer`` already converts its validated request before
+        calling the endpoint, but the in-process scene service calls the
+        endpoint directly.  Normalize that path here so the shared Domain /
+        Node implementation never rejects a valid OpenCode schema merely
+        because it expects the internal Codex-compatible representation.
+        """
+        if getattr(request, "schema_version", None) == "acs-p1-opencode-host-request/1":
+            request = request.internal()
+        return super().handle(request)
+
 
 class OpenCodeHostUnixServer:
     """One authenticated, fixed-schema dispatch or readback per connection."""
