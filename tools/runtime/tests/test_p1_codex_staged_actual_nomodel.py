@@ -65,7 +65,7 @@ def test_catalog_copy_is_digest_pinned_private_and_tool_free():
         })
         staged = stage_codex_home(root, scene)
         generated_config = Path(staged["config"]).read_text(encoding="utf-8")
-        assert "code_mode_host = false" in generated_config
+        assert "code_mode_host = true" in generated_config
         assert "code_mode_only = false" in generated_config
         assert Path(staged["catalog"]).read_bytes() == catalog.read_bytes()
         assert Path(staged["catalog"]).stat().st_mode & 0o777 == 0o600
