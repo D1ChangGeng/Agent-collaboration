@@ -16,7 +16,7 @@ from runtime.codex_driver import (
     DriverJournal,
     LaunchProfile,
 )
-from runtime.artifacts import LocalArtifactStore
+from runtime.artifacts import LocalArtifactStore, WindowsArtifactStore
 from runtime.delivery_models import InvocationRequest
 from runtime.domain import DomainAuthority
 from runtime.models import CommandEnvelope
@@ -30,6 +30,7 @@ from runtime.response_collector import (
     artifact_response_store,
 )
 from runtime.systemd_supervisor import SystemdUserSupervisor
+from runtime.supervisor import WindowsJobSupervisor
 
 SCHEMA = "acs-receiver-codex-factory/1"
 FIELDS = {
@@ -86,7 +87,7 @@ def validate_settings(settings: object) -> dict[str, str]:
             raise CodexReceiverRejected(f"Codex receiver digest {name} is invalid")
     if settings["codex_version"] not in {"0.152.1", "0.153.2"}:
         raise CodexReceiverRejected("Codex receiver version has no reviewed Driver profile")
-    if Path(settings["systemd_environment_dir"]).name != "systemd-env":
+    if os.name == "posix" and Path(settings["systemd_environment_dir"]).name != "systemd-env":
         raise CodexReceiverRejected("Codex receiver Systemd environment directory differs")
     if (
         type(settings.get("collector_max_reads")) is not int
@@ -121,17 +122,18 @@ class CodexReceiverCapacity:
             node_id=registration.node_id, boot_incarnation=registration.boot_incarnation,
         )
         self.journal = DriverJournal(self.settings["driver_journal"])
-        profile = LaunchProfile(
-            self.settings["executable"], self.settings["executable_sha256"],
-            self.settings["codex_version"], self.settings["protocol_schema"],
-            self.settings["protocol_schema_sha256"], self.settings["cwd"],
-            self.settings["codex_home"], self.settings["config_sha256"],
-            self.settings["permission_profile"],
-            {
-                # The reviewed Codex distribution may resolve its optional
-                # code-mode helper by name even when the packet exposes no
-                # tools.  Keep resolution inside the same digest-pinned,
-                # owner-controlled capacity as the executable.
+        if os.name == "nt":
+            native_path = str(Path(self.settings["executable"]).parent)
+            environment = {
+                "PATH": native_path + os.pathsep + os.environ.get("SystemRoot", r"C:\Windows") + r"\System32",
+                "HOME": str(Path(self.settings["codex_home"]).parent / "home"),
+                "TMP": str(Path(self.settings["codex_home"]).parent / "tmp"),
+                "TEMP": str(Path(self.settings["codex_home"]).parent / "tmp"),
+                "SystemRoot": os.environ.get("SystemRoot", r"C:\Windows"),
+                "ZEO_API_KEY": os.environ.get("ZEO_API_KEY", ""),
+            }
+        else:
+            environment = {
                 "PATH": (
                     str(Path(self.settings["executable"]).parent)
                     + ":/opt/acs/codex-sandbox/bin:/usr/bin:/bin"
@@ -139,13 +141,24 @@ class CodexReceiverCapacity:
                 "HOME": str(Path(self.settings["codex_home"]).parent / "home"),
                 "TMPDIR": str(Path(self.settings["codex_home"]).parent / "tmp"),
                 "LANG": "C.UTF-8",
-            },
+            }
+        profile = LaunchProfile(
+            self.settings["executable"], self.settings["executable_sha256"],
+            self.settings["codex_version"], self.settings["protocol_schema"],
+            self.settings["protocol_schema_sha256"], self.settings["cwd"],
+            self.settings["codex_home"], self.settings["config_sha256"],
+            self.settings["permission_profile"],
+            environment,
             self.settings.get("model"),
         )
-        self.supervisor = SystemdUserSupervisor(
-            tasks_max=64, memory_max=1_073_741_824, cpu_quota_percent=100,
-            termination_timeout=10,
-            environment_directory=Path(self.settings["systemd_environment_dir"]),
+        self.supervisor = (
+            WindowsJobSupervisor(max_processes=64, termination_timeout=10)
+            if os.name == "nt"
+            else SystemdUserSupervisor(
+                tasks_max=64, memory_max=1_073_741_824, cpu_quota_percent=100,
+                termination_timeout=10,
+                environment_directory=Path(self.settings["systemd_environment_dir"]),
+            )
         )
         self.driver = CodexAppServerDriver(
             self.settings["binding_id"], profile, self.journal,
@@ -159,7 +172,8 @@ class CodexReceiverCapacity:
             config.ledger_path, self.adapter,
             read_domain_marker=self.authority.receiver_transport.dispatch_marker_current,
         )
-        self.artifact_store = LocalArtifactStore(
+        store_type = WindowsArtifactStore if os.name == "nt" else LocalArtifactStore
+        self.artifact_store = store_type(
             self.settings["artifact_root"], scope_id=registration.scope_id,
         )
         self.projector = PostgresDelayedResponseAuthority(

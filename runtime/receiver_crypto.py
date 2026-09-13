@@ -12,6 +12,7 @@ from nacl.signing import SigningKey, VerifyKey
 from pydantic import BaseModel
 
 from runtime.receiver_paths import PathSecurityRejected, open_validated_file
+from runtime.receiver_paths import descriptor_file_identity
 
 
 class SignatureRejected(ValueError):
@@ -59,8 +60,7 @@ def load_owner_signing_key(path: str | Path) -> SigningKey:
         raise SignatureRejected(f"private-key reference {error}") from None
     try:
         raw = os.read(fd, 65)
-        info = os.fstat(fd)
-        observed = (info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_gid, info.st_nlink)
+        observed = descriptor_file_identity(fd, private=True)
         if observed != identity:
             raise SignatureRejected("private-key reference identity changed")
     finally:

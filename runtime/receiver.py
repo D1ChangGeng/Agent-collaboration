@@ -27,6 +27,7 @@ from runtime.receiver_models import (
 )
 from runtime.receiver_paths import (
     PathSecurityRejected,
+    descriptor_file_identity,
     ensure_private_database,
     open_validated_file,
     validated_file_identity,
@@ -42,6 +43,20 @@ _ACTIVE_EXECUTION_LEASES_LOCK = threading.Lock()
 
 
 def _process_start(process_id: int) -> str:
+    if os.name == "nt":
+        try:
+            from runtime.supervisor import _WinAPI
+
+            api = _WinAPI()
+            handle = api.dll.OpenProcess(0x00100000, False, process_id)
+            if not handle:
+                return ""
+            try:
+                return api.birth_handle(process_id, handle)
+            finally:
+                api.dll.CloseHandle(handle)
+        except (AttributeError, OSError, TypeError, ValueError):
+            return ""
     try:
         return Path(f"/proc/{process_id}/stat").read_text(encoding="ascii").split()[21]
     except (OSError, IndexError, UnicodeDecodeError):
@@ -134,11 +149,7 @@ class ReceiverLedger:
         connection = None
         try:
             before = validated_file_identity(self.path, private=True)
-            witness = os.fstat(self._witness_fd)
-            witness_identity = (
-                witness.st_dev, witness.st_ino, witness.st_mode, witness.st_uid,
-                witness.st_gid, witness.st_nlink,
-            )
+            witness_identity = descriptor_file_identity(self._witness_fd, private=True)
             if before != self._identity or witness_identity != self._identity:
                 raise ReceiverRejected("receiver journal identity changed")
             connection = sqlite3.connect(self.path, timeout=5, isolation_level=None)

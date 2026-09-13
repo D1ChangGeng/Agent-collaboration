@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ipaddress
+import os
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -125,10 +126,8 @@ class ReceiverRuntimeConfig(ReceiverClientConfig):
 
     def validate(self) -> None:
         ReceiverClientConfig.validate(self)
-        try:
-            require_posix()
-        except PathSecurityRejected:
-            raise BootstrapRejected("receiver runtime is POSIX-only until Windows ACL admission exists") from None
+        if os.name not in {"posix", "nt"}:
+            raise BootstrapRejected("receiver runtime path backend is unavailable")
         for path in (self.tls_cert_path, self.tls_key_path, self.node_signing_key_path,
                      self.ledger_path):
             if not Path(path).is_absolute():
