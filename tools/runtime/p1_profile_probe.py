@@ -30,6 +30,7 @@ SOURCE_ROOT = Path(__file__).resolve().parents[2]
 if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
+from runtime.artifacts import LocalArtifactStore
 from runtime.delivery import DeliveryDispatcher, DeliveryService
 from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
 from runtime.delivery_node import DeliveryTransportError, LocalNodeEndpoint
@@ -44,8 +45,22 @@ from runtime.enrollment_models import (
     NodeEnrollment,
     RuntimeRegistration,
 )
-from runtime.errors import FencingRejected, IdempotencyConflict
-from runtime.models import CommandEnvelope, LeaseRequest
+from runtime.errors import (
+    AcceptanceGuardFailed,
+    EffectUnavailable,
+    FencingRejected,
+    IdempotencyConflict,
+)
+from runtime.models import (
+    ArtifactRef,
+    CommandEnvelope,
+    EvidenceBundle,
+    EvidenceRecord,
+    ExecutionReceipt,
+    LeaseRequest,
+    TransitionRequest,
+    WorkItemState,
+)
 from runtime.node import NodeJournal
 from runtime.temporal import TemporalAdapter
 from runtime_tests.test_delivery import FixtureDriver
@@ -78,7 +93,7 @@ class ScenarioCatalog:
     LINEAGE_BOUND: ClassVar[frozenset[str]] = frozenset({
         "P1-DOMAIN-TRANSACTION", "P1-COMMAND-DEDUP", "P1-INBOX-ACK-LOSS",
         "P1-AUTH-REVOCATION", "P1-CORE-RESTART", "P1-NODE-RESTART",
-        "P1-PROVIDER-RESTART", "P1-LEASE-FENCING",
+        "P1-PROVIDER-RESTART", "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT",
     })
     TESTS: ClassVar[dict[str, tuple[str, ...]]] = {
         "P1-DOMAIN-TRANSACTION": (
@@ -936,10 +951,12 @@ def _provider_restart(
 def _register_lease_execution(
     authority: DomainAuthority, node: NodeJournal, work_id: str,
     commit: str, tree: str, suffix: str, issued_at: datetime,
-) -> tuple[dict[str, str], DomainAuthority, Callable[[CommandEnvelope, Any, str], NodeCommandProof]]:
+    *, execution_attempt_id: str | None = None,
+    artifact_store: LocalArtifactStore | None = None,
+) -> tuple[dict[str, Any], DomainAuthority, Callable[[CommandEnvelope, Any, str], NodeCommandProof]]:
     node_id = node.node_id
     runtime_id = "lease-runtime-" + suffix
-    attempt_id = "lease-attempt-" + suffix
+    attempt_id = execution_attempt_id or "lease-attempt-" + suffix
     operator = DomainAuthority(authority._dsn, context=replace(
         authority.context,
         principal_ref="p1-enrollment-operator:" + suffix,
@@ -949,7 +966,7 @@ def _register_lease_execution(
         authority.context,
         principal_ref="p1-node-observer:" + suffix,
         grant_ref="grant:p1-node-observer:" + suffix,
-    ))
+    ), artifact_store=artifact_store)
     operator.bootstrap_local_grant(("enrollment.manage", "work_item.read"))
     observer.bootstrap_local_grant((
         "runtime.register", "attempt.register", "execution.record", "work_item.read",
@@ -969,7 +986,8 @@ def _register_lease_execution(
     ))
 
     def signed(command: CommandEnvelope, request: Any, purpose: str) -> NodeCommandProof:
-        input_value = {"request": request.model_dump(mode="json")}
+        field = "receipt" if purpose == "receipt" else "request"
+        input_value = {field: request.model_dump(mode="json")}
         challenge_command = _domain_command(
             observer, "node.challenge", "node", node_id,
             suffix + ":challenge:" + purpose, issued_at, revision=1,
@@ -1014,13 +1032,14 @@ def _register_lease_execution(
         candidate_ref="p1-candidate-" + suffix,
         observed_started_at=observed_started_at,
     )
-    observer.register_attempt(
+    enrolled_attempt = observer.register_attempt(
         attempt_command, attempt_request, signed(attempt_command, attempt_request, "attempt"),
     )
     owner = {
         "node_id": node_id, "runtime_id": runtime_id, "attempt_id": attempt_id,
         "operator_grant_ref": operator.context.grant_ref,
         "observer_grant_ref": observer.context.grant_ref,
+        "execution_binding": enrolled_attempt.binding,
     }
     return owner, observer, signed
 
@@ -1383,6 +1402,495 @@ def _lease_fencing(
     return proof
 
 
+def _uncertain_effect(
+    authority: DomainAuthority, node: NodeJournal, ledger: ProbeLedger,
+    work_id: str, message_id: str, delivery_operation_id: str,
+    commit: str, tree: str, suffix: str, issued_at: datetime,
+) -> dict[str, Any]:
+    proof_path = ledger.root / "P1-UNCERTAIN-EFFECT-proof.json"
+    if proof_path.exists():
+        proof = json.loads(proof_path.read_text())
+        if (proof.get("delivery_operation_id") != delivery_operation_id
+                or proof.get("message_id") != message_id):
+            raise ProbeRejected("uncertain Effect proof belongs to another delivery")
+        return proof
+    with authority._connect() as connection:
+        delivery_attempts = connection.execute(
+            "SELECT attempt_id,dispatch_id,status FROM delivery_attempts "
+            "WHERE message_id=%s ORDER BY ordinal", (message_id,),
+        ).fetchall()
+    if len(delivery_attempts) != 1 or delivery_attempts[0][2] != "delivered":
+        raise ProbeRejected("uncertain Effect must bind one delivered Attempt")
+    delivery_attempt_id, dispatch_id, _ = delivery_attempts[0]
+    payload = ("P1 uncertain file effect for " + delivery_operation_id).encode()
+    cas_root = ledger.root / "P1-UNCERTAIN-EFFECT-cas"
+    effect_root = ledger.root / "P1-UNCERTAIN-EFFECT-effects"
+    resource_id = "uncertain-resource-" + suffix
+    effect_id = "uncertain-effect-" + suffix
+    operation_id = "file-effect:" + delivery_operation_id
+    with LocalArtifactStore(cas_root) as store:
+        producer = DomainAuthority(
+            authority._dsn, context=authority.context, artifact_store=store,
+        )
+        producer.bootstrap_local_grant((
+            "work_item.create", "delivery.manage", "message.send", "message.read",
+            "runtime.invoke", "lease.acquire", "lease.release", "lease.inspect",
+            "effect.write", "effect.read", "effect.register", "evidence.record",
+            "work_item.read",
+        ))
+        owner, observer, signed = _register_lease_execution(
+            producer, node, work_id, commit, tree, suffix, issued_at,
+            execution_attempt_id=delivery_attempt_id, artifact_store=store,
+        )
+        binding = owner["execution_binding"]
+        if (binding["attempt_id"] != delivery_attempt_id
+                or binding["work_item_id"] != work_id
+                or binding["source_commit"] != commit
+                or binding["source_tree"] != tree):
+            raise ProbeRejected("signed Effect execution differs from Delivery Attempt")
+        output_ref = store.put_bytes(payload, kind="output")
+        readback_ref = store.put_bytes(
+            ("independent source readback:" + delivery_operation_id).encode(),
+            kind="readback",
+        )
+        observed_at = datetime.now(UTC)
+        receipt = ExecutionReceipt(
+            receipt_id="uncertain-execution-receipt-" + suffix,
+            work_item_id=work_id, attempt_id=delivery_attempt_id,
+            runtime_id=owner["runtime_id"], provider=binding["provider"],
+            command_id=binding["execution_command_id"],
+            operation_id=binding["execution_operation_id"],
+            event_id=binding["execution_event_id"],
+            source_baseline=commit, candidate_ref=binding["candidate_ref"],
+            source_commit=commit, source_tree=tree,
+            test_commands=("P1-UNCERTAIN-EFFECT fixed local execution",),
+            test_exit_codes=(0,), test_exit_code=0,
+            os="linux", toolchain="P1 local delivery and file Effect Gateway",
+            artifact_refs=(output_ref,), readback_refs=(readback_ref,),
+            source_sync="committed-private-probe-source",
+            status="succeeded", observed_at=observed_at,
+        )
+        receipt_command = _domain_command(
+            observer, "execution.record", "work_item", work_id,
+            suffix + ":effect-execution-receipt", issued_at,
+        )
+        observer.record_execution_receipt(
+            receipt_command, receipt,
+            node_proof=signed(receipt_command, receipt, "receipt"),
+        )
+        evidence_id = "uncertain-evidence-" + suffix
+        bundle = EvidenceBundle(
+            evidence_id=evidence_id, work_item_id=work_id,
+            source_baseline=commit, candidate_ref=binding["candidate_ref"],
+            producer_ref=producer.context.principal_ref,
+            observer_ref=observer.context.principal_ref,
+            source_class="directly_verified", evidence_state="complete",
+            execution_receipt=receipt, artifact_refs=(output_ref,),
+            readback_refs=(readback_ref,), command_id=receipt.command_id,
+            operation_id=receipt.operation_id, event_id=receipt.event_id,
+            observed_at=observed_at,
+        )
+        evidence = EvidenceRecord(
+            evidence_id=evidence_id, work_item_id=work_id,
+            observer_ref=observer.context.principal_ref,
+            source_class="directly_verified", baseline_ref=commit,
+            artifact_sha256=output_ref.sha256,
+            summary="Signed same-attempt local output and independent CAS readback",
+            bundle_ref=evidence_id, candidate_ref=binding["candidate_ref"],
+            execution_receipt_ref=receipt.receipt_id,
+            evidence_state="complete", producer_ref=producer.context.principal_ref,
+            attempt_id=delivery_attempt_id, test_exit_code=0,
+            artifact_refs=(output_ref,), readback_refs=(readback_ref,),
+        )
+        evidence_command = _domain_command(
+            producer, "evidence.record", "work_item", work_id,
+            suffix + ":effect-evidence", issued_at,
+        )
+        producer.record_evidence(evidence_command, evidence, bundle)
+        reviewer = DomainAuthority(authority._dsn, context=replace(
+            authority.context, principal_ref="p1-effect-reviewer:" + suffix,
+            grant_ref="grant:p1-effect-reviewer:" + suffix,
+        ), artifact_store=store)
+        finalizer = DomainAuthority(authority._dsn, context=replace(
+            authority.context, principal_ref="p1-effect-finalizer:" + suffix,
+            grant_ref="grant:p1-effect-finalizer:" + suffix,
+        ), artifact_store=store)
+        reviewer.bootstrap_local_grant(("review.record", "work_item.read"))
+        finalizer.bootstrap_local_grant((
+            "review.assign", "work_item.transition", "acceptance.finalize",
+            "effect.read", "effect.register", "work_item.read",
+        ))
+        review_id = "uncertain-review-" + suffix
+        assign_command = _domain_command(
+            finalizer, "review.assign", "work_item", work_id,
+            suffix + ":effect-review-assign", issued_at,
+        )
+        finalizer.assign_reviewer(
+            assign_command, work_id, reviewer.context.principal_ref,
+            reviewer.context.grant_ref,
+        )
+        review_command = _domain_command(
+            reviewer, "review.record", "work_item", work_id,
+            suffix + ":effect-review", issued_at,
+        )
+        reviewer.record_review(
+            review_command, review_id, work_id, "pass", evidence_id, commit,
+        )
+        ready_command = _domain_command(
+            finalizer, "work_item.transition", "work_item", work_id,
+            suffix + ":effect-ready", issued_at,
+        )
+        ready = finalizer.transition_work_item(
+            ready_command, TransitionRequest(
+                to_state=WorkItemState.ACCEPTANCE_READY,
+                evidence_refs=(evidence_id,), review_ref=review_id,
+            ),
+        )
+        if ready.revision != 1:
+            raise ProbeRejected("Effect candidate did not reach ready revision")
+        acquire_command = _domain_command(
+            producer, "lease.acquire", "lease", resource_id,
+            suffix + ":uncertain-lease-acquire", issued_at, revision=1,
+        )
+        lease = producer.leases.acquire_lease(
+            acquire_command, LeaseRequest(
+                resource_id=resource_id, owner_attempt_id=delivery_attempt_id,
+                owner_runtime_id=owner["runtime_id"],
+                grant_ref=producer.context.grant_ref,
+                authority_incarnation=producer.context.authority_incarnation,
+                scope_id="local-scope", work_item_id=work_id, ttl_seconds=300,
+            ),
+        )
+        args = {
+            "lease_id": lease["lease_id"], "resource_id": resource_id,
+            "generation": lease["generation"], "fencing_token": lease["fencing_token"],
+            "caller": producer.context, "attempt_id": delivery_attempt_id,
+            "runtime_id": owner["runtime_id"], "scope_id": "local-scope",
+            "grant_ref": producer.context.grant_ref,
+            "authority_incarnation": producer.context.authority_incarnation,
+        }
+        with LocalFileEffectGateway(
+            producer.leases, effect_root, scope_id="local-scope",
+            resource_paths={resource_id: "output.txt"},
+        ) as writer:
+            producer._effect_registration_gateway = writer
+            original_persist = writer._persist
+            original_record = writer._record
+            target_writes = 0
+            crash_seen = False
+
+            def counted_persist(parent, name, body, check, **kwargs):
+                nonlocal target_writes
+                if name == "output.txt":
+                    target_writes += 1
+                return original_persist(parent, name, body, check, **kwargs)
+
+            def interrupt_completion(parent, name, body, check, **kwargs):
+                nonlocal crash_seen
+                if name.endswith(".completed") and not crash_seen:
+                    crash_seen = True
+                    raise OSError("injected completion marker crash after target fsync")
+                return original_record(parent, name, body, check, **kwargs)
+
+            writer._persist = counted_persist
+            writer._record = interrupt_completion
+            try:
+                try:
+                    writer.write(
+                        **args, relative_path="output.txt", payload=payload,
+                        operation_id=operation_id,
+                    )
+                except EffectUnavailable:
+                    pass
+                else:
+                    raise ProbeRejected("injected completion crash did not interrupt Gateway")
+            finally:
+                writer._record = original_record
+            output_path = effect_root / "output.txt"
+            if not crash_seen or target_writes != 1 or output_path.read_bytes() != payload:
+                raise ProbeRejected("external Effect did not occur exactly once before completion")
+            fault_info = output_path.stat(follow_symlinks=False)
+            fault_identity = [
+                fault_info.st_dev, fault_info.st_ino, fault_info.st_uid,
+                fault_info.st_mode & 0o777, fault_info.st_nlink,
+            ]
+            fault_sha = _sha(output_path.read_bytes())
+            prepared = writer.historical_readback(
+                lease["lease_id"], resource_id, lease["generation"],
+                lease["fencing_token"], "output.txt",
+                caller=producer.context, scope_id="local-scope",
+                grant_ref=producer.context.grant_ref,
+                authority_incarnation=producer.context.authority_incarnation,
+                expected_operation_id=operation_id,
+            )
+            with producer._connect() as connection:
+                missing_record = connection.execute(
+                    "SELECT count(*) FROM effects WHERE effect_id=%s", (effect_id,),
+                ).fetchone()[0] == 0
+            if (
+                prepared["completion_state"] != "prepared"
+                or prepared["completion_sha256"] is not None
+                or not missing_record
+            ):
+                raise ProbeRejected("external bytes preceded any Domain completion record")
+            register_command = _domain_command(
+                producer, "effect.register", "work_item", work_id,
+                suffix + ":uncertain-effect-register", issued_at, revision=1,
+            )
+            registration = producer.register_effect(
+                register_command, effect_id=effect_id,
+                lease_id=lease["lease_id"], resource_id=resource_id,
+                readback_ref="output.txt", operation_id=operation_id,
+            )
+            with producer._connect() as connection:
+                initial_row = connection.execute(
+                    "SELECT status,completion_state,completion_sha256,operation_id,"
+                    "registration_command_id,registration_operation_id "
+                    "FROM effects WHERE effect_id=%s", (effect_id,),
+                ).fetchone()
+            if initial_row != (
+                "uncertain", "prepared", None, operation_id,
+                register_command.command_id, registration.operation_id,
+            ):
+                raise ProbeRejected("Domain did not commit the prepared uncertain Effect")
+            if not producer.register_effect(
+                register_command, effect_id=effect_id,
+                lease_id=lease["lease_id"], resource_id=resource_id,
+                readback_ref="output.txt", operation_id=operation_id,
+            ).duplicate:
+                raise ProbeRejected("uncertain Effect registration replay was not idempotent")
+            accept_while_uncertain = _domain_command(
+                finalizer, "work_item.transition", "work_item", work_id,
+                suffix + ":accept-while-uncertain", issued_at, revision=1,
+            )
+            try:
+                finalizer.transition_work_item(
+                    accept_while_uncertain, TransitionRequest(
+                        to_state=WorkItemState.ACCEPTED,
+                        evidence_refs=(evidence_id,), review_ref=review_id,
+                        effect_refs=(effect_id,), readback_refs=("output.txt",),
+                    ),
+                )
+            except AcceptanceGuardFailed as error:
+                acceptance_blocked_while_uncertain = (
+                    "every protected effect must be verified" in str(error)
+                )
+            else:
+                acceptance_blocked_while_uncertain = False
+            with producer._connect() as connection:
+                failed_accept_dedup = connection.execute(
+                    "SELECT count(*) FROM command_dedup WHERE command_id=%s",
+                    (accept_while_uncertain.command_id,),
+                ).fetchone()[0]
+                ready_state = connection.execute(
+                    "SELECT state,revision FROM work_items WHERE work_item_id=%s",
+                    (work_id,),
+                ).fetchone()
+            if (
+                not acceptance_blocked_while_uncertain
+                or failed_accept_dedup != 0
+                or ready_state != (WorkItemState.ACCEPTANCE_READY.value, 1)
+            ):
+                raise ProbeRejected("uncertain Effect was accepted or wrote partial Domain state")
+            try:
+                writer.write(
+                    **args, relative_path="output.txt", payload=b"forbidden second effect",
+                    operation_id="new-effect:" + delivery_operation_id,
+                )
+            except EffectUnavailable:
+                pending_new_operation_rejected = True
+            else:
+                pending_new_operation_rejected = False
+            if not pending_new_operation_rejected or target_writes != 1:
+                raise ProbeRejected("new Effect bypassed unresolved original operation")
+            resume = writer.reconcile(
+                lease["lease_id"], resource_id, lease["generation"],
+                lease["fencing_token"], "output.txt", operation_id=operation_id,
+                caller=producer.context, attempt_id=delivery_attempt_id,
+                runtime_id=owner["runtime_id"], scope_id="local-scope",
+                grant_ref=producer.context.grant_ref,
+                authority_incarnation=producer.context.authority_incarnation,
+            )
+            if (resume["status"] != "verified" or resume["sha256"] != output_ref.sha256
+                    or target_writes != 1):
+                raise ProbeRejected("original Effect could not be reconciled without reapplication")
+            reconcile_command = _domain_command(
+                producer, "effect.reconcile", "work_item", work_id,
+                suffix + ":uncertain-effect-reconcile", issued_at, revision=1,
+            )
+            reconciled = producer.reconcile_effect(reconcile_command, effect_id=effect_id)
+            if not producer.reconcile_effect(reconcile_command, effect_id=effect_id).duplicate:
+                raise ProbeRejected("Effect reconciliation command replay was not idempotent")
+            replay = writer.write(
+                **args, relative_path="output.txt", payload=payload,
+                operation_id=operation_id,
+            )
+            if replay["sha256"] != output_ref.sha256 or target_writes != 1:
+                raise ProbeRejected("same operation retry reapplied protected bytes")
+            completed = writer.historical_readback(
+                lease["lease_id"], resource_id, lease["generation"],
+                lease["fencing_token"], "output.txt",
+                caller=producer.context, scope_id="local-scope",
+                grant_ref=producer.context.grant_ref,
+                authority_incarnation=producer.context.authority_incarnation,
+                expected_operation_id=operation_id,
+            )
+            completion_marker = writer._load(
+                writer._ops, _sha(operation_id.encode()) + ".completed",
+            )
+            if (completion_marker is None
+                    or completion_marker.get("completion_basis") != "observed_target"):
+                raise ProbeRejected("completion did not arise from observed original bytes")
+            output_info = output_path.stat(follow_symlinks=False)
+            output_identity = [
+                output_info.st_dev, output_info.st_ino, output_info.st_uid,
+                output_info.st_mode & 0o777, output_info.st_nlink,
+            ]
+            marker_sha = _effect_marker_digest(effect_root)
+        release_command = _domain_command(
+            producer, "lease.release", "lease", resource_id,
+            suffix + ":uncertain-lease-release", issued_at, revision=1,
+        )
+        released = producer.leases.release_lease(
+            release_command, lease["lease_id"], resource_id,
+            lease["generation"], lease["fencing_token"],
+        )
+        with LocalFileEffectGateway(
+            producer.leases, effect_root, scope_id="local-scope",
+            resource_paths={resource_id: "output.txt"},
+        ) as late_writer:
+            try:
+                late_writer.write(
+                    **args, relative_path="output.txt", payload=payload,
+                    operation_id=operation_id,
+                )
+            except FencingRejected:
+                late_rejected = True
+            else:
+                late_rejected = False
+        reader = DomainAuthority(authority._dsn, context=replace(
+            authority.context,
+            principal_ref="p1-uncertain-reader:" + suffix,
+            grant_ref="grant:p1-uncertain-reader:" + suffix,
+        ))
+        reader.bootstrap_local_grant(("effect.read",))
+        with LocalFileEffectGateway(
+            reader.leases, effect_root, scope_id="local-scope",
+            resource_paths={resource_id: "output.txt"},
+        ) as independent_reader:
+            independent = independent_reader.historical_readback(
+                lease["lease_id"], resource_id, lease["generation"],
+                lease["fencing_token"], "output.txt",
+                caller=reader.context, scope_id="local-scope",
+                grant_ref=reader.context.grant_ref,
+                authority_incarnation=reader.context.authority_incarnation,
+                expected_operation_id=operation_id,
+            )
+        with producer._connect() as connection:
+            final_row = connection.execute(
+                "SELECT status,completion_state,completion_sha256,operation_id,"
+                "registration_command_id,registration_operation_id,"
+                "reconciliation_command_id,reconciliation_operation_id "
+                "FROM effects WHERE effect_id=%s", (effect_id,),
+            ).fetchone()
+            lease_row = connection.execute(
+                "SELECT owner_attempt_id,owner_runtime_id,generation,status "
+                "FROM leases WHERE lease_id=%s", (lease["lease_id"],),
+            ).fetchone()
+            domain_events = connection.execute(
+                "SELECT command_id,event_id FROM domain_events "
+                "WHERE command_id IN (%s,%s,%s,%s) ORDER BY event_id",
+                (acquire_command.command_id, release_command.command_id,
+                 register_command.command_id, reconcile_command.command_id),
+            ).fetchall()
+            domain_outbox = connection.execute(
+                "SELECT operation_id,topic FROM outbox "
+                "WHERE operation_id IN (%s,%s,%s,%s) ORDER BY operation_id",
+                (lease["operation_id"], released["operation_id"],
+                 registration.operation_id, reconciled.operation_id),
+            ).fetchall()
+        if (released["status"] != "released" or not late_rejected
+                or target_writes != 1 or output_path.read_bytes() != payload
+                or output_identity != fault_identity
+                or _sha(output_path.read_bytes()) != fault_sha
+                or _effect_marker_digest(effect_root) != marker_sha
+                or completed["status"] != "verified"
+                or completed["completion_state"] != "completed"
+                or independent["sha256"] != completed["sha256"]
+                or independent["completion_sha256"] != completed["completion_sha256"]
+                or final_row != (
+                    "verified", "completed", completed["completion_sha256"],
+                    operation_id, register_command.command_id,
+                    registration.operation_id, reconcile_command.command_id,
+                    reconciled.operation_id,
+                )
+                or lease_row != (delivery_attempt_id, owner["runtime_id"],
+                                 lease["generation"], "released")
+                or len(domain_events) != 4
+                or set(domain_outbox) != {
+                    (lease["operation_id"], "lease.acquired"),
+                    (released["operation_id"], "lease.release"),
+                    (registration.operation_id, "effect.registered"),
+                    (reconciled.operation_id, "effect.reconciled"),
+                }):
+            raise ProbeRejected("uncertain Effect recovery or late fencing changed its lineage")
+        proof = {
+            "delivery_operation_id": delivery_operation_id,
+            "message_id": message_id, "dispatch_id": dispatch_id,
+            "work_item_id": work_id, "attempt_id": delivery_attempt_id,
+            "runtime_id": owner["runtime_id"], "node_id": node.node_id,
+            "machine_id": node.machine_id, "source_commit": commit,
+            "source_tree": tree, "effect_id": effect_id,
+            "effect_operation_id": operation_id, "resource_id": resource_id,
+            "lease_id": lease["lease_id"], "generation": lease["generation"],
+            "fencing_token_sha256": _sha(lease["fencing_token"].encode()),
+            "acquire_command_id": acquire_command.command_id,
+            "acquire_operation_id": lease["operation_id"],
+            "release_command_id": release_command.command_id,
+            "release_operation_id": released["operation_id"],
+            "registration_command_id": register_command.command_id,
+            "registration_operation_id": registration.operation_id,
+            "reconciliation_command_id": reconcile_command.command_id,
+            "reconciliation_operation_id": reconciled.operation_id,
+            "domain_event_ids": [
+                {"command_id": command_id, "event_id": str(event_id)}
+                for command_id, event_id in domain_events
+            ],
+            "receipt_id": receipt.receipt_id,
+            "evidence_id": evidence_id, "review_id": review_id,
+            "candidate_ref": binding["candidate_ref"],
+            "artifact_sha256": output_ref.sha256,
+            "artifact_ref": output_ref.model_dump(mode="json"),
+            "source_readback_ref": readback_ref.model_dump(mode="json"),
+            "reader_grant_ref": reader.context.grant_ref,
+            "reader_principal_ref": reader.context.principal_ref,
+            "producer_grant_ref": producer.context.grant_ref,
+            "producer_principal_ref": producer.context.principal_ref,
+            "domain_record_absent_at_fault": missing_record,
+            "initial_status": initial_row[0],
+            "initial_completion_state": initial_row[1],
+            "final_status": final_row[0],
+            "final_completion_state": final_row[1],
+            "completion_sha256": completed["completion_sha256"],
+            "completion_basis": completion_marker["completion_basis"],
+            "intent_sha256": completed["intent_sha256"],
+            "effect_file_sha256": _sha(output_path.read_bytes()),
+            "effect_file_identity": output_identity,
+            "fault_file_sha256": fault_sha,
+            "fault_file_identity": fault_identity,
+            "effect_marker_sha256": marker_sha,
+            "target_write_count": target_writes,
+            "pending_new_operation_rejected": pending_new_operation_rejected,
+            "acceptance_blocked_while_uncertain": acceptance_blocked_while_uncertain,
+            "failed_accept_dedup_count": failed_accept_dedup,
+            "late_old_owner_rejected": late_rejected,
+            "original_operation_replay": True,
+        }
+        _private_json(proof_path, proof)
+        return proof
+
+
+
 def _run_domain_transaction(
     profile: dict[str, Any], scenario: str, ledger: ProbeLedger,
     commit: str, tree: str, run_id: str, suffix: str, issued_at: datetime,
@@ -1485,6 +1993,7 @@ def _run_domain_transaction(
     provider_restart_proof = None
     provider_workflow = None
     lease_proof = None
+    uncertain_effect_proof = None
     if scenario == "P1-AUTH-REVOCATION":
         with authority._connect() as connection:
             connection.execute(
@@ -1552,6 +2061,11 @@ def _run_domain_transaction(
     if scenario == "P1-LEASE-FENCING":
         lease_proof = _lease_fencing(
             authority, node, ledger, work_id, sent.operation_id,
+            commit, tree, suffix, issued_at,
+        )
+    if scenario == "P1-UNCERTAIN-EFFECT":
+        uncertain_effect_proof = _uncertain_effect(
+            authority, node, ledger, work_id, message_id, sent.operation_id,
             commit, tree, suffix, issued_at,
         )
     with node._transaction() as connection:
@@ -1694,6 +2208,7 @@ def _run_domain_transaction(
         "node_restart_proof": node_restart_proof,
         "provider_restart_proof": provider_restart_proof,
         "lease_proof": lease_proof,
+        "uncertain_effect_proof": uncertain_effect_proof,
         "dedup_details": list(dedup_details),
         "operation_details": list(operation_details),
         "provider_refs": list(provider_refs),
@@ -1957,6 +2472,171 @@ def _lease_effect_readback(
             "original_marker_verified": True, "late_old_owner_fenced": True}
 
 
+def _uncertain_pg_readback(profile, row, proof):
+    scoped = make_conninfo(
+        profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
+    )
+    with psycopg.connect(scoped) as connection:
+        effect = connection.execute(
+            "SELECT work_item_id,lease_id,resource_id,operation_id,status,"
+            "completion_state,expected_sha256,intent_sha256,completion_sha256,"
+            "registration_command_id,registration_operation_id,"
+            "reconciliation_command_id,reconciliation_operation_id,"
+            "registered_readback,reconciled_readback FROM effects WHERE effect_id=%s",
+            (proof["effect_id"],),
+        ).fetchone()
+        lease = connection.execute(
+            "SELECT owner_attempt_id,owner_runtime_id,generation,status,fencing_token "
+            "FROM leases WHERE lease_id=%s", (proof["lease_id"],),
+        ).fetchone()
+        delivery = connection.execute(
+            "SELECT message_id,dispatch_id,status FROM delivery_attempts "
+            "WHERE attempt_id=%s", (proof["attempt_id"],),
+        ).fetchone()
+        attempt = connection.execute(
+            "SELECT work_item_id,runtime_id,source_commit,source_tree,candidate_ref "
+            "FROM attempts WHERE attempt_id=%s", (proof["attempt_id"],),
+        ).fetchone()
+        receipt = connection.execute(
+            "SELECT attempt_id,work_item_id FROM execution_receipts WHERE receipt_id=%s",
+            (proof["receipt_id"],),
+        ).fetchone()
+        evidence = connection.execute(
+            "SELECT attempt_id,candidate_ref FROM evidence WHERE evidence_id=%s",
+            (proof["evidence_id"],),
+        ).fetchone()
+        review = connection.execute(
+            "SELECT verdict,candidate_ref FROM reviews WHERE review_id=%s",
+            (proof["review_id"],),
+        ).fetchone()
+        events = connection.execute(
+            "SELECT command_id,event_id FROM domain_events "
+            "WHERE command_id IN (%s,%s,%s,%s) ORDER BY event_id",
+            (proof["acquire_command_id"], proof["release_command_id"],
+             proof["registration_command_id"], proof["reconciliation_command_id"]),
+        ).fetchall()
+        outbox = connection.execute(
+            "SELECT operation_id,topic FROM outbox "
+            "WHERE operation_id IN (%s,%s,%s,%s)",
+            (proof["acquire_operation_id"], proof["release_operation_id"],
+             proof["registration_operation_id"], proof["reconciliation_operation_id"]),
+        ).fetchall()
+        ready = connection.execute(
+            "SELECT revision,readiness_snapshot FROM accepted_state_revisions "
+            "WHERE work_item_id=%s AND revision=1", (proof["work_item_id"],),
+        ).fetchone()
+    if (
+        effect is None
+        or effect[:13] != (
+            proof["work_item_id"], proof["lease_id"], proof["resource_id"],
+            proof["effect_operation_id"], "verified", "completed",
+            proof["artifact_sha256"], proof["intent_sha256"],
+            proof["completion_sha256"], proof["registration_command_id"],
+            proof["registration_operation_id"], proof["reconciliation_command_id"],
+            proof["reconciliation_operation_id"],
+        )
+        or not isinstance(effect[13], dict) or not isinstance(effect[14], dict)
+        or effect[13].get("completion_state") != "prepared"
+        or effect[13].get("completion_sha256") is not None
+        or effect[14].get("completion_state") != "completed"
+        or effect[14].get("completion_sha256") != proof["completion_sha256"]
+        or lease is None
+        or lease[:4] != (proof["attempt_id"], proof["runtime_id"],
+                         proof["generation"], "released")
+        or _sha(lease[4].encode()) != proof["fencing_token_sha256"]
+        or delivery != (proof["message_id"], proof["dispatch_id"], "delivered")
+        or attempt != (
+            proof["work_item_id"], proof["runtime_id"], proof["source_commit"],
+            proof["source_tree"], proof["candidate_ref"],
+        )
+        or receipt != (proof["attempt_id"], proof["work_item_id"])
+        or evidence != (proof["attempt_id"], proof["candidate_ref"])
+        or review != ("pass", proof["candidate_ref"])
+        or ready != (1, True)
+        or [{"command_id": item[0], "event_id": str(item[1])} for item in events]
+        != proof["domain_event_ids"]
+        or set(outbox) != {
+            (proof["acquire_operation_id"], "lease.acquired"),
+            (proof["release_operation_id"], "lease.release"),
+            (proof["registration_operation_id"], "effect.registered"),
+            (proof["reconciliation_operation_id"], "effect.reconciled"),
+        }
+    ):
+        raise ProbeRejected("uncertain Effect PG/Delivery/Attempt lineage changed")
+    return {"uncertain_effect_pg_readback": True, "effect_id": proof["effect_id"]}
+
+
+def _uncertain_effect_readback(profile, ledger, row, proof):
+    root = ledger.root / "P1-UNCERTAIN-EFFECT-effects"
+    output = root / "output.txt"
+    info = output.stat(follow_symlinks=False)
+    identity = [info.st_dev, info.st_ino, info.st_uid,
+                info.st_mode & 0o777, info.st_nlink]
+    if (
+        identity != proof["effect_file_identity"]
+        or _sha(output.read_bytes()) != proof["effect_file_sha256"]
+        or _effect_marker_digest(root) != proof["effect_marker_sha256"]
+        or info.st_mode & 0o777 != 0o600 or info.st_nlink != 1
+    ):
+        raise ProbeRejected("uncertain Effect file or marker readback changed")
+    key = _sha(proof["effect_operation_id"].encode())
+    operations = root / ".acs-effect-markers" / "operations"
+    if (
+        not (operations / (key + ".intent")).is_file()
+        or not (operations / (key + ".completed")).is_file()
+        or any(not item.name.startswith(key + ".") for item in operations.iterdir())
+    ):
+        raise ProbeRejected("uncertain Effect admitted another operation marker")
+    completion = json.loads((operations / (key + ".completed")).read_text())
+    if completion.get("body", {}).get("completion_basis") != "observed_target":
+        raise ProbeRejected("uncertain Effect completion was not readback-only")
+    with LocalArtifactStore(ledger.root / "P1-UNCERTAIN-EFFECT-cas") as store:
+        artifact = ArtifactRef.model_validate(proof["artifact_ref"])
+        readback = ArtifactRef.model_validate(proof["source_readback_ref"])
+        if store.read(artifact) != output.read_bytes():
+            raise ProbeRejected("uncertain Effect differs from ready candidate CAS bytes")
+        store.verify(readback)
+    scoped = make_conninfo(
+        profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
+    )
+    authority = DomainAuthority(scoped)
+    with authority._connect() as connection:
+        token = connection.execute(
+            "SELECT fencing_token FROM leases WHERE lease_id=%s", (proof["lease_id"],),
+        ).fetchone()
+    if token is None or _sha(token[0].encode()) != proof["fencing_token_sha256"]:
+        raise ProbeRejected("uncertain Effect Lease token changed")
+    reader = DomainAuthority(scoped, context=replace(
+        authority.context,
+        principal_ref=proof["reader_principal_ref"],
+        grant_ref=proof["reader_grant_ref"],
+    ))
+    with LocalFileEffectGateway(
+        reader.leases, root, scope_id="local-scope",
+        resource_paths={proof["resource_id"]: "output.txt"},
+    ) as gateway:
+        observed = gateway.historical_readback(
+            proof["lease_id"], proof["resource_id"], proof["generation"],
+            token[0], "output.txt", caller=reader.context, scope_id="local-scope",
+            grant_ref=reader.context.grant_ref,
+            authority_incarnation=reader.context.authority_incarnation,
+            expected_operation_id=proof["effect_operation_id"],
+        )
+    if (
+        observed["status"] != "verified"
+        or observed["sha256"] != proof["artifact_sha256"]
+        or observed["intent_sha256"] != proof["intent_sha256"]
+        or observed["completion_sha256"] != proof["completion_sha256"]
+        or observed["completion_state"] != "completed"
+    ):
+        raise ProbeRejected("uncertain Effect original operation no longer reads back")
+    return {"uncertain_effect_file_readback": True,
+            "effect_sha256": observed["sha256"],
+            "completion_sha256": observed["completion_sha256"],
+            "target_write_count": proof["target_write_count"]}
+
+
+
 def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 ledger: ProbeLedger, row: dict[str, Any]) -> dict[str, Any]:
     lineage = json.loads(row["lineage_json"])
@@ -1967,7 +2647,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         "inbox_count", "grant_revoked",
         "ack_loss_observed", "exact_replay", "conflict_rejected",
         "core_crash_proof", "node_restart_proof", "provider_restart_proof",
-        "lease_proof",
+        "lease_proof", "uncertain_effect_proof",
         "dedup_details", "operation_details", "outbox_details", "message_hashes",
         "event_hashes", "provider_refs",
     }
@@ -1998,6 +2678,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         or (lineage["provider_restart_proof"] is not None)
         != (scenario == "P1-PROVIDER-RESTART")
         or (lineage["lease_proof"] is not None) != (scenario == "P1-LEASE-FENCING")
+        or (lineage["uncertain_effect_proof"] is not None)
+        != (scenario == "P1-UNCERTAIN-EFFECT")
     ):
         raise ProbeRejected("scenario lineage does not prove its required fault")
     if scenario == "P1-CORE-RESTART":
@@ -2060,6 +2742,34 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             or not proof.get("effect_completion_sha256")
         ):
             raise ProbeRejected("Lease fence source/Node/effect lineage is incomplete")
+    if scenario == "P1-UNCERTAIN-EFFECT":
+        proof = lineage["uncertain_effect_proof"]
+        if (
+            proof.get("delivery_operation_id") != lineage["operation_id"]
+            or proof.get("message_id") != lineage["message_id"]
+            or proof.get("dispatch_id") != lineage["dispatch_id"]
+            or proof.get("attempt_id") != lineage["attempt_id"]
+            or proof.get("source_commit") != row["source_commit"]
+            or proof.get("source_tree") != row["source_tree"]
+            or proof.get("machine_id") != profile["machine_id"]
+            or proof.get("node_id") != profile["node_id"]
+            or proof.get("domain_record_absent_at_fault") is not True
+            or proof.get("initial_status") != "uncertain"
+            or proof.get("initial_completion_state") != "prepared"
+            or proof.get("final_status") != "verified"
+            or proof.get("final_completion_state") != "completed"
+            or proof.get("target_write_count") != 1
+            or proof.get("completion_basis") != "observed_target"
+            or proof.get("pending_new_operation_rejected") is not True
+            or proof.get("acceptance_blocked_while_uncertain") is not True
+            or proof.get("failed_accept_dedup_count") != 0
+            or proof.get("late_old_owner_rejected") is not True
+            or proof.get("original_operation_replay") is not True
+            or proof.get("effect_file_sha256") != proof.get("artifact_sha256")
+            or proof.get("effect_file_sha256") != proof.get("fault_file_sha256")
+            or proof.get("effect_file_identity") != proof.get("fault_file_identity")
+        ):
+            raise ProbeRejected("uncertain Effect same-lineage recovery proof is incomplete")
     if kind == "postgresql":
         scoped = make_conninfo(
             profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
@@ -2152,7 +2862,9 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             raise ProbeRejected("PostgreSQL Runtime lineage changed")
         extra = (
             _lease_pg_readback(profile, row, lineage["lease_proof"])
-            if scenario == "P1-LEASE-FENCING" else {}
+            if scenario == "P1-LEASE-FENCING"
+            else _uncertain_pg_readback(profile, row, lineage["uncertain_effect_proof"])
+            if scenario == "P1-UNCERTAIN-EFFECT" else {}
         )
         return {"postgresql_readback": True, "lineage_digest": _sha(_canonical(lineage)),
                 **extra}
@@ -2265,7 +2977,10 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             raise ProbeRejected("Driver/raw test evidence changed")
         extra = (
             _lease_effect_readback(profile, ledger, row, lineage["lease_proof"])
-            if scenario == "P1-LEASE-FENCING" else {}
+            if scenario == "P1-LEASE-FENCING"
+            else _uncertain_effect_readback(
+                profile, ledger, row, lineage["uncertain_effect_proof"],
+            ) if scenario == "P1-UNCERTAIN-EFFECT" else {}
         )
         return {"driver_readback": True, "driver_calls": lineage["driver_calls"],
                 "raw_sha256": _sha(raw.read_bytes()), **extra}
@@ -2359,7 +3074,10 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             raise ProbeRejected("source identity changed during scenario evidence")
         extra = (
             _lease_effect_readback(profile, ledger, row, lineage["lease_proof"])
-            if scenario == "P1-LEASE-FENCING" else {}
+            if scenario == "P1-LEASE-FENCING"
+            else _uncertain_effect_readback(
+                profile, ledger, row, lineage["uncertain_effect_proof"],
+            ) if scenario == "P1-UNCERTAIN-EFFECT" else {}
         )
         return {"os_readback": True, "platform": platform.platform(),
                 "systemd_user_exit": systemd_exit, **extra}
@@ -2368,6 +3086,10 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             or (scenario == "P1-LEASE-FENCING" and (
                 not lineage["lease_proof"]["stale_fence_rejected"]
                 or not lineage["lease_proof"]["late_old_owner_rejected"]
+            ))
+            or (scenario == "P1-UNCERTAIN-EFFECT" and (
+                lineage["uncertain_effect_proof"]["target_write_count"] != 1
+                or not lineage["uncertain_effect_proof"]["late_old_owner_rejected"]
             ))):
         raise ProbeRejected("command output does not bind the Runtime transaction")
     return {"command_output": True, "test_digest": row["test_digest"],
@@ -2381,6 +3103,7 @@ def _runner_result(profile: dict[str, Any], scenario: str, kind: str,
     fields = EVIDENCE_FIELDS[kind]
     lineage = json.loads(row["lineage_json"])
     lease = lineage.get("lease_proof")
+    uncertain = lineage.get("uncertain_effect_proof")
     if "fault_injection" in fields:
         facts["fault_injected"] = True
     if "source_readback" in fields:
@@ -2412,10 +3135,17 @@ def _runner_result(profile: dict[str, Any], scenario: str, kind: str,
             lease["acquire_operation_id"], lease["release_operation_id"],
             lease["replacement_acquire_operation_id"],
             lease["replacement_release_operation_id"],
-        ] if lease else []),
+        ] if lease else [])
+        + ([
+            uncertain["acquire_operation_id"], uncertain["release_operation_id"],
+            uncertain["registration_operation_id"],
+            uncertain["reconciliation_operation_id"],
+        ] if uncertain else []),
         "message_ids": [row["message_id"]],
         "event_ids": [row["event_id"]]
-        + ([item["event_id"] for item in lease["lease_events"]] if lease else []),
+        + ([item["event_id"] for item in lease["lease_events"]] if lease else [])
+        + ([item["event_id"] for item in uncertain["domain_event_ids"]]
+           if uncertain else []),
         "receipt_ids": [row["receipt_id"]], "observer": "p1-profile-probe",
         "owner": "runtime-domain", "facts": facts,
     }

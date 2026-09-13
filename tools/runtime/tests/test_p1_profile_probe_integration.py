@@ -120,6 +120,7 @@ def test_replacement_readback_precedes_old_owner_and_late_mutation_is_fenced(
     ("P1-PROVIDER-RESTART", "after_provider_crash_record"),
     ("P1-PROVIDER-RESTART", "after_provider_child_result"),
     ("P1-LEASE-FENCING", "after_domain_dispatch"),
+    ("P1-UNCERTAIN-EFFECT", "after_domain_dispatch"),
 ])
 def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scenario, stage):
     profile = _profile(tmp_path)
@@ -179,6 +180,7 @@ def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scen
     ("P1-NODE-RESTART", "delivered", 0, 2),
     ("P1-PROVIDER-RESTART", "delivered", 0, 1),
     ("P1-LEASE-FENCING", "delivered", 1, 1),
+    ("P1-UNCERTAIN-EFFECT", "delivered", 1, 1),
 ])
 def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
     tmp_path, monkeypatch, scenario, expected_state, driver_count, attempt_count,
@@ -271,6 +273,40 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
             with pytest.raises(probe.ProbeRejected, match="Lease file effect marker history"):
                 probe.execute(profile, scenario, "driver", output)
             marker.write_bytes(marker_original)
+        if scenario == "P1-UNCERTAIN-EFFECT":
+            proof = lineage["uncertain_effect_proof"]
+            assert proof["attempt_id"] == lineage["attempt_id"]
+            assert proof["message_id"] == lineage["message_id"]
+            assert proof["dispatch_id"] == lineage["dispatch_id"]
+            assert proof["machine_id"] == gate_machine
+            assert proof["domain_record_absent_at_fault"]
+            assert proof["initial_status"] == "uncertain"
+            assert proof["initial_completion_state"] == "prepared"
+            assert proof["final_status"] == "verified"
+            assert proof["final_completion_state"] == "completed"
+            assert proof["target_write_count"] == 1
+            assert proof["fault_file_identity"] == proof["effect_file_identity"]
+            assert proof["fault_file_sha256"] == proof["effect_file_sha256"]
+            assert proof["completion_basis"] == "observed_target"
+            assert proof["pending_new_operation_rejected"]
+            assert proof["acceptance_blocked_while_uncertain"]
+            assert proof["late_old_owner_rejected"]
+            assert len(results[0]["operation_ids"]) == 6
+            effect_file = output / "P1-UNCERTAIN-EFFECT-effects" / "output.txt"
+            original = effect_file.read_bytes()
+            effect_file.write_bytes(b"forged second effect")
+            with pytest.raises(probe.ProbeRejected, match="uncertain Effect file or marker"):
+                probe.execute(profile, scenario, "driver", output)
+            effect_file.write_bytes(original)
+            marker = next(
+                (output / "P1-UNCERTAIN-EFFECT-effects" / ".acs-effect-markers"
+                 / "current").glob("*.json")
+            )
+            marker_original = marker.read_bytes()
+            marker.write_bytes(marker_original + b" ")
+            with pytest.raises(probe.ProbeRejected, match="uncertain Effect file or marker"):
+                probe.execute(profile, scenario, "driver", output)
+            marker.write_bytes(marker_original)
         assert (output.stat().st_mode & 0o777) == 0o700
         for private_file in output.iterdir():
             if private_file.is_file():
@@ -346,6 +382,11 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
                     "UPDATE leases SET status='granted' WHERE lease_id=%s",
                     (lineage["lease_proof"]["lease_id"],),
                 )
+            elif scenario == "P1-UNCERTAIN-EFFECT":
+                connection.execute(
+                    "UPDATE outbox SET topic='forged.effect' WHERE operation_id=%s",
+                    (lineage["uncertain_effect_proof"]["reconciliation_operation_id"],),
+                )
             else:
                 connection.execute(
                     "UPDATE delivery_attempts SET status='interrupted' "
@@ -355,6 +396,8 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
         error = (
             "Lease PG authority/enrollment/fence lineage changed"
             if scenario == "P1-LEASE-FENCING"
+            else "uncertain Effect PG/Delivery/Attempt lineage changed"
+            if scenario == "P1-UNCERTAIN-EFFECT"
             else "PostgreSQL Runtime lineage changed"
         )
         with pytest.raises(probe.ProbeRejected, match=error):
