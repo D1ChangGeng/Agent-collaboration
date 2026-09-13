@@ -18,6 +18,7 @@ from typing import Any
 from runtime.recovery_models import (
     BoundaryRejected,
     DispatchIdentity,
+    HarnessSessionProof,
     HumanBridgeCoordinator,
     ManualPacket,
     NativeResponseObservation,
@@ -28,6 +29,7 @@ from runtime.recovery_models import (
     _digest,
     _text,
     canonical_digest,
+    native_observation_from_dict,
     response_receipt_id,
 )
 
@@ -149,10 +151,7 @@ class NodeResponseOutbox:
             ).fetchall()
         values = []
         for row in rows:
-            payload = json.loads(row[0])
-            payload["identity"] = DispatchIdentity(**payload["identity"])
-            payload["observed_at"] = datetime.fromisoformat(payload["observed_at"])
-            values.append(NativeResponseObservation(**payload))
+            values.append(native_observation_from_dict(json.loads(row[0])))
         return tuple(values)
 
     def by_invocation(self, identity: DispatchIdentity) -> NativeResponseObservation | None:
@@ -166,10 +165,7 @@ class NodeResponseOutbox:
             raise StateConflict("multiple terminal observations for one invocation")
         if not rows:
             return None
-        payload = json.loads(rows[0][0])
-        payload["identity"] = DispatchIdentity(**payload["identity"])
-        payload["observed_at"] = datetime.fromisoformat(payload["observed_at"])
-        observation = NativeResponseObservation(**payload)
+        observation = native_observation_from_dict(json.loads(rows[0][0]))
         if observation.identity != identity:
             raise StateConflict("cached terminal belongs to a different DispatchIdentity")
         return observation
@@ -229,6 +225,7 @@ class InvocationCollectionIdentity:
     native_session_ref: str
     native_turn_ref: str
     native_thread_ref: str | None = None
+    harness_proof: HarnessSessionProof | None = None
 
     def __post_init__(self) -> None:
         for name in ("command_id", "binding_id", "driver_kind", "native_session_ref",
@@ -262,6 +259,16 @@ class InvocationCollectionIdentity:
             raise BoundaryRejected("Driver binding differs from dispatch identity")
         if binding["revision"] != self.dispatch.binding_revision:
             raise BoundaryRejected("Driver binding revision differs from dispatch revision")
+        if self.harness_proof is not None:
+            proof = self.harness_proof
+            if (not isinstance(proof, HarnessSessionProof)
+                    or proof.driver_kind != self.driver_kind
+                    or proof.native_session_ref != self.native_session_ref
+                    or proof.context.runtime_id != binding["runtime_id"]
+                    or proof.context.attempt_id != binding["attempt_id"]
+                    or proof.context.agent_slot_id != binding["agent_slot_id"]
+                    or proof.context.node_binding_revision != binding["revision"]):
+                raise BoundaryRejected("Harness proof differs from Driver binding")
 
     def canonical_binding(self) -> dict[str, str | int]:
         return dict(self.binding_items)
@@ -291,6 +298,8 @@ class DriverCollectorAdapter:
             raise BoundaryRejected("collector invocation operation changed")
         cached = self.outbox.by_invocation(identity)
         if cached is not None:
+            if cached.harness_proof != collection.harness_proof:
+                raise BoundaryRejected("cached terminal Harness proof differs")
             return cached
         result = self.driver.collect_result(operation, invocation_operation_id)
         if not isinstance(result, dict) or result.get("receipt_layer") != "response_received":
@@ -355,6 +364,7 @@ class DriverCollectorAdapter:
             response_digest=response_digest,
             evidence_digest=evidence_digest,
             observed_at=terminal_observed_at,
+            harness_proof=collection.harness_proof,
         )
         self.outbox.record(observation)
         return observation
@@ -400,11 +410,6 @@ class PostgresDelayedResponseAuthority:
         ):
             raise BoundaryRejected("response receipt identity is not canonical")
         with psycopg.connect(self.dsn) as connection, connection.cursor() as cursor:
-            authority = self.snapshot(cursor, observation)
-            if not authority.producer_authenticated:
-                raise BoundaryRejected("native observation producer not authenticated")
-            if authority.committed_identity != identity:
-                raise BoundaryRejected("committed dispatch identity changed")
             cursor.execute(
                 "SELECT operation_id,deadline,accepted_state_digest FROM delivery_messages "
                 "WHERE tenant_id=%s AND message_id=%s FOR UPDATE",
@@ -414,6 +419,13 @@ class PostgresDelayedResponseAuthority:
             if (message is None or message[0] != identity.operation_id
                     or message[2] != identity.accepted_state_digest):
                 raise BoundaryRejected("committed delivery message identity changed")
+            # Match dispatch's message-first lock order before the trusted
+            # snapshot acquires Grant, WorkItem, Slot and Harness head locks.
+            authority = self.snapshot(cursor, observation)
+            if not authority.producer_authenticated:
+                raise BoundaryRejected("native observation producer not authenticated")
+            if authority.committed_identity != identity:
+                raise BoundaryRejected("committed dispatch identity changed")
             cursor.execute(
                 "SELECT operation_id,dispatch_id,runtime_dispatched_receipt_id "
                 "FROM delivery_attempts WHERE tenant_id=%s "
@@ -429,7 +441,10 @@ class PostgresDelayedResponseAuthority:
                 "AND message_id=%s AND receipt_id=%s AND layer='runtime_dispatched' FOR UPDATE",
                 (identity.tenant_id, identity.message_id, attempt[2]),
             )
-            if cursor.fetchone() != (identity.attempt_id, identity.dispatch_id):
+            dispatch_receipt_current = cursor.fetchone() == (
+                identity.attempt_id, identity.dispatch_id
+            )
+            if not dispatch_receipt_current and observation.harness_proof is None:
                 raise BoundaryRejected("runtime dispatch receipt is not committed")
             cursor.execute(
                 "SELECT canonical_digest,disposition FROM native_response_observations "
@@ -462,6 +477,7 @@ class PostgresDelayedResponseAuthority:
                 "response_artifact_ref": observation.response_artifact_ref,
                 "response_digest": observation.response_digest,
                 "evidence_digest": observation.evidence_digest,
+                "harness_proof": asdict(observation.harness_proof) if observation.harness_proof else None,
             }
             # The trusted callback and database clock are reread only after the
             # message/attempt/receipt rows are locked, immediately before write.
@@ -471,7 +487,8 @@ class PostgresDelayedResponseAuthority:
             cursor.execute("SELECT clock_timestamp()")
             database_now = cursor.fetchone()[0]
             current = (
-                authority.current_authority_valid and authority.task_valid
+                dispatch_receipt_current
+                and authority.current_authority_valid and authority.task_valid
                 and database_now < min(authority.deadline, message[1])
                 and authority.current_attempt_id == identity.attempt_id
                 and authority.current_accepted_revision == identity.accepted_revision
@@ -489,8 +506,8 @@ class PostgresDelayedResponseAuthority:
                 "attempt_id,dispatch_id,endpoint_id,binding_revision,machine_id,node_id,"
                 "boot_incarnation,accepted_revision,accepted_state_digest,native_response_ref,"
                 "native_outcome,response_artifact_ref,response_digest,evidence_digest,observed_at,"
-                "canonical_digest,disposition) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,"
-                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "canonical_digest,disposition,harness_proof) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,"
+                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (identity.tenant_id, observation.projection_id, observation.receipt_id,
                  identity.message_id, identity.operation_id, identity.invocation_id,
                  identity.attempt_id, identity.dispatch_id, identity.endpoint_id,
@@ -499,7 +516,8 @@ class PostgresDelayedResponseAuthority:
                  identity.accepted_state_digest, observation.native_response_ref,
                  observation.native_outcome, observation.response_artifact_ref,
                  observation.response_digest, observation.evidence_digest,
-                 observation.observed_at, digest, disposition),
+                 observation.observed_at, digest, disposition,
+                 json.dumps(asdict(observation.harness_proof)) if observation.harness_proof else None),
             )
             if disposition == "applied" and existing is None:
                 cursor.execute(
@@ -525,7 +543,12 @@ class PostgresDelayedResponseAuthority:
                              "native_response_ref": observation.native_response_ref,
                              "response_artifact_ref": observation.response_artifact_ref,
                              "response_digest": observation.response_digest,
-                             "evidence_digest": observation.evidence_digest})),
+                             "evidence_digest": observation.evidence_digest,
+                             "harness_binding_id": observation.harness_proof.binding_id
+                             if observation.harness_proof else None,
+                             "harness_binding_revision": observation.harness_proof.revision
+                             if observation.harness_proof else None,
+                             "runtime_dispatch_receipt_current": dispatch_receipt_current})),
             )
         return ProjectionDisposition(observation.projection_id, digest, disposition)
 

@@ -93,6 +93,54 @@ class DispatchIdentity:
 
 
 @dataclass(frozen=True)
+class HarnessAttemptContext:
+    work_item_id: str
+    scope_id: str
+    agent_slot_id: str
+    runtime_id: str
+    attempt_id: str
+    message_id: str
+    machine_id: str
+    node_id: str
+    node_boot_incarnation: str
+    node_binding_revision: int
+    endpoint_id: str
+    endpoint_binding_revision: int
+
+    def __post_init__(self) -> None:
+        for key, value in asdict(self).items():
+            if key in {"node_binding_revision", "endpoint_binding_revision"}:
+                if type(value) is not int or value < 1:
+                    raise BoundaryRejected(f"{key}_outside_bound")
+            else:
+                _text(value, key)
+
+
+@dataclass(frozen=True)
+class HarnessSessionProof:
+    binding_id: str
+    revision: int
+    driver_kind: str
+    native_session_ref: str
+    context: HarnessAttemptContext
+    binding_event_id: int | None = None
+
+    def __post_init__(self) -> None:
+        _text(self.binding_id, "harness_binding_id", maximum=256)
+        _text(self.native_session_ref, "native_session_ref")
+        if type(self.revision) is not int or self.revision < 1:
+            raise BoundaryRejected("harness_binding_revision_outside_bound")
+        if self.driver_kind not in {"codex", "opencode"}:
+            raise BoundaryRejected("harness_driver_kind_outside_bound")
+        if not isinstance(self.context, HarnessAttemptContext):
+            raise BoundaryRejected("harness_attempt_context_missing")
+        if self.binding_event_id is not None and (
+            type(self.binding_event_id) is not int or self.binding_event_id < 1
+        ):
+            raise BoundaryRejected("harness_binding_event_id_outside_bound")
+
+
+@dataclass(frozen=True)
 class NativeResponseObservation:
     projection_id: str
     receipt_id: str
@@ -103,6 +151,7 @@ class NativeResponseObservation:
     response_digest: str
     evidence_digest: str
     observed_at: datetime
+    harness_proof: HarnessSessionProof | None = None
 
     def __post_init__(self) -> None:
         for name in ("projection_id", "receipt_id", "native_response_ref",
@@ -113,11 +162,38 @@ class NativeResponseObservation:
         _digest(self.response_digest, "response_digest")
         _digest(self.evidence_digest, "evidence_digest")
         _aware(self.observed_at, "observed_at")
+        if self.harness_proof is not None:
+            proof = self.harness_proof
+            if not isinstance(proof, HarnessSessionProof):
+                raise BoundaryRejected("harness_session_proof_invalid")
+            context = proof.context
+            identity = self.identity
+            if (context.attempt_id != identity.attempt_id
+                    or context.message_id != identity.message_id
+                    or context.machine_id != identity.machine_id
+                    or context.node_id != identity.node_id
+                    or context.node_boot_incarnation != identity.boot_incarnation
+                    or context.endpoint_id != identity.endpoint_id
+                    or context.endpoint_binding_revision != identity.binding_revision):
+                raise BoundaryRejected("harness_proof_differs_from_dispatch")
 
     def canonical(self) -> dict:
         value = asdict(self)
         value["observed_at"] = self.observed_at.astimezone(UTC).isoformat()
         return value
+
+
+def native_observation_from_dict(value: dict) -> NativeResponseObservation:
+    body = dict(value)
+    body["identity"] = DispatchIdentity(**body["identity"])
+    proof = body.get("harness_proof")
+    if proof is not None:
+        nested = dict(proof)
+        nested["context"] = HarnessAttemptContext(**nested["context"])
+        body["harness_proof"] = HarnessSessionProof(**nested)
+    if isinstance(body["observed_at"], str):
+        body["observed_at"] = datetime.fromisoformat(body["observed_at"])
+    return NativeResponseObservation(**body)
 
 
 @dataclass

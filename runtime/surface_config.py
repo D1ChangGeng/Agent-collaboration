@@ -10,10 +10,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from runtime.artifacts import LocalArtifactStore
 from runtime.auth import LocalCredentialAuthenticator
+from runtime.delivery_node import LocalNodeEndpoint
 from runtime.domain import DomainAuthority
 from runtime.effects import LocalFileEffectGateway
 from runtime.models import AuthenticatedContext, EffectReadback
 from runtime.operator_files import OperatorFileError, read_operator_file
+from runtime.recovery_models import BoundaryRejected
 from runtime.surfaces import SharedService
 
 
@@ -117,6 +119,25 @@ def load_settings(path):
         raise ConfigurationError("trusted configuration is unavailable or invalid") from None
 
 
+def trusted_local_node_response_reader(endpoints):
+    """Bind a projection readback to operator-supplied local Node endpoints."""
+    if not endpoints:
+        return None
+
+    def read(identity):
+        endpoint = endpoints.get(identity.endpoint_id)
+        if not isinstance(endpoint, LocalNodeEndpoint):
+            raise BoundaryRejected("trusted local Node endpoint is unavailable")
+        descriptor = endpoint.descriptor()
+        if (descriptor["machine_id"], descriptor["node_id"], descriptor["boot_incarnation"]) != (
+            identity.machine_id, identity.node_id, identity.boot_incarnation
+        ):
+            raise BoundaryRejected("trusted local Node identity changed")
+        return endpoint.journal.response_outbox().by_invocation(identity)
+
+    return read
+
+
 @contextmanager
 def configured_service(path, *, delivery_endpoints=None):
     settings = load_settings(path)
@@ -129,7 +150,8 @@ def configured_service(path, *, delivery_endpoints=None):
         context = AuthenticatedContext(**settings.context.model_dump())
         domain = DomainAuthority(settings.dsn_ref.resolve(), context=context, artifact_store=store,
                                  authority_binding=(context.authority_id, context.authority_incarnation),
-                                 delivery_endpoints=delivery_endpoints)
+                                 delivery_endpoints=delivery_endpoints,
+                                 node_response_reader=trusted_local_node_response_reader(delivery_endpoints))
         if settings.effects:
             config = settings.effects
             gateway = resources.enter_context(LocalFileEffectGateway(domain.leases, config.root,

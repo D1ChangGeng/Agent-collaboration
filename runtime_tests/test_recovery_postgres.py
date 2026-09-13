@@ -90,6 +90,11 @@ def postgres_dsn():
                 "('acs-p1-runtime','1.8',%s)", (RECEIVER_18_BYTES_SHA256,),
             )
             apply_candidate_schema(connection, standalone_fixture=True)
+            # The generic projector now preserves optional Harness provenance;
+            # this standalone 1.9 table fixture has no full Domain schema.
+            connection.execute(
+                "ALTER TABLE native_response_observations ADD COLUMN harness_proof JSONB"
+            )
         yield dsn
     finally:
         with psycopg.connect(base, autocommit=True) as connection:

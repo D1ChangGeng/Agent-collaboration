@@ -34,6 +34,7 @@ from runtime_tests.test_delivery import FixtureDriver
 
 BASE_18_SHA256 = "b8554614d9923ae43a653371c4445c33fdfe189c219b3376f29e23c476ee7614"
 BASE_19_SHA256 = "7eec78fd9d54b81d20724327e13f3a2237f95a9d5a2bc35f7799ebd3d30b5b9b"
+BASE_110_SHA256 = "3220ec5379b4effbbfe4fb293684881c0e14cd03d681fda8b98aacd6185c162d"
 PERMISSIONS = ("work_item.create", "harness_session.manage", "harness_session.read", "harness_session.result")
 
 
@@ -93,7 +94,12 @@ def test_binding_lifecycle_replay_scope_grant_and_late_result(isolated_dsn):
     assert sessions.change(first, first_request).duplicate
     with pytest.raises(IdempotencyConflict):
         sessions.change(first, binding("bind-other", "native-other"))
-    assert sessions.read(command(authority, "harness_session.read", 1))["active_binding_id"] == "bind-1"
+    first_readback = sessions.read(command(authority, "harness_session.read", 1))
+    assert first_readback["active_binding_id"] == "bind-1"
+    event_id = first_readback["bindings"][0]["attached_event_id"]
+    assert isinstance(event_id, int) and event_id > 0
+    assert query(authority, "SELECT command_id FROM domain_events WHERE event_id=%s",
+                 (event_id,)) == [(first.command_id,)]
 
     with pytest.raises(RevisionConflict):
         sessions.change(command(authority, "harness_session.replace", 0), binding("bind-2", "native-2"))
@@ -291,7 +297,7 @@ def test_attach_and_delivery_send_share_grant_then_work_lock_order(isolated_dsn,
                          "(SELECT count(*) FROM domain_events),(SELECT count(*) FROM outbox)") == before
 
 
-def test_exact_1_9_to_1_10_migration_preserves_rows(isolated_dsn):
+def test_exact_1_9_to_1_11_migration_preserves_rows(isolated_dsn):
     fixture = Path(__file__).with_name("fixtures") / "schema-1.8-a942.sql"
     assert hashlib.sha256(fixture.read_bytes()).hexdigest() == BASE_18_SHA256
     with psycopg.connect(isolated_dsn) as connection:
@@ -323,13 +329,48 @@ def test_exact_1_9_to_1_10_migration_preserves_rows(isolated_dsn):
     authority.initialize()
     schema_bytes = (Path(__file__).parents[1] / "runtime/schema.sql").read_text(encoding="utf-8").encode()
     assert query(authority, "SELECT schema_version,schema_checksum FROM runtime_schema_metadata") == [
-        ("1.10", hashlib.sha256(schema_bytes).hexdigest())]
+        ("1.11", hashlib.sha256(schema_bytes).hexdigest())]
     assert query(authority, "SELECT status FROM scopes WHERE scope_id='migration-sentinel'") == [("active",)]
     assert query(authority, "SELECT row_to_json(w)::text FROM work_items w WHERE work_item_id='migration-work'") == [
         (before,)]
     assert query(authority, "SELECT row_to_json(d)::text FROM command_dedup d "
                             "WHERE command_id='historical-command'") == [(journal_before,)]
     assert query(authority, "SELECT count(*) FROM harness_session_bindings") == [(0,)]
+
+
+def test_exact_1_10_to_1_11_migration_preserves_binding(isolated_dsn):
+    root = Path(__file__).parents[1]
+    fixture = Path(__file__).with_name("fixtures") / "schema-1.8-a942.sql"
+    with psycopg.connect(isolated_dsn) as connection:
+        connection.execute(fixture.read_bytes())
+        connection.execute((root / "runtime/schema_1_9.sql").read_bytes())
+        connection.execute((root / "runtime/schema_1_10.sql").read_bytes())
+        connection.execute(
+            "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
+            "VALUES ('acs-p1-runtime','1.10',%s)", (BASE_110_SHA256,),
+        )
+        connection.execute("INSERT INTO scopes(scope_id,tenant_id,policy,status) "
+                           "VALUES ('migration-scope','local-tenant','{}','active')")
+        connection.execute("INSERT INTO harness_session_heads(tenant_id,work_item_id,scope_id,"
+                           "agent_slot_id,revision,active_binding_id) VALUES "
+                           "('local-tenant','migration-work','migration-scope','migration-slot',1,'old-binding')")
+        connection.execute("INSERT INTO harness_session_bindings(tenant_id,binding_id,work_item_id,"
+                           "scope_id,agent_slot_id,revision,driver_kind,native_session_ref,installed_version,"
+                           "receipt_ref,status,attached_by,attached_command_id) VALUES "
+                           "('local-tenant','old-binding','migration-work','migration-scope',"
+                           "'migration-slot',1,'codex','native-old','0.153.2','receipt:old','active',"
+                           "'agent:old','command:old')")
+        before = connection.execute(
+            "SELECT row_to_json(h)::text FROM harness_session_bindings h WHERE binding_id='old-binding'"
+        ).fetchone()[0]
+    authority = DomainAuthority(isolated_dsn)
+    authority.initialize()
+    authority.initialize()
+    assert query(authority, "SELECT schema_version FROM runtime_schema_metadata") == [("1.11",)]
+    assert query(authority, "SELECT row_to_json(h)::text FROM harness_session_bindings h "
+                            "WHERE binding_id='old-binding'")[0][0].startswith(before[:-1])
+    assert query(authority, "SELECT attempt_context FROM harness_session_bindings "
+                            "WHERE binding_id='old-binding'") == [(None,)]
 
 
 def test_unknown_1_9_checksum_rejected_without_partial_schema(isolated_dsn):
@@ -347,6 +388,27 @@ def test_unknown_1_9_checksum_rejected_without_partial_schema(isolated_dsn):
     assert query(authority, "SELECT schema_version,schema_checksum FROM runtime_schema_metadata") == [
         ("1.9", "f" * 64)]
     assert query(authority, "SELECT to_regclass('harness_session_heads')") == [(None,)]
+
+
+def test_unknown_1_10_checksum_rejected_without_projection_columns(isolated_dsn):
+    root = Path(__file__).parents[1]
+    fixture = Path(__file__).with_name("fixtures") / "schema-1.8-a942.sql"
+    with psycopg.connect(isolated_dsn) as connection:
+        connection.execute(fixture.read_bytes())
+        connection.execute((root / "runtime/schema_1_9.sql").read_bytes())
+        connection.execute((root / "runtime/schema_1_10.sql").read_bytes())
+        connection.execute(
+            "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
+            "VALUES ('acs-p1-runtime','1.10',%s)", ("f" * 64,),
+        )
+    authority = DomainAuthority(isolated_dsn)
+    with pytest.raises(SchemaAdoptionError):
+        authority.initialize()
+    assert query(authority, "SELECT schema_version,schema_checksum FROM runtime_schema_metadata") == [
+        ("1.10", "f" * 64)]
+    assert query(authority, "SELECT count(*) FROM information_schema.columns "
+                            "WHERE table_schema=current_schema() AND table_name='harness_session_bindings' "
+                            "AND column_name='attempt_context'") == [(0,)]
 
 
 def test_surface_contract_is_explicit():
