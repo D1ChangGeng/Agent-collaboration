@@ -3092,6 +3092,24 @@ def run_scenario(
         finalize(run_dir, source_root, contract_path, allow_pass=False)
         raise EvidenceError(reason)
     scenario = state["scenarios"][scenario_id]
+    # A process interruption can occur after every command has been durably
+    # recorded but before the scenario status is committed.  Re-entering a
+    # native capacity here would risk a second model invocation.  Validate the
+    # stored outputs and finalize the scenario directly instead.
+    if all(
+        command["command_id"] in scenario.get("commands", {})
+        for command in commands
+    ):
+        for command in commands:
+            stored = scenario["commands"][command["command_id"]]
+            if stored.get("status") != "passed" or stored.get("kind") != command["kind"]:
+                raise RunnerError("stored scenario command is incomplete")
+            validate_ref(stored.get("output"), run_dir)
+        scenario["status"] = "passed"
+        scenario["reason"] = "complete direct evidence (recovered)"
+        state["updated_at"] = now_text()
+        write_state(run_dir, state)
+        return finalize(run_dir, source_root, contract_path)
     scenario["reason"] = "running"
     try:
         with _native_capacity_context(state, plan, run_dir, scenario_id):
