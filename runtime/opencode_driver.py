@@ -30,9 +30,9 @@ from runtime.codex_driver import (
 from runtime.receiver_paths import PathSecurityRejected, private_parent
 
 if __package__:
-    from .opencode_http import HttpFailure, LoopbackHttp, listener_owner_pids
+    from .opencode_http import HttpFailure, HttpRejected, LoopbackHttp, listener_owner_pids
 else:
-    from opencode_http import HttpFailure, LoopbackHttp, listener_owner_pids
+    from opencode_http import HttpFailure, HttpRejected, LoopbackHttp, listener_owner_pids
 
 SESSION_RULES = [
     {"permission": "*", "pattern": "*", "action": "deny"},
