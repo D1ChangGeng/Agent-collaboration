@@ -11,6 +11,7 @@ import zipfile
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -85,6 +86,41 @@ def test_installed_provisioner_forces_fresh_stage_without_source_pythonpath(tmp_
     assert repeated.returncode != 0
     assert hashlib.sha256((first / "receiver-install-manifest.json").read_bytes()).hexdigest() == before
     assert second.is_dir()
+
+
+def test_receiver_provision_accepts_one_debian_dist_packages_layout(tmp_path, monkeypatch):
+    if os.name != "posix":
+        pytest.skip("receiver provisioning is POSIX-only")
+    import runtime.receiver_provision as provisioner
+
+    parent = tmp_path / "private"
+    parent.mkdir(mode=0o700)
+    wheel = tmp_path / "fixture.whl"
+    wheel.write_bytes(b"fixture")
+    monkeypatch.setattr(provisioner, "verify_wheel_archive", lambda _path: {})
+
+    def fake_run(argv, **_kwargs):
+        stage = Path(argv[argv.index("--prefix") + 1])
+        report = Path(argv[argv.index("--report") + 1])
+        site = stage / "local/lib/python3.12/dist-packages"
+        info = site / "agent_collaboration_runtime-0.1.0.dist-info"
+        info.mkdir(parents=True)
+        (info / "RECORD").write_text(
+            "agent_collaboration_runtime-0.1.0.dist-info/RECORD,,\n", encoding="utf-8",
+        )
+        report.write_text(json.dumps({"install": [{"metadata": {
+            "name": "agent-collaboration-runtime",
+        }}]}), encoding="utf-8")
+        return SimpleNamespace(stdout="Successfully installed agent-collaboration-runtime-0.1.0")
+
+    monkeypatch.setattr(provisioner.subprocess, "run", fake_run)
+    monkeypatch.setattr(provisioner, "_harden_tree", lambda _path: None)
+    monkeypatch.setattr(provisioner, "_fsync", lambda _path: None)
+    with pytest.raises((ValueError, FileNotFoundError)) as error:
+        provisioner.provision(
+            wheel, parent / "install", python=sys.executable, pip_python=sys.executable,
+        )
+    assert "site-packages directory" not in str(error.value)
 
 
 def test_fresh_wheel_is_self_contained_and_installed_origin_is_enforced(tmp_path):
