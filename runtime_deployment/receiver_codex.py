@@ -128,7 +128,11 @@ class CodexReceiverCapacity:
             self.settings["codex_home"], self.settings["config_sha256"],
             self.settings["permission_profile"],
             {
-                "PATH": "/opt/acs/codex-sandbox/bin:/usr/bin:/bin",
+                # The reviewed Codex distribution may resolve its optional
+                # code-mode helper by name even when the packet exposes no
+                # tools.  Keep resolution inside the same digest-pinned,
+                # owner-controlled capacity as the executable.
+                "PATH": str(Path(self.settings["executable"]).parent) + ":/usr/bin:/bin",
                 "HOME": str(Path(self.settings["codex_home"]).parent / "home"),
                 "TMPDIR": str(Path(self.settings["codex_home"]).parent / "tmp"),
                 "LANG": "C.UTF-8",
