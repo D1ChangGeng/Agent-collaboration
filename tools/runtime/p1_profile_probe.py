@@ -67,6 +67,7 @@ from runtime.models import (
 from runtime.node import NodeJournal
 from runtime.temporal import TemporalAdapter
 from runtime_tests.test_delivery import FixtureDriver
+from tools.runtime import p1_partial_artifact
 
 SCHEMA = "acs-p1-loopback-probe-profile/1"
 RESULT_SCHEMA = "acs-p1-gate-probe-result/1"
@@ -97,7 +98,7 @@ class ScenarioCatalog:
         "P1-DOMAIN-TRANSACTION", "P1-COMMAND-DEDUP", "P1-INBOX-ACK-LOSS",
         "P1-AUTH-REVOCATION", "P1-CORE-RESTART", "P1-NODE-RESTART",
         "P1-PROVIDER-RESTART", "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT",
-        "P1-STALE-BASELINE",
+        "P1-STALE-BASELINE", "P1-PARTIAL-ARTIFACT",
     })
     TESTS: ClassVar[dict[str, tuple[str, ...]]] = {
         "P1-DOMAIN-TRANSACTION": (
@@ -2441,6 +2442,7 @@ def _run_domain_transaction(
     lease_proof = None
     uncertain_effect_proof = None
     stale_baseline_proof = None
+    partial_artifact_proof = None
     if scenario == "P1-AUTH-REVOCATION":
         with authority._connect() as connection:
             connection.execute(
@@ -2521,6 +2523,16 @@ def _run_domain_transaction(
             commit, tree, suffix, issued_at,
             source_root=Path(profile["source_root"]),
         )
+    if scenario == "P1-PARTIAL-ARTIFACT":
+        try:
+            partial_artifact_proof = p1_partial_artifact.run(
+                authority, node, ledger, work_id, message_id, sent.operation_id,
+                commit, tree, suffix, issued_at,
+                register_execution=_register_lease_execution,
+                domain_command=_domain_command, private_json=_private_json,
+            )
+        except p1_partial_artifact.PartialArtifactProbeError as exc:
+            raise ProbeRejected(str(exc)) from exc
     with node._transaction() as connection:
         connection.execute(
             "CREATE TABLE IF NOT EXISTS p1_driver_calls(operation_id TEXT PRIMARY KEY)"
@@ -2663,6 +2675,7 @@ def _run_domain_transaction(
         "lease_proof": lease_proof,
         "uncertain_effect_proof": uncertain_effect_proof,
         "stale_baseline_proof": stale_baseline_proof,
+        "partial_artifact_proof": partial_artifact_proof,
         "dedup_details": list(dedup_details),
         "operation_details": list(operation_details),
         "provider_refs": list(provider_refs),
@@ -3282,6 +3295,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         "ack_loss_observed", "exact_replay", "conflict_rejected",
         "core_crash_proof", "node_restart_proof", "provider_restart_proof",
         "lease_proof", "uncertain_effect_proof", "stale_baseline_proof",
+        "partial_artifact_proof",
         "dedup_details", "operation_details", "outbox_details", "message_hashes",
         "event_hashes", "provider_refs",
     }
@@ -3316,6 +3330,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         != (scenario == "P1-UNCERTAIN-EFFECT")
         or (lineage["stale_baseline_proof"] is not None)
         != (scenario == "P1-STALE-BASELINE")
+        or (lineage["partial_artifact_proof"] is not None)
+        != (scenario == "P1-PARTIAL-ARTIFACT")
     ):
         raise ProbeRejected("scenario lineage does not prove its required fault")
     if scenario == "P1-CORE-RESTART":
@@ -3434,6 +3450,14 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             or not proof.get("rejection_reason")
         ):
             raise ProbeRejected("stale source acceptance denial proof is incomplete")
+    partial_extra = {}
+    if scenario == "P1-PARTIAL-ARTIFACT":
+        try:
+            partial_extra = p1_partial_artifact.read_layer(
+                profile, kind, ledger, row, lineage,
+            )
+        except p1_partial_artifact.PartialArtifactProbeError as exc:
+            raise ProbeRejected(str(exc)) from exc
     if kind == "postgresql":
         scoped = make_conninfo(
             profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
@@ -3533,7 +3557,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             if scenario == "P1-STALE-BASELINE" else {}
         )
         return {"postgresql_readback": True, "lineage_digest": _sha(_canonical(lineage)),
-                **extra}
+                **extra, **partial_extra}
     if kind == "sqlite":
         replay = ledger.get(scenario)
         if replay != row:
@@ -3595,7 +3619,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         ):
             raise ProbeRejected("SQLite Node differs from signed Lease execution owner")
         return {"sqlite_readback": True, "journal_sha256": _sha(node_path.read_bytes()),
-                "node_receipt_ids": [item[0] for item in node_receipts]}
+                "node_receipt_ids": [item[0] for item in node_receipts], **partial_extra}
     if kind == "temporal":
         async def read():
             adapter = TemporalAdapter(
@@ -3634,7 +3658,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         ):
             raise ProbeRejected("Temporal scenario marker changed")
         return {"temporal_readback": True, "workflow_id": row["temporal_workflow_id"],
-                "run_id": row["temporal_run_id"]}
+                "run_id": row["temporal_run_id"], **partial_extra}
     if kind == "driver":
         raw = ledger.root / row["raw_path"]
         value = json.loads(raw.read_text())
@@ -3652,7 +3676,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             ) if scenario == "P1-STALE-BASELINE" else {}
         )
         return {"driver_readback": True, "driver_calls": lineage["driver_calls"],
-                "raw_sha256": _sha(raw.read_bytes()), **extra}
+                "raw_sha256": _sha(raw.read_bytes()), **extra, **partial_extra}
     if kind == "os":
         if scenario == "P1-CORE-RESTART":
             proof = lineage["core_crash_proof"]
@@ -3752,7 +3776,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             ) if scenario == "P1-STALE-BASELINE" else {}
         )
         return {"os_readback": True, "platform": platform.platform(),
-                "systemd_user_exit": systemd_exit, **extra}
+                "systemd_user_exit": systemd_exit, **extra, **partial_extra}
     raw = ledger.root / row["raw_path"]
     if (_sha(raw.read_bytes()) != row["test_digest"] or not lineage["conflict_rejected"]
             or (scenario == "P1-LEASE-FENCING" and (
@@ -3769,7 +3793,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             ))):
         raise ProbeRejected("command output does not bind the Runtime transaction")
     return {"command_output": True, "test_digest": row["test_digest"],
-            "lineage_digest": _sha(_canonical(lineage))}
+            "lineage_digest": _sha(_canonical(lineage)), **partial_extra}
 
 
 def _runner_result(profile: dict[str, Any], scenario: str, kind: str,
