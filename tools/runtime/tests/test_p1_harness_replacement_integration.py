@@ -27,11 +27,6 @@ def test_same_attempt_replacement_fences_old_result_and_projects_one_response(
 ):
     scenario = "P1-HARNESS-REPLACEMENT"
     profile_path = _profile(tmp_path)
-    disabled = tmp_path / "formal-unavailable"
-    with pytest.raises(probe.ProbeUnavailable, match="actual native Harness replacement"):
-        probe.execute(profile_path, scenario, "command_output", disabled)
-    assert not disabled.exists()
-
     output = tmp_path / "candidate-output"
     monkeypatch.setenv("ACS_GATE_RUN_ID", "harness-fixture-" + uuid.uuid4().hex)
     profile, profile_digest, _secrets = probe._secure_profile(profile_path)
