@@ -117,6 +117,7 @@ def project_original_opencode_terminal(
         collector = NativeResponseCollector(
             adapter, outbox, artifact_response_store(store), projector.project,
         )
+        started = time.monotonic()
         for index in range(max_collect_reads):
             try:
                 disposition = collector.collect_and_project(invocation)
@@ -124,7 +125,11 @@ def project_original_opencode_terminal(
             except OutcomeUncertain:
                 if index + 1 == max_collect_reads:
                     raise
-                time.sleep(0.05)
+                remaining = 120.0 - (time.monotonic() - started)
+                reads_left = max_collect_reads - index - 1
+                if remaining <= 0:
+                    raise OutcomeUncertain("OpenCode terminal readback exceeded the scene deadline")
+                time.sleep(min(remaining / reads_left, remaining))
         observed = outbox.by_invocation(NativeResponseCollector.dispatch_identity(invocation))
         if observed is None or observed.projection_id != disposition.projection_id:
             raise BoundaryRejected("OpenCode Node Outbox differs from PG projection")
