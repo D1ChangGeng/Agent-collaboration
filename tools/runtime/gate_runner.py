@@ -3375,6 +3375,75 @@ def audit_run(run_dir: Path, source_root: Path, contract_path: Path) -> dict[str
     return finalize(run_dir, source_root, contract_path)
 
 
+def attach_review(
+    run_dir: Path, source_root: Path, contract_path: Path, review_dir: Path
+) -> dict[str, Any]:
+    """Attach one independent exact-baseline review after every P1 scenario passes."""
+    state, plan, contract = load_run(run_dir, source_root, contract_path)
+    if any(item.get("status") != "passed" for item in state["scenarios"].values()):
+        raise EvidenceError("independent review requires all P1 scenarios passed")
+    if not review_dir.is_absolute() or review_dir.is_symlink() or not review_dir.is_dir():
+        raise EvidenceError("review bundle must be an absolute regular directory")
+    files = sorted(path for path in review_dir.iterdir() if path.is_file())
+    report_source = review_dir / "report.json"
+    if (
+        report_source not in files or any(path.is_symlink() for path in files)
+        or len(files) > 32 or sum(path.stat().st_size for path in files) > 32 * 1024 * 1024
+    ):
+        raise EvidenceError("review bundle is missing or outside bounds")
+    report = strict_json(report_source.read_bytes())
+    expected = {
+        "schema_version": "acs-gate-review/1", "gate": "P1",
+        "engineer": plan["engineer"], "source_baseline": state["source_commit"],
+        "decision": "pass", "profile": state["binding"]["profile"],
+        "contract_revision": contract["contract_revision"],
+        "binding_sha256": state["binding_sha256"], "unresolved_items": [],
+    }
+    reviewer = report.get("reviewer") if isinstance(report, dict) else None
+    evidence_name = report.get("evidence", {}).get("path") if isinstance(report, dict) else None
+    reviewed = stamp(report.get("observed_at")) if isinstance(report, dict) else None
+    expiry = stamp(report.get("expires_at")) if isinstance(report, dict) else None
+    scenario_times = [
+        stamp(command["observed_at"])
+        for scenario in state["scenarios"].values()
+        for command in scenario["commands"].values()
+    ]
+    if (
+        any(report.get(key) != value for key, value in expected.items())
+        or not known_text(reviewer) or reviewer == plan["engineer"]
+        or not isinstance(evidence_name, str) or Path(evidence_name).name != evidence_name
+        or review_dir / evidence_name not in files
+        or reviewed is None or reviewed < max(scenario_times)
+        or expiry is None or expiry <= datetime.now(UTC)
+        or expiry > stamp(state["binding"]["expires_at"])
+    ):
+        raise EvidenceError("independent review identity, time or exact baseline differs")
+    destination = run_dir / "review"
+    if destination.exists():
+        raise EvidenceError("independent review is already attached")
+    destination.mkdir(mode=0o700)
+    for path in files:
+        data = path.read_bytes()
+        if secret_findings(data):
+            raise EvidenceError("secret-like material is forbidden in review evidence")
+        target = destination / path.name
+        write_atomic(target, data); target.chmod(0o600)
+    copied_report = strict_json((destination / "report.json").read_bytes())
+    raw_path = destination / evidence_name
+    copied_report["evidence"] = file_ref(raw_path, run_dir)
+    write_json(destination / "report.json", copied_report)
+    plan["review"] = {
+        "reviewer": reviewer, "source_baseline": state["source_commit"],
+        "decision": "pass", "evidence": file_ref(destination / "report.json", run_dir),
+    }
+    plan_bytes = json.dumps(plan, indent=2, ensure_ascii=False).encode() + b"\n"
+    write_atomic(run_dir / "plan.json", plan_bytes)
+    state["plan_sha256"] = digest_bytes(plan_bytes)
+    state["updated_at"] = now_text()
+    write_state(run_dir, state)
+    return finalize(run_dir, source_root, contract_path)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-root", type=Path, required=True)
@@ -3389,6 +3458,9 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--scenario", required=True)
     audit = sub.add_parser("audit")
     audit.add_argument("--run-dir", type=Path, required=True)
+    review = sub.add_parser("review")
+    review.add_argument("--run-dir", type=Path, required=True)
+    review.add_argument("--review-dir", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         source_root = args.source_root.resolve(strict=True)
@@ -3411,9 +3483,15 @@ def main(argv: list[str] | None = None) -> int:
                 args.run_dir.resolve(strict=True), source_root, contract_path, args.scenario
             )
             output = {"status": record["status"], "scenario": args.scenario}
-        else:
+        elif args.action == "audit":
             record = audit_run(args.run_dir.resolve(strict=True), source_root, contract_path)
             output = {"status": record["status"], "audit": "passed"}
+        else:
+            record = attach_review(
+                args.run_dir.resolve(strict=True), source_root, contract_path,
+                args.review_dir.resolve(strict=True),
+            )
+            output = {"status": record["status"], "review": "attached"}
         print(json.dumps(output, sort_keys=True))
         return 0
     except (OSError, RunnerError, ValueError, KeyError, subprocess.SubprocessError) as error:
