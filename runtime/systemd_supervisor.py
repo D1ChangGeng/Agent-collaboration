@@ -168,13 +168,17 @@ class SystemdUserSupervisor(_Ownership):
             raise ContainmentUnavailable("XDG runtime directory ownership or mode is unsafe")
         if self._environment_directory_override is not None:
             directory = self._environment_directory_override
-            prefixes = {
-                runtime / "acs-p1-codex",
-                runtime / "acs-p1-opencode",
-            }
+            admitted = (
+                (runtime / "acs-p1-codex", r"p1-run-[a-f0-9]{32}"),
+                (runtime / "acs-p1-opencode", r"p1-run-[a-f0-9]{32}"),
+                (runtime / "acs-receiver-codex", r"receiver-run-[a-f0-9]{32}"),
+            )
             if (
-                directory.parent.parent not in prefixes
-                or re.fullmatch(r"p1-run-[a-f0-9]{32}", directory.parent.name) is None
+                not any(
+                    directory.parent.parent == prefix
+                    and re.fullmatch(pattern, directory.parent.name) is not None
+                    for prefix, pattern in admitted
+                )
                 or directory.name != "systemd-env"
             ):
                 raise ContainmentUnavailable(
