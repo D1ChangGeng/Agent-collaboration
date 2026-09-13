@@ -121,10 +121,12 @@ Attempt, Node Machine, PostgreSQL state and auxiliary Temporal identity are
 read back across six Gate layers. The fault hook is confined to the probe
 process; no native model-produced artifact is claimed.
 
-`P1-HARNESS-REPLACEMENT` remains `NOT_RUN`. Runtime has a versioned
-HarnessSessionBinding and native response proof consumer, but the actual
-replacement lifecycle has no Gate adapter or verified native run on this
-baseline.
+`P1-HARNESS-REPLACEMENT` uses one committed Delivery Attempt and a versioned
+HarnessSessionBinding. The old Session result is retained as `fenced_late`;
+the replacement Session's structured terminal result is written to CAS,
+recorded by the Node response Outbox, projected to PostgreSQL exactly once and
+read back through all six Gate layers. This no-model scenario verifies identity
+and recovery semantics without claiming a native model lifecycle.
 
 `P1-NATIVE-MULTIAGENT-OFF` remains `NOT_RUN`. Its isolated component adapter
 starts pinned Codex 0.153.2 and OpenCode 1.18.30 under private Systemd user
