@@ -181,7 +181,7 @@ def service(env, authorize_current=fixture_authority_current):
 
 def test_runtime_fails_closed_without_posix_paths(env, monkeypatch):
     monkeypatch.setattr(receiver_paths, "PLATFORM", "nt")
-    with pytest.raises(BootstrapRejected, match="POSIX-only"):
+    with pytest.raises(BootstrapRejected, match="backend differs"):
         env.config.validate()
     with pytest.raises(BootstrapRejected, match="POSIX-only"):
         ReceiverService(env.config, env.node_key, authorize_current=fixture_authority_current)

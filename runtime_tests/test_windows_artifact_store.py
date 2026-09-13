@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from runtime.artifacts import ArtifactError, WindowsArtifactStore
+from runtime.receiver_paths import PathSecurityRejected, private_parent
 
 
 def _private(path: Path) -> None:
@@ -32,3 +33,15 @@ def test_windows_artifact_roundtrip_and_corruption_detection(tmp_path):
         (root / ref.path).write_bytes(b"changed!")
         with pytest.raises(ArtifactError):
             store.read(ref)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows ACL backend")
+def test_windows_inherited_broad_acl_is_rejected(tmp_path):
+    inherited = tmp_path / "inherited"
+    inherited.mkdir()
+    subprocess.run(
+        ["icacls.exe", str(inherited), "/grant", "*S-1-5-32-545:(OI)(CI)R"],
+        check=True, capture_output=True,
+    )
+    with pytest.raises(PathSecurityRejected):
+        private_parent(inherited)

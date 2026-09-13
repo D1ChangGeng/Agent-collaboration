@@ -14,6 +14,7 @@ from runtime.receiver_paths import (
     require_posix,
     validated_file_identity,
 )
+from runtime import receiver_paths
 
 
 class BootstrapRejected(ValueError):
@@ -128,6 +129,8 @@ class ReceiverRuntimeConfig(ReceiverClientConfig):
         ReceiverClientConfig.validate(self)
         if os.name not in {"posix", "nt"}:
             raise BootstrapRejected("receiver runtime path backend is unavailable")
+        if receiver_paths.PLATFORM != os.name:
+            raise BootstrapRejected("receiver runtime path backend differs from the running OS")
         for path in (self.tls_cert_path, self.tls_key_path, self.node_signing_key_path,
                      self.ledger_path):
             if not Path(path).is_absolute():

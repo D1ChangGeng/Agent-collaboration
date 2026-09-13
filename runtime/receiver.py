@@ -161,7 +161,9 @@ class ReceiverLedger:
         except PathSecurityRejected:
             if connection is not None:
                 connection.close()
-            raise ReceiverRejected("receiver journal path admission rejected") from None
+            raise ReceiverRejected(
+                "receiver journal identity changed or path admission rejected"
+            ) from None
         except BaseException:
             if connection is not None:
                 connection.close()
