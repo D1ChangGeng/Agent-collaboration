@@ -500,6 +500,24 @@ class GateRunnerTests(unittest.TestCase):
                 self.run_dir, self.source,
             )
 
+    def test_scenario_output_directories_are_owner_private(self):
+        state = self.initialize()
+        if not state["sandbox"]["available"]:
+            return
+        scenario = next(iter(self.plan["scenarios"]))
+        command = {
+            "command_id": "owner-private-output", "kind": "command_output",
+            "argv": ["/usr/bin/true"], "evidence_fields": ["raw_outputs"],
+        }
+        with self.assertRaises(runner.EvidenceError):
+            runner.execute_command(
+                state, self.plan, scenario, command, self.run_dir, self.source,
+            )
+        self.assertEqual((self.run_dir / "scenario-output").stat().st_mode & 0o777, 0o700)
+        self.assertEqual(
+            (self.run_dir / "scenario-output" / scenario).stat().st_mode & 0o777, 0o700,
+        )
+
     def test_new_clean_commit_cannot_resume_or_be_synced_by_state_edit(self):
         self.initialize()
         (self.source / "tracked.txt").write_text("new commit\n", encoding="utf-8")
