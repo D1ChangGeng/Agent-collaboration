@@ -2953,6 +2953,41 @@ def _opencode_capacity_context(
             expected_root = Path(f"/run/user/{os.geteuid()}/acs-p1-opencode") / state["run_id"]
             if root != expected_root:
                 raise EvidenceError("OpenCode host root left current run")
+            if failed:
+                diagnostic_root = _private_evidence_directory(
+                    run_dir, scenario_id, "opencode-host-failure-diagnostics",
+                )
+                copied = {}
+                candidates = (
+                    root / "ledger" / "driver.sqlite",
+                    root / "ledger" / "node.sqlite",
+                    root / "ledger" / "host.sqlite",
+                    root / "data" / "opencode" / "log" / "opencode.log",
+                )
+                for source in candidates:
+                    if not source.is_file() or source.is_symlink():
+                        continue
+                    data = source.read_bytes()
+                    if len(data) > 32 * 1024 * 1024:
+                        raise EvidenceError("OpenCode failure diagnostic exceeds bound")
+                    relative = source.relative_to(root).as_posix().replace("/", "-")
+                    target = diagnostic_root / relative
+                    if secret_findings(data):
+                        if source.suffix != ".log":
+                            raise EvidenceError("secret-like OpenCode binary diagnostic rejected")
+                        data = redacted(data)
+                    write_atomic(target, data)
+                    copied[relative] = file_ref(target, run_dir)
+                write_json(
+                    diagnostic_root / "manifest.json",
+                    {
+                        "schema_version": "acs-p1-opencode-failure-diagnostics/1",
+                        "run_id": state["run_id"],
+                        "source_commit": state["source_commit"],
+                        "source_tree": state["source_tree"],
+                        "files": copied,
+                    },
+                )
             remove_private_stage(root)
 
 
