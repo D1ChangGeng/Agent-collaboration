@@ -117,6 +117,7 @@ def provision(args):
         admin.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(args.schema_name)))
     dsn = make_conninfo(base, options=f"-c search_path={args.schema_name} -c lock_timeout=5000")
     authority = DomainAuthority(dsn)
+    authority.initialize()
     authority.bootstrap_local_grant((
         "work_item.create", "work_item.read", "enrollment.manage", "receiver.manage",
         "delivery.manage", "message.send", "message.read", "runtime.invoke",
