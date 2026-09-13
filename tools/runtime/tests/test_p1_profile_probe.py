@@ -144,8 +144,9 @@ def test_plan_omits_model_gaps_and_contains_no_profile_secret(profile_file):
         "P1-PROVIDER-RESTART", "P1-HARNESS-REPLACEMENT",
         "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT", "P1-STALE-BASELINE",
         "P1-PARTIAL-ARTIFACT", "P1-SURFACE-PARITY",
+        "P1-IDENTITY-CONTINUITY",
     ]
-    assert len(status["not_run"]) == 5
+    assert len(status["not_run"]) == 4
     assert {
         "P1-CODEX-LIFECYCLE", "P1-OPENCODE-LIFECYCLE", "P1-INTEGRATED-ACCEPTANCE",
     } < set(status["not_run"])

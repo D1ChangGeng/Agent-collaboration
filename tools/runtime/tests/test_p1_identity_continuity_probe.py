@@ -76,9 +76,9 @@ def logical_attempt(env):
     return logical, attempt
 
 
-def test_catalog_keeps_identity_gate_not_run():
+def test_catalog_binds_identity_gate_to_formal_lineage():
     assert "P1-IDENTITY-CONTINUITY" in ScenarioCatalog.TESTS
-    assert "P1-IDENTITY-CONTINUITY" not in ScenarioCatalog.LINEAGE_BOUND
+    assert "P1-IDENTITY-CONTINUITY" in ScenarioCatalog.LINEAGE_BOUND
 
 
 def observed_fixture(tmp_path):
