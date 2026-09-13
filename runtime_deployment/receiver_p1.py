@@ -7,7 +7,9 @@ from runtime.domain import DomainAuthority
 from runtime.receiver_entry import DeploymentCallbacks
 
 
-def callbacks(config, deployment_policy_sha256):
+def callbacks(config, deployment_policy_sha256, settings):
+    if settings != {}:
+        raise RuntimeError("P1 no-model receiver does not accept factory settings")
     if os.environ.get("ACS_RECEIVER_P1_MODE") != "no-model-validation":
         raise RuntimeError("P1 receiver requires an explicitly configured native mode")
     dsn = os.environ.get("ACS_RECEIVER_DSN")
