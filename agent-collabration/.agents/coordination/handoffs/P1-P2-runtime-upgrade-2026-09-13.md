@@ -7,7 +7,7 @@ Continue the uploaded Agent Collaboration System upgrade through P1 acceptance, 
 
 - Formal source repository: `D:\\Chatgpt\\Agent-collaboration`
 - Formal branch: `codex/runtime-p1-hardening-review`
-- Formal HEAD/tree: `2b2c1c0ac307e4fd82780d2211c2fe5b24f6f6a3` / `39405706e0176755731ea5ec7ddc6cef72c829b8`
+- Formal HEAD/tree: `876d92c25c0a873eef9712a6df9559160bd9db44` / `f3a0911a7e37c5148aa003d3c463aa292e2c4eb7`
 - Formal tracked worktree: clean; ignored/untracked isolation material preserved.
 - Remote engineering checkout: `/home/changgeng/Agent-collaboration`, branch `codex/runtime-p1-hardening`, synced to the same HEAD/tree; existing untracked findings/progress/task_plan preserved.
 - Identity Continuity recovery fix: receiver recovery matcher conditionally enforces old/new Runtime ID transition and advances the transition field when IDs are present; legacy component fixtures without Runtime IDs remain valid.
@@ -32,6 +32,13 @@ Continue the uploaded Agent Collaboration System upgrade through P1 acceptance, 
 - Native multiagent actual request-level behavior remains `not_run` despite no-model configuration inventory.
 - Independent Gate Review is not complete; prior automated reviewer action was rejected for network-security risk.
 - P2 must not start before full P1 18/18, independent review, and owner decision.
+
+## Continuation update — 2026-09-13
+
+- Codex restricted lifecycle hardening is now committed through `b9e8088`, `6acd653`, and `876d92c`. The generated config explicitly enables the installed `codex-code-mode-host` helper while keeping shell, apps, plugins, and native multi-agent disabled; the helper is copied into the owner-private run bin and isolated PATH.
+- Linux focused Codex tests pass at `876d92c`: `31 passed, 1 skipped`.
+- One fresh run at `b9e8088` proved the previous `code_mode_host=false` hypothesis wrong: the native warning was `code-mode host is disabled`, the turn remained `inProgress`, and the runner recorded `P1-CODEX-LIFECYCLE=blocked` with clean postflight and no response. No second model call was made.
+- A new run must be created after `876d92c` because source identity changed; the prior run cannot be promoted or reused.
 
 ## Required next action
 
