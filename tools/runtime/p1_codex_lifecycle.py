@@ -243,7 +243,6 @@ def validate_scene_profile(value: object) -> dict[str, Any]:
         or value["reasoning_effort"] != "low"
     ):
         raise CodexSceneRejected("Codex provider or strict model profile differs")
-    for field in (
     for field in ("native_executable_path", "model_catalog_path", "auth_key_ref_path"):
         path = value[field]
         if (
