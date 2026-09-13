@@ -7,7 +7,7 @@ Continue the uploaded Agent Collaboration System upgrade through P1 acceptance, 
 
 - Formal source repository: `D:\\Chatgpt\\Agent-collaboration`
 - Formal branch: `codex/runtime-p1-hardening-review`
-- Formal HEAD/tree: `876d92c25c0a873eef9712a6df9559160bd9db44` / `f3a0911a7e37c5148aa003d3c463aa292e2c4eb7`
+- Codex helper implementation baseline before this handoff update: `876d92c25c0a873eef9712a6df9559160bd9db44` / `f3a0911a7e37c5148aa003d3c463aa292e2c4eb7`; read the repository directly for the containing handoff commit.
 - Formal tracked worktree: clean; ignored/untracked isolation material preserved.
 - Remote engineering checkout: `/home/changgeng/Agent-collaboration`, branch `codex/runtime-p1-hardening`, synced to the same HEAD/tree; existing untracked findings/progress/task_plan preserved.
 - Identity Continuity recovery fix: receiver recovery matcher conditionally enforces old/new Runtime ID transition and advances the transition field when IDs are present; legacy component fixtures without Runtime IDs remain valid.
