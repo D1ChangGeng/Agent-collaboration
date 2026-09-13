@@ -59,6 +59,10 @@ def test_one_http_prompt_has_original_terminal_and_empty_cgroup():
         }), encoding="utf-8")
         config.chmod(0o600)
         schema = Path(__file__).parents[3] / "runtime_tests/schema-1.18.30/opencode-openapi.json"
+        inherited = os.environ.get("PYTHONPATH")
+        pythonpath = str(Path(__file__).parents[3])
+        if inherited:
+            pythonpath += os.pathsep + inherited
         identity = BindingIdentity(
             "fixture-node", "fixture-boot", "fixture-runtime", "fixture-execution", "local-slot", 1
         )
@@ -69,7 +73,7 @@ def test_one_http_prompt_has_original_terminal_and_empty_cgroup():
             str(roots["tmp"]), _sha(config), "engineer", "fixture-provider",
             "fixture-model", {
                 "PATH": "/usr/bin:/bin", "LANG": "C.UTF-8",
-                "PYTHONPATH": str(Path(__file__).parents[3]),
+                "PYTHONPATH": pythonpath,
                 "ACS_P1_FIXTURE_SCHEMA": str(schema),
             },
         )
