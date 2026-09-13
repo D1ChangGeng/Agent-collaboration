@@ -144,7 +144,7 @@ def test_owner_budget_binds_source_scene_run_machine_and_one_prompt(tmp_path: Pa
         "storage": "xdg-data-auth-json", "provider_id": "fixture-provider",
         "owner_mode": "0600", "same_reference": True,
         "provider_connected": True, "native_route_equal": True,
-        "native_source": "api",
+        "native_source": "config",
     }
     assert admission.assert_final_lineage(lineage)["run_id"] == RUN_ID
     for changed in (

@@ -351,13 +351,14 @@ class OpenCodeNativeDriver:
                 not isinstance(connected, list)
                 or connected.count(self.profile.provider_id) != 1
                 or len(selected_providers) != 1
-                or selected_providers[0].get("source") != "api"
+                or selected_providers[0].get("source") not in {"api", "config"}
             ):
                 raise DriverRejected("native provider did not consume the owner auth file")
             stage = self.auth_stager.assert_current(self.profile)
             self.auth_observation = {
                 **stage, "provider_connected": True,
-                "native_route_equal": True, "native_source": "api",
+                "native_route_equal": True,
+                "native_source": selected_providers[0].get("source"),
             }
             self.journal.event(
                 operation.operation_id, "provider_auth_readback", self.auth_observation,
