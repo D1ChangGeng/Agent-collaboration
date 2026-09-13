@@ -811,8 +811,8 @@ def run(
             or codex.get("driver", {}).get("server_request_count") != 0
             or codex.get("driver", {}).get("turn_start_dispatch_count") != 1
             or opencode.get("driver", {}).get("delegation_attempt_requested") is not True
-            or opencode.get("driver", {}).get("non_text_part_count") != 0
-            or opencode.get("driver", {}).get("assistant_part_types") != ["text"]
+            or opencode.get("driver", {}).get("delegation_part_count") != 0
+            or opencode.get("driver", {}).get("assistant_part_types", []).count("text") != 1
             or opencode.get("driver", {}).get("prompt_async_count") != 1
             or any(value.get("os", {}).get("remaining_pids") != [] for value in lifecycle.values())
         ):
@@ -821,7 +821,7 @@ def run(
             "codex": {"operation_id": codex["operation_id"], "message_id": codex["message_id"],
                       "native_request_count": 1, "delegation_request_count": 0},
             "opencode": {"operation_id": opencode["operation_id"], "message_id": opencode["message_id"],
-                         "native_request_count": 1, "non_text_part_count": 0},
+                         "native_request_count": 1, "delegation_part_count": 0},
         }
         with node._transaction() as connection:
             connection.execute(
