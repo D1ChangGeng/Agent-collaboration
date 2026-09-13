@@ -49,6 +49,7 @@ EVIDENCE_FIELDS = (
     "recovery_trace",
 )
 _ACTIVE_CODEX_RUNS: set[str] = set()
+_ACTIVE_OPENCODE_RUNS: set[str] = set()
 READBACK_FLAGS = {
     "source_readback": "source_readback_verified",
     "artifact_readback": "artifact_readback_verified",
@@ -645,6 +646,101 @@ def pinned_runtime_mounts(
                     ),
                 }
             )
+        if scenario_id == "P1-OPENCODE-LIFECYCLE" and "opencode_scene_profile" in configured:
+            pinned = []
+            for name in ("opencode_scene_profile", "opencode_budget_decision"):
+                reference = configured[name]
+                path = Path(reference["path"])
+                parent_fd = _owner_directory(path.parent)
+                descriptors.append(parent_fd)
+                file_fd = os.open(
+                    path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                    dir_fd=parent_fd,
+                )
+                descriptors.append(file_fd)
+                info = os.fstat(file_fd)
+                data = b""
+                while block := os.read(file_fd, 65536):
+                    data += block
+                    if len(data) > MAX_OUTPUT_BYTES:
+                        raise SandboxUnavailable("OpenCode owner file exceeds mount bound")
+                if (
+                    not stat.S_ISREG(info.st_mode)
+                    or info.st_uid != os.geteuid()
+                    or stat.S_IMODE(info.st_mode) != 0o600
+                    or info.st_nlink != 1
+                    or digest_bytes(data) != reference["sha256"]
+                ):
+                    raise SandboxUnavailable("OpenCode owner file changed before mount")
+                pinned.append((path, parent_fd, file_fd, reference["sha256"]))
+                sources[name] = f"/proc/self/fd/{file_fd}"
+            sources["opencode_pins"] = pinned
+            if state is None:
+                raise SandboxUnavailable("OpenCode host socket requires the current run")
+            observer = (
+                Path(f"/run/user/{os.geteuid()}/acs-p1-opencode")
+                / state["run_id"] / "observer"
+            )
+            observer_fd = _owner_directory(observer)
+            descriptors.append(observer_fd)
+            ready_fd = os.open(
+                "ready.json", os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                dir_fd=observer_fd,
+            )
+            descriptors.append(ready_fd)
+            ready_data = b""
+            while block := os.read(ready_fd, 65536):
+                ready_data += block
+                if len(ready_data) > 65536:
+                    raise SandboxUnavailable("OpenCode host ready record exceeds bound")
+            ready = strict_json(ready_data)
+            ready_sha = digest_bytes(ready_data)
+            info = os.fstat(ready_fd)
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_uid != os.geteuid()
+                or stat.S_IMODE(info.st_mode) != 0o600
+                or info.st_nlink != 1
+                or not isinstance(ready, dict)
+                or ready.get("schema_version") != "acs-p1-opencode-host-ready/1"
+                or ready.get("run_id") != state["run_id"]
+                or ready.get("source_commit") != state["source_commit"]
+                or ready.get("source_tree") != state["source_tree"]
+                or ready.get("machine_id") != state["machine_id"]
+                or ready.get("node_id") != state["node_id"]
+                or ready.get("scene_sha256") != configured["opencode_scene_profile"]["sha256"]
+                or ready.get("budget_sha256") != configured["opencode_budget_decision"]["sha256"]
+            ):
+                raise SandboxUnavailable("OpenCode host ready identity changed")
+            socket_info = os.stat("host.sock", dir_fd=observer_fd, follow_symlinks=False)
+            if (
+                not stat.S_ISSOCK(socket_info.st_mode)
+                or socket_info.st_uid != os.geteuid()
+                or stat.S_IMODE(socket_info.st_mode) != 0o600
+            ):
+                raise SandboxUnavailable("OpenCode host socket identity is unsafe")
+            socket_fd = os.open(
+                "host.sock", os.O_PATH | os.O_NOFOLLOW | os.O_CLOEXEC,
+                dir_fd=observer_fd,
+            )
+            descriptors.append(socket_fd)
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as peer:
+                peer.settimeout(2)
+                peer.connect(str(observer / "host.sock"))
+                _pid, peer_uid, _gid = struct.unpack(
+                    "3i", peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12)
+                )
+                if peer_uid != os.geteuid():
+                    raise SandboxUnavailable("OpenCode host socket peer changed")
+            sources.update({
+                "opencode_host_ready": f"/proc/self/fd/{ready_fd}",
+                "opencode_host_ready_sha256": ready_sha,
+                "opencode_host_socket": str(observer / "host.sock"),
+                "opencode_host_pin": (
+                    observer, observer_fd, ready_fd, socket_fd,
+                    (socket_info.st_dev, socket_info.st_ino),
+                ),
+            })
         yield sources, tuple(descriptors)
     finally:
         if bus_parent_fd is not None:
@@ -736,6 +832,45 @@ def assert_runtime_mounts_unchanged(
             or (os.fstat(socket_fd).st_dev, os.fstat(socket_fd).st_ino) != socket_identity
         ):
             raise SandboxUnavailable("Codex host ready/socket inode changed")
+    for path, parent_fd, file_fd, expected_sha in sources.get("opencode_pins", []):
+        parent = _owner_directory(path.parent)
+        try:
+            if (os.fstat(parent).st_dev, os.fstat(parent).st_ino) != (
+                os.fstat(parent_fd).st_dev, os.fstat(parent_fd).st_ino,
+            ):
+                raise SandboxUnavailable("OpenCode owner file parent changed")
+        finally:
+            os.close(parent)
+        current = os.stat(path.name, dir_fd=parent_fd, follow_symlinks=False)
+        held = os.fstat(file_fd)
+        if (current.st_dev, current.st_ino) != (held.st_dev, held.st_ino):
+            raise SandboxUnavailable("OpenCode owner file inode changed")
+        os.lseek(file_fd, 0, os.SEEK_SET)
+        digest = hashlib.sha256()
+        while block := os.read(file_fd, 65536):
+            digest.update(block)
+        if digest.hexdigest() != expected_sha:
+            raise SandboxUnavailable("OpenCode owner file digest changed")
+    if "opencode_host_pin" in sources:
+        observer, observer_fd, ready_fd, socket_fd, socket_identity = sources[
+            "opencode_host_pin"
+        ]
+        parent = _owner_directory(observer)
+        try:
+            if (os.fstat(parent).st_dev, os.fstat(parent).st_ino) != (
+                os.fstat(observer_fd).st_dev, os.fstat(observer_fd).st_ino,
+            ):
+                raise SandboxUnavailable("OpenCode host observer directory changed")
+        finally:
+            os.close(parent)
+        ready = os.stat("ready.json", dir_fd=observer_fd, follow_symlinks=False)
+        socket_now = os.stat("host.sock", dir_fd=observer_fd, follow_symlinks=False)
+        if (
+            (ready.st_dev, ready.st_ino) != (os.fstat(ready_fd).st_dev, os.fstat(ready_fd).st_ino)
+            or (socket_now.st_dev, socket_now.st_ino) != socket_identity
+            or (os.fstat(socket_fd).st_dev, os.fstat(socket_fd).st_ino) != socket_identity
+        ):
+            raise SandboxUnavailable("OpenCode host ready/socket inode changed")
 
 
 def validate_runtime_profile(value: object) -> dict[str, Any] | None:
@@ -750,8 +885,12 @@ def validate_runtime_profile(value: object) -> dict[str, Any] | None:
         "postgresql_endpoint",
         "temporal_endpoint",
     }
-    extended = keys | {"codex_scene_profile", "budget_decision"}
-    if not isinstance(value, dict) or set(value) not in (keys, extended):
+    codex_extended = keys | {"codex_scene_profile", "budget_decision"}
+    opencode_extended = keys | {"opencode_scene_profile", "opencode_budget_decision"}
+    both_extended = codex_extended | opencode_extended
+    if not isinstance(value, dict) or set(value) not in (
+        keys, codex_extended, opencode_extended, both_extended
+    ):
         raise PlanError("runtime_profile fields are invalid")
     if value["network_mode"] != "host_loopback_providers":
         raise PlanError("runtime profile network mode is invalid")
@@ -777,22 +916,28 @@ def validate_runtime_profile(value: object) -> dict[str, Any] | None:
         "codex_model_evidence",
         "opencode_model_evidence",
     }
-    with_scene = set(value) == extended
-    expected_profile_keys = profile_keys | {"codex_scene_mode"} if with_scene else profile_keys
-    expected_schema = (
-        "acs-p1-loopback-probe-profile/2" if with_scene else "acs-p1-loopback-probe-profile/1"
-    )
+    with_codex = "codex_scene_profile" in value
+    with_opencode = "opencode_scene_profile" in value
+    expected_profile_keys = profile_keys
+    if with_codex:
+        expected_profile_keys = expected_profile_keys | {"codex_scene_mode"}
+    if with_opencode:
+        expected_profile_keys = expected_profile_keys | {"opencode_scene_mode"}
+    profile_version = 3 if with_codex and with_opencode else 2 if with_codex or with_opencode else 1
+    expected_schema = f"acs-p1-loopback-probe-profile/{profile_version}"
     if (
         not isinstance(profile, dict)
         or set(profile) != expected_profile_keys
         or profile.get("schema_version") != expected_schema
-        or with_scene
+        or with_codex
         and profile.get("codex_scene_mode") != "same-run-host-node"
+        or with_opencode
+        and profile.get("opencode_scene_mode") != "same-run-host-node"
     ):
         raise PlanError("runtime profile JSON schema is invalid")
     scene_sha = None
     budget_sha = None
-    if with_scene:
+    if with_codex:
         from tools.runtime.p1_codex_lifecycle import validate_scene_profile
 
         for name in ("codex_scene_profile", "budget_decision"):
@@ -811,6 +956,27 @@ def validate_runtime_profile(value: object) -> dict[str, Any] | None:
         validate_scene_profile(strict_json(scene_bytes))
         scene_sha = value["codex_scene_profile"]["sha256"]
         budget_sha = value["budget_decision"]["sha256"]
+    opencode_scene_sha = None
+    opencode_budget_sha = None
+    if with_opencode:
+        from tools.runtime.p1_opencode_gate import validate_scene
+
+        for name in ("opencode_scene_profile", "opencode_budget_decision"):
+            reference = value[name]
+            if (
+                not isinstance(reference, dict)
+                or set(reference) != {"path", "sha256"}
+                or not isinstance(reference["path"], str)
+            ):
+                raise PlanError("OpenCode owner file reference is invalid")
+            _secure_owner_file(Path(reference["path"]), reference["sha256"])
+        scene_bytes = _secure_owner_file(
+            Path(value["opencode_scene_profile"]["path"]),
+            value["opencode_scene_profile"]["sha256"],
+        )
+        validate_scene(strict_json(scene_bytes))
+        opencode_scene_sha = value["opencode_scene_profile"]["sha256"]
+        opencode_budget_sha = value["opencode_budget_decision"]["sha256"]
     if (
         profile.get("profile") != "p1-loopback-provider"
         or not known_text(profile.get("source_root"))
@@ -917,6 +1083,9 @@ def validate_runtime_profile(value: object) -> dict[str, Any] | None:
         "codex_scene_mode": profile.get("codex_scene_mode"),
         "codex_scene_profile_sha256": scene_sha,
         "budget_decision_sha256": budget_sha,
+        "opencode_scene_mode": profile.get("opencode_scene_mode"),
+        "opencode_scene_profile_sha256": opencode_scene_sha,
+        "opencode_budget_decision_sha256": opencode_budget_sha,
     }
 
 
@@ -942,6 +1111,23 @@ def verify_codex_budget_binding(
         decision_id=DECISION_ID,
         provider_alias=scene_profile["provider_alias"],
         model=scene_profile["model"],
+    )
+
+
+def verify_opencode_budget_binding(
+    plan: dict[str, Any], source_commit: str, source_tree: str
+) -> None:
+    configured = plan.get("runtime_profile")
+    if not isinstance(configured, dict) or "opencode_scene_profile" not in configured:
+        return
+    from tools.runtime.p1_opencode_gate import OpenCodeGateAdmission
+
+    scene = configured["opencode_scene_profile"]
+    decision = configured["opencode_budget_decision"]
+    OpenCodeGateAdmission.load(
+        Path(scene["path"]), scene["sha256"],
+        Path(decision["path"]), decision["sha256"],
+        source_commit=source_commit, source_tree=source_tree,
     )
 
 
@@ -1563,6 +1749,20 @@ def sandbox_command(
                     "/run/acs-p1/codex-host.sock",
                 )
             )
+        if "opencode_scene_profile" in mount_sources:
+            runtime_mounts.extend((
+                "--ro-bind", mount_sources["opencode_scene_profile"],
+                "/run/acs-p1/opencode-profile.json",
+                "--ro-bind", mount_sources["opencode_budget_decision"],
+                "/run/acs-p1/opencode-budget.json",
+            ))
+        if "opencode_host_socket" in mount_sources:
+            runtime_mounts.extend((
+                "--ro-bind", mount_sources["opencode_host_ready"],
+                "/run/acs-p1/opencode-ready.json",
+                "--ro-bind", mount_sources["opencode_host_socket"],
+                "/run/acs-p1/opencode-host.sock",
+            ))
     argv = [
         sandbox["path"],
         "--ro-bind",
@@ -1783,6 +1983,31 @@ def validate_plan(plan: object, contract: dict[str, Any]) -> dict[str, Any]:
             ]
             if command["argv"] != expected:
                 raise PlanError("Codex lifecycle probe argv differs from fixed adapter")
+    opencode_commands = scenario_map["P1-OPENCODE-LIFECYCLE"]
+    if opencode_commands:
+        if (
+            runtime_profile is None
+            or runtime_profile.get("opencode_scene_mode") != "same-run-host-node"
+        ):
+            raise PlanError("OpenCode lifecycle requires the pinned same-run host profile")
+        for command in opencode_commands:
+            expected = [
+                "/run/acs-p1/runtime/bin/python",
+                "/mnt/tools/runtime/p1_profile_probe.py",
+                "run", "--profile", "/run/acs-p1/profile.json",
+                "--scenario", "P1-OPENCODE-LIFECYCLE",
+                "--kind", command["kind"], "--output", "/srv",
+            ]
+            if command["argv"] != expected:
+                raise PlanError("OpenCode lifecycle probe argv differs from fixed adapter")
+    if scenario_map["P1-INTEGRATED-ACCEPTANCE"] and (
+        runtime_profile is None
+        or runtime_profile.get("codex_scene_mode") != "same-run-host-node"
+        or runtime_profile.get("opencode_scene_mode") != "same-run-host-node"
+        or not scenario_map["P1-CODEX-LIFECYCLE"]
+        or not opencode_commands
+    ):
+        raise PlanError("integrated acceptance requires both pinned same-run model scenes")
     if not isinstance(plan.get("prerequisites", {}), dict) or not isinstance(
         plan.get("review", {}), dict
     ):
@@ -1824,6 +2049,7 @@ def initialize(
         raise PlanError("runtime profile source root differs from runner source")
     identity = source_identity(source_root)
     verify_codex_budget_binding(plan, identity.commit, identity.tree)
+    verify_opencode_budget_binding(plan, identity.commit, identity.tree)
     guard = collect_source_guard(source_root)
     fingerprint, os_facts = host_fingerprint()
     machine_id = "machine-" + fingerprint[:20]
@@ -1969,6 +2195,7 @@ def load_run(
         record_source_mutation(run_dir, state, baseline_guard, current_guard, "resume-identity")
         raise SourceMutationError("mixed or changed Git baseline")
     verify_codex_budget_binding(plan, state["source_commit"], state["source_tree"])
+    verify_opencode_budget_binding(plan, state["source_commit"], state["source_tree"])
     validate_ref(state.get("source_snapshot"), run_dir)
     if state.get("binding_sha256") != digest(state.get("binding")):
         raise RunnerError("binding digest changed")
@@ -2030,6 +2257,32 @@ def load_run(
             state["updated_at"] = now_text()
             write_state(run_dir, state)
             raise RunnerError("prior Codex host attempt requires independent review")
+    if (
+        current_runtime_profile is not None
+        and current_runtime_profile.get("opencode_scene_profile_sha256")
+        and state["run_id"] not in _ACTIVE_OPENCODE_RUNS
+        and state["scenarios"]["P1-OPENCODE-LIFECYCLE"]["status"] != "passed"
+    ):
+        root = Path(f"/run/user/{os.geteuid()}/acs-p1-opencode") / state["run_id"]
+        if root.exists():
+            from tools.runtime.p1_opencode_host_scene import postflight_opencode_run
+
+            try:
+                proof = postflight_opencode_run(root, state["run_id"])
+            except Exception as error:
+                raise RunnerError("prior OpenCode host postflight is unavailable") from error
+            path = (
+                _private_evidence_directory(
+                    run_dir, "P1-OPENCODE-LIFECYCLE", "opencode-recovery-postflight",
+                ) / "postflight.json"
+            )
+            write_json(path, proof)
+            scenario = state["scenarios"]["P1-OPENCODE-LIFECYCLE"]
+            scenario["status"] = "blocked"
+            scenario["reason"] = "prior OpenCode host attempt cannot reattach or re-invoke"
+            state["updated_at"] = now_text()
+            write_state(run_dir, state)
+            raise RunnerError("prior OpenCode host attempt requires independent review")
     return state, plan, contract
 
 
@@ -2066,6 +2319,17 @@ def probe_environment(
             ]
             environment["ACS_GATE_BUDGET_DECISION_SHA256"] = state["runtime_profile"][
                 "budget_decision_sha256"
+            ]
+        if scenario_id == "P1-OPENCODE-LIFECYCLE" and state["runtime_profile"].get(
+            "opencode_scene_profile_sha256"
+        ):
+            environment["ACS_GATE_OPENCODE_PROFILE"] = "/run/acs-p1/opencode-profile.json"
+            environment["ACS_GATE_OPENCODE_BUDGET"] = "/run/acs-p1/opencode-budget.json"
+            environment["ACS_GATE_OPENCODE_PROFILE_SHA256"] = state["runtime_profile"][
+                "opencode_scene_profile_sha256"
+            ]
+            environment["ACS_GATE_OPENCODE_BUDGET_SHA256"] = state["runtime_profile"][
+                "opencode_budget_decision_sha256"
             ]
     return environment
 
@@ -2175,6 +2439,12 @@ def execute_command(
                 "codex_host_ready_sha256"
             ]
             environment["ACS_GATE_CODEX_HOST_SOCKET"] = "/run/acs-p1/codex-host.sock"
+        if "opencode_host_ready" in mount_sources:
+            environment["ACS_GATE_OPENCODE_HOST_READY"] = "/run/acs-p1/opencode-ready.json"
+            environment["ACS_GATE_OPENCODE_HOST_READY_SHA256"] = mount_sources[
+                "opencode_host_ready_sha256"
+            ]
+            environment["ACS_GATE_OPENCODE_HOST_SOCKET"] = "/run/acs-p1/opencode-host.sock"
         wrapped_argv, output = sandbox_command(
             state,
             plan,
@@ -2315,6 +2585,28 @@ def scenario_record(
             or postflight.get("quarantined_units") != []
         ):
             raise EvidenceError("Codex host postflight is not a clean original run")
+        reference = file_ref(path, run_dir)
+        record["raw_outputs"].append(reference)
+        record["recovery_trace"].append(reference)
+        record["source_readback"].append(reference)
+    if scenario_id == "P1-OPENCODE-LIFECYCLE":
+        if run_dir is None:
+            raise EvidenceError("OpenCode host postflight run directory is missing")
+        path = (
+            run_dir / "evidence" / scenario_id / digest("opencode-host-postflight")
+            / "postflight.json"
+        )
+        postflight = strict_json(path.read_bytes())
+        if (
+            postflight.get("schema_version") != "acs-p1-opencode-postflight/1"
+            or postflight.get("run_id") != state["run_id"]
+            or postflight.get("status") != "clean"
+            or postflight.get("boot_state") != "stopped"
+            or postflight.get("remaining_pids") != []
+            or postflight.get("quarantined_units") != []
+            or postflight.get("environment_files_remaining") != 0
+        ):
+            raise EvidenceError("OpenCode host postflight is not a clean original run")
         reference = file_ref(path, run_dir)
         record["raw_outputs"].append(reference)
         record["recovery_trace"].append(reference)
@@ -2575,6 +2867,176 @@ def _codex_capacity_context(
             raise EvidenceError("Codex host postflight is uncertain")
 
 
+@contextmanager
+def _opencode_capacity_context(
+    state: dict[str, Any],
+    plan: dict[str, Any],
+    run_dir: Path,
+    scenario_id: str,
+):
+    if scenario_id != "P1-OPENCODE-LIFECYCLE":
+        yield None
+        return
+    configured = plan.get("runtime_profile")
+    if not isinstance(configured, dict) or "opencode_scene_profile" not in configured:
+        raise SandboxUnavailable("OpenCode same-run host profile and budget are unavailable")
+    from tools.runtime.p1_opencode_host_factory import (
+        clean_unstarted_capacity,
+        prepare_opencode_host_capacity,
+    )
+    from tools.runtime.p1_opencode_host_scene import postflight_opencode_run
+
+    loopback = strict_json(_secure_owner_file(
+        Path(configured["profile_path"]), configured["profile_sha256"],
+    ))
+    scene = configured["opencode_scene_profile"]
+    budget = configured["opencode_budget_decision"]
+    capacity = None
+    root = Path(f"/run/user/{os.geteuid()}/acs-p1-opencode") / state["run_id"]
+    try:
+        capacity = prepare_opencode_host_capacity(
+            loopback,
+            scene_path=Path(scene["path"]), scene_sha256=scene["sha256"],
+            budget_path=Path(budget["path"]), budget_sha256=budget["sha256"],
+            run_id=state["run_id"], source_commit=state["source_commit"],
+            source_tree=state["source_tree"], machine_id=state["machine_id"],
+            node_id=state["node_id"], source_snapshot=run_dir / "source-snapshot",
+            plan_expires_at=stamp(plan["expires_at"]),
+        )
+        capacity.start()
+        _ACTIVE_OPENCODE_RUNS.add(state["run_id"])
+    except Exception as error:
+        if capacity is not None:
+            try:
+                proof = capacity.close()
+            except Exception as cleanup_error:
+                raise EvidenceError("OpenCode host setup cleanup is unverified") from cleanup_error
+        elif root.exists():
+            try:
+                proof = postflight_opencode_run(root, state["run_id"])
+            except Exception as cleanup_error:
+                raise EvidenceError("OpenCode host setup postflight is unverified") from cleanup_error
+        else:
+            proof = None
+        if proof is not None:
+            path = (
+                _private_evidence_directory(
+                    run_dir, scenario_id, "opencode-host-setup-postflight",
+                ) / "postflight.json"
+            )
+            write_json(path, proof)
+            if proof["status"] != "clean":
+                raise EvidenceError("OpenCode host setup left an uncertain run") from error
+            try:
+                clean_unstarted_capacity(root, state["run_id"], loopback["postgres_dsn"])
+            except Exception as cleanup_error:
+                raise EvidenceError("OpenCode host setup schema/root cleanup is unverified") from cleanup_error
+        raise SandboxUnavailable("OpenCode same-run host capacity is unavailable") from error
+    try:
+        yield capacity
+    finally:
+        failed = sys.exc_info()[0] is not None
+        try:
+            proof = capacity.close()
+        except Exception as error:
+            raise EvidenceError("OpenCode host postflight failed") from error
+        finally:
+            _ACTIVE_OPENCODE_RUNS.discard(state["run_id"])
+        path = (
+            _private_evidence_directory(run_dir, scenario_id, "opencode-host-postflight")
+            / "postflight.json"
+        )
+        write_json(path, proof)
+        if proof["status"] != "clean" and not failed:
+            raise EvidenceError("OpenCode host postflight is uncertain")
+        if proof["status"] == "clean":
+            expected_root = Path(f"/run/user/{os.geteuid()}/acs-p1-opencode") / state["run_id"]
+            if root != expected_root:
+                raise EvidenceError("OpenCode host root left current run")
+            remove_private_stage(root)
+
+
+@contextmanager
+def _native_capacity_context(
+    state: dict[str, Any], plan: dict[str, Any], run_dir: Path, scenario_id: str
+):
+    if scenario_id == "P1-CODEX-LIFECYCLE":
+        with _codex_capacity_context(state, plan, run_dir, scenario_id) as capacity:
+            yield capacity
+    elif scenario_id == "P1-OPENCODE-LIFECYCLE":
+        with _opencode_capacity_context(state, plan, run_dir, scenario_id) as capacity:
+            yield capacity
+    else:
+        yield None
+
+
+def verify_integrated_model_prerequisites(
+    state: dict[str, Any], plan: dict[str, Any], run_dir: Path
+) -> None:
+    """Require both model scenes to have fresh six-kind evidence in this HMAC run."""
+    profile = state.get("runtime_profile")
+    if (
+        not isinstance(profile, dict)
+        or profile.get("codex_scene_mode") != "same-run-host-node"
+        or profile.get("opencode_scene_mode") != "same-run-host-node"
+        or not profile.get("codex_scene_profile_sha256")
+        or not profile.get("budget_decision_sha256")
+        or not profile.get("opencode_scene_profile_sha256")
+        or not profile.get("opencode_budget_decision_sha256")
+    ):
+        raise SandboxUnavailable("integrated acceptance needs both owner-pinned scenes")
+    expected_kinds = {"command_output", "postgresql", "sqlite", "temporal", "driver", "os"}
+    for name in ("P1-CODEX-LIFECYCLE", "P1-OPENCODE-LIFECYCLE"):
+        scenario = state["scenarios"].get(name)
+        planned = plan["scenarios"].get(name, [])
+        if (
+            not isinstance(scenario, dict)
+            or scenario.get("status") != "passed"
+            or {item["kind"] for item in planned} != expected_kinds
+            or set(scenario.get("commands", {})) != {item["command_id"] for item in planned}
+        ):
+            raise SandboxUnavailable("integrated acceptance waits for both same-run model scenes")
+        operation_ids = message_ids = event_ids = receipt_ids = None
+        for item in planned:
+            command = scenario["commands"][item["command_id"]]
+            if command.get("status") != "passed" or command.get("kind") != item["kind"]:
+                raise EvidenceError("model lifecycle command is incomplete")
+            result = strict_json(validate_ref(command.get("output"), run_dir).read_bytes())
+            expected = {
+                "schema_version": PROBE_SCHEMA,
+                "status": "passed",
+                "run_id": state["run_id"],
+                "source_commit": state["source_commit"],
+                "source_tree": state["source_tree"],
+                "scenario_id": name,
+                "command_id": item["command_id"],
+                "evidence_kind": item["kind"],
+                "binding_sha256": state["binding_sha256"],
+                "machine_id": state["machine_id"],
+                "node_id": state["node_id"],
+            }
+            if any(result.get(key) != value for key, value in expected.items()):
+                raise EvidenceError("model lifecycle evidence left same HMAC run")
+            if result.get("versions") != state["version_binding"]:
+                raise EvidenceError("model lifecycle version binding changed")
+            for key, previous in (
+                ("operation_ids", operation_ids), ("message_ids", message_ids),
+                ("event_ids", event_ids), ("receipt_ids", receipt_ids),
+            ):
+                current = result.get(key)
+                if not isinstance(current, list) or not current or previous is not None and current != previous:
+                    raise EvidenceError("model lifecycle six-kind lineage differs")
+            operation_ids = result["operation_ids"]
+            message_ids = result["message_ids"]
+            event_ids = result["event_ids"]
+            receipt_ids = result["receipt_ids"]
+            if not isinstance(result.get("facts"), dict) or not isinstance(
+                result["facts"].get("layer"), dict
+            ):
+                raise EvidenceError("model lifecycle live authority readback is missing")
+        scenario_record(state, name, run_dir)
+
+
 def run_scenario(
     run_dir: Path,
     source_root: Path,
@@ -2584,6 +3046,8 @@ def run_scenario(
     state, plan, contract = load_run(run_dir, source_root, contract_path)
     if scenario_id not in contract["gates"]["P1"]["scenarios"]:
         raise PlanError("unknown P1 scenario")
+    if scenario_id == "P1-INTEGRATED-ACCEPTANCE":
+        verify_integrated_model_prerequisites(state, plan, run_dir)
     commands = plan["scenarios"][scenario_id]
     complete, reason = plan_complete(commands)
     if not complete:
@@ -2595,7 +3059,7 @@ def run_scenario(
     scenario = state["scenarios"][scenario_id]
     scenario["reason"] = "running"
     try:
-        with _codex_capacity_context(state, plan, run_dir, scenario_id):
+        with _native_capacity_context(state, plan, run_dir, scenario_id):
             for command in commands:
                 command_id = command["command_id"]
                 if command_id in scenario["commands"]:
@@ -2650,7 +3114,7 @@ def run_scenario(
             finalize(run_dir, source_root, contract_path, allow_pass=False)
         raise
     except Exception as error:
-        if scenario_id != "P1-CODEX-LIFECYCLE":
+        if scenario_id not in {"P1-CODEX-LIFECYCLE", "P1-OPENCODE-LIFECYCLE"}:
             raise
         if scenario.get("status") == "running":
             scenario["status"] = "blocked"

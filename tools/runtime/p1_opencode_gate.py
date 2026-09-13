@@ -7,13 +7,17 @@ import json
 import os
 import re
 import stat
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import urlsplit
 
 from runtime.opencode_driver import OpenCodeLaunchProfile
-from runtime.receiver_paths import PathSecurityRejected, open_validated_file, private_parent
+from runtime.receiver_paths import (
+    PathSecurityRejected,
+    open_validated_file,
+    private_parent,
+)
 from tools.runtime.p1_opencode_readback import validate_opencode_lineage
 
 DECISION_ID = "P1-OPENCODE-LIFECYCLE-ONE-PROMPT-01"
@@ -23,7 +27,7 @@ SCENE_FIELDS = {
     "schema_version", "native_executable_path", "native_executable_sha256",
     "native_executable_size", "opencode_version", "schema_sha256",
     "provider_id", "provider_url", "model_id", "agent", "auth_key_ref_path",
-    "auth_key_ref_path_sha256", "config_sha256", "max_prompt_async",
+    "auth_key_ref_path_sha256", "config_template_path", "config_sha256", "max_prompt_async",
     "max_collect_reads", "max_elapsed_seconds", "budget_evidence_ref",
 }
 
@@ -36,7 +40,7 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _owner_json(path: Path, expected_sha256: str) -> dict[str, Any]:
+def _owner_bytes(path: Path, expected_sha256: str) -> bytes:
     if os.name != "posix" or not path.is_absolute():
         raise OpenCodeGateRejected("owner-only OpenCode decision requires POSIX absolute path")
     try:
@@ -53,6 +57,11 @@ def _owner_json(path: Path, expected_sha256: str) -> dict[str, Any]:
         os.close(descriptor)
     if len(data) > 100_000 or _sha(data) != expected_sha256:
         raise OpenCodeGateRejected("OpenCode owner file digest differs")
+    return bytes(data)
+
+
+def _owner_json(path: Path, expected_sha256: str) -> dict[str, Any]:
+    data = _owner_bytes(path, expected_sha256)
     try:
         value = json.loads(data)
     except (UnicodeError, ValueError):
@@ -81,7 +90,7 @@ def validate_scene(value: object) -> dict[str, Any]:
         or value["budget_evidence_ref"] != DECISION_ID
     ):
         raise OpenCodeGateRejected("OpenCode scene version or one-prompt bound differs")
-    for name in ("native_executable_path", "auth_key_ref_path"):
+    for name in ("native_executable_path", "auth_key_ref_path", "config_template_path"):
         path = value[name]
         if (
             not isinstance(path, str)
@@ -126,9 +135,9 @@ class OpenCodeGateAdmission:
     budget_sha256: str
     source_commit: str
     source_tree: str
-    run_id: str
-    machine_id: str
-    node_id: str
+    run_id: str | None = None
+    machine_id: str | None = None
+    node_id: str | None = None
 
     @classmethod
     def load(
@@ -140,21 +149,15 @@ class OpenCodeGateAdmission:
         *,
         source_commit: str,
         source_tree: str,
-        run_id: str,
-        machine_id: str,
-        node_id: str,
     ) -> OpenCodeGateAdmission:
         scene = validate_scene(_owner_json(scene_path, scene_sha256))
         decision = _owner_json(budget_path, budget_sha256)
         if (
             not re.fullmatch(r"[a-f0-9]{40}", source_commit)
             or not re.fullmatch(r"[a-f0-9]{40}", source_tree)
-            or not re.fullmatch(r"p1-run-[a-f0-9]{32}", run_id)
-            or not isinstance(machine_id, str) or not machine_id
-            or not isinstance(node_id, str) or not node_id
             or set(decision) != {
                 "schema_version", "decision_id", "source_commit", "source_tree",
-                "scene_profile_sha256", "scenario_id", "run_id", "machine_id", "node_id",
+                "scene_profile_sha256", "scenario_id",
                 "provider_id", "model_id",
                 "prompt", "max_prompt_async", "max_collect_reads",
                 "max_elapsed_seconds", "tool_policy", "retry_policy", "spend_status",
@@ -163,9 +166,6 @@ class OpenCodeGateAdmission:
             or decision["decision_id"] != DECISION_ID
             or decision["source_commit"] != source_commit
             or decision["source_tree"] != source_tree
-            or decision["run_id"] != run_id
-            or decision["machine_id"] != machine_id
-            or decision["node_id"] != node_id
             or decision["scene_profile_sha256"] != scene_sha256
             or decision["scenario_id"] != "P1-OPENCODE-LIFECYCLE"
             or decision["provider_id"] != scene["provider_id"]
@@ -185,12 +185,21 @@ class OpenCodeGateAdmission:
             or "monetary cap not observed" not in decision["spend_status"]
         ):
             raise OpenCodeGateRejected("OpenCode one-prompt Management decision differs")
-        return cls(
-            scene, scene_sha256, budget_sha256, source_commit, source_tree,
-            run_id, machine_id, node_id,
-        )
+        return cls(scene, scene_sha256, budget_sha256, source_commit, source_tree)
+
+    def bind_run(self, run_id: str, machine_id: str, node_id: str) -> OpenCodeGateAdmission:
+        if (
+            not isinstance(run_id, str)
+            or not re.fullmatch(r"p1-run-[a-f0-9]{32}", run_id)
+            or not isinstance(machine_id, str) or not machine_id
+            or not isinstance(node_id, str) or not node_id
+        ):
+            raise OpenCodeGateRejected("OpenCode HMAC run identity is incomplete")
+        return replace(self, run_id=run_id, machine_id=machine_id, node_id=node_id)
 
     def assert_native_profile(self, profile: OpenCodeLaunchProfile) -> None:
+        if self.run_id is None or self.machine_id is None or self.node_id is None:
+            raise OpenCodeGateRejected("OpenCode native boundary has no HMAC run binding")
         if (
             profile.version != self.scene["opencode_version"]
             or profile.executable_sha256 != self.scene["native_executable_sha256"]
@@ -201,6 +210,35 @@ class OpenCodeGateAdmission:
             or profile.agent != self.scene["agent"]
         ):
             raise OpenCodeGateRejected("OpenCode actual Driver profile differs from scene pin")
+        config = _owner_json(profile.config_path, self.scene["config_sha256"])
+        provider = config.get("provider")
+        selected = provider.get(self.scene["provider_id"]) if isinstance(provider, dict) else None
+        options = selected.get("options") if isinstance(selected, dict) else None
+        if (
+            not isinstance(options, dict)
+            or options.get("baseURL") != self.scene["provider_url"]
+            or not isinstance(config.get("agent"), dict)
+            or config.get("model") != self.scene["provider_id"] + "/" + self.scene["model_id"]
+        ):
+            raise OpenCodeGateRejected("OpenCode actual provider config route differs from scene")
+
+    def config_template_bytes(self) -> bytes:
+        """Read only the separately pinned owner config before private staging."""
+        path = Path(self.scene["config_template_path"])
+        expected_sha = self.scene["config_sha256"]
+        data = _owner_bytes(path, expected_sha)
+        try:
+            value = json.loads(data)
+        except (UnicodeError, ValueError):
+            raise OpenCodeGateRejected("OpenCode config template is malformed") from None
+        if not isinstance(value, dict):
+            raise OpenCodeGateRejected("OpenCode config template is not an object")
+        provider = value.get("provider")
+        selected = provider.get(self.scene["provider_id"]) if isinstance(provider, dict) else None
+        options = selected.get("options") if isinstance(selected, dict) else None
+        if not isinstance(options, dict) or options.get("baseURL") != self.scene["provider_url"]:
+            raise OpenCodeGateRejected("OpenCode config template route differs from scene")
+        return data
 
     def key_reference_identity(self) -> tuple[int, int, int, int, int]:
         """Attest the owner key file without reading or copying key bytes."""
@@ -237,6 +275,8 @@ class OpenCodeGateAdmission:
 
     def assert_final_lineage(self, readback: object) -> dict[str, Any]:
         value = validate_opencode_lineage(readback)
+        if self.run_id is None or self.machine_id is None or self.node_id is None:
+            raise OpenCodeGateRejected("OpenCode final readback has no HMAC run binding")
         if (
             value["source_commit"] != self.source_commit
             or value["source_tree"] != self.source_tree
