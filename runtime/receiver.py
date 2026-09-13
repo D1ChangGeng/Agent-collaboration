@@ -303,8 +303,24 @@ class ReceiverService:
             if actual != expected:
                 raise ReceiverRejected("dispatch identity differs from prepared request")
             return original
-        transitions = {`n            "boot_incarnation": (recovery.old_boot_incarnation, recovery.new_boot_incarnation),`n            "endpoint_revision": (recovery.old_endpoint_revision, recovery.new_endpoint_revision),`n            "runtime_revision": (recovery.old_runtime_revision, recovery.new_runtime_revision),`n            "journal_generation": (original.journal_generation, recovery.journal_generation),`n        }
-        if recovery.old_runtime_id is not None or recovery.new_runtime_id is not None:`n            if (`n                recovery.old_runtime_id != original.runtime_id`n                or recovery.new_runtime_id != admission.runtime_id`n                or recovery.old_runtime_id == recovery.new_runtime_id`n            ):`n                raise ReceiverRejected("boot recovery Runtime identity transition rejected")`n            transitions["runtime_id"] = (recovery.old_runtime_id, recovery.new_runtime_id)
+        transitions = {
+            "boot_incarnation": (recovery.old_boot_incarnation, recovery.new_boot_incarnation),
+            "endpoint_revision": (recovery.old_endpoint_revision, recovery.new_endpoint_revision),
+            "runtime_revision": (recovery.old_runtime_revision, recovery.new_runtime_revision),
+            "journal_generation": (original.journal_generation, recovery.journal_generation),
+        }
+        if recovery.old_runtime_id is not None or recovery.new_runtime_id is not None:
+            if (
+                recovery.old_runtime_id != original.runtime_id
+                or recovery.new_runtime_id != admission.runtime_id
+                or recovery.old_runtime_id == recovery.new_runtime_id
+            ):
+                raise ReceiverRejected("boot recovery Runtime identity transition rejected")
+            transitions["runtime_id"] = (recovery.old_runtime_id, recovery.new_runtime_id)
+        for field, (old, new) in transitions.items():
+            if expected[field] != old or actual[field] != new:
+                raise ReceiverRejected("boot recovery identity transition rejected")
+            expected[field] = new
         if actual != expected:
             raise ReceiverRejected("boot recovery identity differs from prepared request")
         return original
