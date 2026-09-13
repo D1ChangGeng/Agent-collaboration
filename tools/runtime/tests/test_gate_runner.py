@@ -84,6 +84,48 @@ class GateRunnerTests(unittest.TestCase):
     def initialize(self):
         return runner.initialize(self.plan_path, self.run_dir, self.source, self.contract_path)
 
+    def make_bootstrap_bundle(self):
+        bundle = self.base / "bootstrap"
+        bundle.mkdir(mode=0o700)
+        source = runner.source_identity(self.source)
+        configs = {}
+        inventory = {}
+        for name in (".agents/config.yaml", ".agents/settings.yaml", ".agents/manifest.json"):
+            data = (name + " fixture\n").encode()
+            digest = runner.digest_bytes(data)
+            configs[name] = digest
+            inventory["management/" + name] = {"sha256": digest, "bytes": len(data)}
+        runner.write_json(bundle / "preservation-inventory.json", inventory)
+        checks = []
+        observed = datetime.now(UTC).isoformat()
+        names = {
+            "git-state", "git-head", "python", "setup-version", "skill-validate",
+            "repository-validate", "workspace-validate", "workspace-upgrade-dry-run",
+            "route-validate",
+        }
+        for name in sorted(names):
+            output = source.commit if name == "git-head" else "0.4.0" if name == "setup-version" else "passed"
+            path = bundle / (name + ".log")
+            path.write_bytes((output + "\n\n--- stderr ---\n").encode())
+            checks.append({
+                "scenario_id": name, "command": ["fixture", name],
+                "started_at": observed, "completed_at": observed,
+                "exit_code": 0, "status": "passed", "raw_output": path.name,
+                "sha256": runner.digest_bytes(path.read_bytes()),
+                "observer": "fixture", "evidence_class": "directly_verified",
+            })
+        runner.write_json(bundle / "report.json", {
+            "schema_version": "bootstrap-evidence/1", "gate": "passed",
+            "recorded_at": observed, "setup_version": "0.4.0", "workspace_schema": "0.3",
+            "profile": "fixture-bootstrap", "machine": "fixture-machine", "os": "fixture-os",
+            "root_id": "fixture-root", "setup_surface": "explicit-source-cli",
+            "policy": "setup-only-readback", "preservation_changes": [],
+            "tracked_file_count": len(inventory),
+            "permissions": {"source_read": True, "source_write": True},
+            "config_refs": configs, "checks": checks,
+        })
+        return bundle
+
     def configure_runtime_profile(self):
         profile_parent = self.base / "profile-private"
         profile_parent.mkdir(mode=0o700)
@@ -161,6 +203,19 @@ class GateRunnerTests(unittest.TestCase):
         self.assertTrue(validation["output"]["valid"])
         self.assertEqual(state["source_commit"], runner.source_identity(self.source).commit)
         self.assertEqual(state["source_tree"], runner.source_identity(self.source).tree)
+
+    def test_init_imports_complete_bootstrap_prerequisite_into_sealed_run(self):
+        bundle = self.make_bootstrap_bundle()
+        state = runner.initialize(
+            self.plan_path, self.run_dir, self.source, self.contract_path,
+            bootstrap_dir=bundle,
+        )
+        plan = json.loads((self.run_dir / "plan.json").read_text())
+        reference = plan["prerequisites"]["BOOTSTRAP"]
+        self.assertEqual(reference["source_baseline"], state["source_commit"])
+        self.assertTrue((self.run_dir / reference["path"]).is_file())
+        validation = json.loads((self.run_dir / "validation.json").read_text())
+        self.assertTrue(validation["output"]["valid"], validation)
 
     def test_missing_evidence_kinds_and_fields_remains_not_run(self):
         self.initialize()
