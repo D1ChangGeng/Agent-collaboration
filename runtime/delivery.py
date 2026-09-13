@@ -466,6 +466,147 @@ class DeliveryDispatcher:
                 raise DeliveryRejected("immutable_invocation_changed")
         return envelope, endpoint
 
+    def _recovery_endpoint(self, cursor, row, attempt):
+        """Fence a prepared Attempt to the original lineage and one new boot."""
+        if attempt["status"] != "prepared" or attempt["finished_at"] is not None:
+            raise DeliveryRejected("recovery_requires_open_prepared_attempt")
+        _, binding = self._authorize(cursor, row)
+        selected = self._selection(row, binding)
+        old = attempt["selection_json"]
+        if digest(old) != attempt["selection_digest"]:
+            raise DeliveryRejected("immutable_selection_changed")
+        stable = (
+            "endpoint_id", "scope_id", "agent_slot_id", "machine_id",
+            "node_id", "supports_invoke", "evidence_class",
+        )
+        if (any(selected[key] != old[key] for key in stable)
+                or selected["revision"] <= old["revision"]
+                or selected["boot_incarnation"] == old["boot_incarnation"]):
+            raise DeliveryRejected("recovery_binding_identity_changed")
+        endpoint = self.service.endpoints.get(row["endpoint_id"])
+        if endpoint is None or not self._endpoint_matches(endpoint, selected):
+            raise DeliveryRejected("recovery_endpoint_unavailable")
+        if not callable(getattr(endpoint, "recover_prepared", None)):
+            raise DeliveryRejected("recovery_transport_unavailable")
+        original = DeliveryEnvelope.model_validate_json(
+            json.dumps(row["envelope_json"]), strict=True,
+        )
+        invocation = InvocationRequest.model_validate_json(
+            json.dumps(attempt["invocation_json"]), strict=True,
+        )
+        if (digest(original.model_dump(mode="json")) != row["envelope_hash"]
+                or invocation != invocation_for(original, attempt["attempt_id"])
+                or digest(invocation.model_dump(mode="json")) != attempt["invocation_digest"]
+                or invocation.selection_digest != attempt["invocation_json"]["selection_digest"]
+                or invocation.dispatch_id != attempt["dispatch_id"]):
+            raise DeliveryRejected("immutable_recovery_invocation_changed")
+        return original, endpoint, invocation
+
+    def recover_prepared(self, identity):
+        """Resume the same signed receiver Attempt after an isolated Node boot.
+
+        No new DeliveryAttempt is created. Once the Domain dispatch marker is
+        committed, another call cannot issue native work and only readback is
+        allowed by the ordinary dispatch path.
+        """
+        if (set(identity) != {"tenant_id", "message_id", "operation_id"}
+                or identity["tenant_id"] != self.service.authority.tenant_id):
+            raise DeliveryRejected("invalid_committed_operation_identity")
+        key = int.from_bytes(hashlib.sha256(json.dumps(
+            ["delivery-dispatch", identity], sort_keys=True,
+        ).encode()).digest()[:8], "big", signed=True)
+        with psycopg.connect(self.service.authority._dsn, autocommit=True) as connection, connection.cursor() as cursor:
+            cursor.execute("SELECT pg_try_advisory_lock(%s)", (key,))
+            if not cursor.fetchone()[0]:
+                return {"status": "busy", "retry_after_seconds": 1}
+            try:
+                with connection.transaction():
+                    row = self._load(cursor, identity)
+                    if row["state"] in TERMINAL_STATES:
+                        return {"status": row["state"], "message_id": row["message_id"]}
+                    attempt = self._load_attempt(cursor, row)
+                    original, endpoint, invocation = self._recovery_endpoint(cursor, row, attempt)
+                    cursor.execute(
+                        "SELECT 1 FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s "
+                        "AND layer='runtime_dispatched'",
+                        (row["tenant_id"], row["message_id"]),
+                    )
+                    if cursor.fetchone() is not None:
+                        raise DeliveryRejected("marked_attempt_requires_readback", "uncertain")
+                evidence = endpoint.store.prepared_recovery_evidence(
+                    invocation.operation_id, invocation.attempt_id, invocation.dispatch_id,
+                )
+                if evidence is None:
+                    raise DeliveryRejected("signed_prepare_evidence_missing")
+                original_prepare, original_receipt = evidence
+
+                def authorize_original():
+                    with self.service.authority._connect() as current_connection, current_connection.cursor() as current_cursor:
+                        current = self._load(current_cursor, identity)
+                        current_attempt = self._load_attempt(current_cursor, current)
+                        checked, checked_endpoint, checked_invocation = self._recovery_endpoint(
+                            current_cursor, current, current_attempt,
+                        )
+                        if checked != original or checked_endpoint is not endpoint or checked_invocation != invocation:
+                            raise DeliveryRejected("recovery_authority_changed")
+                        return checked
+
+                def mark_original(stored, proof):
+                    with self.service.authority._connect() as mark_connection, mark_connection.cursor() as mark_cursor:
+                        current = self._load(mark_cursor, identity)
+                        current_attempt = self._load_attempt(mark_cursor, current)
+                        checked, checked_endpoint, checked_invocation = self._recovery_endpoint(
+                            mark_cursor, current, current_attempt,
+                        )
+                        if (stored != invocation or checked != original
+                                or checked_endpoint is not endpoint or checked_invocation != invocation):
+                            raise DeliveryRejected("recovery_authority_changed")
+                        self._record_receipt(
+                            mark_cursor, current, stored.runtime_dispatched_receipt_id,
+                            "runtime_dispatched", proof, attempt_id=stored.attempt_id,
+                            dispatch_id=stored.dispatch_id,
+                        )
+                        mark_cursor.execute(
+                            "UPDATE delivery_messages SET activation_node_id=%s,activation_machine_id=%s,"
+                            "activation_dispatch_id=%s,activation_receipt_id=%s WHERE tenant_id=%s AND message_id=%s",
+                            (stored.envelope.node_id, stored.envelope.machine_id, stored.dispatch_id,
+                             stored.runtime_dispatched_receipt_id, current["tenant_id"], current["message_id"]),
+                        )
+                        mark_cursor.execute(
+                            "UPDATE delivery_attempts SET status='runtime_dispatched' WHERE tenant_id=%s "
+                            "AND message_id=%s AND ordinal=%s AND status='prepared'",
+                            (current["tenant_id"], current["message_id"], current["attempts"]),
+                        )
+                        if mark_cursor.rowcount != 1:
+                            raise DeliveryRejected("recovery_marker_conflict", "uncertain")
+
+                try:
+                    observation = endpoint.recover_prepared(
+                        invocation, original_prepare, original_receipt,
+                        authorize_original, mark_original,
+                    )
+                except (DeliveryRejected, AuthorizationDenied, InvocationPreCallRejected,
+                        DeliveryTransportError):
+                    with self.service.authority._connect() as fail_connection, fail_connection.cursor() as fail_cursor:
+                        current = self._load(fail_cursor, identity)
+                        fail_cursor.execute(
+                            "SELECT 1 FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s "
+                            "AND layer='runtime_dispatched'",
+                            (current["tenant_id"], current["message_id"]),
+                        )
+                        if fail_cursor.fetchone() is not None:
+                            self._finish(fail_cursor, current, "uncertain", "recovery_result_uncertain")
+                            return {"status": "uncertain", "message_id": current["message_id"]}
+                    raise
+                with self.service.authority._connect() as final_connection, final_connection.cursor() as final_cursor:
+                    current = self._load(final_cursor, identity)
+                    self._project(final_cursor, current, observation)
+                    self._finish(final_cursor, current, observation["status"])
+                    return {"status": observation["status"], "message_id": current["message_id"],
+                            "attempts": current["attempts"]}
+            finally:
+                cursor.execute("SELECT pg_advisory_unlock(%s)", (key,))
+
     @staticmethod
     def _record_receipt(cursor, row, receipt_id, layer, evidence, *, attempt_id=None, dispatch_id=None):
         if layer not in RECEIPT_LAYERS:
