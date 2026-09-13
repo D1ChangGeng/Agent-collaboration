@@ -27,6 +27,7 @@ from runtime.codex_driver import (
     digest,
     file_digest,
 )
+from runtime.receiver_paths import PathSecurityRejected, private_parent
 
 if __package__:
     from .opencode_http import HttpFailure, LoopbackHttp, listener_owner_pids
@@ -55,6 +56,42 @@ def native_id(value, prefix):
     if not isinstance(value, str) or not re.fullmatch(prefix + r"_[A-Za-z0-9_-]{1,250}", value):
         raise DriverRejected("native identifier is missing or malformed")
     return value
+
+
+def reviewed_private_external_allow(profile, pattern):
+    """Admit only OpenCode's exact private tool-output/cache path rules."""
+    if os.name != "posix" or not isinstance(pattern, str):
+        return False
+    for root, suffix in (
+        (Path(profile.data_root), ("opencode", "tool-output")),
+        (Path(profile.temp_root), ("opencode",)),
+    ):
+        target = root.joinpath(*suffix)
+        if pattern != str(target) + "/*":
+            continue
+        try:
+            descriptor, _ = private_parent(root)
+            os.close(descriptor)
+            if root.resolve(strict=True) != root:
+                return False
+            cursor = root
+            for part in suffix:
+                cursor = cursor / part
+                try:
+                    info = cursor.lstat()
+                except FileNotFoundError:
+                    break
+                if (
+                    not stat.S_ISDIR(info.st_mode)
+                    or info.st_uid != os.geteuid()
+                    or stat.S_IMODE(info.st_mode) & 0o022
+                    or cursor.resolve(strict=True) != cursor
+                ):
+                    return False
+            return True
+        except (OSError, PathSecurityRejected, ValueError):
+            return False
+    return False
 
 
 @dataclass(frozen=True)
@@ -257,7 +294,18 @@ class OpenCodeNativeDriver:
         return status, value
 
     def _observe_native_profile(self, operation):
-        _, health = self._http(operation, "GET", "/global/health")
+        health = None
+        for attempt in range(3):
+            try:
+                _, health = self._http(operation, "GET", "/global/health")
+                break
+            except (OSError, TimeoutError) as error:
+                if attempt == 2:
+                    raise OutcomeUncertain(
+                        "owned native listener has no bounded health readback"
+                    ) from error
+                self._auth(operation)
+                time.sleep(0.05)
         if health != {"healthy": True, "version": self.profile.version}:
             raise DriverRejected("health/version does not match the pinned native profile")
         _, schema = self._http(operation, "GET", "/doc", max_bytes=16 * 1024 * 1024)
@@ -305,14 +353,18 @@ class OpenCodeNativeDriver:
         ]
         if not global_denies:
             raise DriverRejected("native agent lacks a final deny-all boundary")
-        protected_permissions = set(tool_ids) | {"task"}
         for rule in rules[global_denies[-1] + 1:]:
-            if (
-                rule["action"] != "deny"
-                and rule["permission"] in protected_permissions | {"*"}
-            ):
+            private_allow = (
+                rule == {
+                    "permission": "external_directory",
+                    "pattern": rule["pattern"],
+                    "action": "allow",
+                }
+                and reviewed_private_external_allow(self.profile, rule["pattern"])
+            )
+            if rule["action"] != "deny" and not private_allow:
                 raise DriverRejected(
-                    "native agent has an effective allow after the deny-all boundary"
+                    "native agent has an unreviewed permission after the deny-all boundary"
                 )
 
     def _metadata(self, operation_id):

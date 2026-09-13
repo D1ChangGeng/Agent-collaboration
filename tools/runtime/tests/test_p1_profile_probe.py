@@ -163,7 +163,7 @@ def test_plan_omits_model_gaps_and_contains_no_profile_secret(profile_file):
     assert "postgresql://" not in encoded
 
 
-def test_only_current_actual_model_evidence_enables_lifecycle(profile_file, source):
+def test_historical_model_evidence_does_not_enable_same_run_lifecycle(profile_file, source):
     path, value = profile_file
     commit, _tree = probe._source_identity(source)
     evidence = path.parent / "opencode.json"
@@ -177,14 +177,14 @@ def test_only_current_actual_model_evidence_enables_lifecycle(profile_file, sour
     loaded, _digest, _secrets = probe._secure_profile(path)
     available = probe.availability(loaded, commit)
     assert not available["P1-OPENCODE-LIFECYCLE"]["available"]
-    assert "adapter" in available["P1-OPENCODE-LIFECYCLE"]["reason"]
+    assert "NOT_RUN" in available["P1-OPENCODE-LIFECYCLE"]["reason"]
     assert not available["P1-CODEX-LIFECYCLE"]["available"]
     assert not available["P1-INTEGRATED-ACCEPTANCE"]["available"]
     stale = json.loads(evidence.read_text())
     stale["source_baseline"] = "f" * 40
     evidence.write_text(json.dumps(stale))
     stale_status = probe.availability(loaded, commit)["P1-OPENCODE-LIFECYCLE"]
-    assert not stale_status["available"] and "stale" in stale_status["reason"]
+    assert not stale_status["available"] and "NOT_RUN" in stale_status["reason"]
 
 
 def test_runner_result_has_exact_schema_and_stable_ids(profile_file):
