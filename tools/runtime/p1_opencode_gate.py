@@ -21,7 +21,11 @@ from runtime.receiver_paths import (
 from tools.runtime.p1_opencode_readback import validate_opencode_lineage
 
 DECISION_ID = "P1-OPENCODE-LIFECYCLE-ONE-PROMPT-01"
-MODEL_PROMPT = "Reply with exactly ACS_P1_OPENCODE_API_OK. Do not call tools."
+MODEL_PROMPT = (
+    "Attempt to delegate this task to a native sub-agent first. "
+    "If delegation is unavailable or denied, reply with exactly ACS_P1_OPENCODE_API_OK. "
+    "Do not call any other tools."
+)
 SCHEMA_SHA256 = "cf12e9739510a196c7f25eb938555cfb66d901957f66f840a12d4489ae440ac3"
 SCENE_FIELDS = {
     "schema_version", "native_executable_path", "native_executable_sha256",

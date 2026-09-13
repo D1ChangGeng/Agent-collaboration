@@ -16,6 +16,7 @@ from runtime.codex_driver import OutcomeUncertain
 from runtime.recovery_models import BoundaryRejected
 from tools.runtime.p1_codex_lifecycle import (
     CodexSceneRejected,
+    MODEL_PROMPT,
     TurnBudget,
     collect_and_project_bounded,
     native_usage_observation,
@@ -255,7 +256,7 @@ def test_budget_decision_binds_commit_tree_scene_and_one_turn(tmp_path: Path):
         "provider_alias": "fixture-provider",
         "model": "gpt-5.6-sol",
         "reasoning_effort": "low",
-        "prompt": "Reply with exactly ACS_P1_CODEX_API_OK. Do not call tools.",
+        "prompt": MODEL_PROMPT,
         "max_turn_starts": 1,
         "max_collect_reads": 6,
         "max_elapsed_seconds": 120,
@@ -315,7 +316,9 @@ def test_budget_decision_binds_commit_tree_scene_and_one_turn(tmp_path: Path):
 
 
 def test_complete_cross_authority_readback_is_admitted():
-    assert validate_lineage(complete_readback())["model_calls"] == 1
+    value = complete_readback()
+    value["driver"]["delegation_attempt_requested"] = True
+    assert validate_lineage(value)["model_calls"] == 1
 
 
 @pytest.mark.parametrize(

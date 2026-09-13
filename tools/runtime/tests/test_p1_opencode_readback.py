@@ -48,6 +48,8 @@ def complete():
             "invocation_id": invocation, "session_id": "ses_a", "message_id": "msg_a",
             "assistant_ids": ["msg_answer_a"], "prompt_async_count": 1,
             "terminal_status": "completed", "assistant_text_exact": True,
+            "delegation_attempt_requested": True,
+            "assistant_part_types": ["text"], "non_text_part_count": 0,
         },
         "response": {
             "invocation_id": invocation, "disposition": "applied",

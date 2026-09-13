@@ -194,7 +194,7 @@ def test_no_model_inventory_adapter_keeps_formal_scene_not_run():
     status = probe.availability({}, "a" * 40)[scenario]
     assert status == {
         "available": False,
-        "reason": "actual native delegation request behavior is NOT_RUN",
+        "reason": "integrated acceptance waits for both actual model lifecycle scenarios",
         "tests": probe.ScenarioCatalog.TESTS[scenario],
     }
 

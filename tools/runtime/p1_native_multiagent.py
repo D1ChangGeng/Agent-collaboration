@@ -786,6 +786,66 @@ def run(
                 or previous.get("operation_id") != operation_id):
             raise NativeInventoryRejected("native inventory proof belongs to another message")
         return previous
+    lifecycle_paths = {
+        "codex": Path("/run/acs-p1/codex-lifecycle.json"),
+        "opencode": Path("/run/acs-p1/opencode-lifecycle.json"),
+    }
+    if all(path.is_file() for path in lifecycle_paths.values()):
+        with authority._connect() as connection:
+            attempt_rows = connection.execute(
+                "SELECT attempt_id,dispatch_id,status FROM delivery_attempts "
+                "WHERE message_id=%s ORDER BY ordinal", (message_id,),
+            ).fetchall()
+        if len(attempt_rows) != 1 or attempt_rows[0][2] != "delivered":
+            raise NativeInventoryRejected("native request behavior lacks one Domain Attempt")
+        attempt_id, dispatch_id, _ = attempt_rows[0]
+        lifecycle = {kind: json.loads(path.read_text()) for kind, path in lifecycle_paths.items()}
+        codex, opencode = lifecycle["codex"], lifecycle["opencode"]
+        if (
+            any(value.get("run_id") != os.environ.get("ACS_GATE_RUN_ID") for value in lifecycle.values())
+            or any(value.get("source_commit") != source_commit or value.get("source_tree") != source_tree
+                   for value in lifecycle.values())
+            or any(value.get("machine_id") != node.machine_id or value.get("node_id") != node.node_id
+                   for value in lifecycle.values())
+            or codex.get("driver", {}).get("delegation_attempt_requested") is not True
+            or codex.get("driver", {}).get("server_request_count") != 0
+            or codex.get("driver", {}).get("turn_start_dispatch_count") != 1
+            or opencode.get("driver", {}).get("delegation_attempt_requested") is not True
+            or opencode.get("driver", {}).get("non_text_part_count") != 0
+            or opencode.get("driver", {}).get("assistant_part_types") != ["text"]
+            or opencode.get("driver", {}).get("prompt_async_count") != 1
+            or any(value.get("os", {}).get("remaining_pids") != [] for value in lifecycle.values())
+        ):
+            raise NativeInventoryRejected("same-run native delegation behavior is incomplete")
+        summaries = {
+            "codex": {"operation_id": codex["operation_id"], "message_id": codex["message_id"],
+                      "native_request_count": 1, "delegation_request_count": 0},
+            "opencode": {"operation_id": opencode["operation_id"], "message_id": opencode["message_id"],
+                         "native_request_count": 1, "non_text_part_count": 0},
+        }
+        with node._transaction() as connection:
+            connection.execute(
+                "CREATE TABLE IF NOT EXISTS p1_native_request_behavior("
+                "kind TEXT PRIMARY KEY,run_id TEXT NOT NULL,lifecycle_operation_id TEXT NOT NULL,"
+                "summary_sha256 TEXT NOT NULL)"
+            )
+            for kind in ("codex", "opencode"):
+                connection.execute(
+                    "INSERT INTO p1_native_request_behavior VALUES (?,?,?,?)",
+                    (kind, os.environ["ACS_GATE_RUN_ID"], summaries[kind]["operation_id"],
+                     _sha(_canonical(summaries[kind]))),
+                )
+        proof = {
+            "work_item_id": work_id, "message_id": message_id, "operation_id": operation_id,
+            "attempt_id": attempt_id, "dispatch_id": dispatch_id,
+            "source_commit": source_commit, "source_tree": source_tree,
+            "node_id": node.node_id, "machine_id": node.machine_id,
+            "run_id": os.environ["ACS_GATE_RUN_ID"], "summaries": summaries,
+            "model_request_count": 2, "native_delegation_count": 0,
+            "formal_request_behavior_measured": True,
+        }
+        private_json(proof_path, proof)
+        return proof
     paths = {
         "codex": os.environ.get("ACS_P1_CODEX_NATIVE_PATH"),
         "catalog": os.environ.get("ACS_P1_CODEX_CATALOG_PATH"),
@@ -925,6 +985,38 @@ def read_layer(
     proof = lineage.get("native_multiagent_proof")
     if not isinstance(proof, dict):
         raise NativeInventoryRejected("native delegation inventory proof is missing")
+    if proof.get("formal_request_behavior_measured") is True:
+        proof_path = ledger.root / (SCENARIO + "-proof.json")
+        if (
+            json.loads(proof_path.read_text()) != proof
+            or proof.get("message_id") != lineage["message_id"]
+            or proof.get("operation_id") != lineage["operation_id"]
+            or proof.get("attempt_id") != lineage["attempt_id"]
+            or proof.get("dispatch_id") != lineage["dispatch_id"]
+            or proof.get("machine_id") != profile["machine_id"]
+            or proof.get("node_id") != profile["node_id"]
+            or proof.get("source_commit") != row["source_commit"]
+            or proof.get("source_tree") != row["source_tree"]
+            or proof.get("model_request_count") != 2
+            or proof.get("native_delegation_count") != 0
+        ):
+            raise NativeInventoryRejected("native request behavior differs from Runtime lineage")
+        if kind == "postgresql":
+            return {"same_run_model_prerequisites": True, "native_delegation_count": 0}
+        if kind == "sqlite":
+            node_path = ledger.root / lineage["node_journal"]
+            with sqlite3.connect(node_path) as connection:
+                rows = connection.execute(
+                    "SELECT kind,run_id,lifecycle_operation_id,summary_sha256 "
+                    "FROM p1_native_request_behavior ORDER BY kind"
+                ).fetchall()
+            expected = [(kind, proof["run_id"], proof["summaries"][kind]["operation_id"],
+                         _sha(_canonical(proof["summaries"][kind])))
+                        for kind in ("codex", "opencode")]
+            if rows != expected:
+                raise NativeInventoryRejected("Node native request behavior changed")
+            return {"node_request_behavior_count": 2}
+        return {"formal_request_behavior_measured": True, "native_delegation_count": 0}
     proof_path = ledger.root / (SCENARIO + "-proof.json")
     try:
         raw = proof_path.read_bytes()

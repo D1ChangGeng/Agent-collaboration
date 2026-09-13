@@ -827,6 +827,10 @@ class OpenCodeNativeDriver:
                                    native_assistant_ids=[value["info"]["id"] for value in terminal],
                                    assistant_text=[part["text"] for value in answers for part in value.get("parts", [])
                                                    if part.get("type") == "text"],
+                                   assistant_part_types=[part.get("type") for value in answers
+                                                         for part in value.get("parts", [])],
+                                   non_text_part_count=sum(part.get("type") != "text" for value in answers
+                                                           for part in value.get("parts", [])),
                                    native_error_digests=[digest(error) for error in errors],
                                    native_terminal_outcome=("interrupted" if any(error.get("name") == "MessageAbortedError" for error in errors)
                                                             else "failed" if errors else "completed"),

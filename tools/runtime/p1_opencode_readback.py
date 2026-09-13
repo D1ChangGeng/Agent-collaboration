@@ -91,6 +91,9 @@ def validate_opencode_lineage(value: object) -> dict[str, Any]:
         or driver["prompt_async_count"] != 1
         or driver.get("terminal_status") != "completed"
         or driver.get("assistant_text_exact") is not True
+        or driver.get("delegation_attempt_requested") is not True
+        or driver.get("assistant_part_types") != ["text"]
+        or driver.get("non_text_part_count") != 0
     ):
         raise OpenCodeReadbackRejected("OpenCode Driver lacks one exact native terminal")
     auth = driver.get("auth")
@@ -311,6 +314,9 @@ def read_original_opencode_scene(
             "prompt_async_count": len(prompts),
             "terminal_status": receipt.get("native_terminal_outcome"),
             "assistant_text_exact": receipt.get("assistant_text") == [expected_text],
+            "assistant_part_types": receipt.get("assistant_part_types"),
+            "non_text_part_count": receipt.get("non_text_part_count"),
+            "delegation_attempt_requested": True,
             "terminal_sha256": hashlib.sha256(
                 json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
             ).hexdigest(),
