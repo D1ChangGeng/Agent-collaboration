@@ -67,7 +67,12 @@ from runtime.models import (
 from runtime.node import NodeJournal
 from runtime.temporal import TemporalAdapter
 from runtime_tests.test_delivery import FixtureDriver
-from tools.runtime import p1_harness_replacement, p1_native_multiagent, p1_partial_artifact
+from tools.runtime import (
+    p1_harness_replacement,
+    p1_native_multiagent,
+    p1_partial_artifact,
+    p1_surface_parity,
+)
 
 SCHEMA = "acs-p1-loopback-probe-profile/1"
 RESULT_SCHEMA = "acs-p1-gate-probe-result/1"
@@ -99,6 +104,7 @@ class ScenarioCatalog:
         "P1-AUTH-REVOCATION", "P1-CORE-RESTART", "P1-NODE-RESTART",
         "P1-PROVIDER-RESTART", "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT",
         "P1-STALE-BASELINE", "P1-PARTIAL-ARTIFACT",
+        "P1-SURFACE-PARITY",
         "P1-CODEX-LIFECYCLE",
         "P1-HARNESS-REPLACEMENT", "P1-OPENCODE-LIFECYCLE",
         "P1-NATIVE-MULTIAGENT-OFF",
@@ -2599,6 +2605,7 @@ def _run_domain_transaction(
     partial_artifact_proof = None
     harness_replacement_proof = None
     native_multiagent_proof = None
+    surface_parity_proof = None
     if scenario == "P1-AUTH-REVOCATION":
         with authority._connect() as connection:
             connection.execute(
@@ -2707,6 +2714,19 @@ def _run_domain_transaction(
                 Path(profile["source_root"]), _private_json,
             )
         except p1_native_multiagent.NativeInventoryRejected as exc:
+            raise ProbeRejected(str(exc)) from exc
+    if scenario == "P1-SURFACE-PARITY":
+        try:
+            surface_parity_proof = p1_surface_parity.exercise(
+                authority,
+                source_root=Path(profile["source_root"]),
+                work_item_id="surface-work-" + suffix,
+                source_baseline=commit,
+                command_id="p1-surface:" + suffix + ":work-item-create",
+                idempotency_key="p1-surface:" + suffix + ":key",
+                issued_at=issued_at,
+            )
+        except p1_surface_parity.SurfaceParityRejected as exc:
             raise ProbeRejected(str(exc)) from exc
     with node._transaction() as connection:
         connection.execute(
@@ -2853,6 +2873,7 @@ def _run_domain_transaction(
         "partial_artifact_proof": partial_artifact_proof,
         "harness_replacement_proof": harness_replacement_proof,
         "native_multiagent_proof": native_multiagent_proof,
+        "surface_parity_proof": surface_parity_proof,
         "dedup_details": list(dedup_details),
         "operation_details": list(operation_details),
         "provider_refs": list(provider_refs),
@@ -3768,6 +3789,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         "partial_artifact_proof",
         "harness_replacement_proof",
         "native_multiagent_proof",
+        "surface_parity_proof",
         "dedup_details", "operation_details", "outbox_details", "message_hashes",
         "event_hashes", "provider_refs",
     }
@@ -3808,8 +3830,24 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         != (scenario == "P1-HARNESS-REPLACEMENT")
         or (lineage["native_multiagent_proof"] is not None)
         != (scenario == "P1-NATIVE-MULTIAGENT-OFF")
+        or (lineage["surface_parity_proof"] is not None)
+        != (scenario == "P1-SURFACE-PARITY")
     ):
         raise ProbeRejected("scenario lineage does not prove its required fault")
+    if scenario == "P1-SURFACE-PARITY":
+        proof = lineage["surface_parity_proof"]
+        if (
+            proof.get("source_baseline") != row["source_commit"]
+            or proof.get("mcp_created") is not True
+            or proof.get("cli_exact_replay") is not True
+            or proof.get("http_exact_replay") is not True
+            or proof.get("http_conflict_rejected") is not True
+            or proof.get("domain_row_count") != 1
+            or proof.get("active_http_processes") != 0
+            or not proof.get("operation_id")
+            or not proof.get("command_id")
+        ):
+            raise ProbeRejected("Surface parity shared Domain operation is incomplete")
     if scenario == "P1-CORE-RESTART":
         proof = lineage["core_crash_proof"]
         if (
