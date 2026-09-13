@@ -251,6 +251,206 @@ def test_changed_secret_path_fails_closed_without_diff_leakage(
         )
 
 
+def test_tracked_secret_hash_rejects_same_size_change_when_git_status_misses(
+    tmp_path: Path, monkeypatch,
+):
+    repo = make_repo(tmp_path / "repo")
+    (repo / ".env").write_text("TOKEN=one\n", encoding="utf-8")
+    (repo / "public.txt").write_text("public\n", encoding="utf-8")
+    commit_all(repo, "secret")
+    (repo / ".env").write_text("TOKEN=two\n", encoding="utf-8")
+    service, store = service_for(tmp_path, repo, secret_patterns=("*.env",))
+    original = service._run_git
+
+    def missed_status(*args, **kwargs):
+        if len(args) > 1 and args[1][:2] == ["status", "--porcelain=v1"]:
+            return b""
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(service, "_run_git", missed_status)
+    with pytest.raises(SourceSecretError, match="changed tracked secret"):
+        service.admit(request_for(repo, allow_dirty=True), allow)
+    assert not list(store.root.rglob("*")) or all(
+        path.name == ".scope" for path in store.root.rglob("*")
+    )
+
+
+def test_tracked_secret_rejects_rename_after_open_even_if_old_fd_hashes_to_head(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+):
+    repo = make_repo(tmp_path / "repo")
+    secret = repo / ".env"
+    secret.write_bytes(b"TOKEN=one\n")
+    (repo / "public.txt").write_bytes(b"public\n")
+    commit_all(repo, "secret")
+    service, store = service_for(tmp_path, repo, secret_patterns=("*.env",))
+    original_git = service._run_git
+    original_open = service._open_relative
+    status_calls = 0
+    swapped = False
+
+    def missed_status(*args, **kwargs):
+        nonlocal status_calls
+        if len(args) > 1 and args[1][:2] == ["status", "--porcelain=v1"]:
+            status_calls += 1
+            return b""
+        return original_git(*args, **kwargs)
+
+    def replace_after_open(root: Path, path: str) -> int:
+        nonlocal swapped
+        descriptor = original_open(root, path)
+        if path == ".env" and not swapped:
+            swapped = True
+            replacement = repo / "replacement"
+            replacement.write_bytes(b"TOKEN=two\n")
+            os.replace(replacement, secret)
+        return descriptor
+
+    monkeypatch.setattr(service, "_run_git", missed_status)
+    monkeypatch.setattr(service, "_open_relative", replace_after_open)
+    with pytest.raises(SourceSecretError, match="path changed"):
+        service.admit(request_for(repo, allow_dirty=True), allow)
+    assert swapped and status_calls >= 1
+    assert secret.read_bytes() == b"TOKEN=two\n"
+    assert not any(
+        b"TOKEN=two" in path.read_bytes()
+        for path in store.root.rglob("*") if path.is_file()
+    )
+
+
+def test_tracked_secret_rechecked_after_initial_verification_before_admit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+):
+    repo = make_repo(tmp_path / "repo")
+    secret = repo / ".env"
+    secret.write_bytes(b"TOKEN=one\n")
+    (repo / "public.txt").write_bytes(b"public\n")
+    commit_all(repo, "secret")
+    service, store = service_for(tmp_path, repo, secret_patterns=("*.env",))
+    original_git = service._run_git
+    original_verify = service._verify_tracked_secrets
+    status_calls = 0
+    verify_calls = 0
+
+    def missed_status(*args, **kwargs):
+        nonlocal status_calls
+        if len(args) > 1 and args[1][:2] == ["status", "--porcelain=v1"]:
+            status_calls += 1
+            return b""
+        return original_git(*args, **kwargs)
+
+    def replace_after_first_check(*args, **kwargs):
+        nonlocal verify_calls
+        original_verify(*args, **kwargs)
+        verify_calls += 1
+        if verify_calls == 1:
+            replacement = repo / "replacement"
+            replacement.write_bytes(b"TOKEN=two\n")
+            os.replace(replacement, secret)
+
+    monkeypatch.setattr(service, "_run_git", missed_status)
+    monkeypatch.setattr(service, "_verify_tracked_secrets", replace_after_first_check)
+    with pytest.raises(SourceSecretError, match="changed tracked secret"):
+        service.admit(request_for(repo, allow_dirty=True), allow)
+    assert verify_calls == 1 and status_calls >= 2
+    assert secret.read_bytes() == b"TOKEN=two\n"
+    assert not any(
+        b"TOKEN=two" in path.read_bytes()
+        for path in store.root.rglob("*") if path.is_file()
+    )
+
+
+def test_staged_secret_change_is_rejected_even_if_worktree_matches_head_and_status_misses(
+    tmp_path: Path, monkeypatch,
+):
+    repo = make_repo(tmp_path / "repo")
+    secret = repo / ".env"
+    secret.write_text("TOKEN=one\n", encoding="utf-8")
+    (repo / "public.txt").write_text("public\n", encoding="utf-8")
+    commit_all(repo, "secret")
+    secret.write_text("TOKEN=two\n", encoding="utf-8")
+    git(repo, "add", ".env")
+    secret.write_text("TOKEN=one\n", encoding="utf-8")
+    service, _store = service_for(tmp_path, repo, secret_patterns=("*.env",))
+    original = service._run_git
+
+    def missed_status(*args, **kwargs):
+        if len(args) > 1 and args[1][:2] == ["status", "--porcelain=v1"]:
+            return b""
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(service, "_run_git", missed_status)
+    with pytest.raises(SourceSecretError, match="index differs"):
+        service.admit(request_for(repo, allow_dirty=True), allow)
+
+
+def test_secret_readback_detects_same_size_change_when_status_misses(
+    tmp_path: Path, monkeypatch,
+):
+    repo = make_repo(tmp_path / "repo")
+    secret = repo / ".env"
+    secret.write_text("TOKEN=one\n", encoding="utf-8")
+    (repo / "public.txt").write_text("public\n", encoding="utf-8")
+    commit_all(repo, "secret")
+    service, store = service_for(tmp_path, repo, secret_patterns=("*.env",))
+    snapshot = service.admit(request_for(repo), allow)
+    secret.write_text("TOKEN=two\n", encoding="utf-8")
+    original = service._run_git
+
+    def missed_status(*args, **kwargs):
+        if len(args) > 1 and args[1][:2] == ["status", "--porcelain=v1"]:
+            return b""
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(service, "_run_git", missed_status)
+    with pytest.raises(SourceChangedDuringSnapshot, match="tracked secret changed"):
+        service.readback(snapshot, allow)
+    assert not any(b"TOKEN=two" in path.read_bytes() for path in store.root.rglob("*") if path.is_file())
+
+
+def test_secret_readback_rechecks_rename_after_initial_verification(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+):
+    repo = make_repo(tmp_path / "repo")
+    secret = repo / ".env"
+    secret.write_bytes(b"TOKEN=one\n")
+    (repo / "public.txt").write_bytes(b"public\n")
+    commit_all(repo, "secret")
+    service, store = service_for(tmp_path, repo, secret_patterns=("*.env",))
+    snapshot = service.admit(request_for(repo), allow)
+    original_git = service._run_git
+    original_verify = service._verify_tracked_secrets
+    status_calls = 0
+    verify_calls = 0
+
+    def missed_status(*args, **kwargs):
+        nonlocal status_calls
+        if len(args) > 1 and args[1][:2] == ["status", "--porcelain=v1"]:
+            status_calls += 1
+            return b""
+        return original_git(*args, **kwargs)
+
+    def replace_after_first_check(*args, **kwargs):
+        nonlocal verify_calls
+        original_verify(*args, **kwargs)
+        verify_calls += 1
+        if verify_calls == 1:
+            replacement = repo / "replacement"
+            replacement.write_bytes(b"TOKEN=two\n")
+            os.replace(replacement, secret)
+
+    monkeypatch.setattr(service, "_run_git", missed_status)
+    monkeypatch.setattr(service, "_verify_tracked_secrets", replace_after_first_check)
+    with pytest.raises(SourceChangedDuringSnapshot, match="tracked secret changed"):
+        service.readback(snapshot, allow)
+    assert verify_calls == 1 and status_calls == 1
+    assert secret.read_bytes() == b"TOKEN=two\n"
+    assert not any(
+        b"TOKEN=two" in path.read_bytes()
+        for path in store.root.rglob("*") if path.is_file()
+    )
+
+
 def test_commit_tree_mismatch_is_rejected(
     tmp_path: Path,
 ):
