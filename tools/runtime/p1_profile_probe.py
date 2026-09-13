@@ -12,10 +12,13 @@ import sqlite3
 import stat
 import subprocess
 import sys
+import tarfile
+import tempfile
 from collections.abc import Callable
 from contextlib import closing
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, ClassVar
@@ -30,7 +33,7 @@ SOURCE_ROOT = Path(__file__).resolve().parents[2]
 if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
-from runtime.artifacts import LocalArtifactStore
+from runtime.artifacts import ArtifactError, LocalArtifactStore
 from runtime.delivery import DeliveryDispatcher, DeliveryService
 from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
 from runtime.delivery_node import DeliveryTransportError, LocalNodeEndpoint
@@ -94,6 +97,7 @@ class ScenarioCatalog:
         "P1-DOMAIN-TRANSACTION", "P1-COMMAND-DEDUP", "P1-INBOX-ACK-LOSS",
         "P1-AUTH-REVOCATION", "P1-CORE-RESTART", "P1-NODE-RESTART",
         "P1-PROVIDER-RESTART", "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT",
+        "P1-STALE-BASELINE",
     })
     TESTS: ClassVar[dict[str, tuple[str, ...]]] = {
         "P1-DOMAIN-TRANSACTION": (
@@ -1891,6 +1895,448 @@ def _uncertain_effect(
 
 
 
+
+
+_SOURCE_EXECUTABLE_PATHS = (
+    "runtime_tests/p1_codex_stdio_fixture.py",
+    "tools/runtime/acs-bwrap-package/install.sh",
+    "tools/runtime/acs-bwrap-package/manage.py",
+    "tools/runtime/acs-bwrap-package/uninstall.sh",
+)
+
+
+def _private_source_drift(
+    source_root: Path, expected_tree: str, issued_at: datetime,
+) -> tuple[dict[str, Any], bytes]:
+    """Rebuild two real Git commits in owner-private ephemeral storage."""
+    with tempfile.TemporaryDirectory(prefix="p1-source-baseline-", dir="/tmp") as temporary:
+        checkout = Path(temporary) / "checkout"
+        checkout.mkdir(mode=0o700)
+        copied = 0
+        if (source_root / ".git").exists():
+            archive = subprocess.run(
+                ["git", "-C", str(source_root), "archive", "--format=tar", "HEAD"],
+                env={
+                    "PATH": "/usr/bin:/bin", "HOME": temporary, "LC_ALL": "C",
+                    "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null",
+                },
+                capture_output=True, check=True, timeout=60,
+            ).stdout
+            with tarfile.open(fileobj=BytesIO(archive), mode="r:") as bundle:
+                for member in bundle.getmembers():
+                    relative = Path(member.name)
+                    if relative.is_absolute() or ".." in relative.parts or member.issym() or member.islnk():
+                        raise ProbeRejected("source archive cannot enter private Git checkout")
+                    target = checkout / relative
+                    if member.isdir():
+                        target.mkdir(parents=True, exist_ok=True)
+                    elif member.isfile():
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        stream = bundle.extractfile(member)
+                        if stream is None:
+                            raise ProbeRejected("source archive file is unreadable")
+                        target.write_bytes(stream.read())
+                        copied += 1
+                    else:
+                        raise ProbeRejected("source archive has unsupported entry")
+        else:
+            for source in sorted(source_root.rglob("*")):
+                relative = source.relative_to(source_root)
+                if source.is_symlink():
+                    raise ProbeRejected("Gate source snapshot contains a symlink")
+                target = checkout / relative
+                if source.is_dir():
+                    target.mkdir(parents=True, exist_ok=True)
+                elif source.is_file():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(source.read_bytes())
+                    copied += 1
+                else:
+                    raise ProbeRejected("Gate source snapshot contains unsupported file")
+        if not 0 < copied <= 20_000:
+            raise ProbeRejected("private Gate source copy is empty or unbounded")
+        for path in sorted(checkout.rglob("*")):
+            path.chmod(0o700 if path.is_dir() else 0o600)
+        for relative in _SOURCE_EXECUTABLE_PATHS:
+            path = checkout / relative
+            if not path.is_file():
+                raise ProbeRejected("reviewed executable source path is missing")
+            path.chmod(0o700)
+        stamp = issued_at.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%S +0000")
+        git_env = {
+            "PATH": "/usr/bin:/bin", "HOME": temporary, "LC_ALL": "C",
+            "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null",
+            "GIT_AUTHOR_NAME": "P1 Private Source Probe",
+            "GIT_AUTHOR_EMAIL": "p1-private@example.invalid",
+            "GIT_COMMITTER_NAME": "P1 Private Source Probe",
+            "GIT_COMMITTER_EMAIL": "p1-private@example.invalid",
+            "GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp,
+        }
+
+        def git(*args: str) -> str:
+            result = subprocess.run(
+                ["git", "-C", str(checkout), *args],
+                env=git_env, capture_output=True, text=True,
+                check=True, timeout=60,
+            )
+            return result.stdout.strip()
+
+        git("init", "-q", "-b", "p1-source-baseline")
+        git("-c", "core.autocrlf=false", "add", "-A", "-f")
+        git("-c", "core.hooksPath=/dev/null", "commit", "-q", "-m", "Copy fixed Gate source")
+        copied_commit = git("rev-parse", "HEAD")
+        copied_tree = git("rev-parse", "HEAD^{tree}")
+        if copied_tree != expected_tree or git("status", "--porcelain"):
+            raise ProbeRejected("private source copy does not match fixed Gate tree")
+        changed_path = "docs/runtime/P1-PROBE-PROFILE.md"
+        target = checkout / changed_path
+        target.write_bytes(
+            target.read_bytes() + b"\n<!-- isolated P1 integration baseline revision -->\n",
+        )
+        git("add", changed_path)
+        git("-c", "core.hooksPath=/dev/null", "commit", "-q", "-m", "Integrate private stale source revision")
+        second_commit = git("rev-parse", "HEAD")
+        second_tree = git("rev-parse", "HEAD^{tree}")
+        if (
+            second_tree == copied_tree
+            or git("rev-parse", "HEAD^") != copied_commit
+            or git("diff", "--name-only", copied_commit, second_commit) != changed_path
+            or git("status", "--porcelain")
+        ):
+            raise ProbeRejected("second private source commit is not one clean integration change")
+        patch = subprocess.run(
+            ["git", "-C", str(checkout), "diff", "--binary", copied_commit, second_commit],
+            env=git_env, capture_output=True, check=True, timeout=60,
+        ).stdout
+        return {
+            "copied_source_commit": copied_commit,
+            "copied_source_tree": copied_tree,
+            "stale_git_commit": second_commit,
+            "stale_git_tree": second_tree,
+            "stale_diff_sha256": _sha(patch),
+            "stale_changed_path": changed_path,
+            "copied_file_count": copied,
+            "git_timestamp": stamp,
+        }, patch
+
+
+def _stale_baseline(
+    authority: DomainAuthority, node: NodeJournal, ledger: ProbeLedger,
+    work_id: str, message_id: str, delivery_operation_id: str,
+    commit: str, tree: str, suffix: str, issued_at: datetime,
+    *, source_root: Path,
+) -> dict[str, Any]:
+    proof_path = ledger.root / "P1-STALE-BASELINE-proof.json"
+    if proof_path.exists():
+        proof = json.loads(proof_path.read_text())
+        if (proof.get("delivery_operation_id") != delivery_operation_id
+                or proof.get("message_id") != message_id):
+            raise ProbeRejected("stale baseline proof belongs to another delivery")
+        return proof
+    with authority._connect() as connection:
+        attempts = connection.execute(
+            "SELECT attempt_id,dispatch_id,status FROM delivery_attempts "
+            "WHERE message_id=%s ORDER BY ordinal", (message_id,),
+        ).fetchall()
+    if len(attempts) != 1 or attempts[0][2] != "delivered":
+        raise ProbeRejected("stale baseline requires one delivered Attempt")
+    delivery_attempt_id, dispatch_id, _ = attempts[0]
+    source_drift, source_patch = _private_source_drift(
+        source_root, tree, issued_at,
+    )
+    patch_path = ledger.root / "P1-STALE-BASELINE-source.diff"
+    descriptor = os.open(
+        patch_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC, 0o600,
+    )
+    try:
+        os.write(descriptor, source_patch)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    stale_baseline = source_drift["stale_git_commit"]
+    cas_root = ledger.root / "P1-STALE-BASELINE-cas"
+    with LocalArtifactStore(cas_root) as store:
+        producer = DomainAuthority(
+            authority._dsn, context=authority.context, artifact_store=store,
+        )
+        producer.bootstrap_local_grant((
+            "work_item.create", "delivery.manage", "message.send", "message.read",
+            "runtime.invoke", "evidence.record", "work_item.read",
+        ))
+        owner, observer, signed = _register_lease_execution(
+            producer, node, work_id, commit, tree, suffix, issued_at,
+            execution_attempt_id=delivery_attempt_id, artifact_store=store,
+        )
+        binding = owner["execution_binding"]
+        if (binding["attempt_id"] != delivery_attempt_id
+                or binding["work_item_id"] != work_id
+                or binding["source_baseline"] != commit
+                or binding["source_commit"] != commit
+                or binding["source_tree"] != tree):
+            raise ProbeRejected("stale baseline execution differs from Delivery Attempt")
+        output_ref = store.put_bytes(
+            ("P1 stale candidate output for " + delivery_operation_id).encode(),
+            kind="output",
+        )
+        readback_ref = store.put_bytes(
+            ("independent stale source readback:" + delivery_operation_id).encode(),
+            kind="readback",
+        )
+        observed_at = datetime.now(UTC)
+        receipt = ExecutionReceipt(
+            receipt_id="stale-execution-receipt-" + suffix,
+            work_item_id=work_id, attempt_id=delivery_attempt_id,
+            runtime_id=owner["runtime_id"], provider=binding["provider"],
+            command_id=binding["execution_command_id"],
+            operation_id=binding["execution_operation_id"],
+            event_id=binding["execution_event_id"],
+            source_baseline=commit, candidate_ref=binding["candidate_ref"],
+            source_commit=commit, source_tree=tree,
+            test_commands=("P1-STALE-BASELINE fixed local execution",),
+            test_exit_codes=(0,), test_exit_code=0,
+            os="linux", toolchain="P1 local delivery and source CAS",
+            artifact_refs=(output_ref,), readback_refs=(readback_ref,),
+            source_sync="committed-private-probe-source",
+            status="succeeded", observed_at=observed_at,
+        )
+        receipt_command = _domain_command(
+            observer, "execution.record", "work_item", work_id,
+            suffix + ":stale-execution-receipt", issued_at,
+        )
+        recorded = observer.record_execution_receipt(
+            receipt_command, receipt,
+            node_proof=signed(receipt_command, receipt, "receipt"),
+        )
+        evidence_id = "stale-evidence-" + suffix
+        bundle = EvidenceBundle(
+            evidence_id=evidence_id, work_item_id=work_id,
+            source_baseline=commit, candidate_ref=binding["candidate_ref"],
+            producer_ref=producer.context.principal_ref,
+            observer_ref=observer.context.principal_ref,
+            source_class="directly_verified", evidence_state="complete",
+            execution_receipt=receipt, artifact_refs=(output_ref,),
+            readback_refs=(readback_ref,), command_id=receipt.command_id,
+            operation_id=receipt.operation_id, event_id=receipt.event_id,
+            observed_at=observed_at,
+        )
+        evidence = EvidenceRecord(
+            evidence_id=evidence_id, work_item_id=work_id,
+            observer_ref=observer.context.principal_ref,
+            source_class="directly_verified", baseline_ref=commit,
+            artifact_sha256=output_ref.sha256,
+            summary="Signed same-attempt source output and independent CAS readback",
+            bundle_ref=evidence_id, candidate_ref=binding["candidate_ref"],
+            execution_receipt_ref=receipt.receipt_id,
+            evidence_state="complete", producer_ref=producer.context.principal_ref,
+            attempt_id=delivery_attempt_id, test_exit_code=0,
+            artifact_refs=(output_ref,), readback_refs=(readback_ref,),
+        )
+        evidence_command = _domain_command(
+            producer, "evidence.record", "work_item", work_id,
+            suffix + ":stale-evidence", issued_at,
+        )
+        evidence_result = producer.record_evidence(
+            evidence_command, evidence, bundle,
+        )
+        reviewer = DomainAuthority(authority._dsn, context=replace(
+            authority.context, principal_ref="p1-stale-reviewer:" + suffix,
+            grant_ref="grant:p1-stale-reviewer:" + suffix,
+        ), artifact_store=store)
+        finalizer = DomainAuthority(authority._dsn, context=replace(
+            authority.context, principal_ref="p1-stale-finalizer:" + suffix,
+            grant_ref="grant:p1-stale-finalizer:" + suffix,
+        ), artifact_store=store)
+        reviewer.bootstrap_local_grant(("review.record", "work_item.read"))
+        finalizer.bootstrap_local_grant((
+            "review.assign", "work_item.transition", "acceptance.finalize",
+            "work_item.read",
+        ))
+        review_id = "stale-review-" + suffix
+        assign_command = _domain_command(
+            finalizer, "review.assign", "work_item", work_id,
+            suffix + ":stale-review-assign", issued_at,
+        )
+        assigned = finalizer.assign_reviewer(
+            assign_command, work_id, reviewer.context.principal_ref,
+            reviewer.context.grant_ref,
+        )
+        review_command = _domain_command(
+            reviewer, "review.record", "work_item", work_id,
+            suffix + ":stale-review", issued_at,
+        )
+        reviewed = reviewer.record_review(
+            review_command, review_id, work_id, "pass", evidence_id, commit,
+        )
+        ready_command = _domain_command(
+            finalizer, "work_item.transition", "work_item", work_id,
+            suffix + ":stale-ready", issued_at,
+        )
+        ready = finalizer.transition_work_item(
+            ready_command, TransitionRequest(
+                to_state=WorkItemState.ACCEPTANCE_READY,
+                evidence_refs=(evidence_id,), review_ref=review_id,
+            ),
+        )
+        if ready.revision != 1:
+            raise ProbeRejected("stale baseline candidate did not reach ready revision")
+        cas_file = cas_root / output_ref.path
+        original_bytes = cas_file.read_bytes()
+        original_mode = stat.S_IMODE(cas_file.stat(follow_symlinks=False).st_mode)
+        cas_file.chmod(0o600)
+        cas_file.write_bytes(b"x" * len(original_bytes))
+        cas_accept_command = _domain_command(
+            finalizer, "work_item.transition", "work_item", work_id,
+            suffix + ":stale-cas-accept", issued_at, revision=1,
+        )
+        try:
+            try:
+                finalizer.transition_work_item(
+                    cas_accept_command, TransitionRequest(
+                        to_state=WorkItemState.ACCEPTED,
+                        evidence_refs=(evidence_id,), review_ref=review_id,
+                    ),
+                )
+            except AcceptanceGuardFailed as error:
+                cas_rejection_reason = str(error)
+            else:
+                raise ProbeRejected("invalidated prepared CAS evidence was accepted")
+        finally:
+            cas_file.write_bytes(original_bytes)
+            cas_file.chmod(original_mode)
+        store.verify(output_ref)
+        with producer._connect() as connection:
+            cas_denied_counts = {
+                table: connection.execute(
+                    f"SELECT count(*) FROM {table} WHERE command_id=%s",
+                    (cas_accept_command.command_id,),
+                ).fetchone()[0]
+                for table in ("command_dedup", "domain_events", "operations")
+            }
+        if (
+            "receipt artifact bytes are not verified" not in cas_rejection_reason
+            or any(cas_denied_counts.values())
+        ):
+            raise ProbeRejected("prepared CAS invalidation did not fail atomically")
+        with producer._connect() as connection:
+            original = connection.execute(
+                "SELECT source_baseline FROM work_items WHERE work_item_id=%s",
+                (work_id,),
+            ).fetchone()
+            snapshot = connection.execute(
+                "SELECT baseline_ref,readiness_snapshot FROM accepted_state_revisions "
+                "WHERE work_item_id=%s AND revision=1",
+                (work_id,),
+            ).fetchone()
+            connection.execute(
+                "UPDATE work_items SET source_baseline=%s WHERE work_item_id=%s "
+                "AND state='acceptance_ready' AND revision=1",
+                (stale_baseline, work_id),
+            )
+            changed = connection.execute(
+                "SELECT state,revision,source_baseline FROM work_items WHERE work_item_id=%s",
+                (work_id,),
+            ).fetchone()
+        if (
+            original != (commit,) or snapshot != (commit, True)
+            or changed != ("acceptance_ready", 1, stale_baseline)
+        ):
+            raise ProbeRejected("injected source baseline did not differ from ready evidence")
+        accept_command = _domain_command(
+            finalizer, "work_item.transition", "work_item", work_id,
+            suffix + ":stale-accept", issued_at, revision=1,
+        )
+        rejection_reasons = []
+        for _ in range(2):
+            try:
+                finalizer.transition_work_item(
+                    accept_command, TransitionRequest(
+                        to_state=WorkItemState.ACCEPTED,
+                        evidence_refs=(evidence_id,), review_ref=review_id,
+                    ),
+                )
+            except AcceptanceGuardFailed as error:
+                rejection_reasons.append(str(error))
+            else:
+                raise ProbeRejected("stale baseline was accepted")
+        if len(set(rejection_reasons)) != 1:
+            raise ProbeRejected("stale acceptance retry changed its denial")
+        committed = {
+            receipt_command.command_id: recorded.operation_id,
+            evidence_command.command_id: evidence_result.operation_id,
+            assign_command.command_id: assigned.operation_id,
+            review_command.command_id: reviewed.operation_id,
+            ready_command.command_id: ready.operation_id,
+        }
+        with producer._connect() as connection:
+            final_work = connection.execute(
+                "SELECT state,revision,source_baseline FROM work_items "
+                "WHERE work_item_id=%s", (work_id,),
+            ).fetchone()
+            accepted_count = connection.execute(
+                "SELECT count(*) FROM accepted_state_revisions "
+                "WHERE work_item_id=%s AND readiness_snapshot=FALSE",
+                (work_id,),
+            ).fetchone()[0]
+            effect_count = connection.execute(
+                "SELECT count(*) FROM effects WHERE work_item_id=%s",
+                (work_id,),
+            ).fetchone()[0]
+            denied_counts = {
+                table: connection.execute(
+                    f"SELECT count(*) FROM {table} WHERE command_id=%s",
+                    (accept_command.command_id,),
+                ).fetchone()[0]
+                for table in ("command_dedup", "domain_events", "operations")
+            }
+            events = connection.execute(
+                "SELECT command_id,event_id FROM domain_events "
+                "WHERE command_id IN (%s,%s,%s,%s,%s) ORDER BY event_id",
+                tuple(committed),
+            ).fetchall()
+            outbox = connection.execute(
+                "SELECT operation_id,topic FROM outbox "
+                "WHERE operation_id IN (%s,%s,%s,%s,%s)",
+                tuple(committed.values()),
+            ).fetchall()
+        if (
+            final_work != changed or accepted_count != 0 or effect_count != 0
+            or any(denied_counts.values()) or len(events) != 5
+            or len(outbox) != 5
+        ):
+            raise ProbeRejected("stale denial left accepted state or partial effects")
+        proof = {
+            "delivery_operation_id": delivery_operation_id,
+            "message_id": message_id, "dispatch_id": dispatch_id,
+            "work_item_id": work_id, "attempt_id": delivery_attempt_id,
+            "runtime_id": owner["runtime_id"], "node_id": node.node_id,
+            "machine_id": node.machine_id, "source_commit": commit,
+            "source_tree": tree, "ready_baseline": commit,
+            "stale_baseline": stale_baseline, "ready_revision": 1,
+            "source_drift": source_drift,
+            "candidate_ref": binding["candidate_ref"],
+            "artifact_ref": output_ref.model_dump(mode="json"),
+            "readback_ref": readback_ref.model_dump(mode="json"),
+            "receipt_id": receipt.receipt_id, "evidence_id": evidence_id,
+            "review_id": review_id, "committed_operations": committed,
+            "committed_event_ids": [
+                {"command_id": command_id, "event_id": str(event_id)}
+                for command_id, event_id in events
+            ],
+            "cas_accept_command_id": cas_accept_command.command_id,
+            "cas_rejection_reason": cas_rejection_reason,
+            "cas_denied_command_counts": cas_denied_counts,
+            "accept_command_id": accept_command.command_id,
+            "rejection_reason": rejection_reasons[0],
+            "denied_replay_count": len(rejection_reasons),
+            "denied_command_counts": denied_counts,
+            "accepted_revision_count": accepted_count,
+            "protected_effect_count": effect_count,
+        }
+        _private_json(proof_path, proof)
+        return proof
+
+
+
 def _run_domain_transaction(
     profile: dict[str, Any], scenario: str, ledger: ProbeLedger,
     commit: str, tree: str, run_id: str, suffix: str, issued_at: datetime,
@@ -1994,6 +2440,7 @@ def _run_domain_transaction(
     provider_workflow = None
     lease_proof = None
     uncertain_effect_proof = None
+    stale_baseline_proof = None
     if scenario == "P1-AUTH-REVOCATION":
         with authority._connect() as connection:
             connection.execute(
@@ -2067,6 +2514,12 @@ def _run_domain_transaction(
         uncertain_effect_proof = _uncertain_effect(
             authority, node, ledger, work_id, message_id, sent.operation_id,
             commit, tree, suffix, issued_at,
+        )
+    if scenario == "P1-STALE-BASELINE":
+        stale_baseline_proof = _stale_baseline(
+            authority, node, ledger, work_id, message_id, sent.operation_id,
+            commit, tree, suffix, issued_at,
+            source_root=Path(profile["source_root"]),
         )
     with node._transaction() as connection:
         connection.execute(
@@ -2209,6 +2662,7 @@ def _run_domain_transaction(
         "provider_restart_proof": provider_restart_proof,
         "lease_proof": lease_proof,
         "uncertain_effect_proof": uncertain_effect_proof,
+        "stale_baseline_proof": stale_baseline_proof,
         "dedup_details": list(dedup_details),
         "operation_details": list(operation_details),
         "provider_refs": list(provider_refs),
@@ -2637,6 +3091,186 @@ def _uncertain_effect_readback(profile, ledger, row, proof):
 
 
 
+def _stale_pg_readback(profile, row, proof):
+    scoped = make_conninfo(
+        profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
+    )
+    with psycopg.connect(scoped) as connection:
+        work = connection.execute(
+            "SELECT state,revision,source_baseline FROM work_items "
+            "WHERE work_item_id=%s", (proof["work_item_id"],),
+        ).fetchone()
+        ready = connection.execute(
+            "SELECT baseline_ref,readiness_snapshot FROM accepted_state_revisions "
+            "WHERE work_item_id=%s AND revision=1", (proof["work_item_id"],),
+        ).fetchone()
+        accepted = connection.execute(
+            "SELECT count(*) FROM accepted_state_revisions "
+            "WHERE work_item_id=%s AND readiness_snapshot=FALSE",
+            (proof["work_item_id"],),
+        ).fetchone()[0]
+        attempt = connection.execute(
+            "SELECT work_item_id,runtime_id,source_baseline,source_commit,source_tree "
+            "FROM attempts WHERE attempt_id=%s", (proof["attempt_id"],),
+        ).fetchone()
+        delivery = connection.execute(
+            "SELECT message_id,dispatch_id,status,selection_json->>'machine_id' "
+            "FROM delivery_attempts WHERE attempt_id=%s", (proof["attempt_id"],),
+        ).fetchone()
+        receipt = connection.execute(
+            "SELECT work_item_id,attempt_id,source_baseline FROM execution_receipts "
+            "WHERE receipt_id=%s", (proof["receipt_id"],),
+        ).fetchone()
+        evidence = connection.execute(
+            "SELECT work_item_id,attempt_id,baseline_ref,candidate_ref FROM evidence "
+            "WHERE evidence_id=%s", (proof["evidence_id"],),
+        ).fetchone()
+        review = connection.execute(
+            "SELECT verdict,baseline_ref,candidate_ref FROM reviews WHERE review_id=%s",
+            (proof["review_id"],),
+        ).fetchone()
+        effects = connection.execute(
+            "SELECT count(*) FROM effects WHERE work_item_id=%s",
+            (proof["work_item_id"],),
+        ).fetchone()[0]
+        denied = {
+            table: connection.execute(
+                f"SELECT count(*) FROM {table} WHERE command_id=%s",
+                (proof["accept_command_id"],),
+            ).fetchone()[0]
+            for table in ("command_dedup", "domain_events", "operations")
+        }
+        cas_denied = {
+            table: connection.execute(
+                f"SELECT count(*) FROM {table} WHERE command_id=%s",
+                (proof["cas_accept_command_id"],),
+            ).fetchone()[0]
+            for table in ("command_dedup", "domain_events", "operations")
+        }
+        events = connection.execute(
+            "SELECT command_id,event_id FROM domain_events "
+            "WHERE command_id IN (%s,%s,%s,%s,%s) ORDER BY event_id",
+            tuple(proof["committed_operations"]),
+        ).fetchall()
+        outbox = connection.execute(
+            "SELECT operation_id,topic FROM outbox "
+            "WHERE operation_id IN (%s,%s,%s,%s,%s)",
+            tuple(proof["committed_operations"].values()),
+        ).fetchall()
+    if (
+        work != ("acceptance_ready", 1, proof["stale_baseline"])
+        or ready != (proof["ready_baseline"], True)
+        or accepted != 0 or effects != 0 or any(denied.values())
+        or any(cas_denied.values())
+        or denied != proof["denied_command_counts"]
+        or cas_denied != proof["cas_denied_command_counts"]
+        or attempt != (
+            proof["work_item_id"], proof["runtime_id"], proof["ready_baseline"],
+            proof["source_commit"], proof["source_tree"],
+        )
+        or delivery != (
+            proof["message_id"], proof["dispatch_id"], "delivered",
+            proof["machine_id"],
+        )
+        or receipt != (
+            proof["work_item_id"], proof["attempt_id"], proof["ready_baseline"],
+        )
+        or evidence != (
+            proof["work_item_id"], proof["attempt_id"], proof["ready_baseline"],
+            proof["candidate_ref"],
+        )
+        or review != ("pass", proof["ready_baseline"], proof["candidate_ref"])
+        or [{"command_id": item[0], "event_id": str(item[1])} for item in events]
+        != proof["committed_event_ids"]
+        or len(outbox) != len(proof["committed_operations"])
+        or {item[0] for item in outbox}
+        != set(proof["committed_operations"].values())
+    ):
+        raise ProbeRejected("stale baseline PG acceptance/readiness lineage changed")
+    return {"stale_baseline_pg_readback": True,
+            "denied_command_id": proof["accept_command_id"],
+            "accepted_revision_count": accepted}
+
+
+def _verify_private_git_drift(
+    source_root: Path, ledger: ProbeLedger, proof: dict[str, Any],
+) -> dict[str, Any]:
+    drift = proof["source_drift"]
+    patch_path = ledger.root / "P1-STALE-BASELINE-source.diff"
+    if (
+        not patch_path.is_file() or patch_path.is_symlink()
+        or patch_path.stat(follow_symlinks=False).st_mode & 0o777 != 0o600
+        or _sha(patch_path.read_bytes()) != drift["stale_diff_sha256"]
+    ):
+        raise ProbeRejected("stale private Git diff identity changed")
+    try:
+        stamp = datetime.strptime(drift["git_timestamp"], "%Y-%m-%dT%H:%M:%S %z")
+        reproduced, patch = _private_source_drift(
+            source_root, proof["source_tree"], stamp,
+        )
+    except (ValueError, OSError, subprocess.SubprocessError) as error:
+        raise ProbeRejected("stale private Git reconstruction failed") from error
+    if reproduced != drift or patch != patch_path.read_bytes():
+        raise ProbeRejected("stale private Git HEAD/tree/parent/diff readback changed")
+    return {
+        "copied_source_commit": drift["copied_source_commit"],
+        "copied_source_tree": drift["copied_source_tree"],
+        "stale_git_commit": drift["stale_git_commit"],
+        "stale_git_tree": drift["stale_git_tree"],
+        "stale_diff_sha256": drift["stale_diff_sha256"],
+    }
+
+
+def _stale_source_readback(profile, ledger, row, proof):
+    source_commit = os.environ.get("ACS_GATE_SOURCE_COMMIT")
+    source_tree = os.environ.get("ACS_GATE_SOURCE_TREE")
+    if not source_commit or not source_tree:
+        source_commit, source_tree = _source_identity(Path(profile["source_root"]))
+    if (
+        (source_commit, source_tree) != (proof["source_commit"], proof["source_tree"])
+        or proof["stale_baseline"] == source_commit
+        or (ledger.root / "P1-STALE-BASELINE-effects").exists()
+    ):
+        raise ProbeRejected("stale baseline source or protected Effect boundary changed")
+    git_readback = _verify_private_git_drift(Path(profile["source_root"]), ledger, proof)
+    if git_readback["stale_git_commit"] != proof["stale_baseline"]:
+        raise ProbeRejected("stale WorkItem baseline is not the private Git HEAD")
+    proof_file = ledger.root / "P1-STALE-BASELINE-proof.json"
+    if (
+        json.loads(proof_file.read_text()) != proof
+        or proof_file.stat(follow_symlinks=False).st_mode & 0o777 != 0o600
+    ):
+        raise ProbeRejected("stale baseline private fault proof changed")
+    try:
+        with LocalArtifactStore(ledger.root / "P1-STALE-BASELINE-cas") as store:
+            artifact = ArtifactRef.model_validate(proof["artifact_ref"])
+            readback = ArtifactRef.model_validate(proof["readback_ref"])
+            store.verify(artifact)
+            store.verify(readback)
+    except (ArtifactError, ValueError):
+        raise ProbeRejected("stale candidate CAS bytes changed") from None
+    scoped = make_conninfo(
+        profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
+    )
+    with psycopg.connect(scoped) as connection:
+        work = connection.execute(
+            "SELECT source_baseline,state,revision FROM work_items "
+            "WHERE work_item_id=%s", (proof["work_item_id"],),
+        ).fetchone()
+        effects = connection.execute(
+            "SELECT count(*) FROM effects WHERE work_item_id=%s",
+            (proof["work_item_id"],),
+        ).fetchone()[0]
+    if work != (proof["stale_baseline"], "acceptance_ready", 1) or effects:
+        raise ProbeRejected("stale baseline source readback no longer denies acceptance")
+    return {"stale_source_readback": True,
+            "actual_source_commit": source_commit,
+            "ready_baseline": proof["ready_baseline"],
+            "stale_baseline": proof["stale_baseline"],
+            "protected_effect_count": effects, **git_readback}
+
+
+
 def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 ledger: ProbeLedger, row: dict[str, Any]) -> dict[str, Any]:
     lineage = json.loads(row["lineage_json"])
@@ -2647,7 +3281,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         "inbox_count", "grant_revoked",
         "ack_loss_observed", "exact_replay", "conflict_rejected",
         "core_crash_proof", "node_restart_proof", "provider_restart_proof",
-        "lease_proof", "uncertain_effect_proof",
+        "lease_proof", "uncertain_effect_proof", "stale_baseline_proof",
         "dedup_details", "operation_details", "outbox_details", "message_hashes",
         "event_hashes", "provider_refs",
     }
@@ -2680,6 +3314,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         or (lineage["lease_proof"] is not None) != (scenario == "P1-LEASE-FENCING")
         or (lineage["uncertain_effect_proof"] is not None)
         != (scenario == "P1-UNCERTAIN-EFFECT")
+        or (lineage["stale_baseline_proof"] is not None)
+        != (scenario == "P1-STALE-BASELINE")
     ):
         raise ProbeRejected("scenario lineage does not prove its required fault")
     if scenario == "P1-CORE-RESTART":
@@ -2770,6 +3406,34 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             or proof.get("effect_file_identity") != proof.get("fault_file_identity")
         ):
             raise ProbeRejected("uncertain Effect same-lineage recovery proof is incomplete")
+    if scenario == "P1-STALE-BASELINE":
+        proof = lineage["stale_baseline_proof"]
+        if (
+            proof.get("delivery_operation_id") != lineage["operation_id"]
+            or proof.get("message_id") != lineage["message_id"]
+            or proof.get("dispatch_id") != lineage["dispatch_id"]
+            or proof.get("attempt_id") != lineage["attempt_id"]
+            or proof.get("source_commit") != row["source_commit"]
+            or proof.get("source_tree") != row["source_tree"]
+            or proof.get("machine_id") != profile["machine_id"]
+            or proof.get("node_id") != profile["node_id"]
+            or proof.get("ready_baseline") != row["source_commit"]
+            or proof.get("stale_baseline") == proof.get("ready_baseline")
+            or proof.get("source_drift", {}).get("copied_source_tree") != row["source_tree"]
+            or proof.get("source_drift", {}).get("stale_git_commit")
+            != proof.get("stale_baseline")
+            or proof.get("source_drift", {}).get("stale_git_tree") == row["source_tree"]
+            or proof.get("ready_revision") != 1
+            or proof.get("denied_replay_count") != 2
+            or "receipt artifact bytes are not verified"
+            not in proof.get("cas_rejection_reason", "")
+            or any(proof.get("cas_denied_command_counts", {}).values())
+            or any(proof.get("denied_command_counts", {}).values())
+            or proof.get("accepted_revision_count") != 0
+            or proof.get("protected_effect_count") != 0
+            or not proof.get("rejection_reason")
+        ):
+            raise ProbeRejected("stale source acceptance denial proof is incomplete")
     if kind == "postgresql":
         scoped = make_conninfo(
             profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
@@ -2864,7 +3528,9 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             _lease_pg_readback(profile, row, lineage["lease_proof"])
             if scenario == "P1-LEASE-FENCING"
             else _uncertain_pg_readback(profile, row, lineage["uncertain_effect_proof"])
-            if scenario == "P1-UNCERTAIN-EFFECT" else {}
+            if scenario == "P1-UNCERTAIN-EFFECT"
+            else _stale_pg_readback(profile, row, lineage["stale_baseline_proof"])
+            if scenario == "P1-STALE-BASELINE" else {}
         )
         return {"postgresql_readback": True, "lineage_digest": _sha(_canonical(lineage)),
                 **extra}
@@ -2980,7 +3646,10 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             if scenario == "P1-LEASE-FENCING"
             else _uncertain_effect_readback(
                 profile, ledger, row, lineage["uncertain_effect_proof"],
-            ) if scenario == "P1-UNCERTAIN-EFFECT" else {}
+            ) if scenario == "P1-UNCERTAIN-EFFECT"
+            else _stale_source_readback(
+                profile, ledger, row, lineage["stale_baseline_proof"],
+            ) if scenario == "P1-STALE-BASELINE" else {}
         )
         return {"driver_readback": True, "driver_calls": lineage["driver_calls"],
                 "raw_sha256": _sha(raw.read_bytes()), **extra}
@@ -3077,7 +3746,10 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             if scenario == "P1-LEASE-FENCING"
             else _uncertain_effect_readback(
                 profile, ledger, row, lineage["uncertain_effect_proof"],
-            ) if scenario == "P1-UNCERTAIN-EFFECT" else {}
+            ) if scenario == "P1-UNCERTAIN-EFFECT"
+            else _stale_source_readback(
+                profile, ledger, row, lineage["stale_baseline_proof"],
+            ) if scenario == "P1-STALE-BASELINE" else {}
         )
         return {"os_readback": True, "platform": platform.platform(),
                 "systemd_user_exit": systemd_exit, **extra}
@@ -3090,6 +3762,10 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             or (scenario == "P1-UNCERTAIN-EFFECT" and (
                 lineage["uncertain_effect_proof"]["target_write_count"] != 1
                 or not lineage["uncertain_effect_proof"]["late_old_owner_rejected"]
+            ))
+            or (scenario == "P1-STALE-BASELINE" and (
+                lineage["stale_baseline_proof"]["accepted_revision_count"] != 0
+                or lineage["stale_baseline_proof"]["protected_effect_count"] != 0
             ))):
         raise ProbeRejected("command output does not bind the Runtime transaction")
     return {"command_output": True, "test_digest": row["test_digest"],
@@ -3104,6 +3780,7 @@ def _runner_result(profile: dict[str, Any], scenario: str, kind: str,
     lineage = json.loads(row["lineage_json"])
     lease = lineage.get("lease_proof")
     uncertain = lineage.get("uncertain_effect_proof")
+    stale = lineage.get("stale_baseline_proof")
     if "fault_injection" in fields:
         facts["fault_injected"] = True
     if "source_readback" in fields:
@@ -3140,12 +3817,15 @@ def _runner_result(profile: dict[str, Any], scenario: str, kind: str,
             uncertain["acquire_operation_id"], uncertain["release_operation_id"],
             uncertain["registration_operation_id"],
             uncertain["reconciliation_operation_id"],
-        ] if uncertain else []),
+        ] if uncertain else [])
+        + (list(stale["committed_operations"].values()) if stale else []),
         "message_ids": [row["message_id"]],
         "event_ids": [row["event_id"]]
         + ([item["event_id"] for item in lease["lease_events"]] if lease else [])
         + ([item["event_id"] for item in uncertain["domain_event_ids"]]
-           if uncertain else []),
+           if uncertain else [])
+        + ([item["event_id"] for item in stale["committed_event_ids"]]
+           if stale else []),
         "receipt_ids": [row["receipt_id"]], "observer": "p1-profile-probe",
         "owner": "runtime-domain", "facts": facts,
     }
