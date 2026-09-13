@@ -320,6 +320,13 @@ class ReceiverService:
             if expected[field] != old or actual[field] != new:
                 raise ReceiverRejected("boot recovery identity transition rejected")
             expected[field] = new
+        if (
+            expected["runtime_id"] != recovery.old_runtime_id
+            or actual["runtime_id"] != recovery.new_runtime_id
+            or recovery.old_runtime_id == recovery.new_runtime_id
+        ):
+            raise ReceiverRejected("boot recovery Runtime identity transition rejected")
+        expected["runtime_id"] = recovery.new_runtime_id
         if actual != expected:
             raise ReceiverRejected("boot recovery identity differs from prepared request")
         return original
