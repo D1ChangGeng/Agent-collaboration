@@ -801,14 +801,17 @@ class OpenCodeNativeDriver:
 
     def collect_result(self, operation, invocation_operation_id):
         with self._lock:
-            self._auth(operation)
-            record = self._invocation(invocation_operation_id)
-            if record["state"] not in ("intent", "uncertain", "acknowledged"):
-                raise DriverRejected("rejected invocation has no accepted response")
-            payload = record["input"]["payload"]
-            if self._message_readback(operation, payload) is None:
-                raise OutcomeUncertain("response lacks its exact user-message readback")
-            view = self._inspect(operation)
+            try:
+                self._auth(operation)
+                record = self._invocation(invocation_operation_id)
+                if record["state"] not in ("intent", "uncertain", "acknowledged"):
+                    raise DriverRejected("rejected invocation has no accepted response")
+                payload = record["input"]["payload"]
+                if self._message_readback(operation, payload) is None:
+                    raise OutcomeUncertain("response lacks its exact user-message readback")
+                view = self._inspect(operation)
+            except (HttpRejected, HttpFailure, OSError, TimeoutError) as error:
+                raise OutcomeUncertain("native terminal readback transport is temporarily unavailable") from error
             answers = [value for value in view["messages"] if value["info"].get("role") == "assistant"
                        and value["info"].get("parentID") == payload["native_message_id"]]
             terminal = [value for value in answers if value["info"].get("time", {}).get("completed") is not None
