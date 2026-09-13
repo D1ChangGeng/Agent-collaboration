@@ -486,9 +486,35 @@ class SystemdUserSupervisor(_Ownership):
                 return dict(record.terminal)
             values = self._show(record.details["unit"])
             if values["LoadState"] == "not-found":
-                raise OwnershipMismatch(
-                    "owned transient unit disappeared before verified termination"
+                members, _ = self._members(
+                    record.details["control_group"], record.details["unit"]
                 )
+                root_birth = _proc_birth(record.details["main_pid"])
+                if root_birth is not None and root_birth != handle.birth_ref:
+                    raise OwnershipMismatch("root PID was reused")
+                if root_birth is not None or members or handle.process.poll() is None:
+                    raise OwnershipMismatch(
+                        "owned transient unit disappeared before verified termination"
+                    )
+                record.terminal = {
+                    "containment_id": handle.containment_id,
+                    "birth_ref": handle.birth_ref,
+                    "backend": "systemd-user-transient-service",
+                    "unit": record.details["unit"],
+                    "invocation_id": record.details["invocation_id"],
+                    "main_pid": record.details["main_pid"],
+                    "control_group": record.details["control_group"],
+                    "started_monotonic": record.details["started_monotonic"],
+                    "active_state": "inactive",
+                    "root_exited": True,
+                    "remaining_pids": [],
+                    "load_state": "not-found",
+                    "wrapper_exited": True,
+                    "wrapper_returncode": handle.process.returncode,
+                    "verified": True,
+                    "scope": "one_transient_user_service_control_group",
+                }
+                return dict(record.terminal)
             self._verify_identity(record, values)
             members, births = self._members(record.details["control_group"], record.details["unit"])
             root_birth = _proc_birth(record.details["main_pid"])
