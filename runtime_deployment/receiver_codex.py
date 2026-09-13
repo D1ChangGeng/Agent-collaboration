@@ -132,7 +132,10 @@ class CodexReceiverCapacity:
                 # code-mode helper by name even when the packet exposes no
                 # tools.  Keep resolution inside the same digest-pinned,
                 # owner-controlled capacity as the executable.
-                "PATH": str(Path(self.settings["executable"]).parent) + ":/usr/bin:/bin",
+                "PATH": (
+                    str(Path(self.settings["executable"]).parent)
+                    + ":/opt/acs/codex-sandbox/bin:/usr/bin:/bin"
+                ),
                 "HOME": str(Path(self.settings["codex_home"]).parent / "home"),
                 "TMPDIR": str(Path(self.settings["codex_home"]).parent / "tmp"),
                 "LANG": "C.UTF-8",
@@ -170,7 +173,20 @@ class CodexReceiverCapacity:
         self._collector_errors: dict[str, str] = {}
         self._collector_lock = threading.Lock()
         self._closed = False
-        self.driver.spawn(self._lifecycle_operation("spawn"))
+        try:
+            self.driver.spawn(self._lifecycle_operation("spawn"))
+        except BaseException:
+            # A failed native spawn may already own a supervised process tree
+            # and a kernel Driver claim.  Constructor failure must not orphan
+            # either resource because no DeploymentCallbacks.close hook exists
+            # yet for the entrypoint to invoke.
+            try:
+                if self.driver.owned is not None:
+                    self.supervisor.terminate_tree(self.driver.owned)
+                self.driver.detach_transport()
+            finally:
+                self.supervisor.close()
+            raise
 
     def _lifecycle_operation(self, action: str) -> AuthorizedOperation:
         prefix = "spawn" if action == "spawn" else "close"

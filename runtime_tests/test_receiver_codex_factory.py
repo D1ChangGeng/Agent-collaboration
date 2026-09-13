@@ -113,7 +113,8 @@ def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_p
     })()})()
     with pytest.raises(StopConstruction):
         CodexReceiverCapacity(config_object, "policy", value)
-    assert observed["environment"]["PATH"].split(":", 1)[0] == str(executable.parent)
+    path = observed["environment"]["PATH"].split(":")
+    assert path[:2] == [str(executable.parent), "/opt/acs/codex-sandbox/bin"]
 
 
 @pytest.mark.skipif(os.name != "posix", reason="deployment factory binding is POSIX-owned")
