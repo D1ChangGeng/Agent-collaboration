@@ -12,7 +12,7 @@ from typing import Any
 from nacl.signing import SigningKey
 
 from runtime.receiver import ReceiverRejected, ReceiverService
-from runtime.receiver_config import ReceiverRuntimeConfig
+from runtime.receiver_config import ReceiverClientConfig, ReceiverRuntimeConfig
 from runtime.receiver_crypto import load_owner_signing_key, sha256, tls_fingerprint, verify
 from runtime.receiver_models import DeliveryAdmission, SignedReceipt, SignedRequest
 from runtime.receiver_paths import PathSecurityRejected, validated_file_identity
@@ -23,7 +23,7 @@ class RemoteTransportRejected(RuntimeError):
 
 
 class RemoteNodeTransport:
-    def __init__(self, config: ReceiverRuntimeConfig, *, timeout: float = 5.0):
+    def __init__(self, config: ReceiverClientConfig, *, timeout: float = 5.0):
         config.validate()
         self.config = config
         self.timeout = timeout

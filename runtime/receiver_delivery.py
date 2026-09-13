@@ -4,7 +4,9 @@ from __future__ import annotations
 import json
 import secrets
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from nacl.signing import SigningKey
 
 from runtime.delivery_models import InvocationRequest
 from runtime.delivery_node import (
@@ -12,7 +14,7 @@ from runtime.delivery_node import (
     InvocationPreCallRejected,
     logical_payload,
 )
-from runtime.receiver_config import ReceiverRuntimeConfig
+from runtime.receiver_config import ReceiverClientConfig, ReceiverRuntimeConfig
 from runtime.receiver_crypto import load_owner_signing_key, sha256
 from runtime.receiver_models import (
     DispatchBody,
@@ -36,6 +38,28 @@ class ReceiverDeployment:
     expected_boot_incarnation: str
     journal_generation: int
     old_boot_isolation_ref: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RemoteSenderDeployment:
+    """Sender-owned authority credential and receiver generation binding.
+
+    Receiver-local certificate, Node key and SQLite paths never cross the
+    machine boundary. The signing key is process-injected and omitted from the
+    dataclass representation so command output cannot reveal it accidentally.
+    """
+
+    authority_signing_key: SigningKey = field(repr=False)
+    expected_boot_incarnation: str = ""
+    journal_generation: int = 1
+    old_boot_isolation_ref: str | None = None
+
+    def validate(self) -> None:
+        if not isinstance(self.authority_signing_key, SigningKey):
+            raise TypeError("sender authority signing key is unavailable")
+        if (not self.expected_boot_incarnation or self.journal_generation < 1
+                or (self.journal_generation == 1) != (self.old_boot_isolation_ref is None)):
+            raise ValueError("sender receiver-generation binding is invalid")
 
 
 class ReceiverNativeDeliveryBridge:
@@ -106,7 +130,8 @@ class RemoteNodeEndpointAdapter:
 
     evidence_class = "authenticated_receiver_transport"
 
-    def __init__(self, authority, endpoint_id: str, deployment: ReceiverDeployment,
+    def __init__(self, authority, endpoint_id: str,
+                 deployment: ReceiverDeployment | RemoteSenderDeployment,
                  *, timeout: float = 5.0):
         self.authority = authority
         self.store = authority.receiver_transport
@@ -125,13 +150,10 @@ class RemoteNodeEndpointAdapter:
             registration_signature=committed["registration"]["registration_signature"],
         )
         key = self.store.load_authority_key()
-        self.config = ReceiverRuntimeConfig(
+        self.config = ReceiverClientConfig(
             binding=binding, authority_key_id=key["key_id"], authority_key_revision=key["revision"],
             authority_public_key=key["public_key"],
             authority_public_key_fingerprint=key["fingerprint"],
-            tls_cert_path=deployment.tls_cert_path, tls_key_path=deployment.tls_key_path,
-            node_signing_key_path=deployment.node_signing_key_path,
-            ledger_path=deployment.ledger_path,
             expected_boot_incarnation=deployment.expected_boot_incarnation,
             journal_generation=deployment.journal_generation,
             old_boot_isolation_ref=deployment.old_boot_isolation_ref,
@@ -140,7 +162,11 @@ class RemoteNodeEndpointAdapter:
         if (registration.endpoint_id != endpoint_id
                 or registration.boot_incarnation != deployment.expected_boot_incarnation):
             raise ValueError("receiver deployment differs from committed endpoint")
-        self._signing_key = load_owner_signing_key(deployment.authority_signing_key_path)
+        if isinstance(deployment, RemoteSenderDeployment):
+            deployment.validate()
+            self._signing_key = deployment.authority_signing_key
+        else:
+            self._signing_key = load_owner_signing_key(deployment.authority_signing_key_path)
         self.transport = RemoteNodeTransport(self.config, timeout=timeout)
 
     @property
