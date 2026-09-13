@@ -353,8 +353,7 @@ class CodexReceiverCapacity:
             self.driver.detach_transport()
         finally:
             self.supervisor.close()
-            self.artifact_store.close()
-
+        self.artifact_store.close()
 
 def callbacks(config, deployment_policy_sha256, settings):
     capacity = CodexReceiverCapacity(config, deployment_policy_sha256, settings)
