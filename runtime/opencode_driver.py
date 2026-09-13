@@ -188,14 +188,27 @@ class OpenCodeNativeDriver:
     harness = "opencode"
 
     def __init__(self, binding_id, profile, journal: DriverJournal, *, identity: BindingIdentity, check_current, supervisor=None,
-                 http_timeout=10, readback_attempts=10):
+                 http_timeout=10, readback_attempts=10, auth_stager=None,
+                 required_provider_url=None):
         if not isinstance(binding_id, str) or not binding_id or not callable(check_current):
             raise DriverRejected("immutable binding and current Node authorization are required")
         identity.validate()
+        if (auth_stager is None) != (required_provider_url is None):
+            raise DriverRejected("private auth stage and reviewed provider route must be paired")
+        if auth_stager is not None and (
+            not callable(getattr(auth_stager, "stage", None))
+            or not callable(getattr(auth_stager, "assert_current", None))
+            or not isinstance(required_provider_url, str)
+            or not required_provider_url.startswith("https://")
+        ):
+            raise DriverRejected("private auth stage is not a bounded host capability")
         self.binding_id, self.profile, self.journal = binding_id, profile, journal
         self.identity, self._identity = identity, asdict(identity)
         self.check_current, self.supervisor = check_current, supervisor
         self.http_timeout, self.readback_attempts = http_timeout, readback_attempts
+        self.auth_stager = auth_stager
+        self.required_provider_url = required_provider_url
+        self.auth_observation = None
         self._lock = threading.RLock()
         self._claim_journal = journal
         self.client = self.owned = self.session_id = None
@@ -312,6 +325,43 @@ class OpenCodeNativeDriver:
         if digest(schema) != digest(json.loads(Path(self.profile.schema_path).read_text())):
             raise DriverRejected("served OpenAPI differs from the reviewed schema")
         _, config = self._http(operation, "GET", "/config")
+        if self.auth_stager is not None:
+            self.auth_stager.assert_current(self.profile)
+            selected = config.get("provider", {}).get(self.profile.provider_id, {})
+            if (
+                not isinstance(selected, dict)
+                or selected.get("options") != {"baseURL": self.required_provider_url}
+                or selected.get("npm") != "@ai-sdk/openai"
+            ):
+                raise DriverRejected("effective native Responses route differs from owner scene")
+            self._auth(operation)
+            if self.client is None:
+                raise DriverRejected("owned native provider readback has no transport")
+            _, provider_state = self.client.request(
+                "GET", "/provider", timeout=self.http_timeout, max_bytes=4 * 1024 * 1024,
+                before_send=lambda: self._auth(operation),
+            )
+            all_providers = provider_state.get("all") if isinstance(provider_state, dict) else None
+            connected = provider_state.get("connected") if isinstance(provider_state, dict) else None
+            selected_providers = [
+                item for item in all_providers if isinstance(item, dict)
+                and item.get("id") == self.profile.provider_id
+            ] if isinstance(all_providers, list) else []
+            if (
+                not isinstance(connected, list)
+                or connected.count(self.profile.provider_id) != 1
+                or len(selected_providers) != 1
+                or selected_providers[0].get("source") != "api"
+            ):
+                raise DriverRejected("native provider did not consume the owner auth file")
+            stage = self.auth_stager.assert_current(self.profile)
+            self.auth_observation = {
+                **stage, "provider_connected": True,
+                "native_route_equal": True, "native_source": "api",
+            }
+            self.journal.event(
+                operation.operation_id, "provider_auth_readback", self.auth_observation,
+            )
         agent = config.get("agent", {}).get(self.profile.agent, {})
         if (config.get("permission") != {"*": "deny", "task": "deny"}
                 or agent.get("permission") != {"*": "deny", "task": "deny"}
@@ -472,6 +522,12 @@ class OpenCodeNativeDriver:
             self.profile.validate(fresh=True)
             if self.supervisor is None:
                 raise DriverRejected("native spawn requires an actual Node containment supervisor")
+            if self.auth_stager is not None:
+                try:
+                    stage = self.auth_stager.stage(self.profile)
+                except ValueError as error:
+                    raise DriverRejected("private OpenCode auth staging rejected") from error
+                self.journal.event(operation.operation_id, "private_auth_staged", stage)
             password = secrets.token_urlsafe(36)
             with socket.socket() as reservation:
                 reservation.bind(("127.0.0.1", 0))

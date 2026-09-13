@@ -93,6 +93,21 @@ def validate_opencode_lineage(value: object) -> dict[str, Any]:
         or driver.get("assistant_text_exact") is not True
     ):
         raise OpenCodeReadbackRejected("OpenCode Driver lacks one exact native terminal")
+    auth = driver.get("auth")
+    if auth is not None and (
+        not isinstance(auth, dict)
+        or set(auth) != {
+            "storage", "provider_id", "owner_mode", "same_reference",
+            "provider_connected", "native_route_equal", "native_source",
+        }
+        or auth["storage"] != "xdg-data-auth-json"
+        or auth["owner_mode"] != "0600"
+        or auth["same_reference"] is not True
+        or auth["provider_connected"] is not True
+        or auth["native_route_equal"] is not True
+        or auth["native_source"] != "api"
+    ):
+        raise OpenCodeReadbackRejected("OpenCode native owner auth readback differs")
     if (
         response.get("invocation_id") != value["invocation_id"]
         or response.get("disposition") != "applied"
@@ -136,6 +151,7 @@ def read_original_opencode_scene(
     run_id: str,
     source_commit: str,
     source_tree: str,
+    auth_observation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     invocation_id = "delivery-invocation:" + attempt_id
     with authority._connect() as connection:
@@ -208,6 +224,15 @@ def read_original_opencode_scene(
             "SELECT kind,body FROM driver_events WHERE operation_id=? ORDER BY sequence",
             (invocation_id,),
         ).fetchall()
+        auth_rows = connection.execute(
+            "SELECT body FROM driver_events WHERE operation_id=? "
+            "AND kind='provider_auth_readback' ORDER BY sequence",
+            (run_id + "-spawn",),
+        ).fetchall() if auth_observation is not None else []
+    if auth_observation is not None and (
+        len(auth_rows) != 1 or json.loads(auth_rows[0][0]) != auth_observation
+    ):
+        raise OpenCodeReadbackRejected("OpenCode native auth readback journal differs")
     events = [(kind, json.loads(body)) for kind, body in rows]
     prompts = [body for kind, body in events if kind == "http_dispatch"
                and body.get("path", "").endswith("/prompt_async")]
@@ -289,6 +314,7 @@ def read_original_opencode_scene(
             "terminal_sha256": hashlib.sha256(
                 json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
             ).hexdigest(),
+            **({"auth": auth_observation} if auth_observation is not None else {}),
         },
         "response": {
             "invocation_id": projection["invocation_id"],

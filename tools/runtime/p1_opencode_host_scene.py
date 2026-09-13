@@ -192,6 +192,7 @@ class OpenCodeHostSceneService:
             run_id=self.admission.run_id,
             source_commit=self.admission.source_commit,
             source_tree=self.admission.source_tree,
+            auth_observation=self.driver.auth_observation,
         )
         self.admission.assert_final_lineage(readback)
         if self._readback is not None and readback != self._readback:
@@ -221,6 +222,12 @@ class OpenCodeHostSceneService:
         )
         self.host.start_native(request, spawn)
         try:
+            if (
+                self.driver.auth_stager is None
+                or self.driver.auth_observation is None
+                or self.driver.auth_stager.assert_current(self.driver.profile).get("same_reference") is not True
+            ):
+                raise OpenCodeHostUncertain("OpenCode native owner auth was not observed")
             if admission.key_reference_identity() != self._key_identity:
                 raise OpenCodeHostUncertain("OpenCode key reference changed before dispatch")
             dispatched = self.host.handle(request)
@@ -252,6 +259,9 @@ class OpenCodeHostSceneService:
                 except Exception as error:
                     raise OpenCodeHostUncertain("OpenCode host termination is unverified") from error
                 self._os_proof = stopped
+                if self.driver.auth_stager is None:
+                    raise OpenCodeHostUncertain("OpenCode owner auth stage disappeared")
+                self.driver.auth_stager.assert_current(self.driver.profile)
                 if admission.key_reference_identity() != self._key_identity:
                     raise OpenCodeHostUncertain("OpenCode key reference changed after stop")
                 if not self.environment_dir.is_dir() or any(self.environment_dir.iterdir()):

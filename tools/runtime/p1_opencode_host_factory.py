@@ -39,6 +39,7 @@ from runtime.receiver_paths import (
 )
 from runtime.systemd_supervisor import SystemdUserSupervisor
 from tools.runtime.p1_codex_host_scene import _copy_pinned_native
+from tools.runtime.p1_opencode_auth import PrivateOpenCodeAuth
 from tools.runtime.p1_opencode_gate import OpenCodeGateAdmission
 from tools.runtime.p1_opencode_host_scene import (
     OpenCodeHostSceneService,
@@ -272,6 +273,7 @@ def prepare_opencode_host_capacity(
         {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
     )
     profile.validate(fresh=True)
+    auth_stager = PrivateOpenCodeAuth(admission)
     supervisor = SystemdUserSupervisor(
         tasks_max=64, memory_max=1_073_741_824, cpu_quota_percent=100,
         termination_timeout=10, environment_directory=root / "systemd-env",
@@ -333,7 +335,8 @@ def prepare_opencode_host_capacity(
     driver = OpenCodeNativeDriver(
         run_id + "-binding", profile, journal,
         identity=binding, check_current=current, supervisor=supervisor,
-        http_timeout=10, readback_attempts=6,
+        http_timeout=10, readback_attempts=6, auth_stager=auth_stager,
+        required_provider_url=scene["provider_url"],
     )
 
     def authorize(invocation: Any, observed: BindingIdentity) -> AuthorizedOperation:

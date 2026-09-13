@@ -27,7 +27,7 @@ SCENE_FIELDS = {
     "schema_version", "native_executable_path", "native_executable_sha256",
     "native_executable_size", "opencode_version", "schema_sha256",
     "provider_id", "provider_url", "model_id", "agent", "auth_key_ref_path",
-    "auth_key_ref_path_sha256", "config_template_path", "config_sha256", "max_prompt_async",
+    "auth_key_ref_path_sha256", "auth_storage", "config_template_path", "config_sha256", "max_prompt_async",
     "max_collect_reads", "max_elapsed_seconds", "budget_evidence_ref",
 }
 
@@ -75,7 +75,7 @@ def validate_scene(value: object) -> dict[str, Any]:
     if not isinstance(value, dict) or set(value) != SCENE_FIELDS:
         raise OpenCodeGateRejected("OpenCode scene fields differ")
     if (
-        value["schema_version"] != "acs-p1-opencode-scene/1"
+        value["schema_version"] != "acs-p1-opencode-scene/2"
         or value["opencode_version"] != "1.18.30"
         or value["schema_sha256"] != SCHEMA_SHA256
         or value["agent"] != "engineer"
@@ -88,6 +88,7 @@ def validate_scene(value: object) -> dict[str, Any]:
         or type(value["max_elapsed_seconds"]) is not int
         or value["max_elapsed_seconds"] != 120
         or value["budget_evidence_ref"] != DECISION_ID
+        or value["auth_storage"] != "xdg-data-auth-json"
     ):
         raise OpenCodeGateRejected("OpenCode scene version or one-prompt bound differs")
     for name in ("native_executable_path", "auth_key_ref_path", "config_template_path"):
@@ -126,6 +127,28 @@ def validate_scene(value: object) -> dict[str, Any]:
     ):
         raise OpenCodeGateRejected("OpenCode provider route is outside reviewed HTTPS form")
     return value
+
+
+def _assert_provider_config(config: object, scene: dict[str, Any]) -> None:
+    if not isinstance(config, dict):
+        raise OpenCodeGateRejected("OpenCode provider config is malformed")
+    provider = config.get("provider")
+    selected = provider.get(scene["provider_id"]) if isinstance(provider, dict) else None
+    options = selected.get("options") if isinstance(selected, dict) else None
+    models = selected.get("models") if isinstance(selected, dict) else None
+    if (
+        not isinstance(provider, dict)
+        or set(provider) != {scene["provider_id"]}
+        or not isinstance(selected, dict)
+        or selected.get("npm") != "@ai-sdk/openai"
+        or not isinstance(options, dict)
+        or options != {"baseURL": scene["provider_url"]}
+        or not isinstance(models, dict)
+        or set(models) != {scene["model_id"]}
+        or "disabled_providers" in config
+        or config.get("model") != scene["provider_id"] + "/" + scene["model_id"]
+    ):
+        raise OpenCodeGateRejected("OpenCode selected Responses route or auth scope differs")
 
 
 @dataclass(frozen=True)
@@ -211,16 +234,9 @@ class OpenCodeGateAdmission:
         ):
             raise OpenCodeGateRejected("OpenCode actual Driver profile differs from scene pin")
         config = _owner_json(profile.config_path, self.scene["config_sha256"])
-        provider = config.get("provider")
-        selected = provider.get(self.scene["provider_id"]) if isinstance(provider, dict) else None
-        options = selected.get("options") if isinstance(selected, dict) else None
-        if (
-            not isinstance(options, dict)
-            or options.get("baseURL") != self.scene["provider_url"]
-            or not isinstance(config.get("agent"), dict)
-            or config.get("model") != self.scene["provider_id"] + "/" + self.scene["model_id"]
-        ):
-            raise OpenCodeGateRejected("OpenCode actual provider config route differs from scene")
+        _assert_provider_config(config, self.scene)
+        if not isinstance(config.get("agent"), dict):
+            raise OpenCodeGateRejected("OpenCode actual selected agent differs")
 
     def config_template_bytes(self) -> bytes:
         """Read only the separately pinned owner config before private staging."""
@@ -233,11 +249,7 @@ class OpenCodeGateAdmission:
             raise OpenCodeGateRejected("OpenCode config template is malformed") from None
         if not isinstance(value, dict):
             raise OpenCodeGateRejected("OpenCode config template is not an object")
-        provider = value.get("provider")
-        selected = provider.get(self.scene["provider_id"]) if isinstance(provider, dict) else None
-        options = selected.get("options") if isinstance(selected, dict) else None
-        if not isinstance(options, dict) or options.get("baseURL") != self.scene["provider_url"]:
-            raise OpenCodeGateRejected("OpenCode config template route differs from scene")
+        _assert_provider_config(value, self.scene)
         return data
 
     def key_reference_identity(self) -> tuple[int, int, int, int, int]:
@@ -275,6 +287,16 @@ class OpenCodeGateAdmission:
 
     def assert_final_lineage(self, readback: object) -> dict[str, Any]:
         value = validate_opencode_lineage(readback)
+        auth = value["driver"].get("auth")
+        if (
+            not isinstance(auth, dict)
+            or auth.get("provider_id") != self.scene["provider_id"]
+            or auth.get("storage") != self.scene["auth_storage"]
+            or auth.get("same_reference") is not True
+            or auth.get("provider_connected") is not True
+            or auth.get("native_route_equal") is not True
+        ):
+            raise OpenCodeGateRejected("OpenCode native auth consumption is unproven")
         if self.run_id is None or self.machine_id is None or self.node_id is None:
             raise OpenCodeGateRejected("OpenCode final readback has no HMAC run binding")
         if (
