@@ -7,7 +7,7 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import Any
 
-from runtime.codex_driver import CodexAppServerDriver
+from runtime.codex_driver import CodexAppServerDriver, OutcomeUncertain
 from runtime.delivery_models import InvocationRequest
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.opencode_driver import OpenCodeNativeDriver
@@ -140,6 +140,11 @@ class NativeResponseCollector:
                     or context.endpoint_binding_revision != invocation.envelope.binding_revision):
                 raise BoundaryRejected("terminal Harness proof differs from Driver or Dispatch")
         if outcome not in {"completed", "failed", "interrupted"}:
+            # A driver may have durably acknowledged dispatch while the native
+            # turn is still running. Preserve the original invocation and let
+            # the bounded collector retry readback; never redispatch the turn.
+            if result.get("receipt_layer") == "runtime_acknowledged":
+                raise OutcomeUncertain("native response is not terminal")
             raise BoundaryRejected("Driver terminal outcome is unsupported")
         stable_result = {key: value for key, value in result.items() if key != "observed_at"}
         evidence_digest = canonical_digest(stable_result)
