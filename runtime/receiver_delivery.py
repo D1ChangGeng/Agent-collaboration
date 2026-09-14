@@ -329,6 +329,35 @@ class RemoteNodeEndpointAdapter:
         observed_status = "delivered" if stored_state == "runtime_acknowledged" else stored_state or status
         return self._projection([readback], observed_status)
 
+    def reconcile_marked(self, invocation):
+        """Resend the exact persisted dispatch after a marked transport outage.
+
+        The admission was durably created before the original network send.  A
+        reconciliation may replay only that byte-identical signed request; the
+        receiver ledger and native dispatch identity remain the dedup boundary.
+        """
+        dispatch = self.store.dispatch_admission(invocation.operation_id)
+        if dispatch is None or dispatch.admission.dispatch_id != invocation.dispatch_id:
+            raise DeliveryTransportError("marked dispatch admission is unavailable")
+        prepare = self.store.prepared_recovery_evidence(
+            invocation.operation_id, invocation.attempt_id, invocation.dispatch_id,
+        )
+        if prepare is None:
+            raise DeliveryTransportError("marked prepare receipt is unavailable")
+        _, prepared_receipt = prepare
+        try:
+            dispatched = self._send(dispatch)
+        except (RemoteTransportRejected, ValueError, RuntimeError):
+            observed = self.inspect_delivery(invocation.operation_id, "uncertain")
+            result = self._projection([prepared_receipt], observed["status"])
+            result["receipts"].extend(observed["receipts"])
+            return result
+        state = dispatched.receipt.state
+        return self._projection(
+            [prepared_receipt, dispatched],
+            "delivered" if state == "runtime_acknowledged" else state,
+        )
+
     def recover_prepared(self, invocation, original_prepare, original_receipt,
                          authorize, mark_dispatched):
         """Route one unmarked old-boot preparation through the current signed boot.

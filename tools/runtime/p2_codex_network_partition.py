@@ -43,6 +43,10 @@ class RelayPartition:
     def __init__(self, arguments):
         self.arguments = arguments
         self.events = []
+        self.old_pid = None
+        self.old_birth = None
+        self.restored_process = None
+        self._log_stream = None
 
     def _snapshot(self, phase: str, pid: int | None) -> dict:
         value = {
@@ -51,13 +55,41 @@ class RelayPartition:
             "listener_pid": pid,
             "worker_port_listening": _listening(self.arguments.worker_port),
             "client_port_listening": _listening(self.arguments.client_port),
+            "control_process_chain": self._control_chain(),
         }
         self.events.append(value)
         return value
 
+    @staticmethod
+    def _control_chain() -> list[dict]:
+        result = []
+        pid = os.getpid()
+        for _ in range(12):
+            stat = Path(f"/proc/{pid}/stat")
+            command = Path(f"/proc/{pid}/cmdline")
+            if not stat.is_file() or not command.is_file():
+                break
+            fields = stat.read_text(encoding="ascii").split()
+            result.append({
+                "pid": pid, "birth": fields[21],
+                "argv_sha256": hashlib.sha256(command.read_bytes()).hexdigest(),
+            })
+            parent = int(fields[3])
+            if parent <= 1 or parent == pid:
+                break
+            pid = parent
+        return result
+
+    @staticmethod
+    def _birth(pid: int) -> str:
+        return Path(f"/proc/{pid}/stat").read_text(encoding="ascii").split()[21]
+
     def __call__(self, invocation) -> None:
         pid = int(self.arguments.relay_pid_file.read_text().strip())
+        self.old_pid = pid
+        self.old_birth = self._birth(pid)
         before = self._snapshot("before_partition", pid)
+        before["listener_birth"] = self.old_birth
         if not before["worker_port_listening"] or not before["client_port_listening"]:
             raise RuntimeError("reverse tunnel was not healthy before partition")
         os.kill(pid, signal.SIGTERM)
@@ -67,14 +99,20 @@ class RelayPartition:
         if during["worker_port_listening"] or during["client_port_listening"]:
             raise RuntimeError("reverse tunnel partition did not isolate the route")
         time.sleep(self.arguments.partition_seconds)
+
+    def restore(self, invocation) -> None:
         command = [
             sys.executable, str(self.arguments.tunnel_script), "listen",
             "--host", "127.0.0.1", "--worker-port", str(self.arguments.worker_port),
             "--client-port", str(self.arguments.client_port), "--token",
             str(self.arguments.token),
         ]
-        log = self.arguments.relay_log.open("ab")
-        process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=log, stderr=log)
+        self._log_stream = self.arguments.relay_log.open("ab")
+        process = subprocess.Popen(
+            command, stdin=subprocess.DEVNULL,
+            stdout=self._log_stream, stderr=self._log_stream,
+        )
+        self.restored_process = process
         self.arguments.relay_pid_file.write_text(str(process.pid))
         _wait(self.arguments.worker_port, True)
         _wait(self.arguments.client_port, True)
@@ -82,10 +120,27 @@ class RelayPartition:
         # the worker sockets destroyed with the listener.
         time.sleep(self.arguments.worker_reconnect_seconds)
         after = self._snapshot("restored", process.pid)
+        after["listener_birth"] = self._birth(process.pid)
         after["logical_message_id"] = invocation.message_id
         after["operation_id"] = invocation.operation_id
         after["attempt_id"] = invocation.attempt_id
         after["dispatch_id"] = invocation.dispatch_id
+
+    def close(self) -> dict:
+        proof = {"pid": None, "birth": None, "exited": True, "returncode": None}
+        if self.restored_process is not None:
+            process = self.restored_process
+            proof.update(pid=process.pid, birth=self._birth(process.pid), exited=False)
+            process.terminate()
+            try:
+                returncode = process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                returncode = process.wait(timeout=5)
+            proof.update(exited=True, returncode=returncode)
+        if self._log_stream is not None:
+            self._log_stream.close()
+        return proof
 
 
 def execute(arguments) -> int:
@@ -127,7 +182,7 @@ def execute(arguments) -> int:
                 + ". Do not call tools and do not delegate.",
         constraints=("one native Codex turn", "no delegation", "no tool calls"),
         source_baseline=state["source_commit"],
-        context_digests=(hashlib.sha256(state["source_tree"].encode()).hexdigest(),),
+        context_digests=(state["source_tree"].ljust(64, "0")[:64],),
         expected_response=sentinel,
         required_evidence=("PostgreSQL", "receiver SQLite", "Driver journal", "Node outbox"),
         activation="invoke", deadline=datetime.now(UTC) + timedelta(minutes=5),
@@ -137,10 +192,27 @@ def execute(arguments) -> int:
         _command(authority, "message.send", "message", message_id), packet,
         endpoint_id=state["endpoint_id"], binding_revision=1,
     )
-    result = DeliveryDispatcher(service, worker_id="linux-p2-network-sender").dispatch({
+    identity = {
         "tenant_id": authority.tenant_id, "message_id": message_id,
         "operation_id": queued.operation_id,
-    })
+    }
+    fault_result = None
+    recovery_result = None
+    try:
+        fault_result = DeliveryDispatcher(
+            service, worker_id="linux-p2-network-sender",
+        ).dispatch(identity)
+        if fault_result.get("status") != "uncertain":
+            raise RuntimeError("partitioned dispatch did not enter uncertain")
+        dispatch = endpoint.store.dispatch_admission(queued.operation_id)
+        if dispatch is None:
+            raise RuntimeError("partitioned dispatch admission was not persisted")
+        partition.restore(dispatch.admission)
+        recovery_result = DeliveryDispatcher(
+            service, worker_id="linux-p2-network-reconciler",
+        ).reconcile_marked(identity)
+    finally:
+        cleanup = partition.close()
     deadline = time.monotonic() + 180
     while time.monotonic() < deadline:
         with authority._connect() as connection:
@@ -175,10 +247,12 @@ def execute(arguments) -> int:
         "attempt": list(attempt) if attempt else None,
         "message": list(message) if message else None,
         "receipts": [list(value) for value in receipts],
-        "dispatch_result": result, "partition_events": partition.events,
+        "fault_result": fault_result, "recovery_result": recovery_result,
+        "partition_events": partition.events,
         "runtime_transport": "end-to-end TLS through Runtime reverse TCP tunnel",
         "control_transport": "SSH retained only for deployment and evidence control",
         "expected_sentinel_sha256": hashlib.sha256(sentinel.encode()).hexdigest(),
+        "relay_cleanup": cleanup,
     }
     _write(arguments.output, evidence)
     print(json.dumps(evidence, sort_keys=True))

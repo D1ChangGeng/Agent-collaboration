@@ -38,11 +38,16 @@ def test_partition_stops_and_restores_only_the_relay(tmp_path):
         tunnel_script=script, token=token, relay_log=log,
     )
     partition = RelayPartition(args)
+    invocation = SimpleNamespace(
+        message_id="message", operation_id="operation",
+        attempt_id="attempt", dispatch_id="dispatch",
+    )
     try:
-        partition(SimpleNamespace(
-            message_id="message", operation_id="operation",
-            attempt_id="attempt", dispatch_id="dispatch",
-        ))
+        partition(invocation)
+        assert [event["phase"] for event in partition.events] == [
+            "before_partition", "partitioned",
+        ]
+        partition.restore(invocation)
         assert [event["phase"] for event in partition.events] == [
             "before_partition", "partitioned", "restored",
         ]
