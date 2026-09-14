@@ -161,7 +161,7 @@ def provision(args):
         authority_id=authority.context.authority_id,authority_incarnation=authority.context.authority_incarnation,
         node_id=node_id,node_binding_revision=1,runtime_id=runtime_id,runtime_revision=1,machine_id=args.machine_id,
         boot_incarnation=boot,scope_id="local-scope",agent_slot_id="local-slot",tls_certificate_sha256=cert_sha,
-        config_sha256="0"*64,expires_at=datetime.now(UTC)+timedelta(minutes=30))
+        config_sha256="0"*64,expires_at=datetime.now(UTC)+timedelta(minutes=4))
     binding=EndpointBinding(registration=provisional,locator_host=args.host,locator_port=args.port,
         route_class=args.route_class,node_key_id=node_key_id,node_public_key=public_key(node_key),registration_signature=sign(node_key,provisional))
     settings=stage_capacity(root,runtime_id)
