@@ -39,6 +39,8 @@ def _write(path: Path, value: dict) -> None:
 
 def issue(path: Path, *, run_id: str, expected_host: str, expected_session: str,
           ttl_seconds: int = 30) -> dict:
+    if path.exists():
+        raise ValueError("control challenge path is not fresh")
     now = datetime.now(UTC)
     value = {
         "schema_version": "acs-p2-control-challenge/1",
@@ -70,7 +72,8 @@ def answer(challenge_path: Path, key_path: Path, output: Path, *, host: str,
 
 
 def validate(challenge_path: Path, proof_path: Path, *, expected_public_key: str,
-             expected_host: str, expected_session: str) -> dict:
+             expected_host: str, expected_session: str,
+             clock_skew_seconds: int = 5) -> dict:
     challenge, proof = _read(challenge_path), _read(proof_path)
     if set(proof) != {"body", "signature"} or not isinstance(proof["body"], dict):
         raise ValueError("control proof shape differs")
@@ -90,7 +93,10 @@ def validate(challenge_path: Path, proof_path: Path, *, expected_public_key: str
         body.get("host"), body.get("session"), body.get("challenge_issued_at"),
         body.get("challenge_expires_at"), body.get("public_key"),
     )
-    if actual != expected or not issued <= signed <= expires or not issued <= now <= expires:
+    skew = timedelta(seconds=clock_skew_seconds)
+    if (not 0 <= clock_skew_seconds <= 30 or actual != expected
+            or not issued - skew <= signed <= expires + skew
+            or not issued - skew <= now <= expires + skew):
         raise ValueError("control proof identity or time differs")
     proof_path.unlink()
     return {
