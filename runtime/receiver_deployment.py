@@ -173,6 +173,9 @@ def deployment_policy(config: ReceiverRuntimeConfig, factory: FactoryBinding) ->
             "host": config.listen_host,
             "port": config.listen_port,
         },
+        "fault_injection": {
+            "drop_response_after_commit_once": config.drop_response_after_commit_once,
+        },
         "authority_key": {
             "key_id": config.authority_key_id,
             "revision": config.authority_key_revision,
