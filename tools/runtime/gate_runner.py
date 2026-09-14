@@ -1297,7 +1297,7 @@ def collect_source_guard(source_root: Path) -> dict[str, Any]:
         "status",
         "--porcelain=v2",
         "--untracked-files=all",
-        "--ignored=matching",
+        "--ignored=no",
     )
     git_dir = Path(git_value(source_root, "rev-parse", "--absolute-git-dir"))
     index_full = inventory_entry(git_dir / "index")
