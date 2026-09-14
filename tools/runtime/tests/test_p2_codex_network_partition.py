@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from tools.runtime.p2_codex_network_partition import RelayPartition
+from tools.runtime.p2_codex_network_partition import RelayPartition, _wait
 
 
 def free_port():
@@ -28,6 +28,8 @@ def test_partition_stops_and_restores_only_the_relay(tmp_path):
         "--host", "127.0.0.1", "--worker-port", str(worker),
         "--client-port", str(client), "--token", os.fspath(token),
     ], stdout=log.open("ab"), stderr=subprocess.STDOUT)
+    _wait(worker, True)
+    _wait(client, True)
     pid = tmp_path / "relay.pid"
     pid.write_text(str(process.pid))
     args = SimpleNamespace(
