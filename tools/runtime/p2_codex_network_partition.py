@@ -28,16 +28,16 @@ from tools.runtime.p2_control_proof import validate as validate_control_proof
 from tools.runtime.p2_codex_half_loop import _command, _json, _write
 
 
-def _listening(port: int) -> bool:
+def _listening(host: str, port: int) -> bool:
     with socket.socket() as probe:
         probe.settimeout(0.2)
-        return probe.connect_ex(("127.0.0.1", port)) == 0
+        return probe.connect_ex((host, port)) == 0
 
 
-def _wait(port: int, expected: bool, seconds: float = 10) -> None:
+def _wait(host: str, port: int, expected: bool, seconds: float = 10) -> None:
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
-        if _listening(port) is expected:
+        if _listening(host, port) is expected:
             return
         time.sleep(0.05)
     raise RuntimeError("reverse tunnel port did not reach expected state")
@@ -61,8 +61,8 @@ class RelayPartition:
             "phase": phase,
             "observed_at": datetime.now(UTC).isoformat(),
             "listener_pid": pid,
-            "worker_port_listening": _listening(self.arguments.worker_port),
-            "client_port_listening": _listening(self.arguments.client_port),
+            "worker_port_listening": _listening(self.arguments.relay_host, self.arguments.worker_port),
+            "client_port_listening": _listening(self.arguments.relay_host, self.arguments.client_port),
             "control_process_chain": self._control_chain(),
         }
         self.events.append(value)
@@ -97,7 +97,7 @@ class RelayPartition:
             return self.process
         command = [
             str(self.arguments.runtime_python), str(self.arguments.tunnel_script), "listen",
-            "--host", "127.0.0.1", "--worker-port", str(self.arguments.worker_port),
+            "--host", self.arguments.relay_host, "--worker-port", str(self.arguments.worker_port),
             "--client-port", str(self.arguments.client_port), "--token",
             str(self.arguments.token),
         ]
@@ -110,8 +110,8 @@ class RelayPartition:
             label="p2-network-relay",
         )
         self.arguments.relay_pid_file.write_text(str(self.process.process.pid))
-        _wait(self.arguments.worker_port, True)
-        _wait(self.arguments.client_port, True)
+        _wait(self.arguments.relay_host, self.arguments.worker_port, True)
+        _wait(self.arguments.relay_host, self.arguments.client_port, True)
         time.sleep(self.arguments.worker_reconnect_seconds)
         return self.process
 
@@ -163,8 +163,8 @@ class RelayPartition:
         if self._birth(pid) != self.old_birth:
             raise RuntimeError("reverse tunnel PID birth changed before signal")
         stopped = self.supervisor.terminate_tree(self.process)
-        _wait(self.arguments.worker_port, False)
-        _wait(self.arguments.client_port, False)
+        _wait(self.arguments.relay_host, self.arguments.worker_port, False)
+        _wait(self.arguments.relay_host, self.arguments.client_port, False)
         during = self._snapshot("partitioned", None)
         during["old_relay_termination"] = stopped
         if during["worker_port_listening"] or during["client_port_listening"]:
@@ -189,14 +189,14 @@ class RelayPartition:
         context.minimum_version = ssl.TLSVersion.TLSv1_3
         context.maximum_version = ssl.TLSVersion.TLSv1_3
         context.check_hostname = False; context.verify_mode = ssl.CERT_NONE
-        with socket.create_connection(("127.0.0.1", self.arguments.client_port), timeout=10) as raw:
+        with socket.create_connection((self.arguments.relay_host, self.arguments.client_port), timeout=10) as raw:
             with context.wrap_socket(raw, server_hostname="receiver") as tls:
                 observed_tls = tls_fingerprint(tls.getpeercert(binary_form=True))
         proof = {
             "pid": process.process.pid, "birth": process.birth_ref,
             "healthy": process.process.poll() is None,
-            "worker_port_listening": _listening(self.arguments.worker_port),
-            "client_port_listening": _listening(self.arguments.client_port),
+            "worker_port_listening": _listening(self.arguments.relay_host, self.arguments.worker_port),
+            "client_port_listening": _listening(self.arguments.relay_host, self.arguments.client_port),
             "containment": self.supervisor.inspect(process),
             "tls_certificate_sha256": observed_tls,
             "tls_verified": observed_tls == self.arguments.expected_tls_fingerprint,
@@ -366,6 +366,7 @@ def main() -> int:
     parser.add_argument("--relay-log", type=Path, required=True)
     parser.add_argument("--worker-port", type=int, required=True)
     parser.add_argument("--client-port", type=int, required=True)
+    parser.add_argument("--relay-host", required=True)
     parser.add_argument("--partition-seconds", type=float, default=1.0)
     parser.add_argument("--worker-reconnect-seconds", type=float, default=2.0)
     parser.add_argument("--control-challenge", type=Path, required=True)
