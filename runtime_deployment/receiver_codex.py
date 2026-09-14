@@ -263,9 +263,30 @@ class CodexReceiverCapacity:
         return operation
 
     @staticmethod
-    def _current_dispatch_identity(recorded, native):
+    def _current_dispatch_identity(recorded, native, endpoint, recovery):
         committed = NativeResponseCollector.dispatch_identity(recorded)
-        if native.binding_revision > committed.binding_revision:
+        if recovery is not None:
+            admission = recovery.admission
+            if (
+                admission.purpose != "delivery.recover"
+                or (admission.tenant_id, admission.message_id, admission.operation_id,
+                    admission.attempt_id, admission.dispatch_id)
+                != (committed.tenant_id, committed.message_id, committed.operation_id,
+                    committed.attempt_id, committed.dispatch_id)
+                or (admission.endpoint_id, admission.endpoint_revision,
+                    admission.runtime_id, admission.runtime_revision,
+                    admission.machine_id, admission.node_id, admission.boot_incarnation,
+                    admission.scope_id, admission.agent_slot_id)
+                != endpoint
+                or admission.endpoint_id != committed.endpoint_id
+                or (admission.machine_id, admission.node_id,
+                    admission.scope_id, admission.agent_slot_id)
+                != (committed.machine_id, committed.node_id,
+                    recorded.envelope.packet.target_scope_id,
+                    recorded.envelope.packet.target_agent_slot_id)
+                or admission.endpoint_revision <= committed.binding_revision
+            ):
+                raise CodexReceiverRejected("current receiver recovery authority differs")
             committed = committed.__class__(
                 tenant_id=committed.tenant_id,
                 message_id=committed.message_id,
@@ -273,11 +294,11 @@ class CodexReceiverCapacity:
                 invocation_id=committed.invocation_id,
                 attempt_id=committed.attempt_id,
                 dispatch_id=committed.dispatch_id,
-                endpoint_id=native.endpoint_id,
-                binding_revision=native.binding_revision,
-                machine_id=native.machine_id,
-                node_id=native.node_id,
-                boot_incarnation=native.boot_incarnation,
+                endpoint_id=admission.endpoint_id,
+                binding_revision=admission.endpoint_revision,
+                machine_id=admission.machine_id,
+                node_id=admission.node_id,
+                boot_incarnation=admission.boot_incarnation,
                 accepted_revision=committed.accepted_revision,
                 accepted_state_digest=committed.accepted_state_digest,
             )
@@ -300,7 +321,21 @@ class CodexReceiverCapacity:
         if message is None or attempt is None or not isinstance(attempt[0], dict):
             raise CodexReceiverRejected("current receiver projection identity is absent")
         recorded = InvocationRequest.model_validate_json(json.dumps(attempt[0]), strict=True)
-        committed = self._current_dispatch_identity(recorded, native)
+        endpoint = cursor.execute(
+            "SELECT endpoint_id,endpoint_revision,runtime_id,runtime_revision,"
+            "machine_id,node_id,boot_incarnation,scope_id,agent_slot_id "
+            "FROM delivery_endpoint_registrations WHERE tenant_id=%s AND endpoint_id=%s "
+            "AND status='active' FOR UPDATE",
+            (native.tenant_id, recorded.envelope.endpoint_id),
+        ).fetchone()
+        if endpoint is None:
+            raise CodexReceiverRejected("current receiver endpoint is absent")
+        recovery = self.authority.receiver_transport.dispatch_admission(
+            recorded.operation_id
+        )
+        committed = self._current_dispatch_identity(
+            recorded, native, endpoint, recovery,
+        )
         envelope = message[1]
         grant = cursor.execute(
             "SELECT revoked_at,expires_at,principal_ref,authority_id,authority_incarnation "
