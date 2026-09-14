@@ -205,9 +205,21 @@ class RelayPartition:
             raise RuntimeError("restored tunnel TLS fingerprint differs")
         return proof
 
+    def close(self) -> dict:
+        termination = None
+        if self.process is not None:
+            try:
+                termination = self.supervisor.terminate_tree(self.process)
+            except Exception as error:
+                termination = {"verified": False, "error_type": type(error).__name__}
+        self.supervisor.close()
+        return {"termination": termination, "closed": True}
+
 
 def execute(arguments) -> int:
     state = _json(arguments.state)
+    if arguments.expected_tls_fingerprint != state["tls_certificate_sha256"]:
+        raise RuntimeError("expected TLS fingerprint differs from committed endpoint state")
     base = _json(arguments.profile)["postgres_dsn"]
     dsn = make_conninfo(base, options=f"-c search_path={state['schema_name']} -c lock_timeout=5000")
     authority = DomainAuthority(dsn)
@@ -263,6 +275,9 @@ def execute(arguments) -> int:
     }
     fault_result = None
     recovery_result = None
+    authenticated_readback = None
+    recovery_route = None
+    relay_close = None
     try:
         fault_result = DeliveryDispatcher(
             service, worker_id="linux-p2-network-sender",
@@ -278,8 +293,14 @@ def execute(arguments) -> int:
         recovery_result = DeliveryDispatcher(
             service, worker_id="linux-p2-network-reconciler",
         ).reconcile_marked(identity)
+        authenticated_readback = endpoint.inspect_delivery(
+            queued.operation_id, "uncertain",
+        )
     finally:
-        recovery_route = partition.finish()
+        try:
+            recovery_route = partition.finish()
+        finally:
+            relay_close = partition.close()
     deadline = time.monotonic() + 180
     while time.monotonic() < deadline:
         with authority._connect() as connection:
@@ -315,12 +336,14 @@ def execute(arguments) -> int:
         "message": list(message) if message else None,
         "receipts": [list(value) for value in receipts],
         "fault_result": fault_result, "recovery_result": recovery_result,
+        "authenticated_readback": authenticated_readback,
         "partition_events": partition.events,
         "signed_dispatch_sha256": partition.signed_dispatch_sha256,
         "runtime_transport": "end-to-end TLS through Runtime reverse TCP tunnel",
         "control_transport": "SSH retained only for deployment and evidence control",
         "expected_sentinel_sha256": hashlib.sha256(sentinel.encode()).hexdigest(),
         "recovery_route": recovery_route,
+        "relay_close": relay_close,
     }
     _write(arguments.output, evidence)
     print(json.dumps(evidence, sort_keys=True))
