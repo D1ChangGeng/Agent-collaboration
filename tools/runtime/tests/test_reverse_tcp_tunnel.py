@@ -27,6 +27,32 @@ def test_worker_retries_invalid_relay_response(monkeypatch):
     assert len(attempts) == 2
 
 
+def test_worker_retries_when_relay_closes_before_connect_command(monkeypatch):
+    connections = []
+
+    class Relay:
+        def __init__(self): self.reads = 0
+        def __enter__(self): return self
+        def __exit__(self, *args): return None
+        def settimeout(self, value): pass
+        def sendall(self, value): pass
+        def recv(self, size):
+            self.reads += 1
+            if self.reads == 1: return b"READY\n"
+            if len(connections) == 1: return b""
+            raise KeyboardInterrupt
+
+    def connect(*args, **kwargs):
+        value = Relay(); connections.append(value); return value
+
+    monkeypatch.setattr(socket, "create_connection", connect)
+    try:
+        reverse_tcp_tunnel._worker("host", 1, "local", 2, b"a" * 64)
+    except KeyboardInterrupt:
+        pass
+    assert len(connections) == 2
+
+
 def test_closed_unauthenticated_worker_probe_does_not_block_next_accept(monkeypatch):
     accepted = []
 
