@@ -130,6 +130,8 @@ def _certificate(output: Path, host: str) -> tuple[Path, Path, str]:
 
 
 def provision(arguments) -> int:
+    if (arguments.listen_host is None) != (arguments.listen_port is None):
+        raise ValueError("listener override requires host and port")
     output = arguments.output.resolve()
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     base = _json(arguments.profile)["postgres_dsn"]
@@ -199,7 +201,7 @@ def provision(arguments) -> int:
         ConnectionReferenceRegistration(
             connection_ref=connection_ref, revision=1,
             locator_host=arguments.linux_host, locator_port=arguments.port,
-            route_class="private", policy_digest=arguments.source_tree.ljust(64, "0")[:64],
+            route_class=arguments.route_class, policy_digest=arguments.source_tree.ljust(64, "0")[:64],
             expires_at=expiry - timedelta(minutes=5),
         ),
     )
@@ -223,7 +225,7 @@ def provision(arguments) -> int:
     )
     binding = EndpointBinding(
         registration=provisional, locator_host=arguments.linux_host,
-        locator_port=arguments.port, route_class="private", node_key_id=node_key_id,
+        locator_port=arguments.port, route_class=arguments.route_class, node_key_id=node_key_id,
         node_public_key=public_key(node_key), registration_signature=sign(node_key, provisional),
     )
     provisional_config = ReceiverRuntimeConfig(
@@ -237,6 +239,11 @@ def provision(arguments) -> int:
         expected_boot_incarnation=boot, journal_generation=1,
         drop_response_after_commit_once=arguments.drop_response,
     )
+    if arguments.listen_host is not None:
+        provisional_config = replace(
+            provisional_config, listen_host=arguments.listen_host,
+            listen_port=arguments.listen_port,
+        )
     factory = FactoryBinding.model_validate(_json(arguments.factory_binding), strict=True)
     process = bind_process_config(provisional_config, factory, node_key)
     registration = process.runtime.binding.registration
@@ -410,6 +417,9 @@ def main(argv=None):
     setup.add_argument("--linux-host", required=True)
     setup.add_argument("--linux-machine-id", required=True)
     setup.add_argument("--port", type=int, required=True)
+    setup.add_argument("--route-class", choices=("private", "tunnel"), default="private")
+    setup.add_argument("--listen-host")
+    setup.add_argument("--listen-port", type=int)
     setup.add_argument(
         "--drop-response",
         choices=("delivery.prepare", "delivery.dispatch", "delivery.readback", "delivery.recover"),
