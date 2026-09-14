@@ -64,11 +64,14 @@ def listen(host: str, worker_port: int, client_port: int, token_path: Path) -> N
     ):
         threading.Thread(target=accept_workers, args=(worker_server,), daemon=True).start()
         while True:
-            client, _ = client_server.accept()
             with lock:
                 while not workers:
                     lock.wait()
                 worker = workers.pop(0)
+            # Do not consume a client before an authenticated worker exists.
+            # Otherwise a readiness client can time out while waiting and the
+            # next worker is then wasted on an already closed socket.
+            client, _ = client_server.accept()
             try:
                 worker.sendall(b"CONNECT\n")
                 pipe(client, worker)

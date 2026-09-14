@@ -128,7 +128,7 @@ class RelayPartition:
         while time.monotonic() < deadline:
             try:
                 with socket.create_connection(
-                    (self.arguments.relay_host, self.arguments.client_port), timeout=2,
+                    (self.arguments.relay_host, self.arguments.client_port), timeout=10,
                 ) as raw, context.wrap_socket(raw, server_hostname="receiver") as tls:
                     observed = tls_fingerprint(tls.getpeercert(binary_form=True))
                 if observed != self.arguments.expected_tls_fingerprint:
