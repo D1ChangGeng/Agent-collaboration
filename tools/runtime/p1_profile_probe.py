@@ -579,10 +579,13 @@ async def _temporal_marker(profile: dict[str, Any], operation_id: str, scenario:
 def _domain_command(authority: DomainAuthority, command_type: str, target_kind: str,
                     target_id: str, suffix: str, issued_at: datetime,
                     *, revision: int = 0) -> CommandEnvelope:
+    command_prefix = os.environ.get("ACS_GATE_COMMAND_PREFIX", "p1")
+    if not re.fullmatch(r"[a-z0-9-]{1,32}", command_prefix):
+        raise ProbeRejected("Gate command prefix is outside the reviewed bound")
     return CommandEnvelope(
-        command_id=f"p1:{suffix}:{command_type}",
-        idempotency_key=f"p1:{suffix}:{command_type}:key",
-        correlation_id=f"p1:{suffix}", command_type=command_type,
+        command_id=f"{command_prefix}:{suffix}:{command_type}",
+        idempotency_key=f"{command_prefix}:{suffix}:{command_type}:key",
+        correlation_id=f"{command_prefix}:{suffix}", command_type=command_type,
         tenant_id=authority.tenant_id, authority_id=authority.context.authority_id,
         authority_incarnation=authority.context.authority_incarnation,
         principal_ref=authority.context.principal_ref, grant_ref=authority.context.grant_ref,
@@ -2502,6 +2505,17 @@ def _run_domain_transaction(
     commit: str, tree: str, run_id: str, suffix: str, issued_at: datetime,
     fault: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
+    external_scenario = os.environ.get("ACS_GATE_SCENARIO_ID", scenario)
+    allowed_external = {
+        "P1-LEASE-FENCING": "P2-CODEX-STALE-OWNER",
+        "P1-UNCERTAIN-EFFECT": "P2-CODEX-UNCERTAIN-EFFECT",
+    }
+    if external_scenario != scenario and allowed_external.get(scenario) != external_scenario:
+        raise ProbeRejected("external Gate scenario alias is not reviewed")
+    lineage_prefix = os.environ.get("ACS_GATE_LINEAGE_PREFIX", "")
+    if lineage_prefix and not re.fullmatch(r"[a-z0-9-]{1,40}", lineage_prefix):
+        raise ProbeRejected("Gate lineage prefix is outside the reviewed bound")
+    identity_prefix = lineage_prefix + "-" if lineage_prefix else ""
     pg_schema = "p1_probe_" + suffix
     with psycopg.connect(profile["postgres_dsn"], autocommit=True) as admin:
         admin.execute(sql.SQL("CREATE SCHEMA IF NOT EXISTS {}").format(sql.Identifier(pg_schema)))
@@ -2518,7 +2532,7 @@ def _run_domain_transaction(
         "runtime.invoke", "lease.acquire", "lease.release", "lease.inspect",
         "effect.write", "effect.read",
     ))
-    work_id = "work-" + suffix
+    work_id = identity_prefix + "work-" + suffix
     create = _domain_command(
         authority, "work_item.create", "work_item", work_id, suffix, issued_at,
     )
@@ -2536,13 +2550,13 @@ def _run_domain_transaction(
     Path(node._path).chmod(0o600)
     driver = (p1_harness_replacement.AcknowledgedFixtureDriver()
               if scenario == "P1-HARNESS-REPLACEMENT" else FixtureDriver())
-    endpoint_id = "endpoint-" + suffix
+    endpoint_id = identity_prefix + "endpoint-" + suffix
     endpoint = LocalNodeEndpoint(node, "local-scope", "local-slot", driver)
     service = DeliveryService(authority, {endpoint_id: endpoint})
     bind = _domain_command(
         authority, "message.bind", "message", endpoint_id, suffix, issued_at,
     )
-    message_id = "message-" + suffix
+    message_id = identity_prefix + "message-" + suffix
     send = _domain_command(
         authority, "message.send", "message", message_id, suffix, issued_at,
     )
@@ -2551,8 +2565,11 @@ def _run_domain_transaction(
     packet = DeliveryPacket(
         work_item_id=work_id, target_scope_id="local-scope",
         target_agent_slot_id="local-slot", accepted_revision=0,
-        goal=f"{scenario} lineage probe", accepted_state_summary="revision zero",
-        request="Return the fixed fixture response", source_baseline=commit,
+        goal=f"{external_scenario} protected-resource lineage probe",
+        accepted_state_summary="P2 Codex source baseline and Delivery Attempt are fixed",
+        request=f"Execute the deterministic {external_scenario} resource fault and return the fixed receipt",
+        constraints=("no model call", "one logical Delivery Attempt", "protected Effect gateway required"),
+        source_baseline=commit,
         expected_response="layered receipt",
         activation="message_only" if scenario in (
             "P1-NODE-RESTART", "P1-PROVIDER-RESTART",
@@ -2854,9 +2871,10 @@ def _run_domain_transaction(
         workflow_id, temporal_run_id = provider_workflow, provider_run
     else:
         workflow_id, temporal_run_id = asyncio.run(
-            _temporal_marker(profile, sent.operation_id + ":temporal", scenario),
+            _temporal_marker(profile, sent.operation_id + ":temporal", external_scenario),
         )
     lineage = {
+        "scenario_id": external_scenario,
         "tenant_id": authority.tenant_id, "grant_ref": authority.context.grant_ref,
         "machine_id": node.machine_id, "node_id": node.node_id,
         "command_id": send.command_id,
@@ -2895,8 +2913,8 @@ def _run_domain_transaction(
     }
     raw = ledger.root / (scenario + "-runtime.json")
     raw.write_bytes(_canonical({
-        "scenario_id": scenario, "lineage": lineage,
-        "result": "passed", "fault": scenario,
+        "scenario_id": external_scenario, "mechanism_profile": scenario,
+        "lineage": lineage, "result": "passed", "fault": external_scenario,
     }))
     raw.chmod(0o600)
     value = {

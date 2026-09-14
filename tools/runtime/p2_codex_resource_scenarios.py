@@ -174,8 +174,9 @@ def _query_authority(profile: dict[str, Any], schema: str, proof: dict[str, Any]
             and effect_rows[0][6] == proof["artifact_sha256"]
             and effect_rows[0][8] == proof["completion_sha256"]
         )
+    delivery_attempt_id = proof.get("delivery_attempt_id", proof.get("attempt_id"))
     if ({row[0] for row in attempt_rows} != expected_attempts
-            or delivery != [(proof["delivery_attempt_id"], proof["dispatch_id"], "delivered")]
+            or delivery != [(delivery_attempt_id, proof["dispatch_id"], "delivered")]
             or any(row[3] != proof["source_commit"] or row[4] != proof["source_tree"]
                    for row in attempt_rows)
             or not valid or events < 1 or outbox < 1):
@@ -244,6 +245,9 @@ def execute(profile_path: Path, scenario: str, output: Path, machine_id: str,
     os.environ.update({
         "ACS_GATE_RUN_ID": run_id, "ACS_GATE_MACHINE_ID": machine_id,
         "ACS_GATE_SOURCE_COMMIT": commit, "ACS_GATE_SOURCE_TREE": tree,
+        "ACS_GATE_SCENARIO_ID": scenario,
+        "ACS_GATE_COMMAND_PREFIX": "p2-codex",
+        "ACS_GATE_LINEAGE_PREFIX": scenario.lower().replace("_", "-").replace(" ", "-")[:40],
     })
     old_schema = None
     renamed = False
@@ -253,6 +257,12 @@ def execute(profile_path: Path, scenario: str, output: Path, machine_id: str,
         if row is None:
             raise ScenarioRejected("P2 private Runtime execution did not retain a lineage")
         lineage = json.loads(row["lineage_json"])
+        if lineage.get("scenario_id") != scenario:
+            raise ScenarioRejected("P2 Delivery lineage scenario identity is not explicit")
+        if not lineage.get("message_id", "").startswith(
+            scenario.lower().replace("_", "-").replace(" ", "-")[:40] + "-message-"
+        ):
+            raise ScenarioRejected("P2 Delivery message identity is not scenario-bound")
         proof = (lineage["lease_proof"] if scenario == "P2-CODEX-STALE-OWNER"
                  else lineage["uncertain_effect_proof"])
         if proof is None or proof["machine_id"] != machine_id:
@@ -352,9 +362,10 @@ def execute(profile_path: Path, scenario: str, output: Path, machine_id: str,
                 os.environ[name] = value
 
 
-def audit(profile_path: Path, output: Path, source_root: Path) -> dict[str, Any]:
+def audit(profile_path: Path, output: Path, source_root: Path | None = None) -> dict[str, Any]:
     profile, _profile_sha, _secrets = engine._secure_profile(profile_path)
-    profile = dict(profile, source_root=str(source_root.resolve(strict=True)))
+    source = (source_root or Path(profile["source_root"])).resolve(strict=True)
+    profile = dict(profile, source_root=str(source))
     evidence_files = list(output.glob("P2-CODEX-*-evidence.json"))
     if len(evidence_files) != 1:
         raise ScenarioRejected("one P2 resource evidence file is required")
