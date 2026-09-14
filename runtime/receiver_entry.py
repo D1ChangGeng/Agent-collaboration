@@ -120,6 +120,10 @@ def main(argv=None):
     process = load_process_config(arguments.config)
     callbacks = load_callbacks(process)
 
+    def close_once():
+        if callbacks.close is not None:
+            callbacks.close()
+
     def ready_check():
         reloaded = load_process_config(arguments.config)
         current, factory, origin, identity = inspect_factory(
@@ -142,7 +146,7 @@ def main(argv=None):
             authorize_current=callbacks.authorize_current,
             native_invoke=callbacks.native_invoke,
             ready_check=ready_check,
-            shutdown_callback=callbacks.close,
+            shutdown_callback=close_once,
         )
     finally:
-        pass
+        close_once()
