@@ -169,6 +169,10 @@ def deployment_policy(config: ReceiverRuntimeConfig, factory: FactoryBinding) ->
             "locator_port": config.binding.locator_port,
             "route_class": config.binding.route_class,
         },
+        "receiver_local_listener": {
+            "host": config.listen_host,
+            "port": config.listen_port,
+        },
         "authority_key": {
             "key_id": config.authority_key_id,
             "revision": config.authority_key_revision,

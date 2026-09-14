@@ -144,7 +144,11 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
             config.expected_boot_incarnation, config.journal_generation,
             old_boot_isolation_ref=config.old_boot_isolation_ref,
         )
-        super().__init__((config.binding.locator_host, config.binding.locator_port), ReceiverHandler)
+        listen = (
+            config.listen_host or config.binding.locator_host,
+            config.listen_port or config.binding.locator_port,
+        )
+        super().__init__(listen, ReceiverHandler)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version = ssl.TLSVersion.TLSv1_3
         context.maximum_version = ssl.TLSVersion.TLSv1_3
