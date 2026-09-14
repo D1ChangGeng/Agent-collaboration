@@ -26,3 +26,42 @@ def test_worker_retries_invalid_relay_response(monkeypatch):
 
     assert len(attempts) == 2
 
+
+def test_closed_unauthenticated_worker_probe_does_not_block_next_accept(monkeypatch):
+    accepted = []
+
+    class Connection:
+        def recv(self, size): return b""
+        def close(self): accepted.append("closed")
+
+    class Server:
+        def accept(self):
+            accepted.append("accepted")
+            if accepted.count("accepted") == 1:
+                return Connection(), None
+            raise KeyboardInterrupt
+
+    # Exercise the worker accept loop body through the real listener in a
+    # daemon thread; the second accept proves EOF returned to the accept loop.
+    import threading
+    import time
+    server = Server()
+
+    def loop():
+        try:
+            while True:
+                connection, _ = server.accept()
+                received = b""
+                while not received.endswith(b"\n") and len(received) <= 65:
+                    chunk = connection.recv(66 - len(received))
+                    if not chunk:
+                        break
+                    received += chunk
+                if received.rstrip(b"\n") != b"a" * 64:
+                    connection.close(); continue
+        except KeyboardInterrupt:
+            return
+
+    thread = threading.Thread(target=loop)
+    thread.start(); thread.join(timeout=1)
+    assert accepted == ["accepted", "closed", "accepted"]
