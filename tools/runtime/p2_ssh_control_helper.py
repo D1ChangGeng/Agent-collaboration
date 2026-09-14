@@ -58,6 +58,9 @@ def run(arguments) -> dict:
             f"{arguments.target}:{arguments.remote_proof}",
         ])
         command([
+            arguments.ssh, arguments.target, "chmod", "600", arguments.remote_proof,
+        ])
+        command([
             arguments.ssh, arguments.target, "test", "-f", arguments.remote_proof,
         ])
     evidence = {

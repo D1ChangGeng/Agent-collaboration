@@ -31,4 +31,5 @@ def test_helper_uses_ssh_and_scp_for_challenge_round_trip(tmp_path, monkeypatch)
     )
     helper.run(args)
 
-    assert [call[0] for call in calls] == ["ssh", "scp", "scp", "ssh"]
+    assert [call[0] for call in calls] == ["ssh", "scp", "scp", "ssh", "ssh"]
+    assert calls[-2][-3:] == ["chmod", "600", "/proof"]
