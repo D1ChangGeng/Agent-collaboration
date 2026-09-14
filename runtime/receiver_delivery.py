@@ -14,7 +14,8 @@ from runtime.delivery_node import (
     InvocationPreCallRejected,
     logical_payload,
 )
-from runtime.receiver_config import ReceiverClientConfig, ReceiverRuntimeConfig
+from runtime.node import NodeJournal
+from runtime.receiver_config import ReceiverClientConfig
 from runtime.receiver_crypto import load_owner_signing_key, sha256
 from runtime.receiver_models import (
     DispatchBody,
@@ -97,6 +98,30 @@ class ReceiverNativeDeliveryBridge:
                 admission.operation_id, admission.attempt_id, admission.dispatch_id,
                 admission.message_id, admission.command_id):
             raise RuntimeError("receiver native invocation lineage differs")
+        if admission.purpose == "delivery.recover":
+            envelope = invocation.envelope.model_copy(update={
+                "binding_revision": admission.endpoint_revision,
+                "machine_id": admission.machine_id,
+                "node_id": admission.node_id,
+                "boot_incarnation": admission.boot_incarnation,
+            })
+            selection = {
+                "endpoint_id": envelope.endpoint_id,
+                "binding_revision": envelope.binding_revision,
+                "machine_id": envelope.machine_id,
+                "node_id": envelope.node_id,
+                "boot_incarnation": envelope.boot_incarnation,
+                "target_scope_id": envelope.packet.target_scope_id,
+                "target_agent_slot_id": envelope.packet.target_agent_slot_id,
+            }
+            invocation = invocation.model_copy(update={
+                "envelope": envelope,
+                "envelope_digest": sha256(envelope.model_dump(mode="json")),
+                "logical_payload_digest": NodeJournal.payload_digest(
+                    logical_payload(envelope)
+                ),
+                "selection_digest": sha256(selection),
+            })
         return invocation
 
     def __call__(self, admission):
@@ -292,7 +317,7 @@ class RemoteNodeEndpointAdapter:
         except (RemoteTransportRejected, ValueError, RuntimeError):
             try:
                 observed = self.inspect_delivery(invocation.operation_id, "uncertain")
-            except Exception:
+            except Exception:  # noqa: BLE001 -- transport/readback failures remain uncertain
                 observed = {"status": "uncertain", "receipts": []}
             prepared_projection = self._projection([prepared], observed["status"])
             prepared_projection["receipts"].extend(observed["receipts"])
