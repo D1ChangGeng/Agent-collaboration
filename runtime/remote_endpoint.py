@@ -63,6 +63,11 @@ class RemoteNodeTransport:
             receipt = SignedReceipt.model_validate_json(raw, strict=True)
             self.validate_receipt(request, receipt)
             return receipt
+        except (
+            OSError, TimeoutError, ssl.SSLError, http.client.HTTPException,
+            ValueError,
+        ) as error:
+            raise RemoteTransportRejected("receiver transport acknowledgement unavailable") from error
         finally:
             connection.close()
 

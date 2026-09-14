@@ -235,6 +235,7 @@ def provision(arguments) -> int:
         tls_cert_path=str(cert_path), tls_key_path=str(tls_key_path),
         node_signing_key_path=str(node_seed), ledger_path=str(output / "receiver.sqlite"),
         expected_boot_incarnation=boot, journal_generation=1,
+        drop_response_after_commit_once=args.drop_response,
     )
     factory = FactoryBinding.model_validate(_json(arguments.factory_binding), strict=True)
     process = bind_process_config(provisional_config, factory, node_key)
@@ -409,6 +410,10 @@ def main(argv=None):
     setup.add_argument("--linux-host", required=True)
     setup.add_argument("--linux-machine-id", required=True)
     setup.add_argument("--port", type=int, required=True)
+    setup.add_argument(
+        "--drop-response",
+        choices=("delivery.prepare", "delivery.dispatch", "delivery.readback", "delivery.recover"),
+    )
     run = sub.add_parser("execute")
     run.add_argument("--windows-profile", type=Path, required=True)
     run.add_argument("--state", type=Path, required=True)
