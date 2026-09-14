@@ -130,6 +130,9 @@ class CodexReceiverCapacity:
                 "TMP": str(Path(self.settings["codex_home"]).parent / "tmp"),
                 "TEMP": str(Path(self.settings["codex_home"]).parent / "tmp"),
                 "SystemRoot": os.environ.get("SystemRoot", r"C:\Windows"),
+                "USERPROFILE": os.environ.get("USERPROFILE", ""),
+                "APPDATA": os.environ.get("APPDATA", ""),
+                "LOCALAPPDATA": os.environ.get("LOCALAPPDATA", ""),
                 "ZEO_API_KEY": os.environ.get("ZEO_API_KEY", ""),
             }
         else:

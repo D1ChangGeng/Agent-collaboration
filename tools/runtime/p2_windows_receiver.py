@@ -87,7 +87,11 @@ def stage_capacity(root: Path, runtime_id: str) -> dict:
     ))
     config_path = root / "codex-home/config.toml"
     config_path.write_text(config, encoding="utf-8")
-    schema = Path(__file__).resolve().parents[2] / "runtime_tests/schema-0.153.2/codex_app_server_protocol.schemas.json"
+    schema = (
+        Path(__file__).resolve().parents[2]
+        / "agent-collabration/.agents/runtime/bootstrap/windows-codex-0.152.1-schema/"
+        "codex_app_server_protocol.schemas.json"
+    )
     settings = {
         "schema_version":"acs-receiver-codex-factory/1", "binding_id":"p2-windows-codex",
         "capacity_attempt_id":"p2-windows-capacity", "executable":str(root / "bin/codex.exe"),
