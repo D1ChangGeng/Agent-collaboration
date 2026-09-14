@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from runtime.artifacts import LocalArtifactStore, WindowsArtifactStore
 from runtime.codex_driver import (
     AuthorizedOperation,
     BindingIdentity,
@@ -16,7 +17,6 @@ from runtime.codex_driver import (
     DriverJournal,
     LaunchProfile,
 )
-from runtime.artifacts import LocalArtifactStore, WindowsArtifactStore
 from runtime.delivery_models import InvocationRequest
 from runtime.domain import DomainAuthority
 from runtime.models import CommandEnvelope
@@ -29,8 +29,8 @@ from runtime.response_collector import (
     NativeResponseCollector,
     artifact_response_store,
 )
-from runtime.systemd_supervisor import SystemdUserSupervisor
 from runtime.supervisor import WindowsJobSupervisor
+from runtime.systemd_supervisor import SystemdUserSupervisor
 
 SCHEMA = "acs-receiver-codex-factory/1"
 FIELDS = {
@@ -262,6 +262,29 @@ class CodexReceiverCapacity:
         self._domain_invocation(operation)
         return operation
 
+    @staticmethod
+    def _current_dispatch_identity(recorded, native):
+        committed = NativeResponseCollector.dispatch_identity(recorded)
+        if native.binding_revision > committed.binding_revision:
+            committed = committed.__class__(
+                tenant_id=committed.tenant_id,
+                message_id=committed.message_id,
+                operation_id=committed.operation_id,
+                invocation_id=committed.invocation_id,
+                attempt_id=committed.attempt_id,
+                dispatch_id=committed.dispatch_id,
+                endpoint_id=native.endpoint_id,
+                binding_revision=native.binding_revision,
+                machine_id=native.machine_id,
+                node_id=native.node_id,
+                boot_incarnation=native.boot_incarnation,
+                accepted_revision=committed.accepted_revision,
+                accepted_state_digest=committed.accepted_state_digest,
+            )
+        if committed != native:
+            raise CodexReceiverRejected("current receiver projection binding differs")
+        return committed
+
     def _projection_snapshot(self, cursor, observation) -> AuthoritySnapshot:
         native = observation.identity
         message = cursor.execute(
@@ -277,7 +300,7 @@ class CodexReceiverCapacity:
         if message is None or attempt is None or not isinstance(attempt[0], dict):
             raise CodexReceiverRejected("current receiver projection identity is absent")
         recorded = InvocationRequest.model_validate_json(json.dumps(attempt[0]), strict=True)
-        committed = NativeResponseCollector.dispatch_identity(recorded)
+        committed = self._current_dispatch_identity(recorded, native)
         envelope = message[1]
         grant = cursor.execute(
             "SELECT revoked_at,expires_at,principal_ref,authority_id,authority_incarnation "
