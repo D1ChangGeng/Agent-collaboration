@@ -22,6 +22,7 @@ from runtime.domain import DomainAuthority
 from runtime.receiver_crypto import public_key, sha256, tls_fingerprint, verify
 from runtime.receiver_delivery import RemoteNodeEndpointAdapter, RemoteSenderDeployment
 from runtime.systemd_supervisor import SystemdUserSupervisor
+from runtime.operator_files import OperatorFileError
 from tools.runtime.p2_control_proof import issue as issue_control_challenge
 from tools.runtime.p2_control_proof import validate as validate_control_proof
 from tools.runtime.p2_codex_half_loop import _command, _json, _write
@@ -139,7 +140,7 @@ class RelayPartition:
                 )
                 result["nonce_sha256"] = hashlib.sha256(challenge["nonce"].encode()).hexdigest()
                 return result
-            except FileNotFoundError:
+            except (FileNotFoundError, OperatorFileError, ValueError):
                 pass
             time.sleep(0.1)
         raise RuntimeError("independent SSH control proof was not received")
