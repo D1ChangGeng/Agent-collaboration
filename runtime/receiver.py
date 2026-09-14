@@ -77,6 +77,11 @@ def _active_execution_lease(lease_id: str):
 class ReceiverLedger:
     def __init__(self, path: str | Path):
         self.path = Path(path)
+        # The execution fence serializes boot replacement with one native
+        # dispatch inside this receiver process. It is deliberately separate
+        # from SQLite's writer transaction because native callbacks may read
+        # the receiver journal while the callback is running.
+        self._execution_fence = threading.RLock()
         self._witness_fd: int | None = None
         try:
             created_identity = ensure_private_database(self.path)
@@ -174,6 +179,11 @@ class ReceiverLedger:
             os.close(self._witness_fd)
             self._witness_fd = None
 
+    @contextmanager
+    def execution_fence(self):
+        with self._execution_fence:
+            yield
+
     def __del__(self):
         try:
             self.close()
@@ -195,24 +205,25 @@ class ReceiverLedger:
     def claim_boot(self, boot: str, generation: int, *, old_boot_isolation_ref: str | None = None):
         if not boot or generation < 1:
             raise ReceiverRejected("invalid boot claim")
-        with self.transaction() as connection:
-            rows = dict(connection.execute("SELECT key,value FROM receiver_meta"))
-            if not rows:
-                if generation != 1 or old_boot_isolation_ref is not None:
-                    raise ReceiverRejected("initial journal generation must be one")
-                values = {"current_boot": boot, "journal_generation": "1",
-                          "previous_boot": "", "old_boot_isolation_ref": ""}
-                connection.executemany("INSERT INTO receiver_meta(key,value) VALUES (?,?)", values.items())
-                return
-            if rows["current_boot"] == boot and int(rows["journal_generation"]) == generation:
-                return
-            if generation != int(rows["journal_generation"]) + 1 or not old_boot_isolation_ref:
-                raise ReceiverRejected("boot replacement lacks monotonic generation or isolation proof")
-            connection.execute("UPDATE receiver_meta SET value=? WHERE key='previous_boot'", (rows["current_boot"],))
-            connection.execute("UPDATE receiver_meta SET value=? WHERE key='current_boot'", (boot,))
-            connection.execute("UPDATE receiver_meta SET value=? WHERE key='journal_generation'", (str(generation),))
-            connection.execute("UPDATE receiver_meta SET value=? WHERE key='old_boot_isolation_ref'",
-                               (old_boot_isolation_ref,))
+        with self.execution_fence():
+            with self.transaction() as connection:
+                rows = dict(connection.execute("SELECT key,value FROM receiver_meta"))
+                if not rows:
+                    if generation != 1 or old_boot_isolation_ref is not None:
+                        raise ReceiverRejected("initial journal generation must be one")
+                    values = {"current_boot": boot, "journal_generation": "1",
+                              "previous_boot": "", "old_boot_isolation_ref": ""}
+                    connection.executemany("INSERT INTO receiver_meta(key,value) VALUES (?,?)", values.items())
+                    return
+                if rows["current_boot"] == boot and int(rows["journal_generation"]) == generation:
+                    return
+                if generation != int(rows["journal_generation"]) + 1 or not old_boot_isolation_ref:
+                    raise ReceiverRejected("boot replacement lacks monotonic generation or isolation proof")
+                connection.execute("UPDATE receiver_meta SET value=? WHERE key='previous_boot'", (rows["current_boot"],))
+                connection.execute("UPDATE receiver_meta SET value=? WHERE key='current_boot'", (boot,))
+                connection.execute("UPDATE receiver_meta SET value=? WHERE key='journal_generation'", (str(generation),))
+                connection.execute("UPDATE receiver_meta SET value=? WHERE key='old_boot_isolation_ref'",
+                                   (old_boot_isolation_ref,))
 
     @staticmethod
     def meta(connection) -> dict[str, str]:
@@ -531,49 +542,69 @@ class ReceiverService:
 
     def _invoke_with_fence(self, request: SignedRequest, request_hash: str, execution_lease_id: str,
                            invoke: Callable[[DeliveryAdmission], dict[str, Any]]) -> SignedReceipt:
-        # This BEGIN IMMEDIATE is the boot-writer fence. It is held from current
-        # authorization/deadline checks through native dispatch and result write.
-        with self.ledger.transaction() as connection:
-            row = self._existing(connection, request, request_hash)
-            if (row is None or row["state"] != "runtime_dispatched"
-                    or not row["local_dispatch_marker"]
-                    or row["execution_lease_id"] != execution_lease_id):
-                raise ReceiverRejected("durable local dispatch marker is unavailable")
-            meta = self.ledger.meta(connection)
-            if (meta["current_boot"] != request.admission.boot_incarnation
-                    or int(meta["journal_generation"]) != request.admission.journal_generation):
-                return self._update(connection, request, request_hash, "blocked",
-                                    {"reason": "boot_or_journal_generation_changed"})
-            now = datetime.now(UTC)
-            registration = self.binding.registration
-            if request.admission.deadline <= now or registration.expires_at <= now:
-                return self._update(connection, request, request_hash, "blocked",
-                                    {"reason": "deadline_or_registration_expired"})
-            try:
-                current = self.authorize_current(request.admission)
-            except Exception as error:  # noqa: BLE001 -- failure is recorded without invoking
-                return self._update(connection, request, request_hash, "blocked",
-                                    {"reason": "current_authority_unavailable",
-                                     "error_type": type(error).__name__})
-            now = datetime.now(UTC)
-            if current is not True or request.admission.deadline <= now or registration.expires_at <= now:
-                return self._update(connection, request, request_hash, "blocked",
-                                    {"reason": "current_authority_or_time_rejected"})
+        # Keep the process-local boot fence while releasing SQLite before the
+        # callback. The callback is allowed to read the same ledger; the final
+        # transaction rechecks the marker and execution lease before commit.
+        with self.ledger.execution_fence():
+            with self.ledger.transaction() as connection:
+                row = self._existing(connection, request, request_hash)
+                if (row is None or row["state"] != "runtime_dispatched"
+                        or not row["local_dispatch_marker"]
+                        or row["execution_lease_id"] != execution_lease_id):
+                    raise ReceiverRejected("durable local dispatch marker is unavailable")
+                meta = self.ledger.meta(connection)
+                if (meta["current_boot"] != request.admission.boot_incarnation
+                        or int(meta["journal_generation"]) != request.admission.journal_generation):
+                    return self._update(connection, request, request_hash, "blocked",
+                                        {"reason": "boot_or_journal_generation_changed"})
+                now = datetime.now(UTC)
+                registration = self.binding.registration
+                if request.admission.deadline <= now or registration.expires_at <= now:
+                    return self._update(connection, request, request_hash, "blocked",
+                                        {"reason": "deadline_or_registration_expired"})
+                try:
+                    current = self.authorize_current(request.admission)
+                except Exception as error:  # noqa: BLE001 -- failure is recorded without invoking
+                    return self._update(connection, request, request_hash, "blocked",
+                                        {"reason": "current_authority_unavailable",
+                                         "error_type": type(error).__name__})
+                now = datetime.now(UTC)
+                if current is not True or request.admission.deadline <= now or registration.expires_at <= now:
+                    return self._update(connection, request, request_hash, "blocked",
+                                        {"reason": "current_authority_or_time_rejected"})
+
             try:
                 evidence = invoke(request.admission)
             except Exception as error:  # noqa: BLE001 -- any post-marker native failure is uncertain
-                return self._update(connection, request, request_hash, "uncertain",
-                                    {"error_type": type(error).__name__})
-            try:
-                connection.execute(
-                    "INSERT INTO native_calls(dispatch_id,request_id,called_at) VALUES (?,?,?)",
-                    (request.admission.dispatch_id, request.admission.request_id,
-                     datetime.now(UTC).isoformat()),
-                )
-            except sqlite3.IntegrityError:
-                return self._update(connection, request, request_hash, "uncertain",
-                                    {"reason": "native_call_identity_already_recorded"})
-            return self._update(connection, request, request_hash, "runtime_acknowledged", evidence)
+                with self.ledger.transaction() as connection:
+                    row = self._existing(connection, request, request_hash)
+                    if row is None or row["state"] != "runtime_dispatched":
+                        raise ReceiverRejected("durable local dispatch marker changed") from error
+                    return self._update(connection, request, request_hash, "uncertain",
+                                        {"error_type": type(error).__name__})
+
+            with self.ledger.transaction() as connection:
+                row = self._existing(connection, request, request_hash)
+                if (row is None or row["state"] != "runtime_dispatched"
+                        or not row["local_dispatch_marker"]
+                        or row["execution_lease_id"] != execution_lease_id
+                        or not self._execution_lease_active(row)):
+                    raise ReceiverRejected("execution lease or dispatch marker changed")
+                meta = self.ledger.meta(connection)
+                if (meta["current_boot"] != request.admission.boot_incarnation
+                        or int(meta["journal_generation"]) != request.admission.journal_generation):
+                    return self._update(connection, request, request_hash, "uncertain",
+                                        {"reason": "boot_or_journal_generation_changed_after_native"})
+                try:
+                    connection.execute(
+                        "INSERT INTO native_calls(dispatch_id,request_id,called_at) VALUES (?,?,?)",
+                        (request.admission.dispatch_id, request.admission.request_id,
+                         datetime.now(UTC).isoformat()),
+                    )
+                except sqlite3.IntegrityError:
+                    return self._update(connection, request, request_hash, "uncertain",
+                                        {"reason": "native_call_identity_already_recorded"})
+                return self._update(connection, request, request_hash, "runtime_acknowledged", evidence)
 
     def dispatch(self, request: SignedRequest, invoke: Callable[[DeliveryAdmission], dict[str, Any]],
                  *, after_marker: Callable[[], None] | None = None) -> SignedReceipt:

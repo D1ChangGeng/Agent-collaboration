@@ -526,6 +526,32 @@ def test_dispatch_exact_replay_returns_signed_ack_once(env):
     assert calls == [env.identity.dispatch_id]
 
 
+def test_native_callback_can_read_receiver_ledger_during_dispatch(env):
+    svc = service(env)
+    prepared, _ = prepare(env, svc)
+    request = dispatch_request(env, prepared)
+    observed = []
+
+    def invoke(admission):
+        with svc.ledger.connect() as connection:
+            row = connection.execute(
+                "SELECT state,local_dispatch_marker FROM receiver_requests "
+                "WHERE request_id=?", (request.admission.request_id,),
+            ).fetchone()
+        observed.append((row[0], row[1], admission.dispatch_id))
+        return {"ack": "ledger-readable"}
+
+    result = svc.dispatch(request, invoke)
+    assert result.receipt.state == "runtime_acknowledged"
+    assert observed == [("runtime_dispatched", 1, request.admission.dispatch_id)]
+    with sqlite3.connect(env.config.ledger_path) as connection:
+        assert connection.execute(
+            "SELECT state FROM receiver_requests WHERE request_id=?",
+            (request.admission.request_id,),
+        ).fetchone() == ("runtime_acknowledged",)
+        assert connection.execute("SELECT count(*) FROM native_calls").fetchone() == (1,)
+
+
 def test_concurrent_exact_replay_observes_pending_without_mutating_owner(env):
     svc = service(env)
     prepared, _ = prepare(env, svc)
