@@ -12,6 +12,8 @@ from runtime.delivery_models import (
     DeliveryEnvelope,
     DeliveryPacket,
     EndpointBindingRequest,
+    EndpointResolution,
+    EndpointResolutionRequest,
     InvocationRequest,
 )
 from runtime.delivery_node import (
@@ -44,8 +46,11 @@ class DeliveryRejected(RuntimeError):
 class DeliveryService:
     """One authenticated Domain command service and its explicitly bound endpoints."""
 
-    def __init__(self, authority, endpoints: dict[str, LocalNodeEndpoint]):
+    def __init__(self, authority, endpoints: dict[str, LocalNodeEndpoint], *, endpoint_resolver=None):
+        if endpoint_resolver is not None and not callable(endpoint_resolver):
+            raise TypeError("endpoint resolver must be callable")
         self.authority, self.endpoints = authority, dict(endpoints)
+        self.endpoint_resolver = endpoint_resolver
 
     @staticmethod
     def _now(cursor):
@@ -447,9 +452,32 @@ class DeliveryDispatcher:
 
     def _selected_endpoint(self, cursor, row, attempt):
         envelope, binding = self._authorize(cursor, row)
-        selection = self._selection(row, binding)
-        if selection != attempt["selection_json"] or digest(selection) != attempt["selection_digest"]:
+        selection = attempt["selection_json"]
+        if not isinstance(selection, dict) or digest(selection) != attempt["selection_digest"]:
             raise DeliveryRejected("attempt_selection_changed")
+        history = attempt.get("selection_history_json", [])
+        last_history = history[-1] if isinstance(history, list) and history else None
+        recorded_selection = last_history.get("selection") if isinstance(last_history, dict) and "selection" in last_history else last_history
+        if recorded_selection != selection:
+            raise DeliveryRejected("attempt_selection_history_changed")
+        if selection["scope_id"] != row["packet_json"]["target_scope_id"] or selection["agent_slot_id"] != row["packet_json"]["target_agent_slot_id"]:
+            raise DeliveryRejected("attempt_selection_scope_changed")
+        if selection["endpoint_id"] == row["endpoint_id"] and selection["revision"] == row["binding_revision"]:
+            expected = self._selection(row, binding)
+            if selection != expected:
+                raise DeliveryRejected("attempt_selection_changed")
+        else:
+            cursor.execute("SELECT to_jsonb(e) FROM delivery_endpoints e WHERE tenant_id=%s AND endpoint_id=%s FOR UPDATE",
+                           (row["tenant_id"], selection["endpoint_id"]))
+            found = cursor.fetchone()
+            if not found or found[0]["revision"] != selection["revision"] or found[0]["status"] != "active":
+                raise DeliveryRejected("attempt_resolution_binding_missing")
+            candidate = found[0]
+            if any(candidate.get(k) != selection.get(k) for k in ("scope_id","agent_slot_id","machine_id","node_id","boot_incarnation","supports_invoke","evidence_class")):
+                raise DeliveryRejected("attempt_resolution_binding_changed")
+            if datetime.fromisoformat(candidate["expires_at"]) <= self.service._now(cursor):
+                raise DeliveryRejected("attempt_resolution_binding_expired", "expired")
+            envelope = envelope.model_copy(update={"endpoint_id": selection["endpoint_id"], "binding_revision": selection["revision"], "machine_id": selection["machine_id"], "node_id": selection["node_id"], "boot_incarnation": selection["boot_incarnation"]})
         endpoint = self.service.endpoints.get(selection["endpoint_id"])
         if endpoint is None:
             raise DeliveryTransportError("endpoint_unavailable")
@@ -465,6 +493,61 @@ class DeliveryDispatcher:
             if invocation != expected or digest(invocation.model_dump(mode="json")) != attempt["invocation_digest"]:
                 raise DeliveryRejected("immutable_invocation_changed")
         return envelope, endpoint
+
+    def _resolve_pre_call(self, identity, attempt_id, dispatch_id, failed_endpoint_id, failed_revision):
+        resolver = self.service.endpoint_resolver
+        if resolver is None:
+            return False
+        with self.service.authority._connect() as connection, connection.cursor() as cursor:
+            row = self._load(cursor, identity)
+            attempt = self._load_attempt(cursor, row)
+            if attempt["attempt_id"] != attempt_id or attempt["dispatch_id"] != dispatch_id or attempt["status"] != "prepared":
+                return False
+            cursor.execute("SELECT 1 FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s AND layer='runtime_dispatched'", (row["tenant_id"], row["message_id"]))
+            if cursor.fetchone() is not None:
+                return False
+            request = EndpointResolutionRequest(
+                tenant_id=row["tenant_id"], message_id=row["message_id"], operation_id=row["operation_id"],
+                attempt_id=attempt_id, dispatch_id=dispatch_id, failed_endpoint_id=failed_endpoint_id,
+                failed_binding_revision=failed_revision, target_scope_id=row["packet_json"]["target_scope_id"],
+                target_agent_slot_id=row["packet_json"]["target_agent_slot_id"], activation=row["packet_json"]["activation"],
+                failure_code="native_pre_call_rejected",
+            )
+            resolution = EndpointResolution.model_validate(resolver(request), strict=True)
+            if resolution.endpoint_id == failed_endpoint_id and resolution.binding_revision == failed_revision:
+                raise DeliveryRejected("resolver_returned_failed_endpoint")
+            cursor.execute("SELECT to_jsonb(e) FROM delivery_endpoints e WHERE tenant_id=%s AND endpoint_id=%s FOR UPDATE", (row["tenant_id"], resolution.endpoint_id))
+            found = cursor.fetchone()
+            if not found:
+                raise DeliveryRejected("resolver_endpoint_missing")
+            binding = found[0]
+            old = attempt["selection_json"]
+            if (binding["status"] != "active" or binding["revision"] != resolution.binding_revision
+                    or binding["scope_id"] != request.target_scope_id or binding["agent_slot_id"] != request.target_agent_slot_id
+                    or binding["supports_invoke"] != old["supports_invoke"]
+                    or binding["evidence_class"] != old["evidence_class"]
+                    or datetime.fromisoformat(binding["expires_at"]) <= self.service._now(cursor)):
+                raise DeliveryRejected("resolver_endpoint_ineligible")
+            selection = self._selection(row, binding)
+            selection["endpoint_id"] = resolution.endpoint_id
+            selection["revision"] = resolution.binding_revision
+            envelope = DeliveryEnvelope.model_validate_json(json.dumps(row["envelope_json"]), strict=True).model_copy(update={
+                "endpoint_id": resolution.endpoint_id, "binding_revision": resolution.binding_revision,
+                "machine_id": binding["machine_id"], "node_id": binding["node_id"], "boot_incarnation": binding["boot_incarnation"],
+            })
+            invocation = invocation_for(envelope, attempt_id) if envelope.packet.activation == "invoke" else None
+            history = attempt.get("selection_history_json", [])
+            history_entry = {"selection": selection, "resolution": resolution.model_dump(mode="json"),
+                             "failed_selection": old, "failure_code": request.failure_code}
+            cursor.execute("UPDATE delivery_attempts SET endpoint_id=%s,selection_revision=%s,selection_json=%s,selection_digest=%s,selection_history_json=%s,invocation_json=%s,invocation_digest=%s WHERE tenant_id=%s AND message_id=%s AND ordinal=%s AND status='prepared'",
+                           (selection["endpoint_id"], selection["revision"], json.dumps(selection), digest(selection),
+                            json.dumps([*history, history_entry]),
+                            json.dumps(invocation.model_dump(mode="json")) if invocation else None,
+                            digest(invocation.model_dump(mode="json")) if invocation else None,
+                            row["tenant_id"], row["message_id"], row["attempts"]))
+            if cursor.rowcount != 1:
+                raise DeliveryRejected("resolver_attempt_update_conflict")
+            return {"selection": selection, "envelope": envelope, "invocation": invocation}
 
     def _recovery_endpoint(self, cursor, row, attempt):
         """Fence a prepared Attempt to the original lineage and one new boot."""
@@ -759,12 +842,13 @@ class DeliveryDispatcher:
                             cursor.execute(
                                 "INSERT INTO delivery_attempts(tenant_id,message_id,ordinal,attempt_id,operation_id,"
                                 "endpoint_id,selection_revision,connection_ref,deadline,status,selection_json,"
-                                "selection_digest,invocation_json,invocation_digest,dispatch_id,"
+                                "selection_digest,selection_history_json,invocation_json,invocation_digest,dispatch_id,"
                                 "runtime_dispatched_receipt_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'prepared',"
-                                "%s,%s,%s,%s,%s,%s)",
+                                "%s,%s,%s,%s,%s,%s,%s)",
                                 (row["tenant_id"], row["message_id"], row["attempts"], attempt_id,
                                  row["operation_id"], selection["endpoint_id"], selection["revision"],
                                  self.worker_id, row["deadline"], json.dumps(selection), digest(selection),
+                                 json.dumps([selection]),
                                  json.dumps(invocation.model_dump(mode="json")) if invocation else None,
                                  digest(invocation.model_dump(mode="json")) if invocation else None,
                                  invocation.dispatch_id if invocation else None,
@@ -864,6 +948,23 @@ class DeliveryDispatcher:
                         )
                 except (DeliveryRejected, AuthorizationDenied, DeliveryBoundaryRejected,
                         OperationIdentityConflict, DeliveryTransportError) as error:
+                    if isinstance(error, InvocationPreCallRejected) and self.service.endpoint_resolver is not None:
+                        try:
+                            resolved = self._resolve_pre_call(
+                                identity, invocation.attempt_id, invocation.dispatch_id,
+                                invocation.envelope.endpoint_id, invocation.envelope.binding_revision,
+                            )
+                            if resolved:
+                                with self.service.authority._connect() as retry_connection, retry_connection.cursor() as retry_cursor:
+                                    retry_cursor.execute(
+                                        "UPDATE delivery_messages SET next_attempt_at=clock_timestamp(),last_error='endpoint_resolved_pre_call' "
+                                        "WHERE tenant_id=%s AND message_id=%s", (identity["tenant_id"], identity["message_id"]),
+                                    )
+                                return {"status": "retry_wait", "message_id": identity["message_id"],
+                                        "attempts": row["attempts"], "retry_after_seconds": 0,
+                                        "endpoint_resolved": True}
+                        except DeliveryRejected:
+                            raise
                     with self.service.authority._connect() as fail_connection, fail_connection.cursor() as fail_cursor:
                         row = self._load(fail_cursor, identity)
                         fail_cursor.execute(

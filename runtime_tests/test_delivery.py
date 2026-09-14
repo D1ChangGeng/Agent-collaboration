@@ -26,6 +26,7 @@ from runtime.delivery_models import (
     DeliveryEnvelope,
     DeliveryPacket,
     EndpointBindingRequest,
+    EndpointResolution,
     InvocationObservation,
 )
 from runtime.delivery_node import DeliveryTransportError, LocalNodeEndpoint, logical_payload
@@ -450,6 +451,108 @@ def test_remote_pre_call_failure_with_empty_readback_keeps_original_error(setup)
 
     assert result["status"] == "blocked"
     assert message(f, identity["message_id"])[1] == "native_pre_call_rejected"
+
+
+def test_pre_call_resolver_switches_endpoint_within_same_attempt(setup, tmp_path):
+    f = setup
+    backup_driver = FixtureDriver()
+    backup = LocalNodeEndpoint(
+        NodeJournal(tmp_path / "backup-node.sqlite"),
+        "local-scope", "local-slot", backup_driver,
+    )
+    requests = []
+
+    def resolve(request):
+        requests.append(request)
+        return EndpointResolution(
+            endpoint_id="backup-endpoint", binding_revision=1,
+            resolver_id="transport-policy", resolver_revision=1,
+            reason="primary rejected before native dispatch",
+        )
+
+    f.service.endpoints["backup-endpoint"] = backup
+    f.service.endpoint_resolver = resolve
+    f.service.bind_endpoint(
+        command(f.authority, "message.bind", "backup-endpoint"),
+        EndpointBindingRequest(
+            scope_id="local-scope", agent_slot_id="local-slot",
+            expires_at=datetime.now(UTC) + timedelta(minutes=5),
+        ),
+    )
+    f.driver.reject = True
+    identity, _, _, _ = send(f, activation="invoke", maximum_attempts=1)
+
+    first = f.dispatcher.dispatch(identity)
+    attempt_before = query(
+        f, "SELECT attempt_id,dispatch_id FROM delivery_attempts",
+    )[0]
+    second = f.dispatcher.dispatch(identity)
+
+    assert first["status"] == "retry_wait" and first["endpoint_resolved"] is True
+    assert second["status"] == "delivered"
+    assert len(requests) == 1
+    request = requests[0]
+    assert request.message_id == identity["message_id"]
+    assert request.operation_id == identity["operation_id"]
+    assert (request.attempt_id, request.dispatch_id) == attempt_before
+    assert request.failed_endpoint_id == "endpoint"
+    assert request.failure_code == "native_pre_call_rejected"
+    assert f.driver.calls == []
+    assert backup_driver.calls == [identity["operation_id"]]
+    assert query(
+        f,
+        "SELECT attempts FROM delivery_messages WHERE message_id=%s",
+        (identity["message_id"],),
+    ) == [(1,)]
+    attempt = query(
+        f,
+        "SELECT attempt_id,dispatch_id,endpoint_id,selection_revision,status,"
+        "selection_json->>'endpoint_id',jsonb_array_length(selection_history_json) "
+        "FROM delivery_attempts WHERE message_id=%s",
+        (identity["message_id"],),
+    )
+    assert attempt == [(
+        attempt_before[0], attempt_before[1], "backup-endpoint", 1,
+        "delivered", "backup-endpoint", 2,
+    )]
+    assert query(
+        f, "SELECT count(*) FROM delivery_receipts WHERE layer='runtime_dispatched'",
+    ) == [(1,)]
+
+
+def test_pre_call_resolver_rejects_incompatible_endpoint_without_native_call(setup, tmp_path):
+    f = setup
+    incompatible = LocalNodeEndpoint(
+        NodeJournal(tmp_path / "incompatible-node.sqlite"),
+        "local-scope", "local-slot", None,
+    )
+    f.service.endpoints["incompatible-endpoint"] = incompatible
+    f.service.endpoint_resolver = lambda _request: EndpointResolution(
+        endpoint_id="incompatible-endpoint", binding_revision=1,
+        resolver_id="transport-policy", resolver_revision=1,
+        reason="candidate lacks invoke capability",
+    )
+    f.service.bind_endpoint(
+        command(f.authority, "message.bind", "incompatible-endpoint"),
+        EndpointBindingRequest(
+            scope_id="local-scope", agent_slot_id="local-slot",
+            expires_at=datetime.now(UTC) + timedelta(minutes=5),
+        ),
+    )
+    f.driver.reject = True
+    identity, _, _, _ = send(f, activation="invoke", maximum_attempts=1)
+
+    with pytest.raises(DeliveryRejected, match="resolver_endpoint_ineligible"):
+        f.dispatcher.dispatch(identity)
+
+    assert f.driver.calls == []
+    assert query(
+        f, "SELECT count(*) FROM delivery_receipts WHERE layer='runtime_dispatched'",
+    ) == [(0,)]
+    assert query(
+        f, "SELECT attempts,status,jsonb_array_length(selection_history_json) "
+        "FROM delivery_messages JOIN delivery_attempts USING(tenant_id,message_id)",
+    ) == [(1, "prepared", 1)]
 
 
 def test_postgres_dispatch_marker_and_location_commit_before_native_call(setup):
