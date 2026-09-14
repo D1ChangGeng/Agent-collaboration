@@ -361,6 +361,66 @@ def test_ambiguous_native_callback_is_not_reinvoked(setup):
         ("accepted_by_authority",), ("runtime_dispatched",), ("target_inbox_committed",)]
 
 
+def test_explicit_marked_reconciliation_keeps_one_attempt(setup):
+    f = setup
+    identity, _, _, _ = send(f, activation="invoke", maximum_attempts=1)
+    original = f.endpoint.deliver
+    invocation_seen = []
+
+    def partitioned(envelope, authorize, invocation=None, mark_dispatched=None,
+                    read_dispatch_marker=None):
+        mark_dispatched(invocation, {
+            "source": "fixture_callback", "dispatch_id": invocation.dispatch_id,
+        })
+        raise DeliveryTransportError("partitioned after durable marker")
+
+    f.endpoint.deliver = partitioned
+    assert f.dispatcher.dispatch(identity)["status"] == "uncertain"
+    before = query(
+        f, "SELECT attempt_id,dispatch_id,status FROM delivery_attempts",
+    )
+
+    def reconcile(invocation):
+        invocation_seen.append(invocation)
+        return {
+            "status": "delivered",
+            "receipts": [
+                {
+                    "receipt_id": "reconciled-inbox",
+                    "layer": "target_inbox_committed",
+                    "evidence": {
+                        "source": "fixture_callback",
+                        "attempt_id": invocation.attempt_id,
+                        "dispatch_id": invocation.dispatch_id,
+                    },
+                },
+                {
+                    "receipt_id": "reconciled-runtime-ack",
+                    "layer": "runtime_acknowledged",
+                    "evidence": {
+                        "source": "fixture_callback",
+                        "attempt_id": invocation.attempt_id,
+                        "dispatch_id": invocation.dispatch_id,
+                    },
+                },
+            ],
+        }
+
+    f.endpoint.reconcile_marked = reconcile
+    result = DeliveryDispatcher(f.service).reconcile_marked(identity)
+
+    assert result["status"] == "delivered" and result["attempts"] == 1
+    assert len(invocation_seen) == 1
+    assert (invocation_seen[0].attempt_id, invocation_seen[0].dispatch_id) == before[0][:2]
+    assert query(
+        f, "SELECT attempt_id,dispatch_id,status FROM delivery_attempts",
+    ) == [(before[0][0], before[0][1], "delivered")]
+    assert query(f, "SELECT count(*) FROM inbox_messages") == [(1,)]
+    with pytest.raises(DeliveryRejected, match="invalid_committed_operation_identity"):
+        DeliveryDispatcher(f.service).reconcile_marked({**identity, "tenant_id": "other"})
+    f.endpoint.deliver = original
+
+
 def test_pre_call_rejection_is_blocked_without_activation_or_dispatch_receipt(setup):
     f = setup
     f.driver.reject = True

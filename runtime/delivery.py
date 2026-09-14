@@ -893,41 +893,69 @@ class DeliveryDispatcher:
 
     def reconcile_marked(self, identity):
         """Reconcile one terminal uncertain Attempt without creating another Attempt."""
-        if set(identity) != {"tenant_id", "message_id", "operation_id"}:
+        if (set(identity) != {"tenant_id", "message_id", "operation_id"}
+                or identity["tenant_id"] != self.service.authority.tenant_id):
             raise DeliveryRejected("invalid_committed_operation_identity")
-        with self.service.authority._connect() as connection, connection.cursor() as cursor:
-            row = self._load(cursor, identity)
-            if row["state"] != "uncertain":
-                return {"status": row["state"], "message_id": row["message_id"]}
-            attempt = self._load_attempt(cursor, row)
-            if attempt["status"] != "uncertain" or attempt["invocation_json"] is None:
-                raise DeliveryRejected("marked_reconciliation_requires_uncertain_attempt")
-            invocation = InvocationRequest.model_validate_json(
-                json.dumps(attempt["invocation_json"]), strict=True,
-            )
-            cursor.execute(
-                "SELECT 1 FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s "
-                "AND layer='runtime_dispatched' AND attempt_id=%s AND dispatch_id=%s",
-                (row["tenant_id"], row["message_id"], invocation.attempt_id,
-                 invocation.dispatch_id),
-            )
-            if cursor.fetchone() is None:
-                raise DeliveryRejected("marked_reconciliation_receipt_missing")
-            _, endpoint = self._selected_endpoint(cursor, row, attempt)
-        observation = endpoint.reconcile_marked(invocation)
-        with self.service.authority._connect() as connection, connection.cursor() as cursor:
-            row = self._load(cursor, identity)
-            self._project(cursor, row, observation)
-            status = observation["status"]
-            cursor.execute(
-                "UPDATE delivery_messages SET state=%s,last_error=NULL WHERE tenant_id=%s AND message_id=%s",
-                (status, row["tenant_id"], row["message_id"]),
-            )
-            cursor.execute(
-                "UPDATE delivery_attempts SET status=%s,error_code=NULL,finished_at=clock_timestamp() "
-                "WHERE tenant_id=%s "
-                "AND message_id=%s AND attempt_id=%s",
-                (status, row["tenant_id"], row["message_id"], invocation.attempt_id),
-            )
-        return {"status": status, "message_id": row["message_id"],
-                "attempts": row["attempts"]}
+        key = int.from_bytes(hashlib.sha256(json.dumps(
+            ["delivery-dispatch", identity], sort_keys=True,
+        ).encode()).digest()[:8], "big", signed=True)
+        with psycopg.connect(
+            self.service.authority._dsn, autocommit=True,
+        ) as connection, connection.cursor() as cursor:
+            cursor.execute("SELECT pg_try_advisory_lock(%s)", (key,))
+            if not cursor.fetchone()[0]:
+                return {"status": "busy", "retry_after_seconds": 1}
+            try:
+                with connection.transaction():
+                    row = self._load(cursor, identity)
+                    if row["state"] != "uncertain":
+                        return {"status": row["state"], "message_id": row["message_id"]}
+                    attempt = self._load_attempt(cursor, row)
+                    if attempt["status"] != "uncertain" or attempt["invocation_json"] is None:
+                        raise DeliveryRejected("marked_reconciliation_requires_uncertain_attempt")
+                    invocation = InvocationRequest.model_validate_json(
+                        json.dumps(attempt["invocation_json"]), strict=True,
+                    )
+                    cursor.execute(
+                        "SELECT receipt_id FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s "
+                        "AND layer='runtime_dispatched' AND attempt_id=%s AND dispatch_id=%s",
+                        (row["tenant_id"], row["message_id"], invocation.attempt_id,
+                         invocation.dispatch_id),
+                    )
+                    marker = cursor.fetchone()
+                    if marker != (invocation.runtime_dispatched_receipt_id,):
+                        raise DeliveryRejected("marked_reconciliation_receipt_missing")
+                    _, endpoint = self._selected_endpoint(cursor, row, attempt)
+                    attempt_identity = (
+                        attempt["attempt_id"], attempt["dispatch_id"],
+                        attempt["invocation_digest"], attempt["selection_digest"],
+                    )
+                observation = endpoint.reconcile_marked(invocation)
+                with connection.transaction():
+                    current = self._load(cursor, identity)
+                    current_attempt = self._load_attempt(cursor, current)
+                    current_identity = (
+                        current_attempt["attempt_id"], current_attempt["dispatch_id"],
+                        current_attempt["invocation_digest"], current_attempt["selection_digest"],
+                    )
+                    if (current["state"] != "uncertain"
+                            or current_attempt["status"] != "uncertain"
+                            or current_identity != attempt_identity):
+                        raise DeliveryRejected("marked_reconciliation_lineage_changed", "uncertain")
+                    self._selected_endpoint(cursor, current, current_attempt)
+                    self._project(cursor, current, observation)
+                    status = observation["status"]
+                    cursor.execute(
+                        "UPDATE delivery_messages SET state=%s,last_error=NULL WHERE tenant_id=%s AND message_id=%s",
+                        (status, current["tenant_id"], current["message_id"]),
+                    )
+                    cursor.execute(
+                        "UPDATE delivery_attempts SET status=%s,error_code=NULL,finished_at=clock_timestamp() "
+                        "WHERE tenant_id=%s AND message_id=%s AND attempt_id=%s",
+                        (status, current["tenant_id"], current["message_id"],
+                         invocation.attempt_id),
+                    )
+                    return {"status": status, "message_id": current["message_id"],
+                            "attempts": current["attempts"]}
+            finally:
+                cursor.execute("SELECT pg_advisory_unlock(%s)", (key,))

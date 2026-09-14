@@ -337,14 +337,43 @@ class RemoteNodeEndpointAdapter:
         receiver ledger and native dispatch identity remain the dedup boundary.
         """
         dispatch = self.store.dispatch_admission(invocation.operation_id)
-        if dispatch is None or dispatch.admission.dispatch_id != invocation.dispatch_id:
+        if dispatch is None:
             raise DeliveryTransportError("marked dispatch admission is unavailable")
+        admission = dispatch.admission
+        expected = (
+            "delivery.dispatch",
+            f"receiver:{invocation.attempt_id}:{invocation.dispatch_id}:delivery.dispatch",
+            invocation.message_id, invocation.command_id, invocation.operation_id,
+            invocation.attempt_id, invocation.dispatch_id, invocation.accepted_revision,
+            invocation.accepted_state_digest, invocation.envelope_digest,
+            invocation.selection_digest, sha256(invocation.model_dump(mode="json")),
+            invocation.envelope.endpoint_id, invocation.envelope.machine_id,
+            invocation.envelope.node_id, invocation.envelope.boot_incarnation,
+            invocation.envelope.packet.target_scope_id,
+            invocation.envelope.packet.target_agent_slot_id,
+        )
+        actual = (
+            admission.purpose, admission.request_id, admission.message_id,
+            admission.command_id, admission.operation_id, admission.attempt_id,
+            admission.dispatch_id, admission.accepted_revision,
+            admission.accepted_state_digest, admission.envelope_digest,
+            admission.selection_digest, admission.invocation_digest,
+            admission.endpoint_id, admission.machine_id, admission.node_id,
+            admission.boot_incarnation, admission.scope_id, admission.agent_slot_id,
+        )
+        if actual != expected:
+            raise DeliveryTransportError("marked dispatch admission lineage changed")
+        body = DispatchBody.model_validate_json(json.dumps(dispatch.body), strict=True)
+        if body.marker_receipt_id != invocation.runtime_dispatched_receipt_id:
+            raise DeliveryTransportError("marked dispatch body changed")
         prepare = self.store.prepared_recovery_evidence(
             invocation.operation_id, invocation.attempt_id, invocation.dispatch_id,
         )
         if prepare is None:
             raise DeliveryTransportError("marked prepare receipt is unavailable")
-        _, prepared_receipt = prepare
+        prepared_request, prepared_receipt = prepare
+        if body.prepare_request_id != prepared_request.admission.request_id:
+            raise DeliveryTransportError("marked dispatch prepare reference changed")
         try:
             dispatched = self._send(dispatch)
         except (RemoteTransportRejected, ValueError, RuntimeError):

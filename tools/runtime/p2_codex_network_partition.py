@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import signal
+import secrets
 import socket
 import subprocess
 import sys
@@ -45,7 +46,7 @@ class RelayPartition:
         self.events = []
         self.old_pid = None
         self.old_birth = None
-        self.restored_process = None
+        self.process = None
         self._log_stream = None
 
     def _snapshot(self, phase: str, pid: int | None) -> dict:
@@ -84,41 +85,70 @@ class RelayPartition:
     def _birth(pid: int) -> str:
         return Path(f"/proc/{pid}/stat").read_text(encoding="ascii").split()[21]
 
-    def __call__(self, invocation) -> None:
-        pid = int(self.arguments.relay_pid_file.read_text().strip())
-        self.old_pid = pid
-        self.old_birth = self._birth(pid)
-        before = self._snapshot("before_partition", pid)
-        before["listener_birth"] = self.old_birth
-        if not before["worker_port_listening"] or not before["client_port_listening"]:
-            raise RuntimeError("reverse tunnel was not healthy before partition")
-        os.kill(pid, signal.SIGTERM)
-        _wait(self.arguments.worker_port, False)
-        _wait(self.arguments.client_port, False)
-        during = self._snapshot("partitioned", None)
-        if during["worker_port_listening"] or during["client_port_listening"]:
-            raise RuntimeError("reverse tunnel partition did not isolate the route")
-        time.sleep(self.arguments.partition_seconds)
-
-    def restore(self, invocation) -> None:
+    def _start(self):
+        if self.process is not None and self.process.poll() is None:
+            return self.process
         command = [
             sys.executable, str(self.arguments.tunnel_script), "listen",
             "--host", "127.0.0.1", "--worker-port", str(self.arguments.worker_port),
             "--client-port", str(self.arguments.client_port), "--token",
             str(self.arguments.token),
         ]
-        self._log_stream = self.arguments.relay_log.open("ab")
-        process = subprocess.Popen(
+        if self._log_stream is None or self._log_stream.closed:
+            self._log_stream = self.arguments.relay_log.open("ab")
+        self.process = subprocess.Popen(
             command, stdin=subprocess.DEVNULL,
             stdout=self._log_stream, stderr=self._log_stream,
         )
-        self.restored_process = process
-        self.arguments.relay_pid_file.write_text(str(process.pid))
+        self.arguments.relay_pid_file.write_text(str(self.process.pid))
         _wait(self.arguments.worker_port, True)
         _wait(self.arguments.client_port, True)
-        # The connector pool may need one additional bounded interval to replace
-        # the worker sockets destroyed with the listener.
         time.sleep(self.arguments.worker_reconnect_seconds)
+        return self.process
+
+    def start(self) -> None:
+        process = self._start()
+        start = self._snapshot("initial", process.pid)
+        start["listener_birth"] = self._birth(process.pid)
+
+    def _control_probe(self) -> dict:
+        nonce = secrets.token_hex(32)
+        self.arguments.control_challenge.write_text(nonce)
+        deadline = time.monotonic() + self.arguments.control_timeout_seconds
+        while time.monotonic() < deadline:
+            try:
+                if self.arguments.control_proof.read_text().strip() == nonce:
+                    return {"nonce_sha256": hashlib.sha256(nonce.encode()).hexdigest(),
+                            "verified": True}
+            except FileNotFoundError:
+                pass
+            time.sleep(0.1)
+        raise RuntimeError("independent SSH control proof was not received")
+
+    def __call__(self, invocation) -> None:
+        if self.process is None or self.process.poll() is not None:
+            raise RuntimeError("owned reverse tunnel process is unavailable")
+        pid = self.process.pid
+        self.old_pid = pid
+        self.old_birth = self._birth(pid)
+        before = self._snapshot("before_partition", pid)
+        before["listener_birth"] = self.old_birth
+        if not before["worker_port_listening"] or not before["client_port_listening"]:
+            raise RuntimeError("reverse tunnel was not healthy before partition")
+        if self._birth(pid) != self.old_birth:
+            raise RuntimeError("reverse tunnel PID birth changed before signal")
+        self.process.terminate()
+        self.process.wait(timeout=10)
+        _wait(self.arguments.worker_port, False)
+        _wait(self.arguments.client_port, False)
+        during = self._snapshot("partitioned", None)
+        if during["worker_port_listening"] or during["client_port_listening"]:
+            raise RuntimeError("reverse tunnel partition did not isolate the route")
+        during["control_probe"] = self._control_probe()
+        time.sleep(self.arguments.partition_seconds)
+
+    def restore(self, invocation) -> None:
+        process = self._start()
         after = self._snapshot("restored", process.pid)
         after["listener_birth"] = self._birth(process.pid)
         after["logical_message_id"] = invocation.message_id
@@ -126,18 +156,14 @@ class RelayPartition:
         after["attempt_id"] = invocation.attempt_id
         after["dispatch_id"] = invocation.dispatch_id
 
-    def close(self) -> dict:
-        proof = {"pid": None, "birth": None, "exited": True, "returncode": None}
-        if self.restored_process is not None:
-            process = self.restored_process
-            proof.update(pid=process.pid, birth=self._birth(process.pid), exited=False)
-            process.terminate()
-            try:
-                returncode = process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                returncode = process.wait(timeout=5)
-            proof.update(exited=True, returncode=returncode)
+    def finish(self) -> dict:
+        process = self._start()
+        proof = {
+            "pid": process.pid, "birth": self._birth(process.pid),
+            "healthy": process.poll() is None,
+            "worker_port_listening": _listening(self.arguments.worker_port),
+            "client_port_listening": _listening(self.arguments.client_port),
+        }
         if self._log_stream is not None:
             self._log_stream.close()
         return proof
@@ -150,6 +176,7 @@ def execute(arguments) -> int:
     authority = DomainAuthority(dsn)
     signing = SigningKey(bytes.fromhex(arguments.authority_seed.read_text().strip()))
     partition = RelayPartition(arguments)
+    partition.start()
     endpoint = RemoteNodeEndpointAdapter(
         authority, state["endpoint_id"],
         RemoteSenderDeployment(
@@ -212,7 +239,7 @@ def execute(arguments) -> int:
             service, worker_id="linux-p2-network-reconciler",
         ).reconcile_marked(identity)
     finally:
-        cleanup = partition.close()
+        recovery_route = partition.finish()
     deadline = time.monotonic() + 180
     while time.monotonic() < deadline:
         with authority._connect() as connection:
@@ -252,7 +279,7 @@ def execute(arguments) -> int:
         "runtime_transport": "end-to-end TLS through Runtime reverse TCP tunnel",
         "control_transport": "SSH retained only for deployment and evidence control",
         "expected_sentinel_sha256": hashlib.sha256(sentinel.encode()).hexdigest(),
-        "relay_cleanup": cleanup,
+        "recovery_route": recovery_route,
     }
     _write(arguments.output, evidence)
     print(json.dumps(evidence, sort_keys=True))
@@ -274,6 +301,9 @@ def main() -> int:
     parser.add_argument("--client-port", type=int, required=True)
     parser.add_argument("--partition-seconds", type=float, default=1.0)
     parser.add_argument("--worker-reconnect-seconds", type=float, default=2.0)
+    parser.add_argument("--control-challenge", type=Path, required=True)
+    parser.add_argument("--control-proof", type=Path, required=True)
+    parser.add_argument("--control-timeout-seconds", type=float, default=30.0)
     return execute(parser.parse_args())
 
 
