@@ -36,6 +36,11 @@ def test_partition_stops_and_restores_supervised_relay(tmp_path, monkeypatch):
         suffix="run", control_host="windows-local", control_session="ssh-control-1",
         control_public_key=public_key(key), control_authority_public_key=public_key(key),
         expected_tls_fingerprint="0" * 64,
+        runtime_python=Path(os.sys.executable),
+        runtime_pythonpath=(
+            str(Path(__file__).parents[3])
+            + os.pathsep + os.environ.get("PYTHONPATH", "")
+        ).rstrip(os.pathsep),
     )
     partition = RelayPartition(args)
     invocation = SimpleNamespace(
