@@ -240,7 +240,8 @@ def execute(profile_path: Path, scenario: str, output: Path, machine_id: str,
     mapped = SCENARIOS[scenario]
     previous = {name: os.environ.get(name) for name in (
         "ACS_GATE_RUN_ID", "ACS_GATE_MACHINE_ID", "ACS_GATE_SOURCE_COMMIT",
-        "ACS_GATE_SOURCE_TREE",
+        "ACS_GATE_SOURCE_TREE", "ACS_GATE_SCENARIO_ID", "ACS_GATE_COMMAND_PREFIX",
+        "ACS_GATE_LINEAGE_PREFIX",
     )}
     os.environ.update({
         "ACS_GATE_RUN_ID": run_id, "ACS_GATE_MACHINE_ID": machine_id,
