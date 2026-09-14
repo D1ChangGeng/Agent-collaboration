@@ -7,7 +7,7 @@ def test_after_dispatch_mark_runs_after_marker_and_before_dispatch():
     events = []
     adapter = object.__new__(RemoteNodeEndpointAdapter)
     adapter.evidence_class = "authenticated_receiver_transport"
-    adapter.after_dispatch_mark = lambda invocation: events.append(("fault", invocation))
+    adapter.after_dispatch_mark = lambda invocation, request: events.append(("fault", invocation))
     adapter._selection = lambda invocation: {"selection": invocation}
     prepared = SimpleNamespace(
         receipt=SimpleNamespace(receipt_id="prepared-receipt", request_id="prepared-request")
@@ -15,7 +15,7 @@ def test_after_dispatch_mark_runs_after_marker_and_before_dispatch():
     adapter._issue = lambda invocation, purpose, body: events.append(("issue", purpose)) or body
 
     def send(request):
-        purpose = events[-1][1]
+        purpose = events[-1][1] if events[-1][0] == "issue" else "delivery.dispatch"
         events.append(("send", purpose))
         if purpose == "delivery.prepare":
             return prepared
@@ -55,6 +55,6 @@ def test_after_dispatch_mark_runs_after_marker_and_before_dispatch():
     assert result["status"] == "uncertain"
     assert [event[0:2] for event in events] == [
         ("issue", "delivery.prepare"), ("send", "delivery.prepare"),
-        ("marker", invocation), ("fault", invocation),
-        ("issue", "delivery.dispatch"), ("send", "delivery.dispatch"),
+        ("marker", invocation), ("issue", "delivery.dispatch"),
+        ("fault", invocation), ("send", "delivery.dispatch"),
     ]
