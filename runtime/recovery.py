@@ -528,10 +528,21 @@ class PostgresDelayedResponseAuthority:
                      json.dumps(receipt_evidence), identity.attempt_id, identity.dispatch_id),
                 )
                 cursor.execute(
-                    "UPDATE delivery_messages SET receipt_high_water='response_received' "
+                    "UPDATE delivery_messages SET receipt_high_water='response_received',"
+                    "state='delivered',last_error=NULL "
                     "WHERE tenant_id=%s AND message_id=%s",
                     (identity.tenant_id, identity.message_id),
                 )
+                cursor.execute(
+                    "UPDATE delivery_attempts SET status='delivered',error_code=NULL,"
+                    "finished_at=COALESCE(finished_at,clock_timestamp()) "
+                    "WHERE tenant_id=%s AND message_id=%s AND attempt_id=%s "
+                    "AND operation_id=%s AND dispatch_id=%s",
+                    (identity.tenant_id, identity.message_id, identity.attempt_id,
+                     identity.operation_id, identity.dispatch_id),
+                )
+                if cursor.rowcount != 1:
+                    raise BoundaryRejected("projected delivery attempt disappeared")
             cursor.execute(
                 "INSERT INTO recovery_audit_events("
                 "tenant_id,projection_id,event_type,command_id,principal_ref,grant_ref,"
