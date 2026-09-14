@@ -85,7 +85,7 @@ def validate_settings(settings: object) -> dict[str, str]:
         value = settings.get(name)
         if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
             raise CodexReceiverRejected(f"Codex receiver digest {name} is invalid")
-    if settings["codex_version"] not in {"0.152.1", "0.153.2"}:
+    if settings["codex_version"] not in {"0.152.1", "0.153.2", "0.153.4"}:
         raise CodexReceiverRejected("Codex receiver version has no reviewed Driver profile")
     if os.name == "posix" and Path(settings["systemd_environment_dir"]).name != "systemd-env":
         raise CodexReceiverRejected("Codex receiver Systemd environment directory differs")

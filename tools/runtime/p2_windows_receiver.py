@@ -53,14 +53,16 @@ def _lock_file(path: Path) -> None:
 def stage_capacity(root: Path, runtime_id: str) -> dict:
     for name in ("bin", "codex-home", "cwd", "home", "tmp", "artifacts", "state"):
         _private(root / name)
-    native = next(Path(
-        r"D:\common\develop\Nodejs\node_global\node_modules\@openai\codex\node_modules"
-        r"\@openai\codex-win32-x64\vendor"
-    ).rglob("codex.exe"))
+    native = next((Path(os.environ["LOCALAPPDATA"]) / "OpenAI/Codex/bin").rglob("codex.exe"))
     shutil.copyfile(native, root / "bin/codex.exe")
-    helper = native.parent / "codex-code-mode-host.exe"
-    if helper.is_file():
-        shutil.copyfile(helper, root / "bin/codex-code-mode-host.exe")
+    for helper_name in (
+        "codex-code-mode-host.exe", "codex-command-runner.exe",
+        "codex-windows-sandbox-setup.exe",
+    ):
+        helper = native.parent / helper_name
+        if not helper.is_file():
+            raise RuntimeError("reviewed Windows Codex helper is missing: " + helper_name)
+        shutil.copyfile(helper, root / "bin" / helper_name)
     import tomllib
     original = tomllib.loads((Path.home() / ".codex/config.toml").read_text(encoding="utf-8"))
     provider = original["model_providers"]["custom"]
@@ -72,14 +74,13 @@ def stage_capacity(root: Path, runtime_id: str) -> dict:
         f"model = {quote(original['model'])}",
         'model_reasoning_effort = "low"', 'model_provider = "custom"',
         f"model_catalog_json = {quote(str(catalog))}", 'approval_policy = "never"',
-        'default_permissions = "achp-windows-receiver"', 'allow_login_shell = false',
+        'default_permissions = ":workspace"', 'allow_login_shell = false',
         'web_search = "disabled"', "", "[features]", "multi_agent = false",
         "multi_agent_v2 = false", "shell_tool = false", "request_permissions_tool = false",
         "apps = false", "plugins = false", "recommended_plugins = false", "",
-        "[windows]", 'sandbox = "elevated"', "", 
+        "[windows]", 'sandbox = "unelevated"', "", 
         "[shell_environment_policy]", 'inherit = "none"', "", 
-        "[permissions.achp-windows-receiver.filesystem]", '":workspace" = "write"',
-        "", "[model_providers.custom]",
+        "[model_providers.custom]",
         f"name = {quote(provider['name'])}", f"base_url = {quote(provider['base_url'])}",
         f"wire_api = {quote(provider['wire_api'])}",
         f"env_key = {quote(provider['env_key'])}",
@@ -89,18 +90,17 @@ def stage_capacity(root: Path, runtime_id: str) -> dict:
     config_path.write_text(config, encoding="utf-8")
     schema = (
         Path(__file__).resolve().parents[2]
-        / "agent-collabration/.agents/runtime/bootstrap/windows-codex-0.152.1-schema/"
-        "codex_app_server_protocol.schemas.json"
+        / "runtime_tests/schema-0.153.4/codex_app_server_protocol.schemas.json"
     )
     settings = {
         "schema_version":"acs-receiver-codex-factory/1", "binding_id":"p2-windows-codex",
         "capacity_attempt_id":"p2-windows-capacity", "executable":str(root / "bin/codex.exe"),
         "executable_sha256":hashlib.sha256((root / "bin/codex.exe").read_bytes()).hexdigest(),
-        "codex_version":"0.152.1", "protocol_schema":str(schema),
+        "codex_version":"0.153.4", "protocol_schema":str(schema),
         "protocol_schema_sha256":hashlib.sha256(schema.read_bytes()).hexdigest(),
         "cwd":str(root / "cwd"), "codex_home":str(root / "codex-home"),
         "config_sha256":hashlib.sha256(config_path.read_bytes()).hexdigest(),
-        "permission_profile":"achp-windows-receiver", "model":original["model"],
+        "permission_profile":":workspace", "model":original["model"],
         "driver_journal":str(root / "state/driver.sqlite"),
         "node_journal":str(root / "state/node.sqlite"),
         "systemd_environment_dir":str(root / "state/windows-job"),

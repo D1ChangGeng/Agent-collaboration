@@ -119,7 +119,7 @@ class LaunchProfile:
     model: str | None = None
 
     def validate(self):
-        if self.version not in {"0.152.1", "0.153.2"}:
+        if self.version not in {"0.152.1", "0.153.2", "0.153.4"}:
             raise DriverRejected("version has no reviewed reference profile")
         for path in (self.executable, self.cwd, self.codex_home, self.schema_path):
             if not Path(path).is_absolute():
@@ -134,7 +134,10 @@ class LaunchProfile:
         config = tomllib.loads(config_path.read_text(encoding="utf-8"))
         if (
             config.get("default_permissions") != self.permission_profile
-            or self.permission_profile.startswith(":")
+            or (
+                self.permission_profile.startswith(":")
+                and not (self.version == "0.153.4" and self.permission_profile == ":workspace")
+            )
             or config.get("approval_policy") != "never"
         ):
             raise DriverRejected(
