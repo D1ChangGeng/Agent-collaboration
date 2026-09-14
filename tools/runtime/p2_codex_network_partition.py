@@ -112,8 +112,32 @@ class RelayPartition:
         self.arguments.relay_pid_file.write_text(str(self.process.process.pid))
         _wait(self.arguments.relay_host, self.arguments.worker_port, True)
         _wait(self.arguments.relay_host, self.arguments.client_port, True)
-        time.sleep(self.arguments.worker_reconnect_seconds)
+        self._wait_tls()
         return self.process
+
+    def _wait_tls(self) -> None:
+        import ssl
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.minimum_version = ssl.TLSVersion.TLSv1_3
+        context.maximum_version = ssl.TLSVersion.TLSv1_3
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        deadline = time.monotonic() + self.arguments.worker_reconnect_seconds
+        last_error = None
+        while time.monotonic() < deadline:
+            try:
+                with socket.create_connection(
+                    (self.arguments.relay_host, self.arguments.client_port), timeout=2,
+                ) as raw, context.wrap_socket(raw, server_hostname="receiver") as tls:
+                    observed = tls_fingerprint(tls.getpeercert(binary_form=True))
+                if observed != self.arguments.expected_tls_fingerprint:
+                    raise RuntimeError("tunnel TLS fingerprint differs")
+                return
+            except (OSError, TimeoutError, ssl.SSLError, RuntimeError) as error:
+                last_error = type(error).__name__
+                time.sleep(0.2)
+        raise RuntimeError("reverse tunnel worker TLS readiness failed: " + str(last_error))
 
     def start(self) -> None:
         process = self._start()
