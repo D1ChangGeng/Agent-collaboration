@@ -881,10 +881,9 @@ class DeliveryDispatcher:
                             return {"status": "uncertain", "message_id": row["message_id"],
                                     "attempts": row["attempts"]}
                         if isinstance(error, InvocationPreCallRejected) and endpoint is not None:
-                            self._project(
-                                fail_cursor, row,
-                                endpoint.inspect_delivery(row["operation_id"], "blocked"),
-                            )
+                            observed = endpoint.inspect_delivery(row["operation_id"], "blocked")
+                            if observed["receipts"]:
+                                self._project(fail_cursor, row, observed)
                         return self._failure(fail_cursor, row, error)
                 return {"status": status, "message_id": row["message_id"],
                         "attempts": row["attempts"], "retry_after_seconds": row["retry_delay_seconds"]}
