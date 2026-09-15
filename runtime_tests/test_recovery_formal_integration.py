@@ -1148,3 +1148,81 @@ def test_human_request_provider_manual_file_and_normal_confirmation(recovery_dom
                 identity="confirm"),
         "recovery.manual.confirm", confirm_payload,
     ).state == "resolved_manual"
+
+
+def test_human_confirmation_reuses_existing_native_response_receipt(recovery_domain, tmp_path):
+    authority, _envelope, invocation = recovery_domain
+    service = RecoveryService(authority)
+    expires = datetime.now(UTC) + timedelta(minutes=5)
+    open_payload = {
+        "incident_id": "native-incident", "generation": 1, "message_id": "message",
+        "operation_id": "delivery-operation", "source_scope_id": "local-scope",
+        "target_scope_id": "local-scope", "accepted_revision": 0,
+        "accepted_state_digest": DIGEST, "expires_at": expires,
+        "eligible_path_ids": ("native",),
+        "paths": ({"path_id": "native", "status": "failed",
+                   "attempt_refs": ("attempt",), "evidence_refs": ("native-fault",)},),
+    }
+    assert service.execute(
+        command(authority, "recovery.incident.open", "native-incident", open_payload),
+        "recovery.incident.open", open_payload,
+    ).state == "open"
+    request_payload = {"incident_id": "native-incident", "request_id": "native-human-request"}
+    assert service.execute(
+        command(authority, "recovery.human.request", "native-incident", request_payload),
+        "recovery.human.request", request_payload,
+    ).state == "human_requested"
+    provider_root = tmp_path / "native-human-provider"
+    provision_local_provider(provider_root)
+    dispatcher = HumanBridgeProviderDispatcher(authority._dsn, provider_root)
+    try:
+        assert dispatcher({"tenant_id": authority.tenant_id, "request_id": "native-human-request"})["status"] == "published"
+    finally:
+        dispatcher.close()
+    manual = ManualReturn(
+        "acs-human-bridge-manual-return/1", "native-manual-packet", authority.tenant_id,
+        "native-incident", 1, "message", "delivery-operation", "response", 0,
+        DIGEST, "c" * 64, "d" * 64, expires,
+    )
+    manual.validate()
+    _write_manual(provider_root, manual)
+    inbox = HumanBridgeManualInbox(authority, provider_root)
+    try:
+        received = inbox.receive(
+            "manual.json", "native-incident",
+            command(authority, "recovery.manual.receive", "native-incident",
+                    {"incident_id": "native-incident", "packet": {}}, identity="native-manual"),
+        )
+        assert received.state == "committed"
+    finally:
+        inbox.close()
+    native_evidence = {"native": {"response_ref": "native-response", "outcome": "completed"}}
+    receipt_id = "native-response-receipt"
+    evidence_digest = canonical_digest({
+        "receipt_id": receipt_id, "layer": "response_received", "message_id": "message",
+        "evidence": native_evidence, "attempt_id": "attempt", "dispatch_id": invocation.dispatch_id,
+    })
+    with authority._connect() as connection:
+        connection.execute(
+            "INSERT INTO delivery_receipts(tenant_id,message_id,receipt_id,layer,attempt_id,"
+            "dispatch_id,evidence_json) VALUES (%s,'message',%s,'response_received','attempt',%s,%s)",
+            (authority.tenant_id, receipt_id, invocation.dispatch_id, json.dumps(native_evidence)),
+        )
+    receipt = {
+        "incident_id": "native-incident", "incident_generation": 1,
+        "packet_id": "native-manual-packet", "tenant_id": authority.tenant_id,
+        "message_id": "message", "operation_id": "delivery-operation",
+        "attempt_id": "attempt", "dispatch_id": invocation.dispatch_id,
+        "direction": "response", "layer": "response_received", "payload_digest": "c" * 64,
+        "receipt_id": receipt_id, "evidence_digest": evidence_digest,
+    }
+    assert service.execute(
+        command(authority, "recovery.manual.confirm", "native-incident",
+                {"incident_id": "native-incident", "receipt": receipt}, identity="native-confirm"),
+        "recovery.manual.confirm", {"incident_id": "native-incident", "receipt": receipt},
+    ).state == "resolved_manual"
+    with authority._connect() as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM delivery_receipts WHERE tenant_id=%s AND message_id='message' AND layer='response_received'",
+            (authority.tenant_id,),
+        ).fetchone() == (1,)
