@@ -109,17 +109,24 @@ def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_p
         "runtime_deployment.receiver_codex.SystemdUserSupervisor",
         lambda **_kwargs: (_ for _ in ()).throw(StopConstruction()),
     )
+    monkeypatch.setattr(
+        "runtime_deployment.receiver_codex.WindowsJobSupervisor",
+        lambda **_kwargs: (_ for _ in ()).throw(StopConstruction()),
+    )
     config_object = type("Config", (), {"binding": type("Binding", (), {
         "registration": type("Registration", (), {
             "config_sha256": "policy", "runtime_id": "runtime",
             "node_id": "node", "boot_incarnation": "boot", "agent_slot_id": "slot",
             "node_binding_revision": 1, "machine_id": "machine", "scope_id": "scope",
         })()
-    })()})()
+    })(), "ledger_path": str(Path(value["node_journal"]).with_name("receiver.sqlite"))})()
     with pytest.raises(StopConstruction):
         CodexReceiverCapacity(config_object, "policy", value)
-    path = observed["environment"]["PATH"].split(":")
-    assert path[:2] == [str(executable.parent), "/opt/acs/codex-sandbox/bin"]
+    path = observed["environment"]["PATH"].split(os.pathsep)
+    if os.name == "nt":
+        assert path[0] == str(executable.parent)
+    else:
+        assert path[:2] == [str(executable.parent), "/opt/acs/codex-sandbox/bin"]
 
 
 @pytest.mark.skipif(os.name != "posix", reason="deployment factory binding is POSIX-owned")
