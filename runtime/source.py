@@ -56,6 +56,7 @@ DEFAULT_SECRET_PATTERNS = (
 )
 
 _AUTHORIZER = Callable[[SourceRequest], object]
+_ARTIFACT_AUTHORIZER = Callable[[object, str], object]
 
 
 class SourceError(RuntimeError):
@@ -1374,8 +1375,16 @@ class SourceService:
         *,
         kind: str,
         media_type: str = "application/octet-stream",
+        authorize: _ARTIFACT_AUTHORIZER | None = None,
     ) -> dict[str, Any]:
         expected_digest = _sha256(payload)
+
+        self._authorize_artifact(
+            {"kind": kind, "size_bytes": len(payload),
+             "scope_id": getattr(self._artifact_store, "scope_id", None)},
+            authorize,
+            operation="write",
+        )
 
         try:
             reference = self._artifact_store.put_bytes(
@@ -1383,6 +1392,7 @@ class SourceService:
                 kind=kind,
                 media_type=media_type,
             )
+            self._authorize_artifact(reference, authorize, operation="read")
             self._artifact_store.verify(reference)
             readback = self._artifact_store.read(reference)
         except Exception as exc:
@@ -1540,10 +1550,38 @@ class SourceService:
                 "Source authorization callback denied the request"
             )
 
+    @staticmethod
+    def _authorize_artifact(
+        value: object,
+        authorize: _ARTIFACT_AUTHORIZER | None,
+        *,
+        operation: str,
+    ) -> None:
+        """Authorize the actual CAS boundary before a byte is touched.
+
+        The legacy Source callback remains compatible with one-argument test
+        fixtures. Runtime integrations pass a separate callback bound to the
+        Domain Grant for artifact.read or artifact.write.
+        """
+        if authorize is None:
+            return
+        try:
+            decision = authorize(value, operation)
+        except Exception:  # noqa: BLE001 - protected boundary fails closed.
+            raise SourceAuthorizationError(
+                f"Artifact {operation} authorization callback failed"
+            ) from None
+        if not decision:
+            raise SourceAuthorizationError(
+                f"Artifact {operation} authorization callback denied the request"
+            )
+
     def admit(
         self,
         request: SourceRequest,
         authorize: _AUTHORIZER | None,
+        *,
+        artifact_authorize: _ARTIFACT_AUTHORIZER | None = None,
     ) -> SourceSnapshot:
         """Admit and seal one immutable Source snapshot."""
 
@@ -1686,6 +1724,7 @@ class SourceService:
                 payload,
                 kind="source",
                 media_type=self._file_media_type(path),
+                authorize=artifact_authorize,
             )
             mode = "100755" if signature[4] & 0o111 else "100644"
             total_source_bytes += len(payload)
@@ -1720,6 +1759,7 @@ class SourceService:
                 payload,
                 kind="source",
                 media_type=self._file_media_type(path),
+                authorize=artifact_authorize,
             )
             mode = "100755" if signature[4] & 0o111 else "100644"
             source_file = SourceFile(
@@ -1744,6 +1784,7 @@ class SourceService:
             diff_payload,
             kind="manifest",
             media_type="text/plain",
+            authorize=artifact_authorize,
         )
 
         untracked_manifest_payload = _canonical_json(
@@ -1757,6 +1798,7 @@ class SourceService:
             untracked_manifest_payload,
             kind="manifest",
             media_type="application/json",
+            authorize=artifact_authorize,
         )
 
         observed_at = datetime.now(UTC).isoformat()
@@ -1797,6 +1839,7 @@ class SourceService:
             manifest_payload,
             kind="manifest",
             media_type="application/json",
+            authorize=artifact_authorize,
         )
         snapshot = replace(
             provisional,
@@ -1853,6 +1896,8 @@ class SourceService:
         self,
         snapshot: SourceSnapshot,
         authorize: _AUTHORIZER | None,
+        *,
+        artifact_authorize: _ARTIFACT_AUTHORIZER | None = None,
     ) -> SourceSnapshot:
         """Verify CAS bytes and current Source readback for a snapshot."""
 
@@ -1905,6 +1950,7 @@ class SourceService:
 
         try:
             manifest_reference = artifact_ref(snapshot.manifest_ref)
+            self._authorize_artifact(manifest_reference, artifact_authorize, operation="read")
             manifest_bytes = self._artifact_store.read(manifest_reference)
             self._artifact_store.verify(manifest_reference)
 
@@ -1928,10 +1974,12 @@ class SourceService:
                 )
 
             diff_reference = artifact_ref(snapshot.diff_ref)
+            self._authorize_artifact(diff_reference, artifact_authorize, operation="read")
             diff_bytes = self._artifact_store.read(diff_reference)
             stored_files: dict[str, tuple[bytes, str]] = {}
             for item in snapshot.files:
                 reference = artifact_ref(item.artifact_ref)
+                self._authorize_artifact(reference, artifact_authorize, operation="read")
                 stored_bytes = self._artifact_store.read(reference)
                 if (
                     len(stored_bytes) != item.size_bytes
@@ -1968,6 +2016,7 @@ class SourceService:
                 )
 
             untracked_reference = artifact_ref(snapshot.untracked_manifest_ref)
+            self._authorize_artifact(untracked_reference, artifact_authorize, operation="read")
             untracked_bytes = self._artifact_store.read(untracked_reference)
             if not untracked_bytes:
                 raise SourceReadbackError(
