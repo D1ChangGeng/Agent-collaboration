@@ -555,8 +555,20 @@ class SystemdUserSupervisor(_Ownership):
             initial = self._show(unit)
             if initial["LoadState"] != "not-found":
                 self._verify_identity(record, initial)
-                stopped = self._run_systemctl(("stop", unit), check=False)
-                if stopped.returncode != 0 and self._show(unit)["LoadState"] != "not-found":
+                try:
+                    stopped = self._run_systemctl(("stop", unit), check=False)
+                except subprocess.TimeoutExpired:
+                    # A lost stop acknowledgement is an observation gap, not
+                    # proof that the owned cgroup survived.  The bounded loop
+                    # below still requires the same pinned unit (or a collected
+                    # unit), an empty cgroup, root exit and wrapper exit before
+                    # publishing verified termination.
+                    stopped = None
+                if (
+                    stopped is not None
+                    and stopped.returncode != 0
+                    and self._show(unit)["LoadState"] != "not-found"
+                ):
                     raise ContainmentUnavailable(
                         "systemctl could not stop the owned transient unit"
                     )
