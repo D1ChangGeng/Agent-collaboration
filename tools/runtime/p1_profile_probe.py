@@ -2530,7 +2530,7 @@ def _run_domain_transaction(
     authority.bootstrap_local_grant((
         "work_item.create", "delivery.manage", "message.send", "message.read",
         "runtime.invoke", "lease.acquire", "lease.release", "lease.inspect",
-        "effect.write", "effect.read",
+        "effect.write", "effect.read", "enrollment.manage", "receiver.manage",
     ))
     work_id = identity_prefix + "work-" + suffix
     create = _domain_command(
@@ -2551,8 +2551,26 @@ def _run_domain_transaction(
     driver = (p1_harness_replacement.AcknowledgedFixtureDriver()
               if scenario == "P1-HARNESS-REPLACEMENT" else FixtureDriver())
     endpoint_id = identity_prefix + "endpoint-" + suffix
-    endpoint = LocalNodeEndpoint(node, "local-scope", "local-slot", driver)
-    service = DeliveryService(authority, {endpoint_id: endpoint})
+    identity_resources = None
+    if scenario == "P1-IDENTITY-CONTINUITY":
+        try:
+            identity_resources = p1_identity_continuity_scene.provision(
+                authority,
+                ledger,
+                endpoint_id=endpoint_id,
+                machine_id=profile["machine_id"],
+                node_id=profile["node_id"],
+                suffix=suffix,
+                issued_at=issued_at,
+                domain_command=_domain_command,
+            )
+        except p1_identity_continuity_scene.IdentityContinuityRejected as exc:
+            raise ProbeRejected(str(exc)) from exc
+        endpoint = identity_resources.service.endpoints[endpoint_id]
+        service = identity_resources.service
+    else:
+        endpoint = LocalNodeEndpoint(node, "local-scope", "local-slot", driver)
+        service = DeliveryService(authority, {endpoint_id: endpoint})
     bind = _domain_command(
         authority, "message.bind", "message", endpoint_id, suffix, issued_at,
     )
@@ -2591,6 +2609,8 @@ def _run_domain_transaction(
             scope_id="local-scope", agent_slot_id="local-slot",
             expires_at=bind.deadline,
         ))
+        if identity_resources is not None:
+            identity_resources.mutation_command_ids.append(bind.command_id)
         sent = service.send_message(send, packet, endpoint_id=endpoint_id, binding_revision=1)
     identity = {
         "tenant_id": authority.tenant_id,
@@ -2686,6 +2706,26 @@ def _run_domain_transaction(
         delivered = DeliveryDispatcher(service).dispatch(identity)
         if delivered["status"] != "delivered":
             raise ProbeRejected("ACK loss retry did not project the same Node response")
+    elif scenario == "P1-IDENTITY-CONTINUITY":
+        try:
+            (delivered, identity_continuity_proof, provider_workflow,
+             provider_run) = p1_identity_continuity_scene.run(
+                profile,
+                identity_resources,
+                ledger,
+                pg_schema=pg_schema,
+                work_id=work_id,
+                message_id=message_id,
+                command_id=send.command_id,
+                operation_id=sent.operation_id,
+                commit=commit,
+                tree=tree,
+                private_json=_private_json,
+            )
+            ack_loss_observed = identity_continuity_proof["ack_loss_observed"]
+        except p1_identity_continuity_scene.IdentityContinuityRejected as exc:
+            p1_identity_continuity_scene.cleanup_owned(identity_resources)
+            raise ProbeRejected(str(exc)) from exc
     else:
         delivered = DeliveryDispatcher(service).dispatch(identity)
         if delivered["status"] != "delivered":
@@ -2748,14 +2788,6 @@ def _run_domain_transaction(
             )
         except p1_surface_parity.SurfaceParityRejected as exc:
             raise ProbeRejected(str(exc)) from exc
-    if scenario == "P1-IDENTITY-CONTINUITY":
-        try:
-            identity_continuity_proof = p1_identity_continuity_scene.run(
-                authority, node, ledger, work_id, message_id, sent.operation_id,
-                commit, tree, suffix, _private_json,
-            )
-        except p1_identity_continuity_scene.IdentityContinuityRejected as exc:
-            raise ProbeRejected(str(exc)) from exc
     with node._transaction() as connection:
         connection.execute(
             "CREATE TABLE IF NOT EXISTS p1_driver_calls(operation_id TEXT PRIMARY KEY)"
@@ -2770,6 +2802,7 @@ def _run_domain_transaction(
     expected_driver_calls = (
         [] if scenario in (
             "P1-AUTH-REVOCATION", "P1-NODE-RESTART", "P1-PROVIDER-RESTART",
+            "P1-IDENTITY-CONTINUITY",
         )
         else [sent.operation_id]
     )
@@ -2851,7 +2884,9 @@ def _run_domain_transaction(
                 outbox_details, message_hashes))
             or len(events) != 1 or operation_count != 1 or outbox_count != 1):
         raise ProbeRejected("Domain command/operation/outbox hashes are incomplete")
-    if scenario == "P1-PROVIDER-RESTART" and provider_refs != (provider_workflow, provider_run):
+    if scenario in ("P1-PROVIDER-RESTART", "P1-IDENTITY-CONTINUITY") and provider_refs != (
+        provider_workflow, provider_run,
+    ):
         raise ProbeRejected("Temporal Workflow reference did not commit to Domain")
     if scenario == "P1-INBOX-ACK-LOSS" and (
         len(attempts) != 2 or [item[3] for item in attempts] != ["retry_wait", "delivered"]
@@ -2864,9 +2899,12 @@ def _run_domain_transaction(
                                              node_restart_proof["new_boot"]]
     ):
         raise ProbeRejected("Node restart did not preserve two selected boot attempts")
-    if scenario == "P1-PROVIDER-RESTART":
+    if scenario in ("P1-PROVIDER-RESTART", "P1-IDENTITY-CONTINUITY"):
         if (len(attempts) != 1 or attempts[0][3] != "delivered"
-                or attempts[0][1] != provider_restart_proof["prepared_attempt_id"]):
+                or (scenario == "P1-PROVIDER-RESTART"
+                    and attempts[0][1] != provider_restart_proof["prepared_attempt_id"])
+                or (scenario == "P1-IDENTITY-CONTINUITY"
+                    and attempts[0][1] != identity_continuity_proof["attempt_id"])):
             raise ProbeRejected("Temporal replacement did not preserve prepared attempt")
         workflow_id, temporal_run_id = provider_workflow, provider_run
     else:
@@ -3842,11 +3880,14 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         or lineage["driver_calls"] != (
             [] if scenario in (
                 "P1-AUTH-REVOCATION", "P1-NODE-RESTART", "P1-PROVIDER-RESTART",
+                "P1-IDENTITY-CONTINUITY",
             )
             else [lineage["operation_id"]]
         )
         or not lineage["exact_replay"] or not lineage["conflict_rejected"]
-        or lineage["ack_loss_observed"] != (scenario == "P1-INBOX-ACK-LOSS")
+        or lineage["ack_loss_observed"] != (
+            scenario in ("P1-INBOX-ACK-LOSS", "P1-IDENTITY-CONTINUITY")
+        )
         or (lineage["core_crash_proof"] is not None) != (scenario == "P1-CORE-RESTART")
         or (lineage["node_restart_proof"] is not None) != (scenario == "P1-NODE-RESTART")
         or (lineage["provider_restart_proof"] is not None)
@@ -3919,6 +3960,24 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             or lineage["provider_refs"] != [proof["workflow_id"], proof["run_id"]]
         ):
             raise ProbeRejected("Temporal worker replacement lineage is incomplete")
+    if scenario == "P1-IDENTITY-CONTINUITY":
+        proof = lineage["identity_continuity_proof"]
+        try:
+            qualification = p1_identity_continuity_scene.require_gate_qualification(
+                proof.get("gate_qualification") if isinstance(proof, dict) else None,
+            )
+        except p1_identity_continuity_scene.IdentityContinuityRejected as exc:
+            raise ProbeRejected(str(exc)) from exc
+        if (
+            proof.get("operation_id") != lineage["operation_id"]
+            or proof.get("attempt_id") != lineage["attempt_id"]
+            or proof.get("dispatch_id") != lineage["dispatch_id"]
+            or proof.get("workflow_id") != row["temporal_workflow_id"]
+            or proof.get("run_id") != row["temporal_run_id"]
+            or lineage["provider_refs"] != [proof["workflow_id"], proof["run_id"]]
+            or qualification.get("missing") != []
+        ):
+            raise ProbeRejected("identity continuity Gate qualification is incomplete")
     if scenario == "P1-LEASE-FENCING":
         proof = lineage["lease_proof"]
         if (
@@ -4030,6 +4089,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             )
         except p1_identity_continuity_scene.IdentityContinuityRejected as exc:
             raise ProbeRejected(str(exc)) from exc
+        return identity_extra
     if kind == "postgresql":
         scoped = make_conninfo(
             profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",

@@ -15,7 +15,7 @@ from runtime.delivery_node import (
     logical_payload,
 )
 from runtime.node import NodeJournal
-from runtime.receiver_config import ReceiverClientConfig
+from runtime.receiver_config import ReceiverClientConfig, ReceiverRuntimeConfig
 from runtime.receiver_crypto import load_owner_signing_key, sha256
 from runtime.receiver_models import (
     DispatchBody,
@@ -157,9 +157,13 @@ class RemoteNodeEndpointAdapter:
 
     def __init__(self, authority, endpoint_id: str,
                  deployment: ReceiverDeployment | RemoteSenderDeployment,
-                 *, timeout: float = 5.0, after_dispatch_mark=None):
+                 *, timeout: float = 5.0, after_prepare=None,
+                 after_dispatch_mark=None):
+        if after_prepare is not None and not callable(after_prepare):
+            raise TypeError("after_prepare must be callable")
         if after_dispatch_mark is not None and not callable(after_dispatch_mark):
             raise TypeError("after_dispatch_mark must be callable")
+        self.after_prepare = after_prepare
         self.after_dispatch_mark = after_dispatch_mark
         self.authority = authority
         self.store = authority.receiver_transport
@@ -178,14 +182,26 @@ class RemoteNodeEndpointAdapter:
             registration_signature=committed["registration"]["registration_signature"],
         )
         key = self.store.load_authority_key()
-        self.config = ReceiverClientConfig(
-            binding=binding, authority_key_id=key["key_id"], authority_key_revision=key["revision"],
-            authority_public_key=key["public_key"],
-            authority_public_key_fingerprint=key["fingerprint"],
-            expected_boot_incarnation=deployment.expected_boot_incarnation,
-            journal_generation=deployment.journal_generation,
-            old_boot_isolation_ref=deployment.old_boot_isolation_ref,
-        )
+        config = {
+            "binding": binding,
+            "authority_key_id": key["key_id"],
+            "authority_key_revision": key["revision"],
+            "authority_public_key": key["public_key"],
+            "authority_public_key_fingerprint": key["fingerprint"],
+            "expected_boot_incarnation": deployment.expected_boot_incarnation,
+            "journal_generation": deployment.journal_generation,
+            "old_boot_isolation_ref": deployment.old_boot_isolation_ref,
+        }
+        if isinstance(deployment, ReceiverDeployment):
+            self.config = ReceiverRuntimeConfig(
+                **config,
+                tls_cert_path=deployment.tls_cert_path,
+                tls_key_path=deployment.tls_key_path,
+                node_signing_key_path=deployment.node_signing_key_path,
+                ledger_path=deployment.ledger_path,
+            )
+        else:
+            self.config = ReceiverClientConfig(**config)
         self.config.validate()
         if (registration.endpoint_id != endpoint_id
                 or registration.boot_incarnation != deployment.expected_boot_incarnation):
@@ -277,6 +293,8 @@ class RemoteNodeEndpointAdapter:
                 "receipt_id": receipt.receipt_id,
                 "layer": layer,
                 "evidence": {"source": "authenticated_receiver_transport",
+                             "attempt_id": receipt.attempt_id,
+                             "dispatch_id": receipt.dispatch_id,
                              "signed_receipt": signed.model_dump(mode="json")},
             })
         return {"status": status, "receipts": projected}
@@ -296,6 +314,12 @@ class RemoteNodeEndpointAdapter:
             prepared = self._send(self._issue(invocation, "delivery.prepare", prepare_body))
         except (RemoteTransportRejected, ValueError, RuntimeError) as error:
             raise InvocationPreCallRejected("receiver prepare rejected before Domain marker") from error
+        # A process-restart probe may stop the Core only after both the receiver
+        # SQLite preparation and its PostgreSQL admission/receipt are durable.
+        # Ordinary callers leave this bounded fault seam unset.
+        after_prepare = getattr(self, "after_prepare", None)
+        if after_prepare is not None:
+            after_prepare(invocation, prepared)
         mark_dispatched(
             invocation,
             {"source": self.evidence_class, "dispatch_id": invocation.dispatch_id,

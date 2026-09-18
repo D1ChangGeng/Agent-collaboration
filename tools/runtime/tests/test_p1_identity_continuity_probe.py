@@ -21,6 +21,10 @@ from tools.runtime.p1_identity_continuity_probe import (
     read_receiver_ledger,
     verify_signed_exchange,
 )
+from tools.runtime.p1_identity_continuity_scene import (
+    IdentityContinuityRejected,
+    require_gate_qualification,
+)
 from tools.runtime.p1_profile_probe import ScenarioCatalog
 
 pytestmark = pytest.mark.skipif(
@@ -79,6 +83,45 @@ def logical_attempt(env):
 def test_catalog_binds_identity_gate_to_formal_lineage():
     assert "P1-IDENTITY-CONTINUITY" in ScenarioCatalog.TESTS
     assert "P1-IDENTITY-CONTINUITY" in ScenarioCatalog.LINEAGE_BOUND
+
+
+def qualified_gate():
+    return {
+        "status": "passed",
+        "gate_status": "passed",
+        "missing": [],
+        "layers": {
+            "postgresql": {"readback": True},
+            "sqlite": {"readback": True},
+            "temporal": {"readback": True},
+            "os": {"readback": True},
+        },
+        "fault_chain": {
+            "ack_loss": True,
+            "core_restart": True,
+            "node_receiver_restart": True,
+            "provider_restart": True,
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    "change,error",
+    [
+        ({"status": "component_only"}, "component-only"),
+        ({"gate_status": "not_run"}, "did not pass"),
+        ({"missing": ["temporal"]}, "missing live layers"),
+    ],
+)
+def test_gate_qualification_rejects_component_or_missing_evidence(change, error):
+    value = {**qualified_gate(), **change}
+    with pytest.raises(IdentityContinuityRejected, match=error):
+        require_gate_qualification(value)
+
+
+def test_gate_qualification_accepts_only_complete_live_layers():
+    value = qualified_gate()
+    assert require_gate_qualification(value) is value
 
 
 def observed_fixture(tmp_path):
