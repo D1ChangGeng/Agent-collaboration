@@ -49,7 +49,11 @@ class PrivateOpenCodeAuth:
                 or (present.st_dev, present.st_ino) != (info.st_dev, info.st_ino)
             ):
                 raise OpenCodeGateRejected("OpenCode source key reference changed")
-            value = bytearray(os.read(descriptor, 8193))
+            value = bytearray(os.read(descriptor, 8195))
+            if value.endswith(b"\r\n"):
+                del value[-2:]
+            elif value.endswith(b"\n"):
+                del value[-1:]
             if (
                 not 1 <= len(value) <= 8192
                 or any(character < 33 or character > 126 for character in value)
