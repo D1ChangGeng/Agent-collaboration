@@ -70,6 +70,18 @@ def test_catalog_exactly_matches_formal_18_scenarios():
     assert list(probe.ScenarioCatalog.TESTS) == contract["gates"]["P1"]["scenarios"]
 
 
+def test_profile_document_points_to_catalog_and_current_inventory():
+    document = (
+        Path(__file__).resolve().parents[3] / "docs/runtime/P1-PROBE-PROFILE.md"
+    ).read_text(encoding="utf-8")
+    assert "ScenarioCatalog" in document
+    assert "12 runnable" in document
+    assert "6 `NOT_RUN` gaps" in document
+    assert "Provider restart" in document and "Identity continuity" in document
+    assert "acs-delivery/<operation>" in document
+    assert "p1_profile_plan.py --profile" in document
+
+
 @pytest.mark.skipif(os.name != "posix", reason="private Git source copy requires POSIX")
 def test_stale_baseline_private_git_head_tree_and_bundle_are_read_back(tmp_path):
     original = Path(__file__).resolve().parents[3]

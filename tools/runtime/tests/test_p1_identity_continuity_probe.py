@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 import multiprocessing
 import os
 import sqlite3
 from dataclasses import replace
+from datetime import UTC, datetime
 
 import pytest
 
@@ -12,6 +14,7 @@ from runtime.receiver_crypto import public_key, sign
 from runtime.receiver_models import ReadbackBody, RecoveryBody
 from runtime.remote_endpoint import RemoteNodeTransport, serve
 from runtime_tests import test_receiver_protocol as protocol
+from tools.runtime import p1_identity_continuity_scene as identity_scene
 from tools.runtime.p1_identity_continuity_probe import (
     AttemptReadback,
     ContinuityRejected,
@@ -23,7 +26,12 @@ from tools.runtime.p1_identity_continuity_probe import (
 )
 from tools.runtime.p1_identity_continuity_scene import (
     IdentityContinuityRejected,
+    _checkpoint_path,
+    _read_checkpoint,
+    finalize_checkpoint,
+    prepare_checkpoint,
     require_gate_qualification,
+    resume_ledger_pending,
 )
 from tools.runtime.p1_profile_probe import ScenarioCatalog
 
@@ -83,6 +91,94 @@ def logical_attempt(env):
 def test_catalog_binds_identity_gate_to_formal_lineage():
     assert "P1-IDENTITY-CONTINUITY" in ScenarioCatalog.TESTS
     assert "P1-IDENTITY-CONTINUITY" in ScenarioCatalog.LINEAGE_BOUND
+
+
+def test_proof_written_before_ledger_put_resumes_exact_checkpoint_lineage(tmp_path, monkeypatch):
+    ledger = __import__("tools.runtime.p1_profile_probe", fromlist=["ProbeLedger"]).ProbeLedger(
+        tmp_path / "ledger",
+    )
+    run_id = "identity-checkpoint-run"
+    suffix = "identity-checkpoint-suffix"
+    ledger.claim("P1-IDENTITY-CONTINUITY", run_id)
+    profile = {"machine_id": "machine-checkpoint", "node_id": "node-checkpoint"}
+    authority = __import__("runtime.domain", fromlist=["DomainAuthority"]).DomainAuthority(
+        "unused-dsn",
+    )
+    checkpoint = prepare_checkpoint(
+        profile,
+        ledger,
+        run_id=run_id,
+        suffix=suffix,
+        commit="a" * 40,
+        tree="b" * 40,
+        work_id="work-checkpoint",
+        message_id="message-checkpoint",
+        endpoint_id="endpoint-checkpoint",
+        machine_id=profile["machine_id"],
+        node_id=profile["node_id"],
+        authority=authority,
+    )
+    assert _read_checkpoint(_checkpoint_path(ledger))["identity_sha256"] == checkpoint[
+        "identity_sha256"
+    ]
+    proof = {
+        key: checkpoint[key]
+        for key in (
+            "source_commit", "source_tree", "work_item_id", "message_id", "command_id",
+            "operation_id", "attempt_id", "dispatch_id", "endpoint_id", "machine_id",
+            "node_id", "old_boot", "new_boot", "old_runtime_id", "new_runtime_id",
+            "authority_key_id",
+        )
+    }
+    proof.update({
+        "tenant_id": checkpoint["tenant_id"],
+        "authority_id": checkpoint["authority_id"],
+        "authority_incarnation": checkpoint["authority_incarnation"],
+        "checkpoint_sha256": checkpoint["identity_sha256"],
+        "workflow_id": "acs-delivery/" + checkpoint["operation_id"],
+        "run_id": "temporal-run-checkpoint",
+        "queue": "identity-checkpoint-queue",
+        "gate_qualification": qualified_gate(),
+    })
+    proof_path = ledger.root / "P1-IDENTITY-CONTINUITY-proof.json"
+    proof_bytes = json.dumps(proof, sort_keys=True, separators=(",", ":")).encode()
+    proof_path.write_bytes(proof_bytes)
+    raw_path = ledger.root / "P1-IDENTITY-CONTINUITY-runtime.json"
+    raw_path.write_bytes(b"checkpoint-runtime")
+    lineage = {"identity_continuity_proof": proof}
+    row = {
+        "scenario_id": "P1-IDENTITY-CONTINUITY",
+        "run_id": run_id,
+        "operation_id": checkpoint["operation_id"],
+        "message_id": checkpoint["message_id"],
+        "event_id": "event-checkpoint",
+        "receipt_id": "receipt-checkpoint",
+        "test_digest": "0" * 64,
+        "raw_path": raw_path.name,
+        "pg_schema": checkpoint["pg_schema"],
+        "temporal_workflow_id": proof["workflow_id"],
+        "temporal_run_id": proof["run_id"],
+        "lineage_json": json.dumps(lineage, sort_keys=True),
+        "source_commit": checkpoint["source_commit"],
+        "source_tree": checkpoint["source_tree"],
+        "status": "passed",
+        "created_at": datetime.now(UTC).isoformat(),
+    }
+    checkpoint = finalize_checkpoint(
+        {**checkpoint, "proof_sha256": __import__("hashlib").sha256(proof_bytes).hexdigest()},
+        lineage=lineage,
+        row=row,
+        raw_sha256=__import__("hashlib").sha256(raw_path.read_bytes()).hexdigest(),
+    )
+    monkeypatch.setattr(
+        identity_scene,
+        "_live_readbacks",
+        lambda *_args, **_kwargs: proof["gate_qualification"]["layers"],
+    )
+    resumed = resume_ledger_pending(profile, ledger, checkpoint)
+    assert resumed["operation_id"] == checkpoint["operation_id"]
+    assert ledger.get("P1-IDENTITY-CONTINUITY")["message_id"] == checkpoint["message_id"]
+    assert _read_checkpoint(_checkpoint_path(ledger))["phase"] == "completed"
 
 
 def qualified_gate():
