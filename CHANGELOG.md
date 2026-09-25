@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented here.
 
-## 1.0.0
+## 1.0.0 candidate
 
-This release combines the setup Skill, Project Collaboration Workspace model
+The candidate combines the setup Skill, Project Collaboration Workspace model
 and the authenticated Runtime MCP surface in one distribution path.
 
 ### Included capabilities
