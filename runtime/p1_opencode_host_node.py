@@ -124,9 +124,12 @@ class OpenCodeHostNodeEndpoint(CodexHostNodeEndpoint):
             or config.get("permission") != {"*": "deny", "task": "deny"}
             or selected_agent.get("model") != f"{provider_id}/{model_id}"
             or selected_agent.get("permission") != {"*": "deny", "task": "deny"}
-            or not isinstance(selected, dict)
-            or selected.get("npm") != "@ai-sdk/openai"
-            or selected.get("options") != {"baseURL": provider_url}
+            or provider_url is not None
+            and (
+                not isinstance(selected, dict)
+                or selected.get("npm") != "@ai-sdk/openai"
+                or selected.get("options") != {"baseURL": provider_url}
+            )
         ):
             raise HostNodeRejected("effective OpenCode config contract changed")
 
