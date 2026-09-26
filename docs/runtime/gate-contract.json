@@ -1,0 +1,42 @@
+{
+  "schema_version": "acs-gate-contract/1",
+  "contract_revision": "2026-09-11.1",
+  "instruction_sha256": "0cffa4ab3888b3c05d61a72f0d7566dd9c03db07b4baffef29c9a6cbb7bb9e46",
+  "supported_evidence_layers": ["explanation", "decision_logic", "real_mechanism", "invariants", "representative_e2e"],
+  "binding_fields": ["profile", "machines", "nodes", "os", "core", "provider", "driver", "harness", "database", "protocol", "credential_scope", "policy", "direction", "expires_at"],
+  "scenario_evidence_fields": ["command_ids", "operation_ids", "message_ids", "event_ids", "receipts", "raw_outputs", "fault_injection", "source_readback", "artifact_readback", "effect_readback", "recovery_trace", "observer", "owner", "unresolved_items"],
+  "gates": {
+    "P1": {
+      "requires": ["BOOTSTRAP"],
+      "scenarios": [
+        "P1-DOMAIN-TRANSACTION", "P1-AUTH-REVOCATION", "P1-COMMAND-DEDUP",
+        "P1-INBOX-ACK-LOSS", "P1-CORE-RESTART", "P1-NODE-RESTART",
+        "P1-PROVIDER-RESTART", "P1-HARNESS-REPLACEMENT", "P1-LEASE-FENCING",
+        "P1-UNCERTAIN-EFFECT", "P1-STALE-BASELINE", "P1-PARTIAL-ARTIFACT",
+        "P1-SURFACE-PARITY", "P1-CODEX-LIFECYCLE", "P1-OPENCODE-LIFECYCLE",
+        "P1-NATIVE-MULTIAGENT-OFF", "P1-IDENTITY-CONTINUITY", "P1-INTEGRATED-ACCEPTANCE"
+      ]
+    },
+    "P2-CODEX": {
+      "requires": ["P1"],
+      "scenarios": [
+        "P2-CODEX-TWO-MACHINE-LOOP", "P2-CODEX-UI-EXIT", "P2-CODEX-NETWORK-PARTITION",
+        "P2-CODEX-NODE-RESTART", "P2-CODEX-SESSION-REPLACEMENT", "P2-CODEX-ACK-LOSS",
+        "P2-CODEX-STALE-OWNER", "P2-CODEX-UNCERTAIN-EFFECT"
+      ]
+    },
+    "P2-OPENCODE": {
+      "requires": ["P2-CODEX"],
+      "scenarios": [
+        "P2-OPENCODE-CROSS-HARNESS-LOOP", "P2-OPENCODE-CAPABILITY-PROBE",
+        "P2-OPENCODE-TRANSPORT-SWITCH", "P2-OPENCODE-LIFECYCLE-RECOVERY",
+        "P2-OPENCODE-PERMISSION-DATA-POLICY", "P2-OPENCODE-LATE-DEDUP",
+        "P2-HUMAN-BRIDGE-RECOVERY", "P2-SOURCE-ARTIFACT-EFFECT-READBACK"
+      ]
+    },
+    "P2-REVIEW": {
+      "requires": ["P2-OPENCODE"],
+      "scenarios": ["P2-INDEPENDENT-GATE-REVIEW", "P2-PRODUCT-OWNER-DECISION"]
+    }
+  }
+}

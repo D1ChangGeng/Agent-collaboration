@@ -101,3 +101,11 @@ deeper contracts.
   source checkout scopes Git operations for both product and management files.
   Verify branch, HEAD, working-tree state, and upstream before synchronization.
 <!-- ACHP-SOURCE-CHECKOUT:END -->
+
+## Runtime contract route
+
+Runtime implementation and acceptance follow `../docs/runtime/UPGRADE-CONTRACT.md`
+and the registered `collaboration-runtime` Route. Keep Runtime Domain state and
+Gate evidence separate from the setup manifest, Route registry and knowledge
+lifecycle. External Agents own reasoning, delegation and acceptance decisions;
+the Runtime applies authenticated commands and deterministic recovery.
