@@ -19,6 +19,7 @@ from runtime.p1_codex_host_node import (
     CodexHostRequest,
     CodexHostResult,
     HostNodeRejected,
+    _sha256_owner_file,
 )
 from runtime.receiver_paths import PathSecurityRejected, private_parent
 from runtime.systemd_supervisor import SystemdUserSupervisor
