@@ -109,12 +109,13 @@ def provision(args):
         expires_at=expiry-timedelta(minutes=5)))
     cert,tls_key,cert_sha=_certificate(root,args.host)
     with authority._connect() as c: node_key_id=c.execute("select key_id from enrolled_node_bindings where tenant_id=%s and node_id=%s and binding_revision=1",(authority.tenant_id,node_id)).fetchone()[0]
+    endpoint_expiry=datetime.now(UTC)+timedelta(seconds=args.endpoint_ttl_seconds)
     provisional=EndpointRegistration(registration_id="p2-windows-registration",endpoint_id="p2-windows-endpoint",
         endpoint_revision=1,connection_ref=connection_ref,tenant_id=authority.tenant_id,
         authority_id=authority.context.authority_id,authority_incarnation=authority.context.authority_incarnation,
         node_id=node_id,node_binding_revision=1,runtime_id=runtime_id,runtime_revision=1,machine_id=args.machine_id,
         boot_incarnation=boot,scope_id="local-scope",agent_slot_id="local-slot",tls_certificate_sha256=cert_sha,
-        config_sha256="0"*64,expires_at=datetime.now(UTC)+timedelta(seconds=280))
+        config_sha256="0"*64,expires_at=endpoint_expiry)
     binding=EndpointBinding(registration=provisional,locator_host=args.host,locator_port=args.port,
         route_class=args.route_class,node_key_id=node_key_id,node_public_key=public_key(node_key),registration_signature=sign(node_key,provisional))
     settings=stage_capacity(root,runtime_id,args)
@@ -154,6 +155,7 @@ def provision(args):
         "listen_host": process.runtime.listen_host,
         "listen_port": process.runtime.listen_port,
         "tls_certificate_sha256": registration.tls_certificate_sha256,
+        "endpoint_expires_at": registration.expires_at,
         "authority_seed_path": str(authority_seed),
         "receiver_process_sha256": hashlib.sha256((root / "receiver-process.json").read_bytes()).hexdigest(),
     }
@@ -254,7 +256,7 @@ def main():
     p=argparse.ArgumentParser(); s=p.add_subparsers(dest="action",required=True)
     a=s.add_parser("provision"); a.add_argument("--profile",type=Path,required=True); a.add_argument("--output",type=Path,required=True)
     a.add_argument("--host",required=True); a.add_argument("--port",type=int,required=True); a.add_argument("--route-class",choices=("private","tunnel"),default="private"); a.add_argument("--listen-host"); a.add_argument("--listen-port",type=int); a.add_argument("--machine-id",required=True); a.add_argument("--tree",required=True); a.add_argument("--commit",required=True); a.add_argument("--schema-name",required=True)
-    a.add_argument("--codex-executable",type=Path); a.add_argument("--model-catalog",type=Path,required=True); a.add_argument("--model",required=True); a.add_argument("--provider-alias",default="custom"); a.add_argument("--provider-name",required=True); a.add_argument("--provider-url",required=True); a.add_argument("--wire-api",choices=("responses",),required=True); a.add_argument("--auth-command",required=True); a.add_argument("--auth-reference",required=True)
+    a.add_argument("--codex-executable",type=Path); a.add_argument("--model-catalog",type=Path,required=True); a.add_argument("--model",required=True); a.add_argument("--provider-alias",default="custom"); a.add_argument("--provider-name",required=True); a.add_argument("--provider-url",required=True); a.add_argument("--wire-api",choices=("responses",),required=True); a.add_argument("--auth-command",required=True); a.add_argument("--auth-reference",required=True); a.add_argument("--endpoint-ttl-seconds",type=int,default=1800)
     b=s.add_parser("serve"); b.add_argument("--config",type=Path,required=True)
     c=s.add_parser("send"); c.add_argument("--profile",type=Path,required=True); c.add_argument("--state",type=Path,required=True); c.add_argument("--authority-seed",type=Path,required=True); c.add_argument("--output",type=Path,required=True); c.add_argument("--suffix",required=True); c.add_argument("--linux-machine-id",required=True)
     x=p.parse_args(); return provision(x) if x.action=="provision" else run(x) if x.action=="serve" else send(x)
