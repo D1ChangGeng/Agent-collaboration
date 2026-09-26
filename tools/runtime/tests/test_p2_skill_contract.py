@@ -116,7 +116,7 @@ class P2SkillContractTests(unittest.TestCase):
         text = (SKILLS / "agent-collaboration-setup" / "SKILL.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("signed release installer", text)
+        self.assertIn("release digest verification", text)
         self.assertIn("project setup CLI", text)
         self.assertIn("OAuth", text)
 

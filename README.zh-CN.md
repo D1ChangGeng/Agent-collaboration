@@ -1,466 +1,124 @@
-# agent-collaboration-setup
+<div align="center">
+  <img src="assets/acs-mark.svg" width="108" alt="Agent Collaboration System 标识" />
+  <h1>Agent Collaboration System</h1>
+  <p>为跨会话、跨机器、跨 Harness 的 AI 协作提供持久项目管理能力。</p>
+  <p><a href="README.md">English</a> · <a href="docs/GETTING-STARTED.md">开始使用</a> · <a href="docs/runtime/UPGRADE-CONTRACT.md">运行架构</a></p>
+</div>
 
-这是一个 **只负责设置（setup-only）** 的 Harness-agnostic Agent Skill，用于把 **ACHP（Agent Collaboration & Handoff Protocol）** 安装、接管、升级或修复到源码仓库或长期存在的 Project Collaboration Workspace。
+ACS 在项目中建立稳定的 **Management Root** 和 **Route**。Root Agent 可以配置
+Team、管理 WorkItem、投递消息、从 Inbox 恢复响应、核对源码证据并发起独立
+Review。Codex 和 OpenCode 是外部 Agent；ACS Runtime 保存身份、授权、投递和
+恢复状态。
 
-它最重要的边界是：
+## 把仓库链接交给 AI
 
-> **完成设置以后，这个 Skill 退出运行链路。**
-
-后续正常协作只依赖：
-
-```text
-AGENTS.md
-.agents/
-```
-
-不会要求模型为了正常开发再次主动加载这个 Skill。
-
-## 为什么这样设计
-
-不同 Harness 的跨会话能力并不一致，而且能力还会受到版本、权限、部署方式和运行环境影响。
-
-因此 ACHP 不通过 `Codex / Claude Code / OpenCode` 这样的产品名称推断能力，而是在当前协作拓扑真正需要时，再判断对应能力是否已经被验证。
-
-默认逻辑：
+将以下链接发给本机 Codex 或 OpenCode：
 
 ```text
-单会话
-  -> 不需要消息 Relay
-
-多会话 + 同机器
-  -> 只判断 same-host send
-
-多会话 + 多机器
-  -> 判断 cross-host send
-
-能力 verified + 目标可寻址
-  -> 可以自动 Relay
-
-能力 unknown / unavailable
-  -> 用户手动复制转发
+https://github.com/D1ChangGeng/Agent-collaboration
 ```
 
-**用户手动转发是正式支持的一等 Transport，不是异常兜底。**
+然后告诉它：
 
-与此同时：
+> 请检查这个仓库并带我安装 ACS。先识别本机和目标项目，执行你能完成的
+> 安装与配置；只就项目选择和必须由我确认的授权事项提问。安装后请实际
+> 验证服务和 MCP 工具，说明我拥有的协作能力，并带我进入 Management Root
+> 启动 Root Agent 会话。
 
-> **消息同步与 Git 仓库同步相互独立。**
+[首次使用指南](docs/GETTING-STARTED.md)列出了安装报告、项目接入、创建
+Route/Team、WorkItem 投递、Inbox 恢复和独立 Review 的完整路径。AI 可以用
+`scripts/acs_doctor.py` 生成只读环境报告，并用 `scripts/acs_install.py`
+预览与执行本地设置。项目 Source 注册和 Harness 实际连接各自需要读回验证。
 
-即使消息已经自动发送，接收方也不能假定代码已经 Pull。
+## 协作能力
 
-## Skill 与协作机制本体的边界
+| 需求 | ACS 能力 |
+| --- | --- |
+| 管理项目 | 稳定的 Project、Management Root、Route 与项目上下文 |
+| 配置团队 | AgentSlot、角色、Grant、Policy 和预算 |
+| 交付工作 | WorkItem、持久消息、Handoff 确认与响应句柄 |
+| 异步继续 | 有界等待、通知、Inbox 和 Session 替换恢复 |
+| 审查结果 | Git SourceBinding、Evidence、独立 Review 和接受状态 |
+| 连接客户端 | 面向 Codex、OpenCode 与个人 ChatGPT Tunnel 的 MCP 工具 |
 
-```text
-agent-collaboration-setup
-        │
-        │ 只负责 bootstrap / adopt / upgrade / repair
-        ▼
-Project Git Repository / Source Checkout Root
-├── Product code
-├── ...
-└── Nested Management Root
-    ├── AGENTS.md
-    ├── .agents/
-    └── Route directories
+[MCP 工具目录](docs/runtime/p2-mcp-tool-contract.json)给出机器可读接口；
+[Runtime Skills](docs/runtime/skills/README.md)提供项目、协作、连续性、源码、
+授权和 Review 的按需知识。
+
+## 架构
+
+```mermaid
+flowchart LR
+    U[用户] --> H[Codex / OpenCode Agent]
+    U --> W[ChatGPT 网页 Agent]
+    W --> T[私有 MCP Tunnel]
+    T --> M[本地 ACS MCP]
+    H --> M
+    M --> D[认证后的 Domain 服务]
+    D --> P[(PostgreSQL<br/>项目、任务、授权、Inbox)]
+    D --> O[投递与恢复]
+    O --> N[Machine Node 和 Harness Driver]
+    O --> Q[Temporal 操作]
+    N --> H
+    D --> S[源码和产物提供方]
 ```
 
-正常开发期间：
+外部 Agent 负责目标、委派与 Review 决策；Domain 在写入前核对身份、项目范围、
+Grant 和修订号。Node 与 Driver 观察真实 Harness 会话与执行，Git commit/tree
+界定源码状态。
 
-- 架构/目标推进；
-- 工程实现；
-- Review；
-- Agent Handoff；
-- Push / Pull；
-- Session Relay；
-- Knowledge 维护；
+## 一个完整协作流程
 
-都不应该再次依赖本 Skill。
-
-只有当你明确需要“设置或修改协作机制本身”时，才重新调用它。
-
-## 推荐安装方式：一份源码，多 Harness 共用
-
-先把仓库 clone 到一个稳定目录：
-
-```bash
-git clone https://github.com/D1ChangGeng/Agent-collaboration.git ~/.local/share/agent-collaboration-setup
-cd ~/.local/share/agent-collaboration-setup
+```mermaid
+sequenceDiagram
+    participant R as Root Agent
+    participant C as ACS Runtime
+    participant E as Engineer Agent
+    participant V as Reviewer Agent
+    R->>C: 建立 Route、Team、WorkItem
+    R->>C: 投递消息或 Handoff
+    C->>E: 写入 Inbox 并在合适时投递
+    E->>C: 返回源码与证据
+    C-->>R: 回执、响应句柄和通知
+    R->>C: 等待或从 Inbox 恢复
+    R->>C: 请求独立 Review
+    C->>V: 提交精确候选与证据
+    V->>C: 记录 Review 结论
+    C-->>R: 回读结果与未解决项
 ```
 
-然后：
-
-```bash
-python3 scripts/install_skill.py --harness all
-```
-
-推荐的个人级路径：
-
-| Harness | Skill 路径 |
-|---|---|
-| Codex | `~/.agents/skills/agent-collaboration-setup/` |
-| OpenCode | `~/.agents/skills/agent-collaboration-setup/` |
-| Claude Code | `~/.claude/skills/agent-collaboration-setup/` |
-
-Codex 和 OpenCode 可以直接共享 `~/.agents/skills/`。
-
-安装器默认优先建立指向同一份 Git checkout 的符号链接，因此以后只需要 `git pull` 一次。
-
-如果系统不允许创建符号链接（部分 Windows 环境常见），安装器会自动退化为 copy 模式。
-
-检查：
-
-```bash
-python3 scripts/install_skill.py --harness all --check
-```
-
-## 使用方式
-
-### Agent 的使用决策模型
-
-如果用户没有直接使用 `bootstrap`、`adopt`、`repair`、`upgrade` 或
-`validate` 这些内部命令名，应先阅读
-[Agent 使用与决策指南](references/OPERATING-GUIDE.md)。该指南规定 Agent
-应先观察什么、哪些事实可以安全推导、什么时候才需要提问，以及如何把
-用户表达映射为 Root / Route 生命周期操作。语义判断由 Agent 完成，脚本
-只负责确定性的文件操作和客观验证。
-
-需要精确查看能力边界时，阅读
-[能力矩阵](references/CAPABILITY-MATRIX.md)；需要检查代表性用户旅程和回归
-场景时，阅读[场景矩阵](references/SCENARIO-MATRIX.md)。矩阵中的
-`supported`、`partial`、`unverified`、`architecture-allowed` 和
-`unsupported` 不可相互替换。
-
-推荐顺序是：
-
-```text
-用户意图
-  → 检查精确目标路径和已有协作文件
-  → 分类 Root / Route 当前状态
-  → 只做安全推导
-  → 只询问会改变下一步行为的未知事实
-  → 先 dry-run 预览
-  → 执行并回读
-  → 验证结果不变量
-```
-
-不要因为 Session、工程师窗口、机器或 Execution Endpoint 发生变化就创建
-新的 Route。Session attach、Endpoint 替换、SSH 源码访问、direct relay 和
-协作配置迁移目前不是本 Skill 已实现并验证的运行时操作；应保留原有身份，
-如实报告 `unverified` 或 `unsupported` 边界。
-
-### 空白项目
-
-对 Agent 说：
-
-```text
-使用 agent-collaboration-setup 在当前仓库 bootstrap ACHP。
-```
-
-### 已有项目
-
-```text
-使用 agent-collaboration-setup 将当前仓库 adopt 到 ACHP。
-保留现有 AGENTS.md、CLAUDE.md、项目文档、代码和 Git 历史。
-```
-
-### 升级
-
-```text
-使用 agent-collaboration-setup 升级当前仓库的 ACHP 设置。
-不要覆盖项目自己的 knowledge、task、handoff 和 project profile。
-```
-
-### 验证
-
-```text
-使用 agent-collaboration-setup 验证当前项目的 ACHP 设置。
-```
-
-不同 Harness 的显式调用语法可以不同，但以上自然语言意图是可移植的。
-
-以上示例表达的是 setup 意图，并不表示 Python CLI 会解析任意自然语言。
-遇到含糊请求时，Agent 应先依据使用指南检查目标，再决定是否提问，不应先
-询问内部 schema 字段或凭 Harness 名称猜测拓扑能力。
-
-## Project Collaboration Workspace 与 Route
-
-Workspace 是长期项目协作、架构管理、目标推进和状态理解的管理根。v0.4.0
-默认将它放在产品代码所在的同一个项目 Git 仓库内部：
-
-```text
-Project Git Repository / Source Checkout Root
-├── Product code
-├── ...
-└── Nested Management Root
-    ├── AGENTS.md
-    ├── .agents/
-    └── Route directories
-```
-
-管理文档、知识和 Route 与产品代码由同一个项目 Git 提交跟踪。本地与远端
-是独立 clone，保留相同的相对布局；Git 同步需要显式执行。Manifest 记录
-`nested-repository` 模式，相对布局由 Git 保存。
-
-CLI 始终以用户提供的精确 nested 管理根为目标。唯一的父级写入是在仓库根
-`.gitignore` 中维护当前管理根的 runtime 忽略规则，使用
-`# ACHP-NESTED:<relative path>:BEGIN` / `# ACHP-NESTED:<relative path>:END`
-独立标记，保留父级全部既有块和规则。Nested 管理根不创建子 `.gitignore`，
-父仓库也不必预先安装 repository scaffold。Standalone Workspace 继续兼容；
-缺少模式字段的旧 manifest 在 `adopt`/`repair` 时保持原样，仓库内的显式
-`workspace upgrade` 才迁移已知、仅含 setup 内容的子 ignore。自定义子规则
-需要经审阅后手动合并，否则拒绝写入。
-
-```bash
-python3 scripts/project_setup.py workspace adopt --root /path/to/workspace --dry-run
-python3 scripts/project_setup.py workspace adopt --root /path/to/workspace
-python3 scripts/project_setup.py workspace validate --root /path/to/workspace
-python3 scripts/project_setup.py route list --workspace /path/to/workspace
-```
-
-如果 Workspace 中存在尚未登记、但看起来像 Route 的目录，应先只读查看候选。
-候选不会因为被发现就自动写入 registry；只有用户明确选择后，才使用可重复的
-`--include-route` 纳入登记：
-
-```bash
-python3 scripts/project_setup.py workspace adopt \
-  --root /path/to/workspace --list-candidates
-python3 scripts/project_setup.py workspace adopt \
-  --root /path/to/workspace --include-route "C Route" --dry-run
-```
-
-新增 Route 时不复制 A/B 或其他路线：
-
-```bash
-python3 scripts/project_setup.py route create \
-  --workspace /path/to/workspace \
-  --path "C Route" \
-  --route-id c-route \
-  --display-name "C Route"
-```
-
-已有 Route 的 adopt 应在该 Route 自己的独立迁移阶段执行。工具会保留已有 `AGENTS.md`、`.agents/knowledge/`、架构资料和状态：
-
-```bash
-python3 scripts/project_setup.py route adopt \
-  --workspace /path/to/workspace \
-  --path "Existing Route"
-```
-
-Root registry 只保存 Route 的 canonical 四字段：ID、path、display name 和 lifecycle status。当前 Session 进度留在 Harness context。只有当已经核验的 Source Repository 事实确实需要跨 Session 保留时，Route 才按需创建可选的 `.agents/state/source-state.yaml`；Route 初始化不再创建全为 `unknown` 的空记录。不能从历史路径或 Harness 名称推断当前 baseline。
-
-### Workspace schema 0.3 当前操作边界
-
-Workspace 的 `bootstrap`、`adopt`、`upgrade`、`repair`、`validate` 按用户提供的精确路径运行。`workspace uninstall` 当前处于安全保护状态：在形成经过审阅的 ownership plan 之前会直接拒绝，并且不会修改文件。读取器继续兼容 schema 0.2；新写入只保留最小稳定结构：Root manifest 中的身份与 registry 位置、Root registry 中的 Route 身份与生命周期、Route metadata 中的身份与显式 Root contract 指针。旧版派生字段只读兼容，不再继续写入。
-
-`route upgrade` 是显式 metadata 迁移边界，会同时规范 Route metadata 和 Root registry，并保留未识别的扩展字段。`route set-state` 与 `route rename` 只更新 Root registry，不在 `route.yaml` 中制造第二份生命周期真相。拆分/合并、移动路径式重命名、Endpoint 替换、restore 和 rollback 仍属于未来迁移契约，必须有明确证据、审阅和可恢复方案后才能实现。
-
-Schema 0.2 数据仍可读取、验证或执行幂等 no-op；如果旧 registry 需要新增 Route，工具会先拒绝写入并要求显式完成 Workspace upgrade，避免旧 registry 中混入新版 Route 条目结构。
-
-安装器 ownership hash 和 preflight 检查记录 setup 完整性。Live execution
-continuity 由 Harness/session context 负责；source identity 由 Git 或 Route
-Source State 负责；durable knowledge 由 self-evolution 负责。setup Skill
-负责配置这些边界，不承担 Session execution recovery。
-
-## 直接使用安装工具
-
-Skill 内置一个只使用 Python 标准库的确定性安装器：
-
-```bash
-python3 scripts/project_setup.py adopt --root /path/to/repo
-```
-
-支持：
-
-```text
-bootstrap
-adopt
-upgrade
-repair
-validate
-uninstall
-```
-
-强烈建议先预览：
-
-```bash
-python3 scripts/project_setup.py adopt --root /path/to/repo --dry-run
-```
-
-安装后：
-
-```bash
-python3 scripts/project_setup.py validate --root /path/to/repo
-```
-
-源码仓库的卸载默认保留项目自己的 `.agents/knowledge/` 和 coordination 数据。Workspace 的 uninstall 是独立的安全保护路径，目前会拒绝执行且不产生文件变更。
-
-如果确实需要清除源码仓库中的全部 ACHP 数据：
-
-```bash
-python3 scripts/project_setup.py uninstall --root /path/to/repo --purge-data
-```
-
-已有内容的源码仓库应使用 `adopt` 并先审阅 dry-run；`bootstrap` 只用于真正
-新的或空的仓库。`repair` 只补回能够证明属于 setup-managed 且缺失的组件；
-如果内容发生漂移或 ownership 有冲突，应停止并交由 Review。只有显式的
-`upgrade` 才负责刷新 setup-managed 协议内容。
-
-## 项目中最终安装的内容
-
-```text
-AGENTS.md
-CLAUDE.md
-.agents/
-├── README.md
-├── config.yaml
-├── manifest.json
-├── protocol/
-│   ├── CAPABILITIES.md
-│   ├── RELAY.md
-│   ├── GIT-SYNC.md
-│   └── KNOWLEDGE.md
-├── coordination/
-│   ├── PROJECT.md
-│   ├── roles/
-│   ├── tasks/
-│   ├── handoffs/
-│   └── templates/
-├── knowledge/
-│   ├── README.md
-│   ├── guides/
-│   ├── decisions/
-│   ├── observations/
-│   └── archive/
-└── （Harness/Session context） # 本地运行上下文，不由安装器创建
-```
-
-安装器维护 `AGENTS.md`、`CLAUDE.md` 和 `.gitignore` 中的 managed block。
-Nested 管理根使用父仓库根 `.gitignore` 中属于自身的独立块，并保留父级全部
-既有块与规则。
-
-## Claude Code 兼容
-
-Codex 和 OpenCode 可以直接读取 `AGENTS.md`。
-
-Claude Code 的项目持久入口是 `CLAUDE.md`，因此安装器只增加一个很薄的兼容路由：
-
-```text
-@AGENTS.md
-```
-
-这样协作协议仍然只有一个权威入口，不需要复制两套正文。
-
-## Knowledge
-
-长期共享知识统一放在：
-
-```text
-.agents/knowledge/
-```
-
-推荐：
-
-```text
-guides/
-decisions/
-observations/
-archive/
-```
-
-只保存真正会改变未来行动、且重新发现成本较高的知识。
-
-这一层与 `self-evolution` 类型的知识生命周期设计兼容，但 ACHP 不依赖任何特定 Skill 或 Harness。
-
-### `AGENTS.md` 的演进边界
-
-`AGENTS.md` 是无条件常驻的基础认知层，只承载稳定身份、协作拓扑、
-ownership / evidence 边界、跨会话连续性以及反复出现且代价高的基础纠偏。
-只有当真实工作证明一项认知在未来 Session / Route 中稳定有效、启动时必须
-出现，并且不能可靠地依靠按需检索知识恢复时，才考虑提升到这里。当前状态、
-实现细节、设计理由、任务进展、工程师报告和临时证据应留在对应的 Route、
-状态、知识或源码权威位置。
-
-`self-evolution` 负责知识的发现、捕获、检索、修正、验证和维护；ACHP 不在
-`AGENTS.md` 中复制第二套知识生命周期，也不让它退化为工作日志或第二份真相。
-
-## 更新 Skill
-
-推荐的 symlink 模式：
-
-```bash
-cd ~/.local/share/agent-collaboration-setup
-git pull
-python3 scripts/install_skill.py --harness all --check
-```
-
-如果使用 copy 模式：
-
-```bash
-git pull
-python3 scripts/install_skill.py --harness all --mode copy
-```
-
-更新 Skill **不会偷偷升级现有项目**。
-
-需要升级项目时明确执行：
-
-```bash
-python3 scripts/project_setup.py upgrade --root /path/to/project
-```
-
-这样协议升级始终可以被 Review。
-
-## 创建你自己的 GitHub 仓库
-
-文件准备完成后，先检查完整变更，只暂存准备公开的文件：
-
-```bash
-git init
-git status --short
-git add <准备提交的文件>
-git diff --cached --check
-git commit -m "Add Project Collaboration Workspace and Route support"
-git branch -M main
-git remote add origin git@github.com:D1ChangGeng/Agent-collaboration.git
-git push -u origin main
-```
-
-公开源码仓库是 `D1ChangGeng/Agent-collaboration`；可安装 Skill 的 slug
-以及本地 discovery 目录仍然是 `agent-collaboration-setup`。
-
-## 开发与验证
-
-```bash
-python3 scripts/validate_skill.py
-python3 -m unittest discover -s tests -v
-```
-
-仓库已经包含 GitHub Actions，在 push / pull request 时执行相同检查。
-
-## 设计原则
-
-- Skill 只负责设置，不承担运行时职责。
-- 协作协议必须 Harness-agnostic。
-- Capability 按实际运行时验证，不能通过产品名猜测。
-- Manual relay 是完全合法的标准模式。
-- Harness Adapter 只能做增强，不能成为项目真相来源。
-- Git 同步和消息 Relay 必须分离。
-- Harness/Session 能力观察保留在当前运行上下文，不写入跨机器公共项目事实。
-- `.agents/knowledge/` 只保存高价值长期知识。
-- 对已有项目优先复用权威文档，而不是复制。
-- 协议升级必须显式执行、可审查、可回滚。
-
-## 参考
-
-- Agent Skills: https://agentskills.io/
-- Codex Skills: https://developers.openai.com/codex/build-skills
-- Codex AGENTS.md: https://developers.openai.com/codex/agent-configuration/agents-md
-- Claude Code Skills: https://code.claude.com/docs/en/skills
-- Claude Code Memory / AGENTS.md compatibility: https://code.claude.com/docs/en/memory
-- OpenCode Skills: https://opencode.ai/docs/skills/
-- OpenCode Instructions: https://opencode.ai/v2/docs/instructions
-- self-evolution: https://github.com/D1ChangGeng/self-evolution
-
-## License
-
-本修订版本除按其原有许可证提供的第三方组件外，采用 [Sustainable Use License（SUL）1.0](LICENSE)。SUL 允许企业内部使用以及个人或非商业用途；向他人分发或提供软件仅限免费且非商业目的，其他商业化提供方式需与相关权利人另行达成协议。SUL 属于源码可见许可证，并非 OSI 批准的开源许可证。此前按 MIT 许可证公开的版本仍受原 MIT 许可证约束。
+例如，Root Agent 可以将一次功能改动交给 Engineer，在会话重启后继续追踪同一
+WorkItem 与消息句柄，再核对输出 commit、测试证据并送交 Reviewer。
+[P2 执行索引](docs/runtime/P2-EXECUTION-STATUS.md)记录已测量的跨机器、
+跨 Harness 与 MCP 结果的精确范围。
+
+## 安装与接入
+
+仓库包含项目 setup Skill 和协作 Runtime。Skill 管理项目文件；Runtime 提供
+类型化工具与持久状态。Source/CAS Runtime 服务运行在 Linux；Windows 的
+Codex 和 OpenCode 作为客户端连接已接入的 Linux 服务。服务安装使用
+Python 3.12+、Git、uv、Docker Compose、PostgreSQL 和 Temporal。
+AI 检查先决条件并完成可自动执行的步骤；你负责系统
+权限和账号确认。
+
+Linux 安装入口先输出计划；指定 `--apply` 后安装锁定的 Python 环境与九个 Skills、
+启动本地服务，并接入指定 Management Root。它报告 `local_services_ready` 和
+剩余的 Runtime 身份、Source 注册与 Harness MCP 检查；AI 完成并回读这些步骤后
+再报告协作就绪。详见[首次使用指南](docs/GETTING-STARTED.md)
+和[排错指南](docs/TROUBLESHOOTING.md)。
+
+ChatGPT 网页端可通过[单用户私有 Tunnel Profile](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md)
+连接安装者 Linux Runtime 主机上的 MCP 服务。Windows Harness 可以作为客户端；
+平台权限与网页连接操作请由 AI 依据
+[官方 Tunnel 文档](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
+提供实时指引。
+
+## 项目与源码边界
+
+推荐把 Management Root 放在项目 Git checkout 内。Root/Route 指令、知识与
+项目元数据随仓库同步；运行观测和凭据留在本机私有存储。消息投递与 Git 同步
+分别记录。[setup Skill](SKILL.md)提供受控的建立、接管、修复、升级和验证。
+
+仓库提供[贡献说明](CONTRIBUTING.md)、[安全报告方式](SECURITY.md)、
+[变更记录](CHANGELOG.md)与 [Sustainable Use License 1.0](LICENSE)。许可允许在其
+用途和再分发条款内免费公开分发。发行包附带源码绑定清单和 SHA-256 摘要。

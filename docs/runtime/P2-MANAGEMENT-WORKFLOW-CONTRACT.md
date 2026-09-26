@@ -289,13 +289,17 @@ waits for a fresh observation.
 
 A web SaaS client connects to one global ACS remote MCP endpoint and then uses
 list_projects and load_project. The remote path uses Streamable HTTP over HTTPS
-or a supported secure tunnel, OAuth-protected resource metadata and per-tool
-security scopes.
+or a supported secure tunnel. The authenticated HTTP profile uses OAuth-protected
+resource metadata and per-tool security scopes. The single-user private Tunnel
+profile uses a local stdio MCP process with an existing ACS principal and Grant;
+its owner and validation rules are in
+[P2-PRIVATE-TUNNEL-PROFILE.md](P2-PRIVATE-TUNNEL-PROFILE.md).
 
-The installer configures the ACS endpoint, authorization metadata and local
-Tunnel client. The user completes the SaaS account connection and OAuth consent.
-The exact callback value shown by the SaaS management page is admitted by the
-authorization server.
+The setup Agent configures the selected ACS endpoint and local Tunnel client
+after the relevant distribution mechanisms pass their installation Gates.
+The user completes the SaaS account connection and platform authorization.
+The HTTP profile additionally configures OAuth metadata and admits the exact
+callback shown by the SaaS management page.
 
 Official ChatGPT references used by this contract:
 

@@ -1,0 +1,41 @@
+name: acs-local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: acs
+      POSTGRES_PASSWORD: ${ACS_POSTGRES_PASSWORD:?Set ACS_POSTGRES_PASSWORD in the private environment file}
+      POSTGRES_DB: acs
+    ports:
+      - "127.0.0.1:${ACS_POSTGRES_PORT:-54329}:5432"
+    volumes:
+      - acs-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acs -d acs"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  temporal:
+    image: temporalio/auto-setup:1.29.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: acs
+      POSTGRES_PWD: ${ACS_POSTGRES_PASSWORD:?Set ACS_POSTGRES_PASSWORD in the private environment file}
+      POSTGRES_SEEDS: postgres
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/docker.yaml
+    ports:
+      - "127.0.0.1:${ACS_TEMPORAL_PORT:-7239}:7233"
+    healthcheck:
+      test: ["CMD-SHELL", "temporal operator cluster health --address $$(hostname -i):7233"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+
+volumes:
+  acs-postgres:
