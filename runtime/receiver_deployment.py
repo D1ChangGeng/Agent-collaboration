@@ -85,9 +85,12 @@ def callable_sha256(function) -> str:
 
 
 def _installation_evidence(origin: Path) -> tuple[str, str]:
+    from runtime.receiver_install import INSTALL_MANIFEST
+
     site_packages = origin.parents[1]
-    install_root = site_packages.parents[2]
-    manifest = install_root / "receiver-install-manifest.json"
+    roots = [parent for parent in site_packages.parents[:5]
+             if (parent / INSTALL_MANIFEST).is_file()]
+    manifest = roots[0] / INSTALL_MANIFEST if len(roots) == 1 else Path("/") / "missing"
     records = list(site_packages.glob("*.dist-info/RECORD"))
     if manifest.is_file() and len(records) == 1:
         return _file_sha256(manifest), _file_sha256(records[0])

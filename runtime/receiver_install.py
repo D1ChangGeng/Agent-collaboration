@@ -34,6 +34,14 @@ REQUIRED = (
 INSTALL_MANIFEST = "receiver-install-manifest.json"
 
 
+def installation_root(site_packages: Path) -> Path:
+    candidates = [parent for parent in site_packages.parents[:5]
+                  if (parent / INSTALL_MANIFEST).is_file()]
+    if len(candidates) != 1:
+        raise ValueError("receiver installation has no unique manifest root")
+    return candidates[0]
+
+
 def record_hash(data: bytes) -> str:
     value = base64.urlsafe_b64encode(hashlib.sha256(data).digest()).rstrip(b"=").decode()
     return "sha256=" + value
@@ -103,7 +111,7 @@ def verify_installed_distribution() -> dict[str, object]:
         evidence[relative] = hashlib.sha256(data).hexdigest()
         installed_paths.add(path.resolve())
     site_packages = Path(distribution.locate_file(".")).resolve()
-    install_root = site_packages.parents[2]
+    install_root = installation_root(site_packages)
     manifest_path = install_root / INSTALL_MANIFEST
     _safe_installed_file(manifest_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
