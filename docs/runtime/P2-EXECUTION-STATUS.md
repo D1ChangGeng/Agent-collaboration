@@ -91,14 +91,26 @@ claimed by them.
 Source-bound zip and tar archives were built at this candidate. Their SHA-256
 values are `42831f88be15895d06fb381faf73c45d1ab9348e4bf1c95a174e158731f22c52`
 and `655649bfcdefc1aa6d1c1827b968fc7fd7b5549c373de50e25b9550545b77aee`
-respectively. The package manifest names the same commit/tree. GitHub Actions
-for this SHA fail before runner allocation: the failed jobs have an empty runner
-name, zero steps and an empty log archive. The CI Gate remains unverified.
+respectively. The package manifest names the same commit/tree. A later public
+repository rerun passed the complete CI matrix; the final candidate still needs
+one fresh run after any subsequent commit.
 
 Control Parity formal assembly, current-candidate independent review,
 ChatGPT private Tunnel read/write/deny/reconnect/revoke, Windows and OpenCode
 link-only cold starts, and the product-owner P2 decision remain open. The
 historical reviewed Gate records retain their original source and expiry.
+
+### Public repository and CI recovery — 2026-09-27
+
+The repository is public and its candidate branch is accessible through the
+GitHub URL. GitHub Actions run `36249826843`, attempt 2, passed on commit
+`e5f69096f72be2ec5778309aad8ef95e36f0e6c5`: Python 3.9, 3.11 and 3.12
+setup validation, Runtime component tests, Gate tooling tests and package build
+all completed on hosted runners. Earlier zero-step failures were runner
+allocation failures while the repository was private; they are preserved as
+platform observations. Later changes to release preflight require a fresh
+successful run at the final candidate commit. See [RELEASE-GATE.md](RELEASE-GATE.md)
+for the exact preflight checks and publication order.
 
 `P2-INDEPENDENT-GATE-REVIEW` and `P2-PRODUCT-OWNER-DECISION` remain `not_run`.
 Before deciding the final Gate, bind the chosen integrated commit/tree, resolve
