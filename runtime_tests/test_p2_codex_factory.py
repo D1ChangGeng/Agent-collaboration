@@ -99,7 +99,14 @@ def test_exact_driver_profile_admission_and_workspace_boundary(tmp_path):
 @pytest.mark.parametrize("version", ["0.155.0", "0.155.0-alpha.2.6", "0.155.0.1", "latest"])
 def test_detect_codex_version_is_exact_and_platform_bound(tmp_path, monkeypatch, version):
     executable = tmp_path / "codex"
-    _fake_codex(executable, version)
+    executable.write_bytes(b"pinned-codex-binary")
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess(
+            _args[0], 0, stdout=f"codex-cli {version}\n", stderr=""
+        ),
+    )
     if version == "0.155.0":
         assert detect_codex_version(executable, host_platform="posix") == version
     elif version == "0.155.0-alpha.2.6":
@@ -109,6 +116,7 @@ def test_detect_codex_version_is_exact_and_platform_bound(tmp_path, monkeypatch,
             detect_codex_version(executable, host_platform="posix")
 
 
+@pytest.mark.skipif(os.name != "posix", reason="fixture stages the reviewed POSIX factory")
 def test_factory_stages_generated_schema_and_never_secret_values(tmp_path):
     import runtime_deployment
     import runtime_deployment.receiver_codex as deployment
@@ -155,6 +163,7 @@ def test_factory_stages_generated_schema_and_never_secret_values(tmp_path):
     validate_settings(settings)
 
 
+@pytest.mark.skipif(os.name != "posix", reason="fixture stages the reviewed POSIX factory")
 def test_factory_rejects_credential_like_catalog_fields(tmp_path):
     executable = tmp_path / "codex"
     _fake_codex(executable, "0.155.0")
