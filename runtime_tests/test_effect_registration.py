@@ -25,6 +25,7 @@ from runtime.errors import (
 )
 from runtime.models import EffectReadback, LeaseRequest, WorkItemState
 from runtime_tests import test_domain_evidence as suite
+from runtime_tests.enrollment_fixture import register_execution_fixture
 
 runtime = suite.runtime
 
@@ -407,13 +408,8 @@ def test_revoked_publication_owner_new_lease_resume_reconcile_and_accept(runtime
         domain.bootstrap_local_grant(("lease.acquire", "lease.release", "effect.write", "effect.register", "effect.read"))
         # Explicit endpoint provisioning for two publication producers, separate
         # from the preexisting candidate evidence producer and its trusted Grant.
-        with psycopg.connect(f.dsn) as conn:
-            conn.execute(
-                "INSERT INTO attempts(attempt_id,tenant_id,work_item_id,agent_slot_id,status,producer_ref,"
-                "runtime_id,scope_id,grant_ref,authority_id,authority_incarnation) VALUES "
-                "(%s,%s,'work','local-slot','running',%s,%s,'local-scope',%s,%s,%s)",
-                (f"publication-attempt-{name}", domain.tenant_id, context.principal_ref,
-                 f"publication-runtime-{name}", context.grant_ref, context.authority_id, context.authority_incarnation))
+        register_execution_fixture(domain, work_item_id="work", runtime_id=f"publication-runtime-{name}",
+                                   attempt_id=f"publication-attempt-{name}", candidate_ref=f.receipt.candidate_ref)
         return domain
 
     old, new = publisher("old"), publisher("new")
