@@ -44,6 +44,7 @@ def test_partition_stops_and_restores_supervised_relay(tmp_path, monkeypatch):
         ).rstrip(os.pathsep),
     )
     partition = RelayPartition(args)
+    monkeypatch.setattr(partition, "_wait_tls", lambda: None)
     invocation = SimpleNamespace(
         message_id="message", operation_id="operation",
         attempt_id="attempt", dispatch_id="dispatch",
