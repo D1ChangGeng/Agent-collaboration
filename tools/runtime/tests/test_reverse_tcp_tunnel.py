@@ -25,3 +25,4 @@ def test_worker_retries_invalid_relay_response(monkeypatch):
         pass
 
     assert len(attempts) == 2
+
