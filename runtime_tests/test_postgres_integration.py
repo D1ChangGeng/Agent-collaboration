@@ -103,7 +103,7 @@ def test_real_postgres_retry_revocation_and_incomplete_evidence_guards(postgres_
 
     with psycopg.connect(postgres_dsn) as connection:
         connection.execute("UPDATE grants SET revoked_at=now() WHERE grant_ref=%s", (authority.context.grant_ref,))
-    authority.bootstrap_local_grant()
+    authority.bootstrap_local_grant(preserve_existing=True)
     with psycopg.connect(postgres_dsn) as connection:
         assert connection.execute("SELECT revoked_at IS NOT NULL FROM grants WHERE grant_ref=%s",
                                   (authority.context.grant_ref,)).fetchone()[0]
