@@ -175,7 +175,7 @@ def _query_authority(profile: dict[str, Any], schema: str, proof: dict[str, Any]
             and effect_rows[0][8] == proof["completion_sha256"]
         )
     if ({row[0] for row in attempt_rows} != expected_attempts
-            or delivery != [(proof["attempt_id"], proof["dispatch_id"], "delivered")]
+            or delivery != [(proof["delivery_attempt_id"], proof["dispatch_id"], "delivered")]
             or any(row[3] != proof["source_commit"] or row[4] != proof["source_tree"]
                    for row in attempt_rows)
             or not valid or events < 1 or outbox < 1):
@@ -264,6 +264,7 @@ def execute(profile_path: Path, scenario: str, output: Path, machine_id: str) ->
         shutil.move(str(effect_source), effect_root)
         effect = _effect_inventory(effect_root)
         proof = {**proof, "message_id": lineage["message_id"],
+                 "delivery_attempt_id": lineage["attempts"][0]["attempt_id"],
                  "dispatch_id": lineage["dispatch_id"]}
         authority = _query_authority(profile, schema, proof, scenario)
         layer_status = {
