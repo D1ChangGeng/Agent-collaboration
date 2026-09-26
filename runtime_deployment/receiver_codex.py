@@ -163,7 +163,7 @@ class CodexReceiverCapacity:
         self.driver = CodexAppServerDriver(
             self.settings["binding_id"], profile, self.journal,
             identity=self.binding, check_current=self._current, supervisor=self.supervisor,
-            rpc_timeout=30,
+            rpc_timeout=120 if os.name == "nt" else 30,
         )
         self.adapter = NativeDeliveryAdapter(
             self.driver, authorize_invocation=self._authorize_invocation,
