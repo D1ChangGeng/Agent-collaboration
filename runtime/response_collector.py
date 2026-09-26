@@ -84,6 +84,11 @@ class NativeResponseCollector:
         ):
             raise BoundaryRejected("collector invocation journal identity changed")
         result = driver.collect_result(operation, invocation.invocation_id)
+        if (
+            isinstance(result, dict)
+            and result.get("receipt_layer") == "runtime_acknowledged"
+        ):
+            raise OutcomeUncertain("native response is not terminal")
         expected = {
             "receipt_layer": "response_received",
             "operation_id": invocation.invocation_id,
@@ -143,8 +148,6 @@ class NativeResponseCollector:
             # A driver may have durably acknowledged dispatch while the native
             # turn is still running. Preserve the original invocation and let
             # the bounded collector retry readback; never redispatch the turn.
-            if result.get("receipt_layer") == "runtime_acknowledged":
-                raise OutcomeUncertain("native response is not terminal")
             raise BoundaryRejected("Driver terminal outcome is unsupported")
         stable_result = {key: value for key, value in result.items() if key != "observed_at"}
         evidence_digest = canonical_digest(stable_result)
