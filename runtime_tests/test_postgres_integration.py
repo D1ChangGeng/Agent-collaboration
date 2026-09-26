@@ -10,6 +10,7 @@ import pytest
 from runtime.domain import DomainAuthority
 from runtime.errors import AcceptanceGuardFailed, AuthorizationDenied
 from runtime.models import (
+    AuthenticatedContext,
     CommandEnvelope,
     EvidenceRecord,
     TransitionRequest,
@@ -43,6 +44,7 @@ def make_command(authority: DomainAuthority, command_type: str, target_id: str, 
 def test_real_postgres_authority_retry_revocation_and_acceptance_guards() -> None:
     authority = DomainAuthority(DSN)
     authority.initialize()
+    authority.bootstrap_local_grant()
     work_item_id = f"work-{uuid.uuid4()}"
     create = make_command(authority, "work_item.create", work_item_id, f"create-{work_item_id}")
 
@@ -64,13 +66,39 @@ def test_real_postgres_authority_retry_revocation_and_acceptance_guards() -> Non
     authority.record_review(make_command(authority, "review.record", work_item_id, f"review-command-{work_item_id}"), f"review-{work_item_id}", work_item_id, "pass", evidence.evidence_id, "baseline-real")
 
     with psycopg.connect(DSN) as connection, connection.cursor() as cursor:
+        cursor.execute("SELECT count(*) FROM domain_events WHERE tenant_id=%s AND command_id IN (%s,%s)", (authority.context.tenant_id, f"cmd-evidence-command-{work_item_id}", f"cmd-review-command-{work_item_id}"))
+        event_count = cursor.fetchone()
+        assert event_count is not None and event_count[0] == 2
+        cursor.execute("SELECT count(*) FROM outbox WHERE tenant_id=%s AND operation_id IN (SELECT operation_id FROM operations WHERE command_id IN (%s,%s))", (authority.context.tenant_id, f"cmd-evidence-command-{work_item_id}", f"cmd-review-command-{work_item_id}"))
+        outbox_count = cursor.fetchone()
+        assert outbox_count is not None and outbox_count[0] == 2
+
+    with psycopg.connect(DSN) as connection, connection.cursor() as cursor:
         cursor.execute("UPDATE grants SET revoked_at=now() WHERE grant_ref=%s", (authority.context.grant_ref,))
     with pytest.raises(AuthorizationDenied):
         authority.transition_work_item(make_command(authority, "work_item.transition", work_item_id, f"blocked-{work_item_id}"), TransitionRequest(to_state=WorkItemState.ACCEPTANCE_READY, evidence_refs=(evidence.evidence_id,), review_ref=f"review-{work_item_id}"))
     with psycopg.connect(DSN) as connection, connection.cursor() as cursor:
         cursor.execute("UPDATE grants SET revoked_at=NULL WHERE grant_ref=%s", (authority.context.grant_ref,))
 
-    ready = authority.transition_work_item(make_command(authority, "work_item.transition", work_item_id, f"ready-{work_item_id}"), TransitionRequest(to_state=WorkItemState.ACCEPTANCE_READY, evidence_refs=(evidence.evidence_id,), review_ref=f"review-{work_item_id}"))
-    assert ready.state == WorkItemState.ACCEPTANCE_READY
     with pytest.raises(AcceptanceGuardFailed):
-        authority.transition_work_item(make_command(authority, "work_item.transition", work_item_id, f"accept-{work_item_id}", ready.revision), TransitionRequest(to_state=WorkItemState.ACCEPTED, effect_refs=(f"effect-{work_item_id}",), readback_refs=(f"readback-{work_item_id}",)))
+        authority.transition_work_item(make_command(authority, "work_item.transition", work_item_id, f"ready-{work_item_id}"), TransitionRequest(to_state=WorkItemState.ACCEPTANCE_READY, evidence_refs=(evidence.evidence_id,), review_ref=f"review-{work_item_id}"))
+
+
+@pytest.mark.skipif(not DSN, reason="NOT_RUN: ACS_P1_DSN is not set")
+def test_real_postgres_assigned_reviewer_can_make_readiness_eligible() -> None:
+    engineer = DomainAuthority(DSN)
+    engineer.initialize()
+    engineer.bootstrap_local_grant()
+    work_item_id = f"assigned-review-{uuid.uuid4()}"
+    baseline = "baseline-assigned-review"
+    engineer.create_work_item(make_command(engineer, "work_item.create", work_item_id, f"create-{work_item_id}"), "local-scope", "local-slot", baseline)
+    reviewer_context = AuthenticatedContext("local-tenant", "acs-p1-authority", "local-1", f"agent:reviewer-{work_item_id}", f"grant:reviewer-{work_item_id}")
+    with psycopg.connect(DSN) as connection, connection.cursor() as cursor:
+        cursor.execute("INSERT INTO grants(grant_ref,tenant_id,principal_ref,authority_id,authority_incarnation,scope_id,permissions,expires_at) VALUES (%s,%s,%s,%s,%s,'local-scope',%s,now()+interval '1 day')", (reviewer_context.grant_ref, reviewer_context.tenant_id, reviewer_context.principal_ref, reviewer_context.authority_id, reviewer_context.authority_incarnation, '[\"review.record\",\"work_item.read\"]'))
+    engineer.assign_reviewer(make_command(engineer, "reviewer.assign", work_item_id, f"assign-{work_item_id}"), work_item_id, reviewer_context.principal_ref, reviewer_context.grant_ref)
+    evidence = EvidenceRecord(evidence_id=f"evidence-{work_item_id}", work_item_id=work_item_id, observer_ref=engineer.context.principal_ref, source_class="directly_verified", baseline_ref=baseline, artifact_sha256="b" * 64, summary="assigned reviewer fixture")
+    engineer.record_evidence(make_command(engineer, "evidence.record", work_item_id, f"evidence-{work_item_id}"), evidence)
+    reviewer = DomainAuthority(DSN, reviewer_context)
+    reviewer.record_review(make_command(reviewer, "review.record", work_item_id, f"review-{work_item_id}"), f"review-{work_item_id}", work_item_id, "pass", evidence.evidence_id, baseline)
+    ready = engineer.transition_work_item(make_command(engineer, "work_item.transition", work_item_id, f"ready-{work_item_id}"), TransitionRequest(to_state=WorkItemState.ACCEPTANCE_READY, evidence_refs=(evidence.evidence_id,), review_ref=f"review-{work_item_id}"))
+    assert ready.state == WorkItemState.ACCEPTANCE_READY
