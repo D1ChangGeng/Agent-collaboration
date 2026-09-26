@@ -94,6 +94,19 @@ def native_no_model(admission):
     return {"native_ack_ref": f"no-model:{admission.dispatch_id}", "model_invoked": False}
 
 
+class FixtureReadiness:
+    def __init__(self, state):
+        self.state = state
+
+    def __call__(self, admission):
+        now = datetime.now(UTC)
+        return {"activity": {0: "idle", 1: "busy", 2: "unknown", 3: "idle"}[self.state.value],
+                "observed_at": (now - timedelta(seconds=4) if self.state.value == 3 else now).isoformat(),
+                "expires_at": (now - timedelta(seconds=2) if self.state.value == 3
+                               else min(now + timedelta(seconds=2), admission.deadline)).isoformat(),
+                "source": "controlled-no-model-fixture"}
+
+
 @pytest.fixture
 def integrated(tmp_path):
     base = os.getenv("ACS_P1_DSN")
@@ -106,6 +119,7 @@ def integrated(tmp_path):
     process = None
     supervisor = None
     handle = None
+    readiness_state = None
     try:
         authority = DomainAuthority(dsn)
         authority.initialize()
@@ -267,10 +281,12 @@ def integrated(tmp_path):
         else:
             context = multiprocessing.get_context("spawn")
             ready = context.Event()
+            readiness_state = context.Value("i", 0)
             process = context.Process(
                 target=serve,
                 args=(process_config.runtime, ready,
                       authority.receiver_transport.current_authority, native_no_model),
+                kwargs={"native_readiness": FixtureReadiness(readiness_state)},
             )
             process.start()
             assert ready.wait(10)
@@ -286,6 +302,7 @@ def integrated(tmp_path):
             authority=authority, service=service, process=process,
             supervisor=supervisor, handle=handle, process_config=process_config,
             config_path=config_path,
+            readiness_state=readiness_state,
         )
     finally:
         if supervisor is not None and handle is not None:
@@ -303,6 +320,34 @@ def integrated(tmp_path):
             process.join(5)
         with psycopg.connect(base, autocommit=True) as admin:
             admin.execute(sql.SQL("DROP SCHEMA {} CASCADE").format(sql.Identifier(schema)))
+
+
+@pytest.mark.parametrize("activity", [1, 2, 3])
+def test_signed_readiness_defers_one_remote_attempt_until_idle(integrated, activity):
+    f = integrated
+    if f.readiness_state is None:
+        pytest.skip("controlled readiness test requires the isolated no-model receiver process")
+    f.authority.create_work_item(command(f.authority, "work_item.create", "work_item", "queued-work"),
+                                 "local-scope", "local-slot", "queued-baseline")
+    submitted = command(f.authority, "message.send", "message", "queued-message")
+    packet = DeliveryPacket(work_item_id="queued-work", target_scope_id="local-scope", target_agent_slot_id="local-slot",
+        accepted_revision=0, goal="Queue fixture", accepted_state_summary="genesis", request="no model",
+        source_baseline="queued-baseline", expected_response="fixture ACK", activation="invoke",
+        delivery_policy="queue_until_idle", deadline=datetime.now(UTC)+timedelta(seconds=50), maximum_attempts=1)
+    queued = f.service.send_message(submitted, packet, endpoint_id="receiver-endpoint", binding_revision=1)
+    identity = {"tenant_id": f.authority.tenant_id, "message_id": submitted.target_id, "operation_id": queued.operation_id}
+    f.readiness_state.value = activity
+    for _ in range(2):
+        assert DeliveryDispatcher(f.service).dispatch(identity)["status"] == "retry_wait"
+        with f.authority._connect() as connection:
+            assert connection.execute("SELECT ordinal,status FROM delivery_attempts").fetchall() == [(1, "prepared")]
+            assert connection.execute("SELECT count(*) FROM delivery_receipts WHERE layer='runtime_dispatched'").fetchone() == (0,)
+            connection.execute("UPDATE delivery_messages SET next_attempt_at=clock_timestamp()")
+    f.readiness_state.value = 0
+    assert DeliveryDispatcher(f.service).dispatch(identity)["status"] == "delivered"
+    with f.authority._connect() as connection:
+        assert connection.execute("SELECT count(*) FROM delivery_attempts").fetchone() == (1,)
+        assert connection.execute("SELECT count(*) FROM delivery_receiver_receipts WHERE state='readiness'").fetchone() == (3,)
 
 
 def test_committed_registration_drives_remote_delivery(integrated):

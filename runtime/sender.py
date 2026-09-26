@@ -57,6 +57,7 @@ class AdmissionFactory:
                 "delivery.prepare": "/v1/delivery/prepare",
                 "delivery.dispatch": "/v1/delivery/dispatch",
                 "delivery.readback": "/v1/delivery/readback",
+                "delivery.readiness": "/v1/delivery/readiness",
                 "delivery.recover": "/v1/delivery/recover",
             }[purpose], body_sha256=sha256(body_value), message_id=identity.message_id,
             command_id=identity.command_id, operation_id=identity.operation_id,

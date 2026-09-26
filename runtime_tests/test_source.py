@@ -721,6 +721,41 @@ def test_readback_rejects_mode_change_even_when_status_code_is_unchanged(tmp_pat
         service.readback(snapshot, allow)
 
 
+def test_safe_git_view_preserves_index_timestamp_without_changing_original(tmp_path: Path):
+    repo = make_repo(tmp_path / "repo")
+    (repo / "README.md").write_text("tracked source\n", encoding="utf-8")
+    commit_all(repo, "source")
+    service, _store = service_for(tmp_path, repo)
+    index = repo / ".git/index"
+    content, timestamp = index.read_bytes(), index.stat().st_mtime_ns
+    git_dir, common_dir = service._repository_metadata(repo, service._authorized_roots)
+    with service._safe_git_view(repo, git_dir, common_dir) as safe:
+        assert (safe / "index").read_bytes() == content
+        assert (safe / "index").stat().st_mtime_ns == timestamp
+    assert index.read_bytes() == content and index.stat().st_mtime_ns == timestamp
+
+
+@pytest.mark.parametrize("allow_dirty", [False, True])
+def test_captured_diff_cannot_be_declared_clean_by_stale_status(tmp_path: Path, monkeypatch, allow_dirty):
+    repo = make_repo(tmp_path / "repo")
+    script = repo / "run.sh"
+    script.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    commit_all(repo, "script")
+    script.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    service, store = service_for(tmp_path, repo)
+    original = service._run_git
+    def stale_status(root, args, **kwargs):
+        return b"" if args[0] == "status" else original(root, args, **kwargs)
+    monkeypatch.setattr(service, "_run_git", stale_status)
+    if not allow_dirty:
+        with pytest.raises(SourceDirtyError, match="captured Source bytes"):
+            service.admit(request_for(repo, allow_dirty=False), allow)
+    else:
+        snapshot = service.admit(request_for(repo, allow_dirty=True), allow)
+        assert snapshot.dirty is True
+        assert b"+exit 1" in store.read(ArtifactRef(**snapshot.diff_ref))
+
+
 def test_oversize_source_file_is_rejected_before_cas_admission(
     tmp_path: Path,
 ):

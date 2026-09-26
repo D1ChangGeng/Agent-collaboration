@@ -5,12 +5,14 @@ import json
 import secrets
 import sqlite3
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 
 from nacl.signing import SigningKey
 
 from runtime.delivery_models import InvocationRequest
 from runtime.delivery_node import (
     DeliveryTransportError,
+    InvocationDeferred,
     InvocationPreCallRejected,
     logical_payload,
 )
@@ -23,6 +25,7 @@ from runtime.receiver_models import (
     EndpointRegistration,
     PrepareBody,
     ReadbackBody,
+    ReadinessBody,
     RecoveryBody,
 )
 from runtime.remote_endpoint import RemoteNodeTransport, RemoteTransportRejected
@@ -136,6 +139,9 @@ class ReceiverNativeDeliveryBridge:
         if observation.native_ack_ref is None:
             raise RuntimeError("native result is uncertain")
         return {"native_observation": observation.model_dump(mode="json")}
+
+    def readiness(self, admission):
+        return self.native_adapter.readiness(self._invocation(admission))
 
     def collect_response(self, admission):
         """Project a delayed terminal response without invoking or resuming native work."""
@@ -320,6 +326,26 @@ class RemoteNodeEndpointAdapter:
         after_prepare = getattr(self, "after_prepare", None)
         if after_prepare is not None:
             after_prepare(invocation, prepared)
+        if envelope.packet.delivery_policy == "queue_until_idle":
+            body = ReadinessBody(prepare_request_id=prepared.receipt.request_id)
+            request = self._factory(invocation).request("delivery.readiness", body,
+                boot_incarnation=self.identity.boot_incarnation, journal_generation=self.config.journal_generation)
+            self.store.persist_admission(request)
+            try:
+                ready = self._send(request)
+                observation = ready.receipt.evidence
+                observed_at = datetime.fromisoformat(observation["observed_at"])
+                expires_at = datetime.fromisoformat(observation["expires_at"])
+                current = datetime.now(UTC)
+                fresh = (observed_at.tzinfo is not None and expires_at.tzinfo is not None
+                         and observed_at <= current + timedelta(seconds=self.config.clock_skew_seconds)
+                         and current < expires_at
+                         and (expires_at - observed_at).total_seconds() <= 2)
+            except (RemoteTransportRejected, ValueError, RuntimeError, KeyError, TypeError):
+                raise InvocationDeferred("unknown") from None
+            if not fresh or observation.get("activity") != "idle":
+                activity = observation.get("activity", "unknown") if fresh else "unknown"
+                raise InvocationDeferred(activity)
         mark_dispatched(
             invocation,
             {"source": self.evidence_class, "dispatch_id": invocation.dispatch_id,

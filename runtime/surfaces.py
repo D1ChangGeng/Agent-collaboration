@@ -67,6 +67,7 @@ class SurfaceCommand(BaseModel):
     target_kind: Literal[
         "work_item", "message", "lease", "effect", "node", "runtime", "attempt",
         "authority_transport_key", "connection", "endpoint", "recovery", "projection",
+        "project", "route", "team",
     ] = "work_item"
     issued_at: datetime
     deadline: datetime
@@ -202,6 +203,7 @@ class ReviewPayload(PayloadModel):
     verdict: Literal["pass", "fail"]
     evidence_ref: str
     baseline_ref: str
+    additional_evidence_refs: tuple[str, ...] = Field(default=(), max_length=31)
 
 
 class EffectRegistration(PayloadModel):
@@ -381,7 +383,8 @@ class SharedService:
         elif name == "review.assign":
             result = authority.assign_reviewer(envelope, request.target_id, payload.reviewer_ref, payload.reviewer_grant_ref)
         elif name == "review.record":
-            result = authority.record_review(envelope, payload.review_id, request.target_id, payload.verdict, payload.evidence_ref, payload.baseline_ref)
+            result = authority.record_review(envelope, payload.review_id, request.target_id, payload.verdict,
+                                             payload.evidence_ref, payload.baseline_ref, payload.additional_evidence_refs)
         elif name in {"effect.register", "effect.reconcile"}:
             method = authority.register_effect if name == "effect.register" else authority.reconcile_effect
             result = method(envelope, **payload.model_dump())

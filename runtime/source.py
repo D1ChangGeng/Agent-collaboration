@@ -715,24 +715,14 @@ class SourceService:
                     "[core]\n\trepositoryformatversion = 0\n\tbare = false\n",
                     encoding="ascii",
                 )
-                index = self._read_control_at(
-                    git_fd,
-                    "index",
-                    maximum=self._max_metadata_bytes,
-                )
-                (safe_git / "index").write_bytes(index)
+                self._copy_index_control(git_fd, "index", safe_git / "index")
                 for base_fd in (git_fd, common_fd):
                     for name in os.listdir(base_fd):
                         if not re.fullmatch(r"sharedindex\.[0-9a-f]{40}", name):
                             continue
-                        payload = self._read_control_at(
-                            base_fd,
-                            name,
-                            maximum=self._max_metadata_bytes,
-                        )
                         target = safe_git / name
                         if not target.exists():
-                            target.write_bytes(payload)
+                            self._copy_index_control(base_fd, name, target)
                 object_fd = os.open(
                     "objects",
                     os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
@@ -745,6 +735,28 @@ class SourceService:
                 os.close(object_fd)
             os.close(common_fd)
             os.close(git_fd)
+
+    def _copy_index_control(self, directory_fd: int, name: str, target: Path) -> None:
+        descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK,
+                             dir_fd=directory_fd)
+        try:
+            before = os.fstat(descriptor)
+            if not stat.S_ISREG(before.st_mode) or before.st_size > self._max_metadata_bytes:
+                raise SourceRepositoryError("Git index is not a bounded regular file")
+            payload = os.read(descriptor, self._max_metadata_bytes + 1)
+            after = os.fstat(descriptor)
+            if (len(payload) != before.st_size or len(payload) > self._max_metadata_bytes
+                    or (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (
+                        after.st_size, after.st_mtime_ns, after.st_ctime_ns)):
+                raise SourceChangedDuringSnapshot("Git index changed while copying the safe view")
+            target.write_bytes(payload)
+            # Git uses the index timestamp to detect racily-clean stat entries.
+            # A fresh copy timestamp would hide an immediate same-size edit.
+            # Preserve it in the private view; never touch the original index.
+            # https://git-scm.com/docs/racy-git
+            os.utime(target, ns=(before.st_atime_ns, before.st_mtime_ns), follow_symlinks=False)
+        finally:
+            os.close(descriptor)
 
     @staticmethod
     def _is_relative_to(path: Path, parent: Path) -> bool:
@@ -1591,9 +1603,10 @@ class SourceService:
             "tenant_id",
             "scope_id",
             "root_id",
-            "route_id",
         ):
             _validate_text(getattr(request, field), field)
+        if request.route_id is not None:
+            _validate_text(request.route_id, "route_id")
 
         root = self._prepare_repository_root(
             request.root,
@@ -1780,6 +1793,12 @@ class SourceService:
             diff_paths,
             captured_payloads,
         )
+        # Captured bytes/modes are authoritative even if a stat-based status
+        # observation missed an edit. A nonempty HEAD-relative diff is dirty.
+        if diff_payload:
+            dirty = True
+            if not request.allow_dirty:
+                raise SourceDirtyError("captured Source bytes or modes differ from HEAD")
         diff_ref = self._store_verified(
             diff_payload,
             kind="manifest",
@@ -1891,6 +1910,60 @@ class SourceService:
         )
 
         return snapshot
+
+    def observe(self, request: SourceRequest, authorize: _AUTHORIZER | None) -> dict[str, Any]:
+        """Read current repository identity without admitting or exporting bytes."""
+        self._authorize(request, authorize)
+        root = self._prepare_repository_root(request.root, self._authorized_roots)
+        git_dir, common_dir = self._repository_metadata(root, self._authorized_roots)
+        with self._safe_git_view(root, git_dir, common_dir) as safe_git:
+            commit, tree, _top, _inside = self._repository_details(root, git_dir=safe_git)
+            status = self._run_git(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all"],
+                                   git_dir=safe_git)
+        git_fd = self._open_authorized_directory(git_dir)
+        common_fd = self._open_authorized_directory(common_dir)
+        try:
+            head = self._read_control_at(git_fd, "HEAD", maximum=4096).decode("utf-8").strip()
+            if self._resolve_head(git_fd, common_fd) != commit:
+                raise SourceChangedDuringSnapshot("Source HEAD changed during observation")
+        finally:
+            os.close(common_fd)
+            os.close(git_fd)
+        self._authorize(request, authorize)
+        return {"commit": commit, "tree": tree,
+                "branch": head.removeprefix("ref: refs/heads/")
+                if head.startswith("ref: refs/heads/") else "detached",
+                "working_tree": "dirty" if status else "clean",
+                "working_tree_status_sha256": _sha256(status),
+                "push": "not-measured", "receiver_sync": "not-measured",
+                "observed_at": datetime.now(UTC).isoformat(),
+                "evidence_class": "directly_verified"}
+
+    def verify_current_paths(self, snapshot: SourceSnapshot, paths: Iterable[str],
+                             authorize: _AUTHORIZER | None) -> None:
+        """Directly verify selected current files against their admitted bytes.
+
+        Context identity checks need the two Management identity files, not
+        unrelated Skill bodies. This also catches same-size edits hidden by
+        a Git index stat-cache entry.
+        """
+        request = SourceRequest(root=snapshot.repository_root, tenant_id=snapshot.tenant_id,
+            scope_id=snapshot.scope_id, root_id=snapshot.root_id, route_id=snapshot.route_id)
+        self._authorize(request, authorize)
+        root = self._prepare_repository_root(request.root, self._authorized_roots)
+        files = {item.path: item for item in snapshot.files}
+        selected = tuple(paths)
+        if not 1 <= len(selected) <= 64:
+            raise SourcePathError("current Source verification requires bounded paths")
+        for path in selected:
+            self._validate_relative_path(path)
+            item = files.get(path)
+            if item is None:
+                raise SourcePathError("current path was not admitted")
+            payload, _signature = self._read_bounded(root, path, self._max_bytes)
+            if len(payload) != item.size_bytes or _sha256(payload) != item.sha256:
+                raise SourceChangedDuringSnapshot("current Source identity bytes changed")
+        self._authorize(request, authorize)
 
     def readback(
         self,

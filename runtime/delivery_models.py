@@ -25,6 +25,7 @@ class DeliveryPacket(DeliveryModel):
     expected_response: str = Field(min_length=1, max_length=4096)
     required_evidence: tuple[str, ...] = Field(default=(), max_length=32)
     activation: Literal["message_only", "invoke"] = "message_only"
+    delivery_policy: Literal["immediate", "queue_until_idle"] = "immediate"
     deadline: datetime
     maximum_attempts: int = Field(default=3, ge=1, le=8, strict=True)
     retry_delay_seconds: int = Field(default=1, ge=1, le=30, strict=True)

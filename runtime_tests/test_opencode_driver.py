@@ -24,6 +24,7 @@ import pytest
 from runtime.codex_driver import (
     AuthorizedOperation,
     BindingIdentity,
+    DriverDeferred,
     DriverJournal,
     DriverRejected,
     OutcomeUncertain,
@@ -794,3 +795,21 @@ def test_authorization_denied_before_http_send_is_a_rejection(native, monkeypatc
     assert not any(path.endswith("/prompt_async") for _, path, _ in native.peer.requests)
     assert driver.journal.read(op.operation_id)["state"] == "rejected"
     assert driver._active_message is None
+
+
+def test_busy_deferral_reuses_native_message_identity(native):
+    driver = native.driver
+    driver.spawn(operation("deferred-spawn"))
+    native.peer.busy = True
+    pending = operation("deferred-invoke")
+    with pytest.raises(DriverDeferred):
+        driver.invoke(pending, "deferred synthetic input")
+    prepared = driver.journal.read(pending.operation_id)
+    assert prepared["state"] == "deferred"
+    native_id = prepared["input"]["payload"]["native_message_id"]
+    assert not any(path.endswith("/prompt_async") for _, path, _ in native.peer.requests)
+    native.peer.busy = False
+    observed = driver.invoke(pending, "deferred synthetic input")
+    assert observed["native_message_id"] == native_id
+    driver.invoke(pending, "deferred synthetic input")
+    assert sum(path.endswith("/prompt_async") for _, path, _ in native.peer.requests) == 1

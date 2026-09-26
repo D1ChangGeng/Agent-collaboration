@@ -9,7 +9,7 @@ import pytest
 from runtime.codex_driver import AuthorizedOperation, DriverJournal, DriverRejected
 from runtime.delivery import DeliveryRejected
 from runtime.delivery_models import DeliveryEnvelope, DeliveryPacket
-from runtime.delivery_node import InvocationPreCallRejected, LocalNodeEndpoint
+from runtime.delivery_node import InvocationDeferred, InvocationPreCallRejected, LocalNodeEndpoint
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.node import NodeJournal
 
@@ -32,6 +32,9 @@ def check_adapter(native, tmp_path, monkeypatch, scenario, operation):
                               expected_response="exact native ACK", activation="invoke",
                               deadline=datetime.now(UTC) + timedelta(seconds=30)),
     )
+    if scenario == "busy_then_idle":
+        envelope = envelope.model_copy(update={"packet": envelope.packet.model_copy(
+            update={"delivery_policy": "queue_until_idle"})})
 
     def authorize_invocation(invocation, binding):
         assert binding == driver.identity
@@ -126,11 +129,25 @@ def check_adapter(native, tmp_path, monkeypatch, scenario, operation):
                 driver._claim_fd = None
         return
 
-    if scenario == "idle_rejected":
+    if scenario in {"idle_rejected", "busy_then_idle"}:
         if driver.harness == "codex":
             native.state["turns"] = [{"id": "busy-turn", "status": "inProgress", "items": []}]
         else:
             native.peer.busy = True
+    if scenario == "busy_then_idle":
+        for _ in range(2):
+            with pytest.raises(InvocationDeferred):
+                endpoint.deliver(envelope, lambda: envelope, invocation, mark, lambda _: False)
+        assert mutations() == 0 and not markers
+        if driver.harness == "codex":
+            native.state["turns"] = []
+        else:
+            native.peer.busy = False
+        result = endpoint.deliver(envelope, lambda: envelope, invocation, mark, lambda _: False)
+        assert result["status"] == "delivered" and mutations() == 1 and len(markers) == 1
+        endpoint.deliver(envelope, lambda: envelope, invocation, mark, lambda _: True)
+        assert mutations() == 1
+        return
     if scenario == "ack_loss":
         if driver.harness == "codex":
             native.state["drop_invoke_ack"] = True

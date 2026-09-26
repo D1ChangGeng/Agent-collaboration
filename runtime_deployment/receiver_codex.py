@@ -458,6 +458,9 @@ class CodexReceiverCapacity:
         self._start_collector(invocation)
         return result
 
+    def readiness(self, admission):
+        return self.bridge.readiness(admission)
+
     def close(self):
         if self._closed:
             return
@@ -482,5 +485,6 @@ def callbacks(config, deployment_policy_sha256, settings):
         endpoint_id=registration.endpoint_id, runtime_id=registration.runtime_id,
         authorize_current=capacity.authorize_current,
         native_invoke=capacity.native_invoke,
+        readiness=capacity.readiness,
         close=capacity.close,
     )

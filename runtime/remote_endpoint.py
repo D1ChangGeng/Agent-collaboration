@@ -110,6 +110,7 @@ class RemoteNodeTransport:
             "delivery.dispatch": {"runtime_dispatched", "runtime_acknowledged", "uncertain", "blocked"},
             "delivery.recover": {"runtime_dispatched", "runtime_acknowledged", "uncertain", "blocked"},
             "delivery.readback": {"readback"},
+            "delivery.readiness": {"readiness"},
         }
         skew = self.config.clock_skew_seconds
         links_ok = (
@@ -130,7 +131,7 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, config: ReceiverRuntimeConfig, node_signing_key: SigningKey,
-                 authorize_current, native_invoke, shutdown_callback=None):
+                 authorize_current, native_invoke, shutdown_callback=None, native_readiness=None):
         if not callable(native_invoke):
             raise RemoteTransportRejected("receiver native adapter callback is required")
         config.validate()
@@ -141,6 +142,7 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
             raise RemoteTransportRejected("receiver TLS path admission rejected") from None
         self.config = config
         self._native_invoke = native_invoke
+        self.native_readiness = native_readiness
         self._shutdown_callback = shutdown_callback
         self._fault_lock = threading.Lock()
         self._response_fault_used = False
@@ -208,7 +210,8 @@ class ReceiverHandler(BaseHTTPRequestHandler):
             request = SignedRequest.model_validate_json(raw, strict=True)
             if request.admission.path != self.path:
                 raise ReceiverRejected("request path rejected")
-            receipt = self.server.service.handle(request, self.server.native_invoke)
+            receipt = self.server.service.handle(request, self.server.native_invoke,
+                                                 native_readiness=self.server.native_readiness)
             if self.server.drop_response(request.admission.purpose):
                 self.close_connection = True
                 try:
@@ -241,12 +244,12 @@ def fixture_authority_current(_admission):
 
 
 def serve(config: ReceiverRuntimeConfig, ready=None, authorize_current=None, native_invoke=None,
-          ready_check=None, shutdown_callback=None):
+          ready_check=None, shutdown_callback=None, native_readiness=None):
     if not callable(authorize_current):
         raise RemoteTransportRejected("receiver current-authority callback is required")
     server = ReceiverHTTPServer(
         config, load_owner_signing_key(config.node_signing_key_path), authorize_current,
-        native_invoke, shutdown_callback,
+        native_invoke, shutdown_callback, native_readiness,
     )
     worker = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
     worker.start()

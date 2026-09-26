@@ -19,6 +19,7 @@ from runtime.delivery_models import (
 from runtime.delivery_node import (
     DeliveryBoundaryRejected,
     DeliveryTransportError,
+    InvocationDeferred,
     InvocationPreCallRejected,
     LocalNodeEndpoint,
     invocation_for,
@@ -27,6 +28,7 @@ from runtime.delivery_node import (
 from runtime.errors import AuthorizationDenied, RevisionConflict
 from runtime.models import AuthenticatedContext, CommandEnvelope, CommandResult
 from runtime.node import RECEIPT_LAYERS, OperationIdentityConflict
+from runtime.team_policy import enforce_team_delivery
 
 
 def digest(value):
@@ -171,6 +173,7 @@ class DeliveryService:
         authority._authorize(command, cursor, "message.send", packet.target_scope_id)
         if packet.activation == "invoke":
             authority._authorize(command, cursor, "runtime.invoke", packet.target_scope_id)
+        enforce_team_delivery(cursor, command, packet, work[3], recovery=recovery)
         return binding, digest(work[3]), digest(accepted_state)
 
     def send_message(
@@ -311,12 +314,12 @@ class DeliveryDispatcher:
                 "retry_after_seconds": row["retry_delay_seconds"]}
 
     @staticmethod
-    def _defer_prepared(cursor, row):
+    def _defer_prepared(cursor, row, reason="transport_ack_unavailable"):
         cursor.execute(
-            "UPDATE delivery_messages SET state='retry_wait',last_error='transport_ack_unavailable',"
+            "UPDATE delivery_messages SET state='retry_wait',last_error=%s,"
             "next_attempt_at=clock_timestamp()+(retry_delay_seconds*interval '1 second') "
             "WHERE tenant_id=%s AND message_id=%s",
-            (row["tenant_id"], row["message_id"]),
+            (reason, row["tenant_id"], row["message_id"]),
         )
         return {
             "status": "retry_wait",
@@ -795,6 +798,7 @@ class DeliveryDispatcher:
             cursor.execute("SELECT pg_try_advisory_lock(%s)", (key,))
             if not cursor.fetchone()[0]:
                 return {"status": "busy", "retry_after_seconds": 1}
+            slot_key = None
             try:
                 new_attempt = False
                 with connection.transaction():
@@ -846,6 +850,15 @@ class DeliveryDispatcher:
                         )
                     try:
                         envelope, binding = self._authorize(cursor, row)
+                        if envelope.packet.delivery_policy == "queue_until_idle" and envelope.packet.activation == "invoke":
+                            candidate_slot_key = int.from_bytes(hashlib.sha256(json.dumps([
+                                "delivery-slot", identity["tenant_id"], envelope.packet.target_scope_id,
+                                envelope.packet.target_agent_slot_id], separators=(",", ":")).encode()).digest()[:8],
+                                "big", signed=True)
+                            cursor.execute("SELECT pg_try_advisory_lock(%s)", (candidate_slot_key,))
+                            if not cursor.fetchone()[0]:
+                                return self._defer_prepared(cursor, row, "target_dispatch_in_progress")
+                            slot_key = candidate_slot_key
                         if reuse_prepared:
                             prepared_attempt = self._load_attempt(cursor, row)
                             if self.attempt_id is not None and prepared_attempt["attempt_id"] != self.attempt_id:
@@ -997,7 +1010,8 @@ class DeliveryDispatcher:
                         )
                 except (DeliveryRejected, AuthorizationDenied, DeliveryBoundaryRejected,
                         OperationIdentityConflict, DeliveryTransportError) as error:
-                    if isinstance(error, InvocationPreCallRejected) and self.service.endpoint_resolver is not None:
+                    if (isinstance(error, InvocationPreCallRejected) and not isinstance(error, InvocationDeferred)
+                            and self.service.endpoint_resolver is not None):
                         try:
                             resolved = self._resolve_pre_call(
                                 identity, invocation.attempt_id, invocation.dispatch_id,
@@ -1034,10 +1048,14 @@ class DeliveryDispatcher:
                             observed = endpoint.inspect_delivery(row["operation_id"], "blocked")
                             if observed["receipts"]:
                                 self._project(fail_cursor, row, observed)
+                        if isinstance(error, InvocationDeferred):
+                            return self._defer_prepared(fail_cursor, row, "target_" + error.activity)
                         return self._failure(fail_cursor, row, error)
                 return {"status": status, "message_id": row["message_id"],
                         "attempts": row["attempts"], "retry_after_seconds": row["retry_delay_seconds"]}
             finally:
+                if slot_key is not None:
+                    cursor.execute("SELECT pg_advisory_unlock(%s)", (slot_key,))
                 cursor.execute("SELECT pg_advisory_unlock(%s)", (key,))
 
     def reconcile_marked(self, identity):

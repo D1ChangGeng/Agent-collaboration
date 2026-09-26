@@ -7,7 +7,7 @@ import urllib.request
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from runtime.mcp_runtime import McpHttpServer, McpRuntime
+from runtime_tests.mcp_component_fixture import McpHttpServer, McpRuntime
 
 ROOT = Path(__file__).parents[1]
 CATALOG = ROOT / "docs/runtime/p2-mcp-tool-contract.json"

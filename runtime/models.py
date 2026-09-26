@@ -60,6 +60,7 @@ class CommandEnvelope(BaseModel):
     target_kind: Literal[
         "work_item", "message", "lease", "effect", "node", "runtime", "attempt",
         "authority_transport_key", "connection", "endpoint", "recovery", "projection",
+        "project", "route", "team",
     ]
     target_id: str = Field(min_length=1, max_length=256)
     expected_revision: int = Field(ge=0)

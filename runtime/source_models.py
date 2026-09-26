@@ -19,7 +19,7 @@ class SourceRequest:
     tenant_id: str
     scope_id: str
     root_id: str
-    route_id: str
+    route_id: str | None = None
     expected_commit: str | None = None
     expected_tree: str | None = None
     allow_dirty: bool = False
@@ -59,7 +59,7 @@ class SourceSnapshot:
     tenant_id: str
     scope_id: str
     root_id: str
-    route_id: str
+    route_id: str | None
     repository_root: str
     source_commit: str
     source_tree: str

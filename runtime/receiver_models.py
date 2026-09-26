@@ -54,7 +54,7 @@ class EndpointBinding(FrozenModel):
 
 class DeliveryAdmission(FrozenModel):
     schema_version: Literal["acs-delivery-admission/1"] = "acs-delivery-admission/1"
-    purpose: Literal["delivery.prepare", "delivery.dispatch", "delivery.readback", "delivery.recover"]
+    purpose: Literal["delivery.prepare", "delivery.dispatch", "delivery.readback", "delivery.recover", "delivery.readiness"]
     authority_key_id: str
     authority_key_revision: int = Field(ge=1, strict=True)
     tenant_id: str
@@ -112,6 +112,10 @@ class ReadbackBody(FrozenModel):
     dispatch_id: str
 
 
+class ReadinessBody(FrozenModel):
+    prepare_request_id: str
+
+
 class RecoveryBody(FrozenModel):
     prepare_request_id: str
     marker_receipt_id: str
@@ -139,7 +143,7 @@ class ReceiverReceipt(FrozenModel):
     request_id: str
     challenge_nonce: str = Field(pattern=r"^[a-f0-9]{64}$")
     purpose: str
-    state: Literal["prepared", "runtime_dispatched", "runtime_acknowledged", "uncertain", "blocked", "readback"]
+    state: Literal["prepared", "runtime_dispatched", "runtime_acknowledged", "uncertain", "blocked", "readback", "readiness"]
     target_request_id: str
     readback_request_id: str | None = None
     tenant_id: str

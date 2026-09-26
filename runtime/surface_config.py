@@ -6,7 +6,7 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from runtime.artifacts import LocalArtifactStore
 from runtime.auth import LocalCredentialAuthenticator
@@ -16,6 +16,7 @@ from runtime.effects import LocalFileEffectGateway
 from runtime.models import AuthenticatedContext, EffectReadback
 from runtime.operator_files import OperatorFileError, read_operator_file
 from runtime.recovery_models import BoundaryRejected
+from runtime.scoped_artifacts import ScopedArtifactStores
 from runtime.surfaces import SharedService
 
 
@@ -93,9 +94,20 @@ class SurfaceSettings(ConfigModel):
     dsn_ref: PrivateReference
     credential_ref: PrivateReference
     artifacts: ArtifactSettings | None = None
+    additional_artifacts: tuple[ArtifactSettings, ...] = Field(default=(), max_length=63)
     effects: EffectSettings | None = None
     host: str = "127.0.0.1"
     port: int = Field(default=8765, ge=1, le=65535)
+
+    @model_validator(mode="after")
+    def unique_artifact_scopes(self):
+        scopes = [item.scope_id for item in self.artifact_configs()]
+        if len(scopes) != len(set(scopes)):
+            raise ValueError("duplicate artifact Scope configuration")
+        return self
+
+    def artifact_configs(self):
+        return ([self.artifacts] if self.artifacts else []) + list(self.additional_artifacts)
 
     @field_validator("host")
     @classmethod
@@ -139,14 +151,17 @@ def trusted_local_node_response_reader(endpoints):
 
 
 @contextmanager
-def configured_service(path, *, delivery_endpoints=None):
+def configured_service(path, *, delivery_endpoints=None, expected_settings=None):
     settings = load_settings(path)
+    if expected_settings is not None and settings != expected_settings:
+        raise ConfigurationError("trusted configuration changed after preflight")
     with ExitStack() as resources:
         store = None
-        if settings.artifacts:
-            config = settings.artifacts
-            store = resources.enter_context(LocalArtifactStore(config.root, scope_id=config.scope_id,
-                authorized_source_roots=config.authorized_source_roots, max_bytes=config.max_bytes))
+        stores = [resources.enter_context(LocalArtifactStore(config.root, scope_id=config.scope_id,
+                  authorized_source_roots=config.authorized_source_roots, max_bytes=config.max_bytes))
+                  for config in settings.artifact_configs()]
+        if stores:
+            store = stores[0] if len(stores) == 1 else ScopedArtifactStores(stores)
         context = AuthenticatedContext(**settings.context.model_dump())
         domain = DomainAuthority(settings.dsn_ref.resolve(), context=context, artifact_store=store,
                                  authority_binding=(context.authority_id, context.authority_incarnation),

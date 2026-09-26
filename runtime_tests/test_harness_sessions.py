@@ -329,7 +329,7 @@ def test_exact_1_9_to_1_11_migration_preserves_rows(isolated_dsn):
     authority.initialize()
     schema_bytes = (Path(__file__).parents[1] / "runtime/schema.sql").read_text(encoding="utf-8").encode()
     assert query(authority, "SELECT schema_version,schema_checksum FROM runtime_schema_metadata") == [
-        ("1.11", hashlib.sha256(schema_bytes).hexdigest())]
+        ("1.12", hashlib.sha256(schema_bytes).hexdigest())]
     assert query(authority, "SELECT status FROM scopes WHERE scope_id='migration-sentinel'") == [("active",)]
     assert query(authority, "SELECT row_to_json(w)::text FROM work_items w WHERE work_item_id='migration-work'") == [
         (before,)]
@@ -338,7 +338,7 @@ def test_exact_1_9_to_1_11_migration_preserves_rows(isolated_dsn):
     assert query(authority, "SELECT count(*) FROM harness_session_bindings") == [(0,)]
 
 
-def test_exact_1_10_to_1_11_migration_preserves_binding(isolated_dsn):
+def test_exact_1_10_to_current_migration_preserves_binding(isolated_dsn):
     root = Path(__file__).parents[1]
     fixture = Path(__file__).with_name("fixtures") / "schema-1.8-a942.sql"
     with psycopg.connect(isolated_dsn) as connection:
@@ -366,7 +366,7 @@ def test_exact_1_10_to_1_11_migration_preserves_binding(isolated_dsn):
     authority = DomainAuthority(isolated_dsn)
     authority.initialize()
     authority.initialize()
-    assert query(authority, "SELECT schema_version FROM runtime_schema_metadata") == [("1.11",)]
+    assert query(authority, "SELECT schema_version FROM runtime_schema_metadata") == [("1.12",)]
     assert query(authority, "SELECT row_to_json(h)::text FROM harness_session_bindings h "
                             "WHERE binding_id='old-binding'")[0][0].startswith(before[:-1])
     assert query(authority, "SELECT attempt_context FROM harness_session_bindings "
