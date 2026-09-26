@@ -95,9 +95,9 @@ sequenceDiagram
 
 For example, a Root Agent can ask an Engineer to change one feature, keep the
 WorkItem and message handle across a Session restart, inspect the output commit
-and test evidence, and route that candidate to a Reviewer. The [P2 execution
-index](docs/runtime/P2-EXECUTION-STATUS.md) records the exact scope of measured
-cross-machine, cross-Harness and MCP behavior.
+and test evidence, and route that candidate to a Reviewer. The
+[engineering evidence index](docs/runtime/P2-EXECUTION-STATUS.md) records the
+exact scope of measured cross-machine, cross-Harness and MCP behavior.
 
 ## Install and connect
 
