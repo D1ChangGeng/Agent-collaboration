@@ -311,10 +311,6 @@ class DomainAuthority:
             "lease.release",
             "lease.revoke",
             "effect.write",
-            "effect.read",
-            "source.read",
-            "artifact.read",
-            "artifact.write",
             "work_item.read",
         ),
     ) -> None:
