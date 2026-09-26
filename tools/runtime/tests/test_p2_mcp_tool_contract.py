@@ -134,7 +134,7 @@ class P2McpToolContractTests(unittest.TestCase):
         )
         self.assertEqual(
             self.gates["gates"]["P2-CONTROL-PARITY"]["scenarios"],
-            ["P2-CONTROL-WEB-RECEIVER-WAKE", "P2-CONTROL-HANDOFF-ACK"],
+            ["P2-CONTROL-CHAT-RECEIVER-WAKE", "P2-CONTROL-HANDOFF-ACK"],
         )
         self.assertEqual(
             self.gates["gates"]["P2-REVIEW"]["requires"],
