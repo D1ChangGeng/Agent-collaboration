@@ -22,6 +22,8 @@ dependencies = [
 
 [project.scripts]
 acs-runtime = "runtime.surface_entry:main"
+acs-receiver = "runtime.receiver_entry:main"
+acs-receiver-provision = "runtime.receiver_provision:main"
 
 [dependency-groups]
 dev = [
@@ -32,7 +34,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["runtime"]
+packages = ["runtime", "runtime_deployment"]
 
 [tool.pytest.ini_options]
 testpaths = ["runtime_tests"]
