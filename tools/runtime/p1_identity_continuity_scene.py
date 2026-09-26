@@ -294,7 +294,8 @@ def _validate_proof_checkpoint_lineage(
     if checkpoint.get("proof_sha256") != _hash(proof_bytes):
         raise IdentityContinuityRejected("identity continuity proof digest differs from checkpoint")
     for key in (
-        "source_commit", "source_tree", "work_item_id", "message_id", "command_id",
+        "tenant_id", "authority_id", "authority_incarnation", "source_commit", "source_tree",
+        "work_item_id", "message_id", "command_id",
         "operation_id", "attempt_id", "dispatch_id", "endpoint_id", "machine_id", "node_id",
         "old_boot", "new_boot", "old_runtime_id", "new_runtime_id", "authority_key_id",
     ):
@@ -342,24 +343,58 @@ def finalize_checkpoint(
     )
 
 
-def resume_ledger_pending(profile: dict[str, Any], ledger, checkpoint: dict[str, Any]) -> dict[str, Any]:
-    """Complete a proof-written run without provisioning a new identity."""
-    if checkpoint.get("phase") != "ledger_pending":
+def _proof_readbacks(
+    profile: dict[str, Any], ledger, checkpoint: dict[str, Any], *, expected_phase: str,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    if checkpoint.get("phase") != expected_phase:
         raise IdentityContinuityRejected(
-            "identity continuity checkpoint is proof-written but not ledger-finalized",
+            f"identity continuity checkpoint must be {expected_phase}",
         )
     proof_path = ledger.root / f"{SCENARIO}-proof.json"
-    raw_path = ledger.root / f"{SCENARIO}-runtime.json"
     try:
         proof_bytes = proof_path.read_bytes()
         proof = json.loads(proof_bytes)
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise IdentityContinuityRejected("identity continuity proof is unreadable") from exc
+    _validate_proof_checkpoint_lineage(checkpoint, proof, proof_bytes)
+    require_gate_qualification(proof.get("gate_qualification"))
+    layers = _live_readbacks(profile, checkpoint, proof, pg_schema=checkpoint["pg_schema"])
+    return proof, layers
+
+
+def _complete_checkpoint_row(checkpoint: dict[str, Any], ledger, row: dict[str, Any]) -> dict[str, Any]:
+    existing = ledger.get(SCENARIO)
+    if existing is not None:
+        if existing != row:
+            raise IdentityContinuityRejected("identity continuity ledger row changed")
+        completed = existing
+    else:
+        ledger.put(row)
+        completed = row
+    _checkpoint_update(checkpoint, phase="completed")
+    return completed
+
+
+def resume_proof_written(
+    profile: dict[str, Any], ledger, checkpoint: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    """Validate proof-written identity state and rerun every live readback."""
+    return _proof_readbacks(
+        profile, ledger, checkpoint, expected_phase="proof_written",
+    )
+
+
+def resume_ledger_pending(profile: dict[str, Any], ledger, checkpoint: dict[str, Any]) -> dict[str, Any]:
+    """Complete a proof-written run without provisioning a new identity."""
+    proof, _layers = _proof_readbacks(
+        profile, ledger, checkpoint, expected_phase="ledger_pending",
+    )
+    raw_path = ledger.root / f"{SCENARIO}-runtime.json"
+    try:
         row = json.loads(checkpoint["row_json"])
         lineage = json.loads(checkpoint["lineage_json"])
     except (KeyError, OSError, UnicodeError, ValueError, TypeError) as exc:
         raise IdentityContinuityRejected("identity continuity ledger checkpoint is incomplete") from exc
-    _validate_proof_checkpoint_lineage(checkpoint, proof, proof_bytes)
-    require_gate_qualification(proof.get("gate_qualification"))
-    _live_readbacks(profile, checkpoint, proof, pg_schema=checkpoint["pg_schema"])
     if (
         row.get("scenario_id") != SCENARIO
         or row.get("status") != "passed"
@@ -372,9 +407,7 @@ def resume_ledger_pending(profile: dict[str, Any], ledger, checkpoint: dict[str,
         or lineage.get("identity_continuity_proof") != proof
     ):
         raise IdentityContinuityRejected("identity continuity ledger checkpoint changed")
-    ledger.put(row)
-    _checkpoint_update(checkpoint, phase="completed")
-    return row
+    return _complete_checkpoint_row(checkpoint, ledger, row)
 
 
 def prepare_checkpoint(

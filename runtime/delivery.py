@@ -273,6 +273,19 @@ class DeliveryDispatcher:
         attempt_id: str | None = None,
     ):
         self.service, self.worker_id, self.attempt_id = service, worker_id, attempt_id
+        self._fixed_attempt_identity: tuple[str, str, str, str] | None = None
+
+    def _bind_fixed_attempt_identity(self, identity: dict[str, str]) -> None:
+        if self.attempt_id is None:
+            return
+        bound = (
+            identity["tenant_id"], identity["message_id"],
+            identity["operation_id"], self.attempt_id,
+        )
+        if self._fixed_attempt_identity is None:
+            self._fixed_attempt_identity = bound
+        elif self._fixed_attempt_identity != bound:
+            raise DeliveryRejected("fixed_attempt_id_identity_conflict")
 
     def after_claim(self, identity):
         """After durable dispatch preparation, before any Node call; fault seam.
@@ -609,6 +622,7 @@ class DeliveryDispatcher:
         if (set(identity) != {"tenant_id", "message_id", "operation_id"}
                 or identity["tenant_id"] != self.service.authority.tenant_id):
             raise DeliveryRejected("invalid_committed_operation_identity")
+        self._bind_fixed_attempt_identity(identity)
         key = int.from_bytes(hashlib.sha256(json.dumps(
             ["delivery-dispatch", identity], sort_keys=True,
         ).encode()).digest()[:8], "big", signed=True)
@@ -622,6 +636,8 @@ class DeliveryDispatcher:
                     if row["state"] in TERMINAL_STATES:
                         return {"status": row["state"], "message_id": row["message_id"]}
                     attempt = self._load_attempt(cursor, row)
+                    if self.attempt_id is not None and attempt["attempt_id"] != self.attempt_id:
+                        raise DeliveryRejected("attempt_id_reused")
                     original, endpoint, invocation = self._recovery_endpoint(cursor, row, attempt)
                     cursor.execute(
                         "SELECT 1 FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s "
@@ -773,6 +789,7 @@ class DeliveryDispatcher:
     def dispatch(self, identity):
         if set(identity) != {"tenant_id", "message_id", "operation_id"} or identity["tenant_id"] != self.service.authority.tenant_id:
             raise DeliveryRejected("invalid_committed_operation_identity")
+        self._bind_fixed_attempt_identity(identity)
         key = int.from_bytes(hashlib.sha256(json.dumps(["delivery-dispatch", identity], sort_keys=True).encode()).digest()[:8], "big", signed=True)
         with psycopg.connect(self.service.authority._dsn, autocommit=True) as connection, connection.cursor() as cursor:
             cursor.execute("SELECT pg_try_advisory_lock(%s)", (key,))
@@ -831,13 +848,15 @@ class DeliveryDispatcher:
                         envelope, binding = self._authorize(cursor, row)
                         if reuse_prepared:
                             prepared_attempt = self._load_attempt(cursor, row)
+                            if self.attempt_id is not None and prepared_attempt["attempt_id"] != self.attempt_id:
+                                raise DeliveryRejected("attempt_id_reused")
                             try:
                                 self._selected_endpoint(cursor, row, prepared_attempt)
                             except DeliveryTransportError:
                                 return self._defer_prepared(cursor, row)
                         else:
                             selection = self._selection(row, binding)
-                            row["attempts"] += 1
+                            next_ordinal = row["attempts"] + 1
                             attempt_id = self.attempt_id or f"delivery-attempt-{uuid.uuid4()}"
                             endpoint = self.service.endpoints.get(row["endpoint_id"])
                             invocation = None
@@ -848,18 +867,26 @@ class DeliveryDispatcher:
                                 preparation_error = DeliveryRejected("configured_endpoint_changed")
                             elif envelope.packet.activation == "invoke":
                                 invocation = invocation_for(envelope, attempt_id)
-                            cursor.execute(
-                                "UPDATE delivery_messages SET attempts=%s,state='delivering',last_error=NULL "
-                                "WHERE tenant_id=%s AND message_id=%s",
-                                (row["attempts"], row["tenant_id"], row["message_id"]),
-                            )
-                            cursor.execute(
+                            if self.attempt_id is not None:
+                                cursor.execute(
+                                    "SELECT tenant_id,message_id,ordinal,operation_id,status,finished_at "
+                                    "FROM delivery_attempts WHERE attempt_id=%s FOR UPDATE",
+                                    (attempt_id,),
+                                )
+                                existing = cursor.fetchone()
+                                if existing is not None:
+                                    raise DeliveryRejected("attempt_id_reused")
+                            insert_sql = (
                                 "INSERT INTO delivery_attempts(tenant_id,message_id,ordinal,attempt_id,operation_id,"
                                 "endpoint_id,selection_revision,connection_ref,deadline,status,selection_json,"
                                 "selection_digest,selection_history_json,invocation_json,invocation_digest,dispatch_id,"
                                 "runtime_dispatched_receipt_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'prepared',"
-                                "%s,%s,%s,%s,%s,%s,%s)",
-                                (row["tenant_id"], row["message_id"], row["attempts"], attempt_id,
+                                "%s,%s,%s,%s,%s,%s,%s)"
+                                + (" ON CONFLICT (attempt_id) DO NOTHING" if self.attempt_id is not None else "")
+                            )
+                            cursor.execute(
+                                insert_sql,
+                                (row["tenant_id"], row["message_id"], next_ordinal, attempt_id,
                                  row["operation_id"], selection["endpoint_id"], selection["revision"],
                                  self.worker_id, row["deadline"], json.dumps(selection), digest(selection),
                                  json.dumps([selection]),
@@ -868,6 +895,14 @@ class DeliveryDispatcher:
                                  invocation.dispatch_id if invocation else None,
                                  invocation.runtime_dispatched_receipt_id if invocation else None),
                             )
+                            if cursor.rowcount != 1:
+                                raise DeliveryRejected("attempt_id_reused")
+                            cursor.execute(
+                                "UPDATE delivery_messages SET attempts=%s,state='delivering',last_error=NULL "
+                                "WHERE tenant_id=%s AND message_id=%s",
+                                (next_ordinal, row["tenant_id"], row["message_id"]),
+                            )
+                            row["attempts"] = next_ordinal
                             new_attempt = True
                             if preparation_error is not None:
                                 return self._failure(cursor, row, preparation_error)

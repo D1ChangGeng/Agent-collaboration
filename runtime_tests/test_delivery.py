@@ -201,6 +201,35 @@ def test_commit_then_actual_node_inbox_projection_and_exact_send_replay(setup):
     assert counts(f) == before
 
 
+def test_fixed_attempt_id_is_bound_to_one_message_identity(setup):
+    f = setup
+    first_identity, _, _, _ = send(f, activation="invoke")
+    second_identity, _, _, _ = send(f, activation="invoke")
+    dispatcher = DeliveryDispatcher(f.service, attempt_id="fixed-attempt-one")
+
+    assert dispatcher.dispatch(first_identity)["status"] == "delivered"
+    with pytest.raises(DeliveryRejected, match="fixed_attempt_id_identity_conflict"):
+        dispatcher.dispatch(second_identity)
+
+
+def test_fixed_attempt_id_reuse_is_rejected_at_pg_boundary(setup):
+    f = setup
+    first_identity, _, _, _ = send(f, activation="invoke")
+    second_identity, _, _, _ = send(f, activation="invoke")
+    fixed = "fixed-attempt-reused"
+
+    assert DeliveryDispatcher(f.service, attempt_id=fixed).dispatch(first_identity)["status"] == "delivered"
+    result = DeliveryDispatcher(f.service, attempt_id=fixed).dispatch(second_identity)
+
+    assert result["status"] == "blocked"
+    assert message(f, second_identity["message_id"])[1] == "attempt_id_reused"
+    assert query(
+        f,
+        "SELECT count(*) FROM delivery_attempts WHERE attempt_id=%s",
+        (fixed,),
+    ) == [(1,)]
+
+
 def test_send_permission_is_not_invoke_permission(setup):
     f = setup
     query(f, "UPDATE grants SET permissions=permissions-'runtime.invoke' WHERE grant_ref=%s", (f.authority.context.grant_ref,))
