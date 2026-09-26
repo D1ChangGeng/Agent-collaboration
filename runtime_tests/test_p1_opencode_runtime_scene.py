@@ -81,6 +81,11 @@ def test_restricted_host_temporal_pg_node_one_fake_turn(setup, tmp_path, current
             "model": "fixture-provider/fixture-model",
             "permission": {"*": "deny", "task": "deny"},
         }},
+        "provider": {"fixture-provider": {
+            "npm": "@ai-sdk/openai",
+            "options": {"baseURL": "https://provider.example.invalid/v1"},
+            "models": {"fixture-model": {"name": "Fixture"}},
+        }},
         "plugin": [], "mcp": {},
     }), encoding="utf-8")
     config.chmod(0o600)
@@ -118,6 +123,7 @@ def test_restricted_host_temporal_pg_node_one_fake_turn(setup, tmp_path, current
         driver = OpenCodeNativeDriver(
             run_id + "-binding", profile, DriverJournal(roots["ledger"] / "driver.sqlite"),
             identity=binding, check_current=current, supervisor=supervisor,
+            required_provider_url="https://provider.example.invalid/v1",
         )
 
         def authorize(invocation, observed):
