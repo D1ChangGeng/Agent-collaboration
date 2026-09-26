@@ -43,9 +43,8 @@ from runtime.p1_opencode_host_node import OpenCodeHostNodeEndpoint, OpenCodeHost
 from runtime.systemd_supervisor import SystemdUserSupervisor
 
 SCENARIO = "P1-NATIVE-MULTIAGENT-OFF"
-CODEX_SHA256 = "f8786262ebc0fa1337448a2977332beadec66c8d0cda0ce973c7849766d7943c"
-CODEX_SIZE = 258_597_984
-CODEX_CATALOG_SHA256 = "c3172f5fa1a69329d1aba8ca6328baf08b07927a100ce67c7d18d4c3d7ac1592"
+CODEX_VERSION = "0.155.0"
+CODEX_SCHEMA_RELATIVE = "runtime_tests/schema-0.155.0/codex_app_server_protocol.schemas.json"
 OPENCODE_SHA256 = "87bd160e053af86b5b409daabf71f8dc05bbc3a2a3a5f563f36011cdf706a999"
 OPENCODE_SIZE = 184_825_984
 OPENCODE_SCHEMA_SHA256 = "cf12e9739510a196c7f25eb938555cfb66d901957f66f840a12d4489ae440ac3"
@@ -71,7 +70,7 @@ def codex_effective_inventory(
     permission_profile: str,
     cwd: str,
 ) -> dict[str, Any]:
-    """Require the actual 0.153.2 feature pages and active thread settings."""
+    """Require the reviewed Codex feature pages and active thread settings."""
     try:
         config = tomllib.loads(config_bytes.decode("utf-8"))
     except (UnicodeError, ValueError) as exc:
@@ -116,7 +115,7 @@ def codex_effective_inventory(
     if any(states.get(name) is not False for name in ("multi_agent", "multi_agent_v2")):
         raise NativeInventoryRejected("Codex effective native delegation is not disabled")
     return {
-        "native_version": "0.153.2",
+        "native_version": CODEX_VERSION,
         "config_sha256": _sha(config_bytes),
         "active_permission_profile": permission_profile,
         "effective_features_sha256": _sha(_canonical(states)),
@@ -207,7 +206,7 @@ def capture_codex_bootstrap(
     driver: CodexAppServerDriver, operation: AuthorizedOperation,
 ) -> dict[str, Any]:
     """Observe the production Driver's native bootstrap; send no turn/start."""
-    if driver.profile.version != "0.153.2":
+    if driver.profile.version not in {"0.153.2", CODEX_VERSION}:
         raise NativeInventoryRejected("Codex native profile version differs")
     original_rpc = driver._rpc
     active: dict[str, Any] | None = None
@@ -455,15 +454,20 @@ def codex_no_model_driver(
     root: Path, native_source: Path, catalog_source: Path, source_checkout: Path,
     binding: BindingIdentity, check_current,
 ) -> tuple[CodexAppServerDriver, SystemdUserSupervisor, Path, Path, dict[str, Any]]:
-    """Stage the pinned 0.153.2 binary and a missing-key, zero-turn profile."""
+    """Stage the reviewed Codex binary and a missing-key, zero-turn profile."""
     paths = _private_dirs(root, "bin", "codex-home", "cwd", "home", "tmp", "ledger")
     executable = paths["bin"] / "codex"
-    native_pin = _copy_pinned(native_source, executable,
-                              expected_sha256=CODEX_SHA256, expected_size=CODEX_SIZE)
+    native_bytes = native_source.read_bytes()
+    native_pin = _copy_pinned(
+        native_source, executable,
+        expected_sha256=_sha(native_bytes), expected_size=len(native_bytes),
+    )
     catalog = paths["codex-home"] / "models.json"
-    catalog_pin = _copy_pinned(catalog_source, catalog,
-                               expected_sha256=CODEX_CATALOG_SHA256, mode=0o600)
-    schema = source_checkout / "runtime_tests/schema-0.153.2/codex_app_server_protocol.schemas.json"
+    catalog_bytes = catalog_source.read_bytes()
+    catalog_pin = _copy_pinned(
+        catalog_source, catalog, expected_sha256=_sha(catalog_bytes), mode=0o600,
+    )
+    schema = source_checkout / CODEX_SCHEMA_RELATIVE
     schema_sha = _sha(schema.read_bytes())
     config = paths["codex-home"] / "config.toml"
     config.write_text("\n".join((
@@ -497,7 +501,7 @@ def codex_no_model_driver(
     )) + "\n", encoding="utf-8")
     config.chmod(0o600)
     profile = LaunchProfile(
-        str(executable), CODEX_SHA256, "0.153.2", str(schema), schema_sha,
+        str(executable), native_pin["private_sha256"], CODEX_VERSION, str(schema), schema_sha,
         str(paths["cwd"]), str(paths["codex-home"]), _sha(config.read_bytes()),
         "achp-engineer",
         {"PATH": "/opt/acs/codex-sandbox/bin:/usr/bin:/bin",

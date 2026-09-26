@@ -241,6 +241,22 @@ def test_strict_scene_profile_accepts_only_bounded_provider_and_key_reference():
         validate_scene_profile(candidate)
 
 
+def test_fresh_linux_scene_profile_requires_exact_0155_zeo_profile():
+    value = scene_profile()
+    value["codex_version"] = "0.155.0"
+    value["provider_alias"] = "zeo-dev"
+    assert validate_scene_profile(value) == value
+    for version in ("0.155", "0.155.0.1", "latest", "0.153.4"):
+        candidate = copy.deepcopy(value)
+        candidate["codex_version"] = version
+        with pytest.raises(CodexSceneRejected):
+            validate_scene_profile(candidate)
+    candidate = copy.deepcopy(value)
+    candidate["provider_alias"] = "fixture-provider"
+    with pytest.raises(CodexSceneRejected):
+        validate_scene_profile(candidate)
+
+
 @pytest.mark.skipif(os.name != "posix", reason="private decision file is POSIX-only")
 def test_budget_decision_binds_commit_tree_scene_and_one_turn(tmp_path: Path):
     parent = tmp_path / "private"

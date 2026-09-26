@@ -160,9 +160,12 @@ def prepare_codex_host_capacity(
         scene["native_executable_size"],
     )
     staged = stage_codex_home(root, scene)
-    schema_file = (
-        source_snapshot / "runtime_tests/schema-0.153.2/codex_app_server_protocol.schemas.json"
+    schema_name = (
+        "schema-0.153.2"
+        if scene["codex_version"] == "0.153.2"
+        else "schema-0.155.0"
     )
+    schema_file = source_snapshot / f"runtime_tests/{schema_name}/codex_app_server_protocol.schemas.json"
     if (
         not schema_file.is_file()
         or schema_file.is_symlink()
@@ -217,7 +220,7 @@ def prepare_codex_host_capacity(
     profile = LaunchProfile(
         staged["executable"],
         scene["native_executable_sha256"],
-        "0.153.2",
+        scene["codex_version"],
         str(schema_file),
         scene["schema_sha256"],
         staged["cwd"],
