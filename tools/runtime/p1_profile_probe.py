@@ -67,7 +67,7 @@ from runtime.models import (
 from runtime.node import NodeJournal
 from runtime.temporal import TemporalAdapter
 from runtime_tests.test_delivery import FixtureDriver
-from tools.runtime import p1_harness_replacement, p1_partial_artifact
+from tools.runtime import p1_harness_replacement, p1_native_multiagent, p1_partial_artifact
 
 SCHEMA = "acs-p1-loopback-probe-profile/1"
 RESULT_SCHEMA = "acs-p1-gate-probe-result/1"
@@ -101,6 +101,7 @@ class ScenarioCatalog:
         "P1-STALE-BASELINE", "P1-PARTIAL-ARTIFACT",
         "P1-CODEX-LIFECYCLE",
         "P1-HARNESS-REPLACEMENT", "P1-OPENCODE-LIFECYCLE",
+        "P1-NATIVE-MULTIAGENT-OFF",
     })
     TESTS: ClassVar[dict[str, tuple[str, ...]]] = {
         "P1-DOMAIN-TRANSACTION": (
@@ -175,6 +176,7 @@ class ScenarioCatalog:
     }
     MODEL_REQUIREMENTS: ClassVar[dict[str, str]] = {
         "P1-HARNESS-REPLACEMENT": "native_harness_replacement_evidence",
+        "P1-NATIVE-MULTIAGENT-OFF": "actual_native_delegation_request_evidence",
         "P1-CODEX-LIFECYCLE": "same_run_codex_host",
         "P1-OPENCODE-LIFECYCLE": "same_run_opencode_host",
         "P1-INTEGRATED-ACCEPTANCE": "all_model_scenarios",
@@ -321,6 +323,8 @@ def availability(profile: dict[str, Any], commit: str) -> dict[str, dict[str, An
             reason = (
                 "actual native Harness replacement evidence is NOT_RUN"
                 if requirement == "native_harness_replacement_evidence"
+                else "actual native delegation request behavior is NOT_RUN"
+                if requirement == "actual_native_delegation_request_evidence"
                 else "Codex same-run restricted host lifecycle is NOT_RUN"
                 if requirement == "same_run_codex_host"
                 else "OpenCode same-run host scene and owner budget are NOT_RUN"
@@ -2534,6 +2538,8 @@ def _run_domain_transaction(
     send = _domain_command(
         authority, "message.send", "message", message_id, suffix, issued_at,
     )
+    if scenario == "P1-NATIVE-MULTIAGENT-OFF":
+        send = send.model_copy(update={"correlation_id": "p1-native-" + suffix})
     packet = DeliveryPacket(
         work_item_id=work_id, target_scope_id="local-scope",
         target_agent_slot_id="local-slot", accepted_revision=0,
@@ -2592,6 +2598,7 @@ def _run_domain_transaction(
     stale_baseline_proof = None
     partial_artifact_proof = None
     harness_replacement_proof = None
+    native_multiagent_proof = None
     if scenario == "P1-AUTH-REVOCATION":
         with authority._connect() as connection:
             connection.execute(
@@ -2691,6 +2698,15 @@ def _run_domain_transaction(
                 domain_command=_domain_command, private_json=_private_json,
             )
         except p1_harness_replacement.HarnessReplacementProbeError as exc:
+            raise ProbeRejected(str(exc)) from exc
+    if scenario == "P1-NATIVE-MULTIAGENT-OFF":
+        try:
+            native_multiagent_proof = p1_native_multiagent.run(
+                authority, node, endpoint, service, ledger, work_id, message_id,
+                sent.operation_id, commit, tree, suffix,
+                Path(profile["source_root"]), _private_json,
+            )
+        except p1_native_multiagent.NativeInventoryRejected as exc:
             raise ProbeRejected(str(exc)) from exc
     with node._transaction() as connection:
         connection.execute(
@@ -2836,6 +2852,7 @@ def _run_domain_transaction(
         "stale_baseline_proof": stale_baseline_proof,
         "partial_artifact_proof": partial_artifact_proof,
         "harness_replacement_proof": harness_replacement_proof,
+        "native_multiagent_proof": native_multiagent_proof,
         "dedup_details": list(dedup_details),
         "operation_details": list(operation_details),
         "provider_refs": list(provider_refs),
@@ -3750,6 +3767,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         "lease_proof", "uncertain_effect_proof", "stale_baseline_proof",
         "partial_artifact_proof",
         "harness_replacement_proof",
+        "native_multiagent_proof",
         "dedup_details", "operation_details", "outbox_details", "message_hashes",
         "event_hashes", "provider_refs",
     }
@@ -3788,6 +3806,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         != (scenario == "P1-PARTIAL-ARTIFACT")
         or (lineage["harness_replacement_proof"] is not None)
         != (scenario == "P1-HARNESS-REPLACEMENT")
+        or (lineage["native_multiagent_proof"] is not None)
+        != (scenario == "P1-NATIVE-MULTIAGENT-OFF")
     ):
         raise ProbeRejected("scenario lineage does not prove its required fault")
     if scenario == "P1-CORE-RESTART":
@@ -3922,6 +3942,14 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             )
         except p1_harness_replacement.HarnessReplacementProbeError as exc:
             raise ProbeRejected(str(exc)) from exc
+    native_extra = {}
+    if scenario == "P1-NATIVE-MULTIAGENT-OFF":
+        try:
+            native_extra = p1_native_multiagent.read_layer(
+                profile, kind, ledger, row, lineage,
+            )
+        except p1_native_multiagent.NativeInventoryRejected as exc:
+            raise ProbeRejected(str(exc)) from exc
     if kind == "postgresql":
         scoped = make_conninfo(
             profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
@@ -4021,7 +4049,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             if scenario == "P1-STALE-BASELINE" else {}
         )
         return {"postgresql_readback": True, "lineage_digest": _sha(_canonical(lineage)),
-                **extra, **partial_extra, **harness_extra}
+                **extra, **partial_extra, **harness_extra, **native_extra}
     if kind == "sqlite":
         replay = ledger.get(scenario)
         if replay != row:
@@ -4084,7 +4112,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             raise ProbeRejected("SQLite Node differs from signed Lease execution owner")
         return {"sqlite_readback": True, "journal_sha256": _sha(node_path.read_bytes()),
                 "node_receipt_ids": [item[0] for item in node_receipts],
-                **partial_extra, **harness_extra}
+                **partial_extra, **harness_extra, **native_extra}
     if kind == "temporal":
         async def read():
             adapter = TemporalAdapter(
@@ -4123,7 +4151,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         ):
             raise ProbeRejected("Temporal scenario marker changed")
         return {"temporal_readback": True, "workflow_id": row["temporal_workflow_id"],
-                "run_id": row["temporal_run_id"], **partial_extra, **harness_extra}
+                "run_id": row["temporal_run_id"], **partial_extra, **harness_extra,
+                **native_extra}
     if kind == "driver":
         raw = ledger.root / row["raw_path"]
         value = json.loads(raw.read_text())
@@ -4142,7 +4171,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         )
         return {"driver_readback": True, "driver_calls": lineage["driver_calls"],
                 "raw_sha256": _sha(raw.read_bytes()), **extra, **partial_extra,
-                **harness_extra}
+                **harness_extra, **native_extra}
     if kind == "os":
         if scenario == "P1-CORE-RESTART":
             proof = lineage["core_crash_proof"]
@@ -4243,7 +4272,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         )
         return {"os_readback": True, "platform": platform.platform(),
                 "systemd_user_exit": systemd_exit, **extra, **partial_extra,
-                **harness_extra}
+                **harness_extra, **native_extra}
     raw = ledger.root / row["raw_path"]
     if (_sha(raw.read_bytes()) != row["test_digest"] or not lineage["conflict_rejected"]
             or (scenario == "P1-LEASE-FENCING" and (
@@ -4261,7 +4290,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         raise ProbeRejected("command output does not bind the Runtime transaction")
     return {"command_output": True, "test_digest": row["test_digest"],
             "lineage_digest": _sha(_canonical(lineage)), **partial_extra,
-            **harness_extra}
+            **harness_extra, **native_extra}
 
 
 def _runner_result(profile: dict[str, Any], scenario: str, kind: str,

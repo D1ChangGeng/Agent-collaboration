@@ -126,6 +126,19 @@ HarnessSessionBinding and native response proof consumer, but the actual
 replacement lifecycle has no Gate adapter or verified native run on this
 baseline.
 
+`P1-NATIVE-MULTIAGENT-OFF` remains `NOT_RUN`. Its isolated component adapter
+starts pinned Codex 0.153.2 and OpenCode 1.18.30 under private Systemd user
+units without issuing a model request. Codex effective feature pages must show
+both native multi-agent flags disabled under the active permission profile.
+OpenCode effective `/config`, `/agent` and `/experimental/tool/ids` readbacks
+must retain the selected deny-all Agent and a bounded tool inventory. The
+HostNode request schemas expose no delegation override, and the current
+PostgreSQL AgentSlot and Scope Policy fences reject a changed launch before a
+new attempt or process. These are configuration and no-model boundary facts:
+Codex does not expose a complete effective tool list at this stage, and an
+actual model request's refusal to delegate has not been measured. The adapter
+therefore cannot make the formal scene available.
+
 The `p1-loopback-provider` profile is Linux-only. It uses the host network and
 admits only `127.0.0.1:54329` PostgreSQL and `127.0.0.1:7239` Temporal. Host
 network sharing is recorded as such; it is not described as a private network.
