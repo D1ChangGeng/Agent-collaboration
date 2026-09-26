@@ -237,6 +237,7 @@ vm.runInNewContext(script, {document: probeDocument,
       baseline_handles: [], expires_at: new Date(Date.now() + 300000).toISOString()},
     widgetState: {privateContent: {probe_id: 'probe-3', phase: 'CLAIMING',
       message: 'Claim outcome unknown after remount.'}},
+    setWidgetState(state) { this.widgetState = state; },
     async callTool() { restoredCalls++; },
     async sendFollowUpMessage() { restoredCalls++; }
   };
@@ -248,7 +249,24 @@ vm.runInNewContext(script, {document: probeDocument,
   await restoredTick();
   assert.equal(restoredCleared, true);
   assert.equal(restoredCalls, 0);
-  assert.equal(restoredElements.phase.textContent, 'CLAIMING');
+  assert.equal(restoredElements.phase.textContent, 'UNCERTAIN');
+  assert.match(restoredElements.status.textContent, /outcome_uncertain after component reload/);
+  assert.equal(restoredBridge.widgetState.privateContent.phase, 'UNCERTAIN');
+  const requestingElements = {status: {textContent: ''}, phase: {textContent: ''}};
+  const requestingBridge = {
+    ...restoredBridge,
+    widgetState: {privateContent: {probe_id: 'probe-3', phase: 'REQUESTING',
+      message: 'Wake claimed for notification:example. Requesting Host follow-up.'}},
+  };
+  vm.runInNewContext(script, {document: {documentElement: {dataset: {}},
+    getElementById: id => requestingElements[id]},
+    window: {openai: requestingBridge, addEventListener: () => {}},
+    setInterval: fn => {restoredTick = fn; return 4},
+    clearInterval: () => {restoredCleared = true}, Date, Set, String, Number});
+  await restoredTick();
+  assert.equal(restoredCalls, 0);
+  assert.equal(requestingBridge.widgetState.privateContent.phase, 'UNCERTAIN');
+  assert.match(requestingElements.status.textContent, /notification:example/);
 })().catch(error => { console.error(error); process.exitCode = 1; });
 """
     result = subprocess.run(["node", "-e", runner], input=HTML,

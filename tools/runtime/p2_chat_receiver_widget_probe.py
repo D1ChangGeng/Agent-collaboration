@@ -161,6 +161,11 @@ function initialize() {
   if (saved?.probe_id === probeId && saved.phase && saved.phase !== 'WAITING') {
     fired = ['CLAIMING', 'REQUESTING', 'SUBMITTED', 'UNCERTAIN'].includes(saved.phase);
     if (fired && timer !== null) clearInterval(timer);
+    if (saved.phase === 'CLAIMING' || saved.phase === 'REQUESTING') {
+      show('outcome_uncertain after component reload during ' + saved.phase + ': ' +
+        saved.message + ' Inspect the claim and native Turn; no automatic retry.', 'UNCERTAIN');
+      return false;
+    }
     status.textContent = saved.message;
     phaseBadge.textContent = saved.phase;
     return !fired;
@@ -241,7 +246,7 @@ def create_probe_server(runtime: McpRuntime, journal_path: Path) -> Server:
         base.append({
             "name": TOOL,
             "title": "Open ACS Chat receiver probe",
-            "description": "Show a short-lived component that observes new project Inbox notifications and probes native Chat follow-up capability.",
+            "description": "Open and render one five-minute Chat receiver component. Call once per user request; the first call already displays it.",
             "inputSchema": {"type": "object", "additionalProperties": False,
                             "required": ["project_id"],
                             "properties": {"project_id": {"type": "string"}}},
