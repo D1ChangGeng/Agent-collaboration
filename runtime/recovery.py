@@ -1030,14 +1030,12 @@ class PostgresHumanBridgeAuthority:
                 "payload_digest": receipt.payload_digest,
             }
             stored_bridge = normal[1].get("human_bridge")
-            if stored_bridge is not None and stored_bridge != bridge_evidence:
+            if stored_bridge != bridge_evidence:
                 raise BoundaryRejected("normal receipt does not bind the current manual packet")
-            # A native OpenCode/Codex response receipt is immutable and may
-            # already be committed before a Human Bridge incident is opened.
-            # In that case the packet row above is the bridge binding; accept
-            # the existing receipt only when its stored evidence digest and
-            # attempt/dispatch identity are exact. Never rewrite the receipt
-            # or create a duplicate layer row.
+            # The normal transport receipt remains immutable. Human Bridge may
+            # reference it only when the receipt itself carries the exact
+            # incident/generation/packet binding; matching a message/Attempt
+            # alone cannot turn an unrelated response into a manual return.
             if normal[2] != receipt.attempt_id or normal[3] != receipt.dispatch_id:
                 raise BoundaryRejected("normal receipt attempt or dispatch changed")
             actual_evidence_digest = canonical_digest({

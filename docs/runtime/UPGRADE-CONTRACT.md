@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-09-22.8.
+is determined by the named Gate records. Contract revision: 2026-09-22.9.
 
 ## Authority and inputs
 
@@ -169,6 +169,10 @@ requires exhaustion of eligible automatic recovery, a still-valid task and an
 incident with attempted paths, evidence, expiry and recheck/exit conditions.
 Successful re-probe returns to an automatic path. Late manual packets undergo
 the same dedup, deadline, revocation and accepted-revision checks.
+Normal transport receipts can resolve a manual path only when their immutable
+evidence contains the exact Human Bridge incident, generation, packet,
+direction, payload, Attempt and Dispatch binding. A matching Message or Attempt
+without that binding remains unrelated and is rejected.
 
 ### Protected resources and acceptance
 
