@@ -64,6 +64,28 @@ class EndpointBindingRequest(DeliveryModel):
         return value
 
 
+class EndpointResolutionRequest(DeliveryModel):
+    tenant_id: str = Field(min_length=1, max_length=256)
+    message_id: str = Field(min_length=1, max_length=256)
+    operation_id: str = Field(min_length=1, max_length=256)
+    attempt_id: str = Field(min_length=1, max_length=512)
+    dispatch_id: str = Field(min_length=1, max_length=512)
+    failed_endpoint_id: str = Field(min_length=1, max_length=256)
+    failed_binding_revision: int = Field(ge=1, strict=True)
+    target_scope_id: str = Field(min_length=1, max_length=256)
+    target_agent_slot_id: str = Field(min_length=1, max_length=256)
+    activation: Literal["message_only", "invoke"]
+    failure_code: Literal["native_pre_call_rejected"]
+
+
+class EndpointResolution(DeliveryModel):
+    endpoint_id: str = Field(min_length=1, max_length=256)
+    binding_revision: int = Field(ge=1, strict=True)
+    resolver_id: str = Field(min_length=1, max_length=256)
+    resolver_revision: int = Field(ge=1, strict=True)
+    reason: str = Field(min_length=1, max_length=1024)
+
+
 class DeliveryEnvelope(DeliveryModel):
     tenant_id: str
     authority_id: str = Field(min_length=1, max_length=256)

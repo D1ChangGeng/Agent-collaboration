@@ -718,11 +718,17 @@ CREATE TABLE IF NOT EXISTS delivery_attempts (
     )),
     error_code TEXT,
     selection_json JSONB NOT NULL, selection_digest TEXT NOT NULL,
+    selection_history_json JSONB NOT NULL DEFAULT '[]'::jsonb,
     invocation_json JSONB, invocation_digest TEXT,
     dispatch_id TEXT, runtime_dispatched_receipt_id TEXT,
     PRIMARY KEY(tenant_id,message_id,ordinal),
     FOREIGN KEY(tenant_id,message_id) REFERENCES delivery_messages(tenant_id,message_id)
 );
+ALTER TABLE delivery_attempts
+    ADD COLUMN IF NOT EXISTS selection_history_json JSONB NOT NULL DEFAULT '[]'::jsonb;
+UPDATE delivery_attempts
+SET selection_history_json = jsonb_build_array(selection_json)
+WHERE selection_history_json = '[]'::jsonb;
 CREATE UNIQUE INDEX IF NOT EXISTS delivery_attempts_one_open
     ON delivery_attempts(tenant_id,message_id) WHERE finished_at IS NULL;
 CREATE TABLE IF NOT EXISTS delivery_receipts (
