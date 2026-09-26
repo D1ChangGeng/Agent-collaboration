@@ -64,8 +64,9 @@ def attach(output: Path, scenario: str, evidence: list[Path], status: str,
         raise GateRejected("scenario attachment conflicts with existing state")
     current.update(status=status, evidence=[ref(path,output) for path in evidence],
                    unresolved_items=unresolved, observed_at=datetime.now(UTC).isoformat())
-    state["status"] = ("acceptance_ready" if all(
-        value["status"] == "passed" for value in state["scenarios"].values()) else "blocked")
+    # This file is a private evidence index only.  Gate promotion belongs to
+    # the formal acs-gate-record/1 surface plus validate_gate.py and review.
+    state["status"] = "blocked"
     state_path.write_text(json.dumps(state,sort_keys=True,separators=(",",":")))
     state_path.chmod(0o600); return state
 
@@ -86,9 +87,8 @@ def audit(output: Path, commit: str, tree: str) -> dict:
             data = (output / item["path"]).read_bytes()
             if len(data) != item["size_bytes"] or digest(data) != item["sha256"]:
                 raise GateRejected("scenario evidence digest differs")
-    complete = all(value["status"] == "passed" for value in state["scenarios"].values())
-    if (state["status"] == "acceptance_ready") != complete:
-        raise GateRejected("aggregate status differs from scenarios")
+    if state["status"] != "blocked":
+        raise GateRejected("private P2 index cannot promote a Gate")
     return {"valid":True,"status":state["status"],"passed":sum(
         value["status"]=="passed" for value in state["scenarios"].values())}
 
