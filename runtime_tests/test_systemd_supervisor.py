@@ -159,6 +159,28 @@ def test_terminate_accepts_collected_unit_only_after_empty_cgroup_and_wrapper_ex
     assert terminated["remaining_pids"] == [] and terminated["wrapper_exited"]
 
 
+def test_stop_timeout_reconciles_only_after_verified_unit_exit(supervisor, monkeypatch):
+    owned = launch(supervisor, "stop-timeout-readback")
+    original = supervisor._run_systemctl
+    injected = False
+
+    def lose_stop_ack(args, *, check=True):
+        nonlocal injected
+        if tuple(args[:1]) == ("stop",) and not injected:
+            injected = True
+            original(args, check=False)
+            raise subprocess.TimeoutExpired(["systemctl", "stop"], 10)
+        return original(args, check=check)
+
+    monkeypatch.setattr(supervisor, "_run_systemctl", lose_stop_ack)
+    terminated = supervisor.terminate_tree(owned)
+    assert injected
+    assert terminated["verified"] is True
+    assert terminated["remaining_pids"] == []
+    assert terminated["root_exited"] is True
+    assert terminated["wrapper_exited"] is True
+
+
 def test_launch_error_does_not_echo_environment_values(supervisor, tmp_path):
     secret = "error-secret-" + os.urandom(16).hex()
     with pytest.raises(ValueError) as caught:
