@@ -47,6 +47,14 @@ def _source_identity(path: Path) -> tuple[int, int, int, int, int, int]:
     absolute = path.absolute()
     if absolute.resolve() != absolute or path.is_symlink():
         raise ValueError("deployment package origin contains a symlink")
+    if os.name == "nt":
+        for component in (*reversed(path.parents), path):
+            if getattr(component.lstat(), "st_file_attributes", 0) & 0x400:
+                raise ValueError("deployment package origin contains a reparse component")
+        info = path.stat(follow_symlinks=False)
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError("deployment package origin is not a regular file")
+        return info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_gid, info.st_nlink
     info = path.stat(follow_symlinks=False)
     if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_nlink != 1
             or stat.S_IMODE(info.st_mode) & 0o022):
