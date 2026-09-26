@@ -100,7 +100,7 @@ class ScenarioCatalog:
         "P1-PROVIDER-RESTART", "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT",
         "P1-STALE-BASELINE", "P1-PARTIAL-ARTIFACT",
         "P1-CODEX-LIFECYCLE",
-        "P1-HARNESS-REPLACEMENT",
+        "P1-HARNESS-REPLACEMENT", "P1-OPENCODE-LIFECYCLE",
     })
     TESTS: ClassVar[dict[str, tuple[str, ...]]] = {
         "P1-DOMAIN-TRANSACTION": (
@@ -239,16 +239,19 @@ def _secure_profile(path: Path) -> tuple[dict[str, Any], str, tuple[bytes, ...]]
         "codex_model_evidence",
         "opencode_model_evidence",
     }
-    profile_v2 = (
-        isinstance(value, dict) and value.get("schema_version") == "acs-p1-loopback-probe-profile/2"
-    )
-    expected = required | {"codex_scene_mode"} if profile_v2 else required
+    scene_fields = set(value) - required if isinstance(value, dict) else set()
+    if scene_fields not in (
+        set(), {"codex_scene_mode"}, {"opencode_scene_mode"},
+        {"codex_scene_mode", "opencode_scene_mode"},
+    ):
+        raise ProbeRejected("P1 profile fields are invalid")
+    profile_version = 3 if len(scene_fields) == 2 else 2 if scene_fields else 1
+    expected = required | scene_fields
     if (
         not isinstance(value, dict)
         or set(value) != expected
-        or value["schema_version"] != ("acs-p1-loopback-probe-profile/2" if profile_v2 else SCHEMA)
-        or profile_v2
-        and value.get("codex_scene_mode") != "same-run-host-node"
+        or value["schema_version"] != f"acs-p1-loopback-probe-profile/{profile_version}"
+        or any(value.get(field) != "same-run-host-node" for field in scene_fields)
     ):
         raise ProbeRejected("P1 profile fields are invalid")
     connection = conninfo_to_dict(value["postgres_dsn"])
@@ -296,10 +299,8 @@ def _model_evidence_current(profile: dict[str, Any], field: str, commit: str) ->
 
 
 def availability(profile: dict[str, Any], commit: str) -> dict[str, dict[str, Any]]:
-    # Historical model receipts cannot authorize same-run host scenes.
-    codex = False
     codex_scene_planned = profile.get("codex_scene_mode") == "same-run-host-node"
-    opencode = False
+    opencode_scene_planned = profile.get("opencode_scene_mode") == "same-run-host-node"
     values = {}
     for scenario in ScenarioCatalog.TESTS:
         requirement = ScenarioCatalog.MODEL_REQUIREMENTS.get(scenario)
@@ -308,10 +309,10 @@ def availability(profile: dict[str, Any], commit: str) -> dict[str, dict[str, An
             or requirement == "same_run_codex_host"
             and codex_scene_planned
             or requirement == "same_run_opencode_host"
-            and opencode
+            and opencode_scene_planned
             or requirement == "all_model_scenarios"
-            and codex
-            and opencode
+            and codex_scene_planned
+            and opencode_scene_planned
         )
         ready = scenario in ScenarioCatalog.LINEAGE_BOUND and resource_ready
         if ready:
@@ -360,6 +361,10 @@ class ProbeLedger:
                 CREATE TABLE IF NOT EXISTS codex_host_requests(
                     scenario_id TEXT PRIMARY KEY,request_json TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS codex_faults(
+                    scenario_id TEXT PRIMARY KEY,fault_json TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS opencode_host_requests(
+                    scenario_id TEXT PRIMARY KEY,request_json TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS opencode_faults(
                     scenario_id TEXT PRIMARY KEY,fault_json TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS scenario_claims(
                     scenario_id TEXT PRIMARY KEY,run_id TEXT NOT NULL,suffix TEXT NOT NULL,
@@ -467,6 +472,53 @@ class ProbeLedger:
             ).fetchone()
         if row is None:
             raise ProbeRejected("Codex ACK-loss fault record is unavailable")
+        return json.loads(row[0])
+
+    def put_opencode_request(self, scenario: str, request_json: str) -> None:
+        with self._connect() as connection:
+            previous = connection.execute(
+                "SELECT request_json FROM opencode_host_requests WHERE scenario_id=?",
+                (scenario,),
+            ).fetchone()
+            if previous is not None and previous[0] != request_json:
+                raise ProbeRejected("OpenCode original host request changed")
+            connection.execute(
+                "INSERT OR IGNORE INTO opencode_host_requests VALUES (?,?)",
+                (scenario, request_json),
+            )
+
+    def opencode_request(self, scenario: str) -> str:
+        with closing(self._connect()) as connection:
+            row = connection.execute(
+                "SELECT request_json FROM opencode_host_requests WHERE scenario_id=?",
+                (scenario,),
+            ).fetchone()
+        if row is None:
+            raise ProbeRejected("OpenCode original host request is unavailable")
+        return row[0]
+
+    def put_opencode_fault(self, scenario: str, fault: dict[str, Any]) -> None:
+        encoded = json.dumps(fault, sort_keys=True, separators=(",", ":"))
+        with self._connect() as connection:
+            prior = connection.execute(
+                "SELECT fault_json FROM opencode_faults WHERE scenario_id=?",
+                (scenario,),
+            ).fetchone()
+            if prior is not None and prior[0] != encoded:
+                raise ProbeRejected("OpenCode ACK-loss fault record changed")
+            connection.execute(
+                "INSERT OR IGNORE INTO opencode_faults VALUES (?,?)",
+                (scenario, encoded),
+            )
+
+    def opencode_fault(self, scenario: str) -> dict[str, Any]:
+        with closing(self._connect()) as connection:
+            row = connection.execute(
+                "SELECT fault_json FROM opencode_faults WHERE scenario_id=?",
+                (scenario,),
+            ).fetchone()
+        if row is None:
+            raise ProbeRejected("OpenCode ACK-loss fault record is unavailable")
         return json.loads(row[0])
 
     def claim(self, scenario: str, run_id: str) -> tuple[str, datetime]:
@@ -3068,6 +3120,10 @@ def _run_tests(
         raise ProbeUnavailable("scenario has no real Runtime lineage adapter")
     if scenario == "P1-CODEX-LIFECYCLE":
         return _run_codex_host_scene(profile, ledger, commit, tree, run_id, suffix, issued_at)
+    if scenario == "P1-OPENCODE-LIFECYCLE":
+        from tools.runtime.p1_opencode_probe import run_scene
+
+        return run_scene(profile, ledger, commit, tree, run_id, suffix, issued_at)
     return _run_domain_transaction(
         profile,
         scenario,
@@ -3650,6 +3706,10 @@ def _stale_source_readback(profile, ledger, row, proof):
 def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 ledger: ProbeLedger, row: dict[str, Any]) -> dict[str, Any]:
     lineage = json.loads(row["lineage_json"])
+    if scenario == "P1-OPENCODE-LIFECYCLE":
+        from tools.runtime.p1_opencode_probe import read_layer
+
+        return read_layer(profile, ledger, row, kind)
     if scenario == "P1-CODEX-LIFECYCLE":
         from runtime.p1_codex_host_node import CodexHostRequest
         from tools.runtime.p1_codex_lifecycle import read_codex_layer
