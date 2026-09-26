@@ -111,10 +111,11 @@ installation actions. You complete machine
 privilege and account consent prompts.
 
 The Linux setup entry prints a plan first. With `--apply`, it installs the
-locked Python environment and nine Skills, starts owner-local services and
-adopts a specified Management Root. It reports `local_services_ready` and the
-remaining Runtime identity, Source registration and Harness MCP checks. The
-Agent completes and reads back those steps before reporting collaboration ready.
+locked Python environment and nine Skills, starts owner-local services,
+initializes a private owner authority and adopts a specified Management Root.
+For a clean committed project Source, it registers the project and reads back
+its context. The Agent configures Harness MCP connections and verifies tool
+discovery before reporting collaboration ready.
 See [getting started](docs/GETTING-STARTED.md) and
 [troubleshooting](docs/TROUBLESHOOTING.md).
 

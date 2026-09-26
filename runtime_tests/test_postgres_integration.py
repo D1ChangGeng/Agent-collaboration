@@ -103,6 +103,10 @@ def test_real_postgres_retry_revocation_and_incomplete_evidence_guards(postgres_
 
     with psycopg.connect(postgres_dsn) as connection:
         connection.execute("UPDATE grants SET revoked_at=now() WHERE grant_ref=%s", (authority.context.grant_ref,))
+    authority.bootstrap_local_grant()
+    with psycopg.connect(postgres_dsn) as connection:
+        assert connection.execute("SELECT revoked_at IS NOT NULL FROM grants WHERE grant_ref=%s",
+                                  (authority.context.grant_ref,)).fetchone()[0]
     with pytest.raises(AuthorizationDenied) as revoked_retry:
         authority.create_work_item(create, "local-scope", "local-slot", "baseline-real")
     assert revoked_retry.value.grant_ref == authority.context.grant_ref

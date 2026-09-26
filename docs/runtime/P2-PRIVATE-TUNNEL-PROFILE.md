@@ -24,8 +24,8 @@ profile.
 1. The setup Agent verifies the local Runtime, Source and project registration,
    Profile, Grant expiry and revocation state, and `read_profile`, `list_projects`
    and `load_project` over the exact stdio command it will give the Tunnel.
-   A `local_services_ready` installation receipt is only the entry to this
-   readback; it does not authorize the Tunnel connection by itself.
+   The installer receipt and live project readback establish the local service
+   state before the Tunnel connection is configured.
 2. The installation owner creates or selects a Tunnel in OpenAI Platform,
    grants the required Tunnel permissions, supplies the runtime key through the
    platform's private mechanism, and enables ChatGPT developer mode when the
