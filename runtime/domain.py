@@ -40,9 +40,10 @@ class DomainAuthority:
     """PostgreSQL Domain authority for the local Runtime profile."""
 
     SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.6"
+    SCHEMA_VERSION = "1.7"
 
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.6", "89400be6a5c44f419ef73fe6661f907c858c11a397407662270fe0a79e169c73"),
         ("1.5", "c5faeecc4a9a6b152eb288f8f5d6cf3a1b4492d464f10d931535d3f737421fee"),
         ("1.4", "8f12aa29f385194b436f930422d5dafebc432d15bdf1a4bafe94294d8f744deb"),
         ("1.3", "0e3600dc7ed3b7fac727670f5c8fec0b00c6e100063e63a3f149661631dccea4"),
@@ -73,6 +74,7 @@ class DomainAuthority:
         authority_binding: tuple[str, str] = ("acs-p1-authority", "local-1"),
         effect_readback_verifier: Any | None = None,
         effect_registration_gateway: Any | None = None,
+        delivery_endpoints: Mapping[str, Any] | None = None,
     ) -> None:
         self._dsn = dsn
         self._authority_binding = authority_binding
@@ -86,6 +88,25 @@ class DomainAuthority:
         self._artifact_store = artifact_store
         self._effect_readback_verifier = effect_readback_verifier
         self._effect_registration_gateway = effect_registration_gateway
+        self._delivery_endpoints = dict(delivery_endpoints or {})
+
+    def send_message(self, command: CommandEnvelope, packet: Any, *, endpoint_id: str,
+                     binding_revision: int) -> CommandResult:
+        from runtime.delivery import DeliveryService
+
+        return DeliveryService(self, self._delivery_endpoints).send_message(
+            command, packet, endpoint_id=endpoint_id, binding_revision=binding_revision,
+        )
+
+    def bind_message_endpoint(self, command: CommandEnvelope, request: Any) -> CommandResult:
+        from runtime.delivery import DeliveryService
+
+        return DeliveryService(self, self._delivery_endpoints).bind_endpoint(command, request)
+
+    def read_message(self, command: CommandEnvelope, message_id: str) -> dict[str, Any]:
+        from runtime.delivery import DeliveryService
+
+        return DeliveryService(self, self._delivery_endpoints).inspect(command, message_id)
 
     def register_effect(
         self, command: CommandEnvelope, *, effect_id: str, lease_id: str,

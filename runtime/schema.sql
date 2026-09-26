@@ -669,3 +669,66 @@ ALTER TABLE execution_receipts ADD COLUMN IF NOT EXISTS enrollment_runtime_id TE
 ALTER TABLE execution_receipts ADD COLUMN IF NOT EXISTS enrollment_proof_ref TEXT;
 ALTER TABLE execution_receipts ADD COLUMN IF NOT EXISTS enrollment_recorded_at TIMESTAMPTZ;
 ALTER TABLE execution_receipts ADD COLUMN IF NOT EXISTS registration_command_id TEXT;
+-- Runtime 1.7 durable delivery and layered receipts.
+-- Event-target columns are also adopted by enrollment 1.6. This extension does
+-- not enroll or rotate Nodes/Runtimes, or assign their trust or capabilities.
+ALTER TABLE domain_events ALTER COLUMN work_item_id DROP NOT NULL;
+ALTER TABLE domain_events ADD COLUMN IF NOT EXISTS target_kind TEXT NOT NULL DEFAULT 'work_item';
+ALTER TABLE domain_events ADD COLUMN IF NOT EXISTS target_id TEXT;
+ALTER TABLE domain_events ADD COLUMN IF NOT EXISTS related_work_item_id TEXT;
+UPDATE domain_events SET target_id=work_item_id WHERE target_id IS NULL AND work_item_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS delivery_endpoints (
+    tenant_id TEXT NOT NULL, endpoint_id TEXT NOT NULL,
+    revision BIGINT NOT NULL, scope_id TEXT NOT NULL, agent_slot_id TEXT NOT NULL,
+    machine_id TEXT NOT NULL, node_id TEXT NOT NULL, boot_incarnation TEXT NOT NULL,
+    supports_invoke BOOLEAN NOT NULL, evidence_class TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL, status TEXT NOT NULL DEFAULT 'active',
+    command_id TEXT NOT NULL, operation_id TEXT NOT NULL,
+    PRIMARY KEY(tenant_id,endpoint_id)
+);
+CREATE TABLE IF NOT EXISTS delivery_messages (
+    tenant_id TEXT NOT NULL, message_id TEXT NOT NULL, command_id TEXT NOT NULL,
+    operation_id TEXT NOT NULL UNIQUE REFERENCES operations(operation_id),
+    endpoint_id TEXT NOT NULL, binding_revision BIGINT NOT NULL,
+    packet_json JSONB NOT NULL, command_json JSONB NOT NULL, canonical_hash TEXT NOT NULL,
+    envelope_json JSONB NOT NULL, envelope_hash TEXT NOT NULL,
+    state TEXT NOT NULL CHECK(state IN ('queued','delivering','retry_wait','delivered','uncertain','expired','blocked','budget_exhausted')),
+    attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    deadline TIMESTAMPTZ NOT NULL, maximum_attempts INTEGER NOT NULL CHECK(maximum_attempts BETWEEN 1 AND 8),
+    retry_delay_seconds INTEGER NOT NULL CHECK(retry_delay_seconds BETWEEN 1 AND 30),
+    last_error TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    policy_hash TEXT NOT NULL, accepted_state_digest TEXT NOT NULL,
+    receipt_high_water TEXT NOT NULL DEFAULT 'accepted_by_authority'
+        CHECK(receipt_high_water IN ('accepted_by_authority','target_inbox_committed','runtime_dispatched','runtime_acknowledged','response_received')),
+    activation_node_id TEXT, activation_machine_id TEXT,
+    activation_dispatch_id TEXT, activation_receipt_id TEXT,
+    PRIMARY KEY(tenant_id,message_id), UNIQUE(tenant_id,command_id),
+    FOREIGN KEY(tenant_id,endpoint_id) REFERENCES delivery_endpoints(tenant_id,endpoint_id)
+);
+CREATE TABLE IF NOT EXISTS delivery_attempts (
+    tenant_id TEXT NOT NULL, message_id TEXT NOT NULL, ordinal INTEGER NOT NULL,
+    attempt_id TEXT NOT NULL UNIQUE, operation_id TEXT NOT NULL,
+    endpoint_id TEXT NOT NULL, selection_revision BIGINT NOT NULL, connection_ref TEXT NOT NULL,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(), finished_at TIMESTAMPTZ,
+    deadline TIMESTAMPTZ NOT NULL,
+    status TEXT NOT NULL CHECK(status IN (
+        'prepared','runtime_dispatched','interrupted','retry_wait','delivered',
+        'uncertain','expired','blocked','budget_exhausted'
+    )),
+    error_code TEXT,
+    selection_json JSONB NOT NULL, selection_digest TEXT NOT NULL,
+    invocation_json JSONB, invocation_digest TEXT,
+    dispatch_id TEXT, runtime_dispatched_receipt_id TEXT,
+    PRIMARY KEY(tenant_id,message_id,ordinal),
+    FOREIGN KEY(tenant_id,message_id) REFERENCES delivery_messages(tenant_id,message_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS delivery_attempts_one_open
+    ON delivery_attempts(tenant_id,message_id) WHERE finished_at IS NULL;
+CREATE TABLE IF NOT EXISTS delivery_receipts (
+    tenant_id TEXT NOT NULL, message_id TEXT NOT NULL, receipt_id TEXT NOT NULL,
+    layer TEXT NOT NULL, attempt_id TEXT, dispatch_id TEXT,
+    evidence_json JSONB NOT NULL, observed_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    PRIMARY KEY(tenant_id,message_id,layer), UNIQUE(tenant_id,receipt_id),
+    FOREIGN KEY(tenant_id,message_id) REFERENCES delivery_messages(tenant_id,message_id)
+);
