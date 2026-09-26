@@ -36,6 +36,7 @@ def _windows_private(path: Path) -> None:
     broad = (
         "Everyone:", "BUILTIN\\Users:", "Authenticated Users:",
         "INTERACTIVE:", "ANONYMOUS LOGON:", "APPLICATION PACKAGE AUTHORITY\\ALL APPLICATION PACKAGES:",
+        "CodexSandboxUsers:",
     )
     if result.returncode != 0 or any(name.casefold() in text.casefold() for name in broad):
         raise PathSecurityRejected("receiver Windows ACL is not private")
