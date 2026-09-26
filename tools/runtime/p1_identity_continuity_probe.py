@@ -159,11 +159,12 @@ def verify_signed_exchange(
             raise ContinuityRejected("receiver recovery body is invalid") from None
         selected = (
             attempt.endpoint_id == registration.endpoint_id
-            and attempt.runtime_id == registration.runtime_id
             and attempt.endpoint_revision == recovery.old_endpoint_revision
             and registration.endpoint_revision == recovery.new_endpoint_revision
             and attempt.runtime_revision == recovery.old_runtime_revision
             and registration.runtime_revision == recovery.new_runtime_revision
+            and attempt.runtime_id == (recovery.old_runtime_id or registration.runtime_id)
+            and registration.runtime_id == (recovery.new_runtime_id or attempt.runtime_id)
             and attempt.boot_incarnation == recovery.old_boot_incarnation
             and registration.boot_incarnation == recovery.new_boot_incarnation
             and registration.node_binding_revision > attempt.node_binding_revision

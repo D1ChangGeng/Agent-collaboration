@@ -1,52 +1,64 @@
 # P1 identity continuity evidence boundary
 
-The logical identity is one tenant, authority incarnation, WorkItem, Scope,
-AgentSlot, Message, command, operation, Machine, Node and source commit/tree.
-A Core, Node, receiver or Provider replacement may change a process PID,
-Node boot, endpoint revision or runtime revision only through a signed current
-registration. It cannot replace the logical identity or create another Inbox
-projection or native dispatch.
+`tools/runtime/p1_identity_continuity_probe.py` remains a component verifier.
+It verifies authority request signatures, Node endpoint-registration signatures,
+receiver receipt signatures, immutable logical identity, exact replay, boot
+history and a bounded receiver SQLite readback. Its result is deliberately:
 
-`tools/runtime/p1_identity_continuity_probe.py` currently verifies genuine
-authority request signatures, Node endpoint registration signatures and
-receiver receipt signatures. It compares every admission and receipt field to
-the same committed Attempt and rejects changed Machine, Node, Scope,
-AgentSlot, authority incarnation, source commit/tree, body digest, boot or
-registration. Exact signed request/receipt replay is idempotent; a conflicting
-receipt under the same request ID is rejected. The no-PG component tests use
-a real ReceiverService prepare/dispatch, signing keys and SQLite ledger.
-A second no-PG regression reclaims generation 2 under a signed new boot and
-recovers the **same** prepared Attempt once; exact replay does not invoke the
-native fixture twice. A separate-process TLS 1.3 test runs signed
-prepare/dispatch/readback through the real RemoteNodeTransport, checks one
-receiver-ledger native call and terminates the service process. The
-component reader reopens that ledger through its owner-path witness and checks
-request, boot/generation and native-dispatch IDs against the same Attempt.
-These remain receiver component observations because no single
-Domain/Temporal/Core/Node process run produced those facts together.
+```text
+status=component_only
+gate_status=not_run
+missing=[postgresql_live,sqlite_live,temporal_live,os_restart_live]
+```
 
-This component returns `gate_status=not_run`. It does not create a Domain
-WorkItem, perform a process restart or collect a P1 Gate result. A Gate adapter
-may be enabled only after one private run proves all of these on the **same**
-Message and WorkItem:
+Those values are not renamed, emptied or accepted as a Gate result.
 
-- PostgreSQL: authenticated WorkItem, accepted revision, Scope/AgentSlot,
-  signed Node/Runtime/endpoint registration history, every DeliveryAttempt,
-  committed operations/events/Outbox, receiver admissions/receipts and exactly
-  one Inbox projection. Old boot and abnormal rebindings must remain fenced.
-- Node SQLite: the same command/message/operation, boot history, mailbox,
-  signed receiver request/receipt history and one actual native dispatch or
-  an explicit no-model count.
-- Temporal: a recorded workflow and run ID for the same operation, with a
-  Worker restart and readback of its result.
-- Driver and OS: one dispatch bound to the original invocation, real Core and
-  receiver process exits/replacements, TLS certificate readback, user service
-  and cgroup cleanup.
-- A deliberately lost transport ACK, a Core restart, a new signed Node boot
-  and a Provider restart must be observed in that one run, with the next
-  authenticated receipt preserving the original logical identity.
+The `P1-IDENTITY-CONTINUITY` profile now has a separate Gate qualification in
+`tools/runtime/p1_identity_continuity_scene.py`. Before the profile's ordinary
+local `DeliveryDispatcher.dispatch` branch can run, the adapter provisions an
+enrolled signed Node, Runtime and TLS receiver endpoint in PostgreSQL, then
+queues the one Domain Message against that endpoint. The same Message,
+operation, Delivery Attempt and dispatch identity pass through this sequence:
 
-A separate receiver test and separate Core/Node/Provider restart tests are
-component evidence. They cannot be combined into a P1 Gate pass. Distinct
-Machine transport evidence, actual model behavior and full acceptance are
-outside this component.
+1. the old Core persists the real receiver `delivery.prepare` admission and
+   signed receipt, then exits before the Domain dispatch marker;
+2. the old receiver exits; the same enrolled Node is rotated from binding/boot
+   revision 1 to 2, with a replacement Runtime and endpoint registered in the
+   same PostgreSQL authority;
+3. `submit_delivery` starts Workflow ID `acs-delivery/<operation_id>` and fixes
+   its Run ID in PostgreSQL;
+4. the first Temporal Worker exits before it recovers the prepared Attempt;
+5. a replacement Worker calls `DeliveryDispatcher.recover_prepared`, preserving
+   the original Attempt while using the signed replacement receiver binding;
+6. the replacement receiver commits exactly one native dispatch in its SQLite
+   journal and deliberately loses the recovery HTTP response;
+7. signed readback completes the Domain projection, and byte-identical recovery
+   replay returns the stored signed receipt without a second native dispatch.
+
+The qualification passes only after reopening and rereading every authority:
+
+- **PostgreSQL:** exactly one WorkItem, Message, Delivery Attempt, registered
+  execution Attempt and Inbox projection; the two Node bindings, two Runtimes,
+  two endpoint registrations, operations/events/Outbox, transport admissions,
+  signed receiver receipts and provider Workflow/Run must all match.
+- **receiver SQLite:** the same command, message, operation, Attempt and dispatch
+  must have prepare/recover/readback history, boot/generation 1 to 2, signed
+  receipts and exactly one native call.
+- **Temporal:** a new client and workflow-only replay/query Worker read the exact
+  Workflow ID and fixed Run using `describe`, `result` and `query`. That
+  readback Worker registers no delivery activity and cannot dispatch again.
+- **OS:** the old Core, old receiver, first Temporal Worker, submission process,
+  replacement Worker and replacement receiver PIDs must be gone and distinct;
+  both listener ports must be closed, TLS must be 1.3 with the registered
+  certificate fingerprint, and private key files must be removed.
+
+`gate_qualification` rejects `status=component_only`, any
+`gate_status != passed`, a non-empty `missing` list, an absent layer readback or
+an incomplete fault chain. Tests also reject changed Temporal Workflow/Run,
+extra PG Node registration or Delivery Attempt, a missing Inbox row, duplicate
+receiver native dispatch and a still-live old PID.
+
+This adapter is the technical P1 scenario mechanism only. It does not execute
+the formal 18-scenario Gate, run an independent review, supply a product-owner
+decision, create an `AcceptedStateRevision`, publish a Release, or establish
+cross-machine support.

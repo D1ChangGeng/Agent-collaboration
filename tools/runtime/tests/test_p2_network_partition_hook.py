@@ -1,5 +1,7 @@
 from types import SimpleNamespace
 
+import pytest
+
 from runtime.receiver_delivery import RemoteNodeEndpointAdapter
 
 
@@ -57,4 +59,54 @@ def test_after_dispatch_mark_runs_after_marker_and_before_dispatch():
         ("issue", "delivery.prepare"), ("send", "delivery.prepare"),
         ("marker", invocation), ("issue", "delivery.dispatch"),
         ("fault", invocation), ("send", "delivery.dispatch"),
+    ]
+
+
+def test_after_prepare_runs_after_durable_prepare_and_before_domain_marker():
+    events = []
+    adapter = object.__new__(RemoteNodeEndpointAdapter)
+    adapter.evidence_class = "authenticated_receiver_transport"
+    adapter.after_prepare = lambda invocation, receipt: events.append(
+        ("prepared-hook", invocation, receipt),
+    )
+    adapter.after_dispatch_mark = None
+    prepared = SimpleNamespace(
+        receipt=SimpleNamespace(receipt_id="prepared-receipt", request_id="prepared-request")
+    )
+    adapter._issue = lambda invocation, purpose, body: events.append(("issue", purpose)) or body
+    adapter._send = lambda request: events.append(("send", "delivery.prepare")) or prepared
+    adapter._selection = lambda invocation: {"selection": True}
+    invocation = SimpleNamespace(
+        operation_id="operation", dispatch_id="dispatch",
+        runtime_dispatched_receipt_id="marker",
+        model_dump=lambda mode: {"invocation": True},
+    )
+    envelope = SimpleNamespace(model_dump=lambda mode: {"envelope": True})
+
+    import runtime.receiver_delivery as module
+    old_prepare, old_dispatch, old_logical = module.PrepareBody, module.DispatchBody, module.logical_payload
+    module.PrepareBody = lambda **kwargs: SimpleNamespace(model_dump=lambda mode: kwargs)
+    module.DispatchBody = lambda **kwargs: SimpleNamespace(model_dump=lambda mode: kwargs)
+    module.logical_payload = lambda value: "same"
+    try:
+        class PreparedCrash(RuntimeError):
+            pass
+
+        def crash_after_prepare(value, receipt):
+            events.append(("prepared-hook", value, receipt))
+            raise PreparedCrash
+
+        adapter.after_prepare = crash_after_prepare
+        with pytest.raises(PreparedCrash):
+            adapter.deliver(
+                envelope, lambda: envelope, invocation=invocation,
+                mark_dispatched=lambda value, evidence: events.append(("marker", value)),
+            )
+    finally:
+        module.PrepareBody, module.DispatchBody, module.logical_payload = old_prepare, old_dispatch, old_logical
+
+    assert [event[0:2] for event in events] == [
+        ("issue", "delivery.prepare"),
+        ("send", "delivery.prepare"),
+        ("prepared-hook", invocation),
     ]
