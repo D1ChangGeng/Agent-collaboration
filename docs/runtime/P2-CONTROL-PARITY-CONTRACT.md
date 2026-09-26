@@ -2,7 +2,7 @@
 
 Status: required P2 supplement; implementation support is determined only by
 the matching Gate record. Gate ID:
-`P2-CONTROL-PARITY`. Contract revision: `2026-09-24.1`.
+`P2-CONTROL-PARITY`. Contract revision: `2026-09-24.2`.
 
 This Gate follows `P2-MANAGEMENT-WORKFLOW` and precedes `P2-REVIEW`. It checks
 two collaboration-control capabilities, not prescribed business
@@ -15,33 +15,36 @@ component or browser observations retain their original scope.
 
 - A **program Harness** is a desktop or CLI Agent Harness, such as Codex,
   Codex CLI, OpenCode or OpenCode Desktop.
-- A **web Harness** is a browser-based Agent Harness, such as ChatGPT or Claude
-  on the web. A remote MCP connection makes it a caller, not automatically an
-  addressable delivery Endpoint or an Agent Session that ACS can wake.
+- A **Chat receiver** is a current, named Chat Agent Session hosted in a browser
+  or desktop app. The first two validation paths are ChatGPT Web and ChatGPT
+  Desktop Chat. Record the exact Host and interface used; MCP caller access
+  alone does not establish a receiving Endpoint or a wakeable Session.
 - A **Root Agent** is an authenticated external Session acting under an explicit
   `project_id` and current management Grant. It is not a new durable Domain
   identity. A user or authorized Root Agent decides whether and where work is
   handed off; the previous Engineer does not gain that decision by being the
   current owner.
-- **Active wake** means an ACS-addressed Message causes the current target web
+- **Active wake** means an ACS-addressed Message causes the current target Chat
   Agent Session to start or resume a Turn without a new user prompt. Authority
   acceptance, Inbox persistence, MCP discovery, a browser notification, or a
   later user-initiated `check_inbox` do not by themselves prove active wake.
 
-## `P2-CONTROL-WEB-RECEIVER-WAKE`
+## `P2-CONTROL-CHAT-RECEIVER-WAKE`
 
-Admit one named web Harness as a target AgentSlot with a current, authenticated
+Admit one named Chat Host as a target AgentSlot with a current, authenticated
 Session and Endpoint whose scoped, directional receive-and-wake capability has
 direct evidence and a valid expiry. From a real program Harness, submit one
 authorized `send_message` to that Slot. Read back the same Message identity
 through `accepted_by_authority`, `target_inbox_committed`, native dispatch,
-native Turn start or resume, acknowledgement and response. Bind the web Host's
+native Turn start or resume, acknowledgement and response. Bind the Chat Host's
 observed Session/Turn to the ACS dispatch; a model-rendered report alone is not
 native readback. Exercise Session replacement or connection loss with one
-deduplicated recovery path. If the named web Host does not expose an active-wake
-capability, record it as unavailable and keep Inbox recovery; do not promote
-that fallback to this scenario's pass. This Gate does not claim every web Host
-supports active wake from one Host's result.
+deduplicated recovery path. Either the browser Chat path or desktop Chat path
+may satisfy this scenario when its entire chain passes; the other path may
+remain `not_run` or `unavailable`. Record each named Host's capability and
+expiry independently. If a Host lacks active wake, keep Inbox recovery as its
+separate continuity result. One Host's pass never asserts capability for every
+Chat Host.
 
 ## `P2-CONTROL-HANDOFF-ACK`
 

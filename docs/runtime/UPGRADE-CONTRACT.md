@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-09-24.1.
+is determined by the named Gate records. Contract revision: 2026-09-24.2.
 
 ## Authority and inputs
 
@@ -125,7 +125,7 @@ The public P2 MCP surface is defined by
 The final collaboration-control parity supplement is
 [P2-CONTROL-PARITY-CONTRACT.md](P2-CONTROL-PARITY-CONTRACT.md); it follows both
 workflow Gates and precedes P2-REVIEW. A documented Gate requirement does not
-claim that the current MCP catalog or a web Host already implements it.
+claim that the current MCP catalog or a Chat Host already implements it.
 Global installation is project-independent; project adoption records one stable
 project_id in the Management Root AGENTS block and machine manifest. Every
 project-scoped runtime tool carries that ID.

@@ -63,7 +63,7 @@ FAULTS = {
     "P2-MGMT-WEB-REVIEWER-FLOW": "perform exact-baseline Review from a web-capable MCP client",
     "P2-MGMT-WATCH-INBOX-RECOVERY": "deliver subscribed change notification and recover through project Inbox",
     "P2-MGMT-SKILL-CONTEXT-PRESENTATION": "present metadata-first Skill knowledge with selective references and Project context",
-    "P2-CONTROL-WEB-RECEIVER-WAKE": "address a web AgentSlot and read back an unsolicited native Turn",
+    "P2-CONTROL-CHAT-RECEIVER-WAKE": "address a current Chat Session through one admitted Host and read back an unsolicited native Turn",
     "P2-CONTROL-HANDOFF-ACK": "obtain one authenticated acknowledgement for a Root-managed handoff",
 }
 SECRET = re.compile(
