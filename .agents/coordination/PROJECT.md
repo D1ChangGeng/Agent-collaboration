@@ -9,8 +9,8 @@ This file is project-owned after first creation. ACHP upgrades preserve it.
 - Skill slug: agent-collaboration-setup
 - Primary branch: `main`
 - Project type: existing source recovered from the v0.1.0 Skill archive
-- Current phase: v0.3.0 Workspace schema 0.3 persistence simplification
-  released and maintained
+- Current phase: v0.4.0 release candidate for the user-journey safety baseline
+  on the minimal Workspace schema 0.3 model
 
 ## Collaboration topology
 
@@ -38,9 +38,9 @@ normal collaboration runtime. Product and design authority is split between
 
 Current milestone: maintain the verified setup-only baseline and the explicit
 non-Git Project Collaboration Workspace / Route control plane while preserving
-the setup/runtime boundary. The v0.3.0 Workspace/Route persistence model is
-published from the verified main branch; future changes require their own
-reviewed migration boundary.
+the setup/runtime boundary. The v0.3.0 Workspace/Route persistence model remains
+the published schema baseline; v0.4.0 hardens lifecycle safety and Agent-facing
+operation guidance without adding runtime recovery state.
 
 ## Critical project-specific constraints
 
@@ -80,7 +80,7 @@ reviewed migration boundary.
 
 ## Version and release identity
 
-- Current version: v0.3.0 (`VERSION`)
+- Current version: v0.4.0 (`VERSION`)
 - Release identity: setup-only `agent-collaboration-setup` Skill, published from
   the `Agent-collaboration` source repository
 - Public GitHub owner: `D1ChangGeng`
