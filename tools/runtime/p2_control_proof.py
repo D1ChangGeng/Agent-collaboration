@@ -50,6 +50,11 @@ def answer(challenge_path: Path, key_path: Path, output: Path, *, host: str,
     }
     value = {"body": body, "signature": sign(key, body)}
     output.write_text(json.dumps(value, sort_keys=True, separators=(",", ":")))
+    if output.exists() and output.stat().st_mode:
+        try:
+            output.chmod(0o600)
+        except OSError:
+            pass
     return value
 
 
