@@ -35,11 +35,11 @@ its Git control directory and common object directory. The Source service
 checks both paths through pinned directory handles; granting only the worktree
 directory leaves its Git metadata outside the admitted Source boundary.
 
-The local installer reports `local_services_ready` after the Python environment,
-Skills, PostgreSQL, Temporal and Management Root are checked. Continue with
-Runtime authority initialization, a scoped credential, exact clean Source
-registration and MCP client discovery. The Agent should report the actual
-result of each step, then mark the project ready only after its MCP calls pass.
+The local installer reports `local_authority_ready` after the Python environment,
+Skills, PostgreSQL, Temporal and private owner Authority are checked. For a clean
+committed Source, it also registers the project and reports `project_registered`
+with a live context readback. The Agent completes any project commit and then
+configures MCP clients. It reports readiness after actual MCP calls pass.
 
 ## Start a project
 

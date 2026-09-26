@@ -8,8 +8,9 @@ description: Install, adopt, configure, validate, repair, upgrade, or remove ACS
 This is the P2 setup Skill contract. Runtime installation packages activate it
 after the global installer, project-adoption service and connection validators
 pass their Gates. The current source checkout also exposes a guarded local
-dependency setup and readiness report; its `local_services_ready` state is
-followed by explicit Runtime identity, Source registration and MCP checks.
+dependency setup and readiness report. The installer establishes a private
+owner Authority, registers a clean committed project Source when supplied, and
+reports the remaining MCP client checks.
 
 Canonical mechanisms: release digest verification, local install preview and
 apply, project setup CLI, read_profile, list_projects, list_connections and

@@ -102,9 +102,9 @@ AI 检查先决条件并完成可自动执行的步骤；你负责系统
 权限和账号确认。
 
 Linux 安装入口先输出计划；指定 `--apply` 后安装锁定的 Python 环境与九个 Skills、
-启动本地服务，并接入指定 Management Root。它报告 `local_services_ready` 和
-剩余的 Runtime 身份、Source 注册与 Harness MCP 检查；AI 完成并回读这些步骤后
-再报告协作就绪。详见[首次使用指南](docs/GETTING-STARTED.md)
+启动本地服务、建立安装者私有 Authority，并接入指定 Management Root。
+项目 Source 已提交且干净时，安装器会完成注册并读回项目上下文。
+AI 随后配置 Harness MCP 连接，验证工具发现后报告协作就绪。详见[首次使用指南](docs/GETTING-STARTED.md)
 和[排错指南](docs/TROUBLESHOOTING.md)。
 
 ChatGPT 网页端可通过[单用户私有 Tunnel Profile](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md)

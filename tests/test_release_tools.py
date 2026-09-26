@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import socket
 import sys
 import tempfile
 import unittest
@@ -132,9 +133,50 @@ class ReleaseToolTests(unittest.TestCase):
             self.assertEqual(path, again)
             self.assertEqual(first["ACS_POSTGRES_PASSWORD"], second["ACS_POSTGRES_PASSWORD"])
             self.assertGreater(len(first["ACS_POSTGRES_PASSWORD"]), 32)
-            self.assertEqual(
-                json.loads(path.read_text())["schema_version"], "acs-local-providers/1"
-            )
+            saved = json.loads(path.read_text())
+            self.assertEqual(saved["schema_version"], "acs-local-providers/2")
+            self.assertEqual(first["ACS_POSTGRES_PORT"], second["ACS_POSTGRES_PORT"])
+            self.assertEqual(first["ACS_TEMPORAL_PORT"], second["ACS_TEMPORAL_PORT"])
+            self.assertEqual(first["COMPOSE_PROJECT_NAME"], second["COMPOSE_PROJECT_NAME"])
+
+    def test_provider_uses_available_port_and_preserves_existing_profile(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        with mock.patch.dict(sys.modules, {"acs_doctor": doctor}):
+            installer = load("acs_install", "acs_install.py")
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as occupied:
+            occupied.bind(("127.0.0.1", 54329))
+            with (
+                tempfile.TemporaryDirectory() as td,
+                mock.patch.object(installer, "private_root", return_value=Path(td)),
+            ):
+                path, environment = installer.local_provider_environment()
+                self.assertNotEqual(environment["ACS_POSTGRES_PORT"], "54329")
+                self.assertEqual(json.loads(path.read_text())["password"],
+                                 environment["ACS_POSTGRES_PASSWORD"])
+                path.write_text(json.dumps({"schema_version": "acs-local-providers/1",
+                                            "password": "p" * 48}))
+                _, legacy = installer.local_provider_environment()
+                self.assertEqual(legacy["ACS_POSTGRES_PORT"], "54329")
+                self.assertEqual(legacy["COMPOSE_PROJECT_NAME"], "acs-local")
+
+    def test_provider_readback_requires_both_healthy_services(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        with mock.patch.dict(sys.modules, {"acs_doctor": doctor}):
+            installer = load("acs_install", "acs_install.py")
+        environment = {"COMPOSE_PROJECT_NAME": "acs-test"}
+        rows = [{"Project": "acs-test", "Service": service,
+                 "State": "running", "Health": "healthy"}
+                for service in ("postgres", "temporal")]
+        output = "\n".join(json.dumps(row) for row in rows)
+        with mock.patch.object(installer.subprocess, "run",
+                               return_value=mock.Mock(stdout=output)):
+            self.assertEqual(len(installer.provider_readback(environment)), 2)
+        rows[1]["Health"] = "starting"
+        output = "\n".join(json.dumps(row) for row in rows)
+        with (mock.patch.object(installer.subprocess, "run",
+                                return_value=mock.Mock(stdout=output)),
+              self.assertRaisesRegex(ValueError, "health readback")):
+            installer.provider_readback(environment)
 
 
 if __name__ == "__main__":
