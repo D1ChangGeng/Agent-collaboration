@@ -1,7 +1,7 @@
 # P2 MCP collaboration and continuation contract
 
 Status: adopted P2 implementation contract. Surface revision:
-acs-p2-mcp-workflow/5.
+acs-p2-mcp-workflow/6.
 
 This contract defines the typed collaboration, messaging and continuation
 surface. Project and web management behavior is defined by
@@ -242,6 +242,15 @@ duplicating GitHub credentials or repository authority.
 submit_command accepts one complete authenticated Domain SurfaceCommand for
 operator, migration and conformance flows. The run alias returns the same
 Domain disposition. Ordinary collaboration uses the typed tools.
+
+The control parity supplement adds `acknowledge_handoff` for the addressed
+collaborator after the Message reaches its Inbox, and `withdraw_handoff` for
+the Root Manager's explicit recovery decision. `handoff_work(require_ack=true)`
+returns a pending handle after the Work assignment and reliable Message commit
+in one Domain transaction. `read_resource(handoff)` distinguishes pending,
+accepted, rejected, withdrawn, cancelled and no-ACK intent from the WorkItem's
+assigned AgentSlot.
+
 
 ## Knowledge Skill layer
 

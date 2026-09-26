@@ -1,7 +1,7 @@
 # P2 project management and web collaboration contract
 
 Status: adopted P2 design contract. MCP surface revision:
-acs-p2-mcp-workflow/5.
+acs-p2-mcp-workflow/6.
 
 This contract defines how external Agent sessions manage one or more ACS
 projects from local Harnesses and web SaaS clients. The machine-readable tool
@@ -166,6 +166,9 @@ Source write tools, messaging and response continuation.
 
 Operator receives identity and connection reads plus submit_command. The run
 compatibility alias maps to the same advanced Domain command contract.
+
+The current tool catalog keeps `submit_command` in the Operator Profile.
+Root Manager uses the typed project management tools.
 
 ## Management list tools
 

@@ -193,7 +193,7 @@ class RouteActions:
             if row is None:
                 raise NotFound("source", args["source_id"])
             return row[0]
-        for field in ("work_handle", "route_handle", "scope_handle", "attempt_handle", "review_handle", "target_handle", "handle"):
+        for field in ("work_handle", "route_handle", "scope_handle", "attempt_handle", "review_handle", "handoff_handle", "target_handle", "handle"):
             value = args.get(field)
             if not value:
                 continue
@@ -220,6 +220,10 @@ class RouteActions:
                 cursor.execute("SELECT m.packet_json->>'target_scope_id' FROM delivery_messages m "
                                "JOIN collaboration_work_links l ON l.tenant_id=m.tenant_id AND l.work_item_id=m.packet_json->>'work_item_id' "
                                "WHERE l.tenant_id=%s AND l.project_id=%s AND m.message_id=%s", parameters)
+            elif kind == "handoff":
+                cursor.execute("SELECT w.scope_id FROM collaboration_handoffs h "
+                               "JOIN work_items w ON w.tenant_id=h.tenant_id AND w.work_item_id=h.work_item_id "
+                               "WHERE h.tenant_id=%s AND h.project_id=%s AND h.handoff_id=%s", parameters)
             elif kind in {"review", "evidence"}:
                 table = "collaboration_review_requests" if kind == "review" else "evidence"
                 identity = "request_id" if kind == "review" else "evidence_id"

@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from runtime.artifacts import ArtifactError
+from runtime.delivery_models import DeliveryPacket
 from runtime.errors import AcceptanceGuardFailed, AuthorizationDenied, NotFound, RevisionConflict
 from runtime.models import (
     ArtifactRef,
@@ -145,6 +146,14 @@ class WorkActions:
             _, work = self._project_work(cursor, project_id, args["handle"])
             data = {"revision": work[1], "state": work[2], "execution_status": work[3],
                     "source_baseline": work[4], "agent_slot_id": work[5]}
+            cursor.execute("SELECT handoff_id,state FROM collaboration_handoffs WHERE tenant_id=%s "
+                           "AND project_id=%s AND work_item_id=%s "
+                           "ORDER BY assigned_work_revision DESC LIMIT 1",
+                           (self.context.tenant_id, project_id, identifier))
+            latest_handoff = cursor.fetchone()
+            data["handoff_handle"] = (handle("handoff", project_id, latest_handoff[0])
+                                      if latest_handoff else None)
+            data["acknowledgement"] = latest_handoff[1] if latest_handoff else "not_required"
             if view in {"detail", "content"}:
                 data["definition"] = work[6]
             elif view == "history":
@@ -156,6 +165,30 @@ class WorkActions:
             elif view == "evidence":
                 return self._list_evidence(authority, cursor, project, command,
                     {"project_id": project_id, "target_handle": args["handle"], "limit": args.get("limit", 50)}, credential)
+        elif kind == "handoff":
+            cursor.execute("SELECT work_item_id,assigned_work_revision,revision,from_agent_slot,"
+                           "to_agent_slot,to_principal_ref,initiated_by,source_state,source_digest,"
+                           "context_handles,evidence_handles,unresolved_items,message_id,state,"
+                           "decision_reason,decided_by,decided_grant_ref,decided_at,created_at "
+                           "FROM collaboration_handoffs WHERE tenant_id=%s AND project_id=%s "
+                           "AND handoff_id=%s", (self.context.tenant_id, project_id, identifier))
+            row = cursor.fetchone()
+            if row is None:
+                raise NotFound("handoff", identifier)
+            if command.principal_ref not in {row[5], row[6]}:
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            data = {"work_handle": handle("work", project_id, row[0]),
+                "assigned_work_revision": row[1], "revision": row[2],
+                "from_agent_slot": row[3], "to_agent_slot": row[4],
+                "source_digest": row[8], "state": row[13],
+                "message_handle": handle("message", project_id, row[12]) if row[12] else None,
+                "decision_reason": row[14], "decided_by": row[15],
+                "decided_grant_ref": row[16],
+                "decided_at": row[17].isoformat() if row[17] else None,
+                "created_at": row[18].isoformat()}
+            if view in {"detail", "content"}:
+                data.update(source_state=row[7], context_handles=row[9],
+                            evidence_handles=row[10], unresolved_items=row[11])
         elif kind == "route":
             cursor.execute("SELECT revision,state,scope_id,definition FROM collaboration_routes "
                            "WHERE tenant_id=%s AND project_id=%s AND route_id=%s",
@@ -300,14 +333,26 @@ class WorkActions:
 
     @staticmethod
     def _require_quiescent(cursor, tenant, work_id, work):
-        if work[2] != "candidate" or work[3] == "running":
+        if work[2] != "candidate" or work[3] in {"running", "failed", "cancelled"}:
             raise AcceptanceGuardFailed("work intent cannot change while running or sealed for acceptance")
+        cursor.execute("SELECT 1 FROM collaboration_handoffs WHERE tenant_id=%s AND work_item_id=%s "
+                       "AND state='pending' LIMIT 1", (tenant, work_id))
+        if cursor.fetchone():
+            raise AcceptanceGuardFailed("work has a pending handoff acknowledgement")
         cursor.execute("SELECT 1 FROM delivery_messages WHERE tenant_id=%s "
                        "AND packet_json->>'work_item_id'=%s "
-                       "AND state IN ('queued','delivering','retry_wait','uncertain') LIMIT 1",
+                       "AND state IN ('queued','delivering','retry_wait','uncertain') "
+                       "AND NOT EXISTS (SELECT 1 FROM collaboration_handoffs h "
+                       "WHERE h.tenant_id=delivery_messages.tenant_id "
+                       "AND h.message_id=delivery_messages.message_id "
+                       "AND h.state IN ('accepted','rejected','withdrawn','cancelled')) LIMIT 1",
                        (tenant, work_id))
         if cursor.fetchone():
             raise AcceptanceGuardFailed("work has unresolved delivery")
+        cursor.execute("SELECT 1 FROM attempts WHERE tenant_id=%s AND work_item_id=%s "
+                       "AND status='running' LIMIT 1", (tenant, work_id))
+        if cursor.fetchone():
+            raise AcceptanceGuardFailed("work has a running Attempt")
         cursor.execute("SELECT 1 FROM leases l JOIN attempts a ON a.attempt_id=l.owner_attempt_id "
                        "AND a.tenant_id=l.tenant_id WHERE a.tenant_id=%s AND a.work_item_id=%s "
                        "AND l.status='granted' AND l.expires_at>clock_timestamp() LIMIT 1", (tenant, work_id))
@@ -317,6 +362,15 @@ class WorkActions:
                        "AND status IN ('prepared','uncertain') LIMIT 1", (tenant, work_id))
         if cursor.fetchone():
             raise AcceptanceGuardFailed("work has an unresolved protected effect")
+
+    @staticmethod
+    def _require_confirmed_handoff(cursor, tenant, work_id):
+        cursor.execute("SELECT state FROM collaboration_handoffs WHERE tenant_id=%s "
+                       "AND work_item_id=%s ORDER BY assigned_work_revision DESC LIMIT 1",
+                       (tenant, work_id))
+        latest = cursor.fetchone()
+        if latest and latest[0] in {"pending", "rejected", "withdrawn"}:
+            raise AcceptanceGuardFailed("handoff acknowledgement is required")
 
     def _save_work_revision(self, cursor, command, args, work_id, work):
         cursor.execute("INSERT INTO work_item_revisions VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
@@ -375,6 +429,9 @@ class WorkActions:
         unresolved_effects = [{"effect_handle": handle("effect", args["project_id"], row[0]),
             "state": row[1], "readback_ref": row[2]} for row in cursor.fetchall()]
         self._save_work_revision(cursor, command, args, work_id, work)
+        cursor.execute("UPDATE collaboration_handoffs SET state='cancelled',revision=revision+1 "
+                       "WHERE tenant_id=%s AND work_item_id=%s AND state='pending'",
+                       (self.context.tenant_id, work_id))
         definition = dict(work[6], cancellation={"reason": reason,
             "requested_by": command.principal_ref, "command_id": command.command_id})
         cursor.execute("UPDATE work_items SET execution_status='cancelled',revision=revision+1,"
@@ -399,14 +456,25 @@ class WorkActions:
             "operation_id": result.operation_id, "accepted_state_changed": False,
             "attempts": attempts, "unresolved_effects": unresolved_effects}, follow
 
-    def _handoff_work(self, authority, cursor, _project, command, args, _credential):
+    def _handoff_work(self, authority, cursor, project, command, args, _credential):
+        if self.profile != "root_manager":
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         work_id, work = self._project_work(cursor, args["project_id"], args["work_handle"])
         authority._authorize(command, cursor, "work.manage", work[0])
         if work[1] != args["expected_revision"]:
             raise RevisionConflict(work_id, args["expected_revision"], work[1])
         self._require_quiescent(cursor, self.context.tenant_id, work_id, work)
+        cursor.execute("SELECT state,previous_execution_status,assigned_work_revision "
+                       "FROM collaboration_handoffs WHERE tenant_id=%s AND work_item_id=%s "
+                       "ORDER BY assigned_work_revision DESC LIMIT 1",
+                       (self.context.tenant_id, work_id))
+        prior_handoff = cursor.fetchone()
+        previous_status = (prior_handoff[1] if prior_handoff and prior_handoff[0] in {"rejected", "withdrawn"}
+                           and work[3] == "blocked" else work[3])
         if args["from_agent_slot"] != work[5]:
             raise ValueError("handoff origin differs from current owner")
+        if args["to_agent_slot"] == work[5]:
+            raise ValueError("handoff target is already the current owner")
         cursor.execute("SELECT m.principal_ref,m.grant_ref,m.profile FROM collaboration_team_members m "
                        "JOIN agent_slots s ON s.agent_slot_id=m.agent_slot_id AND s.tenant_id=m.tenant_id "
                        "WHERE m.tenant_id=%s AND m.project_id=%s AND m.scope_id=%s AND m.agent_slot_id=%s "
@@ -415,8 +483,16 @@ class WorkActions:
         target = cursor.fetchone()
         if target is None:
             raise NotFound("collaborator", args["to_agent_slot"])
-        authority._authorize_delegation(cursor, command.model_copy(update={
-            "principal_ref": target[0], "grant_ref": target[1]}), "profile." + target[2])
+        target_command = command.model_copy(update={
+            "principal_ref": target[0], "grant_ref": target[1]})
+        authority._authorize_delegation(cursor, target_command, "profile." + target[2])
+        if args["require_ack"]:
+            cursor.execute("SELECT 1 FROM grants WHERE grant_ref=%s AND scope_id=%s",
+                           (target[1], work[0]))
+            if cursor.fetchone() is None:
+                raise AuthorizationDenied(target[0], target[1])
+            for permission in ("handoff.ack", "resources.read", "messages.read", "message.read"):
+                authority._authorize_delegation(cursor, target_command, permission)
         source = args["source_state"]
         required = {"branch", "commit", "tree", "working_tree", "push", "receiver_sync"}
         if not required <= set(source) or source["commit"] != work[4]:
@@ -427,25 +503,241 @@ class WorkActions:
             kind = value.split(":", 1)[0]
             if kind not in {"project", "route", "work"}:
                 raise ValueError("handoff context kind is not supported")
-            parse_handle(value, kind, args["project_id"])
+            identifier = parse_handle(value, kind, args["project_id"])
+            if kind == "project":
+                if identifier != project[1]:
+                    raise NotFound("project", identifier)
+            elif kind == "route":
+                cursor.execute("SELECT 1 FROM collaboration_routes WHERE tenant_id=%s "
+                               "AND project_id=%s AND route_id=%s AND scope_id=%s AND state='active'",
+                               (self.context.tenant_id, args["project_id"], identifier, work[0]))
+                if cursor.fetchone() is None:
+                    raise NotFound("route", identifier)
+            else:
+                cursor.execute("SELECT 1 FROM collaboration_work_links l JOIN work_items w "
+                               "USING(tenant_id,work_item_id) WHERE l.tenant_id=%s "
+                               "AND l.project_id=%s AND l.work_item_id=%s AND w.scope_id=%s",
+                               (self.context.tenant_id, args["project_id"], identifier, work[0]))
+                if cursor.fetchone() is None:
+                    raise NotFound("work_item", identifier)
         for value in args["evidence_handles"]:
             self._evidence(cursor, args["project_id"], value, work_id)
+        message_id = None
+        handoff_id = "handoff-" + uuid.uuid4().hex
+        endpoint = None
+        if args["require_ack"]:
+            cursor.execute("SELECT session_ref FROM collaboration_notification_sessions "
+                           "WHERE tenant_id=%s AND project_id=%s AND owner_ref=%s AND state='active' "
+                           "AND expires_at>clock_timestamp()",
+                           (self.context.tenant_id, args["project_id"], target[0]))
+            if cursor.fetchone() is None:
+                raise AcceptanceGuardFailed("receiving collaborator has no current Session")
+            cursor.execute("SELECT endpoint_id,revision FROM delivery_endpoints WHERE tenant_id=%s "
+                           "AND scope_id=%s AND agent_slot_id=%s AND status='active' "
+                           "AND expires_at>clock_timestamp() ORDER BY endpoint_id FOR UPDATE",
+                           (self.context.tenant_id, work[0], args["to_agent_slot"]))
+            endpoints = cursor.fetchall()
+            if len(endpoints) != 1:
+                raise AcceptanceGuardFailed("receiving collaborator needs one current Endpoint")
+            endpoint = endpoints[0]
+            authority._authorize(command, cursor, "message.send", work[0])
+            message_id = "handoff-message-" + uuid.uuid4().hex
         self._save_work_revision(cursor, command, args, work_id, work)
-        definition = dict(work[6], handoff={key: args[key] for key in (
+        handoff_definition = {key: args[key] for key in (
             "from_agent_slot", "to_agent_slot", "source_state", "context_handles", "evidence_handles",
-            "unresolved_items", "require_ack")})
-        cursor.execute("UPDATE work_items SET agent_slot_id=%s,revision=revision+1,updated_at=clock_timestamp() "
+            "unresolved_items", "require_ack")}
+        handoff_definition["handoff_handle"] = handle("handoff", args["project_id"], handoff_id)
+        definition = dict(work[6], handoff=handoff_definition)
+        cursor.execute("UPDATE work_items SET agent_slot_id=%s,revision=revision+1,execution_status=%s,"
+                       "updated_at=clock_timestamp() "
                        "WHERE tenant_id=%s AND work_item_id=%s",
-                       (args["to_agent_slot"], self.context.tenant_id, work_id))
+                       (args["to_agent_slot"], "blocked" if args["require_ack"] else previous_status,
+                        self.context.tenant_id, work_id))
         cursor.execute("UPDATE collaboration_work_links SET definition=%s WHERE tenant_id=%s "
                        "AND project_id=%s AND work_item_id=%s",
                        (canonical(definition), self.context.tenant_id, args["project_id"], work_id))
+        message_result = None
+        source_digest = digest(source)
+        cursor.execute("INSERT INTO collaboration_handoffs(tenant_id,project_id,handoff_id,work_item_id,"
+                           "assigned_work_revision,from_agent_slot,to_agent_slot,to_principal_ref,to_grant_ref,"
+                           "initiated_by,source_state,source_digest,context_handles,evidence_handles,"
+                           "unresolved_items,message_id,previous_execution_status,state) "
+                           "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                           (self.context.tenant_id, args["project_id"], handoff_id, work_id,
+                            work[1]+1, work[5], args["to_agent_slot"], target[0], target[1],
+                            command.principal_ref, canonical(source), source_digest,
+                            canonical(args["context_handles"]), canonical(args["evidence_handles"]),
+                            canonical(args["unresolved_items"]), message_id, previous_status,
+                            "pending" if args["require_ack"] else "not_required"))
+        if message_id and endpoint:
+            message_command = command.model_copy(update={
+                "command_id": command.command_id + ":handoff-message",
+                "idempotency_key": command.idempotency_key + ":handoff-message",
+                "command_type": "message.send", "target_kind": "message", "target_id": message_id,
+                "expected_revision": work[1]+1,
+            })
+            packet = DeliveryPacket(
+                work_item_id=work_id, target_scope_id=work[0],
+                target_agent_slot_id=args["to_agent_slot"], accepted_revision=0,
+                goal="Review and acknowledge the assigned WorkItem",
+                accepted_state_summary="Read the current accepted revision from ACS",
+                request=canonical({"handoff_handle": handle("handoff", args["project_id"], handoff_id),
+                    "work_handle": args["work_handle"], "work_revision": work[1]+1,
+                    "source_digest": source_digest}),
+                source_baseline=work[4], context_digests=(source_digest,),
+                expected_response="Use acknowledge_handoff with the exact revision and source digest",
+                activation="message_only", delivery_policy="queue_until_idle",
+                deadline=command.deadline,
+            )
+            message_result = authority.send_message(message_command, packet,
+                endpoint_id=endpoint[0], binding_revision=endpoint[1])
         result = self._management_record(authority, cursor, command, args, target_kind="work_item",
             target_id=work_id, state="work.handed_off", revision=work[1]+1)
-        return "handed_off", {"project_id": args["project_id"], "work_handle": args["work_handle"],
+        data = {"project_id": args["project_id"], "work_handle": args["work_handle"],
             "revision": work[1]+1, "operation_id": result.operation_id, "source_state": source,
             "assigned_to": args["to_agent_slot"], "acknowledgement": "pending" if args["require_ack"] else "not_required",
-            "source_observation_class": "sender_reported"}, []
+            "source_observation_class": "sender_reported"}
+        follow_ups = []
+        data.update(handoff_handle=handle("handoff", args["project_id"], handoff_id),
+                    handoff_revision=1, source_digest=source_digest)
+        follow_ups.append({"rel": "read_acknowledgement", "tool": "read_resource",
+            "arguments": {"project_id": args["project_id"], "handle": data["handoff_handle"],
+                          "view": "detail"}})
+        if message_id and message_result:
+            data.update(
+                message_handle=handle("message", args["project_id"], message_id),
+                message_operation_id=message_result.operation_id)
+            follow_ups.append({"rel": "read_delivery", "tool": "read_message",
+                "arguments": {"project_id": args["project_id"], "handle": data["message_handle"],
+                              "consume": False}})
+        return "pending" if args["require_ack"] else "handed_off", data, follow_ups
+
+    def _acknowledge_handoff(self, authority, cursor, project, command, args, _credential):
+        handoff_id = parse_handle(args["handoff_handle"], "handoff", args["project_id"])
+        # Match Root cancellation's lock order: Work first, then handoff.
+        cursor.execute("SELECT work_item_id FROM collaboration_handoffs WHERE tenant_id=%s "
+                       "AND project_id=%s AND handoff_id=%s",
+                       (self.context.tenant_id, args["project_id"], handoff_id))
+        identity = cursor.fetchone()
+        if identity is None:
+            raise NotFound("handoff", handoff_id)
+        work_handle = handle("work", args["project_id"], identity[0])
+        work_id, work = self._project_work(cursor, args["project_id"], work_handle)
+        cursor.execute("SELECT work_item_id,assigned_work_revision,revision,to_agent_slot,"
+                       "to_principal_ref,to_grant_ref,source_digest,previous_execution_status,state,message_id "
+                       "FROM collaboration_handoffs WHERE tenant_id=%s AND project_id=%s AND handoff_id=%s "
+                       "FOR UPDATE", (self.context.tenant_id, args["project_id"], handoff_id))
+        handoff = cursor.fetchone()
+        if handoff is None or handoff[0] != work_id:
+            raise NotFound("handoff", handoff_id)
+        if handoff[4] != command.principal_ref or project[5] != handoff[3]:
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+        cursor.execute("SELECT 1 FROM collaboration_team_members m JOIN agent_slots s "
+                       "ON s.tenant_id=m.tenant_id AND s.agent_slot_id=m.agent_slot_id "
+                       "WHERE m.tenant_id=%s AND m.project_id=%s AND m.agent_slot_id=%s "
+                       "AND m.principal_ref=%s AND m.grant_ref=%s AND m.status='active' "
+                       "AND s.status='active' FOR UPDATE OF m,s",
+                       (self.context.tenant_id, args["project_id"], handoff[3],
+                        command.principal_ref, authority.context.grant_ref))
+        if cursor.fetchone() is None:
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+        cursor.execute("SELECT 1 FROM collaboration_notification_sessions WHERE tenant_id=%s "
+                       "AND project_id=%s AND owner_ref=%s AND state='active' "
+                       "AND expires_at>clock_timestamp()",
+                       (self.context.tenant_id, args["project_id"], command.principal_ref))
+        if cursor.fetchone() is None:
+            raise AcceptanceGuardFailed("receiving collaborator has no current Session")
+        if handoff[2] != args["expected_handoff_revision"]:
+            raise RevisionConflict(handoff_id, args["expected_handoff_revision"], handoff[2])
+        if handoff[8] != "pending":
+            raise AcceptanceGuardFailed("handoff is no longer pending")
+        cursor.execute("SELECT 1 FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s "
+                       "AND layer='target_inbox_committed'",
+                       (self.context.tenant_id, handoff[9]))
+        if cursor.fetchone() is None:
+            raise AcceptanceGuardFailed("handoff Message has not reached the receiving Inbox")
+        if handoff[6] != args["source_digest"]:
+            raise AcceptanceGuardFailed("handoff Source state differs")
+        if work[1] != args["expected_work_revision"] or work[1] != handoff[1]:
+            raise RevisionConflict(work_id, args["expected_work_revision"], work[1])
+        if work[5] != handoff[3] or work[3] != "blocked":
+            raise AcceptanceGuardFailed("handoff assignment changed")
+        decision = args["decision"]
+        if decision not in {"accepted", "rejected"}:
+            raise ValueError("handoff decision is invalid")
+        if not 1 <= len(args["reason"]) <= 2048:
+            raise ValueError("handoff reason is outside bounds")
+        self._save_work_revision(cursor, command, args, work_id, work)
+        acknowledgement = {"decision": decision, "reason": args["reason"],
+                           "by": command.principal_ref, "grant_ref": authority.context.grant_ref}
+        definition = dict(work[6], handoff=dict(work[6]["handoff"], acknowledgement=acknowledgement))
+        cursor.execute("UPDATE work_items SET execution_status=%s,revision=revision+1,"
+                       "updated_at=clock_timestamp() WHERE tenant_id=%s AND work_item_id=%s",
+                       (handoff[7] if decision == "accepted" else "blocked", self.context.tenant_id, work_id))
+        cursor.execute("UPDATE collaboration_work_links SET definition=%s WHERE tenant_id=%s "
+                       "AND project_id=%s AND work_item_id=%s",
+                       (canonical(definition), self.context.tenant_id, args["project_id"], work_id))
+        cursor.execute("UPDATE collaboration_handoffs SET state=%s,revision=revision+1,"
+                       "decision_reason=%s,decided_by=%s,decided_grant_ref=%s,decided_at=clock_timestamp() "
+                       "WHERE tenant_id=%s AND project_id=%s AND handoff_id=%s",
+                       (decision, args["reason"], command.principal_ref, authority.context.grant_ref,
+                        self.context.tenant_id, args["project_id"], handoff_id))
+        result = self._management_record(authority, cursor, command, args, target_kind="work_item",
+            target_id=work_id, state="handoff." + decision, revision=work[1]+1)
+        return decision, {"project_id": args["project_id"], "handoff_handle": args["handoff_handle"],
+            "handoff_revision": handoff[2]+1, "work_handle": work_handle,
+            "work_revision": work[1]+1, "assigned_to": handoff[3],
+            "acknowledgement": decision, "operation_id": result.operation_id}, []
+
+    def _withdraw_handoff(self, authority, cursor, _project, command, args, _credential):
+        if self.profile != "root_manager":
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+        handoff_id = parse_handle(args["handoff_handle"], "handoff", args["project_id"])
+        cursor.execute("SELECT work_item_id FROM collaboration_handoffs WHERE tenant_id=%s "
+                       "AND project_id=%s AND handoff_id=%s",
+                       (self.context.tenant_id, args["project_id"], handoff_id))
+        identity = cursor.fetchone()
+        if identity is None:
+            raise NotFound("handoff", handoff_id)
+        work_handle = handle("work", args["project_id"], identity[0])
+        work_id, work = self._project_work(cursor, args["project_id"], work_handle)
+        authority._authorize(command, cursor, "work.manage", work[0])
+        cursor.execute("SELECT revision,assigned_work_revision,to_agent_slot,state "
+                       "FROM collaboration_handoffs WHERE tenant_id=%s AND project_id=%s "
+                       "AND handoff_id=%s FOR UPDATE",
+                       (self.context.tenant_id, args["project_id"], handoff_id))
+        handoff = cursor.fetchone()
+        if handoff is None:
+            raise NotFound("handoff", handoff_id)
+        if handoff[0] != args["expected_handoff_revision"]:
+            raise RevisionConflict(handoff_id, args["expected_handoff_revision"], handoff[0])
+        if work[1] != args["expected_work_revision"] or work[1] != handoff[1]:
+            raise RevisionConflict(work_id, args["expected_work_revision"], work[1])
+        if handoff[3] != "pending" or work[5] != handoff[2] or work[3] != "blocked":
+            raise AcceptanceGuardFailed("handoff is no longer pending on this WorkItem")
+        if not 1 <= len(args["reason"]) <= 2048:
+            raise ValueError("withdrawal reason is outside bounds")
+        self._save_work_revision(cursor, command, args, work_id, work)
+        definition = dict(work[6], handoff=dict(work[6]["handoff"],
+            withdrawal={"reason": args["reason"], "by": command.principal_ref}))
+        cursor.execute("UPDATE work_items SET revision=revision+1,updated_at=clock_timestamp() "
+                       "WHERE tenant_id=%s AND work_item_id=%s",
+                       (self.context.tenant_id, work_id))
+        cursor.execute("UPDATE collaboration_work_links SET definition=%s WHERE tenant_id=%s "
+                       "AND project_id=%s AND work_item_id=%s",
+                       (canonical(definition), self.context.tenant_id, args["project_id"], work_id))
+        cursor.execute("UPDATE collaboration_handoffs SET state='withdrawn',revision=revision+1,"
+                       "decision_reason=%s,decided_by=%s,decided_grant_ref=%s,decided_at=clock_timestamp() "
+                       "WHERE tenant_id=%s AND project_id=%s AND handoff_id=%s",
+                       (args["reason"], command.principal_ref, authority.context.grant_ref,
+                        self.context.tenant_id, args["project_id"], handoff_id))
+        result = self._management_record(authority, cursor, command, args, target_kind="work_item",
+            target_id=work_id, state="handoff.withdrawn", revision=work[1]+1)
+        return "withdrawn", {"project_id": args["project_id"],
+            "handoff_handle": args["handoff_handle"], "handoff_revision": handoff[0]+1,
+            "work_handle": work_handle, "work_revision": work[1]+1,
+            "assigned_to": handoff[2], "acknowledgement": "withdrawn",
+            "operation_id": result.operation_id}, []
 
     def _evidence(self, cursor, project_id, evidence_handle, work_id=None):
         evidence_id = parse_handle(evidence_handle, "evidence", project_id)
@@ -462,6 +754,7 @@ class WorkActions:
 
     def _request_review(self, authority, cursor, _project, command, args, _credential):
         work_id, work = self._project_work(cursor, args["project_id"], args["work_handle"])
+        self._require_confirmed_handoff(cursor, self.context.tenant_id, work_id)
         if work[1] != args["expected_work_revision"]:
             raise RevisionConflict(work_id, args["expected_work_revision"], work[1])
         if args["source_baseline"] != work[4]:
@@ -601,6 +894,7 @@ class WorkActions:
     def _accept_work(self, authority, cursor, _project, command, args, _credential):
         """Apply an explicitly authorized Finalizer decision through all Core guards."""
         work_id, work = self._project_work(cursor, args["project_id"], args["work_handle"])
+        self._require_confirmed_handoff(cursor, self.context.tenant_id, work_id)
         if work[1] != args["expected_revision"]:
             raise RevisionConflict(work_id, args["expected_revision"], work[1])
         if args["decision"] not in {"acceptance_ready", "accepted"}:

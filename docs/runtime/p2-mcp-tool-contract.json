@@ -1,6 +1,6 @@
 {
-  "schema_version": "acs-p2-mcp-tool-contract/5",
-  "surface_revision": "acs-p2-mcp-workflow/5",
+  "schema_version": "acs-p2-mcp-tool-contract/6",
+  "surface_revision": "acs-p2-mcp-workflow/6",
   "server": "agent-collaboration-runtime",
   "naming_convention": "concise_action_phrase",
   "naming_principles": [
@@ -202,7 +202,7 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-list-work/1",
+        "schema_version": "acs-mcp-list-work/2",
         "required": [
           "project_id"
         ],
@@ -420,7 +420,7 @@
     },
     "read_resource": {
       "title": "Read collaboration resource",
-      "description": "Read one known Project, Route, WorkItem, Evidence, Artifact or AcceptedState handle at an exact revision without consuming Inbox state.",
+      "description": "Read one known Project, Route, WorkItem, Handoff, Evidence, Artifact or AcceptedState handle at an exact revision without consuming Inbox state.",
       "selection_guidance": "Use after a list or result supplies a stable handle.",
       "annotations": {
         "readOnlyHint": true,
@@ -429,7 +429,7 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-read-resource/4",
+        "schema_version": "acs-mcp-read-resource/5",
         "required": [
           "project_id",
           "handle"
@@ -838,7 +838,7 @@
     },
     "handoff_work": {
       "title": "Hand off collaboration work",
-      "description": "Transfer WorkItem responsibility with exact source state, context, evidence, unresolved items and acknowledgement policy.",
+      "description": "Assign an existing WorkItem and persist exact source state, context, evidence and unresolved items. With require_ack=true, atomically address B and return a pending handoff handle; assignment and acceptance remain separate.",
       "selection_guidance": "Use for Session, AgentSlot or role ownership transfer.",
       "annotations": {
         "readOnlyHint": false,
@@ -847,7 +847,7 @@
         "openWorldHint": true
       },
       "input_schema": {
-        "schema_version": "acs-mcp-handoff-work/1",
+        "schema_version": "acs-mcp-handoff-work/2",
         "required": [
           "client_request_id",
           "project_id",
@@ -868,6 +868,64 @@
       "security_scopes": [
         "work.manage",
         "messages.send"
+      ]
+    },
+    "acknowledge_handoff": {
+      "title": "Acknowledge assigned handoff",
+      "description": "The receiving collaborator accepts or rejects the exact handoff and Work revision under its own current Grant.",
+      "selection_guidance": "Use after reading an addressed handoff; Inbox consumption or transport ACK is not responsibility acceptance.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-acknowledge-handoff/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "handoff_handle",
+          "expected_handoff_revision",
+          "expected_work_revision",
+          "source_digest",
+          "decision",
+          "reason",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "handoff_acknowledgement",
+      "security_scopes": [
+        "handoff.ack"
+      ]
+    },
+    "withdraw_handoff": {
+      "title": "Withdraw pending handoff",
+      "description": "Root Manager explicitly withdraws a pending handoff while preserving its assignment and history; a later handoff or Work cancellation is a separate decision.",
+      "selection_guidance": "Use when B cannot respond and Root needs to reassign the existing WorkItem.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-withdraw-handoff/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "handoff_handle",
+          "expected_handoff_revision",
+          "expected_work_revision",
+          "reason",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "handoff_acknowledgement",
+      "security_scopes": [
+        "work.manage"
       ]
     },
     "send_message": {
@@ -1516,6 +1574,13 @@
       "handoff_state",
       "acknowledgement"
     ],
+    "handoff_acknowledgement": [
+      "operation",
+      "handoff_handle",
+      "work_handle",
+      "work_revision",
+      "acknowledgement"
+    ],
     "review_request_receipt": [
       "operation",
       "review_handle",
@@ -1588,6 +1653,8 @@
       "create_work",
       "revise_work",
       "handoff_work",
+      "acknowledge_handoff",
+      "withdraw_handoff",
       "send_message",
       "request_review",
       "submit_review",
@@ -1649,6 +1716,8 @@
       "create_work",
       "revise_work",
       "handoff_work",
+      "acknowledge_handoff",
+      "withdraw_handoff",
       "send_message",
       "request_review",
       "accept_work",
@@ -1677,6 +1746,7 @@
       "read_file",
       "read_source",
       "read_diff",
+      "acknowledge_handoff",
       "submit_review",
       "watch_changes",
       "wait_for_response"
@@ -1703,7 +1773,7 @@
       "configure_team",
       "create_work",
       "revise_work",
-      "handoff_work",
+      "acknowledge_handoff",
       "send_message",
       "request_review",
       "watch_changes",
@@ -1727,6 +1797,7 @@
       "read_file",
       "read_source",
       "read_diff",
+      "acknowledge_handoff",
       "send_message",
       "wait_for_response",
       "apply_patch",

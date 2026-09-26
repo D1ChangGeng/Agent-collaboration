@@ -1,6 +1,6 @@
 {
   "schema_version": "acs-p2-skill-contract/2",
-  "surface_revision": "acs-p2-mcp-workflow/5",
+  "surface_revision": "acs-p2-mcp-workflow/6",
   "model": "metadata-first knowledge modules with lazy references",
   "setup_exception": "agent-collaboration-setup uses guarded procedures for installation and migration",
   "presentation": {

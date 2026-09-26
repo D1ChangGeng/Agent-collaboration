@@ -518,6 +518,7 @@ class EnrollmentAuthority:
             runtime, node, binding, _, runtime_expiry = self._active_runtime(cursor, request.runtime_id)
             if request.expected_work_item_revision != work[2]:
                 raise RevisionConflict(request.work_item_id, request.expected_work_item_revision, int(work[2]))
+            self.authority._require_confirmed_project_handoff(cursor, request.work_item_id)
             if (work[0] != runtime["scope_id"] or work[5] != runtime["agent_slot_id"] or work[3] != request.source_baseline):
                 raise AcceptanceGuardFailed("Attempt WorkItem/Scope/Slot/source binding differs")
             observed_start = self._time(request.observed_started_at)
@@ -571,6 +572,7 @@ class EnrollmentAuthority:
         work = cursor.fetchone()
         if work != (attempt["scope_id"], attempt["agent_slot_id"], attempt["source_baseline"]):
             raise AcceptanceGuardFailed("Attempt current WorkItem/source binding differs")
+        self.authority._require_confirmed_project_handoff(cursor, attempt["work_item_id"])
         cursor.execute(
             "SELECT p.command_json,p.input_json,p.signature,p.verified_at,c.message_hex,c.expires_at,c.consumed_by "
             "FROM enrolled_node_command_proofs p JOIN enrolled_node_challenges c ON c.challenge_id=p.challenge_id "

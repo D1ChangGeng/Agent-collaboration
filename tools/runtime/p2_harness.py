@@ -16,7 +16,7 @@ from typing import Any
 INVENTORY_SCHEMA = "acs-p2-readonly-inventory/2"
 WORKSPACE_SCHEMA = "acs-p2-runner-workspace/3"
 MANIFEST_SCHEMA = "acs-p2-runner-manifest/1"
-MCP_SURFACE_REVISION = "acs-p2-mcp-workflow/5"
+MCP_SURFACE_REVISION = "acs-p2-mcp-workflow/6"
 REQUIRED_EVIDENCE = (
     "command_ids", "operation_ids", "message_ids", "event_ids", "receipts",
     "raw_outputs", "fault_injection", "source_readback", "artifact_readback",
@@ -63,6 +63,8 @@ FAULTS = {
     "P2-MGMT-WEB-REVIEWER-FLOW": "perform exact-baseline Review from a web-capable MCP client",
     "P2-MGMT-WATCH-INBOX-RECOVERY": "deliver subscribed change notification and recover through project Inbox",
     "P2-MGMT-SKILL-CONTEXT-PRESENTATION": "present metadata-first Skill knowledge with selective references and Project context",
+    "P2-CONTROL-WEB-RECEIVER-WAKE": "address a web AgentSlot and read back an unsolicited native Turn",
+    "P2-CONTROL-HANDOFF-ACK": "obtain one authenticated acknowledgement for a Root-managed handoff",
 }
 SECRET = re.compile(
     r"(?i)\"?(password|passwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|authorization)\"?\s*[:=]"
@@ -116,7 +118,8 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def contract_scenarios(contract: dict[str, Any]) -> dict[str, list[str]]:
     gates = contract.get("gates", {})
-    counts = {"P2-CODEX": 8, "P2-OPENCODE": 8, "P2-MCP-WORKFLOW": 12, "P2-MANAGEMENT-WORKFLOW": 12}
+    counts = {"P2-CODEX": 8, "P2-OPENCODE": 8, "P2-MCP-WORKFLOW": 12,
+              "P2-MANAGEMENT-WORKFLOW": 12, "P2-CONTROL-PARITY": 2}
     result = {
         gate: gates.get(gate, {}).get("scenarios")
         for gate in counts
@@ -278,7 +281,8 @@ def initialize(inventory_path: Path, contract_path: Path, output: Path, source_r
     workspace = {
         "schema_version": WORKSPACE_SCHEMA,
         "status": "not_run",
-        "execution_order": ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW", "P2-MANAGEMENT-WORKFLOW"],
+        "execution_order": ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW",
+                            "P2-MANAGEMENT-WORKFLOW", "P2-CONTROL-PARITY"],
         "mcp_surface_revision": MCP_SURFACE_REVISION,
         "blockers": blocked,
         "credentials_copied": False,
@@ -304,6 +308,11 @@ def initialize(inventory_path: Path, contract_path: Path, output: Path, source_r
             scenarios["P2-MANAGEMENT-WORKFLOW"],
             management_blockers,
         ),
+    )
+    control_blockers = blocked + ["P2-MANAGEMENT-WORKFLOW prerequisite has not passed"]
+    write_json(
+        output / "P2-CONTROL-PARITY.json",
+        gate_record("P2-CONTROL-PARITY", scenarios["P2-CONTROL-PARITY"], control_blockers),
     )
     write_json(output / "RUN-MANIFEST.json", build_manifest(output, inventory))
     return workspace

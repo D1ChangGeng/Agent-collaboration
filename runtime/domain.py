@@ -253,6 +253,18 @@ class DomainAuthority:
                 authority._transaction_connection = connection
                 yield authority, connection
 
+    def _require_confirmed_project_handoff(self, cursor, work_item_id: str) -> None:
+        """Protect Domain execution/acceptance even when called outside project MCP."""
+        cursor.execute("SELECT to_regclass('collaboration_handoffs')")
+        if cursor.fetchone()[0] is None:
+            return
+        cursor.execute("SELECT state FROM collaboration_handoffs WHERE tenant_id=%s "
+                       "AND work_item_id=%s ORDER BY assigned_work_revision DESC LIMIT 1",
+                       (self.context.tenant_id, work_item_id))
+        latest = cursor.fetchone()
+        if latest and latest[0] in {"pending", "rejected", "withdrawn"}:
+            raise AcceptanceGuardFailed("handoff acknowledgement is required")
+
     def initialize(self) -> None:
         schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
         checksum = hashlib.sha256(schema.encode("utf-8")).hexdigest()
@@ -748,6 +760,8 @@ class DomainAuthority:
                     command.expected_revision,
                     revision,
                 )
+
+            self._require_confirmed_project_handoff(cursor, command.target_id)
 
             acceptance_metadata = self._guard(
                 cursor,

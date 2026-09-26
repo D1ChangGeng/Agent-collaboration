@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-09-22.11.
+is determined by the named Gate records. Contract revision: 2026-09-24.1.
 
 ## Authority and inputs
 
@@ -122,6 +122,10 @@ Gateway and ACP a Driver boundary, not alternative Domain authorities.
 The public P2 MCP surface is defined by
 [P2-MCP-WORKFLOW-CONTRACT.md](P2-MCP-WORKFLOW-CONTRACT.md) and
 [P2-MANAGEMENT-WORKFLOW-CONTRACT.md](P2-MANAGEMENT-WORKFLOW-CONTRACT.md).
+The final collaboration-control parity supplement is
+[P2-CONTROL-PARITY-CONTRACT.md](P2-CONTROL-PARITY-CONTRACT.md); it follows both
+workflow Gates and precedes P2-REVIEW. A documented Gate requirement does not
+claim that the current MCP catalog or a web Host already implements it.
 Global installation is project-independent; project adoption records one stable
 project_id in the Management Root AGENTS block and machine manifest. Every
 project-scoped runtime tool carries that ID.
@@ -245,7 +249,8 @@ Tests with fakes remain unit/fixture evidence. Two processes on one host do not
 prove dual-machine support. Bootstrap SSH or native Codex messaging does not
 prove Collaboration Runtime delivery.
 
-P2 completion requires P2-MCP-WORKFLOW and P2-MANAGEMENT-WORKFLOW.
+P2 completion requires P2-MCP-WORKFLOW, P2-MANAGEMENT-WORKFLOW and
+P2-CONTROL-PARITY before P2-REVIEW.
 Representative evidence includes real Codex and OpenCode clients, a remote
 web-capable MCP client, explicit project isolation, local and web context
 hydration, profile-filtered tools, Source reads, default asynchronous and bounded

@@ -71,6 +71,8 @@ class McpRuntime:
             if field == "decision" and name in {"submit_review", "accept_work"}:
                 properties[field]["enum"] = (["pass", "fail"] if name == "submit_review"
                                                else ["acceptance_ready", "accepted"])
+            if field == "decision" and name == "acknowledge_handoff":
+                properties[field]["enum"] = ["accepted", "rejected"]
             if field == "delivery_policy" and name == "watch_changes":
                 properties[field]["enum"] = ["notify_current_session", "inbox_only"]
         return {"type": "object", "additionalProperties": False,
