@@ -1,0 +1,79 @@
+schema_version: "2.0"
+documents:
+  - path: decisions/adr-001-setup-runtime-boundary.md
+    kind: decision
+    status: accepted
+    id: adr-001-setup-runtime-boundary
+    date: 2026-09-05
+    scope:
+      - SKILL.md
+      - scripts/project_setup.py
+      - assets/scaffold/**
+      - AGENTS.md
+      - .agents/**
+  - path: decisions/adr-002-repository-and-skill-identities.md
+    kind: decision
+    status: accepted
+    id: adr-002-repository-and-skill-identities
+    date: 2026-09-05
+    scope:
+      - SKILL.md
+      - scripts/validate_skill.py
+      - README.md
+      - README.zh-CN.md
+  - path: guides/architecture-and-state.md
+    kind: guide
+    status: active
+    scope:
+      - .agents/manifest.json
+      - .agents/config.yaml
+      - .agents/runtime/**
+      - assets/scaffold/.agents/README.md
+      - assets/scaffold/.agents/config.yaml
+      - assets/scaffold/.agents/runtime/**
+    use_when:
+      - changing ACHP runtime semantics
+      - designing a handoff, relay, or repository synchronization flow
+      - checking whether a state belongs in runtime, coordination, repository, or knowledge storage
+  - path: guides/development-and-release.md
+    kind: runbook
+    status: active
+    scope:
+      - scripts/**
+      - tests/**
+      - .github/**
+      - VERSION
+      - CHANGELOG.md
+      - CONTRIBUTING.md
+      - SECURITY.md
+    use_when:
+      - implementing a change in this repository
+      - preparing a v0.1.x or later release
+      - reviewing whether a change is in the current initialization scope
+  - path: guides/project-model.md
+    kind: guide
+    status: active
+    scope:
+      - SKILL.md
+      - README.md
+      - README.zh-CN.md
+      - references/**
+      - assets/scaffold/CLAUDE_BLOCK.md
+    use_when:
+      - deciding whether a change belongs to the setup Skill or the runtime protocol
+      - onboarding a new agent to Agent-collaboration
+      - reviewing product identity, scope, or release claims
+  - path: guides/relay-and-git-sync.md
+    kind: guide
+    status: active
+    scope:
+      - .agents/protocol/CAPABILITIES.md
+      - .agents/protocol/RELAY.md
+      - .agents/protocol/GIT-SYNC.md
+      - assets/scaffold/.agents/protocol/CAPABILITIES.md
+      - assets/scaffold/.agents/protocol/RELAY.md
+      - assets/scaffold/.agents/protocol/GIT-SYNC.md
+    use_when:
+      - choosing a transport for a session handoff
+      - writing or reviewing a Relay Envelope
+      - handing repository changes to another clone or host

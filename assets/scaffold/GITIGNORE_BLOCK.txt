@@ -1,0 +1,5 @@
+# ACHP:BEGIN
+# Machine/session-local runtime observations are not shared project truth.
+.agents/runtime/*
+!.agents/runtime/.gitkeep
+# ACHP:END

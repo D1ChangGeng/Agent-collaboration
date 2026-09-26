@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.DS_Store
+*.tmp
+*.bak
+dist/
+agent-collaboration-setup-v0.1.0.zip
+agent-collaboration-setup-v0.1.0.tar.gz
+
+# ACHP:BEGIN
+# Machine/session-local runtime observations are not shared project truth.
+.agents/runtime/*
+!.agents/runtime/.gitkeep
+# ACHP:END
