@@ -25,6 +25,36 @@ available. Schema 0.2 input remains readable, while new writers emit the
 minimal stable shape. This deliberate refusal is a safety boundary, not a
 second uninstall semantics.
 
+### Workspace directory model
+
+The preferred v0.4.0 model places the management root in the same project Git
+repository as product code:
+
+```text
+Project Git Repository / Source Checkout Root
+├── Product code
+├── ...
+└── Nested Management Root
+    ├── AGENTS.md
+    ├── .agents/
+    └── Route directories
+```
+
+Management documents, knowledge, and Routes share project Git commits with
+product code. Separate local and remote clones keep the same relative layout
+and synchronize through explicit Git operations. The manifest records only the
+directory mode `nested-repository`; Git carries the relative layout.
+
+The CLI retains the exact nested root. Its only parent write is scoped runtime
+exclusions in repository-root `.gitignore`, using a separate
+`# ACHP-NESTED:<relative path>:BEGIN` / `# ACHP-NESTED:<relative path>:END` block.
+Existing parent blocks and rules are preserved. The nested root has no child
+`.gitignore`, and parent repository scaffolding is not a prerequisite.
+Standalone Workspaces remain supported for compatibility. Legacy manifests
+without the mode remain unchanged during `adopt`/`repair`; explicit Workspace
+upgrade inside Git migrates known setup-only child ignores. Custom child rules
+require reviewed manual consolidation before writes proceed.
+
 ### Runtime collaboration plane
 
 Installed into each target repository, or into the Root/Route surfaces of a
@@ -56,7 +86,7 @@ Git branch, commits, Push/Pull, exact baselines.
 ### Knowledge Plane
 Durable shared project knowledge under `.agents/knowledge/`.
 
-In a non-Git Workspace, the Repository State Plane is represented as explicit
+In a compatible standalone non-Git Workspace, the Repository State Plane is represented as explicit
 Source State Evidence and may remain `unknown`, `unverified`, or
 `not-measured`. A Workspace Root is a management/control surface, not an
 implicit execution checkout.

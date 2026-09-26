@@ -1,12 +1,9 @@
 <!-- ACHP-WORKSPACE:BEGIN -->
 ## ACHP Project Collaboration Root
 
-This directory is a Project Collaboration Root: a durable Management Root for
-project identity, routes, coordination, and source-state evidence. The primary
-layout places this Management Root inside the Source Checkout Root. Product
-code, management documents, knowledge, and Route directories are tracked in the
-same Git repository. Standalone management workspaces remain a compatibility
-deployment.
+This directory is a Project Collaboration Root: a durable management workspace
+for project identity, routes, coordination, and source-state evidence. It is not
+assumed to be a Git repository or an execution checkout.
 
 ### Startup
 
@@ -18,10 +15,9 @@ deployment.
    knowledge.
 4. Read `.agents/protocol/SOURCE-STATE.md` before making claims about code,
    branches, endpoints, or execution status.
-5. Inspect the containing source checkout's Git state when the task involves
-   tracked management or source files. Bind branch, commit, and working-tree
-   claims to that checkout; use `unknown`, `unverified`, or `not-measured` for
-   facts that have not been established.
+5. For a management-workspace task, do not invent branch, commit, or working
+   tree facts. Use `unknown`, `unverified`, or `not-measured` until evidence is
+   bound to a specific Source State.
 
 ### Scope and ownership
 
@@ -32,14 +28,8 @@ deployment.
   display name; live Session progress remains in the current Harness context.
 - An Execution Endpoint is replaceable runtime capacity, not a permanent Route
   identity.
-- Management, Source Repository state, and Execution Endpoint responsibilities
-  remain logically separate when their files share one Git repository.
-- Local and remote hosts use distinct clones with the same repository-relative
-  Management Root and Route layout. Absolute paths may differ; synchronization
-  requires explicit Git operations.
-- In the nested layout, the Source Checkout Root's `.gitignore` owns scoped
-  rules for transient files and secrets; the Management Root has no child
-  `.gitignore`.
+- A Source Repository and its Repository State are separate from this
+  management workspace.
 - Do not assume this file is automatically inherited by a child Route. Harness
   discovery is runtime-specific; use the explicit Root contract path.
 - `self-evolution` owns durable-knowledge lifecycle; ACHP owns collaboration

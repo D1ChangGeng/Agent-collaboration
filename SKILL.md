@@ -10,10 +10,10 @@ metadata:
 
 # Agent Collaboration Setup
 
-This skill is an **installer/configurator**, not the collaboration runtime. It can
-initialize either a repository-oriented project or a non-Git Project
-Collaboration Workspace that manages long-lived Routes and points to separate
-Execution Endpoints and Source Repositories.
+This skill is an **installer/configurator**, not the collaboration runtime. It
+maintains repository setup and Project Collaboration Workspaces. The preferred
+Workspace is a management root nested in the same project Git repository as
+the product code; standalone Workspaces remain supported for compatibility.
 
 Its job is to install or maintain the ACHP project scaffold so future sessions can collaborate from repository-native instructions and state. After setup, ordinary collaboration MUST run from the project's `AGENTS.md` and `.agents/` files without loading this skill again.
 
@@ -61,9 +61,49 @@ intent parser. Decide the lifecycle from the observed target and user intent
 before invoking one. A new Session, Engineer window, machine, or Endpoint does
 not by itself justify creating a new Route.
 
-Workspace commands use the exact supplied path and never climb to a Git root.
+Workspace commands keep the exact supplied management root as their target.
 Route adoption registers and minimally annotates a Route while preserving its
 existing `AGENTS.md`, `.agents/knowledge/`, references, and state.
+
+The default v0.4.0 directory model is:
+
+```text
+Project Git Repository / Source Checkout Root
+├── Product code
+├── ...
+└── Nested Management Root
+    ├── AGENTS.md
+    ├── .agents/
+    └── Route directories
+```
+
+Track management documents, knowledge, and Routes in the same project Git
+commits as product code. Local and remote copies are separate clones with the
+same relative layout; Git synchronization must be performed explicitly. The
+manifest records `collaboration_root_mode: nested-repository`; the relative
+layout is carried by Git, not by a manifest path field.
+
+Nested setup adds a source-checkout block to Management Root `AGENTS.md` using
+`assets/scaffold/workspace/SOURCE_CHECKOUT_BLOCK.md`. It records the source
+checkout relative to that management directory and directs all Git synchronization,
+pull, staging, and commit operations to the resolved source checkout. The path
+is derived from the actual nesting depth and remains portable across clones.
+`workspace repair` adds a missing block; an existing conflicting block requires
+review before writes proceed.
+
+Keep credentials, private Session data, caches, and temporary logs local; review
+their exclusions in the repository-root `.gitignore`. Shared Git ownership
+preserves the separate responsibilities and knowledge scopes of Root and Routes.
+
+The only setup write outside the exact management root is its scoped runtime
+exclusions in the repository-root `.gitignore`, between
+`# ACHP-NESTED:<relative path>:BEGIN` and
+`# ACHP-NESTED:<relative path>:END`. Preserve all pre-existing parent blocks and
+rules. A nested root has no child `.gitignore`, and its parent does not need
+repository scaffolding installed. Legacy manifests without
+`collaboration_root_mode` stay unchanged during `adopt`/`repair`; explicit
+`workspace upgrade` inside Git migrates a known setup-only child ignore. Custom
+child rules require reviewed manual consolidation and cause writes to be refused.
 
 For an existing target, preview first and treat ownership conflicts as a stop
 condition. `bootstrap` is for a genuinely new/empty target; `adopt` is for
@@ -138,8 +178,9 @@ The installed runtime must satisfy all of these:
    - Claude Code gets a minimal `CLAUDE.md` import/router to `AGENTS.md`.
 9. Existing `AGENTS.md`, `CLAUDE.md`, `.gitignore`, project docs, source, and Git history must be preserved.
 10. The setup skill itself is not referenced by runtime instructions.
-11. A Project Collaboration Workspace may be non-Git; source-state and endpoint
-    claims remain explicit `unknown`/`unverified` until evidence is bound.
+11. Prefer a `nested-repository` management root with the directory and ignore
+    boundaries above. Standalone Workspaces remain supported for compatibility;
+    source-state and endpoint claims require evidence.
 12. Root registry writes contain stable Route identity, display name, path, and
     lifecycle status only; dynamic/current Route state remains Route-owned.
 13. `AGENTS.md` contains only startup-critical, always-on invariants. New

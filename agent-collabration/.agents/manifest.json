@@ -1,5 +1,6 @@
 {
-  "execution_repository_required": false,
+  "collaboration_root_mode": "nested-repository",
+  "execution_repository_required": true,
   "kind": "project-collaboration-root",
   "management_root": true,
   "registry_path": ".agents/coordination/routes.yaml",

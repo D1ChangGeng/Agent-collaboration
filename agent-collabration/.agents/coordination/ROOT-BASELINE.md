@@ -10,9 +10,15 @@ Status: adopted Root baseline for ACHP Workspace schema 0.3.
   identity metadata, durable goals, decisions, knowledge, and source evidence.
 - **Execution Endpoint** — replaceable engineer/agent/session/host capacity;
   Route↔Endpoint is not a permanent 1:1 identity.
-- **Source Repository / Repository State** — implementation location and
-  verifiable branch/commit/tree/worktree/push/sync evidence. It may be outside
-  the Root and may be unknown.
+- **Source Repository / Repository State** — the project Git checkout containing
+  product code and this nested Management Root, with verifiable
+  branch/commit/tree/worktree/push/sync evidence for each clone.
+
+Management documents, knowledge, and Route directories share the product Git
+repository. Local and remote clones keep the same repository-relative layout.
+The source checkout's root `.gitignore` owns local-data exclusions; this nested
+Management Root uses that shared ignore boundary. Root, Route, and execution
+responsibilities retain separate logical ownership.
 
 ## Ownership and inheritance
 
@@ -24,9 +30,9 @@ route metadata is identity-only. Harness, Session, and live Endpoint facts stay
 in the current execution context; Source State Evidence is the durable claim
 boundary for independently verified source identity.
 
-Routes must explicitly read this contract. Do not assume a Harness will inherit a
-parent `AGENTS.md` from a non-Git management tree. Do not copy this contract or
-the entire Root protocol into every Route.
+Routes must explicitly read this contract. Harness inheritance of a parent
+`AGENTS.md` depends on runtime discovery even inside a Git checkout. Do not copy
+this contract or the entire Root protocol into every Route.
 
 ## Route creation and adoption
 
@@ -47,8 +53,9 @@ so there is one registry and one spelling rather than parallel JSON/YAML sources
 ### Schema 0.3 implementation boundary
 
 The currently implemented Workspace operations are `bootstrap`, `adopt`,
-`upgrade`, `repair`, and `validate`. They use the exact supplied Workspace path;
-they do not require or infer a Git root. `workspace uninstall` is intentionally
+`upgrade`, `repair`, and `validate`. They keep the supplied Management Root as
+their scope; the containing source checkout owns Git synchronization and scoped
+ignore rules. `workspace uninstall` is intentionally
 guarded and currently returns a refusal without changing files until a reviewed
 ownership plan exists. It is not an implemented removal workflow.
 
