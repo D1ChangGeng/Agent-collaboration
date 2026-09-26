@@ -121,6 +121,7 @@ def test_replacement_readback_precedes_old_owner_and_late_mutation_is_fenced(
     ("P1-PROVIDER-RESTART", "after_provider_child_result"),
     ("P1-LEASE-FENCING", "after_domain_dispatch"),
     ("P1-UNCERTAIN-EFFECT", "after_domain_dispatch"),
+    ("P1-STALE-BASELINE", "after_domain_dispatch"),
 ])
 def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scenario, stage):
     profile = _profile(tmp_path)
@@ -181,6 +182,7 @@ def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scen
     ("P1-PROVIDER-RESTART", "delivered", 0, 1),
     ("P1-LEASE-FENCING", "delivered", 1, 1),
     ("P1-UNCERTAIN-EFFECT", "delivered", 1, 1),
+    ("P1-STALE-BASELINE", "delivered", 1, 1),
 ])
 def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
     tmp_path, monkeypatch, scenario, expected_state, driver_count, attempt_count,
@@ -307,6 +309,45 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
             with pytest.raises(probe.ProbeRejected, match="uncertain Effect file or marker"):
                 probe.execute(profile, scenario, "driver", output)
             marker.write_bytes(marker_original)
+        if scenario == "P1-STALE-BASELINE":
+            proof = lineage["stale_baseline_proof"]
+            assert proof["message_id"] == lineage["message_id"]
+            assert proof["attempt_id"] == lineage["attempt_id"]
+            assert proof["dispatch_id"] == lineage["dispatch_id"]
+            assert proof["machine_id"] == gate_machine
+            assert proof["ready_baseline"] == row["source_commit"]
+            assert proof["stale_baseline"] != proof["ready_baseline"]
+            drift = proof["source_drift"]
+            assert drift["copied_source_tree"] == row["source_tree"]
+            assert drift["stale_git_commit"] == proof["stale_baseline"]
+            assert drift["stale_git_tree"] != row["source_tree"]
+            assert drift["copied_file_count"] > 0
+            assert proof["denied_replay_count"] == 2
+            assert "receipt artifact bytes are not verified" in proof["cas_rejection_reason"]
+            assert not any(proof["cas_denied_command_counts"].values())
+            assert proof["accepted_revision_count"] == 0
+            assert proof["protected_effect_count"] == 0
+            assert not any(proof["denied_command_counts"].values())
+            assert len(proof["committed_operations"]) == 5
+            assert len(results[0]["operation_ids"]) == 7
+            assert not (output / "P1-STALE-BASELINE-effects").exists()
+            source_patch = output / "P1-STALE-BASELINE-source.diff"
+            original_patch = source_patch.read_bytes()
+            source_patch.write_bytes(original_patch + b" ")
+            with pytest.raises(probe.ProbeRejected, match="Git diff identity"):
+                probe.execute(profile, scenario, "os", output)
+            source_patch.write_bytes(original_patch)
+            artifact_file = (
+                output / "P1-STALE-BASELINE-cas" / proof["artifact_ref"]["path"]
+            )
+            artifact_original = artifact_file.read_bytes()
+            artifact_mode = artifact_file.stat().st_mode & 0o777
+            artifact_file.chmod(0o600)
+            artifact_file.write_bytes(b"x" * len(artifact_original))
+            with pytest.raises(probe.ProbeRejected, match="stale candidate CAS bytes changed"):
+                probe.execute(profile, scenario, "driver", output)
+            artifact_file.write_bytes(artifact_original)
+            artifact_file.chmod(artifact_mode)
         assert (output.stat().st_mode & 0o777) == 0o700
         for private_file in output.iterdir():
             if private_file.is_file():
@@ -322,6 +363,22 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
             json.loads(profile.read_text())["postgres_dsn"],
             options=f"-c search_path={schema}",
         )
+        if scenario == "P1-STALE-BASELINE":
+            proof = lineage["stale_baseline_proof"]
+            with psycopg.connect(scoped) as connection:
+                connection.execute(
+                    "UPDATE work_items SET source_baseline=%s WHERE work_item_id=%s",
+                    (proof["ready_baseline"], proof["work_item_id"]),
+                )
+            with pytest.raises(
+                probe.ProbeRejected, match="stale baseline PG acceptance/readiness lineage",
+            ):
+                probe.execute(profile, scenario, "postgresql", output)
+            with psycopg.connect(scoped) as connection:
+                connection.execute(
+                    "UPDATE work_items SET source_baseline=%s WHERE work_item_id=%s",
+                    (proof["stale_baseline"], proof["work_item_id"]),
+                )
         if scenario in ("P1-COMMAND-DEDUP", "P1-LEASE-FENCING"):
             with psycopg.connect(scoped) as connection:
                 selected = connection.execute(
@@ -387,6 +444,13 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
                     "UPDATE outbox SET topic='forged.effect' WHERE operation_id=%s",
                     (lineage["uncertain_effect_proof"]["reconciliation_operation_id"],),
                 )
+            elif scenario == "P1-STALE-BASELINE":
+                connection.execute(
+                    "UPDATE accepted_state_revisions SET baseline_ref=%s "
+                    "WHERE work_item_id=%s AND readiness_snapshot=TRUE",
+                    ("forged-ready-baseline",
+                     lineage["stale_baseline_proof"]["work_item_id"]),
+                )
             else:
                 connection.execute(
                     "UPDATE delivery_attempts SET status='interrupted' "
@@ -398,6 +462,8 @@ def test_fixed_scenario_lineage_six_kinds_and_tamper_fence(
             if scenario == "P1-LEASE-FENCING"
             else "uncertain Effect PG/Delivery/Attempt lineage changed"
             if scenario == "P1-UNCERTAIN-EFFECT"
+            else "stale baseline PG acceptance/readiness lineage changed"
+            if scenario == "P1-STALE-BASELINE"
             else "PostgreSQL Runtime lineage changed"
         )
         with pytest.raises(probe.ProbeRejected, match=error):

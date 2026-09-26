@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -69,6 +70,40 @@ def test_catalog_exactly_matches_formal_18_scenarios():
     assert list(probe.ScenarioCatalog.TESTS) == contract["gates"]["P1"]["scenarios"]
 
 
+@pytest.mark.skipif(os.name != "posix", reason="private Git source copy requires POSIX")
+def test_stale_baseline_private_git_head_tree_and_bundle_are_read_back(tmp_path):
+    original = Path(__file__).resolve().parents[3]
+    _commit, tree = probe._source_identity(original)
+    ledger = probe.ProbeLedger(tmp_path / "ledger")
+    drift, patch_bytes = probe._private_source_drift(
+        original, tree, datetime.now(UTC),
+    )
+    patch = ledger.root / "P1-STALE-BASELINE-source.diff"
+    patch.write_bytes(patch_bytes)
+    patch.chmod(0o600)
+    proof = {"source_drift": drift, "source_tree": tree}
+    observed = probe._verify_private_git_drift(original, ledger, proof)
+    assert observed["copied_source_tree"] == tree
+    assert observed["stale_git_commit"] != drift["copied_source_commit"]
+    assert observed["stale_git_tree"] != tree
+    assert not (ledger.root / "P1-STALE-BASELINE-source-checkout").exists()
+    assert not (ledger.root / "P1-STALE-BASELINE-source.bundle").exists()
+    assert not any(
+        b"profile-test-only" in item.read_bytes()
+        for item in ledger.root.rglob("*") if item.is_file()
+    )
+    original_patch = patch.read_bytes()
+    patch.write_bytes(original_patch + b" ")
+    with pytest.raises(probe.ProbeRejected, match="Git diff identity"):
+        probe._verify_private_git_drift(original, ledger, proof)
+    patch.write_bytes(original_patch)
+    forged = {"source_drift": {**drift, "stale_git_commit": "0" * 40},
+              "source_tree": tree}
+    with pytest.raises(probe.ProbeRejected, match="Git HEAD/tree/parent/diff"):
+        probe._verify_private_git_drift(original, ledger, forged)
+    assert probe._verify_private_git_drift(original, ledger, proof) == observed
+
+
 @pytest.mark.skipif(os.name == "posix", reason="Windows-only fail-closed check")
 def test_windows_profile_fails_closed(tmp_path):
     with pytest.raises(probe.ProbeRejected, match="absolute POSIX path"):
@@ -107,9 +142,9 @@ def test_plan_omits_model_gaps_and_contains_no_profile_secret(profile_file):
         "P1-DOMAIN-TRANSACTION", "P1-AUTH-REVOCATION", "P1-COMMAND-DEDUP",
         "P1-INBOX-ACK-LOSS", "P1-CORE-RESTART", "P1-NODE-RESTART",
         "P1-PROVIDER-RESTART",
-        "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT",
+        "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT", "P1-STALE-BASELINE",
     ]
-    assert len(status["not_run"]) == 9
+    assert len(status["not_run"]) == 8
     assert {
         "P1-CODEX-LIFECYCLE", "P1-OPENCODE-LIFECYCLE", "P1-INTEGRATED-ACCEPTANCE",
     } < set(status["not_run"])
