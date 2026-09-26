@@ -105,7 +105,7 @@ def validate_opencode_lineage(value: object) -> dict[str, Any]:
         or auth["same_reference"] is not True
         or auth["provider_connected"] is not True
         or auth["native_route_equal"] is not True
-        or auth["native_source"] != "api"
+        or auth["native_source"] not in {"api", "config"}
     ):
         raise OpenCodeReadbackRejected("OpenCode native owner auth readback differs")
     if (
