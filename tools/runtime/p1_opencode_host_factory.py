@@ -220,8 +220,10 @@ def prepare_opencode_host_capacity(
     )
     config_path = root / "config" / "opencode" / "opencode.json"
     _write_private(config_path, admission.config_template_bytes())
-    schema_file = (
-        source_snapshot / "runtime_tests/schema-1.18.30/opencode-openapi.json"
+    schema_file = source_snapshot / (
+        "runtime_tests/schema-1.18.31-opencode-openapi.json"
+        if scene["opencode_version"] == "1.18.31"
+        else "runtime_tests/schema-1.18.30/opencode-openapi.json"
     )
     if (
         not schema_file.is_file() or schema_file.is_symlink()
@@ -265,7 +267,7 @@ def prepare_opencode_host_capacity(
     )
     profile = OpenCodeLaunchProfile(
         str(root / "bin" / "opencode"), scene["native_executable_sha256"],
-        "1.18.30", str(schema_file), scene["schema_sha256"],
+        scene["opencode_version"], str(schema_file), scene["schema_sha256"],
         str(root / "input"), str(root / "home"), str(root / "config"),
         str(root / "data"), str(root / "state"), str(root / "cache"),
         str(root / "tmp"), scene["config_sha256"], scene["agent"],

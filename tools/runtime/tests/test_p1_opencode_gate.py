@@ -13,6 +13,7 @@ import pytest
 
 from tools.runtime.p1_opencode_gate import (
     DECISION_ID,
+    LEGACY_SCHEMA_SHA256,
     MODEL_PROMPT,
     SCHEMA_SHA256,
     OpenCodeGateAdmission,
@@ -33,7 +34,7 @@ def scene() -> dict:
         "native_executable_sha256": "a" * 64,
         "native_executable_size": 184_825_984,
         "opencode_version": "1.18.30",
-        "schema_sha256": SCHEMA_SHA256,
+        "schema_sha256": LEGACY_SCHEMA_SHA256,
         "provider_id": "fixture-provider",
         "provider_url": "https://provider.example.invalid/v1",
         "model_id": "fixture-model",
@@ -89,8 +90,20 @@ def test_scene_rejects_route_or_budget_expansion():
     ):
         candidate = copy.deepcopy(scene())
         candidate[field] = changed
-        with pytest.raises(OpenCodeGateRejected):
-            validate_scene(candidate)
+    with pytest.raises(OpenCodeGateRejected):
+        validate_scene(candidate)
+
+
+def test_exact_version_binds_its_schema_digest():
+    legacy = scene()
+    assert validate_scene(legacy)["opencode_version"] == "1.18.30"
+    current = copy.deepcopy(legacy)
+    current["opencode_version"] = "1.18.31"
+    current["schema_sha256"] = SCHEMA_SHA256
+    assert validate_scene(current)["opencode_version"] == "1.18.31"
+    current["schema_sha256"] = LEGACY_SCHEMA_SHA256
+    with pytest.raises(OpenCodeGateRejected):
+        validate_scene(current)
 
 
 def test_selected_provider_config_cannot_override_private_auth_or_route():
