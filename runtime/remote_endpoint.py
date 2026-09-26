@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import http.client
 import json
+import signal
 import socket
 import ssl
 import threading
@@ -124,7 +125,7 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, config: ReceiverRuntimeConfig, node_signing_key: SigningKey,
-                 authorize_current, native_invoke):
+                 authorize_current, native_invoke, shutdown_callback=None):
         if not callable(native_invoke):
             raise RemoteTransportRejected("receiver native adapter callback is required")
         config.validate()
@@ -135,6 +136,7 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
             raise RemoteTransportRejected("receiver TLS path admission rejected") from None
         self.config = config
         self._native_invoke = native_invoke
+        self._shutdown_callback = shutdown_callback
         self.service = ReceiverService(
             config, node_signing_key, authorize_current=authorize_current,
         )
@@ -165,6 +167,10 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
 
     def native_invoke(self, admission: DeliveryAdmission) -> dict[str, Any]:
         return self._native_invoke(admission)
+
+    def close_runtime(self) -> None:
+        if self._shutdown_callback is not None:
+            self._shutdown_callback()
 
 
 class ReceiverHandler(BaseHTTPRequestHandler):
@@ -206,14 +212,24 @@ def fixture_authority_current(_admission):
 
 
 def serve(config: ReceiverRuntimeConfig, ready=None, authorize_current=None, native_invoke=None,
-          ready_check=None):
+          ready_check=None, shutdown_callback=None):
     if not callable(authorize_current):
         raise RemoteTransportRejected("receiver current-authority callback is required")
     server = ReceiverHTTPServer(
-        config, load_owner_signing_key(config.node_signing_key_path), authorize_current, native_invoke,
+        config, load_owner_signing_key(config.node_signing_key_path), authorize_current,
+        native_invoke, shutdown_callback,
     )
     worker = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
     worker.start()
+    previous_handlers = {}
+    if threading.current_thread() is threading.main_thread():
+        def stop(_signum, _frame):
+            server.shutdown()
+
+        for name in ("SIGTERM", "SIGINT"):
+            number = getattr(signal, name, None)
+            if number is not None:
+                previous_handlers[number] = signal.signal(number, stop)
     try:
         server.verify_presented_certificate()
         if ready_check is not None and ready_check() is not True:
@@ -222,6 +238,9 @@ def serve(config: ReceiverRuntimeConfig, ready=None, authorize_current=None, nat
             ready.set()
         worker.join()
     finally:
+        for number, previous in previous_handlers.items():
+            signal.signal(number, previous)
         server.shutdown()
         server.server_close()
         worker.join(timeout=5)
+        server.close_runtime()
