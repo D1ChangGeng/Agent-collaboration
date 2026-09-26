@@ -125,11 +125,24 @@ def verify_installed_distribution() -> dict[str, object]:
     provisioner = install_root / "bin" / "acs-receiver-provision"
     _safe_installed_file(launcher)
     _safe_installed_file(provisioner)
-    interpreter = Path(sys.executable).absolute()
-    if (manifest.get("interpreter_path") != str(interpreter)
+    interpreter = Path(manifest.get("interpreter_path", "")).absolute()
+    interpreter_info = interpreter.stat(follow_symlinks=False)
+    if (
+        not stat.S_ISREG(interpreter_info.st_mode) or interpreter.is_symlink()
+        or interpreter_info.st_uid not in {0, os.geteuid()}
+        or stat.S_IMODE(interpreter_info.st_mode) & 0o022
+    ):
+        raise ValueError("receiver interpreter reference is not owner controlled")
+    interpreter_data = interpreter.read_bytes()
+    active = Path(sys.executable).absolute()
+    delegated = interpreter != active and interpreter_data.startswith(
+        f"#!{active}\n".encode()
+    )
+    if (not interpreter.is_absolute()
             or manifest.get("interpreter_path_sha256")
             != hashlib.sha256(str(interpreter).encode()).hexdigest()
-            or manifest.get("interpreter_sha256") != hashlib.sha256(interpreter.read_bytes()).hexdigest()
+            or manifest.get("interpreter_sha256") != hashlib.sha256(interpreter_data).hexdigest()
+            or interpreter != active and not delegated
             or not launcher.read_bytes().startswith(f"#!{interpreter}\n".encode())
             or not provisioner.read_bytes().startswith(f"#!{interpreter}\n".encode())
             or hashlib.sha256(launcher.read_bytes()).hexdigest() != manifest.get("launcher_sha256")
