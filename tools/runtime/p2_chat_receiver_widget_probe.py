@@ -28,7 +28,7 @@ from runtime.surface_config import configured_service
 PROJECT = "project-portfolio-sandbox"
 TOOL = "open_chat_receiver_probe"
 CLAIM_TOOL = "claim_chat_receiver_probe_wake"
-URI = "ui://acs/chat-receiver-probe/v1.html"
+URI = "ui://acs/chat-receiver-probe/v2.html"
 LEASE_SECONDS = 300
 
 
