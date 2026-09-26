@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import secrets
+import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -20,6 +22,21 @@ def _read(path: Path) -> dict:
     return value
 
 
+def _write(path: Path, value: dict) -> None:
+    descriptor, temporary = tempfile.mkstemp(prefix=".control-", dir=path.parent)
+    try:
+        os.fchmod(descriptor, 0o600)
+        data = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(data); stream.flush(); os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        try:
+            os.unlink(temporary)
+        except FileNotFoundError:
+            pass
+
+
 def issue(path: Path, *, run_id: str, expected_host: str, expected_session: str,
           ttl_seconds: int = 30) -> dict:
     now = datetime.now(UTC)
@@ -30,8 +47,7 @@ def issue(path: Path, *, run_id: str, expected_host: str, expected_session: str,
         "issued_at": now.isoformat(),
         "expires_at": (now + timedelta(seconds=ttl_seconds)).isoformat(),
     }
-    path.write_text(json.dumps(value, sort_keys=True, separators=(",", ":")))
-    path.chmod(0o600)
+    _write(path, value)
     return value
 
 
@@ -49,12 +65,7 @@ def answer(challenge_path: Path, key_path: Path, output: Path, *, host: str,
         "public_key": public_key(key),
     }
     value = {"body": body, "signature": sign(key, body)}
-    output.write_text(json.dumps(value, sort_keys=True, separators=(",", ":")))
-    if output.exists() and output.stat().st_mode:
-        try:
-            output.chmod(0o600)
-        except OSError:
-            pass
+    _write(output, value)
     return value
 
 
