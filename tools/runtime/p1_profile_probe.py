@@ -30,6 +30,7 @@ if str(SOURCE_ROOT) not in sys.path:
 from runtime.delivery import DeliveryDispatcher, DeliveryService
 from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
 from runtime.delivery_node import DeliveryTransportError, LocalNodeEndpoint
+from runtime.delivery_temporal import submit_delivery
 from runtime.domain import DomainAuthority
 from runtime.errors import IdempotencyConflict
 from runtime.models import CommandEnvelope
@@ -64,7 +65,8 @@ class ProbeRejected(RuntimeError):
 class ScenarioCatalog:
     LINEAGE_BOUND: ClassVar[frozenset[str]] = frozenset({
         "P1-DOMAIN-TRANSACTION", "P1-COMMAND-DEDUP", "P1-INBOX-ACK-LOSS",
-        "P1-AUTH-REVOCATION", "P1-CORE-RESTART",
+        "P1-AUTH-REVOCATION", "P1-CORE-RESTART", "P1-NODE-RESTART",
+        "P1-PROVIDER-RESTART",
     })
     TESTS: ClassVar[dict[str, tuple[str, ...]]] = {
         "P1-DOMAIN-TRANSACTION": (
@@ -416,6 +418,16 @@ def _private_json(path: Path, value: dict[str, Any]) -> bytes:
     return data
 
 
+def _probe_child_env() -> dict[str, str]:
+    environment = {}
+    for key in ("PATH", "HOME", "LANG", "LC_ALL", "TZ"):
+        value = os.environ.get(key)
+        if value is not None:
+            environment[key] = value
+    environment["PYTHONNOUSERSITE"] = "1"
+    return environment
+
+
 def _core_crash_child(profile_path: Path, context_path: Path, expected_hash: str) -> None:
     profile, _digest, _secrets = _secure_profile(profile_path)
     data = context_path.read_bytes()
@@ -458,17 +470,11 @@ def _core_restart(
         if proof.get("context_digest") != context_digest or proof.get("exit_code") != 83:
             raise ProbeRejected("Core crash proof identity changed")
     else:
-        environment = {}
-        for key in ("PATH", "HOME", "LANG", "LC_ALL", "TZ"):
-            value = os.environ.get(key)
-            if value is not None:
-                environment[key] = value
-        environment["PYTHONNOUSERSITE"] = "1"
         process = subprocess.Popen(
             [sys.executable, str(Path(__file__).resolve()), "core-crash",
              "--profile", profile["_profile_path"], "--context", str(context_path),
              "--context-sha256", context_digest],
-            cwd=ledger.root, env=environment,
+            cwd=ledger.root, env=_probe_child_env(),
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         try:
@@ -512,6 +518,404 @@ def _core_restart(
     return delivered, proof
 
 
+def _node_receipts(path: Path, operation_id: str) -> list[list[str]]:
+    with sqlite3.connect(path) as connection:
+        return [list(item) for item in connection.execute(
+            "SELECT receipt_id,layer,evidence_json FROM lifecycle_receipts "
+            "WHERE operation_id=? ORDER BY layer", (operation_id,),
+        ).fetchall()]
+
+
+def _node_restart_child(
+    profile_path: Path, context_path: Path, expected_hash: str, result_path: Path,
+) -> None:
+    profile, _digest, _secrets = _secure_profile(profile_path)
+    data = context_path.read_bytes()
+    if _sha(data) != expected_hash:
+        raise ProbeRejected("Node restart context digest changed")
+    context = json.loads(data)
+    required = {
+        "pg_schema", "identity", "endpoint_id", "machine_id", "node_id",
+        "old_boot", "new_boot", "node_file", "suffix", "issued_at",
+        "old_receipts",
+    }
+    if set(context) != required or not re.fullmatch(r"p1_probe_[0-9a-f]{24}", context["pg_schema"]):
+        raise ProbeRejected("Node restart context fields changed")
+    node_path = context_path.parent / context["node_file"]
+    if (context["node_file"] != "P1-NODE-RESTART-node.sqlite"
+            or not node_path.is_file() or node_path.is_symlink()):
+        raise ProbeRejected("Node restart journal path changed")
+    authority = DomainAuthority(make_conninfo(
+        profile["postgres_dsn"], options=f"-c search_path={context['pg_schema']}",
+    ))
+    node = NodeJournal(
+        node_path, machine_id=context["machine_id"], node_id=context["node_id"],
+        boot_incarnation=context["new_boot"],
+    )
+    driver = FixtureDriver()
+    endpoint = LocalNodeEndpoint(node, "local-scope", "local-slot", driver)
+    service = DeliveryService(authority, {context["endpoint_id"]: endpoint})
+    issued_at = datetime.fromisoformat(context["issued_at"])
+    rebind = _domain_command(
+        authority, "message.bind", "message", context["endpoint_id"],
+        context["suffix"] + ":rebind", issued_at, revision=1,
+    )
+    service.bind_endpoint(rebind, EndpointBindingRequest(
+        scope_id="local-scope", agent_slot_id="local-slot",
+        expires_at=rebind.deadline,
+    ))
+    with authority._connect() as connection:
+        connection.execute(
+            "UPDATE delivery_messages SET next_attempt_at=clock_timestamp() "
+            "WHERE message_id=%s", (context["identity"]["message_id"],),
+        )
+    delivered = DeliveryDispatcher(service, worker_id="replacement-node-core").dispatch(
+        context["identity"],
+    )
+    receipts = _node_receipts(node_path, context["identity"]["operation_id"])
+    if (delivered["status"] != "delivered" or driver.calls
+            or receipts != context["old_receipts"]
+            or node.get_message(context["identity"]["message_id"]) is None):
+        raise ProbeRejected("replacement Node changed the logical Inbox or receipts")
+    _private_json(result_path, {
+        "context_digest": expected_hash, "child_pid": os.getpid(),
+        "new_boot": context["new_boot"], "status": delivered["status"],
+        "node_receipt_digest": _sha(_canonical(receipts)),
+        "driver_calls": [],
+    })
+
+
+def _node_restart(
+    profile: dict[str, Any], ledger: ProbeLedger, pg_schema: str,
+    service: DeliveryService, endpoint: LocalNodeEndpoint,
+    identity: dict[str, str], suffix: str, issued_at: datetime,
+    node: NodeJournal, driver: FixtureDriver,
+    fault: Callable[[str], None] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], NodeJournal]:
+    context_path = ledger.root / "P1-NODE-RESTART-context.json"
+    result_path = ledger.root / "P1-NODE-RESTART-child-result.json"
+    proof_path = ledger.root / "P1-NODE-RESTART-proof.json"
+    if proof_path.exists():
+        proof = json.loads(proof_path.read_text())
+        result = json.loads(result_path.read_text())
+        if (_sha(context_path.read_bytes()) != proof["context_digest"]
+                or _sha(result_path.read_bytes()) != proof["result_digest"]
+                or result["child_pid"] != proof["child_pid"]):
+            raise ProbeRejected("Node restart proof identity changed")
+    elif result_path.exists():
+        context = json.loads(context_path.read_text())
+        result = json.loads(result_path.read_text())
+        context_digest = _sha(context_path.read_bytes())
+        with service.authority._connect() as connection:
+            current = connection.execute(
+                "SELECT state FROM delivery_messages WHERE message_id=%s "
+                "AND operation_id=%s", (identity["message_id"], identity["operation_id"]),
+            ).fetchone()
+        if (
+            context["pg_schema"] != pg_schema or context["identity"] != identity
+            or context["suffix"] != suffix or context["new_boot"] != node.boot_incarnation
+            or result["context_digest"] != context_digest
+            or result["new_boot"] != context["new_boot"]
+            or result["status"] != "delivered" or result["driver_calls"]
+            or Path(f"/proc/{result['child_pid']}").exists()
+            or current != ("delivered",)
+            or result["node_receipt_digest"] != _sha(_canonical(
+                _node_receipts(Path(node._path), identity["operation_id"]),
+            ))
+        ):
+            raise ProbeRejected("Node child result cannot be recovered by readback")
+        proof = {
+            "context_digest": context_digest,
+            "result_digest": _sha(result_path.read_bytes()),
+            "child_pid": result["child_pid"], "exit_code": None,
+            "recovered_from_readback": True,
+            "old_boot": context["old_boot"], "new_boot": context["new_boot"],
+            "node_receipt_digest": result["node_receipt_digest"],
+        }
+        _private_json(proof_path, proof)
+    else:
+        original = endpoint.deliver
+
+        def lose_ack(*args: Any, **kwargs: Any) -> dict[str, Any]:
+            original(*args, **kwargs)
+            raise DeliveryTransportError("injected ACK loss before Node process replacement")
+
+        endpoint.deliver = lose_ack
+        first = DeliveryDispatcher(service).dispatch(identity)
+        endpoint.deliver = original
+        with service.authority._connect() as connection:
+            inbox_count = connection.execute(
+                "SELECT count(*) FROM inbox_messages WHERE message_id=%s",
+                (identity["message_id"],),
+            ).fetchone()[0]
+        if (first["status"] != "retry_wait" or inbox_count != 0
+                or node.get_message(identity["message_id"]) is None
+                or driver.calls):
+            raise ProbeRejected("Node replacement seam did not isolate committed Inbox")
+        old_receipts = _node_receipts(Path(node._path), identity["operation_id"])
+        context = {
+            "pg_schema": pg_schema, "identity": identity,
+            "endpoint_id": next(iter(service.endpoints)),
+            "machine_id": node.machine_id, "node_id": node.node_id,
+            "old_boot": node.boot_incarnation,
+            "new_boot": "reboot-" + suffix,
+            "node_file": "P1-NODE-RESTART-node.sqlite", "suffix": suffix,
+            "issued_at": issued_at.isoformat(), "old_receipts": old_receipts,
+        }
+        context_digest = _sha(_private_json(context_path, context))
+        process = subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "node-restart",
+             "--profile", profile["_profile_path"], "--context", str(context_path),
+             "--context-sha256", context_digest, "--result", str(result_path)],
+            cwd=ledger.root, env=_probe_child_env(),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        try:
+            exit_code = process.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+            raise ProbeRejected("replacement Node child exceeded its deadline") from None
+        if exit_code != 0 or Path(f"/proc/{process.pid}").exists() or not result_path.exists():
+            raise ProbeRejected("replacement Node child did not complete bounded recovery")
+        result = json.loads(result_path.read_text())
+        if (result["context_digest"] != context_digest
+                or result["child_pid"] != process.pid or result["status"] != "delivered"
+                or result["new_boot"] != context["new_boot"]):
+            raise ProbeRejected("replacement Node result identity changed")
+        if fault is not None:
+            fault("after_node_child_result")
+        proof = {
+            "context_digest": context_digest,
+            "result_digest": _sha(result_path.read_bytes()),
+            "child_pid": process.pid, "exit_code": exit_code,
+            "recovered_from_readback": False,
+            "old_boot": context["old_boot"], "new_boot": context["new_boot"],
+            "node_receipt_digest": result["node_receipt_digest"],
+        }
+        _private_json(proof_path, proof)
+    reopened = NodeJournal(
+        Path(node._path), machine_id=node.machine_id, node_id=node.node_id,
+        boot_incarnation=proof["new_boot"],
+    )
+    if (proof["old_boot"] == proof["new_boot"]
+            or _sha(_canonical(_node_receipts(Path(node._path), identity["operation_id"])))
+            != proof["node_receipt_digest"]):
+        raise ProbeRejected("replacement Node journal did not retain original receipts")
+    return {"status": "delivered"}, proof, reopened
+
+
+def _provider_worker_child(
+    profile_path: Path, context_path: Path, expected_hash: str,
+    mode: str, result_path: Path,
+) -> None:
+    profile, _digest, _secrets = _secure_profile(profile_path)
+    data = context_path.read_bytes()
+    if _sha(data) != expected_hash or mode not in ("crash", "recover"):
+        raise ProbeRejected("Temporal worker context identity changed")
+    context = json.loads(data)
+    required = {
+        "pg_schema", "identity", "endpoint_id", "machine_id", "node_id",
+        "boot_incarnation", "node_file", "workflow_id", "run_id", "task_queue",
+    }
+    if set(context) != required or not re.fullmatch(r"p1_probe_[0-9a-f]{24}", context["pg_schema"]):
+        raise ProbeRejected("Temporal worker context fields changed")
+    node_path = context_path.parent / context["node_file"]
+    if (context["node_file"] != "P1-PROVIDER-RESTART-node.sqlite"
+            or not node_path.is_file() or node_path.is_symlink()):
+        raise ProbeRejected("Temporal worker Node journal path changed")
+    authority = DomainAuthority(make_conninfo(
+        profile["postgres_dsn"], options=f"-c search_path={context['pg_schema']}",
+    ))
+    node = NodeJournal(
+        node_path, machine_id=context["machine_id"], node_id=context["node_id"],
+        boot_incarnation=context["boot_incarnation"],
+    )
+    driver = FixtureDriver()
+    endpoint = LocalNodeEndpoint(node, "local-scope", "local-slot", driver)
+    dispatcher = DeliveryDispatcher(DeliveryService(
+        authority, {context["endpoint_id"]: endpoint},
+    ), worker_id="temporal-" + mode)
+    if mode == "crash":
+        dispatcher.after_claim = lambda _identity: os._exit(84)
+
+    async def run() -> None:
+        adapter = TemporalAdapter(
+            profile["temporal_endpoint"], namespace=profile["temporal_namespace"],
+            task_queue=context["task_queue"], delivery_dispatcher=dispatcher,
+        )
+        await adapter.connect(start_worker=True)
+        try:
+            if mode == "crash":
+                await asyncio.sleep(120)
+                raise ProbeRejected("Temporal worker crash seam was not reached")
+            handle = adapter.client.get_workflow_handle(
+                context["workflow_id"], run_id=context["run_id"],
+            )
+            result = await asyncio.wait_for(handle.result(), timeout=95)
+            receipts = _node_receipts(node_path, context["identity"]["operation_id"])
+            if (result.get("status") != "delivered" or driver.calls
+                    or node.get_message(context["identity"]["message_id"]) is None):
+                raise ProbeRejected("replacement Temporal worker changed delivery outcome")
+            _private_json(result_path, {
+                "context_digest": expected_hash, "child_pid": os.getpid(),
+                "workflow_id": context["workflow_id"], "run_id": context["run_id"],
+                "status": result["status"], "node_receipt_digest": _sha(_canonical(receipts)),
+                "driver_calls": [],
+            })
+        finally:
+            await adapter.close()
+
+    asyncio.run(run())
+
+
+def _provider_restart(
+    profile: dict[str, Any], ledger: ProbeLedger, pg_schema: str,
+    service: DeliveryService, endpoint: LocalNodeEndpoint,
+    identity: dict[str, str], suffix: str, node: NodeJournal, driver: FixtureDriver,
+    fault: Callable[[str], None] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], str, str]:
+    queue = "p1-provider-" + suffix
+
+    async def submit() -> tuple[str, str]:
+        adapter = TemporalAdapter(
+            profile["temporal_endpoint"], namespace=profile["temporal_namespace"],
+        )
+        await adapter.connect(start_worker=False)
+        try:
+            handle = await submit_delivery(
+                adapter.client, queue, DeliveryDispatcher(service), identity,
+            )
+            description = await handle.describe()
+            return handle.id, description.run_id
+        finally:
+            await adapter.close()
+
+    workflow_id, run_id = asyncio.run(submit())
+    context_path = ledger.root / "P1-PROVIDER-RESTART-context.json"
+    crash_path = ledger.root / "P1-PROVIDER-RESTART-crash.json"
+    result_path = ledger.root / "P1-PROVIDER-RESTART-child-result.json"
+    proof_path = ledger.root / "P1-PROVIDER-RESTART-proof.json"
+    context = {
+        "pg_schema": pg_schema, "identity": identity,
+        "endpoint_id": next(iter(service.endpoints)),
+        "machine_id": node.machine_id, "node_id": node.node_id,
+        "boot_incarnation": node.boot_incarnation,
+        "node_file": "P1-PROVIDER-RESTART-node.sqlite",
+        "workflow_id": workflow_id, "run_id": run_id, "task_queue": queue,
+    }
+    context_digest = _sha(_private_json(context_path, context))
+    if proof_path.exists():
+        proof = json.loads(proof_path.read_text())
+        if (proof["context_digest"] != context_digest
+                or proof["result_digest"] != _sha(result_path.read_bytes())
+                or proof["crash_digest"] != _sha(crash_path.read_bytes())):
+            raise ProbeRejected("Temporal worker restart proof identity changed")
+        return {"status": "delivered"}, proof, workflow_id, run_id
+
+    if not crash_path.exists():
+        with service.authority._connect() as connection:
+            prior_attempt = connection.execute(
+                "SELECT status FROM delivery_attempts WHERE message_id=%s AND ordinal=1",
+                (identity["message_id"],),
+            ).fetchone()
+        if prior_attempt is not None:
+            raise ProbeUnavailable("Temporal crash exit evidence is missing; recovery fenced")
+        process = subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "provider-worker",
+             "--mode", "crash", "--profile", profile["_profile_path"],
+             "--context", str(context_path), "--context-sha256", context_digest,
+             "--result", str(result_path)],
+            cwd=ledger.root, env=_probe_child_env(),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        try:
+            exit_code = process.wait(timeout=45)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+            raise ProbeRejected("first Temporal worker did not reach crash seam") from None
+        with service.authority._connect() as connection:
+            prepared = connection.execute(
+                "SELECT attempt_id,status,finished_at FROM delivery_attempts "
+                "WHERE message_id=%s AND ordinal=1", (identity["message_id"],),
+            ).fetchone()
+            inbox_count = connection.execute(
+                "SELECT count(*) FROM inbox_messages WHERE message_id=%s",
+                (identity["message_id"],),
+            ).fetchone()[0]
+        if (exit_code != 84 or Path(f"/proc/{process.pid}").exists()
+                or prepared is None or prepared[1:] != ("prepared", None)
+                or inbox_count != 0 or node.get_message(identity["message_id"]) is not None
+                or driver.calls):
+            raise ProbeRejected("first Temporal worker crossed Node/native boundary")
+        _private_json(crash_path, {
+            "context_digest": context_digest, "child_pid": process.pid,
+            "exit_code": exit_code, "prepared_attempt_id": prepared[0],
+            "node_before": 0, "driver_before": 0,
+        })
+        if fault is not None:
+            fault("after_provider_crash_record")
+    crash = json.loads(crash_path.read_text())
+    if (crash["context_digest"] != context_digest or crash["exit_code"] != 84
+            or Path(f"/proc/{crash['child_pid']}").exists()):
+        raise ProbeRejected("first Temporal worker crash record changed")
+    recovery_exit = None
+    if not result_path.exists():
+        process = subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "provider-worker",
+             "--mode", "recover", "--profile", profile["_profile_path"],
+             "--context", str(context_path), "--context-sha256", context_digest,
+             "--result", str(result_path)],
+            cwd=ledger.root, env=_probe_child_env(),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        try:
+            exit_code = process.wait(timeout=110)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+            raise ProbeRejected("replacement Temporal worker exceeded deadline") from None
+        if exit_code != 0 or Path(f"/proc/{process.pid}").exists():
+            raise ProbeRejected("replacement Temporal worker did not stop cleanly")
+        recovery_exit = exit_code
+    result = json.loads(result_path.read_text())
+    if (result["context_digest"] != context_digest or result["status"] != "delivered"
+            or result["workflow_id"] != workflow_id or result["run_id"] != run_id
+            or result["driver_calls"] or Path(f"/proc/{result['child_pid']}").exists()
+            or result["node_receipt_digest"] != _sha(_canonical(
+                _node_receipts(Path(node._path), identity["operation_id"]),
+            ))):
+        raise ProbeRejected("replacement Temporal worker readback changed")
+    with service.authority._connect() as connection:
+        attempts = connection.execute(
+            "SELECT ordinal,attempt_id,status FROM delivery_attempts WHERE message_id=%s",
+            (identity["message_id"],),
+        ).fetchall()
+        message_state = connection.execute(
+            "SELECT state FROM delivery_messages WHERE message_id=%s",
+            (identity["message_id"],),
+        ).fetchone()
+    if (attempts != [(1, crash["prepared_attempt_id"], "delivered")]
+            or message_state != ("delivered",)):
+        raise ProbeRejected("Temporal retry did not preserve original prepared attempt")
+    if fault is not None:
+        fault("after_provider_child_result")
+    proof = {
+        "context_digest": context_digest,
+        "crash_digest": _sha(crash_path.read_bytes()),
+        "result_digest": _sha(result_path.read_bytes()),
+        "crash_pid": crash["child_pid"], "crash_exit": 84,
+        "recovery_pid": result["child_pid"], "recovery_exit": recovery_exit,
+        "recovered_from_readback": recovery_exit is None,
+        "prepared_attempt_id": crash["prepared_attempt_id"],
+        "workflow_id": workflow_id, "run_id": run_id,
+        "node_receipt_digest": result["node_receipt_digest"],
+    }
+    _private_json(proof_path, proof)
+    return {"status": "delivered"}, proof, workflow_id, run_id
+
+
 def _run_domain_transaction(
     profile: dict[str, Any], scenario: str, ledger: ProbeLedger,
     commit: str, tree: str, run_id: str, suffix: str, issued_at: datetime,
@@ -537,10 +941,15 @@ def _run_domain_transaction(
         authority, "work_item.create", "work_item", work_id, suffix, issued_at,
     )
     authority.create_work_item(create, "local-scope", "local-slot", commit)
+    resume_node_restart = scenario == "P1-NODE-RESTART" and any(
+        (ledger.root / name).exists() for name in (
+            "P1-NODE-RESTART-proof.json", "P1-NODE-RESTART-child-result.json",
+        )
+    )
     node = NodeJournal(
         ledger.root / (scenario + "-node.sqlite"),
         machine_id="machine-" + suffix, node_id=profile["node_id"],
-        boot_incarnation="boot-" + suffix,
+        boot_incarnation=("reboot-" if resume_node_restart else "boot-") + suffix,
     )
     Path(node._path).chmod(0o600)
     driver = FixtureDriver()
@@ -550,10 +959,6 @@ def _run_domain_transaction(
     bind = _domain_command(
         authority, "message.bind", "message", endpoint_id, suffix, issued_at,
     )
-    service.bind_endpoint(bind, EndpointBindingRequest(
-        scope_id="local-scope", agent_slot_id="local-slot",
-        expires_at=bind.deadline,
-    ))
     message_id = "message-" + suffix
     send = _domain_command(
         authority, "message.send", "message", message_id, suffix, issued_at,
@@ -563,29 +968,54 @@ def _run_domain_transaction(
         target_agent_slot_id="local-slot", accepted_revision=0,
         goal=f"{scenario} lineage probe", accepted_state_summary="revision zero",
         request="Return the fixed fixture response", source_baseline=commit,
-        expected_response="layered receipt", activation="invoke",
+        expected_response="layered receipt",
+        activation="message_only" if scenario in (
+            "P1-NODE-RESTART", "P1-PROVIDER-RESTART",
+        ) else "invoke",
         deadline=send.deadline,
     )
-    sent = service.send_message(send, packet, endpoint_id=endpoint_id, binding_revision=1)
+    if resume_node_restart:
+        with authority._connect() as connection:
+            current = connection.execute(
+                "SELECT operation_id,state FROM delivery_messages "
+                "WHERE command_id=%s AND message_id=%s AND tenant_id=%s",
+                (send.command_id, message_id, authority.tenant_id),
+            ).fetchone()
+        if current is None or current[1] != "delivered":
+            raise ProbeRejected("Node restart checkpoint is not a terminal Runtime message")
+        sent = SimpleNamespace(operation_id=current[0])
+    else:
+        service.bind_endpoint(bind, EndpointBindingRequest(
+            scope_id="local-scope", agent_slot_id="local-slot",
+            expires_at=bind.deadline,
+        ))
+        sent = service.send_message(send, packet, endpoint_id=endpoint_id, binding_revision=1)
     identity = {
         "tenant_id": authority.tenant_id,
         "message_id": message_id,
         "operation_id": sent.operation_id,
     }
-    replay = service.send_message(send, packet, endpoint_id=endpoint_id, binding_revision=1)
-    changed_packet = packet.model_copy(update={"request": "changed conflicting request"})
-    try:
-        service.send_message(send, changed_packet, endpoint_id=endpoint_id, binding_revision=1)
-    except IdempotencyConflict:
+    if resume_node_restart:
+        replay = SimpleNamespace(duplicate=True, operation_id=sent.operation_id)
         conflict_rejected = True
     else:
-        conflict_rejected = False
+        replay = service.send_message(send, packet, endpoint_id=endpoint_id, binding_revision=1)
+        changed_packet = packet.model_copy(update={"request": "changed conflicting request"})
+        try:
+            service.send_message(send, changed_packet, endpoint_id=endpoint_id, binding_revision=1)
+        except IdempotencyConflict:
+            conflict_rejected = True
+        else:
+            conflict_rejected = False
     if not replay.duplicate or replay.operation_id != sent.operation_id:
         raise ProbeRejected("Domain exact command replay did not retain its identity")
     if not conflict_rejected:
         raise ProbeRejected("Domain command conflict was not rejected")
     ack_loss_observed = False
     core_crash_proof = None
+    node_restart_proof = None
+    provider_restart_proof = None
+    provider_workflow = None
     if scenario == "P1-AUTH-REVOCATION":
         with authority._connect() as connection:
             connection.execute(
@@ -599,6 +1029,16 @@ def _run_domain_transaction(
         delivered, core_crash_proof = _core_restart(
             profile, ledger, pg_schema, service, endpoint, identity,
             message_id, sent.operation_id, node, driver,
+        )
+    elif scenario == "P1-NODE-RESTART":
+        delivered, node_restart_proof, node = _node_restart(
+            profile, ledger, pg_schema, service, endpoint, identity,
+            suffix, issued_at, node, driver, fault,
+        )
+    elif scenario == "P1-PROVIDER-RESTART":
+        delivered, provider_restart_proof, provider_workflow, provider_run = _provider_restart(
+            profile, ledger, pg_schema, service, endpoint, identity, suffix, node, driver,
+            fault,
         )
     elif scenario == "P1-INBOX-ACK-LOSS":
         original_deliver = endpoint.deliver
@@ -651,14 +1091,20 @@ def _run_domain_transaction(
                 "SELECT operation_id FROM p1_driver_calls ORDER BY operation_id"
             )
         ]
-    expected_driver_calls = [] if scenario == "P1-AUTH-REVOCATION" else [sent.operation_id]
+    expected_driver_calls = (
+        [] if scenario in (
+            "P1-AUTH-REVOCATION", "P1-NODE-RESTART", "P1-PROVIDER-RESTART",
+        )
+        else [sent.operation_id]
+    )
     if driver_calls != expected_driver_calls:
         raise ProbeRejected("Driver call lineage is incomplete")
     if fault is not None:
         fault("after_domain_dispatch")
     with authority._connect() as connection:
         attempts = connection.execute(
-            "SELECT ordinal,attempt_id,dispatch_id,status FROM delivery_attempts "
+            "SELECT ordinal,attempt_id,dispatch_id,status,selection_revision,"
+            "selection_json->>'boot_incarnation' FROM delivery_attempts "
             "WHERE message_id=%s ORDER BY ordinal",
             (message_id,),
         ).fetchall()
@@ -689,6 +1135,10 @@ def _run_domain_transaction(
             "SELECT status,provider FROM operations WHERE operation_id=%s",
             (sent.operation_id,),
         ).fetchone()
+        provider_refs = connection.execute(
+            "SELECT provider_workflow_id,provider_run_id FROM operations WHERE operation_id=%s",
+            (sent.operation_id,),
+        ).fetchone()
         outbox_details = connection.execute(
             "SELECT topic,delivered_at IS NOT NULL FROM outbox WHERE operation_id=%s",
             (sent.operation_id,),
@@ -709,7 +1159,9 @@ def _run_domain_transaction(
             "SELECT count(*) FROM outbox WHERE operation_id=%s",
             (sent.operation_id,),
         ).fetchone()[0]
-    if (not receipts or not events or any(item[2] is None for item in attempts)
+    if (not receipts or not events
+            or (scenario not in ("P1-NODE-RESTART", "P1-PROVIDER-RESTART")
+                and any(item[2] is None for item in attempts))
             or (scenario == "P1-AUTH-REVOCATION" and attempts)
             or (scenario != "P1-AUTH-REVOCATION" and not attempts)):
         raise ProbeRejected("Domain delivery lineage rows are incomplete")
@@ -718,16 +1170,32 @@ def _run_domain_transaction(
         raise ProbeRejected("scenario authority state disagrees with the expected fault")
     if inbox_count != (0 if scenario == "P1-AUTH-REVOCATION" else 1):
         raise ProbeRejected("scenario Inbox projection count changed")
-    if (not all((dedup_details, operation_details, outbox_details, message_hashes))
+    if (not all((dedup_details, operation_details, provider_refs,
+                outbox_details, message_hashes))
             or len(events) != 1 or operation_count != 1 or outbox_count != 1):
         raise ProbeRejected("Domain command/operation/outbox hashes are incomplete")
+    if scenario == "P1-PROVIDER-RESTART" and provider_refs != (provider_workflow, provider_run):
+        raise ProbeRejected("Temporal Workflow reference did not commit to Domain")
     if scenario == "P1-INBOX-ACK-LOSS" and (
         len(attempts) != 2 or [item[3] for item in attempts] != ["retry_wait", "delivered"]
     ):
         raise ProbeRejected("ACK loss did not retain both delivery attempts")
-    workflow_id, temporal_run_id = asyncio.run(
-        _temporal_marker(profile, sent.operation_id + ":temporal", scenario),
-    )
+    if scenario == "P1-NODE-RESTART" and (
+        len(attempts) != 2 or [item[3] for item in attempts] != ["retry_wait", "delivered"]
+        or [item[4] for item in attempts] != [1, 2]
+        or [item[5] for item in attempts] != [node_restart_proof["old_boot"],
+                                             node_restart_proof["new_boot"]]
+    ):
+        raise ProbeRejected("Node restart did not preserve two selected boot attempts")
+    if scenario == "P1-PROVIDER-RESTART":
+        if (len(attempts) != 1 or attempts[0][3] != "delivered"
+                or attempts[0][1] != provider_restart_proof["prepared_attempt_id"]):
+            raise ProbeRejected("Temporal replacement did not preserve prepared attempt")
+        workflow_id, temporal_run_id = provider_workflow, provider_run
+    else:
+        workflow_id, temporal_run_id = asyncio.run(
+            _temporal_marker(profile, sent.operation_id + ":temporal", scenario),
+        )
     lineage = {
         "tenant_id": authority.tenant_id, "grant_ref": authority.context.grant_ref,
         "command_id": send.command_id,
@@ -735,7 +1203,9 @@ def _run_domain_transaction(
         "attempt_id": attempts[-1][1] if attempts else None,
         "dispatch_id": attempts[-1][2] if attempts else None,
         "attempts": [{"ordinal": item[0], "attempt_id": item[1],
-                      "dispatch_id": item[2], "status": item[3]} for item in attempts],
+                      "dispatch_id": item[2], "status": item[3],
+                      "selection_revision": item[4], "selection_boot": item[5]}
+                     for item in attempts],
         "event_ids": [str(item[0]) for item in events],
         "receipts": [{"receipt_id": item[0], "layer": item[1]} for item in receipts],
         "driver_calls": driver_calls, "node_journal": scenario + "-node.sqlite",
@@ -744,8 +1214,11 @@ def _run_domain_transaction(
         "last_error": message_state[1], "inbox_count": inbox_count,
         "grant_revoked": grant_revoked, "ack_loss_observed": ack_loss_observed,
         "core_crash_proof": core_crash_proof,
+        "node_restart_proof": node_restart_proof,
+        "provider_restart_proof": provider_restart_proof,
         "dedup_details": list(dedup_details),
         "operation_details": list(operation_details),
+        "provider_refs": list(provider_refs),
         "outbox_details": list(outbox_details),
         "message_hashes": list(message_hashes),
         "event_hashes": [item[0] for item in event_hashes],
@@ -793,9 +1266,9 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         "dispatch_id", "attempts", "event_ids", "receipts", "driver_calls",
         "node_journal", "grant_ref", "message_state", "inbox_count", "grant_revoked",
         "ack_loss_observed", "exact_replay", "conflict_rejected",
-        "core_crash_proof",
+        "core_crash_proof", "node_restart_proof", "provider_restart_proof",
         "dedup_details", "operation_details", "outbox_details", "message_hashes",
-        "event_hashes",
+        "event_hashes", "provider_refs",
     }
     if set(lineage) < required_lineage:
         raise ProbeRejected("marker-only evidence is not an actual Runtime lineage")
@@ -804,10 +1277,18 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         lineage["message_state"] != ("blocked" if expected_auth_failure else "delivered")
         or lineage["inbox_count"] != (0 if expected_auth_failure else 1)
         or lineage["grant_revoked"] != expected_auth_failure
-        or lineage["driver_calls"] != ([] if expected_auth_failure else [lineage["operation_id"]])
+        or lineage["driver_calls"] != (
+            [] if scenario in (
+                "P1-AUTH-REVOCATION", "P1-NODE-RESTART", "P1-PROVIDER-RESTART",
+            )
+            else [lineage["operation_id"]]
+        )
         or not lineage["exact_replay"] or not lineage["conflict_rejected"]
         or lineage["ack_loss_observed"] != (scenario == "P1-INBOX-ACK-LOSS")
         or (lineage["core_crash_proof"] is not None) != (scenario == "P1-CORE-RESTART")
+        or (lineage["node_restart_proof"] is not None) != (scenario == "P1-NODE-RESTART")
+        or (lineage["provider_restart_proof"] is not None)
+        != (scenario == "P1-PROVIDER-RESTART")
     ):
         raise ProbeRejected("scenario lineage does not prove its required fault")
     if scenario == "P1-CORE-RESTART":
@@ -820,6 +1301,33 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             or lineage["attempts"][0]["status"] != "delivered"
         ):
             raise ProbeRejected("Core crash recovery lineage is incomplete")
+    if scenario == "P1-NODE-RESTART":
+        proof = lineage["node_restart_proof"]
+        if (
+            proof.get("exit_code") not in (0, None)
+            or (proof.get("exit_code") is None) != proof.get("recovered_from_readback")
+            or proof.get("old_boot") == proof.get("new_boot")
+            or len(lineage["attempts"]) != 2
+            or [item["status"] for item in lineage["attempts"]] != ["retry_wait", "delivered"]
+            or [item["selection_revision"] for item in lineage["attempts"]] != [1, 2]
+            or [item["selection_boot"] for item in lineage["attempts"]]
+            != [proof["old_boot"], proof["new_boot"]]
+        ):
+            raise ProbeRejected("Node boot replacement lineage is incomplete")
+    if scenario == "P1-PROVIDER-RESTART":
+        proof = lineage["provider_restart_proof"]
+        if (
+            proof.get("crash_exit") != 84
+            or proof.get("recovery_exit") not in (0, None)
+            or (proof.get("recovery_exit") is None) != proof.get("recovered_from_readback")
+            or len(lineage["attempts"]) != 1
+            or lineage["attempts"][0]["attempt_id"] != proof.get("prepared_attempt_id")
+            or lineage["attempts"][0]["status"] != "delivered"
+            or proof.get("workflow_id") != row["temporal_workflow_id"]
+            or proof.get("run_id") != row["temporal_run_id"]
+            or lineage["provider_refs"] != [proof["workflow_id"], proof["run_id"]]
+        ):
+            raise ProbeRejected("Temporal worker replacement lineage is incomplete")
     if kind == "postgresql":
         scoped = make_conninfo(
             profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
@@ -831,7 +1339,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 (lineage["command_id"],),
             ).fetchone()
             operation_row = connection.execute(
-                "SELECT operation_id,status,provider FROM operations WHERE operation_id=%s",
+                "SELECT operation_id,status,provider,provider_workflow_id,provider_run_id "
+                "FROM operations WHERE operation_id=%s",
                 (lineage["operation_id"],),
             ).fetchone()
             event_rows = connection.execute(
@@ -850,7 +1359,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 (lineage["message_id"],),
             ).fetchone()
             attempt_rows = connection.execute(
-                "SELECT ordinal,attempt_id,dispatch_id,status FROM delivery_attempts "
+                "SELECT ordinal,attempt_id,dispatch_id,status,selection_revision,"
+                "selection_json->>'boot_incarnation' FROM delivery_attempts "
                 "WHERE message_id=%s ORDER BY ordinal",
                 (lineage["message_id"],),
             ).fetchall()
@@ -885,11 +1395,13 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             ).fetchone()[0]
         expected_receipts = [(item["receipt_id"], item["layer"]) for item in lineage["receipts"]]
         expected_attempts = [
-            (item["ordinal"], item["attempt_id"], item["dispatch_id"], item["status"])
+            (item["ordinal"], item["attempt_id"], item["dispatch_id"], item["status"],
+             item["selection_revision"], item["selection_boot"])
             for item in lineage["attempts"]
         ]
         if (
-            operation_row != (lineage["operation_id"], *lineage["operation_details"])
+            operation_row != (lineage["operation_id"], *lineage["operation_details"],
+                              *lineage["provider_refs"])
             or [str(item[0]) for item in event_rows] != lineage["event_ids"]
             or [item[1] for item in event_rows] != lineage["event_hashes"]
             or outbox_row != (lineage["operation_id"], *lineage["outbox_details"])
@@ -923,12 +1435,25 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 "SELECT receipt_id FROM lifecycle_receipts WHERE operation_id=?",
                 (lineage["operation_id"],),
             ).fetchall()
+            boot_rows = connection.execute(
+                "SELECT boot_incarnation,machine_id,node_id FROM node_boots "
+                "ORDER BY started_at,boot_incarnation",
+            ).fetchall()
         if expected_auth_failure:
             if journal is not None or mailbox is not None or node_receipts:
                 raise ProbeRejected("revoked command reached the Node")
         elif (journal != (lineage["command_id"], lineage["message_id"])
               or mailbox != (lineage["operation_id"],) or not node_receipts):
             raise ProbeRejected("SQLite Node lineage changed")
+        if scenario == "P1-NODE-RESTART":
+            proof = lineage["node_restart_proof"]
+            boots = {item[0] for item in boot_rows}
+            if (boots != {proof["old_boot"], proof["new_boot"]}
+                    or len(boot_rows) != 2
+                    or len({(item[1], item[2]) for item in boot_rows}) != 1
+                    or _sha(_canonical(_node_receipts(node_path, lineage["operation_id"])))
+                    != proof["node_receipt_digest"]):
+                raise ProbeRejected("SQLite Node boot/receipt lineage changed")
         return {"sqlite_readback": True, "journal_sha256": _sha(node_path.read_bytes()),
                 "node_receipt_ids": [item[0] for item in node_receipts]}
     if kind == "temporal":
@@ -938,11 +1463,30 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             )
             await adapter.connect(start_worker=False)
             try:
-                return await adapter.readback(row["temporal_workflow_id"])
+                value = await adapter.readback(row["temporal_workflow_id"])
+                if scenario == "P1-PROVIDER-RESTART":
+                    description = await adapter.client.get_workflow_handle(
+                        row["temporal_workflow_id"],
+                    ).describe()
+                    return value, description.run_id, await description.memo()
+                return value, None, None
             finally:
                 await adapter.close()
-        value = asyncio.run(read())
-        if (
+        value, temporal_run, memo = asyncio.run(read())
+        if scenario == "P1-PROVIDER-RESTART":
+            identity = {key: lineage[key] for key in ("tenant_id", "message_id", "operation_id")}
+            expected_hash = _sha(json.dumps(
+                identity, sort_keys=True, separators=(",", ":"),
+            ).encode())
+            if (
+                value.get("status") != "delivered"
+                or value.get("message_id") != lineage["message_id"]
+                or row["temporal_workflow_id"] != "acs-delivery/" + lineage["operation_id"]
+                or temporal_run != row["temporal_run_id"]
+                or memo.get("acs_delivery_identity_hash") != expected_hash
+            ):
+                raise ProbeRejected("Temporal delivery Workflow lineage changed")
+        elif (
             value.get("status") != "committed"
             or row["temporal_workflow_id"] != lineage["operation_id"] + ":temporal"
             or value.get("payload", {}).get("operation_id") != row["temporal_workflow_id"]
@@ -972,6 +1516,37 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                        for path in (context_path, proof_path))
             ):
                 raise ProbeRejected("Core crash process is not conclusively stopped")
+        if scenario == "P1-NODE-RESTART":
+            proof = lineage["node_restart_proof"]
+            context_path = ledger.root / "P1-NODE-RESTART-context.json"
+            result_path = ledger.root / "P1-NODE-RESTART-child-result.json"
+            proof_path = ledger.root / "P1-NODE-RESTART-proof.json"
+            if (
+                Path(f"/proc/{proof['child_pid']}").exists()
+                or _sha(context_path.read_bytes()) != proof["context_digest"]
+                or _sha(result_path.read_bytes()) != proof["result_digest"]
+                or json.loads(proof_path.read_text()) != proof
+                or any((path.stat().st_mode & 0o777) != 0o600
+                       for path in (context_path, result_path, proof_path))
+            ):
+                raise ProbeRejected("Node replacement process is not conclusively stopped")
+        if scenario == "P1-PROVIDER-RESTART":
+            proof = lineage["provider_restart_proof"]
+            paths = {
+                "context_digest": ledger.root / "P1-PROVIDER-RESTART-context.json",
+                "crash_digest": ledger.root / "P1-PROVIDER-RESTART-crash.json",
+                "result_digest": ledger.root / "P1-PROVIDER-RESTART-child-result.json",
+            }
+            proof_path = ledger.root / "P1-PROVIDER-RESTART-proof.json"
+            if (
+                Path(f"/proc/{proof['crash_pid']}").exists()
+                or Path(f"/proc/{proof['recovery_pid']}").exists()
+                or any(_sha(path.read_bytes()) != proof[key] for key, path in paths.items())
+                or json.loads(proof_path.read_text()) != proof
+                or any((path.stat().st_mode & 0o777) != 0o600
+                       for path in (*paths.values(), proof_path))
+            ):
+                raise ProbeRejected("Temporal Worker processes are not conclusively stopped")
         systemd = subprocess.run(
             ["systemctl", "--user", "show-environment"], capture_output=True,
             timeout=10, check=False,
@@ -1103,11 +1678,30 @@ def main(argv: list[str] | None = None) -> int:
     crash.add_argument("--profile", type=Path, required=True)
     crash.add_argument("--context", type=Path, required=True)
     crash.add_argument("--context-sha256", required=True)
+    node_restart = commands.add_parser("node-restart")
+    node_restart.add_argument("--profile", type=Path, required=True)
+    node_restart.add_argument("--context", type=Path, required=True)
+    node_restart.add_argument("--context-sha256", required=True)
+    node_restart.add_argument("--result", type=Path, required=True)
+    provider_worker = commands.add_parser("provider-worker")
+    provider_worker.add_argument("--profile", type=Path, required=True)
+    provider_worker.add_argument("--context", type=Path, required=True)
+    provider_worker.add_argument("--context-sha256", required=True)
+    provider_worker.add_argument("--mode", choices=("crash", "recover"), required=True)
+    provider_worker.add_argument("--result", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         if args.command == "core-crash":
             _core_crash_child(args.profile, args.context, args.context_sha256)
             raise ProbeRejected("Core crash child returned unexpectedly")
+        if args.command == "node-restart":
+            _node_restart_child(args.profile, args.context, args.context_sha256, args.result)
+            return 0
+        if args.command == "provider-worker":
+            _provider_worker_child(
+                args.profile, args.context, args.context_sha256, args.mode, args.result,
+            )
+            return 0
         if args.command == "run":
             value = execute(args.profile, args.scenario, args.kind, args.output)
         else:
