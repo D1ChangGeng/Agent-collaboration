@@ -243,6 +243,7 @@ def validate_scene_profile(value: object) -> dict[str, Any]:
         or value["reasoning_effort"] != "low"
     ):
         raise CodexSceneRejected("Codex provider or strict model profile differs")
+    for field in (
     for field in ("native_executable_path", "model_catalog_path", "auth_key_ref_path"):
         path = value[field]
         if (
@@ -260,7 +261,9 @@ def validate_scene_profile(value: object) -> dict[str, Any]:
         or value["auth_key_ref_path_sha256"] != _sha(value["auth_key_ref_path"].encode())
         or any(
             not isinstance(value[field], str) or not re.fullmatch("[0-9a-f]{64}", value[field])
-            for field in ("native_executable_sha256", "model_catalog_sha256", "schema_sha256")
+            for field in (
+                "native_executable_sha256", "model_catalog_sha256", "schema_sha256",
+            )
         )
     ):
         raise CodexSceneRejected("Codex executable, schema or key reference pin differs")
@@ -363,6 +366,23 @@ def stage_codex_home(host_root: Path, profile: dict[str, Any]) -> dict[str, str]
         or _file_sha(executable) != profile["native_executable_sha256"]
     ):
         raise CodexSceneRejected("private native Codex executable differs")
+    # The native app-server discovers its optional code-mode helper by name on
+    # PATH during a turn, even when the packet exposes no tools.  Keep that
+    # helper inside the same owner-private capacity when the reviewed install
+    # provides it; never broaden PATH to the host installation.
+    helper_source = Path(profile["native_executable_path"]).parent / "codex-code-mode-host"
+    helper_target = host_root / "bin" / "codex-code-mode-host"
+    if helper_source.exists():
+        helper_info = helper_source.stat(follow_symlinks=False)
+        if (
+            helper_source.is_symlink()
+            or not stat.S_ISREG(helper_info.st_mode)
+            or helper_info.st_uid != os.geteuid()
+            or helper_info.st_nlink != 1
+        ):
+            raise CodexSceneRejected("private code-mode host helper differs")
+        _write_private(helper_target, helper_source.read_bytes())
+        os.chmod(helper_target, 0o500)
     source_catalog = Path(profile["model_catalog_path"])
     catalog_bytes = _private_file(source_catalog)
     if (
@@ -415,7 +435,7 @@ def stage_codex_home(host_root: Path, profile: dict[str, Any]) -> dict[str, str]
             "apps = false",
             "plugins = false",
             "recommended_plugins = false",
-            "code_mode_host = false",
+            "code_mode_host = true",
             "code_mode_only = false",
             "",
             "[shell_environment_policy]",
@@ -423,7 +443,7 @@ def stage_codex_home(host_root: Path, profile: dict[str, Any]) -> dict[str, str]
             "experimental_use_profile = false",
             "",
             "[shell_environment_policy.set]",
-            'PATH = "/usr/bin:/bin"',
+            f'PATH = {quote(str(host_root / "bin") + ":/usr/bin:/bin")}',
             f"HOME = {quote(str(host_root / 'home'))}",
             f"TMPDIR = {quote(str(host_root / 'tmp'))}",
             "",
