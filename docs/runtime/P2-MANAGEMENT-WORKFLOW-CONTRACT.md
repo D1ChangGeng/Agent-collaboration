@@ -1,7 +1,7 @@
 # P2 project management and web collaboration contract
 
 Status: adopted P2 design contract. MCP surface revision:
-acs-p2-mcp-workflow/4.
+acs-p2-mcp-workflow/5.
 
 This contract defines how external Agent sessions manage one or more ACS
 projects from local Harnesses and web SaaS clients. The machine-readable tool
@@ -300,6 +300,27 @@ Official ChatGPT references used by this contract:
 - https://developers.openai.com/plugins/build/auth?site_locale=en
 - https://developers.openai.com/plugins/concepts/skills?site_locale=en
 
+## Knowledge Skill presentation
+
+The plugin exposes Skill name and description metadata before full content.
+Descriptions contain stable domain entities and decision signals. The Agent
+loads one applicable SKILL.md and follows one named model, decisions or tools
+reference for the material question.
+
+ProjectContextPack can include knowledge_hints derived from resource kinds,
+boundary states and missing context. Tool-result metadata can carry the same
+skill, topic, reason and reference fields. These hints route retrieval while the
+authenticated tool surface remains the authority for actions.
+
+Web Sessions receive the same product knowledge Skills as local Harnesses. This
+supplies ACS mental models even when the web client has no local cwd or automatic
+AGENTS discovery. load_project then supplies the current Project-specific
+instructions and evidence.
+
+The setup Skill is the guarded procedural module. Runtime Skills are knowledge
+domains: project context, collaboration, Runtime, continuity, Source/Evidence,
+Review/Acceptance, governance and web collaboration.
+
 ## Storage boundary
 
 ACS stores project identity, topology, Grants, WorkItems, Attempts, Message and
@@ -322,4 +343,4 @@ P2-MANAGEMENT-WORKFLOW executes after P2-MCP-WORKFLOW. Direct evidence covers:
 - stale context and source mismatch handling;
 - web Reviewer and Root Manager flows;
 - subscriptions and Project Inbox recovery;
-- Skill-driven workflows with one-sentence user entry.
+- metadata-first Skill discovery, selective reference loading and project-context integration.

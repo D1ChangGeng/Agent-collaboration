@@ -31,7 +31,7 @@
       ]
     },
     "mcp_surface_revision": {
-      "const": "acs-p2-mcp-workflow/4"
+      "const": "acs-p2-mcp-workflow/5"
     },
     "machines": {
       "type": "array",

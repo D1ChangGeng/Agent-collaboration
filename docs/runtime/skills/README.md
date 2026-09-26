@@ -1,51 +1,60 @@
-# ACS Skill workflow catalog
+# ACS knowledge Skill catalog
 
-Status: adopted P2 Skill contract for MCP surface acs-p2-mcp-workflow/4.
-The machine-readable catalog is [p2-skill-contract.json](../p2-skill-contract.json).
+Status: adopted P2 knowledge contract for MCP surface
+acs-p2-mcp-workflow/5. The machine-readable catalog is
+[p2-skill-contract.json](../p2-skill-contract.json).
 
-ACS uses three layers:
+ACS uses four instruction layers:
 
-1. MCP tools provide authenticated data and controlled actions.
-2. Skills provide reusable multi-tool workflows, branching, templates and completion criteria.
-3. Starter prompts provide one-sentence user entry points.
+1. MCP server instructions expose the minimal startup and Project-context rule.
+2. Skill metadata routes a material question to one knowledge domain.
+3. SKILL.md provides its core model, invariants and reference map.
+4. References provide entities, decision maps and tool implications on demand.
 
-Domain Command remains the internal deterministic state-transition protocol.
-CLI commands remain setup and operator mechanisms. User workflows use Skills.
-Harness slash aliases may select a Skill and share the same SKILL.md authority.
+MCP tools provide authenticated data and controlled actions. Domain Commands
+provide deterministic internal transitions. Skills provide reusable conceptual
+knowledge that helps an Agent reason about current and future tasks. The setup
+Skill remains procedural because installation and migration require guarded,
+repeatable mechanics.
 
 ## Catalog
 
-| Skill | User goal |
+| Skill | Knowledge domain |
 |---|---|
-| agent-collaboration-setup | install ACS, adopt or maintain a project Management Root, configure local Harnesses and remote web connection |
-| acs-project-manager | resume, understand, report and advance one project |
-| acs-delegate-work | create or reuse work and delegate it with asynchronous response tracking |
-| acs-handoff-work | transfer existing responsibility with source, evidence and acknowledgement continuity |
-| acs-review-work | perform architecture, engineering, evidence or finalization review |
-| acs-finalize-work | validate and commit accepted state at the authorized boundary |
-| acs-recover-work | recover interrupted delivery, Session, Source or protected-effect state |
-| acs-portfolio-manager | compare and coordinate multiple authorized projects |
+| agent-collaboration-setup | global installation, project adoption, Harness and web connection setup |
+| acs-project-context | Project, Root, Route, Scope, project_id, context loading and multi-project topology |
+| acs-collaboration-model | AgentSlot, Role, team, WorkItem, delegation, handoff and Message semantics |
+| acs-runtime-model | Machine, Node, Runtime, Harness, Driver, Session, Attempt, Lease and Effect |
+| acs-continuity-recovery | Inbox, Outbox, receipts, response, subscription, wake, retry and recovery |
+| acs-source-evidence | SourceBinding, Git/filesystem state, Artifact, Evidence, digest and readback |
+| acs-review-acceptance | Review types, independence, findings, finalization and AcceptedState |
+| acs-policy-governance | Tenant, Grant, Policy, Profile, budget, OAuth, approval and data boundaries |
+| acs-web-collaboration | remote MCP, ProjectContextPack, Tunnel, OAuth and web Source access |
 
-The repository root SKILL.md is the active setup Skill. The Skill specifications
-under this directory become installable runtime Skills after their required MCP
-tools pass P2 conformance.
+## Knowledge admission
 
-## Skill admission rule
+A knowledge Skill earns an independent module when its entities, authority,
+state dimensions and decision rules remain useful across multiple unpredictable
+tasks. A common action alone does not create a Skill. Direct tool selection
+comes from tools/list. Project-specific facts come from ProjectContextPack,
+AGENTS and project knowledge. Temporary task state remains in the Harness.
 
-Create a Skill when a recognizable user goal needs multiple tools, ordered
-preconditions, context hydration, branching on incomplete results, a stable
-output contract, or cross-Project, cross-AgentSlot or cross-Provider
-coordination. A direct single-tool request uses the tool description.
+Each module has one concise SKILL.md and three lazy references:
 
-## Shared invariants
+- model.md for entities, relations, authority and storage;
+- decisions.md for stable decision axes and boundary cases;
+- tools.md for how public tools expose that domain.
 
-Every project workflow carries project_id. Missing web context begins with
-list_projects and load_project. Local context uses the same project_id from the
-Management Root AGENTS block and manifest.
+## Retrieval behavior
 
-Source-dependent claims bind SourceBinding, revision, commit and tree. Message
-delivery and source synchronization are independent. Skills preserve unresolved
-items and evidence class. Mutations use idempotency, expected revision and
-deadline.
+The Harness initially sees only Skill name and description. It loads full
+SKILL.md when the user's goal, current resource, tool result or unresolved state
+matches that domain. It follows one reference at a time for a named question.
 
-See [STARTER-PROMPTS.md](STARTER-PROMPTS.md) for portable user entries.
+High-signal nouns in descriptions improve recall. Narrow domain boundaries,
+explicit Related knowledge links and lazy references limit unnecessary context.
+Tool results may include knowledge_hints containing Skill name, topic, reason
+and reference. Hints advise retrieval and never grant authority.
+
+See [RUNTIME-PRESENTATION.md](RUNTIME-PRESENTATION.md) for routing, load budgets,
+ProjectContextPack integration and quality measures.

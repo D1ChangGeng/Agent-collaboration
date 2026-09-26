@@ -1,7 +1,7 @@
 {
   "schema_version": "acs-gate-contract/1",
-  "contract_revision": "2026-09-22.4",
-  "p2_surface_revision": "acs-p2-mcp-workflow/4",
+  "contract_revision": "2026-09-22.5",
+  "p2_surface_revision": "acs-p2-mcp-workflow/5",
   "instruction_sha256": "0cffa4ab3888b3c05d61a72f0d7566dd9c03db07b4baffef29c9a6cbb7bb9e46",
   "supported_evidence_layers": [
     "explanation",
@@ -114,7 +114,7 @@
         "P2-MCP-RESOURCE-MESSAGE-INBOX",
         "P2-MCP-TYPED-CONTROL",
         "P2-MCP-WAIT-AGGREGATION",
-        "P2-MCP-SKILL-WORKFLOWS"
+        "P2-MCP-SKILL-KNOWLEDGE-ROUTING"
       ]
     },
     "P2-MANAGEMENT-WORKFLOW": {
@@ -133,7 +133,7 @@
         "P2-MGMT-EXTERNAL-SOURCE-COORDINATION",
         "P2-MGMT-WEB-REVIEWER-FLOW",
         "P2-MGMT-WATCH-INBOX-RECOVERY",
-        "P2-MGMT-SKILL-STARTER-PROMPTS"
+        "P2-MGMT-SKILL-CONTEXT-PRESENTATION"
       ]
     },
     "P2-REVIEW": {
