@@ -7,16 +7,20 @@ Windows has no admitted sandbox and therefore remains NOT_RUN.
 
 P2 preparation uses `tools/runtime/p2_harness.py` and
 `docs/runtime/P2-INVENTORY-TEMPLATE.json`. The template binds stable Machine
-identities only. Initialization reobserves the current local Machine and Git
-commit/tree; execution must independently reobserve the remote Machine. Gate
-order is P1, P2-CODEX, P2-OPENCODE, P2-MCP-WORKFLOW,
-P2-MANAGEMENT-WORKFLOW, then P2-REVIEW. The public collaboration and management
+identities only; its `not_run` values do not report completed execution state.
+Historical reviewed Gate results, later candidate continuity and the current
+Control Parity result are indexed in `docs/runtime/P2-EXECUTION-STATUS.md`.
+Initialization reobserves the current local Machine and Git commit/tree;
+execution must independently reobserve the remote Machine. Gate order is P1,
+P2-CODEX, P2-OPENCODE, P2-MCP-WORKFLOW, P2-MANAGEMENT-WORKFLOW,
+P2-CONTROL-PARITY, then P2-REVIEW. The public collaboration and management
 surfaces are defined in docs/runtime/P2-MCP-WORKFLOW-CONTRACT.md and
 docs/runtime/P2-MANAGEMENT-WORKFLOW-CONTRACT.md at surface revision
 acs-p2-mcp-workflow/6. The Gates validate Profile-filtered discovery, explicit
 project context, closed schemas, discriminated results, executable follow-ups,
-Source reads, metadata-first Skill routing and selective references. Checked-in contracts remain preparation input
-until direct execution evidence is attached.
+Source reads, metadata-first Skill routing and selective references. The
+evidence index distinguishes historical runs, current-candidate continuity,
+and the final P2 review boundary.
 
 Independent review follows a capability-first order. Reviewers inspect the
 Runtime implementation and architecture, then verify representative product

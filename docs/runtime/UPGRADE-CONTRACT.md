@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-09-24.2.
+is determined by the named Gate records. Contract revision: 2026-09-25.1.
 
 ## Authority and inputs
 
