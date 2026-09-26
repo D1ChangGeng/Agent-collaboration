@@ -1,11 +1,12 @@
 # P1 real-resource probe profile
 
 This harness prepares executable evidence commands for the 18 P1 scenarios.
-It does not write a formal Gate. Seven scenarios currently have an actual
+It does not write a formal Gate. Eight scenarios currently have an actual
 fixed-identity Runtime lineage adapter: `P1-DOMAIN-TRANSACTION`,
 `P1-AUTH-REVOCATION`, `P1-COMMAND-DEDUP`, and `P1-INBOX-ACK-LOSS`.
-`P1-CORE-RESTART`, `P1-NODE-RESTART` and `P1-PROVIDER-RESTART` are the remaining
-adapters. The other 11 have no runnable command and remain `NOT_RUN`.
+`P1-CORE-RESTART`, `P1-NODE-RESTART`, `P1-PROVIDER-RESTART` and
+`P1-LEASE-FENCING` are the remaining adapters. The other 10 have no runnable
+command and remain `NOT_RUN`.
 
 Each runnable scenario commits its own command, operation, event, Outbox,
 message and receipt lineage in a dedicated PostgreSQL schema. It records
@@ -54,6 +55,31 @@ receipt are separately verified. The two Worker process identities and their
 exit/readback states are kept in owner-only private evidence. No native Driver
 call is claimed for these `message_only` restart scenarios.
 
+`P1-LEASE-FENCING` derives its execution owner from the same WorkItem and
+actual Node machine/boot as its delivered message. The Node Machine ID is the
+Gate runner's observed Machine ID, and PG attempt selection, Node SQLite,
+signed enrollment and every result are compared against it. Signed Domain
+APIs register the original Runtime/Attempt. A real PostgreSQL Lease fences
+the first `LocalFileEffectGateway` write. After its release, a separately
+granted producer obtains a second signed Runtime/Attempt and the same resource
+at generation 2. The replacement owner writes new bytes and an independent `effect.read`
+principal verifies them before the original owner attempts a late write using
+its original Grant, Runtime, Attempt and fencing token. The late call must
+raise `FencingRejected`; file SHA/identity, all effect markers and both
+PostgreSQL Lease identities must remain byte-equivalent across that call.
+After generation 2 is released, the independent reader verifies the same
+intent, completion and current file again, while the original completed
+marker history remains pinned. Readback binds both owners,
+both Lease generations and acquire/release journals to the Delivery message,
+Node journal, effect inode/content and auxiliary Temporal workflow. Fencing
+tokens remain in owner-only Gateway/PG state; probe results contain only their
+digests. This is a local file effect, not a native model-produced artifact or
+an acceptance decision.
+
+`P1-HARNESS-REPLACEMENT` remains `NOT_RUN` while Runtime lacks an authoritative
+versioned HarnessSessionBinding command and readback. Reattaching a Driver or
+replacing a Node is insufficient evidence for that scenario.
+
 The `p1-loopback-provider` profile is Linux-only. It uses the host network and
 admits only `127.0.0.1:54329` PostgreSQL and `127.0.0.1:7239` Temporal. Host
 network sharing is recorded as such; it is not described as a private network.
@@ -80,7 +106,7 @@ argv or ordinary environment. A runnable Gate still needs an independently
 reviewed plan and real run on the target Machine; this harness's isolated
 tests do not promote a Gate.
 
-`p1_profile_plan.py` emits six commands only for the seven implemented scenarios
+`p1_profile_plan.py` emits six commands only for the eight implemented scenarios
 when their required real resources are current, and an empty command list for
 every gap. Missing command kinds therefore stay `NOT_RUN`; the harness never
 fabricates a passed result. The command and six readbacks must share one

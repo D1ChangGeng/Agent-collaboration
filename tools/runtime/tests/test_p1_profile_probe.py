@@ -107,8 +107,9 @@ def test_plan_omits_model_gaps_and_contains_no_profile_secret(profile_file):
         "P1-DOMAIN-TRANSACTION", "P1-AUTH-REVOCATION", "P1-COMMAND-DEDUP",
         "P1-INBOX-ACK-LOSS", "P1-CORE-RESTART", "P1-NODE-RESTART",
         "P1-PROVIDER-RESTART",
+        "P1-LEASE-FENCING",
     ]
-    assert len(status["not_run"]) == 11
+    assert len(status["not_run"]) == 10
     assert {
         "P1-CODEX-LIFECYCLE", "P1-OPENCODE-LIFECYCLE", "P1-INTEGRATED-ACCEPTANCE",
     } < set(status["not_run"])
@@ -157,6 +158,7 @@ def test_runner_result_has_exact_schema_and_stable_ids(profile_file):
         "run_id": "run", "operation_id": "operation", "temporal_workflow_id": "workflow",
         "message_id": "message", "event_id": "event", "receipt_id": "receipt",
         "source_commit": "b" * 40, "source_tree": "c" * 40,
+        "lineage_json": json.dumps({"lease_proof": None}),
     }
     value = probe._runner_result(
         profile, "P1-DOMAIN-TRANSACTION", "command_output", row,
