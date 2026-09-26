@@ -9,5 +9,7 @@ P2 preparation uses `tools/runtime/p2_harness.py` and
 `docs/runtime/P2-INVENTORY-TEMPLATE.json`. The template binds stable Machine
 identities only. Initialization reobserves the current local Machine and Git
 commit/tree; execution must independently reobserve the remote Machine. Gate
-order is P1, P2-CODEX, then P2-OPENCODE. The checked-in tools and documents do
-not contain a PASS Gate or authorize fault injection.
+order is P1, P2-CODEX, P2-OPENCODE, P2-MCP-WORKFLOW, then P2-REVIEW. The public
+tool surface and continuation contract are defined in
+`docs/runtime/P2-MCP-WORKFLOW-CONTRACT.md`. The checked-in tools and documents
+remain preparation inputs until each Gate has direct execution evidence.

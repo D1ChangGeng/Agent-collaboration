@@ -1,13 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/acs/p2-execution-plan-1.schema.json",
+  "$id": "https://example.invalid/acs/p2-execution-plan-2.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "status", "execution_order", "machines", "gates"],
+  "required": ["schema_version", "status", "execution_order", "mcp_surface_revision", "machines", "gates"],
   "properties": {
-    "schema_version": {"const": "acs-p2-execution-plan/1"},
+    "schema_version": {"const": "acs-p2-execution-plan/2"},
     "status": {"enum": ["not_run", "blocked"]},
-    "execution_order": {"const": ["P1", "P2-CODEX", "P2-OPENCODE"]},
+    "execution_order": {"const": ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW"]},
+    "mcp_surface_revision": {"const": "acs-p2-mcp-workflow/1"},
     "machines": {
       "type": "array", "minItems": 2, "maxItems": 2,
       "items": {
@@ -28,10 +29,11 @@
     "gates": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["P2-CODEX", "P2-OPENCODE"],
+      "required": ["P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW"],
       "properties": {
         "P2-CODEX": {"$ref": "#/$defs/gate"},
-        "P2-OPENCODE": {"$ref": "#/$defs/gate"}
+        "P2-OPENCODE": {"$ref": "#/$defs/gate"},
+        "P2-MCP-WORKFLOW": {"$ref": "#/$defs/gate"}
       }
     }
   },
@@ -43,7 +45,7 @@
         "status": {"enum": ["not_run", "blocked"]},
         "prerequisite": {"type": "string"},
         "scenarios": {
-          "type": "array", "minItems": 8, "maxItems": 8,
+          "type": "array", "minItems": 1, "maxItems": 64,
           "items": {
             "type": "object",
             "required": ["scenario_id", "status", "fault_injection", "evidence"],

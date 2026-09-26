@@ -90,7 +90,11 @@ class GateIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(initialized.returncode, 0, initialized.stderr + initialized.stdout)
         workspace = json.loads((output / "workspace.json").read_text())
-        self.assertEqual(workspace["execution_order"], ["P1", "P2-CODEX", "P2-OPENCODE"])
+        self.assertEqual(
+            workspace["execution_order"],
+            ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW"],
+        )
+        self.assertEqual(workspace["mcp_surface_revision"], "acs-p2-mcp-workflow/1")
         observation = json.loads((output / "runtime-observation.json").read_text())
         current = subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=self.source,
@@ -100,6 +104,9 @@ class GateIntegrationTests(unittest.TestCase):
         opencode = json.loads((output / "P2-OPENCODE.json").read_text())
         self.assertTrue(all("P2-CODEX prerequisite has not passed" in item["blockers"]
                             for item in opencode["scenarios"]))
+        workflow = json.loads((output / "P2-MCP-WORKFLOW.json").read_text())
+        self.assertTrue(all("P2-OPENCODE prerequisite has not passed" in item["blockers"]
+                            for item in workflow["scenarios"]))
         audited = self.run_cli(
             "p2_harness.py", "--contract", self.contract,
             "audit", "--output", output,
@@ -108,7 +115,7 @@ class GateIntegrationTests(unittest.TestCase):
         self.assertEqual(json.loads(audited.stdout), {"audit": "passed", "status": "not_run"})
         self.assertEqual(self.git_status(), "")
         self.assertFalse(any(value.get("status") == "passed" for value in (
-            json.loads((output / "P2-CODEX.json").read_text()), opencode,
+            json.loads((output / "P2-CODEX.json").read_text()), opencode, workflow,
         )))
 
 

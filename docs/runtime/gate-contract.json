@@ -1,6 +1,7 @@
 {
   "schema_version": "acs-gate-contract/1",
   "contract_revision": "2026-09-11.1",
+  "p2_surface_revision": "acs-p2-mcp-workflow/1",
   "instruction_sha256": "0cffa4ab3888b3c05d61a72f0d7566dd9c03db07b4baffef29c9a6cbb7bb9e46",
   "supported_evidence_layers": ["explanation", "decision_logic", "real_mechanism", "invariants", "representative_e2e"],
   "binding_fields": ["profile", "machines", "nodes", "os", "core", "provider", "driver", "harness", "database", "protocol", "credential_scope", "policy", "direction", "expires_at"],
@@ -34,8 +35,19 @@
         "P2-HUMAN-BRIDGE-RECOVERY", "P2-SOURCE-ARTIFACT-EFFECT-READBACK"
       ]
     },
-    "P2-REVIEW": {
+    "P2-MCP-WORKFLOW": {
       "requires": ["P2-OPENCODE"],
+      "scenarios": [
+        "P2-MCP-COLLABORATION-APPLY", "P2-MCP-HARNESS-DISCOVERY",
+        "P2-MCP-SEND-ASYNC", "P2-MCP-SEND-SYNC",
+        "P2-MCP-BOUNDED-AWAIT-CONTINUITY", "P2-MCP-TARGET-IDLE-DELIVERY",
+        "P2-MCP-COMPLETION-NOTIFICATION", "P2-MCP-SESSION-CONTINUITY",
+        "P2-MCP-GENERIC-READ-INBOX", "P2-MCP-CANCELLATION",
+        "P2-MCP-WAIT-AGGREGATION", "P2-MCP-WORKFLOW-COMMANDS"
+      ]
+    },
+    "P2-REVIEW": {
+      "requires": ["P2-MCP-WORKFLOW"],
       "scenarios": ["P2-INDEPENDENT-GATE-REVIEW", "P2-PRODUCT-OWNER-DECISION"]
     }
   }

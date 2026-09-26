@@ -21,6 +21,11 @@ facts are not current inputs.
 5. Execute all eight `P2-CODEX` scenarios and independently review that Gate.
 6. Execute all eight `P2-OPENCODE` scenarios, including Human Bridge, and review
    that Gate. A P2-CODEX component result cannot satisfy an OpenCode scenario.
+7. Implement and execute the `P2-MCP-WORKFLOW` surface from
+   [P2-MCP-WORKFLOW-CONTRACT.md](P2-MCP-WORKFLOW-CONTRACT.md) through real Codex
+   and OpenCode MCP clients.
+8. Perform the complete P2 independent review and retain the product-owner
+   decision boundary.
 
 Each scenario must produce its own command, operation, message and event IDs;
 receipts; raw output; fault injection; source, artifact and effect read-back;
@@ -67,6 +72,38 @@ unresolved items. Reused P1 evidence proves only the prerequisite.
   against successful re-probe. Manual content never grants authority.
 - `SOURCE-ARTIFACT-EFFECT-READBACK`: independently read exact source tree,
   artifact digest and protected effect result from their real authorities.
+
+## P2-MCP-WORKFLOW
+
+- `COLLABORATION-APPLY`: apply an explicit Scope, AgentSlot, role, Grant, Policy
+  and budget plan and read back its revision.
+- `HARNESS-DISCOVERY`: list eligible current Harness capacities using scoped,
+  unexpired capability evidence.
+- `SEND-ASYNC`: use default asynchronous send, return a stable response handle,
+  exact read/await instructions and automatic completion notification state.
+- `SEND-SYNC`: use the same Message and response handle with bounded synchronous
+  observation and a common result envelope.
+- `BOUNDED-AWAIT-CONTINUITY`: retain response tracking and notification across
+  await timeout, MCP disconnect and reconnect.
+- `TARGET-IDLE-DELIVERY`: commit the target Inbox while its Session is active,
+  then dispatch exactly once after a current idle observation.
+- `COMPLETION-NOTIFICATION`: queue and deliver one completion Message to the
+  initiating AgentSlot according to its Session activity.
+- `SESSION-CONTINUITY`: route completion to the current Session binding after
+  replacement while retaining logical AgentSlot and response identity.
+- `GENERIC-READ-INBOX`: recover notifications and read Message, response,
+  Evidence and Artifact handles through the common read contract.
+- `CANCELLATION`: apply subscription, WorkItem and Runtime Attempt cancellation
+  through their respective Grants and state dimensions.
+- `WAIT-AGGREGATION`: exercise `any` and `all` over response handles with one
+  completion revision and one notification per satisfied aggregate.
+- `WORKFLOW-COMMANDS`: execute the adopted collaboration, review, results,
+  status and cancellation command documents through the versioned tool contracts.
+
+The public MCP result bytes, exact tool arguments, Domain rows, Inbox/Outbox,
+Temporal history, Node/Driver observations, Session activity transitions and
+completion readback are direct Gate evidence. A tool description or generated
+schema alone is not execution evidence.
 
 ## Fault safety
 
