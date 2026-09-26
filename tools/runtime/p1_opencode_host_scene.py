@@ -230,7 +230,18 @@ class OpenCodeHostSceneService:
                 raise OpenCodeHostUncertain("OpenCode native owner auth was not observed")
             if admission.key_reference_identity() != self._key_identity:
                 raise OpenCodeHostUncertain("OpenCode key reference changed before dispatch")
-            dispatched = self.host.handle(request)
+            try:
+                dispatched = self.host.handle(request)
+            except BaseException as error:
+                try:
+                    self.driver.journal.event(
+                        request.operation_id,
+                        "host_dispatch_error",
+                        {"error_type": type(error).__name__, "detail": str(error)[:300]},
+                    )
+                except (OSError, RuntimeError, TypeError, ValueError):
+                    pass
+                raise
             if dispatched.status != "delivered" or not dispatched.attempt_id:
                 raise OpenCodeHostUncertain("OpenCode original Temporal dispatch lacks native ACK")
             if self.temporal.last is None:
