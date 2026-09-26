@@ -58,11 +58,27 @@ class OpenCodeTemporalDispatcher:
                     if asyncio.get_running_loop().time() >= ready_deadline:
                         raise RuntimeError("OpenCode Temporal worker did not become ready")
                     await asyncio.sleep(0.01)
+                self._journal_event(identity["operation_id"], "temporal_worker_ready", {
+                    "task_queue": self.task_queue,
+                    "worker_running": worker.is_running,
+                })
+                self._journal_event(identity["operation_id"], "temporal_submit_intent", {
+                    "workflow_id": "acs-delivery/" + identity["operation_id"],
+                    "task_queue": self.task_queue,
+                })
                 handle = await submit_delivery(
                     client, self.task_queue, self.dispatcher, identity
                 )
                 description = await handle.describe()
+                self._journal_event(identity["operation_id"], "temporal_submit_return", {
+                    "workflow_id": handle.id,
+                    "provider_run_id": description.run_id,
+                    "status": str(description.status),
+                })
                 result = await asyncio.wait_for(handle.result(), timeout=remaining)
+                self._journal_event(identity["operation_id"], "temporal_result", {
+                    "status": result.get("status") if isinstance(result, dict) else None,
+                })
                 return result, handle.id, description.run_id
             finally:
                 await worker.shutdown()
@@ -99,3 +115,12 @@ class OpenCodeTemporalDispatcher:
             "result": dict(result),
         }
         return result
+
+    def _journal_event(self, operation_id: str, kind: str, body: dict[str, Any]) -> None:
+        endpoints = tuple(self.service.endpoints.values())
+        endpoint = endpoints[0] if len(endpoints) == 1 else None
+        adapter = getattr(endpoint, "driver", None)
+        driver = getattr(adapter, "driver", adapter)
+        journal = getattr(driver, "journal", None)
+        if journal is not None:
+            journal.event(operation_id, kind, body)
