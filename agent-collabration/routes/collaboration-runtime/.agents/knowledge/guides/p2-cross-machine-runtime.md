@@ -36,7 +36,7 @@ review_when:
 ## Evidence boundary
 
 These boundaries were last checked against source commit
-`d43c37f72e59d72c94ee49c8dcce9ae6b49be3d2`, including
+`65da0bcea403b5a479d7fd1359a45fcbb2bd0f69`, including
 `docs/runtime/UPGRADE-CONTRACT.md`, `runtime/receiver*.py`,
 `runtime/codex_driver.py`, `runtime/supervisor.py`,
 `runtime/systemd_supervisor.py`, and `tools/runtime/p2_*.py`. A later candidate
