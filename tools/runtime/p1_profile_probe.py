@@ -70,6 +70,7 @@ from runtime_tests.test_delivery import FixtureDriver
 from tools.runtime import (
     p1_harness_replacement,
     p1_identity_continuity_scene,
+    p1_integrated_acceptance,
     p1_native_multiagent,
     p1_partial_artifact,
     p1_surface_parity,
@@ -181,6 +182,7 @@ class ScenarioCatalog:
         ),
         "P1-INTEGRATED-ACCEPTANCE": (
             "runtime_tests/test_acceptance_gateway_integration.py::test_real_ready_publication_historical_callback_and_acceptance",
+            "runtime_tests/test_effect_registration.py::test_authenticated_registration_replaces_fixture_enrollment_and_accepts",
         ),
     }
     MODEL_REQUIREMENTS: ClassVar[dict[str, str]] = {
@@ -2689,6 +2691,7 @@ def _run_domain_transaction(
     native_multiagent_proof = None
     surface_parity_proof = None
     identity_continuity_proof = None
+    integrated_acceptance_proof = None
     if scenario == "P1-AUTH-REVOCATION":
         with authority._connect() as connection:
             connection.execute(
@@ -2830,6 +2833,16 @@ def _run_domain_transaction(
                 issued_at=issued_at,
             )
         except p1_surface_parity.SurfaceParityRejected as exc:
+            raise ProbeRejected(str(exc)) from exc
+    if scenario == "P1-INTEGRATED-ACCEPTANCE":
+        try:
+            integrated_acceptance_proof = p1_integrated_acceptance.run(
+                authority, node, ledger, work_id, message_id,
+                sent.operation_id, commit, tree, suffix, issued_at,
+                register_execution=_register_lease_execution,
+                domain_command=_domain_command, private_json=_private_json,
+            )
+        except p1_integrated_acceptance.IntegratedAcceptanceRejected as exc:
             raise ProbeRejected(str(exc)) from exc
     with node._transaction() as connection:
         connection.execute(
@@ -2985,6 +2998,7 @@ def _run_domain_transaction(
         "native_multiagent_proof": native_multiagent_proof,
         "surface_parity_proof": surface_parity_proof,
         "identity_continuity_proof": identity_continuity_proof,
+        "integrated_acceptance_proof": integrated_acceptance_proof,
         "dedup_details": list(dedup_details),
         "operation_details": list(operation_details),
         "provider_refs": list(provider_refs),
@@ -4110,6 +4124,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         "native_multiagent_proof",
         "surface_parity_proof",
         "identity_continuity_proof",
+        "integrated_acceptance_proof",
         "dedup_details", "operation_details", "outbox_details", "message_hashes",
         "event_hashes", "provider_refs",
     }
@@ -4157,6 +4172,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         != (scenario == "P1-SURFACE-PARITY")
         or (lineage["identity_continuity_proof"] is not None)
         != (scenario == "P1-IDENTITY-CONTINUITY")
+        or (lineage["integrated_acceptance_proof"] is not None)
+        != (scenario == "P1-INTEGRATED-ACCEPTANCE")
     ):
         raise ProbeRejected("scenario lineage does not prove its required fault")
     if scenario == "P1-SURFACE-PARITY":
@@ -4228,6 +4245,23 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             or qualification.get("missing") != []
         ):
             raise ProbeRejected("identity continuity Gate qualification is incomplete")
+    if scenario == "P1-INTEGRATED-ACCEPTANCE":
+        proof = lineage["integrated_acceptance_proof"]
+        if (
+            proof.get("delivery_operation_id") != lineage["operation_id"]
+            or proof.get("message_id") != lineage["message_id"]
+            or proof.get("delivery_attempt_id") != lineage["attempt_id"]
+            or proof.get("source_commit") != row["source_commit"]
+            or proof.get("source_tree") != row["source_tree"]
+            or proof.get("machine_id") != profile["machine_id"]
+            or proof.get("node_id") != profile["node_id"]
+            or proof.get("work") != ["accepted", 2, row["source_commit"]]
+            or proof.get("before_publication_rejected") is not True
+            or proof.get("effect", [None])[0] != "verified"
+            or proof.get("output_sha256") != proof.get("file_sha256")
+            or not proof.get("completion_sha256")
+        ):
+            raise ProbeRejected("integrated acceptance candidate proof is incomplete")
     if scenario == "P1-LEASE-FENCING":
         proof = lineage["lease_proof"]
         if (
@@ -4340,6 +4374,14 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         except p1_identity_continuity_scene.IdentityContinuityRejected as exc:
             raise ProbeRejected(str(exc)) from exc
         return identity_extra
+    integrated_extra = {}
+    if scenario == "P1-INTEGRATED-ACCEPTANCE":
+        try:
+            integrated_extra = p1_integrated_acceptance.read_layer(
+                profile, kind, ledger, row, lineage,
+            )
+        except p1_integrated_acceptance.IntegratedAcceptanceRejected as exc:
+            raise ProbeRejected(str(exc)) from exc
     if kind == "postgresql":
         scoped = make_conninfo(
             profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
@@ -4439,7 +4481,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             if scenario == "P1-STALE-BASELINE" else {}
         )
         return {"postgresql_readback": True, "lineage_digest": _sha(_canonical(lineage)),
-                **extra, **partial_extra, **harness_extra, **native_extra, **identity_extra}
+                **extra, **partial_extra, **harness_extra, **native_extra, **identity_extra,
+                **integrated_extra}
     if kind == "sqlite":
         replay = ledger.get(scenario)
         if replay != row:
@@ -4502,7 +4545,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             raise ProbeRejected("SQLite Node differs from signed Lease execution owner")
         return {"sqlite_readback": True, "journal_sha256": _sha(node_path.read_bytes()),
                 "node_receipt_ids": [item[0] for item in node_receipts],
-                **partial_extra, **harness_extra, **native_extra, **identity_extra}
+                **partial_extra, **harness_extra, **native_extra, **identity_extra,
+                **integrated_extra}
     if kind == "temporal":
         async def read():
             adapter = TemporalAdapter(
@@ -4543,7 +4587,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             raise ProbeRejected("Temporal scenario marker changed")
         return {"temporal_readback": True, "workflow_id": row["temporal_workflow_id"],
                 "run_id": row["temporal_run_id"], **partial_extra, **harness_extra,
-                **native_extra, **identity_extra}
+                **native_extra, **identity_extra, **integrated_extra}
     if kind == "driver":
         raw = ledger.root / row["raw_path"]
         value = json.loads(raw.read_text())
@@ -4562,7 +4606,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         )
         return {"driver_readback": True, "driver_calls": lineage["driver_calls"],
                 "raw_sha256": _sha(raw.read_bytes()), **extra, **partial_extra,
-                **harness_extra, **native_extra, **identity_extra}
+                **harness_extra, **native_extra, **identity_extra, **integrated_extra}
     if kind == "os":
         if scenario == "P1-CORE-RESTART":
             proof = lineage["core_crash_proof"]
@@ -4663,7 +4707,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         )
         return {"os_readback": True, "platform": platform.platform(),
                 "systemd_user_exit": systemd_exit, **extra, **partial_extra,
-                **harness_extra, **native_extra, **identity_extra}
+                **harness_extra, **native_extra, **identity_extra, **integrated_extra}
     raw = ledger.root / row["raw_path"]
     if (_sha(raw.read_bytes()) != row["test_digest"] or not lineage["conflict_rejected"]
             or (scenario == "P1-LEASE-FENCING" and (
@@ -4681,7 +4725,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         raise ProbeRejected("command output does not bind the Runtime transaction")
     return {"command_output": True, "test_digest": row["test_digest"],
             "lineage_digest": _sha(_canonical(lineage)), **partial_extra,
-            **harness_extra, **native_extra, **identity_extra}
+            **harness_extra, **native_extra, **identity_extra, **integrated_extra}
 
 
 def _runner_result(profile: dict[str, Any], scenario: str, kind: str,

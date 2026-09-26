@@ -157,6 +157,17 @@ model lifecycle scenario is admitted by a historical receipt.
 owner-pinned same-run host scenes, one-request decisions, terminal readbacks
 and process-tree postflights are executed and reviewed. Integrated acceptance
 requires both completed lifecycle records in that same authenticated Gate run.
+Its own scenario must additionally bind one delivered Attempt to a signed
+execution receipt and CAS output, record Evidence, assign a distinct Reviewer
+identity, record a Review, advance to `acceptance_ready`, reject Effect
+registration before publication without a partial Domain commit, publish the
+reviewed output through the fenced file Gateway, register and historically read
+back the completed Effect, and commit an `AcceptedStateRevision`. PostgreSQL,
+Gateway and OS file readbacks are repeated by the six evidence commands. The
+local Driver response and scripted Review exercise the deterministic Runtime
+path; they do not stand in for an external Agent's independent product decision
+or the P2 product owner's final acceptance. Catalog test names are regression
+references, not evidence that the Gate adapter executed those tests.
 
 The Gate runner's `runtime_profile` provisions a digest-pinned, read-only
 profile at `/run/acs-p1/profile.json` and a reviewed Runtime Python environment
