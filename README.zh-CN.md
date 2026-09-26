@@ -463,4 +463,4 @@ python3 -m unittest discover -s tests -v
 
 ## License
 
-当前默认使用 MIT License。正式发布前如果你希望更换许可证，可以直接替换 `LICENSE`。
+本修订版本除按其原有许可证提供的第三方组件外，采用 [Sustainable Use License（SUL）1.0](LICENSE)。SUL 允许企业内部使用以及个人或非商业用途；向他人分发或提供软件仅限免费且非商业目的，其他商业化提供方式需与相关权利人另行达成协议。SUL 属于源码可见许可证，并非 OSI 批准的开源许可证。此前按 MIT 许可证公开的版本仍受原 MIT 许可证约束。
