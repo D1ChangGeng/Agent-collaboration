@@ -76,22 +76,43 @@ def listen(host: str, worker_port: int, client_port: int, token_path: Path) -> N
                 client.close(); worker.close()
 
 
-def connect(relay_host: str, relay_port: int, local_host: str, local_port: int,
-            token_path: Path) -> None:
-    secret = token(token_path)
+def _worker(relay_host: str, relay_port: int, local_host: str, local_port: int,
+            secret: bytes) -> None:
     while True:
-        with socket.create_connection((relay_host, relay_port), timeout=10) as relay:
-            relay.settimeout(None)
-            relay.sendall(secret + b"\n")
-            if relay.recv(6) != b"READY\n":
-                raise RuntimeError("reverse tunnel relay authentication failed")
-            command = b""
-            while not command.endswith(b"\n"):
-                command += relay.recv(16)
-            if command != b"CONNECT\n":
-                raise RuntimeError("reverse tunnel relay command differs")
-            with socket.create_connection((local_host, local_port), timeout=10) as local:
-                pipe(relay, local)
+        try:
+            with socket.create_connection((relay_host, relay_port), timeout=10) as relay:
+                relay.settimeout(None)
+                relay.sendall(secret + b"\n")
+                if relay.recv(6) != b"READY\n":
+                    raise RuntimeError("reverse tunnel relay authentication failed")
+                command = b""
+                while not command.endswith(b"\n"):
+                    command += relay.recv(16)
+                if command != b"CONNECT\n":
+                    raise RuntimeError("reverse tunnel relay command differs")
+                with socket.create_connection((local_host, local_port), timeout=10) as local:
+                    pipe(relay, local)
+        except OSError:
+            continue
+
+
+def connect(relay_host: str, relay_port: int, local_host: str, local_port: int,
+            token_path: Path, *, workers: int = 4) -> None:
+    secret = token(token_path)
+    if not 2 <= workers <= 16:
+        raise ValueError("reverse tunnel worker bound is invalid")
+    threads = [
+        threading.Thread(
+            target=_worker,
+            args=(relay_host, relay_port, local_host, local_port, secret),
+            daemon=False,
+        )
+        for _ in range(workers)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
 
 
 def main():
@@ -104,11 +125,15 @@ def main():
     agent.add_argument("--relay-host", required=True); agent.add_argument("--relay-port", type=int, required=True)
     agent.add_argument("--local-host", required=True); agent.add_argument("--local-port", type=int, required=True)
     agent.add_argument("--token", type=Path, required=True)
+    agent.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()
     if args.action == "listen":
         listen(args.host, args.worker_port, args.client_port, args.token)
     else:
-        connect(args.relay_host, args.relay_port, args.local_host, args.local_port, args.token)
+        connect(
+            args.relay_host, args.relay_port, args.local_host, args.local_port,
+            args.token, workers=args.workers,
+        )
 
 
 if __name__ == "__main__":
