@@ -13,7 +13,9 @@ facts are not current inputs.
 1. Finish and independently accept P1 on one exact integrated commit/tree.
 2. Synchronize both clones to that exact commit and verify clean tracked state.
 3. Enroll both physical Machines and Nodes; record fresh machine/session
-   observations and actual Harness/Driver versions.
+   observations, actual Harness/Driver versions, and the selected Codex
+   authentication mode. For the current profile, verify the `zeo-dev` API
+   provider by a redacted fresh probe; do not require OAuth login.
 4. Deploy the authenticated TLS receiver and supervised Node on Linux. Verify
    the presented certificate, current registration and systemd/cgroup state.
 5. Execute all eight `P2-CODEX` scenarios and independently review that Gate.
