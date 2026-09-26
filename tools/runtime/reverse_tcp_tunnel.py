@@ -49,7 +49,10 @@ def listen(host: str, worker_port: int, client_port: int, token_path: Path) -> N
             try:
                 received = b""
                 while not received.endswith(b"\n") and len(received) <= 65:
-                    received += connection.recv(66 - len(received))
+                    chunk = connection.recv(66 - len(received))
+                    if not chunk:
+                        break
+                    received += chunk
                 if received.rstrip(b"\n") != secret:
                     connection.close(); continue
                 connection.sendall(b"READY\n")
