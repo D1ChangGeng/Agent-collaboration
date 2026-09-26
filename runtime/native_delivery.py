@@ -99,6 +99,14 @@ class NativeDeliveryAdapter:
             self.driver._owned_mutation()
             return invocation
         except (DriverRejected, OutcomeUncertain) as error:
+            try:
+                self.driver.journal.event(
+                    invocation.invocation_id,
+                    "native_prepare_error",
+                    {"error_type": type(error).__name__, "detail": str(error)[:300]},
+                )
+            except (OSError, RuntimeError, TypeError, ValueError):
+                pass
             raise InvocationPreCallRejected("native_binding_not_ready") from error
 
     def invoke(self, invocation, *, on_dispatch):
