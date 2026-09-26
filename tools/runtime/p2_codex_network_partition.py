@@ -147,6 +147,8 @@ class RelayPartition:
         start["listener_birth"] = process.birth_ref
 
     def _control_probe(self) -> dict:
+        if self.arguments.control_challenge.exists() or self.arguments.control_proof.exists():
+            raise RuntimeError("control proof run paths are not fresh")
         challenge = issue_control_challenge(
             self.arguments.control_challenge, run_id=self.arguments.suffix,
             expected_host=self.arguments.control_host,
