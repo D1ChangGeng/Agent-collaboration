@@ -1552,12 +1552,44 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                        for path in (*paths.values(), proof_path))
             ):
                 raise ProbeRejected("Temporal Worker processes are not conclusively stopped")
-        systemd = subprocess.run(
-            ["systemctl", "--user", "show-environment"], capture_output=True,
-            timeout=10, check=False,
-        )
-        if systemd.returncode:
-            raise ProbeUnavailable("systemd --user manager is unavailable")
+        if os.environ.get("ACS_GATE_RUNTIME_ROOT") == "/run/acs-p1/runtime":
+            if os.environ.get("ACS_GATE_HOST_OS_ATTESTATION") != "/run/acs-p1/host-os.json":
+                raise ProbeRejected("trusted host OS attestation is missing")
+            host_sha = os.environ.get("ACS_GATE_HOST_OS_SHA256", "")
+            host_path = Path("/run/acs-p1/host-os.json")
+            try:
+                host_bytes = host_path.read_bytes()
+                host = json.loads(host_bytes)
+                host_info = host_path.stat(follow_symlinks=False)
+            except (OSError, ValueError):
+                raise ProbeRejected("trusted host OS attestation is unreadable") from None
+            if (not isinstance(host, dict) or not 0 < len(host_bytes) <= 65_536
+                    or not re.fullmatch(r"[0-9a-f]{64}", host_sha)
+                    or _sha(host_bytes) != host_sha
+                    or not stat.S_ISREG(host_info.st_mode)
+                    or host_info.st_uid != os.geteuid()
+                    or stat.S_IMODE(host_info.st_mode) != 0o600
+                    or host_info.st_nlink != 1
+                    or host.get("schema_version") != "acs-p1-host-os-attestation/1"
+                    or host.get("run_id") != os.environ.get("ACS_GATE_RUN_ID")
+                    or host.get("scenario_id") != scenario
+                    or host.get("command_id") != os.environ.get("ACS_GATE_COMMAND_ID")
+                    or host.get("source_commit") != row["source_commit"]
+                    or host.get("source_tree") != row["source_tree"]
+                    or host.get("binding_sha256") != os.environ.get("ACS_GATE_BINDING_SHA256")
+                    or host.get("host_uid") != os.geteuid()
+                    or host.get("bus_peer_uid") != os.geteuid()
+                    or host.get("systemd_user_exit") != 0):
+                raise ProbeRejected("trusted host OS attestation differs from scenario")
+            systemd_exit = 0
+        else:
+            systemd = subprocess.run(
+                ["systemctl", "--user", "show-environment"], capture_output=True,
+                timeout=10, check=False,
+            )
+            if systemd.returncode:
+                raise ProbeUnavailable("systemd --user manager is unavailable")
+            systemd_exit = systemd.returncode
         current_commit = os.environ.get("ACS_GATE_SOURCE_COMMIT")
         current_tree = os.environ.get("ACS_GATE_SOURCE_TREE")
         if not current_commit or not current_tree:
@@ -1565,7 +1597,7 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         if (current_commit, current_tree) != (row["source_commit"], row["source_tree"]):
             raise ProbeRejected("source identity changed during scenario evidence")
         return {"os_readback": True, "platform": platform.platform(),
-                "systemd_user_exit": systemd.returncode}
+                "systemd_user_exit": systemd_exit}
     raw = ledger.root / row["raw_path"]
     if _sha(raw.read_bytes()) != row["test_digest"] or not lineage["conflict_rejected"]:
         raise ProbeRejected("command output does not bind the Runtime transaction")

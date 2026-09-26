@@ -590,6 +590,89 @@ class GateRunnerTests(unittest.TestCase):
             ) / "redacted-failure.txt"
             self.assertNotIn("private-value", failure.read_text())
 
+    @unittest.skipUnless(os.name == "posix", "host OS attestation is POSIX-only")
+    def test_guest_receives_host_os_attestation_without_user_bus_descriptor(self):
+        self.configure_runtime_profile()
+        state = self.initialize()
+        scenario_id = "P1-DOMAIN-TRANSACTION"
+        command = {
+            "command_id": "host-os-observation", "kind": "os",
+            "argv": [
+                "/bin/sh", "-c",
+                f"test ! -e /run/user/{os.geteuid()}/bus && test -r /run/acs-p1/host-os.json",
+            ],
+            "evidence_fields": ["source_readback"],
+        }
+        with runner.pinned_runtime_mounts(
+            self.plan, state=state, scenario_id=scenario_id,
+            command=command, run_dir=self.run_dir,
+        ) as (sources, descriptors):
+            self.assertNotIn(sources["_bus_parent_fd"], descriptors)
+            self.assertIn("host_os", sources)
+            attestation = json.loads(sources["host_os_path"].read_text())
+            self.assertEqual(attestation["bus_peer_uid"], os.geteuid())
+            self.assertEqual(attestation["systemd_user_exit"], 0)
+            environment = runner.probe_environment(state, scenario_id, command)
+            environment["ACS_GATE_HOST_OS_ATTESTATION"] = "/run/acs-p1/host-os.json"
+            environment["ACS_GATE_HOST_OS_SHA256"] = sources["host_os_ref"]["sha256"]
+            if state["sandbox"]["available"]:
+                argv, _output = runner.sandbox_command(
+                    state, self.plan, self.run_dir, scenario_id, command,
+                    environment, sources,
+                )
+                mount_argv = argv[:argv.index("--")]
+                self.assertNotIn(f"/run/user/{os.geteuid()}/bus", mount_argv)
+                self.assertIn("/run/acs-p1/host-os.json", mount_argv)
+                result = subprocess.run(
+                    argv, cwd=self.run_dir, env={}, capture_output=True, timeout=30,
+                    check=False, pass_fds=descriptors,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr[-500:])
+            runner.assert_runtime_mounts_unchanged(self.plan, sources, descriptors)
+
+    @unittest.skipUnless(os.name == "posix", "host OS file mode audit is POSIX-only")
+    def test_host_os_attestation_mode_change_fails_final_audit(self):
+        self.configure_runtime_profile()
+        state = self.initialize()
+        scenario_id = "P1-DOMAIN-TRANSACTION"
+        command = {
+            "command_id": "host-os-mode", "kind": "os", "argv": ["/bin/true"],
+            "evidence_fields": ["source_readback"],
+        }
+        self.plan["scenarios"][scenario_id] = [command]
+        directory = runner._private_evidence_directory(
+            self.run_dir, scenario_id, command["command_id"],
+        )
+        stdout = directory / "stdout.json"
+        runner.write_json(stdout, {
+            "run_id": state["run_id"], "scenario_id": scenario_id,
+            "command_id": command["command_id"],
+            "source_commit": state["source_commit"],
+            "source_tree": state["source_tree"],
+            "binding_sha256": state["binding_sha256"],
+        })
+        host_path = directory / "host-os.json"
+        runner.write_json(host_path, {
+            "schema_version": "acs-p1-host-os-attestation/1",
+            "run_id": state["run_id"], "scenario_id": scenario_id,
+            "command_id": command["command_id"],
+            "source_commit": state["source_commit"],
+            "source_tree": state["source_tree"],
+            "binding_sha256": state["binding_sha256"],
+            "host_uid": os.geteuid(), "bus_peer_uid": os.geteuid(),
+            "systemd_user_exit": 0,
+        })
+        state["scenarios"][scenario_id]["commands"][command["command_id"]] = {
+            "kind": command["kind"], "evidence_fields": command["evidence_fields"],
+            "argv_sha256": runner.digest(command["argv"]),
+            "output": runner.file_ref(stdout, self.run_dir),
+            "host_os_attestation": runner.file_ref(host_path, self.run_dir),
+        }
+        runner.audit_commands(state, self.plan, self.run_dir)
+        host_path.chmod(0o644)
+        with self.assertRaisesRegex(runner.EvidenceError, "mode changed"):
+            runner.audit_commands(state, self.plan, self.run_dir)
+
     @unittest.skipUnless(os.name == "posix", "sandbox argv is POSIX-only")
     def test_default_profile_has_no_runtime_mount(self):
         state = self.initialize()
