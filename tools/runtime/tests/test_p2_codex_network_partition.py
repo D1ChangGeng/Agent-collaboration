@@ -29,6 +29,7 @@ def test_partition_stops_and_restores_supervised_relay(tmp_path, monkeypatch):
     key_path.write_text(key.encode().hex()); key_path.chmod(0o600)
     args = SimpleNamespace(
         worker_port=worker, client_port=client, relay_pid_file=tmp_path / "relay.pid",
+        relay_host="127.0.0.1",
         partition_seconds=0.1, worker_reconnect_seconds=0.1,
         tunnel_script=script, token=token, relay_log=tmp_path / "relay.log",
         control_challenge=tmp_path / "control-challenge",
