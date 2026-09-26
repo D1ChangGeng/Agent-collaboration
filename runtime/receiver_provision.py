@@ -80,7 +80,13 @@ def provision(wheel: str | Path, destination: str | Path, *, python: str = sys.e
         if "Successfully installed" not in installed.stdout:
             raise ValueError("receiver provision pip did not confirm a staged installation")
         report_path.unlink()
-        sites = list(stage.glob("lib/python*/site-packages"))
+        sites = [
+            path for pattern in (
+                "lib/python*/site-packages", "lib/python*/dist-packages",
+                "local/lib/python*/site-packages", "local/lib/python*/dist-packages",
+            )
+            for path in stage.glob(pattern)
+        ]
         if len(sites) != 1:
             raise ValueError("receiver provision did not create one site-packages directory")
         site = sites[0]
