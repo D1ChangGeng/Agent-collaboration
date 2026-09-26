@@ -21,7 +21,8 @@ def run(*arguments: str, environment: dict[str, str] | None = None) -> None:
 
 
 def private_root() -> Path:
-    return Path.home() / ".local" / "share" / "agent-collaboration"
+    # Operator file reads pin every parent directory and reject symlink hops.
+    return Path.home() / ".agent-collaboration"
 
 
 def available_loopback_port(start: int) -> int:
@@ -139,6 +140,11 @@ def initialize_local_authority(environment: dict[str, str]) -> Path:
     from runtime.surfaces import SharedService
 
     root = private_root()
+    if root.is_symlink():
+        raise ValueError("private runtime directory path is unsafe")
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if os.name == "posix" and stat.S_IMODE(root.stat().st_mode) & 0o077:
+        raise ValueError("private runtime directory permissions are unsafe")
     config_path = root / "runtime-surface.json"
     credential_path = root / "runtime-credential"
     dsn_path = root / "runtime-dsn"
@@ -289,6 +295,16 @@ def install(
         raise ValueError("this host cannot run the Source/CAS Runtime service")
     if not all(result["prerequisites"].values()):
         raise ValueError("required local tools are unavailable")
+    legacy = Path.home() / ".local/share/agent-collaboration/local-providers.json"
+    if not (private_root() / "local-providers.json").exists() and legacy.is_file():
+        previous = json.loads(legacy.read_text(encoding="utf-8"))
+        if previous.get("schema_version") != "acs-local-providers/2":
+            raise ValueError("existing provider profile requires explicit migration")
+        root = private_root()
+        root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if root.is_symlink() or (os.name == "posix" and stat.S_IMODE(root.stat().st_mode) & 0o077):
+            raise ValueError("provider directory permissions are unsafe")
+        owner_file(root / "local-providers.json", json.dumps(previous) + "\n")
     if project is not None:
         from workspace_setup import workspace_install
 
