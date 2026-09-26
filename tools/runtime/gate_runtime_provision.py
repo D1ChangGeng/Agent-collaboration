@@ -44,7 +44,7 @@ def owner_file_sha256(path: Path) -> str:
                 or before.st_nlink != 1
                 or before.st_size > 100_000
             ):
-                raise RuntimeError("Codex owner reference is not a bounded 0600 file")
+                raise RuntimeError("native scene owner reference is not a bounded 0600 file")
             data = bytearray()
             while chunk := os.read(descriptor, min(65536, 100_001 - len(data))):
                 data.extend(chunk)
@@ -52,7 +52,7 @@ def owner_file_sha256(path: Path) -> str:
                     break
             after = os.stat(path.name, dir_fd=parent_fd, follow_symlinks=False)
             if len(data) > 100_000 or (after.st_dev, after.st_ino) != (before.st_dev, before.st_ino):
-                raise RuntimeError("Codex owner reference changed during read")
+                raise RuntimeError("native scene owner reference changed during read")
             return hashlib.sha256(data).hexdigest()
         finally:
             os.close(descriptor)
@@ -67,6 +67,8 @@ def provision(
     *,
     codex_scene_profile: Path | None = None,
     budget_decision: Path | None = None,
+    opencode_scene_profile: Path | None = None,
+    opencode_budget_decision: Path | None = None,
 ) -> dict[str, object]:
     if os.name != "posix":
         raise RuntimeError("P1 runtime environment provisioning is POSIX-only")
@@ -74,11 +76,16 @@ def provision(
         raise RuntimeError("provision paths must be absolute")
     if (codex_scene_profile is None) != (budget_decision is None):
         raise RuntimeError("Codex scene profile and budget decision must be paired")
+    if (opencode_scene_profile is None) != (opencode_budget_decision is None):
+        raise RuntimeError("OpenCode scene profile and budget decision must be paired")
     if any(
         path is not None and not path.is_absolute()
-        for path in (codex_scene_profile, budget_decision)
+        for path in (
+            codex_scene_profile, budget_decision,
+            opencode_scene_profile, opencode_budget_decision,
+        )
     ):
-        raise RuntimeError("Codex owner file paths must be absolute")
+        raise RuntimeError("native scene owner file paths must be absolute")
     if destination.exists():
         raise RuntimeError("runtime environment destination already exists")
     files = [path for path in source_site.rglob("*") if path.is_file()]
@@ -141,6 +148,15 @@ def provision(
                 "path": str(budget_decision),
                 "sha256": owner_file_sha256(budget_decision),
             }
+        if opencode_scene_profile is not None and opencode_budget_decision is not None:
+            validation["opencode_scene_profile"] = {
+                "path": str(opencode_scene_profile),
+                "sha256": owner_file_sha256(opencode_scene_profile),
+            }
+            validation["opencode_budget_decision"] = {
+                "path": str(opencode_budget_decision),
+                "sha256": owner_file_sha256(opencode_budget_decision),
+            }
         validate_runtime_profile(validation)
         os.replace(stage, destination)
         published = True
@@ -173,7 +189,10 @@ def attach_plan(plan_path: Path, provisioned: dict[str, object]) -> None:
             "postgresql_endpoint", "temporal_endpoint",
         )
     }
-    for name in ("codex_scene_profile", "budget_decision"):
+    for name in (
+        "codex_scene_profile", "budget_decision",
+        "opencode_scene_profile", "opencode_budget_decision",
+    ):
         if name in provisioned:
             plan["runtime_profile"][name] = provisioned[name]
     write_atomic(
@@ -190,6 +209,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--plan", type=Path)
     parser.add_argument("--codex-scene-profile", type=Path)
     parser.add_argument("--budget-decision", type=Path)
+    parser.add_argument("--opencode-scene-profile", type=Path)
+    parser.add_argument("--opencode-budget-decision", type=Path)
     args = parser.parse_args(argv)
     try:
         result = provision(
@@ -198,6 +219,8 @@ def main(argv: list[str] | None = None) -> int:
             args.profile,
             codex_scene_profile=args.codex_scene_profile,
             budget_decision=args.budget_decision,
+            opencode_scene_profile=args.opencode_scene_profile,
+            opencode_budget_decision=args.opencode_budget_decision,
         )
         if args.plan is not None:
             attach_plan(args.plan, result)

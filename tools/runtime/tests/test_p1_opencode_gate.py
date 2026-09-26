@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -38,6 +39,7 @@ def scene() -> dict:
         "agent": "engineer",
         "auth_key_ref_path": key,
         "auth_key_ref_path_sha256": hashlib.sha256(key.encode()).hexdigest(),
+        "config_template_path": "/home/review/private/opencode.json",
         "config_sha256": "d" * 64,
         "max_prompt_async": 1,
         "max_collect_reads": 6,
@@ -54,9 +56,6 @@ def decision(scene_sha: str) -> dict:
         "source_tree": "b" * 40,
         "scene_profile_sha256": scene_sha,
         "scenario_id": "P1-OPENCODE-LIFECYCLE",
-        "run_id": RUN_ID,
-        "machine_id": "machine-a",
-        "node_id": "node-a",
         "provider_id": "fixture-provider",
         "model_id": "fixture-model",
         "prompt": MODEL_PROMPT,
@@ -101,11 +100,10 @@ def test_owner_budget_binds_source_scene_run_machine_and_one_prompt(tmp_path: Pa
     budget_sha = _write(budget_path, decision(scene_sha))
     kwargs = {
         "source_commit": "a" * 40, "source_tree": "b" * 40,
-        "run_id": RUN_ID, "machine_id": "machine-a", "node_id": "node-a",
     }
     admission = OpenCodeGateAdmission.load(
         scene_path, scene_sha, budget_path, budget_sha, **kwargs
-    )
+    ).bind_run(RUN_ID, "machine-a", "node-a")
     lineage = complete()
     lineage["run_id"] = RUN_ID
     lineage["os"]["unit"] = "acs-" + RUN_ID + ".service"
@@ -113,13 +111,18 @@ def test_owner_budget_binds_source_scene_run_machine_and_one_prompt(tmp_path: Pa
     for changed in (
         {**kwargs, "source_commit": "d" * 40},
         {**kwargs, "source_tree": "d" * 40},
-        {**kwargs, "run_id": "p1-run-" + "d" * 32},
-        {**kwargs, "machine_id": "other-machine"},
     ):
         with pytest.raises(OpenCodeGateRejected):
             OpenCodeGateAdmission.load(
                 scene_path, scene_sha, budget_path, budget_sha, **changed
             )
+    for changed_run in (
+        admission.bind_run("p1-run-" + "d" * 32, "machine-a", "node-a"),
+        admission.bind_run(RUN_ID, "other-machine", "node-a"),
+        admission.bind_run(RUN_ID, "machine-a", "other-node"),
+    ):
+        with pytest.raises(OpenCodeGateRejected, match="exact source"):
+            changed_run.assert_final_lineage(lineage)
     altered = decision(scene_sha)
     altered["provider_id"] = "replacement-provider"
     wrong_budget_sha = _write(budget_path, altered)
@@ -151,7 +154,6 @@ def test_key_reference_is_owner_single_link_and_no_follow(tmp_path: Path):
     admission = OpenCodeGateAdmission.load(
         scene_path, scene_sha, budget_path, budget_sha,
         source_commit="a" * 40, source_tree="b" * 40,
-        run_id=RUN_ID, machine_id="machine-a", node_id="node-a",
     )
     assert admission.key_reference_identity()[1] == key.stat().st_ino
     key.chmod(0o644)
@@ -164,6 +166,50 @@ def test_key_reference_is_owner_single_link_and_no_follow(tmp_path: Path):
         admission.key_reference_identity()
 
 
+@pytest.mark.skipif(os.name != "posix", reason="owner-only provider config requires POSIX")
+def test_actual_config_route_is_bound_to_scene_digest(tmp_path: Path):
+    private = tmp_path / "owner"
+    private.mkdir(mode=0o700)
+    private.chmod(0o700)
+    config = private / "opencode.json"
+
+    def stage(route: str):
+        config_sha = _write(config, {
+            "model": "fixture-provider/fixture-model",
+            "agent": {"engineer": {"model": "fixture-provider/fixture-model"}},
+            "provider": {"fixture-provider": {"options": {"baseURL": route}}},
+        })
+        value = scene()
+        value["config_template_path"] = str(config)
+        value["config_sha256"] = config_sha
+        scene_path, budget_path = private / "scene.json", private / "decision.json"
+        scene_sha = _write(scene_path, value)
+        budget_sha = _write(budget_path, decision(scene_sha))
+        admission = OpenCodeGateAdmission.load(
+            scene_path, scene_sha, budget_path, budget_sha,
+            source_commit="a" * 40, source_tree="b" * 40,
+        ).bind_run(RUN_ID, "machine-a", "node-a")
+        profile = SimpleNamespace(
+            version="1.18.30", executable_sha256=value["native_executable_sha256"],
+            schema_sha256=value["schema_sha256"], config_sha256=config_sha,
+            provider_id=value["provider_id"], model_id=value["model_id"],
+            agent="engineer", config_path=config,
+        )
+        return admission, profile
+
+    admission, profile = stage("https://provider.example.invalid/v1")
+    admission.assert_native_profile(profile)
+    assert hashlib.sha256(admission.config_template_bytes()).hexdigest() == profile.config_sha256
+    admission, profile = stage("https://different.example.invalid/v1")
+    with pytest.raises(OpenCodeGateRejected, match="provider config route"):
+        admission.assert_native_profile(profile)
+    with pytest.raises(OpenCodeGateRejected, match="config template route"):
+        admission.config_template_bytes()
+    config.chmod(0o644)
+    with pytest.raises(OpenCodeGateRejected, match="owner file"):
+        admission.assert_native_profile(profile)
+
+
 @pytest.mark.skipif(os.name == "posix", reason="Windows boundary")
 def test_windows_owner_budget_fails_closed(tmp_path: Path):
     with pytest.raises(OpenCodeGateRejected, match="POSIX"):
@@ -171,5 +217,4 @@ def test_windows_owner_budget_fails_closed(tmp_path: Path):
             tmp_path / "scene.json", "0" * 64,
             tmp_path / "decision.json", "0" * 64,
             source_commit="a" * 40, source_tree="b" * 40,
-            run_id=RUN_ID, machine_id="machine-a", node_id="node-a",
         )
