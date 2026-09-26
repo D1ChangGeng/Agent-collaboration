@@ -146,7 +146,8 @@ def provision(args):
     connection_ref="p2-windows-private"
     authority.register_receiver_connection(_command(authority,"receiver.connection.register","connection",
         connection_ref),ConnectionReferenceRegistration(connection_ref=connection_ref,revision=1,
-        locator_host=args.host,locator_port=args.port,route_class="private",policy_digest=args.tree,
+        locator_host=args.host,locator_port=args.port,route_class="private",
+        policy_digest=hashlib.sha256(args.tree.encode()).hexdigest(),
         expires_at=expiry-timedelta(minutes=5)))
     cert,tls_key,cert_sha=_certificate(root,args.host)
     with authority._connect() as c: node_key_id=c.execute("select key_id from enrolled_node_bindings where tenant_id=%s and node_id=%s and binding_revision=1",(authority.tenant_id,node_id)).fetchone()[0]
