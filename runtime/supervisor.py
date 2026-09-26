@@ -2,8 +2,10 @@
 
 This supervises descendants; it is not a filesystem, network, credential or
 external process-broker sandbox. Windows uses an unnamed non-breakaway Job.
-Linux requires an explicit pinned Docker policy. There is no process-group or
-Popen.kill fallback advertised as subtree containment.
+Linux supports an explicit pinned Docker policy. The separate
+``runtime.systemd_supervisor`` module provides reviewed non-root transient user
+service containment. There is no process-group or Popen.kill fallback
+advertised as subtree containment.
 """
 from __future__ import annotations
 
