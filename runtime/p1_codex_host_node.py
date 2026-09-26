@@ -553,7 +553,13 @@ class CodexHostNodeEndpoint:
             for field in ("unit", "containment_id", "birth_ref", "invocation_id"):
                 if current.get(field) != original.get(field):
                     raise HostNodeRejected("host native process identity changed")
-            proof = supervisor.terminate_tree(owned)
+            proof = (
+                current
+                if current.get("verified") is True
+                and current.get("root_exited") is True
+                and current.get("remaining_pids") == []
+                else supervisor.terminate_tree(owned)
+            )
             if proof.get("verified") is not True or proof.get("remaining_pids") != []:
                 raise HostNodeRejected("host native termination lacks empty-cgroup proof")
             with closing(self._connect()) as connection:
