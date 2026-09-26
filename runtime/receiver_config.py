@@ -89,16 +89,12 @@ class EndpointBootstrap:
 
 
 @dataclass(frozen=True, slots=True)
-class ReceiverRuntimeConfig:
+class ReceiverClientConfig:
     binding: EndpointBinding
     authority_key_id: str
     authority_key_revision: int
     authority_public_key: str
     authority_public_key_fingerprint: str
-    tls_cert_path: str
-    tls_key_path: str
-    node_signing_key_path: str
-    ledger_path: str
     expected_boot_incarnation: str
     journal_generation: int
     old_boot_isolation_ref: str | None = None
@@ -106,16 +102,33 @@ class ReceiverRuntimeConfig:
     clock_skew_seconds: int = 5
 
     def validate(self) -> None:
-        try:
-            require_posix()
-        except PathSecurityRejected:
-            raise BootstrapRejected("receiver runtime is POSIX-only until Windows ACL admission exists") from None
         if key_fingerprint(self.authority_public_key) != self.authority_public_key_fingerprint:
             raise BootstrapRejected("authority transport-key fingerprint differs")
         verify(self.binding.node_public_key, self.binding.registration_signature,
                self.binding.registration)
         if self.binding.registration.expires_at <= datetime.now(UTC):
             raise BootstrapRejected("endpoint registration is expired")
+        if not 1_024 <= self.maximum_body_bytes <= 1_048_576 or not 0 <= self.clock_skew_seconds <= 30:
+            raise BootstrapRejected("receiver bounds are invalid")
+        if (self.expected_boot_incarnation != self.binding.registration.boot_incarnation
+                or self.journal_generation < 1
+                or (self.journal_generation == 1) != (self.old_boot_isolation_ref is None)):
+            raise BootstrapRejected("receiver boot/generation/isolation configuration is invalid")
+
+
+@dataclass(frozen=True, slots=True)
+class ReceiverRuntimeConfig(ReceiverClientConfig):
+    tls_cert_path: str = ""
+    tls_key_path: str = ""
+    node_signing_key_path: str = ""
+    ledger_path: str = ""
+
+    def validate(self) -> None:
+        super().validate()
+        try:
+            require_posix()
+        except PathSecurityRejected:
+            raise BootstrapRejected("receiver runtime is POSIX-only until Windows ACL admission exists") from None
         for path in (self.tls_cert_path, self.tls_key_path, self.node_signing_key_path,
                      self.ledger_path):
             if not Path(path).is_absolute():
@@ -129,9 +142,3 @@ class ReceiverRuntimeConfig:
             raise BootstrapRejected(
                 "receiver path identity, private parent or owner-only mode rejected"
             ) from None
-        if not 1_024 <= self.maximum_body_bytes <= 1_048_576 or not 0 <= self.clock_skew_seconds <= 30:
-            raise BootstrapRejected("receiver bounds are invalid")
-        if (self.expected_boot_incarnation != self.binding.registration.boot_incarnation
-                or self.journal_generation < 1
-                or (self.journal_generation == 1) != (self.old_boot_isolation_ref is None)):
-            raise BootstrapRejected("receiver boot/generation/isolation configuration is invalid")
