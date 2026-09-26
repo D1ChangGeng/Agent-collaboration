@@ -265,7 +265,7 @@ def initialize_local_authority(environment: dict[str, str]) -> Path:
         existing = connection.execute("SELECT count(*) FROM grants").fetchone()[0]
     if existing:
         raise ValueError("existing Runtime authority requires explicit enrollment")
-    authority.bootstrap_local_grant(tuple(sorted(permissions)))
+    authority.bootstrap_local_grant(tuple(sorted(permissions)), preserve_existing=True)
     service = SharedService(authority, LocalCredentialAuthenticator(context))
     ProjectService(service, catalog, profile="root_manager").initialize()
     owner_file(dsn_path, dsn + "\n")
