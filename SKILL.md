@@ -82,6 +82,11 @@ The installed runtime must satisfy all of these:
     claims remain explicit `unknown`/`unverified` until evidence is bound.
 12. Root registry writes contain stable identity, lifecycle, and pointers only;
     dynamic Route state remains Route-owned.
+13. `AGENTS.md` contains only startup-critical, always-on invariants. New
+    material is admitted there only after real work demonstrates stable,
+    cross-session value that cannot be reliably supplied by retrieved knowledge;
+    concrete state and knowledge lifecycle remain in their authoritative
+    Route/state/knowledge surfaces.
 
 ## Preferred deterministic workflow
 

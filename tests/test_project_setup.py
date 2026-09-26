@@ -108,6 +108,25 @@ class ProjectSetupTests(unittest.TestCase):
             self.assertTrue(ok, problems)
             self.assertFalse((root / ".git").exists())
 
+    def test_workspace_route_scaffold_carries_agents_evolution_boundary(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "workspace"
+            mod.workspace_install(root, "adopt", False)
+            args = type("Args", (), {
+                "workspace": root,
+                "action": "create",
+                "path": "C Route",
+                "route_id": "c-route",
+                "display_name": "C Route",
+                "state": None,
+                "dry_run": False,
+            })()
+            self.assertEqual(mod.route_operation(args), 0)
+            text = (root / "C Route" / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn("Always-on content boundary", text)
+            self.assertIn("self-evolution", text)
+            self.assertIn("work log", text)
+
     def test_workspace_route_create_and_state_are_idempotent(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -290,6 +309,26 @@ class ProjectSetupTests(unittest.TestCase):
 
             self.assertFalse(ok)
             self.assertTrue(any("hash mismatch" in problem for problem in problems), problems)
+
+    def test_workspace_validate_checks_root_instruction_blocks(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "workspace"
+            mod.workspace_install(root, "adopt", False)
+            agents = root / "AGENTS.md"
+            agents.write_text(agents.read_text(encoding="utf-8").replace("<!-- ACHP-WORKSPACE:BEGIN -->", "<!-- removed -->"), encoding="utf-8")
+            ok, problems = mod.validate_workspace(root)
+            self.assertFalse(ok)
+            self.assertTrue(any("AGENTS.md ACHP managed block" in problem for problem in problems), problems)
+
+    def test_workspace_validate_rejects_root_managed_block_drift(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "workspace"
+            mod.workspace_install(root, "adopt", False)
+            agents = root / "AGENTS.md"
+            agents.write_text(agents.read_text(encoding="utf-8").replace("Project Collaboration Root", "Altered Root"), encoding="utf-8")
+            ok, problems = mod.validate_workspace(root)
+            self.assertFalse(ok)
+            self.assertTrue(any("managed block drift" in problem for problem in problems), problems)
 
     def test_workspace_upgrade_rejects_discovery_id_collision_before_write(self):
         with tempfile.TemporaryDirectory() as td:

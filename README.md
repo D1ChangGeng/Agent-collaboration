@@ -334,6 +334,21 @@ archive/
 
 This model is compatible with a `self-evolution`-style knowledge lifecycle but does not require that Skill or any specific harness.
 
+### AGENTS evolution boundary
+
+`AGENTS.md` is the always-on foundation for stable identity, collaboration
+topology, ownership/evidence boundaries, cross-session continuity, and recurring
+high-cost corrections. A new rule belongs there only after real work shows that
+it is stable across future sessions or Routes, required at startup, and not
+reliably supplied by retrieved knowledge. Current state, implementation detail,
+design rationale, task progress, engineer reports, and temporary evidence stay
+in their authoritative Route, state, knowledge, or source records.
+
+`self-evolution` owns knowledge discovery, capture, retrieval, correction,
+verification, and maintenance. ACHP does not duplicate that lifecycle in
+`AGENTS.md`, and `AGENTS.md` must not become a work log or a second source of
+truth.
+
 ## Updating this Skill
 
 With the recommended symlink installation:
