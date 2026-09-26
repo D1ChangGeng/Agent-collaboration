@@ -10,6 +10,7 @@ import pytest
 
 from runtime.receiver_deployment import inspect_factory
 from runtime_deployment.receiver_codex import (
+    CodexReceiverCapacity,
     CodexReceiverRejected,
     SCHEMA,
     validate_settings,
@@ -64,6 +65,55 @@ def test_codex_receiver_settings_are_exact_and_bounded(tmp_path):
         changed = dict(value, **{field: replacement})
         with pytest.raises(CodexReceiverRejected):
             validate_settings(changed)
+
+
+def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_path, monkeypatch):
+    value = settings(tmp_path)
+    executable = Path(value["executable"])
+    executable.write_bytes(b"codex")
+    value["executable_sha256"] = hashlib.sha256(b"codex").hexdigest()
+    schema = Path(value["protocol_schema"])
+    schema.write_bytes(b"schema")
+    value["protocol_schema_sha256"] = hashlib.sha256(b"schema").hexdigest()
+    cwd = Path(value["cwd"])
+    cwd.mkdir()
+    codex_home = Path(value["codex_home"])
+    codex_home.mkdir()
+    config = codex_home / "config.toml"
+    config.write_text('approval_policy = "never"\ndefault_permissions = "achp-engineer"\n')
+    value["config_sha256"] = hashlib.sha256(config.read_bytes()).hexdigest()
+
+    observed = {}
+
+    class Profile:
+        def __init__(self, *args):
+            observed["environment"] = args[9]
+
+    class StopConstruction(Exception):
+        pass
+
+    monkeypatch.setattr(
+        "runtime_deployment.receiver_codex.DomainAuthority",
+        lambda dsn: type("Authority", (), {"_dsn": dsn})(),
+    )
+    monkeypatch.setenv("ACS_RECEIVER_DSN", "postgresql://redacted")
+    # Stop immediately after the profile is constructed; the remaining
+    # collaborators are covered by the production-factory integration tests.
+    monkeypatch.setattr("runtime_deployment.receiver_codex.LaunchProfile", Profile)
+    monkeypatch.setattr(
+        "runtime_deployment.receiver_codex.SystemdUserSupervisor",
+        lambda **_kwargs: (_ for _ in ()).throw(StopConstruction()),
+    )
+    config_object = type("Config", (), {"binding": type("Binding", (), {
+        "registration": type("Registration", (), {
+            "config_sha256": "policy", "runtime_id": "runtime",
+            "node_id": "node", "boot_incarnation": "boot", "agent_slot_id": "slot",
+            "node_binding_revision": 1, "machine_id": "machine", "scope_id": "scope",
+        })()
+    })()})()
+    with pytest.raises(StopConstruction):
+        CodexReceiverCapacity(config_object, "policy", value)
+    assert observed["environment"]["PATH"].split(":", 1)[0] == str(executable.parent)
 
 
 @pytest.mark.skipif(os.name != "posix", reason="deployment factory binding is POSIX-owned")
