@@ -9,7 +9,7 @@ from datetime import timedelta
 from typing import Any
 
 from temporalio import activity, workflow
-from temporalio.client import Client
+from temporalio.client import Client, WorkflowExecutionStatus
 from temporalio.common import RetryPolicy, WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
 from temporalio.service import RPCError
@@ -289,8 +289,12 @@ class TemporalAdapter:
     async def readback(self, operation_id: str) -> dict[str, Any]:
         try:
             handle = self.client.get_workflow_handle(operation_id)
+            description = await handle.describe()
+            completed = self.client.get_workflow_handle(operation_id, run_id=description.run_id)
+            if description.status != WorkflowExecutionStatus.RUNNING:
+                return dict(await completed.result())
             return dict(await handle.query("state"))
-        except (RPCError, RuntimeError):
+        except (RPCError, RuntimeError, TypeError, ValueError):
             try:
                 description = await self.client.get_workflow_handle(operation_id).describe()
                 completed = self.client.get_workflow_handle(operation_id, run_id=description.run_id)
