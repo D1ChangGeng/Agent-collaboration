@@ -257,6 +257,30 @@ def test_fresh_linux_scene_profile_requires_exact_0155_zeo_profile():
         validate_scene_profile(candidate)
 
 
+def test_windows_alpha_profile_is_metadata_only_and_requires_workspace():
+    value = scene_profile()
+    value.update(
+        {
+            "codex_version": "0.155.0-alpha.2.6",
+            "platform": "windows",
+            "permission_profile": ":workspace",
+            "schema_path": r"C:\\runtime_tests\\schema-0.155.0\\codex_app_server_protocol.schemas.json",
+            "native_executable_path": r"C:\\codex\\codex.exe",
+            "model_catalog_path": r"C:\\codex\\models.json",
+            "auth_key_ref_path": r"C:\\codex\\auth-ref",
+            "auth_command": r"C:\\Windows\\System32\\more.com",
+            "provider_alias": "zeo-dev",
+        }
+    )
+    value["auth_key_ref_path_sha256"] = hashlib.sha256(
+        value["auth_key_ref_path"].encode()
+    ).hexdigest()
+    assert validate_scene_profile(value) == value
+    value["permission_profile"] = "achp-engineer"
+    with pytest.raises(CodexSceneRejected):
+        validate_scene_profile(value)
+
+
 @pytest.mark.skipif(os.name != "posix", reason="private decision file is POSIX-only")
 def test_budget_decision_binds_commit_tree_scene_and_one_turn(tmp_path: Path):
     parent = tmp_path / "private"

@@ -456,6 +456,20 @@ def codex_no_model_driver(
 ) -> tuple[CodexAppServerDriver, SystemdUserSupervisor, Path, Path, dict[str, Any]]:
     """Stage the reviewed Codex binary and a missing-key, zero-turn profile."""
     paths = _private_dirs(root, "bin", "codex-home", "cwd", "home", "tmp", "ledger")
+    try:
+        version = subprocess.run(
+            [str(native_source), "--version"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30,
+            env={"PATH": str(native_source.parent), "HOME": str(paths["home"]),
+                 "TMPDIR": str(paths["tmp"]), "LANG": "C.UTF-8"},
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise NativeInventoryRejected("reviewed Codex version could not be observed") from error
+    if version.stdout.strip() != "codex-cli 0.155.0" or version.stderr.strip():
+        raise NativeInventoryRejected("reviewed Codex version is not exact 0.155.0")
     executable = paths["bin"] / "codex"
     native_bytes = native_source.read_bytes()
     native_pin = _copy_pinned(
