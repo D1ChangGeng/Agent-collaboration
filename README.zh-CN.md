@@ -89,7 +89,7 @@ sequenceDiagram
 
 例如，Root Agent 可以将一次功能改动交给 Engineer，在会话重启后继续追踪同一
 WorkItem 与消息句柄，再核对输出 commit、测试证据并送交 Reviewer。
-[P2 执行索引](docs/runtime/P2-EXECUTION-STATUS.md)记录已测量的跨机器、
+[工程证据索引](docs/runtime/P2-EXECUTION-STATUS.md)记录已测量的跨机器、
 跨 Harness 与 MCP 结果的精确范围。
 
 ## 安装与接入
