@@ -212,6 +212,7 @@ def provision(arguments) -> int:
             "AND binding_revision=1", (authority.tenant_id, node_id),
         ).fetchone()[0]
     endpoint_id = f"p2-linux-endpoint-{arguments.run_suffix}"
+    endpoint_expiry = datetime.now(UTC) + timedelta(seconds=arguments.endpoint_ttl_seconds)
     provisional = EndpointRegistration(
         registration_id=f"p2-linux-registration-{arguments.run_suffix}",
         endpoint_id=endpoint_id, endpoint_revision=1, connection_ref=connection_ref,
@@ -221,7 +222,7 @@ def provision(arguments) -> int:
         runtime_revision=1, machine_id=arguments.linux_machine_id,
         boot_incarnation=boot, scope_id="local-scope", agent_slot_id="local-slot",
         tls_certificate_sha256=cert_hash, config_sha256="0" * 64,
-        expires_at=datetime.now(UTC) + timedelta(minutes=4),
+        expires_at=endpoint_expiry,
     )
     binding = EndpointBinding(
         registration=provisional, locator_host=arguments.linux_host,
@@ -283,6 +284,7 @@ def provision(arguments) -> int:
         "factory_binding_sha256": hashlib.sha256(arguments.factory_binding.read_bytes()).hexdigest(),
         "factory_settings_sha256": hashlib.sha256(arguments.factory_settings.read_bytes()).hexdigest(),
         "tls_certificate_sha256": cert_hash,
+        "endpoint_expires_at": registration.expires_at,
     }
     _write(output / "state.json", public)
     print(json.dumps(public, sort_keys=True))
@@ -424,6 +426,7 @@ def main(argv=None):
         "--drop-response",
         choices=("delivery.prepare", "delivery.dispatch", "delivery.readback", "delivery.recover"),
     )
+    setup.add_argument("--endpoint-ttl-seconds", type=int, default=1800)
     run = sub.add_parser("execute")
     run.add_argument("--windows-profile", type=Path, required=True)
     run.add_argument("--state", type=Path, required=True)
