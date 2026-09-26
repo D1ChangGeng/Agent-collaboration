@@ -160,6 +160,7 @@ CREATE TABLE IF NOT EXISTS effects (
     grant_ref TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS generation BIGINT DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS evidence (
     evidence_id TEXT PRIMARY KEY,
