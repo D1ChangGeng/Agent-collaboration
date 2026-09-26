@@ -19,12 +19,28 @@ REQUIRED_FILES = [
     "VERSION",
     "scripts/install_skill.py",
     "scripts/project_setup.py",
+    "scripts/workspace_setup.py",
     "assets/scaffold/AGENTS_BLOCK.md",
     "assets/scaffold/CLAUDE_BLOCK.md",
     "assets/scaffold/.agents/protocol/CAPABILITIES.md",
     "assets/scaffold/.agents/protocol/RELAY.md",
     "assets/scaffold/.agents/protocol/GIT-SYNC.md",
     "assets/scaffold/.agents/protocol/KNOWLEDGE.md",
+    "assets/scaffold/workspace/AGENTS_BLOCK.md",
+    "assets/scaffold/workspace/GITIGNORE_BLOCK.txt",
+    "assets/scaffold/workspace/ROUTE_AGENTS.md",
+    "assets/scaffold/workspace/.agents/README.md",
+    "assets/scaffold/workspace/.agents/config.yaml",
+    "assets/scaffold/workspace/.agents/settings.yaml",
+    "assets/scaffold/workspace/.agents/protocol/CAPABILITIES.md",
+    "assets/scaffold/workspace/.agents/protocol/RELAY.md",
+    "assets/scaffold/workspace/.agents/protocol/GIT-SYNC.md",
+    "assets/scaffold/workspace/.agents/protocol/KNOWLEDGE.md",
+    "assets/scaffold/workspace/.agents/protocol/SOURCE-STATE.md",
+    "assets/scaffold/workspace/.agents/coordination/ROOT.md",
+    "assets/scaffold/workspace/.agents/coordination/ROOT-BASELINE.md",
+    "assets/scaffold/workspace/.agents/coordination/PROJECT.md",
+    "assets/scaffold/workspace/.agents/state/source-state.yaml",
 ]
 
 
@@ -82,6 +98,10 @@ def main() -> int:
             present = forbidden.intersection(fm)
             if present:
                 problems.append(f"non-portable harness-specific frontmatter present: {sorted(present)}")
+            version_file = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+            metadata_version = fm.get("version", "")
+            if metadata_version and metadata_version != version_file:
+                problems.append(f"SKILL metadata version '{metadata_version}' does not match VERSION '{version_file}'")
         except Exception as exc:
             problems.append(str(exc))
 
@@ -100,6 +120,22 @@ def main() -> int:
     claude = ROOT / "assets/scaffold/CLAUDE_BLOCK.md"
     if claude.exists() and "@AGENTS.md" not in claude.read_text(encoding="utf-8"):
         problems.append("Claude compatibility block must import @AGENTS.md")
+
+    workspace_agents = ROOT / "assets/scaffold/workspace/AGENTS_BLOCK.md"
+    if workspace_agents.exists():
+        text = workspace_agents.read_text(encoding="utf-8")
+        for needle in [
+            "Project Collaboration Root",
+            "not\nassumed to be a Git repository or an execution checkout",
+            "Do not assume this file is automatically inherited",
+            "SOURCE-STATE.md",
+        ]:
+            if needle not in text:
+                problems.append(f"workspace AGENTS block missing invariant: {needle}")
+
+    source_state = ROOT / "assets/scaffold/workspace/.agents/protocol/SOURCE-STATE.md"
+    if source_state.exists() and "unknown" not in source_state.read_text(encoding="utf-8"):
+        problems.append("workspace source-state contract must define explicit unknown values")
 
     if problems:
         print("Validation failed:")
