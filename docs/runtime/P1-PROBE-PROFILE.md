@@ -1,12 +1,12 @@
 # P1 real-resource probe profile
 
 This harness prepares executable evidence commands for the 18 P1 scenarios.
-It does not write a formal Gate. Ten scenarios currently have an actual
+It does not write a formal Gate. Eleven scenarios currently have an actual
 fixed-identity Runtime lineage adapter: `P1-DOMAIN-TRANSACTION`,
 `P1-AUTH-REVOCATION`, `P1-COMMAND-DEDUP`, and `P1-INBOX-ACK-LOSS`.
 `P1-CORE-RESTART`, `P1-NODE-RESTART`, `P1-PROVIDER-RESTART` and
-`P1-LEASE-FENCING`, `P1-UNCERTAIN-EFFECT` and `P1-STALE-BASELINE` are
-the remaining adapters. The other 8 have no runnable command and remain
+`P1-LEASE-FENCING`, `P1-UNCERTAIN-EFFECT`, `P1-STALE-BASELINE` and
+`P1-PARTIAL-ARTIFACT` are the remaining adapters. The other 7 have no runnable command and remain
 `NOT_RUN`.
 
 Each runnable scenario commits its own command, operation, event, Outbox,
@@ -111,9 +111,20 @@ command or mutation of the Gate's fixed source checkout is claimed. The second
 Git commit exists in owner-private temporary storage while being verified;
 the Gate output keeps only the source identities and safe one-file diff.
 
-`P1-HARNESS-REPLACEMENT` remains `NOT_RUN` while Runtime lacks an authoritative
-versioned HarnessSessionBinding command and readback. Reattaching a Driver or
-replacing a Node is insufficient evidence for that scenario.
+`P1-PARTIAL-ARTIFACT` interrupts the production CAS publisher after a short
+temporary-file write and injects `EIO` before a complete ArtifactRef exists.
+It checks temporary-file removal and directory fsync, an independent readback
+of a complete control artifact, and absence of the partial output. A signed
+receipt referencing the missing output is rejected by the Domain, and the
+Finalizer cannot reach readiness or acceptance. The same delivered message,
+Attempt, Node Machine, PostgreSQL state and auxiliary Temporal identity are
+read back across six Gate layers. The fault hook is confined to the probe
+process; no native model-produced artifact is claimed.
+
+`P1-HARNESS-REPLACEMENT` remains `NOT_RUN`. Runtime has a versioned
+HarnessSessionBinding and native response proof consumer, but the actual
+replacement lifecycle has no Gate adapter or verified native run on this
+baseline.
 
 The `p1-loopback-provider` profile is Linux-only. It uses the host network and
 admits only `127.0.0.1:54329` PostgreSQL and `127.0.0.1:7239` Temporal. Host
@@ -125,7 +136,7 @@ and emitted probe results are scanned so the password does not leave the
 profile boundary.
 
 The Codex strict Driver uses a separate no-network helper profile. No Codex
-model/login evidence is currently admitted, so `P1-CODEX-LIFECYCLE` remains
+model evidence for this source baseline is currently admitted, so `P1-CODEX-LIFECYCLE` remains
 `NOT_RUN`. OpenCode model evidence must say `pass`, bind the current source
 commit, contain exactly one prompt and prove process-tree cleanup; stale
 evidence is not admitted. Integrated acceptance remains `NOT_RUN` until both
@@ -141,7 +152,7 @@ argv or ordinary environment. A runnable Gate still needs an independently
 reviewed plan and real run on the target Machine; this harness's isolated
 tests do not promote a Gate.
 
-`p1_profile_plan.py` emits six commands only for the eight implemented scenarios
+`p1_profile_plan.py` emits six commands only for the eleven implemented scenarios
 when their required real resources are current, and an empty command list for
 every gap. Missing command kinds therefore stay `NOT_RUN`; the harness never
 fabricates a passed result. The command and six readbacks must share one
