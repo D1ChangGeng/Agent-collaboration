@@ -30,6 +30,7 @@ from runtime.receiver_paths import (
     private_parent,
 )
 from tools.runtime.p1_opencode_gate import OpenCodeGateAdmission
+from tools.runtime.p1_opencode_gate import MODEL_PROMPT
 from tools.runtime.p1_opencode_readback import validate_opencode_lineage
 
 SCENE = "P1-OPENCODE-LIFECYCLE"
@@ -235,7 +236,7 @@ def run_scene(
         target_agent_slot_id="local-slot", accepted_revision=0,
         goal="Observe one authorized OpenCode lifecycle prompt",
         accepted_state_summary="revision zero",
-        request="Reply with exactly ACS_P1_OPENCODE_API_OK. Do not call tools.",
+        request=MODEL_PROMPT,
         source_baseline=commit, expected_response="ACS_P1_OPENCODE_API_OK",
         activation="invoke", deadline=deadline - timedelta(seconds=1),
         maximum_attempts=1,

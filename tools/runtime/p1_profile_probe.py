@@ -2927,6 +2927,7 @@ def _run_codex_host_scene(
     from runtime.receiver_paths import open_validated_file
     from tools.runtime.p1_codex_lifecycle import (
         DECISION_ID,
+        MODEL_PROMPT,
         _host_result_from_socket,
         dispatch_host_without_ack,
         load_scene_profile,
@@ -3047,7 +3048,7 @@ def _run_codex_host_scene(
         accepted_revision=0,
         goal="Observe one authorized Codex lifecycle turn",
         accepted_state_summary="revision zero",
-        request="Reply with exactly ACS_P1_CODEX_API_OK. Do not call tools.",
+        request=MODEL_PROMPT,
         source_baseline=commit,
         expected_response="ACS_P1_CODEX_API_OK",
         activation="invoke",
