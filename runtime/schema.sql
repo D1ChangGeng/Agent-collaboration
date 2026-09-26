@@ -524,3 +524,44 @@ DROP TRIGGER IF EXISTS acs_effect_work_item_barrier ON effects;
 CREATE TRIGGER acs_effect_work_item_barrier
 BEFORE INSERT OR UPDATE OR DELETE ON effects
 FOR EACH ROW EXECUTE FUNCTION acs_effect_work_item_barrier();
+
+-- Runtime 1.5 authenticated Effect registration and reconciliation.
+-- Append to the Runtime schema; nullable adoption never invents old proofs.
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS completion_sha256 TEXT;
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS completion_state TEXT;
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS registered_readback JSONB;
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS registered_by TEXT;
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS registration_command_id TEXT;
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS registration_operation_id TEXT;
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS registration_event_id TEXT;
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS reconciled_readback JSONB;
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS reconciliation_command_id TEXT;
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS reconciliation_operation_id TEXT;
+ALTER TABLE effects ADD COLUMN IF NOT EXISTS reconciliation_event_id TEXT;
+
+-- Formal registration seals identity and its first observation. Reconciliation
+-- may update completion/status and its own audit columns, never these bindings.
+-- Legacy rows with no registration command retain their existing migration path.
+CREATE OR REPLACE FUNCTION acs_registered_effect_identity_guard() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF OLD.registration_command_id IS NOT NULL AND (
+        ROW(NEW.effect_id,NEW.tenant_id,NEW.work_item_id,NEW.resource_id,NEW.baseline_ref,
+            NEW.lease_id,NEW.fencing_token,NEW.generation,NEW.grant_ref,NEW.candidate_ref,
+            NEW.operation_id,NEW.readback_ref,NEW.expected_sha256,NEW.expected_size_bytes,NEW.intent_sha256,
+            NEW.registered_readback,NEW.registered_by,NEW.registration_command_id,NEW.registration_operation_id)
+        IS DISTINCT FROM
+        ROW(OLD.effect_id,OLD.tenant_id,OLD.work_item_id,OLD.resource_id,OLD.baseline_ref,
+            OLD.lease_id,OLD.fencing_token,OLD.generation,OLD.grant_ref,OLD.candidate_ref,
+            OLD.operation_id,OLD.readback_ref,OLD.expected_sha256,OLD.expected_size_bytes,OLD.intent_sha256,
+            OLD.registered_readback,OLD.registered_by,OLD.registration_command_id,OLD.registration_operation_id)
+        OR (OLD.registration_event_id IS NOT NULL AND NEW.registration_event_id IS DISTINCT FROM OLD.registration_event_id)
+    ) THEN
+        RAISE EXCEPTION 'registered effect identity and original proof are immutable' USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+DROP TRIGGER IF EXISTS acs_registered_effect_identity_guard ON effects;
+CREATE TRIGGER acs_registered_effect_identity_guard BEFORE UPDATE ON effects
+FOR EACH ROW EXECUTE FUNCTION acs_registered_effect_identity_guard();
