@@ -45,7 +45,9 @@ def settings(tmp_path: Path):
         "source_tree": "b" * 40,
         "driver_journal": str(root / "driver.sqlite"),
         "node_journal": str(root / "node.sqlite"),
-        "systemd_environment_dir": str(root / "systemd-env"),
+        "systemd_environment_dir": str(
+            root / ("windows-job" if os.name == "nt" else "systemd-env")
+        ),
         "artifact_root": str(root / "artifacts"),
         "runtime_id": "runtime",
         "spawn_operation_id": "spawn-operation",
