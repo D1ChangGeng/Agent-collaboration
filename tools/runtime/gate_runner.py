@@ -2015,6 +2015,71 @@ def validate_plan(plan: object, contract: dict[str, Any]) -> dict[str, Any]:
     return plan
 
 
+def import_bootstrap_bundle(
+    source: Path,
+    stage: Path,
+    contract: dict[str, Any],
+    plan: dict[str, Any],
+    identity: SourceIdentity,
+) -> dict[str, Any]:
+    """Copy one bounded setup audit into the sealed run prerequisite plane."""
+    if not source.is_absolute() or source.is_symlink() or not source.is_dir():
+        raise PlanError("BOOTSTRAP bundle must be an absolute regular directory")
+    files = sorted(path for path in source.iterdir() if path.is_file())
+    if (
+        any(path.is_symlink() for path in files)
+        or len(files) > 64
+        or sum(path.stat().st_size for path in files) > 64 * 1024 * 1024
+    ):
+        raise PlanError("BOOTSTRAP bundle is unsafe or outside bounds")
+    report_source = source / "report.json"
+    inventory_source = source / "preservation-inventory.json"
+    if report_source not in files or inventory_source not in files:
+        raise PlanError("BOOTSTRAP report and preservation inventory are required")
+    report = strict_json(report_source.read_bytes())
+    if (
+        not isinstance(report, dict)
+        or report.get("schema_version") != "bootstrap-evidence/1"
+        or report.get("gate") != "passed"
+        or report.get("setup_version") != "0.4.0"
+        or report.get("workspace_schema") != "0.3"
+    ):
+        raise PlanError("BOOTSTRAP report has not passed the adopted setup profile")
+    checks = report.get("checks")
+    raw_names = {
+        check.get("raw_output") for check in checks if isinstance(check, dict)
+    } if isinstance(checks, list) else set()
+    if (
+        not raw_names
+        or any(
+            not isinstance(name, str)
+            or Path(name).name != name
+            or source / name not in files
+            for name in raw_names
+        )
+    ):
+        raise PlanError("BOOTSTRAP raw check outputs are incomplete")
+    destination = stage / "prerequisites" / "bootstrap"
+    destination.mkdir(parents=True, mode=0o700)
+    for path in files:
+        data = path.read_bytes()
+        if secret_findings(data):
+            raise PlanError("secret-like material is forbidden in BOOTSTRAP evidence")
+        target = destination / path.name
+        write_atomic(target, data)
+        target.chmod(0o600)
+    report_path = destination / "report.json"
+    inventory_path = destination / "preservation-inventory.json"
+    return {
+        **file_ref(report_path, stage),
+        "status": "passed",
+        "source_baseline": identity.commit,
+        "contract_revision": contract["contract_revision"],
+        "expires_at": plan["expires_at"],
+        "preservation_inventory": file_ref(inventory_path, stage),
+    }
+
+
 def plan_complete(commands: list[dict[str, Any]]) -> tuple[bool, str]:
     kinds = {command["kind"] for command in commands}
     fields = {field for command in commands for field in command["evidence_fields"]}
@@ -2032,7 +2097,8 @@ def plan_complete(commands: list[dict[str, Any]]) -> tuple[bool, str]:
 
 
 def initialize(
-    plan_path: Path, run_dir: Path, source_root: Path, contract_path: Path
+    plan_path: Path, run_dir: Path, source_root: Path, contract_path: Path,
+    bootstrap_dir: Path | None = None,
 ) -> dict[str, Any]:
     require_external_run_dir(run_dir, source_root)
     if run_dir.exists():
@@ -2061,6 +2127,15 @@ def initialize(
     stage.chmod(0o700)
     try:
         create_state_key(stage)
+        if bootstrap_dir is not None:
+            plan["prerequisites"] = {
+                "BOOTSTRAP": import_bootstrap_bundle(
+                    bootstrap_dir, stage, contract, plan, identity,
+                )
+            }
+            plan_bytes = json.dumps(
+                plan, indent=2, ensure_ascii=False,
+            ).encode() + b"\n"
         write_atomic(stage / "plan.json", plan_bytes)
         snapshot = create_source_snapshot(source_root, stage / "source-snapshot")
         write_json(
@@ -3256,6 +3331,7 @@ def main(argv: list[str] | None = None) -> int:
     init = sub.add_parser("init")
     init.add_argument("--plan", type=Path, required=True)
     init.add_argument("--run-dir", type=Path, required=True)
+    init.add_argument("--bootstrap-dir", type=Path)
     run = sub.add_parser("run")
     run.add_argument("--run-dir", type=Path, required=True)
     run.add_argument("--scenario", required=True)
@@ -3267,7 +3343,11 @@ def main(argv: list[str] | None = None) -> int:
         contract_path = args.contract.resolve(strict=True)
         if args.action == "init":
             state = initialize(
-                args.plan.resolve(strict=True), args.run_dir.absolute(), source_root, contract_path
+                args.plan.resolve(strict=True), args.run_dir.absolute(), source_root, contract_path,
+                bootstrap_dir=(
+                    args.bootstrap_dir.resolve(strict=True)
+                    if args.bootstrap_dir is not None else None
+                ),
             )
             output = {
                 "status": "not_run",
