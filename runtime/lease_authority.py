@@ -83,8 +83,8 @@ class LeaseAuthority:
     def verify_fence(self, lease_id: str, resource_id: str, generation: int, fencing_token: str) -> None:
         with self._store._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
-                "SELECT 1 FROM leases l JOIN grants g ON g.grant_ref=l.grant_ref JOIN authority_instances a ON a.authority_id=%s AND a.authority_incarnation=l.authority_incarnation WHERE l.lease_id=%s AND l.tenant_id=%s AND l.resource_id=%s AND l.generation=%s AND l.fencing_token=%s AND l.status='granted' AND l.expires_at>now() AND g.revoked_at IS NULL AND g.expires_at>now() AND a.status='active'",
-                (self._store.authority_id, lease_id, self._store.tenant_id, resource_id, generation, fencing_token),
+                "SELECT 1 FROM leases l JOIN grants g ON g.grant_ref=l.grant_ref AND g.tenant_id=l.tenant_id AND g.authority_id=l.authority_id AND g.authority_incarnation=l.authority_incarnation JOIN authority_instances a ON a.authority_id=l.authority_id AND a.authority_incarnation=l.authority_incarnation WHERE l.lease_id=%s AND l.tenant_id=%s AND l.resource_id=%s AND l.generation=%s AND l.fencing_token=%s AND l.status='granted' AND l.expires_at>now() AND g.revoked_at IS NULL AND g.expires_at>now() AND a.status='active'",
+                (lease_id, self._store.tenant_id, resource_id, generation, fencing_token),
             )
             if cursor.fetchone() is None:
                 raise FencingRejected(resource_id)
