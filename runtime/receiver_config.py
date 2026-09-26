@@ -126,6 +126,7 @@ class ReceiverRuntimeConfig(ReceiverClientConfig):
     ledger_path: str = ""
     listen_host: str | None = None
     listen_port: int | None = None
+    drop_response_after_commit_once: str | None = None
 
     def validate(self) -> None:
         ReceiverClientConfig.validate(self)
@@ -155,3 +156,7 @@ class ReceiverRuntimeConfig(ReceiverClientConfig):
                 raise BootstrapRejected("receiver local listener address is invalid") from None
             if not address.is_loopback or not 1 <= self.listen_port <= 65535:
                 raise BootstrapRejected("receiver local listener override must be loopback")
+        if self.drop_response_after_commit_once not in {
+            None, "delivery.prepare", "delivery.dispatch", "delivery.readback", "delivery.recover",
+        }:
+            raise BootstrapRejected("receiver response fault purpose is invalid")

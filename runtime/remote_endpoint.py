@@ -137,6 +137,8 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
         self.config = config
         self._native_invoke = native_invoke
         self._shutdown_callback = shutdown_callback
+        self._fault_lock = threading.Lock()
+        self._response_fault_used = False
         self.service = ReceiverService(
             config, node_signing_key, authorize_current=authorize_current,
         )
@@ -176,6 +178,16 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
         if self._shutdown_callback is not None:
             self._shutdown_callback()
 
+    def drop_response(self, purpose: str) -> bool:
+        with self._fault_lock:
+            if (
+                self._response_fault_used
+                or self.config.drop_response_after_commit_once != purpose
+            ):
+                return False
+            self._response_fault_used = True
+            return True
+
 
 class ReceiverHandler(BaseHTTPRequestHandler):
     server: ReceiverHTTPServer
@@ -192,6 +204,14 @@ class ReceiverHandler(BaseHTTPRequestHandler):
             if request.admission.path != self.path:
                 raise ReceiverRejected("request path rejected")
             receipt = self.server.service.handle(request, self.server.native_invoke)
+            if self.server.drop_response(request.admission.purpose):
+                self.close_connection = True
+                try:
+                    self.connection.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+                self.connection.close()
+                return
             encoded = receipt.model_dump_json().encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
