@@ -3375,6 +3375,16 @@ def run_scenario(
 def audit_run(run_dir: Path, source_root: Path, contract_path: Path) -> dict[str, Any]:
     state, plan, _contract = load_run(run_dir, source_root, contract_path)
     audit_commands(state, plan, run_dir)
+    manifest = strict_json((run_dir / "RUN-MANIFEST.json").read_bytes())
+    if (
+        manifest.get("schema_version") != MANIFEST_SCHEMA
+        or manifest.get("run_id") != state["run_id"]
+    ):
+        raise EvidenceError("run manifest identity mismatch")
+    for name, expected in manifest.get("files", {}).items():
+        path = run_dir / name
+        if not path.is_file() or digest_bytes(path.read_bytes()) != expected:
+            raise EvidenceError("run manifest file digest mismatch")
     if os.name == "posix" and state.get("runtime_profile") is not None:
         token = state["run_id"]
         processes = []
@@ -3469,16 +3479,6 @@ def audit_run(run_dir: Path, source_root: Path, contract_path: Path) -> dict[str
     ):
         if workspace.is_dir():
             audit_workspace(workspace, state, run_dir)
-    manifest = strict_json((run_dir / "RUN-MANIFEST.json").read_bytes())
-    if (
-        manifest.get("schema_version") != MANIFEST_SCHEMA
-        or manifest.get("run_id") != state["run_id"]
-    ):
-        raise EvidenceError("run manifest identity mismatch")
-    for name, expected in manifest.get("files", {}).items():
-        path = run_dir / name
-        if not path.is_file() or digest_bytes(path.read_bytes()) != expected:
-            raise EvidenceError("run manifest file digest mismatch")
     return finalize(run_dir, source_root, contract_path)
 
 
