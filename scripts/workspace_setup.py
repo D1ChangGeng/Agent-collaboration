@@ -9,6 +9,7 @@ import json
 import math
 import os
 import re
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -16,6 +17,9 @@ from typing import Any, Dict, List, Optional, Tuple
 WORKSPACE_KIND = "project-collaboration-root"
 SCHEMA = "0.3"
 SUPPORTED_SCHEMAS = {"0.2", "0.3"}
+WORKSPACE_MODE_NESTED_REPOSITORY = "nested-repository"
+WORKSPACE_MODE_STANDALONE = "standalone-workspace"
+WORKSPACE_MODES = {WORKSPACE_MODE_NESTED_REPOSITORY, WORKSPACE_MODE_STANDALONE}
 STATES = {"discovered", "active", "paused", "completed", "archived"}
 LEGACY_MIGRATION_STATE = "legacy-unmigrated"
 DEPRECATED_REGISTRY_FIELDS = {
@@ -52,6 +56,7 @@ MANIFEST_CANONICAL_FIELDS = {
     "setup_skill",
     "registry_path",
     "runtime_dependency_on_setup_skill",
+    "collaboration_root_mode",
 }
 MANIFEST_OPTIONAL_INTEGRITY_FIELDS = {
     "managed_files",
@@ -88,6 +93,13 @@ WORKSPACE_ASSETS = {
     ".agents/knowledge/README.md": "workspace/.agents/knowledge/README.md",
 }
 PROJECT_OWNED = {".agents/coordination/ROOT-BASELINE.md", ".agents/coordination/PROJECT.md"}
+# Exact LF-normalized fingerprints of setup assets shipped before the directory
+# wording update. They permit reviewed upgrades without claiming custom bytes.
+LEGACY_WORKSPACE_ASSET_HASHES = {
+    ".agents/README.md": "76422de7528953cdc5ed3eaa76e14488482b288597ea01c07e146b5e44c69ac8",
+    ".agents/protocol/GIT-SYNC.md": "dfbe66c06e160f649ad535ef296e26ca27425460a931be8b2d52a972380c993c",
+    ".agents/protocol/SOURCE-STATE.md": "1ac66b9953b33e0c6227097c90b2170cf04add03c94325a5e71bb4256018c237",
+}
 WORKSPACE_CREATE = [
     ".agents/config.yaml",
     ".agents/settings.yaml",
@@ -125,6 +137,8 @@ CLAUDE_BEGIN = "<!-- ACHP-CLAUDE-ROUTER:BEGIN -->"
 CLAUDE_END = "<!-- ACHP-CLAUDE-ROUTER:END -->"
 GITIGNORE_BEGIN = "# ACHP-WORKSPACE:BEGIN"
 GITIGNORE_END = "# ACHP-WORKSPACE:END"
+SOURCE_CHECKOUT_BEGIN = "<!-- ACHP-SOURCE-CHECKOUT:BEGIN -->"
+SOURCE_CHECKOUT_END = "<!-- ACHP-SOURCE-CHECKOUT:END -->"
 
 
 def _skill_root() -> Path:
@@ -133,6 +147,191 @@ def _skill_root() -> Path:
 
 def _asset(rel: str) -> str:
     return (_skill_root() / "assets" / "scaffold" / rel).read_text(encoding="utf-8")
+
+
+def _git_environment() -> Dict[str, str]:
+    # The explicit target, rather than caller Git environment overrides,
+    # determines which checkout owns setup writes.
+    return {key: value for key, value in os.environ.items() if key not in {
+        "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE",
+    }}
+
+
+def _git_root_for_path(path: Path) -> Optional[Path]:
+    """Verify the nearest Git checkout, including linked worktree markers."""
+    current = _exact_root(path, "workspace path")
+    while True:
+        marker = current / ".git"
+        if _is_reparse(marker):
+            raise ValueError(f"Git marker uses a symlink or reparse point: {marker}")
+        if marker.exists():
+            try:
+                result = subprocess.run(
+                    ["git", "-C", str(current), "rev-parse", "--show-toplevel"],
+                    capture_output=True, text=True, check=False, env=_git_environment(), timeout=10,
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                raise ValueError(f"cannot verify enclosing Git checkout: {current}") from exc
+            if result.returncode != 0 or not result.stdout.strip():
+                raise ValueError(f"invalid enclosing Git checkout: {current}")
+            verified = _exact_root(Path(result.stdout.strip()), "repository path")
+            if verified != current:
+                raise ValueError(f"Git marker resolves to a different checkout: {marker}")
+            return verified
+        if current == current.parent:
+            return None
+        current = current.parent
+
+
+def _workspace_mode(
+    root: Path,
+    old: Optional[Dict[str, Any]] = None,
+    explicit_upgrade: bool = False,
+) -> str:
+    """Resolve the v0.4 directory model while keeping standalone compatibility."""
+    if old is not None:
+        # A legacy manifest predates the mode field.  Keep its historical
+        # standalone semantics for adopt/repair; only an explicit Workspace
+        # upgrade may opt it into the nested repository model.
+        if "collaboration_root_mode" not in old:
+            if not explicit_upgrade:
+                return WORKSPACE_MODE_STANDALONE
+        elif isinstance(old.get("collaboration_root_mode"), str):
+            mode = old["collaboration_root_mode"]
+            if mode not in WORKSPACE_MODES:
+                raise ValueError(f"workspace collaboration_root_mode invalid: {mode!r}")
+            return mode
+        else:
+            raise ValueError(
+                "workspace collaboration_root_mode must be a string when present"
+            )
+    git_root = _git_root_for_path(root)
+    if git_root is not None and git_root != Path(os.path.abspath(os.fspath(root))):
+        return WORKSPACE_MODE_NESTED_REPOSITORY
+    return WORKSPACE_MODE_STANDALONE
+
+
+def _managed_block_targets(include_workspace_gitignore: bool = True):
+    targets = [
+        ("AGENTS.md", AGENTS_BEGIN, AGENTS_END, "workspace/AGENTS_BLOCK.md"),
+        ("CLAUDE.md", CLAUDE_BEGIN, CLAUDE_END, "CLAUDE_BLOCK.md"),
+    ]
+    if include_workspace_gitignore:
+        targets.append((".gitignore", GITIGNORE_BEGIN, GITIGNORE_END, "workspace/GITIGNORE_BLOCK.txt"))
+    return tuple(targets)
+
+
+def _workspace_repository_root(root: Path) -> Optional[Path]:
+    """Return the enclosing Git root for a nested management root."""
+    repository_root = _git_root_for_path(root)
+    if repository_root is None:
+        return None
+    resolved_root = Path(os.path.abspath(os.fspath(root)))
+    return None if os.path.normcase(os.fspath(repository_root)) == os.path.normcase(os.fspath(resolved_root)) else repository_root
+
+
+def _validate_nested_repository_boundary(
+    root: Path, require_ignore: bool = False
+) -> Optional[str]:
+    """Validate the shared-repository boundary for a nested management root."""
+    path, content, error = _nested_repository_gitignore_plan(root)
+    if error:
+        return error
+    if require_ignore and (not path.exists() or path.read_text(encoding="utf-8") != content):
+        return f"missing nested management ignore block in repository-root .gitignore: {path}"
+    return None
+
+
+def _source_checkout_block(root: Path) -> str:
+    """Render the checkout pointer relative to the management AGENTS file."""
+    repository_root = _workspace_repository_root(root)
+    if repository_root is None:
+        raise ValueError("source checkout binding requires a nested management root")
+    relative = Path(os.path.relpath(repository_root, root)).as_posix()
+    return _asset("workspace/SOURCE_CHECKOUT_BLOCK.md").replace(
+        "{{SOURCE_CHECKOUT_RELATIVE}}", relative
+    )
+
+
+def _nested_repository_gitignore_plan(
+    root: Path,
+) -> Tuple[Optional[Path], Optional[str], Optional[str]]:
+    """Plan the repository-root ignore update without writing anything.
+
+    Returns ``(path, content, error)``. Each management root owns only its
+    repository-relative block; all existing project rules remain unchanged.
+    """
+    try:
+        repository_root = _workspace_repository_root(root)
+        if repository_root is None:
+            return None, None, "nested-repository management root must be inside a Git source checkout"
+        path = repository_root / ".gitignore"
+        if _is_reparse(path) or (path.exists() and not path.is_file()):
+            return None, None, f"nested-repository repository-root .gitignore is not a regular file: {path}"
+        rel = root.relative_to(repository_root).as_posix()
+        if any(ord(char) < 32 for char in rel):
+            return None, None, "nested management path contains unsupported control characters"
+        check = subprocess.run(
+            ["git", "-C", str(repository_root), "check-ignore", "--no-index", "--",
+             f"{rel}/AGENTS.md", f"{rel}/.agents/manifest.json",
+             f"{rel}/.agents/knowledge/index.yaml"],
+            capture_output=True, text=True, check=False, env=_git_environment(), timeout=10,
+        )
+        if check.returncode == 0:
+            return None, None, "shared management files are ignored by existing Git rules; review exclusions first"
+        if check.returncode != 1:
+            return None, None, "cannot verify Git tracking boundary for management files"
+        begin, end = f"# ACHP-NESTED:{rel}:BEGIN", f"# ACHP-NESTED:{rel}:END"
+        literal_rel = re.sub(r"([\\*?\[\] ])", r"\\\1", rel)
+        body = f"# Machine-local capability records.\n/{literal_rel}/.agents/runtime/*"
+        existing = path.read_text(encoding="utf-8") if path.exists() else ""
+        _validate_marker_pair(existing, begin, end, "repository-root nested .gitignore")
+        actual = _extract_block(existing, begin, end)
+        if actual is not None:
+            if actual != body:
+                return None, None, "custom nested .gitignore block requires ownership review"
+            return path, existing, None
+        separator = "\n" if existing.endswith("\n") else "\n\n" if existing else ""
+        updated = existing + separator + f"{begin}\n{body}\n{end}\n"
+        return path, updated, None
+    except (OSError, UnicodeError, ValueError, subprocess.TimeoutExpired) as exc:
+        return None, None, f"nested-repository repository-root .gitignore update rejected: {exc}"
+
+
+def _nested_child_gitignore_plan(
+    root: Path, input_schema: str = SCHEMA
+) -> Tuple[Optional[Path], Optional[str]]:
+    """Plan removal of a legacy child ignore file when it is setup-only."""
+    child = root / ".gitignore"
+    if _is_reparse(child) or (child.exists() and not child.is_file()):
+        return None, f"nested-repository child .gitignore is not a regular file: {child}"
+    if not child.exists():
+        return None, None
+    try:
+        text = child.read_text(encoding="utf-8")
+        expected = _asset("workspace/GITIGNORE_BLOCK.txt").strip()
+        allowed = {expected}
+        if input_schema == "0.2":
+            for body in _legacy_managed_block_bodies(
+                ".gitignore", _extract_block(expected, GITIGNORE_BEGIN, GITIGNORE_END) or ""
+            ):
+                allowed.add(f"{GITIGNORE_BEGIN}\n{body}\n{GITIGNORE_END}")
+        if text.strip() not in allowed:
+            return None, (
+                "nested-repository child .gitignore contains project content; "
+                "review and remove it explicitly before migration"
+            )
+    except (OSError, UnicodeError) as exc:
+        return None, f"nested-repository child .gitignore cannot be inspected: {exc}"
+    return child, None
+
+
+def _remove(path: Path, dry_run: bool, actions: List[str]) -> None:
+    if not path.exists():
+        return
+    actions.append(f"remove {path}")
+    if not dry_run:
+        path.unlink()
 
 
 def _is_reparse(path: Path) -> bool:
@@ -547,13 +746,18 @@ def _validate_marker_pair(text: str, begin: str, end: str, label: str) -> None:
         raise ValueError(f"{label} managed block begin marker must precede end marker")
 
 
-def _validate_existing_managed_blocks(root: Path) -> None:
+def _validate_existing_managed_blocks(
+    root: Path, include_workspace_gitignore: bool = True
+) -> None:
     """Validate all existing managed files before any setup write occurs."""
-    for filename, begin, end in (
+    targets = [
         ("AGENTS.md", AGENTS_BEGIN, AGENTS_END),
+        ("AGENTS.md", SOURCE_CHECKOUT_BEGIN, SOURCE_CHECKOUT_END),
         ("CLAUDE.md", CLAUDE_BEGIN, CLAUDE_END),
-        (".gitignore", GITIGNORE_BEGIN, GITIGNORE_END),
-    ):
+    ]
+    if include_workspace_gitignore:
+        targets.append((".gitignore", GITIGNORE_BEGIN, GITIGNORE_END))
+    for filename, begin, end in targets:
         path = root / filename
         if not path.exists():
             continue
@@ -697,20 +901,20 @@ def _legacy_managed_block_bodies(filename: str, current_body: str) -> set[str]:
     managed blocks remain valid compatibility input, but arbitrary edits are
     still drift and must not be silently accepted by validation.
     """
-    bodies = {current_body}
+    bodies = _known_workspace_block_bodies(filename, current_body)
     if filename == "AGENTS.md":
-        old_body = current_body.replace(
-            "- A Route Node owns its identity metadata, durable goals, decisions, knowledge,\n"
-            "  and verified source evidence. The Root registry owns lifecycle status and\n"
-            "  display name; live Session progress remains in the current Harness context.",
-            "- A Route Node owns its goals, route-specific identity, state, knowledge, and\n"
-            "  engineer-facing continuity.",
-        ).replace(
-            "- Harness/session context and capability observations are local to the running\n"
-            "  environment. They are not required Project Collaboration Workspace state.",
-            "- `.agents/runtime/` is machine/session-local and must not become project truth.",
-        )
-        if old_body != current_body:
+        for body in list(bodies):
+            old_body = body.replace(
+                "- A Route Node owns its identity metadata, durable goals, decisions, knowledge,\n"
+                "  and verified source evidence. The Root registry owns lifecycle status and\n"
+                "  display name; live Session progress remains in the current Harness context.",
+                "- A Route Node owns its goals, route-specific identity, state, knowledge, and\n"
+                "  engineer-facing continuity.",
+            ).replace(
+                "- Harness/session context and capability observations are local to the running\n"
+                "  environment. They are not required Project Collaboration Workspace state.",
+                "- `.agents/runtime/` is machine/session-local and must not become project truth.",
+            )
             bodies.add(old_body)
     elif filename == ".gitignore":
         bodies.add(
@@ -721,14 +925,22 @@ def _legacy_managed_block_bodies(filename: str, current_body: str) -> set[str]:
     return bodies
 
 
+def _known_workspace_block_bodies(filename: str, current_body: str) -> set[str]:
+    bodies = {current_body}
+    if filename == "AGENTS.md":
+        compatibility = _skill_root() / "assets/compatibility/workspace-0.3/AGENTS_BLOCK.md"
+        bodies.add(_extract_block(compatibility.read_text(encoding="utf-8"), AGENTS_BEGIN, AGENTS_END) or "")
+    return bodies
+
+
 def _workspace_block_is_upgrade_owned(
     text: str, filename: str, input_schema: str
 ) -> bool:
     """Return whether an existing Workspace managed block may be refreshed.
 
-    A schema-0.3 Workspace has no block ownership ledger.  A valid block that
-    differs from the current scaffold is therefore project content and must be
-    preserved until a human explicitly reviews it.  Schema-0.2 is a known
+    A schema-0.3 Workspace has no block ownership ledger. A block outside the
+    current and exact known prior templates is project content and must be
+    preserved until a human explicitly reviews it. Schema-0.2 is a known
     compatibility input whose legacy block bodies are intentionally migrated by
     the explicit Workspace upgrade operation.
     """
@@ -755,7 +967,7 @@ def _workspace_block_is_upgrade_owned(
         begin,
         end,
     )
-    if current == expected:
+    if current in _known_workspace_block_bodies(filename, expected or ""):
         return True
     if input_schema == "0.2":
         return current in _legacy_managed_block_bodies(filename, expected or "")
@@ -839,8 +1051,15 @@ def validate_manifest(data: Dict[str, Any], root: Optional[Path] = None) -> None
         raise ValueError(f"workspace manifest kind invalid: {data.get('kind')!r}")
     if data.get("management_root") is not True:
         raise ValueError("workspace manifest management_root must be true")
-    if data.get("execution_repository_required") is not False:
-        raise ValueError("workspace manifest execution_repository_required must be false")
+    mode = data.get("collaboration_root_mode", WORKSPACE_MODE_STANDALONE)
+    if not isinstance(mode, str) or mode not in WORKSPACE_MODES:
+        raise ValueError(f"workspace manifest collaboration_root_mode invalid: {mode!r}")
+    expected_repository_required = mode == WORKSPACE_MODE_NESTED_REPOSITORY
+    if data.get("execution_repository_required") is not expected_repository_required:
+        raise ValueError(
+            "workspace manifest execution_repository_required does not match "
+            f"collaboration_root_mode={mode}"
+        )
     if data.get("runtime_dependency_on_setup_skill") is not False:
         raise ValueError("workspace manifest runtime dependency must be false")
     if not isinstance(data.get("root_id"), str) or not data.get("root_id"):
@@ -853,6 +1072,9 @@ def validate_manifest(data: Dict[str, Any], root: Optional[Path] = None) -> None
             raise ValueError(f"workspace manifest {key} must be a relative path")
         if root is not None and _safe_path(root, value) is None:
             raise ValueError(f"workspace manifest {key} escapes workspace")
+    if root is not None and mode == WORKSPACE_MODE_NESTED_REPOSITORY:
+        if _workspace_repository_root(root) is None:
+            raise ValueError("nested-repository management root must be inside a Git source checkout")
     # The Root contract has one fixed baseline location.  Older manifests may
     # omit it because the location is derivable; if present, every spelling
     # must agree and non-default values fail closed.
@@ -1281,7 +1503,10 @@ def _validate_projected_route(
 
 
 def _workspace_manifest(
-    root: Path, old: Optional[Dict[str, Any]], canonicalize: bool = True
+    root: Path,
+    old: Optional[Dict[str, Any]],
+    canonicalize: bool = True,
+    explicit_upgrade: bool = False,
 ) -> Dict[str, Any]:
     if old and not canonicalize:
         return dict(old)
@@ -1301,15 +1526,22 @@ def _workspace_manifest(
         managed_files = default_managed
     if not isinstance(project_owned_files, list) or any(not isinstance(value, str) for value in project_owned_files):
         project_owned_files = default_owned
+    root_mode = _workspace_mode(root, old if old else None, explicit_upgrade=explicit_upgrade)
+    managed_hashes = old.get("managed_hashes", {})
+    if root_mode == WORKSPACE_MODE_NESTED_REPOSITORY:
+        # A removed, setup-owned child ignore is no longer an integrity target.
+        managed_files = [rel for rel in managed_files if rel != ".gitignore"]
+        managed_hashes = {rel: digest for rel, digest in managed_hashes.items() if rel != ".gitignore"}
     result = {
         "schema_version": SCHEMA,
         "kind": WORKSPACE_KIND,
         "root_id": old.get("root_id", "agent-collaboration-root"),
         "management_root": True,
-        "execution_repository_required": False,
+        "execution_repository_required": root_mode == WORKSPACE_MODE_NESTED_REPOSITORY,
         "setup_skill": "agent-collaboration-setup",
         "runtime_dependency_on_setup_skill": False,
         "registry_path": registry_path,
+        "collaboration_root_mode": root_mode,
         # Ownership and hashes are installer integrity metadata, not runtime
         # collaboration state. They remain optional compatibility metadata.
         # These fields are optional installer integrity metadata.  Existing
@@ -1317,7 +1549,7 @@ def _workspace_manifest(
         # not need to carry them as collaboration state.
         **({"managed_files": managed_files} if "managed_files" in old else {}),
         **({"project_owned_files": project_owned_files} if "project_owned_files" in old else {}),
-        **({"managed_hashes": old["managed_hashes"]} if "managed_hashes" in old else {}),
+        **({"managed_hashes": managed_hashes} if "managed_hashes" in old else {}),
     }
     reserved = (
         MANIFEST_CANONICAL_FIELDS
@@ -1358,9 +1590,15 @@ def _refresh_managed_hashes(
     return refreshed
 
 
-def _preflight_file_targets(root: Path, extra_paths: Optional[List[str]] = None) -> None:
+def _preflight_file_targets(
+    root: Path,
+    extra_paths: Optional[List[str]] = None,
+    include_workspace_gitignore: bool = True,
+) -> None:
     """Reject file/directory collisions before any workspace write."""
-    targets = ["AGENTS.md", "CLAUDE.md", ".gitignore"] + list(WORKSPACE_ASSETS) + list(WORKSPACE_CREATE) + [".agents/manifest.json"]
+    targets = ["AGENTS.md", "CLAUDE.md"] + list(WORKSPACE_ASSETS) + list(WORKSPACE_CREATE) + [".agents/manifest.json"]
+    if include_workspace_gitignore:
+        targets.insert(2, ".gitignore")
     targets.extend(extra_paths or [])
     root = _exact_root(root, "workspace path")
     seen = set()
@@ -1502,10 +1740,6 @@ def workspace_install(
         return [f"error {exc}"]
     if root.exists() and not root.is_dir():
         return [f"error workspace target is not a directory: {root}"]
-    try:
-        _validate_existing_managed_blocks(root)
-    except (OSError, ValueError) as exc:
-        return [f"error managed block markers: {exc}"]
     manifest_path = root / ".agents" / "manifest.json"
     if mode in {"upgrade", "repair"} and not manifest_path.exists():
         return [f"error workspace manifest missing; {mode} requires an existing Workspace"]
@@ -1518,6 +1752,13 @@ def workspace_install(
             validate_manifest(old, root)
         except (OSError, ValueError) as exc:
             return [f"error {manifest_path}: {exc}"]
+    try:
+        root_mode = _workspace_mode(root, old, explicit_upgrade=mode == "upgrade")
+        _validate_existing_managed_blocks(
+            root, include_workspace_gitignore=root_mode == WORKSPACE_MODE_STANDALONE
+        )
+    except (OSError, ValueError) as exc:
+        return [f"error managed block markers: {exc}"]
     baseline_rel = (old or {}).get("baseline_path", DEFAULT_BASELINE_PATH)
     baseline_path = _safe_path(root, baseline_rel)
     if baseline_path is None:
@@ -1582,9 +1823,40 @@ def workspace_install(
         manifest_paths.extend(old.get("managed_files", []))
         manifest_paths.extend(old.get("project_owned_files", []))
     try:
-        _preflight_file_targets(root, [path for path in manifest_paths if isinstance(path, str)])
+        _preflight_file_targets(
+            root,
+            [path for path in manifest_paths if isinstance(path, str)],
+            include_workspace_gitignore=root_mode == WORKSPACE_MODE_STANDALONE,
+        )
     except ValueError as exc:
         return [f"error {exc}"]
+    parent_ignore_path: Optional[Path] = None
+    parent_ignore_content: Optional[str] = None
+    child_ignore_to_remove: Optional[Path] = None
+    source_checkout_block: Optional[str] = None
+    if root_mode == WORKSPACE_MODE_NESTED_REPOSITORY:
+        parent_ignore_path, parent_ignore_content, boundary_error = _nested_repository_gitignore_plan(root)
+        if boundary_error:
+            return [f"error {boundary_error}"]
+        child_ignore_to_remove, child_error = _nested_child_gitignore_plan(
+            root, schema_version(old) if old is not None else SCHEMA
+        )
+        if child_error:
+            return [f"error {child_error}"]
+        if child_ignore_to_remove is not None and (old is None or mode != "upgrade"):
+            return ["error child .gitignore consolidation requires an existing Workspace and explicit upgrade"]
+        if child_ignore_to_remove is not None and ".gitignore" in old.get("project_owned_files", []):
+            return ["error child .gitignore is declared project-owned; review consolidation before upgrade"]
+        try:
+            source_checkout_block = _source_checkout_block(root)
+            agents_path = root / "AGENTS.md"
+            existing_agents = agents_path.read_text(encoding="utf-8") if agents_path.exists() else ""
+            actual_binding = _extract_block(existing_agents, SOURCE_CHECKOUT_BEGIN, SOURCE_CHECKOUT_END)
+            expected_binding = _extract_block(source_checkout_block, SOURCE_CHECKOUT_BEGIN, SOURCE_CHECKOUT_END)
+            if actual_binding is not None and actual_binding != expected_binding:
+                return [f"preserve-conflict {agents_path}: source checkout binding requires review"]
+        except (OSError, ValueError) as exc:
+            return [f"error source checkout binding: {exc}"]
     input_schema = schema_version(old) if old is not None else schema_version(registry)
     hashes = (old or {}).get("managed_hashes", {})
     if not isinstance(hashes, dict):
@@ -1597,6 +1869,9 @@ def workspace_install(
             scaffold_hash = _normalized_digest_bytes(_asset(asset).encode())
             raw_digest = _digest(path)
             normalized_digest = _normalized_digest(path)
+            known_scaffold = normalized_digest in {
+                scaffold_hash, LEGACY_WORKSPACE_ASSET_HASHES.get(target)
+            }
             # A missing hash means ownership has not been recorded.  During
             # adopt/bootstrap we still protect a non-scaffold file; explicit
             # upgrade/repair may refresh setup-managed assets without treating
@@ -1605,14 +1880,14 @@ def workspace_install(
             if recorded_hash is not None:
                 conflict = (
                     raw_digest != recorded_hash
-                    and normalized_digest != scaffold_hash
+                    and not known_scaffold
                 )
             else:
                 conflict = (
-                    normalized_digest != scaffold_hash
+                    not known_scaffold
                     and mode in {"adopt", "bootstrap"}
                 ) or (
-                    normalized_digest != scaffold_hash
+                    not known_scaffold
                     and mode == "upgrade"
                     and input_schema == SCHEMA
                 )
@@ -1623,10 +1898,8 @@ def workspace_install(
     # current scaffold therefore has no ownership proof and must not be
     # replaced.  This is the same fail-closed rule used by repository setup.
     if mode == "upgrade":
-        for filename, begin, end, _asset_name in (
-            ("AGENTS.md", AGENTS_BEGIN, AGENTS_END, "workspace/AGENTS_BLOCK.md"),
-            ("CLAUDE.md", CLAUDE_BEGIN, CLAUDE_END, "CLAUDE_BLOCK.md"),
-            (".gitignore", GITIGNORE_BEGIN, GITIGNORE_END, "workspace/GITIGNORE_BLOCK.txt"),
+        for filename, begin, end, _asset_name in _managed_block_targets(
+            include_workspace_gitignore=root_mode == WORKSPACE_MODE_STANDALONE
         ):
             path = root / filename
             if not path.exists():
@@ -1741,22 +2014,32 @@ def workspace_install(
         return [f"error merged registry: {exc}"]
     if not dry_run:
         root.mkdir(parents=True, exist_ok=True)
+    # Establish the shared exclusion before removing a legacy local rule.
+    # All ownership/path/registry checks above complete before either write.
+    if parent_ignore_path is not None and parent_ignore_content is not None:
+        _write(parent_ignore_path, parent_ignore_content, dry_run, actions)
     # Existing managed blocks are preserved during adopt/repair.  Replacing a
     # valid legacy block is an explicit upgrade concern; ordinary adoption or
     # repair may create a missing block, but must not silently rewrite one that
     # is already present.  Upgrade always installs the current block body.
-    managed_targets = (
-        ("AGENTS.md", AGENTS_BEGIN, AGENTS_END, "workspace/AGENTS_BLOCK.md"),
-        ("CLAUDE.md", CLAUDE_BEGIN, CLAUDE_END, "CLAUDE_BLOCK.md"),
-        (".gitignore", GITIGNORE_BEGIN, GITIGNORE_END, "workspace/GITIGNORE_BLOCK.txt"),
+    managed_targets = _managed_block_targets(
+        include_workspace_gitignore=root_mode == WORKSPACE_MODE_STANDALONE
     )
     preserve_existing_blocks = mode in {"adopt", "repair"}
     for filename, begin, end, asset in managed_targets:
         path = root / filename
         existing = path.read_text(encoding="utf-8") if path.exists() else ""
-        if preserve_existing_blocks and path.exists() and _extract_block(existing, begin, end) is not None:
-            continue
-        _write(path, _replace_block(existing, begin, end, _asset(asset)), dry_run, actions)
+        actual_block = _extract_block(existing, begin, end)
+        expected_block = _extract_block(_asset(asset), begin, end)
+        if actual_block == expected_block or (preserve_existing_blocks and actual_block is not None):
+            updated = existing
+        else:
+            updated = _replace_block(existing, begin, end, _asset(asset))
+        if filename == "AGENTS.md" and source_checkout_block is not None:
+            if _extract_block(updated, SOURCE_CHECKOUT_BEGIN, SOURCE_CHECKOUT_END) is None:
+                separator = "" if not updated or updated.endswith("\n\n") else "\n" if updated.endswith("\n") else "\n\n"
+                updated += separator + source_checkout_block.strip() + "\n"
+        _write(path, updated, dry_run, actions)
     refreshed_assets: set[str] = set()
     for target, asset in WORKSPACE_ASSETS.items():
         if target in PROJECT_OWNED and (root / target).exists():
@@ -1778,7 +2061,12 @@ def workspace_install(
     if registry_changed:
         _write(registry_path, stable_json(merged), dry_run, actions)
     canonicalize_manifest = old is None or mode == "upgrade"
-    data = _workspace_manifest(root, old, canonicalize=canonicalize_manifest)
+    data = _workspace_manifest(
+        root,
+        old,
+        canonicalize=canonicalize_manifest,
+        explicit_upgrade=mode == "upgrade",
+    )
     # Fresh v0.3 workspaces do not need an integrity ledger.  When a legacy
     # manifest already carried one, refresh it as installer metadata so the
     # old drift guard remains usable without making the ledger collaboration
@@ -1794,6 +2082,8 @@ def workspace_install(
         )
     if canonicalize_manifest or (old and "managed_hashes" in old and refreshed_assets):
         _write(manifest_path, stable_json(data), dry_run, actions)
+    if child_ignore_to_remove is not None:
+        _remove(child_ignore_to_remove, dry_run, actions)
     return actions
 
 
@@ -1810,11 +2100,12 @@ def validate_workspace(root: Path) -> Tuple[bool, List[str]]:
     except (OSError, ValueError) as exc:
         return False, [str(exc)]
     try:
-        _preflight_file_targets(root)
+        standalone = _workspace_mode(root, manifest) == WORKSPACE_MODE_STANDALONE
+        _preflight_file_targets(root, include_workspace_gitignore=standalone)
     except ValueError as exc:
         return False, [str(exc)]
     try:
-        _validate_existing_managed_blocks(root)
+        _validate_existing_managed_blocks(root, include_workspace_gitignore=standalone)
     except (OSError, ValueError) as exc:
         errors.append(f"managed block markers invalid: {exc}")
     baseline_path = _safe_path(
@@ -1850,10 +2141,15 @@ def validate_workspace(root: Path) -> Tuple[bool, List[str]]:
         allowed = (
             _legacy_managed_block_bodies("AGENTS.md", expected or "")
             if schema_version(manifest) == "0.2"
-            else {expected}
+            else _known_workspace_block_bodies("AGENTS.md", expected or "")
         )
         if actual is not None and actual not in allowed:
             errors.append("AGENTS.md ACHP managed block drift")
+        if not standalone:
+            expected_binding = _extract_block(_source_checkout_block(root), SOURCE_CHECKOUT_BEGIN, SOURCE_CHECKOUT_END)
+            actual_binding = _extract_block(text, SOURCE_CHECKOUT_BEGIN, SOURCE_CHECKOUT_END)
+            if actual_binding != expected_binding:
+                errors.append("AGENTS.md source checkout binding missing or incorrect; review and run workspace repair")
     claude = root / "CLAUDE.md"
     if not claude.exists():
         errors.append("missing CLAUDE.md")
@@ -1868,7 +2164,13 @@ def validate_workspace(root: Path) -> Tuple[bool, List[str]]:
         if actual is not None and actual != expected:
             errors.append("CLAUDE.md ACHP router drift")
     gitignore = root / ".gitignore"
-    if not gitignore.exists():
+    if not standalone:
+        boundary_error = _validate_nested_repository_boundary(root, require_ignore=True)
+        if boundary_error:
+            errors.append(boundary_error)
+        if gitignore.exists() or _is_reparse(gitignore):
+            errors.append("nested management root must use the repository-root .gitignore; review child .gitignore")
+    elif not gitignore.exists():
         errors.append("missing .gitignore")
     elif not gitignore.is_file():
         errors.append(".gitignore is not a file")
