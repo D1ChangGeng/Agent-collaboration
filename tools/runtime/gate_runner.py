@@ -1733,6 +1733,8 @@ def sandbox_command(
             )
     output = run_dir / "scenario-output" / scenario_id
     output.mkdir(parents=True, exist_ok=True)
+    output.parent.chmod(0o700)
+    output.chmod(0o700)
     relative_cwd = Path(command.get("cwd", "."))
     target_cwd = "/mnt" if str(relative_cwd) == "." else "/mnt/" + relative_cwd.as_posix()
     runtime_profile = validate_runtime_profile(plan.get("runtime_profile"))
