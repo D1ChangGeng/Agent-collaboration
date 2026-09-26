@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/acs/p1-gate-probe-result-1.schema.json",
+  "title": "P1 Gate probe result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "run_id", "scenario_id", "command_id",
+    "evidence_kind", "source_commit", "source_tree", "binding_sha256",
+    "profile", "machine_id", "node_id", "direction", "versions",
+    "observed_at", "expires_at", "operation_ids", "message_ids", "event_ids",
+    "receipt_ids", "observer", "owner", "facts"
+  ],
+  "properties": {
+    "schema_version": {"const": "acs-p1-gate-probe-result/1"},
+    "status": {"const": "passed"},
+    "run_id": {"type": "string", "minLength": 1},
+    "scenario_id": {"type": "string", "pattern": "^P1-"},
+    "command_id": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{1,128}$"},
+    "evidence_kind": {"enum": ["command_output", "postgresql", "sqlite", "temporal", "driver", "os"]},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "binding_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "profile": {"type": "string", "minLength": 1},
+    "machine_id": {"type": "string", "minLength": 1},
+    "node_id": {"type": "string", "minLength": 1},
+    "direction": {"type": "string", "minLength": 1},
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["core", "provider", "database", "protocol", "harness", "driver", "os"],
+      "properties": {
+        "core": {"type": "string", "minLength": 1},
+        "provider": {"type": "object", "minProperties": 1},
+        "database": {"type": "object", "minProperties": 1},
+        "protocol": {"type": "string", "minLength": 1},
+        "harness": {"type": "object", "minProperties": 1},
+        "driver": {"type": "object", "minProperties": 1},
+        "os": {"type": "object", "minProperties": 1}
+      }
+    },
+    "observed_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "operation_ids": {"$ref": "#/$defs/ids"},
+    "message_ids": {"$ref": "#/$defs/ids"},
+    "event_ids": {"$ref": "#/$defs/ids"},
+    "receipt_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "observer": {"type": "string", "minLength": 1},
+    "owner": {"type": "string", "minLength": 1},
+    "facts": {
+      "type": "object",
+      "properties": {
+        "fault_injected": {"type": "boolean"},
+        "source_readback_verified": {"type": "boolean"},
+        "artifact_readback_verified": {"type": "boolean"},
+        "effect_readback_verified": {"type": "boolean"},
+        "recovery_verified": {"type": "boolean"}
+      }
+    }
+  },
+  "$defs": {
+    "ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
