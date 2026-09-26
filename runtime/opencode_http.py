@@ -144,6 +144,8 @@ class LoopbackHttp:
 
     def events(self, stop, callback, *, before_send=None, opened=None):
         """Bounded SSE observation; events never establish an invocation ACK."""
+        if stop.is_set():
+            return
         if not self.verify_owner():
             raise HttpRejected("event endpoint ownership is unverified")
         connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=self.timeout)
@@ -151,13 +153,19 @@ class LoopbackHttp:
         try:
             connection.connect()
             self._event_socket = connection.sock
+            if stop.is_set():
+                return
             if not self.verify_owner():
                 raise HttpRejected("event endpoint changed before authentication")
             if before_send is not None:
                 before_send()
+            if stop.is_set():
+                return
             connection.request("GET", "/event?" + urlencode({"directory": self.directory}),
                                headers={"Authorization": self._authorization, "Accept": "text/event-stream"})
             response = connection.getresponse()
+            if stop.is_set():
+                return
             if response.status != 200 or "text/event-stream" not in response.getheader("Content-Type", ""):
                 raise HttpFailure(response.status, "/event")
             if opened is not None:

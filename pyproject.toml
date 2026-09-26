@@ -24,6 +24,7 @@ dependencies = [
 acs-runtime = "runtime.surface_entry:main"
 acs-receiver = "runtime.receiver_entry:main"
 acs-receiver-provision = "runtime.receiver_provision:main"
+acs-human-bridge = "runtime.human_bridge_entry:main"
 
 [dependency-groups]
 dev = [

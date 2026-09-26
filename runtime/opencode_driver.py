@@ -351,6 +351,7 @@ class OpenCodeNativeDriver:
         self._stop_events()
         self._event_stop = threading.Event()
         stop = self._event_stop
+        settled = threading.Event()
         session_id, identity = self.session_id, dict(self._identity)
         self._auth(operation)
         self.journal.event(operation.operation_id, "http_intent",
@@ -364,30 +365,53 @@ class OpenCodeNativeDriver:
                 self.journal.event(operation.operation_id, "native_event",
                                    {"type": value.get("type"), "native_session_id": session_id,
                                     "binding": identity, "event_digest": digest(value)})
+        self._event_state = "connecting"
+
         def read():
-            self._event_state = "connecting"
             def opened():
                 self._auth(operation)
                 self._event_state = "subscribed"
                 self.journal.event(operation.operation_id, "event_subscription_opened",
                                    {"native_session_id": session_id, "binding": identity})
+                settled.set()
             try:
                 self.client.events(stop, observe, before_send=lambda: self._auth(operation), opened=opened)
                 self._event_state = "closed"
+            except DriverRejected:
+                # Claim loss is already authoritative. Do not open the journal
+                # from this background thread after its ownership was released.
+                self._event_state = "unavailable"
             except Exception as error:  # noqa: BLE001 - background observation failure is journaled without response bodies.
                 self._event_state = "unavailable"
-                self.journal.event(operation.operation_id, "event_subscription_unavailable",
-                                   {"error_type": type(error).__name__, "binding": identity,
-                                    "native_session_id": session_id})
+                try:
+                    self.journal.event(operation.operation_id, "event_subscription_unavailable",
+                                       {"error_type": type(error).__name__, "binding": identity,
+                                        "native_session_id": session_id})
+                except Exception as journal_error:  # noqa: BLE001 - bounded background state
+                    self._event_state = (
+                        "unavailable_unjournaled:" + type(journal_error).__name__
+                    )
+            finally:
+                settled.set()
         self._event_thread = threading.Thread(target=read, daemon=True)
         self._event_thread.start()
+        if not settled.wait(timeout=min(2.0, float(self.http_timeout))):
+            self._stop_events()
+            self._event_state = "unavailable"
 
     def _stop_events(self):
         self._event_stop.set()
-        if self.client is not None:
-            self.client.stop_events()
-        if self._event_thread is not None:
-            self._event_thread.join(timeout=1.5)
+        thread = self._event_thread
+        if thread is not None:
+            for _ in range(3):
+                if self.client is not None:
+                    self.client.stop_events()
+                thread.join(timeout=0.75)
+                if not thread.is_alive():
+                    break
+            if thread.is_alive():
+                raise DriverRejected("native event observation thread did not stop")
+        self._event_thread = None
 
     def spawn(self, operation):
         def perform():
@@ -684,6 +708,9 @@ class OpenCodeNativeDriver:
                 raise OutcomeUncertain("correlated assistant output is not terminal")
             body = record["input"]
             errors = [value["info"]["error"] for value in terminal if value["info"].get("error")]
+            terminal_observed_at = self.journal.first_event_observed_at(
+                invocation_operation_id, "terminal_readback",
+            ) or datetime.now(UTC).isoformat()
             result = self._receipt("response_received", native_message_id=payload["native_message_id"],
                                    native_assistant_ids=[value["info"]["id"] for value in terminal],
                                    assistant_text=[part["text"] for value in answers for part in value.get("parts", [])
@@ -691,9 +718,13 @@ class OpenCodeNativeDriver:
                                    native_error_digests=[digest(error) for error in errors],
                                    native_terminal_outcome=("interrupted" if any(error.get("name") == "MessageAbortedError" for error in errors)
                                                             else "failed" if errors else "completed"),
+                                   native_terminal_observed_at=terminal_observed_at,
                                    operation_id=invocation_operation_id, command_id=body["command_id"],
                                    message_id=body["message_id"])
-            self.journal.event(invocation_operation_id, "terminal_readback", result)
+            self.journal.event(
+                invocation_operation_id, "terminal_readback", result,
+                observed_at=terminal_observed_at,
+            )
             return result
 
     def cancel(self, operation, native_message_id):
@@ -745,7 +776,10 @@ class OpenCodeNativeDriver:
                 raise OutcomeUncertain("complete owned process termination is unverified")
             self._stop_events()
             for thread in self._diag_threads:
-                thread.join(timeout=1)
+                thread.join(timeout=2)
+                if thread.is_alive():
+                    raise OutcomeUncertain("native diagnostic drain thread did not stop")
+            self._diag_threads = []
             return self._receipt("process_tree_terminated", supervisor_proof=proof)
         return self._run(operation, "terminate", {"native_session_id": self.session_id}, perform)
 
@@ -769,6 +803,11 @@ class OpenCodeNativeDriver:
                         "live exclusive capacity must be terminated before detach"
                     )
             self._stop_events()
+            for thread in self._diag_threads:
+                thread.join(timeout=2)
+                if thread.is_alive():
+                    raise DriverRejected("native diagnostic drain thread did not stop")
+            self._diag_threads = []
             self.client = None
             self.session_id = None
             self.owned = None

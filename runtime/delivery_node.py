@@ -90,10 +90,13 @@ class LocalNodeEndpoint:
     """
 
     def __init__(self, journal: NodeJournal, scope_id: str, agent_slot_id: str,
-                 driver: InvocationDriver | None = None) -> None:
+                 driver: InvocationDriver | None = None, response_collector=None) -> None:
         if journal.SCHEMA_VERSION != "acs-node-journal/2":
             raise ValueError("unsupported NodeJournal schema")
         self.journal, self.scope_id, self.agent_slot_id, self.driver = journal, scope_id, agent_slot_id, driver
+        self.response_collector = response_collector
+        if response_collector is not None and driver is None:
+            raise ValueError("response collector requires the bound invocation Driver")
         if driver is not None and driver.evidence_class not in ("fixture_callback", "native_driver_observation"):
             raise ValueError("Driver evidence scope must be explicit")
         with journal._transaction() as connection:
@@ -389,3 +392,17 @@ class LocalNodeEndpoint:
         receipts = [{"receipt_id": item.receipt_id, "layer": item.layer, "evidence": dict(item.evidence)}
                     for item in self.journal.receipts(operation_id)]
         return {"status": status, "receipts": receipts}
+
+    def collect_response(self, operation_id: str):
+        """Collect and project the existing invocation; this path never calls ``invoke``."""
+        if self.response_collector is None:
+            raise DeliveryBoundaryRejected("response_collector_unavailable")
+        with self.journal._connect() as connection:
+            row = connection.execute(
+                "SELECT request_json,state FROM delivery_invocations WHERE operation_id=?",
+                (operation_id,),
+            ).fetchone()
+        if row is None or row[1] not in {"runtime_dispatched", "acknowledged", "uncertain"}:
+            raise DeliveryBoundaryRejected("collectable_invocation_unavailable")
+        invocation = InvocationRequest.model_validate_json(row[0], strict=True)
+        return self.response_collector.collect_and_project(invocation)
