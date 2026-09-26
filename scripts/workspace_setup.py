@@ -153,6 +153,14 @@ def _replace_block(text: str, begin: str, end: str, block: str) -> str:
     return (text.rstrip() + "\n\n" if text.strip() else "") + block
 
 
+def _extract_block(text: str, begin: str, end: str) -> Optional[str]:
+    if begin not in text or end not in text:
+        return None
+    _, rest = text.split(begin, 1)
+    body, _ = rest.split(end, 1)
+    return body.strip()
+
+
 def _write(path: Path, content: str, dry_run: bool, actions: List[str]) -> None:
     if path.exists() and path.is_dir():
         raise ValueError(f"target is a directory, expected a file: {path}")
@@ -609,6 +617,47 @@ def validate_workspace(root: Path) -> Tuple[bool, List[str]]:
         _preflight_file_targets(root)
     except ValueError as exc:
         return False, [str(exc)]
+    agents = root / "AGENTS.md"
+    if not agents.exists():
+        errors.append("missing AGENTS.md")
+    elif not agents.is_file():
+        errors.append("AGENTS.md is not a file")
+    else:
+        text = agents.read_text(encoding="utf-8")
+        if AGENTS_BEGIN not in text or AGENTS_END not in text:
+            errors.append("AGENTS.md ACHP managed block missing/incomplete")
+        if "always-on" not in text.lower() or "self-evolution" not in text:
+            errors.append("AGENTS.md admission boundary missing/incomplete")
+        expected = _extract_block(_asset("workspace/AGENTS_BLOCK.md"), AGENTS_BEGIN, AGENTS_END)
+        actual = _extract_block(text, AGENTS_BEGIN, AGENTS_END)
+        if actual is not None and actual != expected:
+            errors.append("AGENTS.md ACHP managed block drift")
+    claude = root / "CLAUDE.md"
+    if not claude.exists():
+        errors.append("missing CLAUDE.md")
+    elif not claude.is_file():
+        errors.append("CLAUDE.md is not a file")
+    else:
+        text = claude.read_text(encoding="utf-8")
+        if CLAUDE_BEGIN not in text or CLAUDE_END not in text or "@AGENTS.md" not in text:
+            errors.append("CLAUDE.md ACHP router missing/incomplete")
+        expected = _extract_block(_asset("CLAUDE_BLOCK.md"), CLAUDE_BEGIN, CLAUDE_END)
+        actual = _extract_block(text, CLAUDE_BEGIN, CLAUDE_END)
+        if actual is not None and actual != expected:
+            errors.append("CLAUDE.md ACHP router drift")
+    gitignore = root / ".gitignore"
+    if not gitignore.exists():
+        errors.append("missing .gitignore")
+    elif not gitignore.is_file():
+        errors.append(".gitignore is not a file")
+    else:
+        text = gitignore.read_text(encoding="utf-8")
+        if GITIGNORE_BEGIN not in text or GITIGNORE_END not in text:
+            errors.append(".gitignore ACHP runtime block missing")
+        expected = _extract_block(_asset("workspace/GITIGNORE_BLOCK.txt"), GITIGNORE_BEGIN, GITIGNORE_END)
+        actual = _extract_block(text, GITIGNORE_BEGIN, GITIGNORE_END)
+        if actual is not None and actual != expected:
+            errors.append(".gitignore ACHP managed block drift")
     for rel in list(WORKSPACE_ASSETS) + WORKSPACE_CREATE:
         if not (root / rel).exists():
             errors.append(f"missing {rel}")
