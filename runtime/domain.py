@@ -40,9 +40,10 @@ class DomainAuthority:
     """PostgreSQL Domain authority for the local Runtime profile."""
 
     SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.5"
+    SCHEMA_VERSION = "1.6"
 
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.5", "c5faeecc4a9a6b152eb288f8f5d6cf3a1b4492d464f10d931535d3f737421fee"),
         ("1.4", "8f12aa29f385194b436f930422d5dafebc432d15bdf1a4bafe94294d8f744deb"),
         ("1.3", "0e3600dc7ed3b7fac727670f5c8fec0b00c6e100063e63a3f149661631dccea4"),
         (
@@ -103,6 +104,29 @@ class DomainAuthority:
         return EffectDomain(self, self._effect_registration_gateway).reconcile_effect(
             command, effect_id=effect_id,
         )
+
+    @property
+    def enrollment(self):
+        from runtime.enrollment import EnrollmentAuthority
+        return EnrollmentAuthority(self)
+
+    def enroll_node(self, command, request):
+        return self.enrollment.enroll_node(command, request)
+
+    def rotate_node(self, command, request):
+        return self.enrollment.rotate_node(command, request)
+
+    def revoke_node(self, command, request):
+        return self.enrollment.revoke_node(command, request)
+
+    def challenge_node(self, command, request):
+        return self.enrollment.challenge_node(command, request)
+
+    def register_runtime(self, command, request, proof):
+        return self.enrollment.register_runtime(command, request, proof)
+
+    def register_attempt(self, command, request, proof):
+        return self.enrollment.register_attempt(command, request, proof)
 
     @property
     def leases(self) -> LeaseAuthority:
@@ -958,6 +982,7 @@ class DomainAuthority:
         }:
             raise AcceptanceGuardFailed("evidence digest does not bind candidate bytes")
         self._validate_execution_receipt(receipt, scope_id)
+        self.enrollment.verify_receipt_provenance(cursor, receipt)
         return bundle, receipt, bound
 
     def record_evidence(
@@ -1542,7 +1567,7 @@ class DomainAuthority:
             raise AcceptanceGuardFailed("receipt has no verified output artifact")
 
     def record_execution_receipt(
-        self, command: CommandEnvelope, receipt: ExecutionReceipt,
+        self, command: CommandEnvelope, receipt: ExecutionReceipt, *, node_proof: Any | None = None,
     ) -> CommandResult:
         """Node-only receipt registration for an already trusted Attempt.
 
@@ -1557,11 +1582,13 @@ class DomainAuthority:
             if command.target_id != receipt.work_item_id:
                 raise AuthorizationDenied(command.principal_ref, command.grant_ref)
             row = self._lock_work_item(cursor, command, receipt.work_item_id, permission="execution.record")
+            enrolled = self.enrollment.authorize_execution_receipt(cursor, command, receipt, node_proof)
             result = CommandResult(command_id=command.command_id, operation_id=f"op-{uuid.uuid4()}",
                                    target_id=receipt.work_item_id, revision=int(row[2]), state="execution_receipt")
             duplicate, digest = self._dedup(cursor, command, result, {"receipt": receipt.model_dump(mode="json")})
             if duplicate is not None:
                 return duplicate
+            enrolled = self.enrollment.validate_new_execution_receipt(cursor, command, receipt, enrolled)
             if command.expected_revision != int(row[2]):
                 raise RevisionConflict(command.target_id, command.expected_revision, int(row[2]))
             bound = self._execution_binding(cursor, receipt, str(row[0]))
@@ -1583,6 +1610,7 @@ class DomainAuthority:
                  json.dumps([ref.model_dump(mode="json") for ref in receipt.readback_refs]),
                  receipt.candidate_ref, receipt.model_dump_json()),
             )
+            self.enrollment.seal_execution_receipt(cursor, command, receipt, enrolled)
             self._record(cursor, command, WorkItemState(row[1]), WorkItemState(row[1]), int(row[2]),
                          (receipt.receipt_id,), digest)
             self._operation(cursor, command, result.operation_id)
