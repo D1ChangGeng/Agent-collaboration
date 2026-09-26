@@ -28,7 +28,7 @@ from runtime.surface_config import configured_service
 PROJECT = "project-portfolio-sandbox"
 TOOL = "open_chat_receiver_probe"
 CLAIM_TOOL = "claim_chat_receiver_probe_wake"
-URI = "ui://acs/chat-receiver-probe/v2.html"
+URI = "ui://acs/chat-receiver-probe/v3.html"
 LEASE_SECONDS = 300
 
 
@@ -85,14 +85,37 @@ class ProbeJournal:
 HTML = r"""<!doctype html>
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  body { font: 14px system-ui, sans-serif; margin: 16px; color: #17212b; }
-  strong { display: block; margin-bottom: 8px; }
-  #status { white-space: pre-wrap; overflow-wrap: anywhere; }
+  :root { color-scheme: light dark; --panel: #f7fafb; --ink: #13202b; --muted: #405568;
+          --line: #c6d6dc; --accent: #087d78; --accent-ink: #075a57; }
+  @media (prefers-color-scheme: dark) {
+    :root { --panel: #17232c; --ink: #f2f8fa; --muted: #bdcbd2;
+            --line: #40545f; --accent: #74e0d3; --accent-ink: #b1f5eb; }
+  }
+  :root[data-theme="light"] { color-scheme: light; --panel: #f7fafb; --ink: #13202b;
+    --muted: #405568; --line: #c6d6dc; --accent: #087d78; --accent-ink: #075a57; }
+  :root[data-theme="dark"] { color-scheme: dark; --panel: #17232c; --ink: #f2f8fa;
+    --muted: #bdcbd2; --line: #40545f; --accent: #74e0d3; --accent-ink: #b1f5eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--panel); color: var(--ink);
+         font: 14px/1.45 "Segoe UI Variable", "Aptos", system-ui, sans-serif; }
+  main { min-height: 116px; padding: 18px 20px; border-top: 3px solid var(--accent); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .eyebrow { color: var(--accent-ink); font-size: 11px; font-weight: 750;
+             letter-spacing: .09em; text-transform: uppercase; }
+  #phase { color: var(--accent-ink); border: 1px solid var(--line); border-radius: 999px;
+           padding: 3px 9px; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+  h1 { margin: 11px 0 4px; font-size: 17px; font-weight: 650; letter-spacing: -.025em; }
+  #status { margin: 0; color: var(--muted); white-space: pre-wrap;
+            overflow-wrap: anywhere; line-height: 1.5; }
 </style>
-<strong>ACS Chat receiver capability probe</strong>
-<div id="status">Waiting for the ChatGPT component bridge.</div>
+<main>
+  <header><span class="eyebrow">ACS / Chat receiver</span><span id="phase">CONNECTING</span></header>
+  <h1>Receiver capability probe</h1>
+  <p id="status" role="status" aria-live="polite">Waiting for the ChatGPT component bridge.</p>
+</main>
 <script type="module">
 const status = document.getElementById('status');
+const phaseBadge = document.getElementById('phase');
 let projectId = null;
 let probeId = null;
 let expiresAt = 0;
@@ -100,20 +123,30 @@ let seen = new Set();
 let busy = false;
 let fired = false;
 let timer = null;
-function show(message) { status.textContent = message; }
+function show(message, phase = 'WAITING') {
+  status.textContent = message;
+  phaseBadge.textContent = phase;
+  if (probeId && typeof window.openai?.setWidgetState === 'function') {
+    try { window.openai.setWidgetState({privateContent: {
+      probe_id: probeId, phase, message}}); } catch (_) { /* UI state is diagnostic only. */ }
+  }
+}
 function expired() {
   if (Date.now() < expiresAt) return false;
   if (timer !== null) clearInterval(timer);
-  show('Probe expired. Open a new probe to observe further notifications.');
+  show('Probe expired. Open a new probe to observe further notifications.', 'EXPIRED');
   return true;
 }
 function initialize() {
   const bridge = window.openai;
+  if (bridge?.theme === 'light' || bridge?.theme === 'dark') {
+    document.documentElement.dataset.theme = bridge.theme;
+  }
   const output = bridge?.toolOutput;
   if (!bridge || typeof bridge.callTool !== 'function' ||
       typeof bridge.sendFollowUpMessage !== 'function' || !output?.project_id ||
       !output?.probe_id || !output?.expires_at) {
-    show('Waiting for component tool output and Chat follow-up capability.');
+    show('Waiting for component tool output and Chat follow-up capability.', 'CONNECTING');
     return false;
   }
   if (probeId === output.probe_id) return !expired();
@@ -124,6 +157,14 @@ function initialize() {
   seen = new Set(output.baseline_handles || []);
   fired = false;
   if (expired()) return false;
+  const saved = bridge.widgetState?.privateContent;
+  if (saved?.probe_id === probeId && saved.phase && saved.phase !== 'WAITING') {
+    fired = ['CLAIMING', 'REQUESTING', 'SUBMITTED', 'UNCERTAIN'].includes(saved.phase);
+    if (fired && timer !== null) clearInterval(timer);
+    status.textContent = saved.message;
+    phaseBadge.textContent = saved.phase;
+    return !fired;
+  }
   show('Connected to ' + projectId + '. Waiting for a new ACS notification.');
   return true;
 }
@@ -139,7 +180,7 @@ async function poll() {
   try {
     const result = body(await window.openai.callTool('check_inbox', {project_id: projectId}));
     if (result?.ok !== true || result?.data?.project_id !== projectId) {
-      show('Inbox observation unavailable; waiting for the next poll.');
+      show('Inbox observation unavailable; waiting for the next poll.', 'RETRYING');
       return;
     }
     const notices = result.data.notifications || [];
@@ -151,28 +192,34 @@ async function poll() {
         seen.add(handle);
         continue;
       }
+      show('New ACS notification ' + handle + '. Claiming one wake attempt.', 'CLAIMING');
       const claimed = body(await window.openai.callTool('claim_chat_receiver_probe_wake',
         {project_id: projectId, probe_id: probeId, notification_handle: handle}));
       seen.add(handle);
-      if (claimed?.claimed !== true) continue;
+      if (claimed?.claimed !== true) {
+        show('Wake claim unavailable or already taken by another component. Waiting for a new event.',
+          'WAITING');
+        continue;
+      }
       fired = true;
       if (timer !== null) clearInterval(timer);
-      show('New ACS notification ' + handle + '. Requesting a native Chat follow-up.');
+      show('Wake claimed for ' + handle + '. Requesting a native Chat follow-up.', 'REQUESTING');
       const prompt = 'ACS Chat receiver probe notification ' + handle +
         '. Please call ACS read_message with project_id=' + projectId +
         ', handle=' + handle + ', consume=false; report the event_id and command_id.';
       try {
         await window.openai.sendFollowUpMessage({prompt, scrollToBottom: false});
-        show('Chat follow-up submitted for ' + handle + '. Verify the native Turn and ACS readback.');
+        show('Chat follow-up submitted for ' + handle + '. Verify the native Turn and ACS readback.',
+          'SUBMITTED');
       } catch (error) {
         show('outcome_uncertain for ' + handle +
           ': wake claim recorded, but Host follow-up has no confirmed result. ' +
-          'Inspect the native Turn; no automatic retry.');
+          'Inspect the native Turn; no automatic retry.', 'UNCERTAIN');
       }
       break;
     }
   } catch (error) {
-    show('Component bridge error: ' + String(error?.name || error));
+    show('Component bridge error: ' + String(error?.name || error), 'ERROR');
   } finally {
     busy = false;
   }
@@ -180,7 +227,7 @@ async function poll() {
 window.addEventListener('openai:set_globals', initialize);
 initialize();
 timer = setInterval(poll, 2500);
-if (expiresAt && Date.now() >= expiresAt) clearInterval(timer);
+if (fired || (expiresAt && Date.now() >= expiresAt)) clearInterval(timer);
 </script></html>"""
 
 

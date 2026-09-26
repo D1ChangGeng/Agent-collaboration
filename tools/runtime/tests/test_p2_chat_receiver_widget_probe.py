@@ -151,12 +151,17 @@ const script = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
 const notifications = [];
 const claims = [];
 const followUps = [];
+const probeElements = {status: {textContent: ''}, phase: {textContent: ''}};
+const probeDocument = {documentElement: {dataset: {}},
+  getElementById: id => probeElements[id]};
 let tick;
 let cleared = false;
 let allowClaim = false;
 const bridge = {
+  theme: 'dark',
   toolOutput: {project_id: 'project-portfolio-sandbox', probe_id: 'probe-1',
     baseline_handles: [], expires_at: new Date(Date.now() + 300000).toISOString()},
+  setWidgetState(state) { this.widgetState = state; },
   async callTool(name, args) {
     if (name === 'check_inbox') return {structuredContent: {ok: true,
       data: {project_id: bridge.toolOutput.project_id, notifications}}};
@@ -168,7 +173,7 @@ const bridge = {
   },
   async sendFollowUpMessage(args) { followUps.push(args); }
 };
-vm.runInNewContext(script, {document: {getElementById: () => ({textContent: ''})},
+vm.runInNewContext(script, {document: probeDocument,
   window: {openai: bridge, addEventListener: () => {}},
   setInterval: fn => {tick = fn; return 1}, clearInterval: () => {cleared = true},
   Date, Set, String, Number});
@@ -193,12 +198,18 @@ vm.runInNewContext(script, {document: {getElementById: () => ({textContent: ''})
   await tick();
   assert.equal(followUps.length, 1);
   assert.equal(cleared, true);
-  const uncertainStatus = {textContent: ''};
+  assert.equal(probeDocument.documentElement.dataset.theme, 'dark');
+  assert.equal(probeElements.phase.textContent, 'SUBMITTED');
+  assert.equal(bridge.widgetState.privateContent.phase, 'SUBMITTED');
+  const uncertainElements = {status: {textContent: ''}, phase: {textContent: ''}};
+  const uncertainDocument = {documentElement: {dataset: {}},
+    getElementById: id => uncertainElements[id]};
   let uncertainTick;
   let uncertainSends = 0;
   const uncertainBridge = {
     toolOutput: {project_id: 'project-portfolio-sandbox', probe_id: 'probe-2',
       baseline_handles: [], expires_at: new Date(Date.now() + 300000).toISOString()},
+    setWidgetState(state) { this.widgetState = state; },
     async callTool(name) {
       if (name === 'check_inbox') return {structuredContent: {ok: true,
         data: {project_id: 'project-portfolio-sandbox', notifications: [
@@ -208,14 +219,36 @@ vm.runInNewContext(script, {document: {getElementById: () => ({textContent: ''})
     },
     async sendFollowUpMessage() { uncertainSends++; throw new Error('host rejected'); }
   };
-  vm.runInNewContext(script, {document: {getElementById: () => uncertainStatus},
+  vm.runInNewContext(script, {document: uncertainDocument,
     window: {openai: uncertainBridge, addEventListener: () => {}},
     setInterval: fn => {uncertainTick = fn; return 2}, clearInterval: () => {},
     Date, Set, String, Number});
   await uncertainTick();
   await uncertainTick();
-  assert.match(uncertainStatus.textContent, /outcome_uncertain for uncertain/);
+  assert.match(uncertainElements.status.textContent, /outcome_uncertain for uncertain/);
+  assert.equal(uncertainBridge.widgetState.privateContent.phase, 'UNCERTAIN');
   assert.equal(uncertainSends, 1);
+  const restoredElements = {status: {textContent: ''}, phase: {textContent: ''}};
+  let restoredTick;
+  let restoredCleared = false;
+  let restoredCalls = 0;
+  const restoredBridge = {
+    toolOutput: {project_id: 'project-portfolio-sandbox', probe_id: 'probe-3',
+      baseline_handles: [], expires_at: new Date(Date.now() + 300000).toISOString()},
+    widgetState: {privateContent: {probe_id: 'probe-3', phase: 'CLAIMING',
+      message: 'Claim outcome unknown after remount.'}},
+    async callTool() { restoredCalls++; },
+    async sendFollowUpMessage() { restoredCalls++; }
+  };
+  vm.runInNewContext(script, {document: {documentElement: {dataset: {}},
+    getElementById: id => restoredElements[id]},
+    window: {openai: restoredBridge, addEventListener: () => {}},
+    setInterval: fn => {restoredTick = fn; return 3},
+    clearInterval: () => {restoredCleared = true}, Date, Set, String, Number});
+  await restoredTick();
+  assert.equal(restoredCleared, true);
+  assert.equal(restoredCalls, 0);
+  assert.equal(restoredElements.phase.textContent, 'CLAIMING');
 })().catch(error => { console.error(error); process.exitCode = 1; });
 """
     result = subprocess.run(["node", "-e", runner], input=HTML,
