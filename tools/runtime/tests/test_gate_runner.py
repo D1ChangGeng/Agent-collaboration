@@ -455,6 +455,12 @@ class GateRunnerTests(unittest.TestCase):
             if wrapped[index:index + len(private_dir)] == private_dir
         )
         self.assertLess(private_dir_index, bind_index)
+        chmod_target = ["--chmod", "0700", "/srv"]
+        chmod_target_index = next(
+            index for index in range(len(wrapped) - len(chmod_target) + 1)
+            if wrapped[index:index + len(chmod_target)] == chmod_target
+        )
+        self.assertGreater(chmod_target_index, bind_index)
 
         result = runner.execute_command(
             state, self.plan, scenario, command, self.run_dir, self.source,
@@ -467,6 +473,52 @@ class GateRunnerTests(unittest.TestCase):
         self.assertEqual(evidence["facts"]["receiver_parent_mode"], 0o700)
         self.assertEqual(output.stat().st_mode & 0o777, 0o700)
         self.assertEqual(output.parent.stat().st_mode & 0o777, 0o700)
+
+    @unittest.skipUnless(os.name == "posix", "sandbox mount target is POSIX-only")
+    def test_sandbox_chmod_applies_to_bound_srv_and_receiver_sqlite_opens(self):
+        state = self.initialize()
+        if not state["sandbox"]["available"]:
+            self.skipTest("reviewed bubblewrap unavailable")
+        scenario = next(iter(self.plan["scenarios"]))
+        command = {
+            "command_id": "srv-bound-mode-readback",
+            "kind": "command_output",
+            "argv": [
+                "/usr/bin/python3",
+                "-c",
+                (
+                    "import json,os,pathlib,sqlite3;"
+                    "parent=pathlib.Path('/srv/receiver-private');"
+                    "parent.mkdir(mode=0o700);parent.chmod(0o700);"
+                    "db=parent/'receiver.sqlite';"
+                    "connection=sqlite3.connect(db);"
+                    "connection.execute('create table receiver_probe(value text)');"
+                    "connection.commit();connection.close();"
+                    "srv=os.stat('/srv');nested=os.stat(parent);"
+                    "print(json.dumps({'srv_uid':srv.st_uid,'srv_mode':srv.st_mode & 0o777,"
+                    "'receiver_parent_uid':nested.st_uid,'receiver_parent_mode':nested.st_mode & 0o777,"
+                    "'receiver_sqlite_opened':db.is_file()}))"
+                ),
+            ],
+            "evidence_fields": ["raw_outputs"],
+        }
+        environment = runner.probe_environment(state, scenario, command)
+        wrapped, output = runner.sandbox_command(
+            state, self.plan, self.run_dir, scenario, command, environment,
+        )
+        output.chmod(0o755)
+        result = subprocess.run(
+            wrapped, cwd=self.run_dir, env={}, capture_output=True, timeout=30,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        facts = json.loads(result.stdout)
+        self.assertEqual(facts["srv_uid"], os.geteuid())
+        self.assertEqual(facts["srv_mode"], 0o700)
+        self.assertEqual(facts["receiver_parent_uid"], os.geteuid())
+        self.assertEqual(facts["receiver_parent_mode"], 0o700)
+        self.assertTrue(facts["receiver_sqlite_opened"])
+        self.assertEqual(output.stat().st_mode & 0o777, 0o700)
 
     def test_secret_output_is_redacted_and_blocked(self):
         state = self.initialize()
