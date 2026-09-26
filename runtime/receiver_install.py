@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import stat
 import sys
 import zipfile
@@ -135,9 +136,16 @@ def verify_installed_distribution() -> dict[str, object]:
         raise ValueError("receiver interpreter reference is not owner controlled")
     interpreter_data = interpreter.read_bytes()
     active = Path(sys.executable).absolute()
-    delegated = interpreter != active and interpreter_data.startswith(
-        f"#!{active}\n".encode()
-    )
+    delegated = False
+    if interpreter != active:
+        try:
+            wrapper = interpreter_data.decode("utf-8")
+        except UnicodeDecodeError:
+            wrapper = ""
+        delegated = bool(re.fullmatch(
+            r"#!/bin/sh\nPYTHONPATH=/[A-Za-z0-9_./:+-]+ exec "
+            + re.escape(str(active)) + r' "\$@"\n', wrapper,
+        ))
     if (not interpreter.is_absolute()
             or manifest.get("interpreter_path_sha256")
             != hashlib.sha256(str(interpreter).encode()).hexdigest()
