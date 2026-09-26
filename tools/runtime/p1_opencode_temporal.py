@@ -56,7 +56,8 @@ class OpenCodeTemporalDispatcher:
         except BaseException as error:
             endpoints = tuple(self.service.endpoints.values())
             endpoint = endpoints[0] if len(endpoints) == 1 else None
-            driver = getattr(endpoint, "driver", None)
+            adapter = getattr(endpoint, "driver", None)
+            driver = getattr(adapter, "driver", adapter)
             journal = getattr(driver, "journal", None)
             if journal is not None:
                 try:
