@@ -80,14 +80,14 @@ def _command(domain, kind, target_kind, target_id, *, revision=0, suffix=""):
     )
 
 
-def _proof(node_domain, node_key, node_id, purpose_command, node_input):
+def _proof(node_domain, node_key, node_id, purpose_command, node_input, *, ttl_seconds=120):
     challenge = node_domain.challenge_node(
         _command(node_domain, "node.challenge", "node", node_id, revision=1),
         NodeChallengeRequest(
             purpose=purpose_command.command_type,
             purpose_command_id=purpose_command.command_id,
             purpose_hash=EnrollmentAuthority.signing_hash(purpose_command, node_input),
-            ttl_seconds=120,
+            ttl_seconds=ttl_seconds,
         ),
     )
     return NodeCommandProof(
@@ -219,7 +219,7 @@ def provision(arguments) -> int:
         runtime_revision=1, machine_id=arguments.linux_machine_id,
         boot_incarnation=boot, scope_id="local-scope", agent_slot_id="local-slot",
         tls_certificate_sha256=cert_hash, config_sha256="0" * 64,
-        expires_at=expiry - timedelta(minutes=10),
+        expires_at=datetime.now(UTC) + timedelta(minutes=4),
     )
     binding = EndpointBinding(
         registration=provisional, locator_host=arguments.linux_host,
@@ -249,7 +249,9 @@ def provision(arguments) -> int:
         EndpointRegistrationCommand(
             registration=registration,
             registration_signature=process.runtime.binding.registration_signature,
-            proof=_proof(node, node_key, node_id, endpoint_command, node_input),
+            proof=_proof(
+                node, node_key, node_id, endpoint_command, node_input, ttl_seconds=300,
+            ),
         ),
     )
     _write(output / "receiver-process.json", json.loads(dump_process_config(process)))
