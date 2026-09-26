@@ -415,6 +415,8 @@ def stage_codex_home(host_root: Path, profile: dict[str, Any]) -> dict[str, str]
             "apps = false",
             "plugins = false",
             "recommended_plugins = false",
+            "code_mode_host = false",
+            "code_mode_only = false",
             "",
             "[shell_environment_policy]",
             'inherit = "none"',
