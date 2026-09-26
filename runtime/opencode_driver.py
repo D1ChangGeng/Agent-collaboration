@@ -21,6 +21,7 @@ from pathlib import Path
 from runtime.codex_driver import (
     AuthorizedOperation,
     BindingIdentity,
+    DriverDeferred,
     DriverJournal,
     DriverRejected,
     OutcomeUncertain,
@@ -250,8 +251,10 @@ class OpenCodeNativeDriver:
             self._auth(operation)
             if record["state"] == "acknowledged":
                 return record["result"]
-            if not record["created"]:
+            if not record["created"] and record["state"] != "deferred":
                 raise OutcomeUncertain("original operation must be reconciled; no blind redispatch")
+            if record["state"] == "deferred" and self.journal.has_mutating_io(operation.operation_id):
+                raise OutcomeUncertain("deferred invocation has mutating I/O evidence")
             previous_active = self._active_message, self._active_operation_id
             try:
                 result = function()
@@ -269,7 +272,9 @@ class OpenCodeNativeDriver:
                     if not any(kind == "process_dispatch" or kind == "http_dispatch" and json.loads(body)["method"] == "POST"
                                for kind, body in events):
                         state = "rejected"
-                if state == "rejected":
+                        if isinstance(error, DriverDeferred) and not self.journal.has_mutating_io(operation.operation_id):
+                            state = "deferred"
+                if state in {"rejected", "deferred"}:
                     self._active_message, self._active_operation_id = previous_active
                 self.journal.finish(operation.operation_id, state, {"error_type": type(error).__name__})
                 raise
@@ -784,7 +789,7 @@ class OpenCodeNativeDriver:
                 self._owned_mutation()
                 view = self._inspect(operation)
                 if view["status"]["type"] != "idle":
-                    raise DriverRejected("native session is active; implicit steering is prohibited")
+                    raise DriverDeferred("busy")
                 if self._active_message is None and view["messages"]:
                     raise OutcomeUncertain("unregistered native history cannot start a new authorized turn")
                 if self._active_message is not None:

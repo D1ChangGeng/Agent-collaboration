@@ -60,6 +60,14 @@ class DriverRejected(ValueError):
     pass
 
 
+class DriverDeferred(DriverRejected):
+    """Fresh native observation prohibits invocation before any mutating I/O."""
+
+    def __init__(self, activity="busy"):
+        self.activity = activity
+        super().__init__("native target is not idle; implicit steering is prohibited")
+
+
 class OutcomeUncertain(RuntimeError):
     pass
 
@@ -332,6 +340,21 @@ class DriverJournal:
                 (state, canonical(result), operation_id),
             )
 
+    def has_mutating_io(self, operation_id):
+        readonly_rpc = {"initialize", "thread/read", "thread/turns/list", "config/read"}
+        with self._connect() as connection:
+            rows = connection.execute("SELECT kind,body FROM driver_events WHERE operation_id=?",
+                                      (operation_id,)).fetchall()
+        for kind, raw in rows:
+            body = json.loads(raw)
+            if kind in {"process_intent", "process_dispatch"}:
+                return True
+            if kind in {"rpc_intent", "rpc_dispatch"} and body.get("method") not in readonly_rpc:
+                return True
+            if kind in {"http_intent", "http_dispatch"} and body.get("method") != "GET":
+                return True
+        return False
+
 
 class CodexAppServerDriver:
     harness = "codex"
@@ -458,14 +481,9 @@ class CodexAppServerDriver:
                     "this operation was previously rejected before mutation dispatch"
                 )
             # A previous attempt may have dispatched before its process crashed.
-            if not record["created"]:
+            if not record["created"] and record["state"] != "deferred":
                 raise OutcomeUncertain("inspect/reconcile the original operation before any retry")
-            with self.journal._connect() as conn:
-                dispatched = conn.execute(
-                    "SELECT 1 FROM driver_events WHERE operation_id=? LIMIT 1",
-                    (operation.operation_id,),
-                ).fetchone()
-            if dispatched:
+            if self.journal.has_mutating_io(operation.operation_id):
                 raise OutcomeUncertain(
                     "durable intent already has execution evidence; no blind retry"
                 )
@@ -494,6 +512,8 @@ class CodexAppServerDriver:
                         for kind, body in events
                     ):
                         state = "rejected"
+                        if isinstance(exc, DriverDeferred) and not self.journal.has_mutating_io(operation.operation_id):
+                            state = "deferred"
                 self.journal.finish(
                     operation.operation_id, state, {"error_type": type(exc).__name__}
                 )
@@ -817,7 +837,7 @@ class CodexAppServerDriver:
             if view["thread"].get("status", {}).get("type") != "idle" or any(
                 t.get("status") == "inProgress" for t in view["turns"]
             ):
-                raise DriverRejected("active/unknown native turn; implicit steering is prohibited")
+                raise DriverDeferred("busy")
             response = self._rpc(
                 operation,
                 "turn/start",

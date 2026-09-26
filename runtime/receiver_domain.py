@@ -403,7 +403,7 @@ class ReceiverTransportAuthority:
                     admission.scope_id,
                     clock_skew_seconds=clock_skew_seconds,
                 )
-                if admission.purpose in {"delivery.dispatch", "delivery.recover"}:
+                if admission.purpose in {"delivery.dispatch", "delivery.recover", "delivery.readiness"}:
                     self.authority._authorize(
                         command,
                         cursor,
@@ -455,7 +455,7 @@ class ReceiverTransportAuthority:
                 raise AcceptanceGuardFailed("receiver admission delivery lineage is unavailable")
             command = _model(CommandEnvelope, lineage[0])
             self.authority._authorize(command, cursor, "message.send", admission.scope_id)
-            if admission.purpose in {"delivery.dispatch", "delivery.recover"}:
+            if admission.purpose in {"delivery.dispatch", "delivery.recover", "delivery.readiness"}:
                 self.authority._authorize(command, cursor, "runtime.invoke", admission.scope_id)
             cursor.execute(
                 "SELECT to_jsonb(e) FROM delivery_endpoint_registrations e WHERE tenant_id=%s "
@@ -589,7 +589,7 @@ class ReceiverTransportAuthority:
             state = {
                 "prepared": "prepared", "runtime_dispatched": "runtime_dispatched",
                 "runtime_acknowledged": "completed", "uncertain": "uncertain",
-                "blocked": "blocked", "readback": "completed",
+                "blocked": "blocked", "readback": "completed", "readiness": "completed",
             }[receipt.state]
             cursor.execute(
                 "UPDATE delivery_transport_admissions SET state=%s WHERE tenant_id=%s AND request_id=%s",

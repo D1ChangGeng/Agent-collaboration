@@ -1,4 +1,4 @@
-"""Execute the live P2 MCP and project-management workflows."""
+"""Exercise the MCP component fixture; never emits passing Runtime Gate records."""
 from __future__ import annotations
 
 import argparse
@@ -6,13 +6,18 @@ import hashlib
 import io
 import json
 import os
+import sys
 import threading
 import urllib.request
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from runtime.mcp_runtime import McpHttpServer, McpRuntime
+SOURCE_ROOT = Path(__file__).resolve().parents[2]
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
+
+from runtime_tests.mcp_component_fixture import McpHttpServer, McpRuntime
 
 MCP_SCENARIOS = (
     "P2-MCP-TEAM-CONFIGURE", "P2-MCP-HARNESS-LIST", "P2-MCP-SEND-ASYNC",
@@ -340,8 +345,9 @@ def main() -> None:
         gate_root = output / gate; gate_root.mkdir(mode=0o700)
         for scenario, data in values.items():
             evidence = {
-                "schema_version": "acs-p2-mcp-live-scenario/1", "gate": gate,
-                "scenario_id": scenario, "status": "passed", "source_commit": args.commit,
+                "schema_version": "acs-mcp-component-scenario/1", "gate": gate,
+                "scenario_id": scenario, "status": "observed", "source_commit": args.commit,
+                "evidence_class": "component_fixture", "gate_eligible": False,
                 "source_tree": args.tree, "profile": "root_manager",
                 "surface_revision": root.catalog["surface_revision"],
                 "observed_at": datetime.now(UTC).isoformat(), "data": data,
@@ -354,7 +360,8 @@ def main() -> None:
     write(transcript_path, {"stdio": stdio_messages, "profile_tools": profile_lists,
                             "calls": transcript, "web": {"context": web_context, "review": web_review}})
     inventory = {
-        "schema_version": "acs-p2-mcp-live-run/1", "status": "passed",
+        "schema_version": "acs-mcp-component-run/1", "status": "observed",
+        "evidence_class": "component_fixture", "gate_eligible": False,
         "source_commit": args.commit, "source_tree": args.tree,
         "database": {"path": str(database), "sha256": sha(database), "bytes": database.stat().st_size},
         "wire": {"path": str(transcript_path), "sha256": sha(transcript_path), "bytes": transcript_path.stat().st_size},
@@ -363,7 +370,8 @@ def main() -> None:
         "observed_at": datetime.now(UTC).isoformat(), "unresolved_items": [],
     }
     write(output / "run.json", inventory)
-    print(json.dumps({"status": "passed", "mcp_scenarios": len(mcp_evidence),
+    print(json.dumps({"status": "observed", "evidence_class": "component_fixture",
+                      "gate_eligible": False, "mcp_scenarios": len(mcp_evidence),
                       "management_scenarios": len(management_evidence),
                       "database_sha256": inventory["database"]["sha256"],
                       "wire_sha256": inventory["wire"]["sha256"]}, sort_keys=True))

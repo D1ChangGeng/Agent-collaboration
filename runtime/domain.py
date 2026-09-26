@@ -4,6 +4,8 @@ import hashlib
 import json
 import uuid
 from collections.abc import Iterable, Mapping
+from contextlib import contextmanager, nullcontext
+from copy import copy
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, ClassVar
@@ -40,9 +42,10 @@ class DomainAuthority:
     """PostgreSQL Domain authority for the local Runtime profile."""
 
     SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.11"
+    SCHEMA_VERSION = "1.12"
 
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.11", "e840b74d16389bd9b07df1aee061e696955e78a0397dd8649571b04193c49b9d"),
         ("1.10", "3220ec5379b4effbbfe4fb293684881c0e14cd03d681fda8b98aacd6185c162d"),
         ("1.9", "7eec78fd9d54b81d20724327e13f3a2237f95a9d5a2bc35f7799ebd3d30b5b9b"),
         ("1.8", "b8554614d9923ae43a653371c4445c33fdfe189c219b3376f29e23c476ee7614"),
@@ -95,6 +98,7 @@ class DomainAuthority:
         self._effect_registration_gateway = effect_registration_gateway
         self._delivery_endpoints = dict(delivery_endpoints or {})
         self._node_response_reader = node_response_reader
+        self._transaction_connection: psycopg.Connection | None = None
 
     def send_message(self, command: CommandEnvelope, packet: Any, *, endpoint_id: str,
                      binding_revision: int) -> CommandResult:
@@ -230,8 +234,24 @@ class DomainAuthority:
     def authority_id(self) -> str:
         return self.context.authority_id
 
-    def _connect(self) -> psycopg.Connection:
+    def _connect(self):
+        if self._transaction_connection is not None:
+            return nullcontext(self._transaction_connection)
         return psycopg.connect(self._dsn)
+
+    @contextmanager
+    def transaction(self):
+        """Compose Domain commands and their projections in one transaction.
+
+        The borrowed authority is private to the caller. Nested Domain methods
+        neither commit nor close the connection; the outer owner commits only
+        after every command and projection has completed.
+        """
+        with self._connect() as connection:
+            with connection.transaction():
+                authority = copy(self)
+                authority._transaction_connection = connection
+                yield authority, connection
 
     def initialize(self) -> None:
         schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
@@ -383,6 +403,7 @@ class DomainAuthority:
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
         self._lock_command_identity(cursor, command)
+        self._authorize_delegation(cursor, command, permission)
         cursor.execute(
             "SELECT g.scope_id,g.permissions,g.expires_at "
             "FROM grants g "
@@ -423,6 +444,39 @@ class DomainAuthority:
             or (scope_id is not None and str(row[0]) != str(scope_id))
         ):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+
+    def _authorize_delegation(self, cursor, command, permission):
+        """Lock the finite Grant chain root-first and enforce current ancestry."""
+        cursor.execute(
+            "WITH RECURSIVE ancestry AS ("
+            "SELECT %s::text AS ref,0 AS depth,ARRAY[%s::text] AS path,FALSE AS cycle "
+            "UNION ALL SELECT d.parent_grant_ref,a.depth+1,a.path || d.parent_grant_ref,"
+            "d.parent_grant_ref=ANY(a.path) FROM ancestry a JOIN grant_delegations d "
+            "ON d.grant_ref=a.ref WHERE NOT a.cycle AND a.depth<9) "
+            "SELECT a.ref,a.depth,a.cycle,g.tenant_id,g.permissions,g.expires_at,g.revoked_at,"
+            "g.authority_id,g.authority_incarnation,s.status,s.policy,d.parent_policy_digest "
+            "FROM ancestry a JOIN grants g ON g.grant_ref=a.ref JOIN scopes s ON s.scope_id=g.scope_id "
+            "LEFT JOIN grant_delegations d ON d.grant_ref=a.ref "
+            "ORDER BY a.depth DESC FOR UPDATE OF g,s",
+            (command.grant_ref, command.grant_ref),
+        )
+        chain = cursor.fetchall()
+        if not chain or chain[0][1] > 8 or any(row[2] for row in chain):
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+        now = datetime.now(UTC)
+        parent = None
+        for row in chain:
+            if (row[3] != command.tenant_id or permission not in tuple(row[4] or ())
+                    or row[5] <= now or row[6] is not None or row[9] != "active"
+                    or (row[7], row[8]) != (command.authority_id, command.authority_incarnation)):
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            if parent is not None:
+                policy_digest = hashlib.sha256(json.dumps(parent[10], sort_keys=True,
+                    separators=(",", ":")).encode()).hexdigest()
+                if (row[11] != policy_digest or not set(row[4] or ()) <= set(parent[4] or ())
+                        or row[5] > parent[5]):
+                    raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            parent = row
 
     @staticmethod
     def _hash(command: CommandEnvelope, extra: Mapping[str, object]) -> str:
@@ -863,8 +917,10 @@ class DomainAuthority:
         accepted = current is WorkItemState.ACCEPTANCE_READY and transition.to_state is WorkItemState.ACCEPTED
         if not ready and not accepted:
             raise InvalidTransition(current, transition.to_state)
-        if len(transition.evidence_refs) != 1 or transition.review_ref is None:
-            raise AcceptanceGuardFailed("exactly one evidence and its assigned review are required")
+        if (not 1 <= len(transition.evidence_refs) <= 32
+                or len(set(transition.evidence_refs)) != len(transition.evidence_refs)
+                or transition.review_ref is None):
+            raise AcceptanceGuardFailed("a bounded unique evidence set and its assigned review are required")
         cursor.execute(
             "SELECT to_jsonb(e),to_jsonb(b) FROM evidence e JOIN evidence_bundles b "
             "ON b.evidence_id=e.evidence_id AND b.tenant_id=e.tenant_id AND b.work_item_id=e.work_item_id "
@@ -912,7 +968,7 @@ class DomainAuthority:
             raise AcceptanceGuardFailed("producer/observer cannot authorize acceptance")
         cursor.execute(
             "SELECT r.reviewer_ref,r.authority_incarnation,r.assignment_revision,a.assignment_revision,"
-            "a.authority_incarnation,g.permissions,r.candidate_ref,r.evidence_set_hash,g.expires_at "
+            "a.authority_incarnation,g.permissions,r.candidate_ref,r.evidence_set_hash,g.expires_at,r.reviewer_grant_ref "
             "FROM reviews r JOIN reviewer_assignments a ON a.tenant_id=r.tenant_id "
             "AND a.work_item_id=r.work_item_id AND a.reviewer_ref=r.reviewer_ref "
             "AND a.reviewer_grant_ref=r.reviewer_grant_ref AND a.status='active' "
@@ -939,6 +995,11 @@ class DomainAuthority:
                 or review[7] != self._evidence_set_hash(transition.evidence_refs)):
             raise AcceptanceGuardFailed("reviewer independence or evidence binding failed")
         valid_until.append(review[8])
+        try:
+            self._authorize_delegation(cursor, AuthenticatedContext(self.tenant_id, self.authority_id,
+                self.context.authority_incarnation, review[0], review[9]), "review.record")
+        except AuthorizationDenied:
+            raise AcceptanceGuardFailed("reviewer delegated authority is no longer valid") from None
         candidate_ref = next(iter(candidates))
         # WorkItem is already locked by transition_work_item. Effect admission
         # must take the same lock before inserting/updating any Effect, and must
@@ -1165,8 +1226,13 @@ class DomainAuthority:
         verdict: str,
         evidence_ref: str,
         baseline_ref: str,
+        additional_evidence_refs: tuple[str, ...] = (),
     ) -> CommandResult:
         self._expect_command(command, 'review.record')
+        evidence_refs = (evidence_ref, *additional_evidence_refs)
+        if (verdict not in {"pass", "fail"} or not 1 <= len(evidence_refs) <= 32
+                or len(set(evidence_refs)) != len(evidence_refs)):
+            raise AcceptanceGuardFailed("review evidence set or verdict is invalid")
         with self._connect() as connection, connection.cursor() as cursor:
             if command.target_id != work_item_id:
                 raise AuthorizationDenied(command.principal_ref, command.grant_ref)
@@ -1192,6 +1258,8 @@ class DomainAuthority:
                 "evidence_ref": evidence_ref,
                 "baseline_ref": baseline_ref,
             }
+            if additional_evidence_refs:
+                extra["additional_evidence_refs"] = list(additional_evidence_refs)
             duplicate, digest = self._dedup(cursor, command, result, extra)
             if duplicate is not None:
                 return duplicate
@@ -1218,6 +1286,16 @@ class DomainAuthority:
                     command.principal_ref,
                     command.grant_ref,
                 )
+
+            for reference in sorted(additional_evidence_refs):
+                cursor.execute("SELECT baseline_ref,observer_ref,producer_ref,candidate_ref FROM evidence "
+                               "WHERE tenant_id=%s AND work_item_id=%s AND evidence_id=%s FOR UPDATE",
+                               (self.tenant_id, work_item_id, reference))
+                additional = cursor.fetchone()
+                if additional is None or additional[0] != baseline_ref or additional[3] != evidence[3]:
+                    raise AcceptanceGuardFailed("review evidence set is not bound to one candidate")
+                if command.principal_ref in {additional[1], additional[2] or additional[1]}:
+                    raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
             cursor.execute(
                 "SELECT a.assignment_revision,a.authority_incarnation,g.permissions "
@@ -1255,8 +1333,8 @@ class DomainAuthority:
                 "INSERT INTO reviews("
                 "review_id,tenant_id,work_item_id,reviewer_ref,reviewer_grant_ref,"
                 "verdict,evidence_ref,baseline_ref,candidate_ref,evidence_set_hash,"
-                "authority_incarnation,assignment_revision) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "authority_incarnation,assignment_revision,evidence_refs) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
                     review_id,
                     self.context.tenant_id,
@@ -1267,9 +1345,10 @@ class DomainAuthority:
                     evidence_ref,
                     baseline_ref,
                     evidence[3],
-                    self._evidence_set_hash((evidence_ref,)),
+                    self._evidence_set_hash(evidence_refs),
                     self.context.authority_incarnation,
                     assignment[0],
+                    json.dumps(evidence_refs),
                 ),
             )
             self._record(
@@ -1278,7 +1357,7 @@ class DomainAuthority:
                 WorkItemState(row[1]),
                 WorkItemState(row[1]),
                 int(row[2]),
-                (review_id, evidence_ref),
+                (review_id, *evidence_refs),
                 digest,
             )
             self._operation(cursor, command, result.operation_id)
@@ -1593,7 +1672,10 @@ class DomainAuthority:
             "a.execution_started_at,g.expires_at,og.expires_at,g.permissions,og.permissions "
             "FROM attempts a JOIN work_items w ON w.tenant_id=a.tenant_id "
             "AND w.work_item_id=a.work_item_id AND w.scope_id=a.scope_id "
-            "AND w.agent_slot_id=a.agent_slot_id AND w.source_baseline=a.source_baseline "
+            "AND w.source_baseline=a.source_baseline AND (w.agent_slot_id=a.agent_slot_id OR EXISTS ("
+            "SELECT 1 FROM work_item_revisions history WHERE history.tenant_id=w.tenant_id "
+            "AND history.work_item_id=w.work_item_id AND history.agent_slot_id=a.agent_slot_id "
+            "AND history.source_baseline=a.source_baseline AND history.revision<w.revision)) "
             "JOIN agent_slots slot ON slot.agent_slot_id=a.agent_slot_id "
             "AND slot.tenant_id=a.tenant_id AND slot.scope_id=a.scope_id AND slot.status='active' "
             "JOIN grants g ON g.grant_ref=a.grant_ref AND g.tenant_id=a.tenant_id "
@@ -1628,6 +1710,15 @@ class DomainAuthority:
                 or "execution.record" not in tuple(bound["observer_permissions"] or ())
                 or "evidence.record" not in tuple(bound["producer_permissions"] or ())):
             raise AcceptanceGuardFailed("trusted execution attempt binding is missing or unauthorized")
+        for principal, grant, permission in (
+            (bound["producer_ref"], bound["producer_grant_ref"], "evidence.record"),
+            (bound["observer_ref"], bound["observer_grant_ref"], "execution.record"),
+        ):
+            try:
+                self._authorize_delegation(cursor, AuthenticatedContext(self.tenant_id, self.authority_id,
+                    self.context.authority_incarnation, principal, grant), permission)
+            except AuthorizationDenied:
+                raise AcceptanceGuardFailed("execution participant delegated authority is no longer valid") from None
         for key in ("runtime_id", "command_id", "operation_id", "event_id", "provider",
                     "source_baseline", "source_commit", "source_tree", "candidate_ref"):
             if getattr(receipt, key) != bound[key]:

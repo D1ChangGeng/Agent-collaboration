@@ -19,6 +19,7 @@ from runtime.codex_driver import (
     AuthorizedOperation,
     BindingIdentity,
     CodexAppServerDriver,
+    DriverDeferred,
     DriverJournal,
     DriverRejected,
     LaunchProfile,
@@ -30,6 +31,35 @@ from runtime.codex_jsonrpc import JsonRpcClient, RpcDisconnected, RpcError, RpcT
 from runtime.delivery_node import InvocationPreCallRejected
 
 OMIT = object()
+
+
+def test_busy_deferral_can_retry_same_authorized_operation_without_steering(native):
+    driver = native.driver
+    driver.spawn(operation("deferred-spawn"))
+    native.state["turns"] = [{"id": "busy-external", "status": "inProgress", "items": []}]
+    pending = operation("deferred-invoke")
+    with pytest.raises(DriverDeferred):
+        driver.invoke(pending, "deferred authorized text")
+    assert driver.journal.read(pending.operation_id)["state"] == "deferred"
+    assert native.state["turn_calls"] == 0
+    native.state["turns"] = []
+    assert driver.invoke(pending, "deferred authorized text")["receipt_layer"] == "runtime_acknowledged"
+    driver.invoke(pending, "deferred authorized text")
+    assert native.state["turn_calls"] == 1
+
+
+def test_deferred_journal_with_mutating_evidence_cannot_be_reinvoked(native):
+    driver = native.driver
+    driver.spawn(operation("deferred-fault-spawn"))
+    native.state["turns"] = [{"id": "busy-external", "status": "inProgress", "items": []}]
+    pending = operation("deferred-fault")
+    with pytest.raises(DriverDeferred):
+        driver.invoke(pending, "deferred authorized text")
+    driver.journal.event(pending.operation_id, "rpc_dispatch", {"method": "turn/start"})
+    native.state["turns"] = []
+    with pytest.raises(OutcomeUncertain):
+        driver.invoke(pending, "deferred authorized text")
+    assert native.state["turn_calls"] == 0
 
 
 @pytest.mark.parametrize("rejection", [DriverRejected, InvocationPreCallRejected])

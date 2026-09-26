@@ -22,6 +22,14 @@ class InvocationPreCallRejected(DeliveryBoundaryRejected):
     """The Driver rejected immutable input before any native I/O was admitted."""
 
 
+class InvocationDeferred(InvocationPreCallRejected):
+    """Keep the prepared Attempt while the target is busy/offline/unknown."""
+
+    def __init__(self, activity="unknown"):
+        self.activity = activity
+        super().__init__("target_" + activity)
+
+
 class InvocationDriver(Protocol):
     evidence_class: str
 
@@ -254,6 +262,9 @@ class LocalNodeEndpoint:
                 )
                 if prepared != invocation:
                     raise InvocationPreCallRejected("driver_changed_immutable_invocation")
+            except InvocationDeferred:
+                # Prepared identity and Inbox remain reusable before dispatch.
+                raise
             except InvocationPreCallRejected:
                 connection.execute(
                     "UPDATE delivery_invocations SET state='pre_call_rejected' WHERE operation_id=?",
@@ -346,6 +357,11 @@ class LocalNodeEndpoint:
                     raise ValueError("Driver observation identity differs")
                 if len(observation.model_dump_json().encode()) > 65536:
                     raise ValueError("Driver observation exceeds bound")
+            except InvocationDeferred:
+                if not marker_attempted:
+                    raise
+                connection.execute("UPDATE delivery_invocations SET state='uncertain' WHERE operation_id=?",
+                                   (envelope.operation_id,))
             except InvocationPreCallRejected:
                 if not marker_attempted:
                     connection.execute(

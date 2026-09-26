@@ -20,6 +20,7 @@ from runtime.receiver_models import (
     DispatchBody,
     PrepareBody,
     ReadbackBody,
+    ReadinessBody,
     ReceiverReceipt,
     RecoveryBody,
     SignedReceipt,
@@ -238,6 +239,7 @@ class ReceiverService:
         "delivery.prepare": "/v1/delivery/prepare",
         "delivery.dispatch": "/v1/delivery/dispatch",
         "delivery.readback": "/v1/delivery/readback",
+        "delivery.readiness": "/v1/delivery/readiness",
         "delivery.recover": "/v1/delivery/recover",
     }
 
@@ -267,6 +269,7 @@ class ReceiverService:
             "delivery.prepare": PrepareBody,
             "delivery.dispatch": DispatchBody,
             "delivery.readback": ReadbackBody,
+            "delivery.readiness": ReadinessBody,
             "delivery.recover": RecoveryBody,
         }
         return models[request.admission.purpose].model_validate(request.body, strict=True)
@@ -732,12 +735,43 @@ class ReceiverService:
                 identity_admission=target_admission, target_request_id=target["request_id"],
             )
 
+    def readiness(self, request: SignedRequest, probe) -> SignedReceipt:
+        body, request_hash = self._verify(request)
+        if not isinstance(body, ReadinessBody):
+            raise ReceiverRejected("readiness body rejected")
+        with self.ledger.transaction() as connection:
+            self._check_current_boot(connection, request.admission)
+            prepared = self._prepared(connection, request.admission, body.prepare_request_id)
+            self._match_prepare(prepared, request.admission)
+            if self.authorize_current(request.admission) is not True:
+                raise ReceiverRejected("readiness authority is no longer current")
+            existing = self._existing(connection, request, request_hash)
+            if existing:
+                return self._stored(existing)
+        now = datetime.now(UTC)
+        observed = (probe(request.admission) if callable(probe) else {
+            "activity": "unknown", "observed_at": now.isoformat(),
+            "expires_at": min(request.admission.deadline, now + timedelta(seconds=2)).isoformat(),
+            "source": "readiness_provider_unavailable"})
+        if not isinstance(observed, dict) or observed.get("activity") not in {"idle", "busy", "offline", "unknown"}:
+            raise ReceiverRejected("readiness observation rejected")
+        with self.ledger.transaction() as connection:
+            self._check_current_boot(connection, request.admission)
+            if self.authorize_current(request.admission) is not True:
+                raise ReceiverRejected("readiness authority changed during probe")
+            existing = self._existing(connection, request, request_hash)
+            if existing:
+                return self._stored(existing)
+            return self._insert(connection, request, request_hash, "readiness", False, observed,
+                                prepare_identity=self._identity(request.admission))
+
     def handle(self, request: SignedRequest, invoke: Callable[[DeliveryAdmission], dict[str, Any]],
-               *, after_marker=None) -> SignedReceipt:
+               *, after_marker=None, native_readiness=None) -> SignedReceipt:
         actions = {
             "delivery.prepare": lambda: self.prepare(request),
             "delivery.dispatch": lambda: self.dispatch(request, invoke, after_marker=after_marker),
             "delivery.readback": lambda: self.readback(request),
+            "delivery.readiness": lambda: self.readiness(request, native_readiness or getattr(invoke, "readiness", None)),
             "delivery.recover": lambda: self.recover(request, invoke, after_marker=after_marker),
         }
         return actions[request.admission.purpose]()

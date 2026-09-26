@@ -132,12 +132,13 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-load-project/1",
+        "schema_version": "acs-mcp-load-project/2",
         "required": [
           "project_id"
         ],
         "optional": [
           "context_view",
+          "route_handle",
           "include",
           "at_revision",
           "max_inline_bytes"
@@ -468,7 +469,7 @@
     },
     "read_message": {
       "title": "Read collaboration message",
-      "description": "Read one Message or response and atomically record owner consumption when requested.",
+      "description": "Read one delivered Message, tracked response, or assigned Review request and atomically record owner consumption when requested. Consuming a Review request does not submit a Review decision.",
       "selection_guidance": "Use for Inbox Messages and completed responses.",
       "annotations": {
         "readOnlyHint": false,
@@ -477,7 +478,7 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-read-message/1",
+        "schema_version": "acs-mcp-read-message/2",
         "required": [
           "project_id",
           "handle"
@@ -718,7 +719,7 @@
     },
     "update_route": {
       "title": "Update development Route",
-      "description": "Apply one versioned lifecycle or management-metadata change to an existing Route.",
+      "description": "Apply one versioned lifecycle or management-metadata change to an existing Route. A context_manifest change requires direct identity readback from an admitted Source snapshot in the same Route Scope.",
       "selection_guidance": "Use for lifecycle, goal-summary or display changes.",
       "annotations": {
         "readOnlyHint": false,
@@ -727,7 +728,7 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-update-route/1",
+        "schema_version": "acs-mcp-update-route/2",
         "required": [
           "client_request_id",
           "project_id",
@@ -922,7 +923,7 @@
     },
     "request_review": {
       "title": "Request independent review",
-      "description": "Create one Review request bound to a candidate, exact baseline, criteria, evidence requirements and reviewer constraints.",
+      "description": "Create one Review request bound to a candidate, exact baseline, criteria, evidence requirements and an explicitly selected reviewer. Optional evidence_handles selects the reviewed set; other candidate records remain disclosed for reviewer disposition.",
       "selection_guidance": "Use for architecture, engineering, evidence or finalization review.",
       "annotations": {
         "readOnlyHint": false,
@@ -931,7 +932,7 @@
         "openWorldHint": true
       },
       "input_schema": {
-        "schema_version": "acs-mcp-request-review/1",
+        "schema_version": "acs-mcp-request-review/2",
         "required": [
           "client_request_id",
           "project_id",
@@ -945,7 +946,7 @@
           "reviewer_requirements",
           "deadline"
         ],
-        "optional": []
+        "optional": ["evidence_handles"]
       },
       "result_type": "review_request_receipt",
       "security_scopes": [
@@ -963,7 +964,7 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-submit-review/1",
+        "schema_version": "acs-mcp-submit-review/2",
         "required": [
           "client_request_id",
           "project_id",
@@ -976,7 +977,7 @@
           "unresolved_items",
           "deadline"
         ],
-        "optional": []
+        "optional": ["evidence_dispositions"]
       },
       "result_type": "review_submission_receipt",
       "security_scopes": [

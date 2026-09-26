@@ -29,6 +29,7 @@ class DeploymentCallbacks:
     authorize_current: object
     native_invoke: object
     close: object | None = None
+    readiness: object | None = None
 
 
 def load_process_config(path: str | Path) -> ReceiverProcessConfig:
@@ -145,6 +146,7 @@ def main(argv=None):
             process.runtime,
             authorize_current=callbacks.authorize_current,
             native_invoke=callbacks.native_invoke,
+            native_readiness=callbacks.readiness,
             ready_check=ready_check,
             shutdown_callback=close_once,
         )

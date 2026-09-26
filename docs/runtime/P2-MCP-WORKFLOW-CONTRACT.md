@@ -209,6 +209,13 @@ recovery notifications for the project management or AgentSlot context.
 request_review binds the Review to candidate, exact source baseline, criteria,
 evidence requirements and reviewer constraints.
 
+The optional evidence_handles field selects the evidence set explicitly. The
+request seals the complete candidate inventory and discloses unselected records.
+Passing submit_review requires evidence_dispositions for every excluded record;
+failed or uncertain evidence needs selected verified replacements and an explicit
+Reviewer rationale. New candidate evidence invalidates that sealed inventory.
+Original records and their source classes remain unchanged.
+
 submit_review records decision, findings, evidence handles, exact source
 readback and unresolved items.
 

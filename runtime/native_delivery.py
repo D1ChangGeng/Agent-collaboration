@@ -10,15 +10,17 @@ import json
 import os
 import stat
 from dataclasses import asdict
+from datetime import UTC, datetime, timedelta
 
 from runtime.codex_driver import (
     AuthorizedOperation,
     CodexAppServerDriver,
+    DriverDeferred,
     DriverRejected,
     OutcomeUncertain,
 )
 from runtime.delivery_models import InvocationObservation, InvocationRequest
-from runtime.delivery_node import InvocationPreCallRejected, invocation_for
+from runtime.delivery_node import InvocationDeferred, InvocationPreCallRejected, invocation_for
 from runtime.opencode_driver import OpenCodeNativeDriver
 
 
@@ -93,12 +95,48 @@ class NativeDeliveryAdapter:
         self._check_binding()
         return operation
 
+    def readiness(self, invocation):
+        operation = self._operation(invocation)
+        observed_at = datetime.now(UTC)
+        try:
+            view = self.driver.inspect(operation)
+            if isinstance(self.driver, CodexAppServerDriver):
+                state = view.get("thread", {}).get("status", {}).get("type")
+                activity = ("idle" if state == "idle" and not any(
+                    turn.get("status") == "inProgress" for turn in view.get("turns", []))
+                    else "busy" if state in {"idle", "active", "running"} else "unknown")
+                native_session = self.driver.thread_id
+            else:
+                state = view.get("status", {}).get("type")
+                activity = "idle" if state == "idle" else "busy" if state in {"busy", "retry"} else "unknown"
+                native_session = self.driver.session_id
+        except DriverRejected:
+            raise
+        except (OSError, RuntimeError):
+            activity, native_session = "unknown", None
+        result = {"activity": activity, "observed_at": observed_at.isoformat(),
+                  "expires_at": min(operation.deadline, observed_at + timedelta(seconds=2)).isoformat(),
+                  "native_session_ref": native_session, "binding_id": self._binding_id,
+                  "source": "native_driver_readback"}
+        self._journal.event(operation.operation_id, "readiness_observation", result)
+        return result
+
     def prepare(self, invocation):
         try:
             self._operation(invocation)
             self.driver._owned_mutation()
+            if invocation.envelope.packet.delivery_policy == "queue_until_idle":
+                readiness = self.readiness(invocation)
+                if datetime.fromisoformat(readiness["expires_at"]) <= datetime.now(UTC):
+                    raise InvocationDeferred("unknown")
+                if readiness["activity"] != "idle":
+                    raise InvocationDeferred(readiness["activity"])
             return invocation
-        except (DriverRejected, OutcomeUncertain) as error:
+        except OutcomeUncertain as error:
+            if invocation.envelope.packet.delivery_policy == "queue_until_idle":
+                raise InvocationDeferred("unknown") from error
+            raise InvocationPreCallRejected("native_binding_not_ready") from error
+        except DriverRejected as error:
             try:
                 self.driver.journal.event(
                     invocation.invocation_id,
@@ -126,6 +164,12 @@ class NativeDeliveryAdapter:
         try:
             operation = self._operation(invocation)
             receipt = self.driver.invoke(operation, self.prompt(invocation), on_dispatch=dispatch)
+        except DriverDeferred as error:
+            if not entered:
+                if invocation.envelope.packet.delivery_policy == "queue_until_idle":
+                    raise InvocationDeferred(error.activity) from error
+                raise InvocationPreCallRejected("native target is not idle") from error
+            raise
         except DriverRejected as error:
             if not entered:
                 raise InvocationPreCallRejected("native_rejected_before_dispatch") from error

@@ -109,3 +109,11 @@ and the registered `collaboration-runtime` Route. Keep Runtime Domain state and
 Gate evidence separate from the setup manifest, Route registry and knowledge
 lifecycle. External Agents own reasoning, delegation and acceptance decisions;
 the Runtime applies authenticated commands and deterministic recovery.
+
+<!-- ACS-PROJECT:BEGIN -->
+## ACS Runtime project identity
+
+project_id: project-agent-collaboration
+
+Use this explicit project_id for project-scoped Runtime tools.
+<!-- ACS-PROJECT:END -->

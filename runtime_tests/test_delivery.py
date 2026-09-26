@@ -123,13 +123,14 @@ def setup(tmp_path):
 
 
 def send(f, *, activation="message_only", ttl=60, maximum_attempts=3,
-         target_scope="local-scope", target_slot="local-slot", endpoint_id="endpoint"):
+         target_scope="local-scope", target_slot="local-slot", endpoint_id="endpoint", delivery_policy="immediate"):
     cmd = command(f.authority, "message.send", f"message-{uuid.uuid4()}")
     packet = DeliveryPacket(work_item_id="work", target_scope_id=target_scope, target_agent_slot_id=target_slot,
         accepted_revision=0, goal="Exercise durable delivery", accepted_state_summary="explicit genesis revision 0",
         request="Read this packet; no reasoning unless invoke was separately authorized", constraints=("fixture scope",),
         source_baseline="delivery-fixture-baseline", expected_response="layered receipt", required_evidence=("actual Inbox commit",),
-        activation=activation, deadline=datetime.now(UTC) + timedelta(seconds=ttl), maximum_attempts=maximum_attempts)
+        activation=activation, delivery_policy=delivery_policy,
+        deadline=datetime.now(UTC) + timedelta(seconds=ttl), maximum_attempts=maximum_attempts)
     result = f.service.send_message(cmd, packet, endpoint_id=endpoint_id, binding_revision=1)
     identity = {"tenant_id": f.authority.tenant_id, "message_id": cmd.target_id, "operation_id": result.operation_id}
     return identity, cmd, packet, result
@@ -137,6 +138,55 @@ def send(f, *, activation="message_only", ttl=60, maximum_attempts=3,
 
 def due(f, message_id):
     query(f, "UPDATE delivery_messages SET next_attempt_at=clock_timestamp() WHERE message_id=%s", (message_id,))
+
+
+@pytest.mark.parametrize("activity", ["busy", "unknown", "offline"])
+def test_queue_until_idle_retains_prepared_attempt_across_repeated_deferral(setup, monkeypatch, activity):
+    from runtime.delivery_node import InvocationDeferred
+
+    f = setup
+    identity, _, _, result = send(f, activation="invoke", delivery_policy="queue_until_idle", maximum_attempts=1)
+    original = f.driver.prepare
+    def defer(_invocation):
+        raise InvocationDeferred(activity)
+    monkeypatch.setattr(f.driver, "prepare", defer)
+    for _ in range(3):
+        observed = DeliveryDispatcher(f.service).dispatch(identity)
+        assert observed["status"] == "retry_wait"
+        assert query(f, "SELECT ordinal,status,finished_at FROM delivery_attempts") == [(1, "prepared", None)]
+        assert query(f, "SELECT count(*) FROM delivery_receipts WHERE layer='runtime_dispatched'") == [(0,)]
+        assert f.driver.calls == []
+        due(f, identity["message_id"])
+    monkeypatch.setattr(f.driver, "prepare", original)
+    assert DeliveryDispatcher(f.service).dispatch(identity)["status"] == "delivered"
+    assert f.driver.calls == [result.operation_id]
+    assert query(f, "SELECT count(*) FROM delivery_attempts") == [(1,)]
+
+
+def test_queued_dispatches_cannot_race_the_same_slot_idle_observation(setup):
+    f = setup
+    first, _, _, _ = send(f, activation="invoke", delivery_policy="queue_until_idle")
+    second, _, _, _ = send(f, activation="invoke", delivery_policy="queue_until_idle")
+    held, release = Event(), Event()
+    first_dispatcher = DeliveryDispatcher(f.service)
+    def hold_after_claim(_identity):
+        held.set()
+        assert release.wait(10)
+    first_dispatcher.after_claim = hold_after_claim
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        running = pool.submit(first_dispatcher.dispatch, first)
+        assert held.wait(10)
+        try:
+            deferred = DeliveryDispatcher(f.service).dispatch(second)
+            assert deferred["status"] == "retry_wait"
+            assert query(f, "SELECT attempts FROM delivery_messages WHERE message_id=%s",
+                         (second["message_id"],)) == [(0,)]
+        finally:
+            release.set()
+        assert running.result(timeout=10)["status"] == "delivered"
+    due(f, second["message_id"])
+    assert DeliveryDispatcher(f.service).dispatch(second)["status"] == "delivered"
+    assert len(f.driver.calls) == 2
 
 
 def message(f, message_id):
