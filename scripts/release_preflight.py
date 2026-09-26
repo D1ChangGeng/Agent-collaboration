@@ -69,7 +69,8 @@ def main() -> int:
     if repository.get("visibility") != "public":
         raise SystemExit("GitHub repository is not public")
     pull = gh_json("pr", "view", "1", "--json", "state,isDraft,headRefOid,baseRefOid")
-    if pull["state"] != "OPEN" or pull["headRefOid"] != commit or pull["baseRefOid"] != repository.get("default_branch", "main"):
+    base = run("git", "ls-remote", "origin", f"refs/heads/{repository.get('default_branch', 'main')}").split()[0]
+    if pull["state"] != "OPEN" or pull["headRefOid"] != commit or pull["baseRefOid"] != base:
         raise SystemExit("release PR does not point to the frozen candidate")
     runs = json.loads(run("gh", "run", "list", "--branch", BRANCH, "--limit", "10", "--json", "databaseId,headSha,status,conclusion"))
     successful = [item for item in runs if item["headSha"] == commit and item["status"] == "completed" and item["conclusion"] == "success"]
