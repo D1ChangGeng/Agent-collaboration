@@ -8,11 +8,12 @@ import psycopg
 import pytest
 
 from runtime.domain import DomainAuthority
-from runtime.errors import AcceptanceGuardFailed, AuthorizationDenied
+from runtime.errors import AcceptanceGuardFailed, AuthorizationDenied, FencingRejected
 from runtime.models import (
     AuthenticatedContext,
     CommandEnvelope,
     EvidenceRecord,
+    LeaseRequest,
     TransitionRequest,
     WorkItemState,
 )
@@ -120,3 +121,14 @@ def test_real_postgres_rejects_cross_paired_effect_readback_and_forged_observer(
     forged = evidence.model_copy(update={"observer_ref": "forged-observer"})
     with pytest.raises(AuthorizationDenied):
         authority.record_evidence(make_command(authority, "evidence.record", work_item_id, f"forged-{work_item_id}"), forged)
+
+    other_authority = DomainAuthority(DSN, AuthenticatedContext(authority.context.tenant_id, "other-authority", "other-incarnation", authority.context.principal_ref, "other-grant"))
+    lease = authority.leases.acquire_lease(make_command(authority, "lease.acquire", work_item_id, f"lease-{work_item_id}"), LeaseRequest(resource_id=f"resource-{work_item_id}", owner_attempt_id=f"attempt-{work_item_id}", owner_runtime_id=f"runtime-{work_item_id}", grant_ref=authority.context.grant_ref, authority_incarnation=authority.context.authority_incarnation, ttl_seconds=30))
+    lease_id = lease["lease_id"]
+    resource_id = lease["resource_id"]
+    generation = lease["generation"]
+    fencing_token = lease["fencing_token"]
+    assert isinstance(lease_id, str) and isinstance(resource_id, str)
+    assert isinstance(generation, int) and isinstance(fencing_token, str)
+    with pytest.raises(FencingRejected):
+        other_authority.leases.verify_fence(lease_id, resource_id, generation, fencing_token)
