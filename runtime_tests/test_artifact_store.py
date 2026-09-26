@@ -6,6 +6,7 @@ import stat
 import sys
 
 import pytest
+
 from runtime.artifacts import ArtifactError, LocalArtifactStore
 
 linux = pytest.mark.skipif(not sys.platform.startswith("linux"), reason="Linux dir_fd backend")
