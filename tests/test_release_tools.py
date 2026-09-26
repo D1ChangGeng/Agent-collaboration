@@ -144,13 +144,17 @@ class ReleaseToolTests(unittest.TestCase):
         with mock.patch.dict(sys.modules, {"acs_doctor": doctor}):
             installer = load("acs_install", "acs_install.py")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as occupied:
-            occupied.bind(("127.0.0.1", 54329))
+            occupied.bind(("127.0.0.1", 0))
+            bound_port = occupied.getsockname()[1]
             with (
                 tempfile.TemporaryDirectory() as td,
                 mock.patch.object(installer, "private_root", return_value=Path(td)),
+                mock.patch.object(installer, "available_loopback_port",
+                                  wraps=installer.available_loopback_port) as selected,
             ):
+                self.assertNotEqual(installer.available_loopback_port(bound_port), bound_port)
                 path, environment = installer.local_provider_environment()
-                self.assertNotEqual(environment["ACS_POSTGRES_PORT"], "54329")
+                self.assertEqual(selected.call_count, 3)
                 self.assertEqual(json.loads(path.read_text())["password"],
                                  environment["ACS_POSTGRES_PASSWORD"])
                 path.write_text(json.dumps({"schema_version": "acs-local-providers/1",
