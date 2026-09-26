@@ -174,6 +174,23 @@ class OpenCodeHostUnixServer:
         self.socket.settimeout(accept_timeout)
         peer, _ = self.socket.accept()
         with peer:
+            request = None
+
+            def record_server_error(kind: str, error: BaseException) -> None:
+                candidate = getattr(self.endpoint, "driver", None)
+                driver = getattr(candidate, "driver", candidate)
+                journal = getattr(driver, "journal", None)
+                operation_id = getattr(request, "operation_id", "host-server")
+                if journal is None:
+                    return
+                try:
+                    journal.event(
+                        operation_id,
+                        kind,
+                        {"error_type": type(error).__name__, "detail": str(error)[:300]},
+                    )
+                except (OSError, RuntimeError, TypeError, ValueError):
+                    return
             try:
                 _, uid, _ = struct.unpack(
                     "3i", peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12)
@@ -212,32 +229,10 @@ class OpenCodeHostUnixServer:
                 if len(data) > self.MAX_RESPONSE:
                     data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"uncertain"}\n'
             except HostNodeRejected as error:
-                candidate = getattr(self.endpoint, "driver", None)
-                driver = getattr(candidate, "driver", candidate)
-                journal = getattr(driver, "journal", None)
-                if journal is not None:
-                    try:
-                        journal.event(
-                            getattr(self.endpoint, "policy", None).run_id + "-spawn",
-                            "host_server_rejection",
-                            {"error_type": type(error).__name__, "detail": str(error)[:300]},
-                        )
-                    except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
-                        pass
+                record_server_error("host_server_rejection", error)
                 data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"rejected"}\n'
             except Exception as error:  # noqa: BLE001 -- unknown dispatch outcome stays uncertain
-                candidate = getattr(self.endpoint, "driver", None)
-                driver = getattr(candidate, "driver", candidate)
-                journal = getattr(driver, "journal", None)
-                if journal is not None:
-                    try:
-                        journal.event(
-                            getattr(self.endpoint, "policy", None).run_id + "-spawn",
-                            "host_server_error",
-                            {"error_type": type(error).__name__, "detail": str(error)[:300]},
-                        )
-                    except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
-                        pass
+                record_server_error("host_server_error", error)
                 data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"uncertain"}\n'
             try:
                 peer.settimeout(2)
