@@ -349,10 +349,14 @@ class WorkActions:
                        (tenant, work_id))
         if cursor.fetchone():
             raise AcceptanceGuardFailed("work has unresolved delivery")
-        cursor.execute("SELECT 1 FROM attempts WHERE tenant_id=%s AND work_item_id=%s "
-                       "AND status='running' LIMIT 1", (tenant, work_id))
+        cursor.execute("SELECT 1 FROM attempts a WHERE a.tenant_id=%s AND a.work_item_id=%s "
+                       "AND a.status='running' AND NOT EXISTS ("
+                       "SELECT 1 FROM execution_receipts r WHERE r.tenant_id=a.tenant_id "
+                       "AND r.work_item_id=a.work_item_id AND r.attempt_id=a.attempt_id "
+                       "AND r.source_class='directly_verified' AND r.finished_at IS NOT NULL "
+                       "AND r.receipt_json->>'status'='succeeded') LIMIT 1", (tenant, work_id))
         if cursor.fetchone():
-            raise AcceptanceGuardFailed("work has a running Attempt")
+            raise AcceptanceGuardFailed("work has a running Attempt without a verified completion")
         cursor.execute("SELECT 1 FROM leases l JOIN attempts a ON a.attempt_id=l.owner_attempt_id "
                        "AND a.tenant_id=l.tenant_id WHERE a.tenant_id=%s AND a.work_item_id=%s "
                        "AND l.status='granted' AND l.expires_at>clock_timestamp() LIMIT 1", (tenant, work_id))
