@@ -17,6 +17,7 @@ from tools.runtime.p1_opencode_gate import (
     SCHEMA_SHA256,
     OpenCodeGateAdmission,
     OpenCodeGateRejected,
+    _assert_provider_config,
     validate_scene,
 )
 from tools.runtime.tests.test_p1_opencode_readback import complete
@@ -27,7 +28,7 @@ RUN_ID = "p1-run-" + "c" * 32
 def scene() -> dict:
     key = "/home/review/private/provider-key"
     return {
-        "schema_version": "acs-p1-opencode-scene/1",
+        "schema_version": "acs-p1-opencode-scene/2",
         "native_executable_path": "/home/review/native/opencode",
         "native_executable_sha256": "a" * 64,
         "native_executable_size": 184_825_984,
@@ -39,6 +40,7 @@ def scene() -> dict:
         "agent": "engineer",
         "auth_key_ref_path": key,
         "auth_key_ref_path_sha256": hashlib.sha256(key.encode()).hexdigest(),
+        "auth_storage": "xdg-data-auth-json",
         "config_template_path": "/home/review/private/opencode.json",
         "config_sha256": "d" * 64,
         "max_prompt_async": 1,
@@ -83,11 +85,42 @@ def test_scene_rejects_route_or_budget_expansion():
         ("max_prompt_async", 2),
         ("max_collect_reads", 7),
         ("auth_key_ref_path_sha256", "0" * 64),
+        ("auth_storage", "ordinary-env"),
     ):
         candidate = copy.deepcopy(scene())
         candidate[field] = changed
         with pytest.raises(OpenCodeGateRejected):
             validate_scene(candidate)
+
+
+def test_selected_provider_config_cannot_override_private_auth_or_route():
+    selected = scene()
+    config = {
+        "model": "fixture-provider/fixture-model",
+        "provider": {"fixture-provider": {
+            "npm": "@ai-sdk/openai",
+            "options": {"baseURL": "https://provider.example.invalid/v1"},
+            "models": {"fixture-model": {"name": "Fixture"}},
+        }},
+    }
+    _assert_provider_config(config, selected)
+    for mutate in (
+        lambda value: value["provider"]["fixture-provider"]["options"].update(
+            {"apiKey": "fixture-only"}
+        ),
+        lambda value: value["provider"]["fixture-provider"]["options"].update(
+            {"headers": {"Authorization": "fixture-only"}}
+        ),
+        lambda value: value["provider"]["fixture-provider"].update(
+            {"npm": "@ai-sdk/openai-compatible"}
+        ),
+        lambda value: value["provider"].update({"another": {"options": {}}}),
+        lambda value: value.update({"disabled_providers": ["fixture-provider"]}),
+    ):
+        candidate = copy.deepcopy(config)
+        mutate(candidate)
+        with pytest.raises(OpenCodeGateRejected, match="Responses route"):
+            _assert_provider_config(candidate, selected)
 
 
 @pytest.mark.skipif(os.name != "posix", reason="owner-only decision requires POSIX")
@@ -107,6 +140,12 @@ def test_owner_budget_binds_source_scene_run_machine_and_one_prompt(tmp_path: Pa
     lineage = complete()
     lineage["run_id"] = RUN_ID
     lineage["os"]["unit"] = "acs-" + RUN_ID + ".service"
+    lineage["driver"]["auth"] = {
+        "storage": "xdg-data-auth-json", "provider_id": "fixture-provider",
+        "owner_mode": "0600", "same_reference": True,
+        "provider_connected": True, "native_route_equal": True,
+        "native_source": "api",
+    }
     assert admission.assert_final_lineage(lineage)["run_id"] == RUN_ID
     for changed in (
         {**kwargs, "source_commit": "d" * 40},
@@ -177,7 +216,11 @@ def test_actual_config_route_is_bound_to_scene_digest(tmp_path: Path):
         config_sha = _write(config, {
             "model": "fixture-provider/fixture-model",
             "agent": {"engineer": {"model": "fixture-provider/fixture-model"}},
-            "provider": {"fixture-provider": {"options": {"baseURL": route}}},
+            "provider": {"fixture-provider": {
+                "npm": "@ai-sdk/openai",
+                "options": {"baseURL": route},
+                "models": {"fixture-model": {"name": "Fixture"}},
+            }},
         })
         value = scene()
         value["config_template_path"] = str(config)
@@ -201,9 +244,9 @@ def test_actual_config_route_is_bound_to_scene_digest(tmp_path: Path):
     admission.assert_native_profile(profile)
     assert hashlib.sha256(admission.config_template_bytes()).hexdigest() == profile.config_sha256
     admission, profile = stage("https://different.example.invalid/v1")
-    with pytest.raises(OpenCodeGateRejected, match="provider config route"):
+    with pytest.raises(OpenCodeGateRejected, match="Responses route"):
         admission.assert_native_profile(profile)
-    with pytest.raises(OpenCodeGateRejected, match="config template route"):
+    with pytest.raises(OpenCodeGateRejected, match="Responses route"):
         admission.config_template_bytes()
     config.chmod(0o644)
     with pytest.raises(OpenCodeGateRejected, match="owner file"):
