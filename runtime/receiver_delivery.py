@@ -277,18 +277,18 @@ class RemoteNodeEndpointAdapter:
              "receiver_prepare_receipt_id": prepared.receipt.receipt_id,
              "receiver_prepare_request_id": prepared.receipt.request_id},
         )
-        # The Domain callback returns only after the runtime_dispatched marker
-        # is committed.  Fault scenarios may use this single hook to isolate
-        # the transport at that exact boundary; normal production callers leave
-        # it unset.
-        if self.after_dispatch_mark is not None:
-            self.after_dispatch_mark(invocation)
         dispatch_body = DispatchBody(
             prepare_request_id=prepared.receipt.request_id,
             marker_receipt_id=invocation.runtime_dispatched_receipt_id,
         )
+        dispatch_request = self._issue(invocation, "delivery.dispatch", dispatch_body)
+        # The signed dispatch admission is now durably persisted, while no
+        # transport send has occurred. Fault scenarios may isolate that exact
+        # request; ordinary production callers leave the hook unset.
+        if self.after_dispatch_mark is not None:
+            self.after_dispatch_mark(invocation, dispatch_request)
         try:
-            dispatched = self._send(self._issue(invocation, "delivery.dispatch", dispatch_body))
+            dispatched = self._send(dispatch_request)
         except (RemoteTransportRejected, ValueError, RuntimeError):
             observed = self.inspect_delivery(invocation.operation_id, "uncertain")
             prepared_projection = self._projection([prepared], observed["status"])
