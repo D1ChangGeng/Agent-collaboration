@@ -741,6 +741,39 @@ def pinned_runtime_mounts(
                     (socket_info.st_dev, socket_info.st_ino),
                 ),
             })
+        if scenario_id == "P1-NATIVE-MULTIAGENT-OFF":
+            if state is None or run_dir is None:
+                raise SandboxUnavailable("native delegation readback requires the current run")
+            for lifecycle, target in (
+                ("P1-CODEX-LIFECYCLE", "codex_lifecycle"),
+                ("P1-OPENCODE-LIFECYCLE", "opencode_lifecycle"),
+            ):
+                path = run_dir / "scenario-output" / lifecycle / f"{lifecycle}-runtime.json"
+                parent_fd = _owner_directory(path.parent)
+                descriptors.append(parent_fd)
+                file_fd = os.open(
+                    path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                    dir_fd=parent_fd,
+                )
+                descriptors.append(file_fd)
+                data = b""
+                while block := os.read(file_fd, 65536):
+                    data += block
+                    if len(data) > MAX_OUTPUT_BYTES:
+                        raise SandboxUnavailable("model lifecycle readback exceeds mount bound")
+                value = strict_json(data)
+                info = os.fstat(file_fd)
+                if (
+                    not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid()
+                    or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1
+                    or value.get("run_id") != state["run_id"]
+                    or value.get("source_commit") != state["source_commit"]
+                    or value.get("source_tree") != state["source_tree"]
+                    or value.get("machine_id") != state["machine_id"]
+                    or value.get("node_id") != state["node_id"]
+                ):
+                    raise SandboxUnavailable("model lifecycle readback left the current run")
+                sources[target] = f"/proc/self/fd/{file_fd}"
         yield sources, tuple(descriptors)
     finally:
         if bus_parent_fd is not None:
@@ -1763,6 +1796,13 @@ def sandbox_command(
                 "--ro-bind", mount_sources["opencode_host_socket"],
                 "/run/acs-p1/opencode-host.sock",
             ))
+        if "codex_lifecycle" in mount_sources:
+            runtime_mounts.extend((
+                "--ro-bind", mount_sources["codex_lifecycle"],
+                "/run/acs-p1/codex-lifecycle.json",
+                "--ro-bind", mount_sources["opencode_lifecycle"],
+                "/run/acs-p1/opencode-lifecycle.json",
+            ))
     argv = [
         sandbox["path"],
         "--ro-bind",
@@ -2008,6 +2048,14 @@ def validate_plan(plan: object, contract: dict[str, Any]) -> dict[str, Any]:
         or not opencode_commands
     ):
         raise PlanError("integrated acceptance requires both pinned same-run model scenes")
+    if scenario_map["P1-NATIVE-MULTIAGENT-OFF"] and (
+        runtime_profile is None
+        or runtime_profile.get("codex_scene_mode") != "same-run-host-node"
+        or runtime_profile.get("opencode_scene_mode") != "same-run-host-node"
+        or not scenario_map["P1-CODEX-LIFECYCLE"]
+        or not opencode_commands
+    ):
+        raise PlanError("native delegation behavior requires both same-run model scenes")
     if not isinstance(plan.get("prerequisites", {}), dict) or not isinstance(
         plan.get("review", {}), dict
     ):
@@ -3184,6 +3232,8 @@ def run_scenario(
     if scenario_id not in contract["gates"]["P1"]["scenarios"]:
         raise PlanError("unknown P1 scenario")
     if scenario_id == "P1-INTEGRATED-ACCEPTANCE":
+        verify_integrated_model_prerequisites(state, plan, run_dir)
+    if scenario_id == "P1-NATIVE-MULTIAGENT-OFF":
         verify_integrated_model_prerequisites(state, plan, run_dir)
     commands = plan["scenarios"][scenario_id]
     complete, reason = plan_complete(commands)

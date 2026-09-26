@@ -184,7 +184,7 @@ class ScenarioCatalog:
         ),
     }
     MODEL_REQUIREMENTS: ClassVar[dict[str, str]] = {
-        "P1-NATIVE-MULTIAGENT-OFF": "actual_native_delegation_request_evidence",
+        "P1-NATIVE-MULTIAGENT-OFF": "all_model_scenarios",
         "P1-CODEX-LIFECYCLE": "same_run_codex_host",
         "P1-OPENCODE-LIFECYCLE": "same_run_opencode_host",
         "P1-INTEGRATED-ACCEPTANCE": "all_model_scenarios",
