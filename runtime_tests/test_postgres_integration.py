@@ -64,15 +64,16 @@ def test_real_postgres_authority_retry_revocation_and_acceptance_guards() -> Non
         summary="real PostgreSQL authority evidence",
     )
     authority.record_evidence(make_command(authority, "evidence.record", work_item_id, f"evidence-command-{work_item_id}"), evidence)
-    authority.record_review(make_command(authority, "review.record", work_item_id, f"review-command-{work_item_id}"), f"review-{work_item_id}", work_item_id, "pass", evidence.evidence_id, "baseline-real")
+    with pytest.raises(AuthorizationDenied):
+        authority.record_review(make_command(authority, "review.record", work_item_id, f"review-command-{work_item_id}"), f"review-{work_item_id}", work_item_id, "pass", evidence.evidence_id, "baseline-real")
 
     with psycopg.connect(DSN) as connection, connection.cursor() as cursor:
         cursor.execute("SELECT count(*) FROM domain_events WHERE tenant_id=%s AND command_id IN (%s,%s)", (authority.context.tenant_id, f"cmd-evidence-command-{work_item_id}", f"cmd-review-command-{work_item_id}"))
         event_count = cursor.fetchone()
-        assert event_count is not None and event_count[0] == 2
+        assert event_count is not None and event_count[0] == 1
         cursor.execute("SELECT count(*) FROM outbox WHERE tenant_id=%s AND operation_id IN (SELECT operation_id FROM operations WHERE command_id IN (%s,%s))", (authority.context.tenant_id, f"cmd-evidence-command-{work_item_id}", f"cmd-review-command-{work_item_id}"))
         outbox_count = cursor.fetchone()
-        assert outbox_count is not None and outbox_count[0] == 2
+        assert outbox_count is not None and outbox_count[0] == 1
 
     with psycopg.connect(DSN) as connection, connection.cursor() as cursor:
         cursor.execute("UPDATE grants SET revoked_at=now() WHERE grant_ref=%s", (authority.context.grant_ref,))
