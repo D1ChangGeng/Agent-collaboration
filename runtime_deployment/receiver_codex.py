@@ -1,8 +1,10 @@
 """Production Codex receiver factory for one supervised native capacity."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 import threading
 import time
 from datetime import UTC, datetime, timedelta
@@ -36,7 +38,8 @@ SCHEMA = "acs-receiver-codex-factory/1"
 FIELDS = {
     "schema_version", "binding_id", "capacity_attempt_id", "executable",
     "executable_sha256", "codex_version", "protocol_schema", "protocol_schema_sha256",
-    "cwd", "codex_home", "config_sha256", "permission_profile", "model",
+    "model_catalog", "model_catalog_sha256", "cwd", "codex_home", "config_sha256",
+    "permission_profile", "model", "source_commit", "source_tree",
     "driver_journal", "node_journal", "systemd_environment_dir", "runtime_id",
     "spawn_operation_id", "spawn_command_id", "spawn_message_id",
     "close_operation_id", "close_command_id", "close_message_id",
@@ -75,20 +78,43 @@ def validate_settings(settings: object) -> dict[str, str]:
         _absolute(settings, name)
     for name in (
         "binding_id", "capacity_attempt_id", "permission_profile", "runtime_id",
+        "source_commit", "source_tree",
         "spawn_operation_id", "spawn_command_id", "spawn_message_id",
         "close_operation_id", "close_command_id", "close_message_id",
     ):
         _text(settings, name)
+    for name in ("source_commit", "source_tree"):
+        if not re.fullmatch(r"[a-f0-9]{40}", settings[name]):
+            raise CodexReceiverRejected(f"Codex receiver {name} is invalid")
     if settings.get("model") is not None:
         _text(settings, "model")
     for name in ("executable_sha256", "protocol_schema_sha256", "config_sha256"):
         value = settings.get(name)
         if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
             raise CodexReceiverRejected(f"Codex receiver digest {name} is invalid")
-    if settings["codex_version"] not in {"0.152.1", "0.153.2", "0.153.4"}:
+    if settings["codex_version"] not in {
+        "0.152.1", "0.153.2", "0.153.4", "0.155.0", "0.155.0-alpha.2.6",
+    }:
         raise CodexReceiverRejected("Codex receiver version has no reviewed Driver profile")
+    if (
+        settings["codex_version"] == "0.155.0" and settings["permission_profile"] != "achp-engineer"
+        or settings["codex_version"] == "0.155.0-alpha.2.6"
+        and settings["permission_profile"] != ":workspace"
+    ):
+        raise CodexReceiverRejected("Codex receiver permission profile is not reviewed for version")
+    _absolute(settings, "model_catalog")
+    value = settings["model_catalog_sha256"]
+    if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
+        raise CodexReceiverRejected("Codex receiver model catalog digest is invalid")
+    catalog = Path(settings["model_catalog"])
+    if not catalog.is_file() or catalog.is_symlink():
+        raise CodexReceiverRejected("Codex receiver model catalog is unavailable")
+    if hashlib.sha256(catalog.read_bytes()).hexdigest() != value:
+        raise CodexReceiverRejected("Codex receiver model catalog differs from pinned profile")
     if os.name == "posix" and Path(settings["systemd_environment_dir"]).name != "systemd-env":
         raise CodexReceiverRejected("Codex receiver Systemd environment directory differs")
+    if os.name == "nt" and Path(settings["systemd_environment_dir"]).name != "windows-job":
+        raise CodexReceiverRejected("Codex receiver Windows Job directory differs")
     if (
         type(settings.get("collector_max_reads")) is not int
         or not 1 <= settings["collector_max_reads"] <= 120
@@ -133,7 +159,6 @@ class CodexReceiverCapacity:
                 "USERPROFILE": os.environ.get("USERPROFILE", ""),
                 "APPDATA": os.environ.get("APPDATA", ""),
                 "LOCALAPPDATA": os.environ.get("LOCALAPPDATA", ""),
-                "ZEO_API_KEY": os.environ.get("ZEO_API_KEY", ""),
             }
         else:
             environment = {
@@ -389,12 +414,12 @@ class CodexReceiverCapacity:
                 try:
                     self.collector.collect_and_project(invocation)
                     return
-                except Exception as error:  # bounded readback; never reinvokes
+                except Exception as error:  # noqa: BLE001 -- bounded readback; never reinvokes
                     last = type(error).__name__
                     time.sleep(self.settings["collector_interval_seconds"])
             with self._collector_lock:
                 self._collector_errors[invocation.invocation_id] = last
-        except BaseException as error:
+        except BaseException as error:  # noqa: BLE001 -- preserve cleanup uncertainty
             with self._collector_lock:
                 self._collector_errors[invocation.invocation_id] = type(error).__name__
 

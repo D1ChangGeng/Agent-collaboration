@@ -1,4 +1,4 @@
-"""Concrete Codex App Server stdio driver, reference profiles 0.152.1/0.153.2.
+"""Concrete Codex App Server stdio driver with exact reviewed profiles.
 
 Protocol inputs: binary-generated experimental schemas; fixed upstream sources
 5adb68a49933ae446bf11935662c83dba55a0804 and
@@ -119,7 +119,9 @@ class LaunchProfile:
     model: str | None = None
 
     def validate(self):
-        if self.version not in {"0.152.1", "0.153.2", "0.153.4"}:
+        if self.version not in {
+            "0.152.1", "0.153.2", "0.153.4", "0.155.0", "0.155.0-alpha.2.6",
+        }:
             raise DriverRejected("version has no reviewed reference profile")
         for path in (self.executable, self.cwd, self.codex_home, self.schema_path):
             if not Path(path).is_absolute():
@@ -136,7 +138,10 @@ class LaunchProfile:
             config.get("default_permissions") != self.permission_profile
             or (
                 self.permission_profile.startswith(":")
-                and not (self.version == "0.153.4" and self.permission_profile == ":workspace")
+                and not (
+                    self.version in {"0.153.4", "0.155.0-alpha.2.6"}
+                    and self.permission_profile == ":workspace"
+                )
             )
             or config.get("approval_policy") != "never"
         ):
