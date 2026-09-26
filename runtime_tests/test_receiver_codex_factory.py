@@ -6,6 +6,7 @@ import json
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -164,8 +165,41 @@ def test_projection_identity_adopts_only_a_newer_recovery_binding():
     current = old.__class__(
         **{**old.__dict__, "binding_revision": 2, "boot_incarnation": "boot-2"}
     )
-    assert CodexReceiverCapacity._current_dispatch_identity(recorded, current) == current
+    recovery = SimpleNamespace(admission=SimpleNamespace(
+        purpose="delivery.recover", tenant_id=old.tenant_id,
+        message_id=old.message_id, operation_id=old.operation_id,
+        attempt_id=old.attempt_id, dispatch_id=old.dispatch_id,
+        endpoint_id=old.endpoint_id, endpoint_revision=2,
+        runtime_id="runtime-2", runtime_revision=1,
+        machine_id=old.machine_id, node_id=old.node_id,
+        boot_incarnation="boot-2", scope_id="scope", agent_slot_id="slot",
+    ))
+    endpoint = (
+        old.endpoint_id, 2, "runtime-2", 1, old.machine_id, old.node_id,
+        "boot-2", "scope", "slot",
+    )
+    assert CodexReceiverCapacity._current_dispatch_identity(
+        recorded, current, endpoint, recovery,
+    ) == current
     with pytest.raises(CodexReceiverRejected, match="binding differs"):
         CodexReceiverCapacity._current_dispatch_identity(
-            recorded, old.__class__(**{**old.__dict__, "node_id": "changed"})
+            recorded, old.__class__(**{**old.__dict__, "node_id": "changed"}),
+            (old.endpoint_id, 1, "runtime-1", 1, old.machine_id, old.node_id,
+             old.boot_incarnation, "scope", "slot"),
+            None,
+        )
+    for field in ("endpoint_id", "machine_id", "node_id", "boot_incarnation"):
+        changed = old.__class__(**{
+            **current.__dict__, field: "changed",
+        })
+        with pytest.raises(CodexReceiverRejected):
+            CodexReceiverCapacity._current_dispatch_identity(
+                recorded, changed, endpoint, recovery,
+            )
+    with pytest.raises(CodexReceiverRejected, match="authority differs"):
+        CodexReceiverCapacity._current_dispatch_identity(
+            recorded, current, endpoint,
+            SimpleNamespace(admission=SimpleNamespace(**{
+                **recovery.admission.__dict__, "purpose": "delivery.dispatch",
+            })),
         )
