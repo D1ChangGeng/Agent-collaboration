@@ -95,14 +95,17 @@ class RelayPartition:
         if self.process is not None and self.process.process.poll() is None:
             return self.process
         command = [
-            sys.executable, str(self.arguments.tunnel_script), "listen",
+            str(self.arguments.runtime_python), str(self.arguments.tunnel_script), "listen",
             "--host", "127.0.0.1", "--worker-port", str(self.arguments.worker_port),
             "--client-port", str(self.arguments.client_port), "--token",
             str(self.arguments.token),
         ]
         self.process = self.supervisor.launch(
             command, cwd=str(self.arguments.tunnel_script.parent),
-            env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+            env={
+                "PATH": "/usr/bin:/bin", "LANG": "C.UTF-8",
+                "PYTHONPATH": self.arguments.runtime_pythonpath,
+            },
             label="p2-network-relay",
         )
         self.arguments.relay_pid_file.write_text(str(self.process.process.pid))
@@ -345,6 +348,8 @@ def main() -> int:
     parser.add_argument("--control-host", required=True)
     parser.add_argument("--control-session", required=True)
     parser.add_argument("--expected-tls-fingerprint", required=True)
+    parser.add_argument("--runtime-python", type=Path, required=True)
+    parser.add_argument("--runtime-pythonpath", required=True)
     return execute(parser.parse_args())
 
 
