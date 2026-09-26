@@ -4227,7 +4227,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             value.get("status") != "committed"
             or row["temporal_workflow_id"] != lineage["operation_id"] + ":temporal"
             or value.get("payload", {}).get("operation_id") != row["temporal_workflow_id"]
-            or value.get("payload", {}).get("scenario_id") != scenario
+            or value.get("payload", {}).get("scenario_id")
+            not in {scenario, lineage.get("scenario_id", scenario)}
         ):
             raise ProbeRejected("Temporal scenario marker changed")
         return {"temporal_readback": True, "workflow_id": row["temporal_workflow_id"],
