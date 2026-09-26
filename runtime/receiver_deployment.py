@@ -33,6 +33,7 @@ class FactoryBinding(BaseModel):
     origin_path_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     install_manifest_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     distribution_record_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    settings: dict[str, Any] = Field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,7 +114,9 @@ def inspect_factory_files(reference: str) -> tuple[Path, tuple[int, ...], str, s
     )
 
 
-def inspect_factory(reference: str) -> tuple[FactoryBinding, Any, Path, tuple[int, ...]]:
+def inspect_factory(
+    reference: str, *, settings: dict[str, Any] | None = None,
+) -> tuple[FactoryBinding, Any, Path, tuple[int, ...]]:
     (origin, identity, module_sha, package_sha, origin_path_sha,
      manifest_sha, record_sha) = inspect_factory_files(reference)
     module_name, function_name = reference.split(":", 1)
@@ -130,6 +133,7 @@ def inspect_factory(reference: str) -> tuple[FactoryBinding, Any, Path, tuple[in
         reference=reference, module_sha256=module_sha, package_sha256=package_sha,
         callable_sha256=callable_sha256(factory), origin_path_sha256=origin_path_sha,
         install_manifest_sha256=manifest_sha, distribution_record_sha256=record_sha,
+        settings={} if settings is None else settings,
     )
     return binding, factory, origin, identity
 

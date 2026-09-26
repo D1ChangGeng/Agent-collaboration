@@ -29,6 +29,7 @@ REQUIRED = (
     "runtime/sender.py",
     "runtime_deployment/__init__.py",
     "runtime_deployment/receiver_p1.py",
+    "runtime_deployment/receiver_codex.py",
 )
 INSTALL_MANIFEST = "receiver-install-manifest.json"
 

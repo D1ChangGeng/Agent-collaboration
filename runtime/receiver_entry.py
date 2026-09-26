@@ -28,6 +28,7 @@ class DeploymentCallbacks:
     runtime_id: str
     authorize_current: object
     native_invoke: object
+    close: object | None = None
 
 
 def load_process_config(path: str | Path) -> ReceiverProcessConfig:
@@ -58,14 +59,17 @@ def load_callbacks(process: ReceiverProcessConfig) -> DeploymentCallbacks:
     ):
         raise ValueError("receiver deployment package file digest differs before import")
     observed, factory, origin, identity = inspect_factory(process.factory.reference)
-    if observed != process.factory:
+    if observed.model_copy(update={"settings": process.factory.settings}) != process.factory:
         raise ValueError("receiver deployment factory binding differs")
-    callbacks = factory(process.runtime, process.deployment_policy_sha256)
+    callbacks = factory(
+        process.runtime, process.deployment_policy_sha256, process.factory.settings,
+    )
     if (not isinstance(callbacks, DeploymentCallbacks)
             or callbacks.deployment_policy_sha256 != process.deployment_policy_sha256
             or callbacks.endpoint_id != process.runtime.binding.registration.endpoint_id
             or callbacks.runtime_id != process.runtime.binding.registration.runtime_id
-            or not callable(callbacks.authorize_current) or not callable(callbacks.native_invoke)):
+            or not callable(callbacks.authorize_current) or not callable(callbacks.native_invoke)
+            or callbacks.close is not None and not callable(callbacks.close)):
         raise TypeError("receiver deployment callbacks are not bound to configuration")
     info = origin.stat(follow_symlinks=False)
     after_identity = (info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_gid, info.st_nlink)
@@ -84,13 +88,31 @@ def main(argv=None):
     parser.add_argument("--config")
     parser.add_argument("--verify-install", action="store_true")
     parser.add_argument("--factory-binding", action="store_true")
+    parser.add_argument(
+        "--factory-reference", default="runtime_deployment.receiver_p1:callbacks",
+    )
+    parser.add_argument("--factory-settings")
     arguments = parser.parse_args(argv)
     install = verify_installed_distribution()
     if arguments.verify_install:
         print(json.dumps(install, sort_keys=True))
         return 0
     if arguments.factory_binding:
-        binding, _, _, _ = inspect_factory("runtime_deployment.receiver_p1:callbacks")
+        settings = {}
+        if arguments.factory_settings:
+            descriptor, _ = open_validated_file(arguments.factory_settings, private=True)
+            try:
+                raw = os.read(descriptor, 1_048_577)
+            finally:
+                os.close(descriptor)
+            if len(raw) > 1_048_576:
+                raise ValueError("factory settings exceed bound")
+            settings = json.loads(raw)
+            if not isinstance(settings, dict):
+                raise ValueError("factory settings must be an object")
+        binding, _, _, _ = inspect_factory(
+            arguments.factory_reference, settings=settings,
+        )
         print(binding.model_dump_json())
         return 0
     if not arguments.config:
@@ -100,17 +122,27 @@ def main(argv=None):
 
     def ready_check():
         reloaded = load_process_config(arguments.config)
-        current = load_callbacks(reloaded)
+        current, factory, origin, identity = inspect_factory(
+            reloaded.factory.reference, settings=reloaded.factory.settings,
+        )
+        info = origin.stat(follow_symlinks=False)
+        after_identity = (
+            info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_gid, info.st_nlink,
+        )
         return (
             reloaded == process
-            and current.deployment_policy_sha256 == callbacks.deployment_policy_sha256
-            and (current.endpoint_id, current.runtime_id)
-            == (callbacks.endpoint_id, callbacks.runtime_id)
+            and current == process.factory
+            and after_identity == identity
+            and getattr(factory, "__name__", None) == "callbacks"
         )
 
-    serve(
-        process.runtime,
-        authorize_current=callbacks.authorize_current,
-        native_invoke=callbacks.native_invoke,
-        ready_check=ready_check,
-    )
+    try:
+        serve(
+            process.runtime,
+            authorize_current=callbacks.authorize_current,
+            native_invoke=callbacks.native_invoke,
+            ready_check=ready_check,
+        )
+    finally:
+        if callbacks.close is not None:
+            callbacks.close()
