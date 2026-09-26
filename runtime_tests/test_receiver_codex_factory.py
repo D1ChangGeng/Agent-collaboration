@@ -158,6 +158,35 @@ def test_codex_receiver_current_authority_uses_configured_clock_skew():
     assert observed == {"admission": admission, "clock_skew_seconds": 5}
 
 
+def test_codex_receiver_native_domain_recheck_uses_same_clock_skew():
+    observed = {}
+
+    class Authority:
+        def _authorize(
+            self, command, cursor, permission, scope_id, *, clock_skew_seconds,
+        ):
+            observed.update(
+                command=command,
+                cursor=cursor,
+                permission=permission,
+                scope_id=scope_id,
+                clock_skew_seconds=clock_skew_seconds,
+            )
+
+    capacity = object.__new__(CodexReceiverCapacity)
+    capacity.config = SimpleNamespace(clock_skew_seconds=5)
+    capacity.authority = Authority()
+    values = [object(), object(), "runtime.invoke", "scope"]
+    capacity._authorize_domain_command(*values)
+    assert observed == {
+        "command": values[0],
+        "cursor": values[1],
+        "permission": "runtime.invoke",
+        "scope_id": "scope",
+        "clock_skew_seconds": 5,
+    }
+
+
 @pytest.mark.skipif(os.name != "posix", reason="deployment factory binding is POSIX-owned")
 def test_factory_binding_digest_includes_settings(tmp_path):
     value = settings(tmp_path)
