@@ -1,0 +1,135 @@
+{
+  "schema_version": "acs-p2-skill-contract/1",
+  "surface_revision": "acs-p2-mcp-workflow/4",
+  "workflow_authority": "SKILL.md",
+  "domain_command_role": "internal deterministic state transition",
+  "starter_prompts": "skills/STARTER-PROMPTS.md",
+  "skills": {
+    "agent-collaboration-setup": {
+      "goal": "install, adopt and maintain ACS global and project setup",
+      "triggers": [
+        "install ACS",
+        "adopt this project",
+        "configure web MCP",
+        "validate collaboration setup"
+      ],
+      "required_tools": [
+        "read_profile",
+        "list_projects",
+        "list_connections",
+        "load_project"
+      ],
+      "spec": "skills/agent-collaboration-setup/SKILL.md"
+    },
+    "acs-project-manager": {
+      "goal": "resume, report and advance one project",
+      "triggers": [
+        "continue managing this project",
+        "show project status",
+        "triage blockers"
+      ],
+      "required_tools": [
+        "load_project",
+        "check_inbox",
+        "list_routes",
+        "list_work",
+        "list_activity",
+        "read_source"
+      ],
+      "spec": "skills/acs-project-manager/SKILL.md"
+    },
+    "acs-delegate-work": {
+      "goal": "create or reuse work and delegate it durably",
+      "triggers": [
+        "delegate this goal",
+        "run these tasks in parallel",
+        "ask a specialist"
+      ],
+      "required_tools": [
+        "create_work",
+        "list_collaborators",
+        "list_harnesses",
+        "configure_team",
+        "send_message"
+      ],
+      "spec": "skills/acs-delegate-work/SKILL.md"
+    },
+    "acs-handoff-work": {
+      "goal": "transfer existing responsibility with continuity",
+      "triggers": [
+        "hand off this work",
+        "move this task to another Agent",
+        "continue in another Session"
+      ],
+      "required_tools": [
+        "read_source",
+        "list_evidence",
+        "handoff_work",
+        "send_message"
+      ],
+      "spec": "skills/acs-handoff-work/SKILL.md"
+    },
+    "acs-review-work": {
+      "goal": "perform architecture, engineering, evidence or finalization review",
+      "triggers": [
+        "review this architecture",
+        "review this implementation",
+        "verify this evidence"
+      ],
+      "required_tools": [
+        "request_review",
+        "list_evidence",
+        "read_diff",
+        "submit_review"
+      ],
+      "spec": "skills/acs-review-work/SKILL.md"
+    },
+    "acs-finalize-work": {
+      "goal": "validate and commit accepted state",
+      "triggers": [
+        "finalize this WorkItem",
+        "accept this candidate",
+        "check release readiness"
+      ],
+      "required_tools": [
+        "read_source",
+        "list_reviews",
+        "list_evidence",
+        "accept_work"
+      ],
+      "spec": "skills/acs-finalize-work/SKILL.md"
+    },
+    "acs-recover-work": {
+      "goal": "recover interrupted or uncertain collaboration",
+      "triggers": [
+        "recover this collaboration",
+        "resume after Session loss",
+        "reconcile uncertain effect"
+      ],
+      "required_tools": [
+        "check_inbox",
+        "list_activity",
+        "list_connections",
+        "read_source",
+        "read_resource"
+      ],
+      "spec": "skills/acs-recover-work/SKILL.md"
+    },
+    "acs-portfolio-manager": {
+      "goal": "compare and coordinate multiple projects",
+      "triggers": [
+        "compare my projects",
+        "show portfolio blockers",
+        "coordinate cross-project dependencies"
+      ],
+      "required_tools": [
+        "list_projects",
+        "load_project",
+        "list_routes",
+        "list_work",
+        "list_activity"
+      ],
+      "spec": "skills/acs-portfolio-manager/SKILL.md"
+    }
+  }
+}

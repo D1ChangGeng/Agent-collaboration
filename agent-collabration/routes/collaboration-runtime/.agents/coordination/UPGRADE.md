@@ -23,9 +23,10 @@ Root: `agent-collaboration-root`; Route: `collaboration-runtime`.
 | P1-INTEGRATE | Management + Reviewer | Sealed integrated candidate and complete named local Profile evidence. |
 | P2-CODEX | Two Machine Nodes + external Codex Agents | Dual-machine/session collaboration and fault recovery after P1. |
 | P2-OPENCODE | Codex + OpenCode Agents | Separate cross-Harness loop and recovery after P2-CODEX. |
-| P2-MCP-SURFACE | Management + Runtime Engineering | Public `setup_collaboration`, `find_harnesses`, `send_message`, `wait_for_response`, `read_resource`, `check_inbox`, `set_notification`, `cancel_work` and `stop_attempt` tools with exact exposure metadata and discriminated result templates. |
-| P2-CONTINUATION | Runtime Engineering + Reviewer | Durable response handles, Session-activity-aware delivery, completion notification, generic read, aggregate waiting and cancellation. |
-| P2-WORKFLOW-COMMANDS | Management + Reviewer | Collaboration, review, results, status and cancellation command documents exercised through Codex and OpenCode. |
+| P2-MCP-SURFACE | Management + Runtime Engineering | Profile-filtered global, project, Source, collaboration, continuation and advanced tools with explicit project_id, exact schemas and discriminated results. |
+| P2-CONTINUATION | Runtime Engineering + Reviewer | Durable responses, subscriptions, Session-aware wake, project Inbox recovery, typed reads and control. |
+| P2-MANAGEMENT | Management + Runtime Engineering | Cross-project discovery, ProjectContextPack, Route and WorkItem management, Source reads, web OAuth/Tunnel access and remote Review. |
+| P2-SKILLS | Management + Reviewer | Setup, project management, delegation, handoff, review, finalization, recovery and portfolio Skills exercised through local and web clients. |
 | P2-REVIEW | Independent Reviewer + product owner | Exact Profile review, limitations, evidence expiry and owner decision. |
 
 ## Current scoped observations
@@ -58,6 +59,13 @@ credentials and projects remain outside the resource grant. New high-risk access
 Hosted direction and final P2 owner review use the escalation contract from the
 uploaded instruction. Save private transcripts and raw operational details in
 ignored evidence storage; curate public source and Gate artifacts explicitly.
+
+Independent review is capability-first. It prioritizes technical implementation,
+architecture boundaries, durable Runtime behavior and actual product flows with
+direct read-back. Source binding, evidence integrity, expiry, reviewer identity
+and authorization remain hard prerequisites. Component-only, fixture-only,
+no-model, single-normal-delivery and offline-validator observations keep their
+declared scope until live product behavior closes the corresponding scenario.
 
 ## Repository synchronization
 

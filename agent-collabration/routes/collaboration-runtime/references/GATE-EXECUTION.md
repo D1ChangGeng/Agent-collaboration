@@ -9,11 +9,21 @@ P2 preparation uses `tools/runtime/p2_harness.py` and
 `docs/runtime/P2-INVENTORY-TEMPLATE.json`. The template binds stable Machine
 identities only. Initialization reobserves the current local Machine and Git
 commit/tree; execution must independently reobserve the remote Machine. Gate
-order is P1, P2-CODEX, P2-OPENCODE, P2-MCP-WORKFLOW, then P2-REVIEW. The public
-tool surface and continuation contract are defined in
-`docs/runtime/P2-MCP-WORKFLOW-CONTRACT.md` at surface revision
-`acs-p2-mcp-workflow/3`. The Gate validates concise action names grounded in
-human collaboration and Domain behavior, selection-oriented descriptions,
-closed input schemas, discriminated results and executable follow-up calls. The
-checked-in tools and documents remain preparation inputs until each Gate has
-direct execution evidence.
+order is P1, P2-CODEX, P2-OPENCODE, P2-MCP-WORKFLOW,
+P2-MANAGEMENT-WORKFLOW, then P2-REVIEW. The public collaboration and management
+surfaces are defined in docs/runtime/P2-MCP-WORKFLOW-CONTRACT.md and
+docs/runtime/P2-MANAGEMENT-WORKFLOW-CONTRACT.md at surface revision
+acs-p2-mcp-workflow/4. The Gates validate Profile-filtered discovery, explicit
+project context, closed schemas, discriminated results, executable follow-ups,
+Source reads and Skill workflows. Checked-in contracts remain preparation input
+until direct execution evidence is attached.
+
+Independent review follows a capability-first order. Reviewers inspect the
+Runtime implementation and architecture, then verify representative product
+behavior through direct receipts, fault injection, read-back and postflight
+cleanup. Structural validity, expiry, source binding, reviewer identity and
+authorization are hard prerequisites for passage; they do not substitute for
+live Runtime behavior. Component-only, fixture-only, no-model,
+single-normal-delivery and offline-validator results retain their declared
+scope. Identity continuity, Harness replacement and integrated acceptance are
+promoted only from the live layers named by their scenario contracts.

@@ -4,7 +4,6 @@ import json
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[3]
 TOOL_CONTRACT = ROOT / "docs" / "runtime" / "p2-mcp-tool-contract.json"
 GATE_CONTRACT = ROOT / "docs" / "runtime" / "gate-contract.json"
@@ -16,148 +15,122 @@ class P2McpToolContractTests(unittest.TestCase):
         cls.catalog = json.loads(TOOL_CONTRACT.read_text(encoding="utf-8"))
         cls.gates = json.loads(GATE_CONTRACT.read_text(encoding="utf-8"))
 
-    def test_public_surface_uses_concise_action_phrase_names(self):
-        ordinary = [
-            "setup_collaboration",
-            "find_harnesses",
-            "send_message",
-            "wait_for_response",
-            "read_resource",
-            "check_inbox",
-            "set_notification",
-            "cancel_work",
-            "stop_attempt",
-        ]
-        self.assertEqual(self.catalog["naming_convention"], "concise_action_phrase")
+    def test_surface_groups_are_exact_and_names_are_concise(self):
+        groups = self.catalog["tool_groups"]
         self.assertEqual(
-            self.catalog["naming_principles"],
+            list(groups),
             [
-                "intended_action",
-                "human_collaboration_phrase",
-                "runtime_or_domain_behavior",
-                "target_as_argument_when_contract_is_uniform",
-                "separate_tool_when_authorization_state_or_result_differs",
+                "global", "project_context", "project_lists", "project_reads",
+                "source_reads", "project_actions", "continuation",
+                "source_writes", "advanced",
             ],
         )
-        self.assertEqual(self.catalog["ordinary_tools"], ordinary)
-        self.assertEqual(self.catalog["advanced_tools"], ["submit_command"])
-        for name in ordinary + ["submit_command"]:
+        names = [name for group in groups.values() for name in group]
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(set(names), set(self.catalog["tools"]))
+        self.assertIn("configure_team", names)
+        self.assertIn("list_harnesses", names)
+        self.assertNotIn("setup_collaboration", names)
+        self.assertNotIn("find_harnesses", names)
+        for name in names:
             self.assertIn(len(name.split("_")), (2, 3), name)
-        self.assertEqual(
-            set(self.catalog["tools"]), set(ordinary) | {"submit_command"}
-        )
-        self.assertEqual(
-            self.catalog["compatibility_aliases"]["run"]["canonical_tool"],
-            "submit_command",
-        )
 
-    def test_every_tool_exposes_selection_and_result_metadata(self):
+    def test_every_tool_has_selection_schema_security_and_result_metadata(self):
         annotation_fields = {
             "readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"
         }
         for name, tool in self.catalog["tools"].items():
             with self.subTest(tool=name):
                 self.assertTrue(tool["title"])
-                self.assertIn("Returns", tool["description"])
+                self.assertTrue(tool["description"])
                 self.assertTrue(tool["selection_guidance"])
                 self.assertEqual(set(tool["annotations"]), annotation_fields)
                 self.assertTrue(tool["input_schema"]["schema_version"])
+                self.assertIsInstance(tool["security_scopes"], list)
+                self.assertTrue(tool["security_scopes"])
                 self.assertIn(tool["result_type"], self.catalog["result_types"])
 
-    def test_send_message_defaults_and_modes_are_explicit(self):
-        self.assertEqual(
-            self.catalog["defaults"],
-            {
-                "activation": "invoke",
-                "delivery_policy": "queue_until_idle",
-                "expect_response": True,
-                "response_mode": "async",
-                "wait_until": "response_received",
-            },
-        )
-        send = self.catalog["tools"]["send_message"]["input_schema"]
-        self.assertEqual(send["response_modes"], ["async", "sync"])
-        self.assertIn("queue_until_idle", send["delivery_policies"])
-        self.assertNotIn("response_mode", send["required"])
-        self.assertNotIn("wait_timeout_seconds", send["required"])
+    def test_result_types_match_the_exposed_surface(self):
+        used = {tool["result_type"] for tool in self.catalog["tools"].values()}
+        self.assertEqual(used, set(self.catalog["result_types"]))
+
+    def test_project_id_is_explicit_on_every_project_tool(self):
+        global_tools = set(self.catalog["project_context_rule"]["global_tools"])
+        for name, tool in self.catalog["tools"].items():
+            required = set(tool["input_schema"]["required"])
+            if name in global_tools or name == "submit_command":
+                continue
+            with self.subTest(tool=name):
+                self.assertIn("project_id", required)
+        self.assertTrue(self.catalog["project_context_rule"]["handle_project_must_match_argument"])
+
+    def test_team_configuration_matches_existing_scope_boundary(self):
+        configure = self.catalog["tools"]["configure_team"]
+        self.assertEqual(configure["result_type"], "team_configuration")
+        required = set(configure["input_schema"]["required"])
         self.assertTrue(
             {
-                "activation", "delivery_policy", "expect_response", "response_mode",
-                "wait_until", "wait_timeout_seconds",
+                "project_id", "scope_handle", "expected_revision", "members",
+                "policies", "budgets",
             }
-            <= set(send["optional"])
+            <= required
+        )
+        self.assertNotIn("scope", required)
+
+    def test_read_and_message_consumption_are_separate(self):
+        resource = self.catalog["tools"]["read_resource"]
+        message = self.catalog["tools"]["read_message"]
+        self.assertTrue(resource["annotations"]["readOnlyHint"])
+        self.assertFalse(message["annotations"]["readOnlyHint"])
+        self.assertNotIn("consume", resource["input_schema"]["optional"])
+        self.assertEqual(message["input_schema"]["defaults"]["consume"], True)
+        self.assertTrue(
+            {"summary", "detail", "content", "history", "evidence"}
+            <= set(resource["input_schema"]["views"])
         )
 
-    def test_results_are_discriminated_and_supply_executable_follow_ups(self):
-        envelope = self.catalog["result_envelope"]
-        self.assertEqual(envelope["schema_version"], "acs-mcp-result/2")
+    def test_send_wait_and_subscription_defaults_are_explicit(self):
+        defaults = self.catalog["defaults"]
+        self.assertEqual(defaults["response_mode"], "async")
+        self.assertEqual(defaults["delivery_policy"], "queue_until_idle")
+        send = self.catalog["tools"]["send_message"]["input_schema"]
+        self.assertIn("response_mode", send["optional"])
+        self.assertNotIn("response_mode", send["required"])
+        self.assertEqual(send["response_modes"], ["async", "sync"])
         self.assertEqual(
-            set(envelope["success_required"]),
-            {
-                "schema_version", "result_type", "ok", "state", "data",
-                "follow_ups", "metadata",
-            },
+            self.catalog["tools"]["wait_for_response"]["input_schema"]["modes"],
+            ["any", "all"],
         )
+        self.assertIn("watch_changes", self.catalog["tool_groups"]["continuation"])
+
+    def test_profiles_limit_tool_discovery(self):
+        profiles = self.catalog["profiles"]
+        self.assertIn("load_project", profiles["root_manager"])
+        self.assertIn("submit_review", profiles["reviewer"])
+        self.assertNotIn("accept_work", profiles["reviewer"])
+        self.assertIn("apply_patch", profiles["engineer"])
+        self.assertEqual(
+            profiles["operator"],
+            ["read_profile", "list_projects", "list_connections", "submit_command"],
+        )
+
+    def test_result_envelope_and_gate_revision_are_bound(self):
+        envelope = self.catalog["result_envelope"]
+        self.assertEqual(envelope["schema_version"], "acs-mcp-result/3")
         self.assertEqual(
             envelope["follow_up_required"], ["rel", "tool", "arguments"]
         )
         self.assertEqual(
-            set(self.catalog["result_types"]["message_submission"]),
-            {"operation", "message", "delivery", "response", "notification"},
+            self.gates["p2_surface_revision"], self.catalog["surface_revision"]
         )
         self.assertEqual(
-            self.catalog["receipt_order"],
-            [
-                "accepted_by_authority", "target_inbox_committed",
-                "runtime_dispatched", "runtime_acknowledged", "response_received",
-            ],
+            self.gates["gates"]["P2-REVIEW"]["requires"],
+            ["P2-MANAGEMENT-WORKFLOW"],
         )
-
-    def test_read_and_wait_contracts_cover_continuation(self):
-        read_tool = self.catalog["tools"]["read_resource"]
-        read = read_tool["input_schema"]
-        self.assertTrue(
-            {"summary", "result", "evidence", "history", "content"}
-            <= set(read["views"])
-        )
-        await_tool = self.catalog["tools"]["wait_for_response"]
-        await_schema = await_tool["input_schema"]
-        self.assertEqual(await_schema["modes"], ["any", "all"])
-        self.assertFalse(read_tool["annotations"]["readOnlyHint"])
-        self.assertFalse(await_tool["annotations"]["readOnlyHint"])
-        self.assertTrue(
-            self.catalog["tools"]["check_inbox"]["annotations"]["readOnlyHint"]
-        )
-        self.assertEqual(
-            self.catalog["tools"]["check_inbox"]["result_type"], "inbox_page"
-        )
-
-    def test_parameterized_tools_and_split_control_boundaries_are_explicit(self):
-        self.assertEqual(
-            self.catalog["tools"]["read_resource"]["input_schema"]["required"],
-            ["handle"],
-        )
-        self.assertIn(
-            "handles",
-            self.catalog["tools"]["wait_for_response"]["input_schema"]["required"],
-        )
-        self.assertIn(
-            "response_handle",
-            self.catalog["tools"]["set_notification"]["input_schema"]["required"],
-        )
-        self.assertNotEqual(
-            self.catalog["tools"]["cancel_work"]["result_type"],
-            self.catalog["tools"]["stop_attempt"]["result_type"],
-        )
-
-    def test_p2_workflow_gate_binds_the_surface_revision(self):
-        scenarios = self.gates["gates"]["P2-MCP-WORKFLOW"]["scenarios"]
-        self.assertEqual(self.gates["p2_surface_revision"], self.catalog["surface_revision"])
-        self.assertEqual(len(scenarios), 12)
-        self.assertEqual(len(set(scenarios)), 12)
-        self.assertEqual(
-            self.gates["gates"]["P2-REVIEW"]["requires"], ["P2-MCP-WORKFLOW"]
-        )
+        for gate in ("P2-MCP-WORKFLOW", "P2-MANAGEMENT-WORKFLOW"):
+            scenarios = self.gates["gates"][gate]["scenarios"]
+            self.assertEqual(len(scenarios), 12)
+            self.assertEqual(len(set(scenarios)), 12)
 
 
 if __name__ == "__main__":

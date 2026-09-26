@@ -177,7 +177,7 @@ class GateTests(unittest.TestCase):
                 self.assertEqual(self.check(self.records[name]), [])
 
     def test_uniform_flat_pins_and_explicit_machine_pins_are_compatible(self):
-        for name in ("P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW", "P2-REVIEW"):
+        for name in ("P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW", "P2-MANAGEMENT-WORKFLOW", "P2-REVIEW"):
             binding = self.records[name]["binding"]
             for field in ("harness", "driver"):
                 binding[field] = {"by_machine": {m: copy.deepcopy(binding[field]) for m in binding["machines"]}}

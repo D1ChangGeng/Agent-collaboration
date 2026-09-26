@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: `2026-09-11.1`.
+is determined by the named Gate records. Contract revision: 2026-09-22.4.
 
 ## Authority and inputs
 
@@ -106,16 +106,46 @@ entry points, including unauthorized and duplicate commands. A2A is an optional
 Gateway and ACP a Driver boundary, not alternative Domain authorities.
 
 The public P2 MCP surface is defined by
-[`P2-MCP-WORKFLOW-CONTRACT.md`](P2-MCP-WORKFLOW-CONTRACT.md). It exposes
-typed collaboration-plan, Harness-capacity, Message, response, resource, Inbox,
-notification, WorkItem and Runtime Attempt operations. `send_message` commits
-response tracking and completion notification in the same authoritative
-operation. Asynchronous response handling is the default; synchronous response
-handling observes the same stable response handle for a bounded interval.
-Completion notification is addressed to the initiating AgentSlot and follows
-its current Session binding. Session activity controls queue-versus-invoke
-admission, with `queue_until_idle` as the default delivery policy. Every result
-uses a result-type discriminator and executable follow-up calls.
+[P2-MCP-WORKFLOW-CONTRACT.md](P2-MCP-WORKFLOW-CONTRACT.md) and
+[P2-MANAGEMENT-WORKFLOW-CONTRACT.md](P2-MANAGEMENT-WORKFLOW-CONTRACT.md).
+Global installation is project-independent; project adoption records one stable
+project_id in the Management Root AGENTS block and machine manifest. Every
+project-scoped runtime tool carries that ID.
+
+Root Agent is an external Session role projection, while Project, Root, Route,
+Scope, AgentSlot and WorkItem retain durable identity. Local Sessions obtain
+project context from the Management Root. Web Sessions use list_projects and
+load_project through remote HTTPS MCP or an admitted Tunnel.
+
+The typed surface covers project context, Route and WorkItem management, team
+configuration, Harness and Source discovery, messaging, waiting, Review,
+acceptance, subscriptions and protected control. configure_team owns AgentSlot,
+role, Grant, Policy and budget bindings within an existing Scope. send_message
+commits response tracking and notification atomically. Async is the default and
+sync performs a bounded wait on the same response handle.
+
+Reusable user workflows are Skills. The MCP server provides live data,
+authorization and actions; Skills provide tool order, context hydration,
+incomplete-result handling, templates and completion criteria. Domain Command
+remains the deterministic internal protocol and submit_command remains an
+advanced Profile tool.
+
+### Review and product-capability boundary
+
+Independent Reviews prioritize the implemented architecture and product
+behavior visible through the Runtime. They inspect authority transactions,
+authorization, revisions and fencing, durable recovery, Node and Driver
+read-back, Harness lifecycle behavior, cross-Harness or cross-Machine flows,
+and user-visible results from representative fault paths. Each conclusion is
+bound to the exact source, runtime identity, receipts, read-back and cleanup
+evidence that supports it.
+
+Evidence integrity, expiry, validator scope, reviewer identity and acceptance
+authorization remain mandatory prerequisites. They establish whether a claim
+is admissible; they do not replace evidence that the implementation performs
+the promised product capability. Component-only, fixture-only, no-model,
+single-normal-delivery and offline-completeness results retain their narrower
+scope until the corresponding live behavior is read back.
 
 Directed CommunicationBinding resolves an authorized DeliveryPlan: addressing,
 message, activation and receipt providers plus policy constraints. Candidate
@@ -186,11 +216,12 @@ Tests with fakes remain unit/fixture evidence. Two processes on one host do not
 prove dual-machine support. Bootstrap SSH or native Codex messaging does not
 prove Collaboration Runtime delivery.
 
-P2 completion also requires the `P2-MCP-WORKFLOW` Gate. Representative evidence
-must include real Codex and OpenCode clients, default asynchronous and bounded
-synchronous send, Session-activity-aware delivery, completion notification,
-Session replacement, resource read and Inbox recovery, typed notification and
-execution control, aggregate waiting and high-level command workflows.
+P2 completion requires P2-MCP-WORKFLOW and P2-MANAGEMENT-WORKFLOW.
+Representative evidence includes real Codex and OpenCode clients, a remote
+web-capable MCP client, explicit project isolation, local and web context
+hydration, profile-filtered tools, Source reads, default asynchronous and bounded
+synchronous messaging, Session-aware notification, Review, Inbox recovery and
+Skill workflows invoked from one-sentence user entries.
 
 ## External source reference
 
