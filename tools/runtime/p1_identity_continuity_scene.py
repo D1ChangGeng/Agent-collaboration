@@ -525,6 +525,35 @@ def _pid_live(pid: int) -> bool:
     return type(pid) is int and pid > 0 and Path(f"/proc/{pid}").exists()
 
 
+def _exit_witness(
+    process: multiprocessing.Process, label: str,
+) -> dict[str, Any]:
+    if type(process.pid) is not int or process.pid <= 0 or process.exitcode is None:
+        raise IdentityContinuityRejected(f"{label} process exit was not observed")
+    return {
+        "pid": process.pid,
+        "exitcode": process.exitcode,
+        "joined": True,
+    }
+
+
+def _validate_exit_witnesses(proof: dict[str, Any], pids: dict[str, int]) -> dict[str, dict[str, Any]]:
+    witnesses = proof.get("process_exit_witnesses")
+    if not isinstance(witnesses, dict) or set(witnesses) != set(pids):
+        raise IdentityContinuityRejected("OS process exit witness set is incomplete")
+    for name, pid in pids.items():
+        witness = witnesses.get(name)
+        if (
+            not isinstance(witness, dict)
+            or set(witness) != {"pid", "exitcode", "joined"}
+            or witness["pid"] != pid
+            or type(witness["exitcode"]) is not int
+            or witness["joined"] is not True
+        ):
+            raise IdentityContinuityRejected("OS process exit witness is invalid")
+    return witnesses
+
+
 def _port_closed(port: int) -> bool:
     try:
         with socket.create_connection(("127.0.0.1", port), timeout=0.2):
@@ -1117,7 +1146,7 @@ def _rotate_receiver(
     attempt_id: str,
     commit: str,
     tree: str,
-) -> int:
+) -> tuple[int, dict[str, Any]]:
     authority = resources.authority
     observer = resources.observer
     if resources.old_receiver is None:
@@ -1126,6 +1155,7 @@ def _rotate_receiver(
     _stop_owned(resources.old_receiver, "old receiver")
     if _pid_live(old_receiver_pid):
         raise IdentityContinuityRejected("old receiver PID remains live")
+    old_receiver_witness = _exit_witness(resources.old_receiver, "old receiver")
 
     with authority._connect() as connection:
         observed_started_at = connection.execute("SELECT clock_timestamp()").fetchone()[0]
@@ -1258,7 +1288,11 @@ def _rotate_receiver(
         ledger_path=str(resources.receiver_ledger),
         expected_boot_incarnation=resources.new_boot,
         journal_generation=2,
-        old_boot_isolation_ref=f"pid:{old_receiver_pid}:exited",
+        old_boot_isolation_ref=(
+            "exit-witness:" + json.dumps(
+                old_receiver_witness, sort_keys=True, separators=(",", ":"),
+            )
+        ),
         drop_response_after_commit_once="delivery.recover",
     )
     resources.new_binding = binding
@@ -1283,7 +1317,7 @@ def _rotate_receiver(
         expires_at=bind.deadline,
     ))
     resources.mutation_command_ids.append(bind.command_id)
-    return old_receiver_pid
+    return old_receiver_pid, old_receiver_witness
 
 
 def _signed_exchange_rows(
@@ -1578,9 +1612,9 @@ def _os_readback(proof: dict[str, Any]) -> dict[str, Any]:
     }
     private_paths = [Path(value) for value in proof["removed_private_paths"]]
     certificate = Path(proof["certificate_evidence_path"])
+    witnesses = _validate_exit_witnesses(proof, pids)
     if (
-        any(_pid_live(pid) for pid in pids.values())
-        or len(set(pids.values())) != len(pids)
+        len(set(pids.values())) != len(pids)
         or not _port_closed(proof["old_receiver_port"])
         or not _port_closed(proof["new_receiver_port"])
         or any(path.exists() for path in private_paths)
@@ -1596,6 +1630,7 @@ def _os_readback(proof: dict[str, Any]) -> dict[str, Any]:
         raise IdentityContinuityRejected("OS process/TLS/boot/cleanup readback changed")
     return {
         "exited_pids": pids,
+        "exit_witnesses": witnesses,
         "ports_closed": [proof["old_receiver_port"], proof["new_receiver_port"]],
         "tls_version": proof["tls_version"],
         "certificate_sha256": proof["certificate_sha256"],
@@ -1723,7 +1758,7 @@ def _run_scene(
     (ordinal, attempt_id, dispatch_id, _, _selection, selection_digest,
      _invocation, invocation_digest) = attempt[0]
 
-    old_receiver_pid = _rotate_receiver(
+    old_receiver_pid, old_receiver_witness = _rotate_receiver(
         resources, work_id=work_id, attempt_id=attempt_id, commit=commit, tree=tree,
     )
     if resources.new_binding is None or resources.new_receiver is None or resources.new_config is None:
@@ -1923,6 +1958,18 @@ def _run_scene(
         "temporal_submitter_pid": submitter.pid,
         "old_receiver_port": resources.old_binding.locator_port,
         "new_receiver_port": resources.new_binding.locator_port,
+        "process_exit_witnesses": {
+            "old_core": _exit_witness(core, "old Core"),
+            "old_receiver": old_receiver_witness,
+            "old_temporal_worker": _exit_witness(crash_worker, "first Temporal Worker"),
+            "temporal_submitter": _exit_witness(submitter, "Temporal submission"),
+            "replacement_core": _exit_witness(
+                replacement_worker, "replacement Temporal Worker",
+            ),
+            "replacement_receiver": _exit_witness(
+                resources.new_receiver, "replacement receiver",
+            ),
+        },
         "workflow_id": workflow_id,
         "run_id": run_id,
         "queue": queue,

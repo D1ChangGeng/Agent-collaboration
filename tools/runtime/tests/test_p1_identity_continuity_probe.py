@@ -28,6 +28,7 @@ from tools.runtime.p1_identity_continuity_probe import (
 from tools.runtime.p1_identity_continuity_scene import (
     IdentityContinuityRejected,
     _checkpoint_path,
+    _os_readback,
     _read_checkpoint,
     finalize_checkpoint,
     prepare_checkpoint,
@@ -336,6 +337,79 @@ def test_gate_qualification_rejects_component_or_missing_evidence(change, error)
 def test_gate_qualification_accepts_only_complete_live_layers():
     value = qualified_gate()
     assert require_gate_qualification(value) is value
+
+
+def _os_readback_fixture(tmp_path):
+    certificate = tmp_path / "peer-certificate.der"
+    certificate.write_bytes(b"fixture-certificate")
+    certificate.chmod(0o600)
+    pids = {
+        "old_core": 9,
+        "old_receiver": 6,
+        "old_temporal_worker": 51,
+        "temporal_submitter": 15,
+        "replacement_core": 89,
+        "replacement_receiver": 11,
+    }
+    witnesses = {
+        name: {
+            "pid": pid,
+            "exitcode": 0,
+            "joined": True,
+        }
+        for index, (name, pid) in enumerate(pids.items())
+    }
+    return {
+        **{f"{name}_pid": pid for name, pid in pids.items()},
+        "process_exit_witnesses": witnesses,
+        "new_receiver_pid": pids["replacement_receiver"],
+        "removed_private_paths": [str(tmp_path / "removed-a"), str(tmp_path / "removed-b")],
+        "certificate_evidence_path": str(certificate),
+        "certificate_sha256": "certificate-digest",
+        "old_receiver_port": 41001,
+        "new_receiver_port": 41002,
+        "tls_version": "TLSv1.3",
+        "old_boot": "boot-old",
+        "new_boot": "boot-new",
+        "old_boot_revision": 1,
+        "new_boot_revision": 2,
+    }
+
+
+def test_os_readback_accepts_stable_exit_witness_when_namespace_pids_collide(
+    tmp_path, monkeypatch,
+):
+    proof = _os_readback_fixture(tmp_path)
+    monkeypatch.setattr(identity_scene, "_pid_live", lambda _pid: True)
+    monkeypatch.setattr(identity_scene, "_port_closed", lambda _port: True)
+    monkeypatch.setattr(identity_scene, "tls_fingerprint", lambda _value: "certificate-digest")
+    observed = _os_readback(proof)
+    assert observed["exited_pids"] == {
+        name: proof[f"{name}_pid"] for name in (
+            "old_core", "old_receiver", "old_temporal_worker", "temporal_submitter",
+            "replacement_core", "replacement_receiver",
+        )
+    }
+    assert observed["exit_witnesses"] == proof["process_exit_witnesses"]
+
+
+def test_os_readback_rejects_bare_pids_even_when_proc_namespace_is_empty(
+    tmp_path, monkeypatch,
+):
+    proof = _os_readback_fixture(tmp_path)
+    proof.pop("process_exit_witnesses")
+    monkeypatch.setattr(identity_scene, "_pid_live", lambda _pid: False)
+    monkeypatch.setattr(identity_scene, "_port_closed", lambda _port: True)
+    monkeypatch.setattr(identity_scene, "tls_fingerprint", lambda _value: "certificate-digest")
+    with pytest.raises(IdentityContinuityRejected, match="exit witness"):
+        _os_readback(proof)
+
+
+def test_os_readback_rejects_forged_unjoined_exit_witness(tmp_path, monkeypatch):
+    proof = _os_readback_fixture(tmp_path)
+    proof["process_exit_witnesses"]["old_core"]["joined"] = False
+    with pytest.raises(IdentityContinuityRejected, match="exit witness"):
+        identity_scene._os_readback(proof)
 
 
 def observed_fixture(tmp_path):
