@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import sys
 import tempfile
@@ -137,11 +138,16 @@ def sdk_parameters(f, tmp_path):
 
 
 def complete_response(f, message_id):
+    response = {"text": "fixture completion"}
+    response_digest = hashlib.sha256(json.dumps(
+        response, sort_keys=True, separators=(",", ":"),
+    ).encode()).hexdigest()
     with psycopg.connect(f.dsn) as connection:
         connection.execute("INSERT INTO delivery_receipts(tenant_id,message_id,receipt_id,layer,evidence_json) "
             "VALUES ('local-tenant',%s,%s,'response_received',%s) ON CONFLICT DO NOTHING",
             (message_id, "fixture-response:" + message_id, json.dumps({"source": "fixture-completion",
-                "response": {"text": "fixture completion"}})))
+                "response_artifact_ref": "artifact:" + response_digest,
+                "response_digest": response_digest})))
         connection.execute("UPDATE delivery_messages SET receipt_high_water='response_received',state='delivered' "
                            "WHERE message_id=%s", (message_id,))
 

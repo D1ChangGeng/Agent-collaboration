@@ -22,7 +22,7 @@ async def serve_stdio(server):
         await server.run(read, write, server.create_initialization_options())
 
 
-def main(argv=None):
+def main(argv=None, *, delivery_endpoints=None):
     parser = SafeArguments(prog="acs-project-runtime")
     parser.add_argument("--config", required=True)
     parser.add_argument("--catalog", type=Path, required=True)
@@ -32,7 +32,9 @@ def main(argv=None):
     try:
         args = parser.parse_args(argv)
         catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
-        with configured_service(args.config) as (service, settings), ExitStack() as resources:
+        with configured_service(args.config, delivery_endpoints=delivery_endpoints) as (
+            service, settings,
+        ), ExitStack() as resources:
             sources = None
             configs = settings.artifact_configs()
             if configs and any(item.authorized_source_roots for item in configs):

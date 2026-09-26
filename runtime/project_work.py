@@ -1,14 +1,24 @@
 """Work intent, handoff and independent Review adapters for the shared Domain."""
 from __future__ import annotations
 
+import base64
 import uuid
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from runtime.artifacts import ArtifactError
 from runtime.errors import AcceptanceGuardFailed, AuthorizationDenied, NotFound, RevisionConflict
-from runtime.models import AuthenticatedContext, EvidenceRecord, TransitionRequest, WorkItemState
+from runtime.models import (
+    ArtifactRef,
+    AuthenticatedContext,
+    EvidenceRecord,
+    TransitionRequest,
+    WorkItemState,
+)
 from runtime.project_common import canonical, digest, handle, parse_handle
+from runtime.project_source import read_artifact_reference
+from runtime.source import SourceError
 
 
 class EvidenceDisposition(BaseModel):
@@ -41,14 +51,27 @@ class WorkActions:
 
     def _list_evidence(self, _authority, cursor, _project, _command, args, _credential):
         work_id, _ = self._project_work(cursor, args["project_id"], args["target_handle"])
-        cursor.execute("SELECT evidence_id,source_class,evidence_state,candidate_ref,baseline_ref,bundle_ref "
-                       "FROM evidence WHERE tenant_id=%s AND work_item_id=%s ORDER BY evidence_id",
+        cursor.execute("SELECT e.evidence_id,e.source_class,e.evidence_state,e.candidate_ref,"
+                       "e.baseline_ref,e.bundle_ref,b.bundle_json FROM evidence e "
+                       "LEFT JOIN evidence_bundles b ON b.tenant_id=e.tenant_id "
+                       "AND b.evidence_id=e.evidence_id WHERE e.tenant_id=%s "
+                       "AND e.work_item_id=%s ORDER BY e.evidence_id",
                        (self.context.tenant_id, work_id))
-        rows = [{"evidence_handle": handle("evidence", args["project_id"], row[0]),
-                 "evidence_class": row[1], "state": row[2], "candidate_ref": row[3],
-                 "source_baseline": row[4], "bundle_handle": handle("bundle", args["project_id"], row[5]) if row[5] else None}
-                for row in cursor.fetchall() if (not args.get("evidence_classes") or row[1] in args["evidence_classes"])
-                and (not args.get("kinds") or ("bundle" if row[5] else "summary") in args["kinds"])]
+        rows = []
+        for row in cursor.fetchall():
+            if ((args.get("evidence_classes") and row[1] not in args["evidence_classes"])
+                    or (args.get("kinds") and ("bundle" if row[5] else "summary") not in args["kinds"])):
+                continue
+            references = [] if row[6] is None else [
+                *row[6].get("artifact_refs", []), *row[6].get("readback_refs", []),
+            ]
+            rows.append({"evidence_handle": handle("evidence", args["project_id"], row[0]),
+                "evidence_class": row[1], "state": row[2], "candidate_ref": row[3],
+                "source_baseline": row[4],
+                "bundle_handle": handle("bundle", args["project_id"], row[5]) if row[5] else None,
+                "artifact_handles": sorted({handle("artifact", args["project_id"],
+                    reference["scope_id"] + "." + reference["sha256"])
+                    for reference in references})})
         return self._page_result(args["project_id"], rows, args, "evidence_handle")
 
     def _list_reviews(self, authority, cursor, project, _command, args, _credential):
@@ -156,14 +179,112 @@ class WorkActions:
         elif kind == "evidence":
             record, bundle = self._evidence(cursor, project_id, args["handle"])
             data = {"revision": 1, "record": record, "bundle": bundle if view in {"detail", "evidence"} else None}
+        elif kind == "accepted":
+            try:
+                work_id, revision_text = identifier.rsplit(".", 1)
+                revision = int(revision_text)
+            except (ValueError, TypeError):
+                raise ValueError("AcceptedState handle is invalid") from None
+            cursor.execute("SELECT to_jsonb(a) FROM accepted_state_revisions a "
+                           "JOIN collaboration_work_links l USING(tenant_id,work_item_id) "
+                           "WHERE a.tenant_id=%s AND l.project_id=%s AND a.work_item_id=%s "
+                           "AND a.revision=%s", (self.context.tenant_id, project_id,
+                           work_id, revision))
+            row = cursor.fetchone()
+            if row is None:
+                raise NotFound("accepted_state", identifier)
+            data = {"revision": revision, "accepted_state": row[0],
+                    "work_handle": handle("work", project_id, work_id)}
+        elif kind == "artifact":
+            if len(identifier) < 66 or identifier[-65] != ".":
+                raise ValueError("Artifact handle is invalid")
+            scope_id, sha256 = identifier[:-65], identifier[-64:]
+            authority._authorize(command, cursor, "artifact.read", scope_id)
+            references = []
+            cursor.execute("SELECT f.value->'artifact_ref' FROM collaboration_source_snapshots p "
+                           "JOIN collaboration_sources s USING(tenant_id,project_id,source_id) "
+                           "CROSS JOIN LATERAL jsonb_array_elements(p.snapshot_json->'files') f "
+                           "WHERE p.tenant_id=%s AND p.project_id=%s "
+                           "AND p.snapshot_json->>'scope_id'=%s "
+                           "AND f.value->'artifact_ref'->>'sha256'=%s",
+                           (self.context.tenant_id, project_id, scope_id, sha256))
+            references.extend(row[0] for row in cursor.fetchall())
+            cursor.execute("SELECT p.snapshot_json->'manifest_ref' FROM collaboration_source_snapshots p "
+                           "WHERE p.tenant_id=%s AND p.project_id=%s "
+                           "AND p.snapshot_json->>'scope_id'=%s "
+                           "AND p.snapshot_json->'manifest_ref'->>'sha256'=%s",
+                           (self.context.tenant_id, project_id, scope_id, sha256))
+            references.extend(row[0] for row in cursor.fetchall())
+            cursor.execute("SELECT r.value FROM evidence_bundles b "
+                           "JOIN collaboration_work_links l USING(tenant_id,work_item_id) "
+                           "CROSS JOIN LATERAL jsonb_array_elements("
+                           "COALESCE(b.bundle_json->'artifact_refs','[]'::jsonb) || "
+                           "COALESCE(b.bundle_json->'readback_refs','[]'::jsonb)) r "
+                           "WHERE b.tenant_id=%s AND l.project_id=%s "
+                           "AND r.value->>'scope_id'=%s AND r.value->>'sha256'=%s",
+                           (self.context.tenant_id, project_id, scope_id, sha256))
+            references.extend(row[0] for row in cursor.fetchall())
+            unique = {canonical(reference): reference for reference in references}
+            store = self.sources.store if self.sources is not None else self.artifacts
+            if not unique:
+                cursor.execute("SELECT 1 FROM delivery_receipts r JOIN delivery_messages m "
+                               "USING(tenant_id,message_id) JOIN collaboration_work_links l "
+                               "ON l.tenant_id=m.tenant_id "
+                               "AND l.work_item_id=m.packet_json->>'work_item_id' "
+                               "WHERE r.tenant_id=%s AND l.project_id=%s "
+                               "AND m.packet_json->>'target_scope_id'=%s "
+                               "AND r.layer='response_received' "
+                               "AND r.evidence_json->>'response_digest'=%s",
+                               (self.context.tenant_id, project_id, scope_id, sha256))
+                if cursor.fetchone() and store is not None:
+                    provider = store.for_scope(scope_id) if hasattr(store, "for_scope") else store
+                    try:
+                        reference = provider.reference_for_digest(
+                            sha256, kind="readback", media_type="application/json",
+                        )
+                    except ArtifactError as error:
+                        raise SourceError("Artifact reference is unavailable") from error
+                    unique[canonical(reference.model_dump(mode="json"))] = reference.model_dump(mode="json")
+            if len(unique) != 1 or store is None:
+                raise NotFound("artifact", identifier)
+            reference = ArtifactRef.model_validate(next(iter(unique.values())), strict=True)
+            if reference.scope_id != scope_id or reference.sha256 != sha256:
+                raise SourceError("Artifact handle differs from stored identity")
+            reference, payload = read_artifact_reference(store, reference,
+                args.get("max_inline_bytes", 16384), authority, command)
+            data = {"revision": 1, "artifact_ref": reference.model_dump(mode="json"),
+                    "content_state": "verified_reference"}
+            if args.get("content_mode", "reference") not in {"inline", "reference"}:
+                raise ValueError("invalid Artifact content mode")
+            if args.get("content_mode", "reference") == "inline" and payload is not None:
+                if reference.media_type.startswith("text/") or reference.media_type == "application/json":
+                    try:
+                        data["content"] = payload.decode("utf-8")
+                    except UnicodeDecodeError as error:
+                        raise SourceError("text Artifact is not UTF-8") from error
+                else:
+                    data["content_base64"] = base64.b64encode(payload).decode("ascii")
+                if len(canonical(data).encode()) <= args.get("max_inline_bytes", 16384):
+                    data["content_state"] = "inline"
+                else:
+                    data.pop("content", None)
+                    data.pop("content_base64", None)
         else:
             raise ValueError("unsupported resource kind")
         if args.get("at_revision") is not None and args["at_revision"] != data["revision"]:
             raise RevisionConflict(identifier, args["at_revision"], data["revision"])
         maximum = args.get("max_inline_bytes", 16384)
-        if type(maximum) is not int or not 1 <= maximum <= 65536 or len(canonical(data).encode()) > maximum:
+        if type(maximum) is not int or not 1 <= maximum <= 65536:
+            raise ValueError("resource output bound is invalid")
+        result = dict(data, project_id=project_id, handle=args["handle"])
+        if (kind == "artifact" and result.get("content_state") == "inline"
+                and len(canonical(result).encode()) > maximum):
+            result.pop("content", None)
+            result.pop("content_base64", None)
+            result["content_state"] = "verified_reference"
+        if len(canonical(result).encode()) > maximum:
             raise ValueError("resource exceeds requested inline bound")
-        return "observed", dict(data, project_id=project_id, handle=args["handle"]), []
+        return "observed", result, []
 
     def _project_work(self, cursor, project_id, work_handle):
         work_id = parse_handle(work_handle, "work", project_id)
@@ -229,6 +350,54 @@ class WorkActions:
             target_id=work_id, state="work.revised", revision=work[1]+1)
         return "revised", {"project_id": args["project_id"], "work_handle": args["work_handle"],
                            "revision": work[1]+1, "operation_id": result.operation_id}, []
+
+    def _cancel_work(self, authority, cursor, _project, command, args, _credential):
+        """End the durable objective without pretending to stop a native process."""
+        work_id, work = self._project_work(cursor, args["project_id"], args["work_handle"])
+        authority._authorize(command, cursor, "work.manage", work[0])
+        if work[1] != args["expected_revision"]:
+            raise RevisionConflict(work_id, args["expected_revision"], work[1])
+        if work[2] != "candidate" or work[3] == "cancelled":
+            raise AcceptanceGuardFailed("sealed or already cancelled Work cannot be cancelled")
+        reason = args["reason"]
+        if not isinstance(reason, str) or not 1 <= len(reason) <= 2048:
+            raise ValueError("cancellation reason is outside bounds")
+        cursor.execute("SELECT attempt_id,status,runtime_id,enrollment_node_id,enrollment_revision "
+                       "FROM attempts WHERE tenant_id=%s AND work_item_id=%s ORDER BY attempt_id FOR UPDATE",
+                       (self.context.tenant_id, work_id))
+        attempts = [{"attempt_handle": handle("attempt", args["project_id"], row[0]),
+            "revision": 1 if row[1] == "running" else max(row[4] or 1, 2),
+            "state": row[1], "runtime_id": row[2], "node_id": row[3],
+            "control_required": row[1] == "running"} for row in cursor.fetchall()]
+        cursor.execute("SELECT effect_id,status,readback_ref FROM effects WHERE tenant_id=%s "
+                       "AND work_item_id=%s AND status IN ('prepared','uncertain') ORDER BY effect_id",
+                       (self.context.tenant_id, work_id))
+        unresolved_effects = [{"effect_handle": handle("effect", args["project_id"], row[0]),
+            "state": row[1], "readback_ref": row[2]} for row in cursor.fetchall()]
+        self._save_work_revision(cursor, command, args, work_id, work)
+        definition = dict(work[6], cancellation={"reason": reason,
+            "requested_by": command.principal_ref, "command_id": command.command_id})
+        cursor.execute("UPDATE work_items SET execution_status='cancelled',revision=revision+1,"
+                       "updated_at=clock_timestamp() WHERE tenant_id=%s AND work_item_id=%s",
+                       (self.context.tenant_id, work_id))
+        cursor.execute("UPDATE collaboration_work_links SET definition=%s WHERE tenant_id=%s "
+                       "AND project_id=%s AND work_item_id=%s", (canonical(definition),
+                       self.context.tenant_id, args["project_id"], work_id))
+        result = self._management_record(authority, cursor, command, args,
+            target_kind="work_item", target_id=work_id, state="work.cancelled",
+            revision=work[1] + 1)
+        follow = [{"rel": "stop_running_attempt", "tool": "stop_attempt", "arguments": {
+            "client_request_id": args["client_request_id"] + ":stop:" +
+                parse_handle(item["attempt_handle"], "attempt", args["project_id"]),
+            "project_id": args["project_id"], "attempt_handle": item["attempt_handle"],
+            "expected_revision": item["revision"], "reason": reason,
+            "deadline": args["deadline"],
+        }} for item in attempts if item["control_required"]]
+        return "cancelled", {"project_id": args["project_id"],
+            "work_handle": args["work_handle"], "revision": work[1] + 1,
+            "work_state": work[2], "execution_status": "cancelled",
+            "operation_id": result.operation_id, "accepted_state_changed": False,
+            "attempts": attempts, "unresolved_effects": unresolved_effects}, follow
 
     def _handoff_work(self, authority, cursor, _project, command, args, _credential):
         work_id, work = self._project_work(cursor, args["project_id"], args["work_handle"])
@@ -496,5 +665,7 @@ class WorkActions:
             evidence_refs=tuple(sorted(evidence_refs)), review_ref=min(review_ids),
             effect_refs=tuple(effects["effect_refs"]), readback_refs=tuple(effects["readback_refs"])))
         return result.state, {"project_id": args["project_id"], "work_handle": args["work_handle"],
+            "accepted_state_handle": handle("accepted", args["project_id"],
+                                            work_id + "." + str(result.revision)),
             "revision": result.revision, "operation_id": result.operation_id,
             "accepted_by": authority.context.principal_ref if result.state == "accepted" else None}, []

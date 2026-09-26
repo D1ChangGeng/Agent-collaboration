@@ -301,6 +301,30 @@ class LocalArtifactStore:
             self._read_verified(ref)
             return ref
 
+    def reference_for_digest(self, digest: str, *, kind: str = "readback",
+                             media_type: str = "application/json") -> ArtifactRef:
+        """Resolve metadata only inside this already-authorized Scope CAS."""
+        with self._lock:
+            root = self._ensure_open()
+            if not isinstance(digest, str) or re.fullmatch(r"[a-f0-9]{64}", digest) is None:
+                raise ArtifactError("artifact digest is invalid")
+            parent = self._open_child_directory(root, digest[:2], create=False)
+            try:
+                try:
+                    info = os.stat(digest, dir_fd=parent, follow_symlinks=False)
+                except OSError as error:
+                    raise ArtifactError("artifact digest target is unavailable") from error
+            finally:
+                os.close(parent)
+            if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1
+                    or not 0 <= info.st_size <= self.max_bytes):
+                raise ArtifactError("artifact digest target is not a bounded immutable file")
+            ref = ArtifactRef(path=self._relative_path(digest), sha256=digest,
+                size_bytes=info.st_size, media_type=media_type, kind=kind,
+                scope_id=self.scope_id, immutable=True)
+            self._validate_ref(ref)
+            return ref
+
     def read(self, ref: ArtifactRef) -> bytes:
         with self._lock:
             return self._read_verified(ref)
@@ -397,6 +421,26 @@ class WindowsArtifactStore:
         self.read(ref)
         return ref
 
+    def reference_for_digest(self, digest: str, *, kind: str = "readback",
+                             media_type: str = "application/json") -> ArtifactRef:
+        with self._lock:
+            if self._closed or not isinstance(digest, str) or re.fullmatch(r"[a-f0-9]{64}", digest) is None:
+                raise ArtifactError("Windows artifact digest is unavailable")
+            target = self._root / self._relative_path(digest)
+            try:
+                info = target.stat(follow_symlinks=False)
+            except OSError as error:
+                raise ArtifactError("Windows artifact digest target is unavailable") from error
+            if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1
+                    or getattr(info, "st_file_attributes", 0) & 0x400
+                    or not 0 <= info.st_size <= self.max_bytes):
+                raise ArtifactError("Windows artifact digest target is invalid")
+            ref = ArtifactRef(path=self._relative_path(digest), sha256=digest,
+                size_bytes=info.st_size, media_type=media_type, kind=kind,
+                scope_id=self.scope_id, immutable=True)
+            self._validate_ref(ref)
+            return ref
+
     def read(self, ref: ArtifactRef) -> bytes:
         with self._lock:
             self._validate_ref(ref)
@@ -408,7 +452,7 @@ class WindowsArtifactStore:
     def close(self) -> None:
         self._closed = True
 
-    def __enter__(self) -> WindowsArtifactStore:
+    def __enter__(self) -> Self:
         if self._closed:
             raise ArtifactError("artifact store is closed")
         return self

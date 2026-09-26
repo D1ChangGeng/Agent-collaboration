@@ -202,11 +202,20 @@ class RouteActions:
             parameters = (self.context.tenant_id, project_id, identifier)
             if kind == "scope":
                 return self._scope(cursor, *parameters[:2], value)
+            if kind == "artifact":
+                if len(identifier) < 66 or identifier[-65] != ".":
+                    raise ValueError("Artifact handle is invalid")
+                return self._scope(cursor, self.context.tenant_id, project_id,
+                                   handle("scope", project_id, identifier[:-65]))
             if kind == "route":
                 cursor.execute("SELECT scope_id FROM collaboration_routes WHERE tenant_id=%s AND project_id=%s AND route_id=%s", parameters)
             elif kind == "work":
                 cursor.execute("SELECT w.scope_id FROM collaboration_work_links l JOIN work_items w USING(tenant_id,work_item_id) "
                                "WHERE l.tenant_id=%s AND l.project_id=%s AND l.work_item_id=%s", parameters)
+            elif kind == "attempt":
+                cursor.execute("SELECT a.scope_id FROM attempts a JOIN collaboration_work_links l "
+                               "ON l.tenant_id=a.tenant_id AND l.work_item_id=a.work_item_id "
+                               "WHERE l.tenant_id=%s AND l.project_id=%s AND a.attempt_id=%s", parameters)
             elif kind in {"message", "response"}:
                 cursor.execute("SELECT m.packet_json->>'target_scope_id' FROM delivery_messages m "
                                "JOIN collaboration_work_links l ON l.tenant_id=m.tenant_id AND l.work_item_id=m.packet_json->>'work_item_id' "
@@ -217,6 +226,18 @@ class RouteActions:
                 cursor.execute(f"SELECT w.scope_id FROM {table} e JOIN collaboration_work_links l USING(tenant_id,work_item_id) "
                                "JOIN work_items w USING(tenant_id,work_item_id) "
                                f"WHERE l.tenant_id=%s AND l.project_id=%s AND e.{identity}=%s", parameters)
+            elif kind == "accepted":
+                try:
+                    work_id, revision = identifier.rsplit(".", 1)
+                    int(revision)
+                except (ValueError, TypeError):
+                    raise ValueError("AcceptedState handle is invalid") from None
+                cursor.execute("SELECT w.scope_id FROM accepted_state_revisions a "
+                               "JOIN collaboration_work_links l USING(tenant_id,work_item_id) "
+                               "JOIN work_items w USING(tenant_id,work_item_id) "
+                               "WHERE l.tenant_id=%s AND l.project_id=%s "
+                               "AND a.work_item_id=%s AND a.revision=%s",
+                               (self.context.tenant_id, project_id, work_id, int(revision)))
             else:
                 continue
             row = cursor.fetchone()

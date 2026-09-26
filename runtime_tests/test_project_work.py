@@ -5,16 +5,20 @@ import hashlib
 import json
 import sys
 import uuid
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import UTC, datetime
 
 import psycopg
 import pytest
 
 from runtime.auth import LocalCredentialAuthenticator
+from runtime.codex_driver import BindingIdentity, DriverJournal, DriverRejected, OutcomeUncertain
+from runtime.delivery_node import LocalNodeEndpoint
 from runtime.domain import DomainAuthority
 from runtime.mcp_runtime import McpRuntime
 from runtime.models import EvidenceBundle, EvidenceRecord, ExecutionReceipt
+from runtime.native_delivery import NativeDeliveryAdapter
+from runtime.node import NodeJournal
 from runtime.project_service import ProjectService
 from runtime.surfaces import SharedService
 from runtime_tests.enrollment_fixture import enrollment_command, register_execution_fixture
@@ -83,6 +87,222 @@ def test_known_transport_credential_is_never_persisted_as_intent(managed_work):
     f = managed_work
     assert f.mcp.call("revise_work", dict(revise_args(), changes={"goal": f.credential}))["isError"]
     assert scalar(f, "SELECT count(*) FROM work_item_revisions") == 0
+
+
+def cancel_args(**changes):
+    value = {"client_request_id": "cancel-1", "project_id": "project-alpha",
+        "work_handle": "work:project-alpha:mcp-work", "expected_revision": 0,
+        "reason": "the durable objective is no longer required", "deadline": deadline()}
+    value.update(changes)
+    return value
+
+
+class AttemptControlDriver:
+    evidence_class = "fixture_callback"
+
+    def __init__(self, path, identity, *, outcome="stopped"):
+        self.binding_id = "attempt-control-binding"
+        self.identity = identity
+        self.journal = DriverJournal(path)
+        self.outcome = outcome
+        self.calls = 0
+
+    def terminate(self, operation):
+        record = self.journal.begin(operation, self.binding_id, "terminate",
+                                    {"binding": asdict(self.identity)})
+        if record["state"] == "acknowledged":
+            return record["result"]
+        self.calls += 1
+        if self.outcome == "rejected":
+            self.journal.finish(operation.operation_id, "rejected",
+                                {"error_type": "DriverRejected"})
+            raise DriverRejected("fixture rejects before control mutation")
+        if self.outcome == "uncertain":
+            self.journal.event(operation.operation_id, "process_dispatch", {"fixture": True})
+            self.journal.finish(operation.operation_id, "uncertain",
+                                {"error_type": "OutcomeUncertain"})
+            raise OutcomeUncertain("fixture control acknowledgement lost")
+        result = {"binding_id": self.binding_id, "binding": asdict(self.identity),
+                  "receipt_layer": "process_tree_terminated",
+                  "supervisor_proof": {"verified": True, "fixture_scope": True}}
+        self.journal.finish(operation.operation_id, "acknowledged", result)
+        return result
+
+
+def install_attempt_control(f, *, outcome="stopped", wrapped=False):
+    enrolled = register_execution_fixture(f.authority, work_item_id="mcp-work",
+        runtime_id="control-runtime", attempt_id="control-attempt", provider="fixture-node")
+    attempt = enrolled.attempt
+    with psycopg.connect(f.dsn) as connection:
+        machine_id = connection.execute("SELECT machine_id FROM enrolled_node_bindings "
+                                        "WHERE tenant_id=%s AND node_id=%s AND binding_revision=%s",
+                                        (f.authority.tenant_id, attempt["enrollment_node_id"],
+                                         attempt["enrollment_node_binding_revision"])).fetchone()[0]
+    identity = BindingIdentity(node_id=attempt["enrollment_node_id"],
+        node_boot_id=attempt["enrollment_boot_incarnation"],
+        runtime_id=attempt["enrollment_runtime_id"], attempt_id="control-attempt",
+        agent_slot_id=attempt["agent_slot_id"],
+        revision=attempt["enrollment_node_binding_revision"])
+    driver = AttemptControlDriver(f.path.parent / ("control-driver-" + outcome + ".sqlite"),
+                                  identity, outcome=outcome)
+    node = NodeJournal(f.path.parent / ("control-node-" + outcome + ".sqlite"),
+        machine_id=machine_id, node_id=identity.node_id,
+        boot_incarnation=identity.node_boot_id)
+    provider = driver
+    if wrapped:
+        provider = object.__new__(NativeDeliveryAdapter)
+        provider.evidence_class = "native_driver_observation"
+        provider.driver = driver
+        provider._check_binding = lambda: None
+    endpoint = LocalNodeEndpoint(node, attempt["scope_id"], attempt["agent_slot_id"], provider)
+    f.authority._delivery_endpoints["attempt-control"] = endpoint
+    return driver
+
+
+def test_cancel_work_preserves_running_attempt_and_returns_separate_control(managed_work):
+    f = managed_work
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("INSERT INTO attempts(attempt_id,tenant_id,work_item_id,agent_slot_id,status) "
+                           "VALUES ('active-attempt','local-tenant','mcp-work','local-slot','running')")
+        connection.execute("UPDATE work_items SET execution_status='running' "
+                           "WHERE work_item_id='mcp-work'")
+    args = cancel_args()
+    result = ok(f, "cancel_work", args)
+    assert result["state"] == "cancelled"
+    assert result["data"]["execution_status"] == "cancelled"
+    assert result["data"]["accepted_state_changed"] is False
+    assert result["data"]["attempts"] == [{
+        "attempt_handle": "attempt:project-alpha:active-attempt", "revision": 1,
+        "state": "running", "runtime_id": None, "node_id": None,
+        "control_required": True,
+    }]
+    assert result["follow_ups"][0]["tool"] == "stop_attempt"
+    assert scalar(f, "SELECT status FROM attempts WHERE attempt_id='active-attempt'") == "running"
+    assert scalar(f, "SELECT execution_status FROM work_items WHERE work_item_id='mcp-work'") == "cancelled"
+    assert scalar(f, "SELECT count(*) FROM accepted_state_revisions") == 0
+    assert ok(f, "cancel_work", args)["data"] == result["data"]
+    detail = ok(f, "read_resource", {"project_id": "project-alpha",
+        "handle": "work:project-alpha:mcp-work", "view": "detail"})["data"]
+    assert detail["definition"]["cancellation"]["reason"] == cancel_args()["reason"]
+    after_cancel = f.mcp.call("send_message", dict(send_args(),
+        client_request_id="send-after-cancel", expected_work_revision=1))
+    assert after_cancel["structuredContent"]["data"]["code"] == "guard_rejected"
+    assert scalar(f, "SELECT count(*) FROM delivery_messages") == 0
+
+
+def test_cancel_work_rejects_stale_revision_and_sealed_state(managed_work):
+    f = managed_work
+    stale = f.mcp.call("cancel_work", cancel_args(expected_revision=1))
+    assert stale["structuredContent"]["data"]["code"] == "revision_conflict"
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("UPDATE work_items SET state='acceptance_ready' WHERE work_item_id='mcp-work'")
+    sealed = f.mcp.call("cancel_work", cancel_args(client_request_id="cancel-sealed"))
+    assert sealed["structuredContent"]["data"]["code"] == "guard_rejected"
+    assert scalar(f, "SELECT execution_status FROM work_items WHERE work_item_id='mcp-work'") == "ready"
+
+
+def stop_args(**changes):
+    value = {"client_request_id": "stop-1", "project_id": "project-alpha",
+        "attempt_handle": "attempt:project-alpha:control-attempt", "expected_revision": 1,
+        "reason": "the cancelled Work still owns native capacity", "deadline": deadline()}
+    value.update(changes)
+    return value
+
+
+def test_stop_attempt_requires_cancelled_work_and_persists_driver_ack(managed_work):
+    f = managed_work
+    driver = install_attempt_control(f, wrapped=True)
+    before_cancel = f.mcp.call("stop_attempt", stop_args(client_request_id="stop-before-cancel"))
+    assert before_cancel["structuredContent"]["data"]["code"] == "guard_rejected"
+    ok(f, "cancel_work", cancel_args())
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("INSERT INTO effects(effect_id,tenant_id,work_item_id,resource_id,"
+                           "baseline_ref,lease_id,fencing_token,status,readback_ref,grant_ref) VALUES "
+                           "('control-effect','local-tenant','mcp-work','fixture-resource',"
+                           "'fixture-baseline','fixture-lease','fixture-fence','uncertain',"
+                           "'readback:fixture','grant:p1')")
+    args = stop_args()
+    stopped = ok(f, "stop_attempt", args)
+    assert stopped["state"] == "stopped"
+    assert stopped["data"]["driver_acknowledgement"] == "acknowledged"
+    assert stopped["data"]["attempt_state"] == "cancelled"
+    assert stopped["data"]["revision"] == 2
+    assert stopped["data"]["effect_uncertainty"] == "requires_readback"
+    assert stopped["data"]["unresolved_effects"] == [{
+        "effect_handle": "effect:project-alpha:control-effect",
+        "state": "uncertain", "readback_ref": "readback:fixture",
+    }]
+    assert stopped["data"]["control_observation"]["receipt_layer"] == "process_tree_terminated"
+    assert driver.calls == 1
+    assert scalar(f, "SELECT status FROM attempts WHERE attempt_id='control-attempt'") == "cancelled"
+    assert ok(f, "stop_attempt", args)["data"] == stopped["data"]
+    assert driver.calls == 1
+    stale = f.mcp.call("stop_attempt", stop_args(client_request_id="stop-stale"))
+    assert stale["structuredContent"]["data"]["code"] == "revision_conflict"
+    assert scalar(f, "SELECT count(*) FROM domain_events WHERE to_state='attempt.stopped'") == 1
+
+
+def test_stop_attempt_rejects_stale_enrollment_before_control_intent(managed_work):
+    f = managed_work
+    driver = install_attempt_control(f)
+    ok(f, "cancel_work", cancel_args())
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("UPDATE enrolled_runtimes SET status='retired',"
+                           "retired_at=clock_timestamp() WHERE runtime_id='control-runtime'")
+    result = f.mcp.call("stop_attempt", stop_args())
+    assert result["structuredContent"]["data"]["code"] == "guard_rejected"
+    assert driver.calls == 0
+    assert scalar(f, "SELECT count(*) FROM collaboration_commands "
+                     "WHERE tool_name='stop_attempt'") == 0
+
+
+def test_stop_attempt_recovers_committed_intent_as_uncertain_without_provider(
+        managed_work, monkeypatch):
+    f = managed_work
+    driver = install_attempt_control(f)
+    ok(f, "cancel_work", cancel_args())
+    args = stop_args()
+    original_read = driver.journal.read
+
+    def interrupt_after_domain_commit(_operation_id):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(driver.journal, "read", interrupt_after_domain_commit)
+    with pytest.raises(KeyboardInterrupt):
+        f.projects.execute("stop_attempt", args, f.credential)
+    assert scalar(f, "SELECT result_json->>0 FROM collaboration_commands "
+                     "WHERE tool_name='stop_attempt'") == "stop_requested"
+    monkeypatch.setattr(driver.journal, "read", original_read)
+    f.authority._delivery_endpoints.clear()
+    recovered = ok(f, "stop_attempt", args)
+    assert recovered["state"] == "uncertain"
+    assert recovered["data"]["attempt_state"] == "running"
+    assert recovered["data"]["control_observation"] == {
+        "evidence_class": "authority_observation",
+        "state": "control_provider_unavailable",
+    }
+    assert driver.calls == 0
+
+
+@pytest.mark.parametrize("outcome", ["rejected", "uncertain"])
+def test_stop_attempt_preserves_non_acknowledged_attempt_and_replays(managed_work, outcome):
+    f = managed_work
+    driver = install_attempt_control(f, outcome=outcome)
+    ok(f, "cancel_work", cancel_args())
+    args = stop_args()
+    result = ok(f, "stop_attempt", args)
+    assert result["state"] == outcome
+    assert result["data"]["driver_acknowledgement"] == outcome
+    assert result["data"]["attempt_state"] == "running"
+    expected_uncertainty = "control_outcome_uncertain" if outcome == "uncertain" else "none_observed"
+    assert result["data"]["effect_uncertainty"] == expected_uncertainty
+    assert scalar(f, "SELECT status FROM attempts WHERE attempt_id='control-attempt'") == "running"
+    assert ok(f, "stop_attempt", args)["data"] == result["data"]
+    assert driver.calls == 1
+    if outcome == "uncertain":
+        repeated = f.mcp.call("stop_attempt", stop_args(client_request_id="stop-new-intent"))
+        assert repeated["structuredContent"]["data"]["code"] == "guard_rejected"
+        assert driver.calls == 1
 
 
 @pytest.fixture
@@ -178,6 +398,11 @@ def test_independent_review_seals_complete_set_without_accepting_work(review_pro
     assert listed["data"]["items"][0]["review_handle"] == review
     resources = ok(f, "read_resource", {"project_id": "project-alpha", "handle": review, "view": "detail"})
     assert resources["data"]["submission"]["decision"] == "pass"
+    evidence = ok(f, "list_evidence", {"project_id": "project-alpha",
+        "target_handle": "work:project-alpha:mcp-work"})
+    assert evidence["data"]["items"][0]["artifact_handles"]
+    assert all(item.startswith("artifact:project-alpha:local-scope.")
+               for item in evidence["data"]["items"][0]["artifact_handles"])
 
 
 @pytest.mark.parametrize("fault", ["source", "evidence_set", "findings", "artifact", "revision", "parent_revoke"])
@@ -216,7 +441,8 @@ def finalizer_client(f):
         grant_ref="grant:fixture-finalizer", credential_hash=hashlib.sha256(secret.encode()).hexdigest())
     authority = DomainAuthority(f.dsn, context=context, artifact_store=f.projects.sources.store)
     authority.bootstrap_local_grant(("profile.root_manager", "acceptance.commit", "work_item.transition",
-                                    "acceptance.finalize", "source.read", "artifact.read"))
+                                    "acceptance.finalize", "source.read", "artifact.read",
+                                    "resources.read"))
     with psycopg.connect(f.dsn) as connection:
         connection.execute("INSERT INTO agent_slots VALUES ('fixture-finalizer-slot','local-tenant','local-scope','active')")
         connection.execute("INSERT INTO collaboration_memberships VALUES ('local-tenant','project-alpha',"
@@ -251,6 +477,13 @@ def test_multi_evidence_finalization_uses_explicit_authority_and_core_guards(rev
     assert not accepted["isError"], accepted
     assert accepted["structuredContent"]["data"]["accepted_by"] == "fixture:authorized-finalizer"
     assert scalar(f, "SELECT count(*) FROM accepted_state_revisions WHERE readiness_snapshot=FALSE") == 1
+    accepted_handle = accepted["structuredContent"]["data"]["accepted_state_handle"]
+    readback = finalizer.call("read_resource", {"project_id": "project-alpha",
+        "handle": accepted_handle, "view": "detail",
+        "at_revision": accepted["structuredContent"]["data"]["revision"]})
+    assert not readback["isError"], readback
+    assert readback["structuredContent"]["data"]["accepted_state"]["accepted_by"] == \
+        "fixture:authorized-finalizer"
 
 
 def test_acceptance_rejects_evidence_subset_even_with_explicit_authority(review_project):

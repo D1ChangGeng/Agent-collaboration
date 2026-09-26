@@ -13,9 +13,10 @@ import pytest
 
 from runtime.artifacts import LocalArtifactStore
 from runtime.models import CommandEnvelope
+from runtime.project_service import ProjectService
 from runtime.project_source import ProjectSources
 from runtime.source_models import SourceRequest
-from runtime_tests.test_project_service import ok, work_args
+from runtime_tests.test_project_service import CATALOG, deadline, ok, work_args
 from runtime_tests.test_project_service import project as project_fixture
 from runtime_tests.test_source import commit_all, git, make_repo
 
@@ -102,6 +103,60 @@ def test_source_reads_return_exact_cas_bytes_and_current_git_observation(source_
     connections = ok(f, "list_connections", {"project_id": "project-alpha", "kinds": ["source"]})
     assert connections["data"]["items"][0]["source_id"] == "source-main"
     assert str(f.repo) not in json.dumps(connections)
+
+
+def test_completed_response_reads_digest_verified_native_artifact(source_project):
+    f = source_project
+    ok(f, "create_work", work_args())
+    sent = ok(f, "send_message", {
+        "client_request_id": "response-readback-send", "project_id": "project-alpha",
+        "work_handle": "work:project-alpha:mcp-work", "expected_work_revision": 0,
+        "target": {"scope_id": "local-scope", "agent_slot_id": "local-slot"},
+        "goal": "read native result", "request": "return exact response artifact",
+        "constraints": ["digest verified"], "accepted_revision": 0,
+        "required_evidence": ["native response artifact"], "activation": "message_only",
+        "deadline": deadline(),
+    })["data"]
+    native = {"assistant_text": ["NATIVE_RESPONSE_MARKER"], "outcome": "completed"}
+    encoded = json.dumps(native, sort_keys=True, separators=(",", ":")).encode()
+    reference = f.projects.sources.store.put_bytes(
+        encoded, kind="readback", media_type="application/json",
+    )
+    evidence = {"receipt_id": "response-readback-receipt",
+        "response_artifact_ref": "artifact:" + reference.sha256,
+        "response_digest": reference.sha256}
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("UPDATE delivery_messages SET state='delivered',"
+                           "receipt_high_water='response_received' WHERE message_id=%s",
+                           (sent["message_id"],))
+        connection.execute("INSERT INTO delivery_receipts(tenant_id,message_id,receipt_id,layer,evidence_json) "
+                           "VALUES ('local-tenant',%s,%s,'response_received',%s)",
+                           (sent["message_id"], evidence["receipt_id"], json.dumps(evidence)))
+    args = {"project_id": "project-alpha", "handle": sent["response_handle"], "consume": False}
+    read = ok(f, "read_message", args)["data"]
+    assert read["response"] == native
+    assert read["response_artifact"] == {
+        **reference.model_dump(mode="json"), "opaque_ref": "artifact:" + reference.sha256,
+        "content_state": "inline",
+    }
+    bounded = ok(f, "read_message", dict(args, max_inline_bytes=1))["data"]
+    assert "response" not in bounded
+    assert bounded["response_artifact"]["content_state"] == "verified_reference"
+    f.authority._artifact_store = f.projects.sources.store
+    artifact_only = ProjectService(f.projects.service, CATALOG, profile="root_manager")
+    artifact_read = artifact_only.execute("read_message", args, f.credential)[1]
+    assert artifact_read["response"] == native
+    assert artifact_read["response_artifact"]["content_state"] == "inline"
+    artifact_handle = "artifact:project-alpha:local-scope." + reference.sha256
+    resource = ok(f, "read_resource", {"project_id": "project-alpha",
+        "handle": artifact_handle, "view": "content", "content_mode": "inline"})["data"]
+    assert json.loads(resource["content"]) == native
+    assert resource["content_state"] == "inline"
+    assert f.mcp.call("read_resource", {"project_id": "another-project",
+        "handle": artifact_handle})["isError"]
+    (f.projects.sources.store.root / reference.path).unlink()
+    missing = f.mcp.call("read_message", args)
+    assert missing["structuredContent"]["data"]["code"] == "source_unavailable"
 
 
 def test_context_hydrates_instructions_and_metadata_then_loads_one_reference(source_project, monkeypatch):

@@ -469,7 +469,7 @@
     },
     "read_message": {
       "title": "Read collaboration message",
-      "description": "Read one delivered Message, tracked response, or assigned Review request and atomically record owner consumption when requested. Consuming a Review request does not submit a Review decision.",
+      "description": "Read one delivered Message, tracked response, or assigned Review request and atomically record owner consumption when requested. A completed response returns digest-verified native response content when its admitted Scope Artifact provider is available, or an explicitly verified/unavailable Artifact state. Consuming a Review request does not submit a Review decision.",
       "selection_guidance": "Use for Inbox Messages and completed responses.",
       "annotations": {
         "readOnlyHint": false,
@@ -478,7 +478,7 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-read-message/2",
+        "schema_version": "acs-mcp-read-message/3",
         "required": [
           "project_id",
           "handle"
