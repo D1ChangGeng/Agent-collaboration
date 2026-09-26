@@ -5,11 +5,11 @@ This file is project-owned after first creation. ACHP upgrades preserve it.
 ## Identity
 
 - Project: Agent-collaboration
-- Repository: Agent-collaboration (local repository; GitHub publication pending)
+- Repository: Agent-collaboration (local Git repository; public GitHub repository published as `D1ChangGeng/Agent-collaboration`)
 - Skill slug: agent-collaboration-setup
-- Primary branch: main (to be initialized)
+- Primary branch: `main`
 - Project type: existing source recovered from the v0.1.0 Skill archive
-- Current phase: v0.1.0 published; post-release maintenance and v0.2 discovery
+- Current phase: v0.2.0 Workspace/Route architecture upgrade and local validation
 
 ## Collaboration topology
 
@@ -35,9 +35,10 @@ normal collaboration runtime. Product and design authority is split between
 
 ## Current milestone
 
-Current milestone: maintain the verified v0.1.0 baseline after source recovery,
-ACHP dogfooding, Knowledge Plane initialization, GitHub publication, and Release
-creation. Future changes must remain scoped and evidence-backed.
+Current milestone: extend the verified v0.1.0 setup-only baseline with an
+explicit non-Git Project Collaboration Workspace / Route control plane, while
+keeping the repository-oriented mode compatible and preserving the setup/runtime
+boundary. The v0.2.0 changes in this working tree are local and not published.
 
 ## Critical project-specific constraints
 
@@ -52,13 +53,17 @@ creation. Future changes must remain scoped and evidence-backed.
   is the durable project Knowledge Plane.
 - Preserve project-owned profile, tasks, handoffs, and knowledge during setup
   upgrades and default uninstall.
+- Keep management Workspaces distinct from source repositories and execution
+  endpoints; missing source-state facts remain `unknown` or `unverified`.
+- Treat the Root registry as stable control-plane metadata, not a per-turn
+  shared status log; Route knowledge and dynamic state remain Route-owned.
 
 ## Authoritative routes
 
 | Need | Location |
 |---|---|
 | Product intent | `SKILL.md`, `README.md`, `README.zh-CN.md` |
-| Architecture | `references/DESIGN.md`, `references/HARNESS-COMPATIBILITY.md`, `.agents/protocol/` |
+| Architecture | `references/DESIGN.md`, `references/HARNESS-COMPATIBILITY.md`, `.agents/protocol/`, `assets/scaffold/workspace/` |
 | Roadmap | `.agents/knowledge/observations/`, future accepted Decisions, and release notes |
 | Current implementation status | `scripts/`, `tests/`, `.github/workflows/validate.yml`, `CHANGELOG.md` |
 | Decisions | `.agents/knowledge/decisions/` |
@@ -68,12 +73,12 @@ creation. Future changes must remain scoped and evidence-backed.
 
 ## Version and release identity
 
-- Current version: v0.1.0 (`VERSION`)
+- Current version: v0.2.0 (`VERSION`)
 - Release identity: setup-only `agent-collaboration-setup` Skill, published from
   the `Agent-collaboration` source repository
 - Public GitHub owner: `D1ChangGeng`
 - Repository: `https://github.com/D1ChangGeng/Agent-collaboration`
-- Release: `v0.1.0` published with ZIP and tar.gz Skill artifacts
+- Published release: `v0.1.0`; v0.2.0 is local and has not been pushed or released
 
 ## Validation routes
 
@@ -81,13 +86,16 @@ creation. Future changes must remain scoped and evidence-backed.
 python scripts/validate_skill.py
 python -m unittest discover -s tests -v
 python scripts/project_setup.py validate --root .
+python scripts/project_setup.py workspace validate --root <workspace>
+python scripts/project_setup.py route list --workspace <workspace>
 node <installed-self-evolution>/references/bin/kb.mjs check --project-root . --format text
 git diff --check
 ```
 
 ## Current primary goal
 
-Preserve the verified v0.1.0 setup/runtime boundary while evaluating only
-evidence-backed maintenance and future v0.2 work. Do not expand into runtime
-services, a broker/daemon, UI, or new Harness adapters without an explicitly
-accepted design and validation plan.
+Complete and review the v0.2.0 Workspace/Route setup baseline, validate the
+dogfood Root at `D:\Chatgpt\Agent`, and keep A/B Route semantic migration as an
+independent later phase. Do not expand into runtime services, a broker/daemon,
+UI, or new Harness adapters without an explicitly accepted design and
+validation plan.
