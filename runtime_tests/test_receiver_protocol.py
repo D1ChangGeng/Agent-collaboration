@@ -189,6 +189,12 @@ def test_runtime_fails_closed_without_posix_paths(env, monkeypatch):
         RemoteNodeTransport(env.config)
 
 
+def test_response_fault_purpose_is_deployment_bounded(env):
+    replace(env.config, drop_response_after_commit_once="delivery.dispatch").validate()
+    with pytest.raises(BootstrapRejected, match="fault purpose"):
+        replace(env.config, drop_response_after_commit_once="anything").validate()
+
+
 @pytest.mark.parametrize("field", ["node_signing_key_path", "tls_key_path"])
 @pytest.mark.parametrize("mode", [0o400, 0o644])
 def test_private_key_requires_exact_owner_mode_0600(env, field, mode):
