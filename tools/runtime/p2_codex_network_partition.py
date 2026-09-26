@@ -226,59 +226,61 @@ def execute(arguments) -> int:
     signing = SigningKey(bytes.fromhex(arguments.authority_seed.read_text().strip()))
     partition = RelayPartition(arguments)
     arguments.control_authority_public_key = public_key(signing)
-    partition.start()
-    endpoint = RemoteNodeEndpointAdapter(
-        authority, state["endpoint_id"],
-        RemoteSenderDeployment(
-            authority_signing_key=signing,
-            expected_boot_incarnation=state["boot_incarnation"], journal_generation=1,
-        ),
-        timeout=10, after_dispatch_mark=partition,
-    )
-    service = DeliveryService(authority, {state["endpoint_id"]: endpoint})
-    service.bind_endpoint(
-        _command(authority, "message.bind", "message", state["endpoint_id"]),
-        EndpointBindingRequest(
-            scope_id="local-scope", agent_slot_id="local-slot",
-            expires_at=datetime.now(UTC) + timedelta(minutes=20),
-        ),
-    )
-    work_id = "p2-network-work-" + arguments.suffix
-    authority.create_work_item(
-        _command(authority, "work_item.create", "work_item", work_id),
-        "local-scope", "local-slot", state["source_commit"],
-    )
-    sentinel = "P2-CODEX-NETWORK-PARTITION-" + arguments.suffix
-    message_id = "p2-network-message-" + arguments.suffix
-    packet = DeliveryPacket(
-        work_item_id=work_id, target_scope_id="local-scope",
-        target_agent_slot_id="local-slot", accepted_revision=0,
-        goal="Recover one P2 Codex delivery across a bounded Runtime tunnel partition",
-        accepted_state_summary="P1 passed; P2 remains blocked pending all scenarios",
-        request="Return exactly this sentinel and no other text: " + sentinel
-                + ". Do not call tools and do not delegate.",
-        constraints=("one native Codex turn", "no delegation", "no tool calls"),
-        source_baseline=state["source_commit"],
-        context_digests=(state["source_tree"].ljust(64, "0")[:64],),
-        expected_response=sentinel,
-        required_evidence=("PostgreSQL", "receiver SQLite", "Driver journal", "Node outbox"),
-        activation="invoke", deadline=datetime.now(UTC) + timedelta(minutes=5),
-        maximum_attempts=1, retry_delay_seconds=1,
-    )
-    queued = service.send_message(
-        _command(authority, "message.send", "message", message_id), packet,
-        endpoint_id=state["endpoint_id"], binding_revision=1,
-    )
-    identity = {
-        "tenant_id": authority.tenant_id, "message_id": message_id,
-        "operation_id": queued.operation_id,
-    }
+    endpoint = service = queued = identity = None
+    sentinel = message_id = None
     fault_result = None
     recovery_result = None
     authenticated_readback = None
     recovery_route = None
     relay_close = None
     try:
+        partition.start()
+        endpoint = RemoteNodeEndpointAdapter(
+            authority, state["endpoint_id"],
+            RemoteSenderDeployment(
+                authority_signing_key=signing,
+                expected_boot_incarnation=state["boot_incarnation"], journal_generation=1,
+            ),
+            timeout=10, after_dispatch_mark=partition,
+        )
+        service = DeliveryService(authority, {state["endpoint_id"]: endpoint})
+        service.bind_endpoint(
+            _command(authority, "message.bind", "message", state["endpoint_id"]),
+            EndpointBindingRequest(
+                scope_id="local-scope", agent_slot_id="local-slot",
+                expires_at=datetime.now(UTC) + timedelta(minutes=20),
+            ),
+        )
+        work_id = "p2-network-work-" + arguments.suffix
+        authority.create_work_item(
+            _command(authority, "work_item.create", "work_item", work_id),
+            "local-scope", "local-slot", state["source_commit"],
+        )
+        sentinel = "P2-CODEX-NETWORK-PARTITION-" + arguments.suffix
+        message_id = "p2-network-message-" + arguments.suffix
+        packet = DeliveryPacket(
+            work_item_id=work_id, target_scope_id="local-scope",
+            target_agent_slot_id="local-slot", accepted_revision=0,
+            goal="Recover one P2 Codex delivery across a bounded Runtime tunnel partition",
+            accepted_state_summary="P1 passed; P2 remains blocked pending all scenarios",
+            request="Return exactly this sentinel and no other text: " + sentinel
+                    + ". Do not call tools and do not delegate.",
+            constraints=("one native Codex turn", "no delegation", "no tool calls"),
+            source_baseline=state["source_commit"],
+            context_digests=(state["source_tree"].ljust(64, "0")[:64],),
+            expected_response=sentinel,
+            required_evidence=("PostgreSQL", "receiver SQLite", "Driver journal", "Node outbox"),
+            activation="invoke", deadline=datetime.now(UTC) + timedelta(minutes=5),
+            maximum_attempts=1, retry_delay_seconds=1,
+        )
+        queued = service.send_message(
+            _command(authority, "message.send", "message", message_id), packet,
+            endpoint_id=state["endpoint_id"], binding_revision=1,
+        )
+        identity = {
+            "tenant_id": authority.tenant_id, "message_id": message_id,
+            "operation_id": queued.operation_id,
+        }
         fault_result = DeliveryDispatcher(
             service, worker_id="linux-p2-network-sender",
         ).dispatch(identity)
@@ -298,7 +300,8 @@ def execute(arguments) -> int:
         )
     finally:
         try:
-            recovery_route = partition.finish()
+            if partition.signed_dispatch_sha256 is not None:
+                recovery_route = partition.finish()
         finally:
             relay_close = partition.close()
     deadline = time.monotonic() + 180
