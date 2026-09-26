@@ -69,6 +69,37 @@ required scenario in revision `2026-09-25.1`.
 
 ## P2-REVIEW boundary
 
+### v1.0.0 release candidate checkpoint — 2026-09-26
+
+The public candidate branch `codex/p2-v1-release` is at commit
+`bec582b52c98568f8eeee393d1d769c293f6ee49`, tree
+`e2585dc1caac53504bd939edbccb00818d95735f`. The branch includes the
+committed P1/P2 implementation, the owner-local installer, setup and knowledge
+Skills, and product documentation under Sustainable Use License 1.0.
+
+On Linux host `1302-1`, an isolated Compose project has healthy PostgreSQL and
+Temporal. The installer registered this repository's Management Root and Route,
+then read back `context_completeness=current`. Its local Codex and OpenCode MCP
+entries each completed an MCP SDK handshake, discovered 36 tools, and returned
+an authorized Profile and current project context. A separate candidate profile
+created a Team and WorkItem through real stdio MCP and read back the WorkItem and
+Inbox. Real PostgreSQL targeted tests passed: 16 Grant/team tests and 67 project
+registration, MCP, Work and Review tests. These are scoped source and local
+service observations; no ChatGPT Tunnel or cross-host first-use journey is
+claimed by them.
+
+Source-bound zip and tar archives were built at this candidate. Their SHA-256
+values are `42831f88be15895d06fb381faf73c45d1ab9348e4bf1c95a174e158731f22c52`
+and `655649bfcdefc1aa6d1c1827b968fc7fd7b5549c373de50e25b9550545b77aee`
+respectively. The package manifest names the same commit/tree. GitHub Actions
+for this SHA fail before runner allocation: the failed jobs have an empty runner
+name, zero steps and an empty log archive. The CI Gate remains unverified.
+
+Control Parity formal assembly, current-candidate independent review,
+ChatGPT private Tunnel read/write/deny/reconnect/revoke, Windows and OpenCode
+link-only cold starts, and the product-owner P2 decision remain open. The
+historical reviewed Gate records retain their original source and expiry.
+
 `P2-INDEPENDENT-GATE-REVIEW` and `P2-PRODUCT-OWNER-DECISION` remain `not_run`.
 Before deciding the final Gate, bind the chosen integrated commit/tree, resolve
 the Control Parity formal record, assess the source changes since the historical
