@@ -69,6 +69,75 @@ def _profile(tmp_path: Path) -> Path:
     return path
 
 
+def test_integrated_acceptance_same_delivery_review_publication_and_readback(
+    tmp_path, monkeypatch,
+):
+    """Real loopback resources, but not a formal P1 Gate or native model proof."""
+    profile_path = _profile(tmp_path)
+    value = json.loads(profile_path.read_text())
+    value["codex_scene_mode"] = "same-run-host-node"
+    value["opencode_scene_mode"] = "same-run-host-node"
+    profile_path.write_text(json.dumps(value))
+    profile_path.chmod(0o600)
+    monkeypatch.setenv("ACS_GATE_RUN_ID", "integrated-test-" + uuid.uuid4().hex)
+    monkeypatch.setenv("ACS_GATE_MACHINE_ID", "machine-" + uuid.uuid4().hex[:20])
+
+    def test_profile(path):
+        data = path.read_bytes()
+        return json.loads(data), probe._sha(data), ()
+
+    monkeypatch.setattr(probe, "_secure_profile", test_profile)
+    output = tmp_path / "integrated-output"
+    try:
+        results = [probe.execute(
+            profile_path, "P1-INTEGRATED-ACCEPTANCE", kind, output,
+        ) for kind in probe.KINDS]
+        assert {item["status"] for item in results} == {"passed"}
+        ledger = probe.ProbeLedger(output)
+        row = ledger.get("P1-INTEGRATED-ACCEPTANCE")
+        lineage = json.loads(row["lineage_json"])
+        proof = lineage["integrated_acceptance_proof"]
+        assert proof["delivery_attempt_id"] == lineage["attempt_id"]
+        assert proof["work"] == ["accepted", 2, row["source_commit"]]
+        assert proof["before_publication_rejected"]
+        assert proof["snapshots"][0][1] is True
+        assert proof["snapshots"][1][1] is False
+        assert proof["effect"][0] == "verified"
+        assert proof["output_sha256"] == proof["file_sha256"]
+        assert results[1]["facts"]["layer"]["integrated_postgresql_readback"]
+        assert results[4]["facts"]["layer"]["integrated_historical_gateway_readback"]
+
+        scoped = make_conninfo(
+            value["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
+        )
+        with psycopg.connect(scoped) as connection:
+            connection.execute(
+                "UPDATE reviewer_assignments SET status='revoked' "
+                "WHERE work_item_id=%s AND reviewer_ref=%s",
+                (proof["work_item_id"], proof["review"][0]),
+            )
+        with pytest.raises(probe.ProbeRejected, match="integrated PostgreSQL readback changed"):
+            probe.execute(profile_path, "P1-INTEGRATED-ACCEPTANCE", "postgresql", output)
+        with psycopg.connect(scoped) as connection:
+            connection.execute(
+                "UPDATE reviewer_assignments SET status='active' "
+                "WHERE work_item_id=%s AND reviewer_ref=%s",
+                (proof["work_item_id"], proof["review"][0]),
+            )
+        publication = output / "P1-INTEGRATED-ACCEPTANCE-publication" / "output.txt"
+        original = publication.read_bytes()
+        publication.write_bytes(b"tampered published bytes")
+        with pytest.raises(probe.ProbeRejected, match="integrated publication or CAS bytes changed"):
+            probe.execute(profile_path, "P1-INTEGRATED-ACCEPTANCE", "driver", output)
+        publication.write_bytes(original)
+        assert probe.execute(
+            profile_path, "P1-INTEGRATED-ACCEPTANCE", "driver", output,
+        )["status"] == "passed"
+    finally:
+        if output.exists():
+            probe.cleanup(profile_path, output)
+
+
 def test_identity_continuity_gate_qualification_and_live_tamper_fences(
     tmp_path, monkeypatch,
 ):
