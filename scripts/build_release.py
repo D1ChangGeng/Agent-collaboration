@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Build a source-bound ACS distribution archive and digest manifest."""
 
 from __future__ import annotations
