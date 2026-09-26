@@ -124,7 +124,7 @@ class ReceiverRuntimeConfig(ReceiverClientConfig):
     ledger_path: str = ""
 
     def validate(self) -> None:
-        super().validate()
+        ReceiverClientConfig.validate(self)
         try:
             require_posix()
         except PathSecurityRejected:
