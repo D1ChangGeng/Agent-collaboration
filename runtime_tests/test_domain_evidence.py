@@ -1,7 +1,7 @@
 """PostgreSQL + real Linux CAS regressions for trusted evidence admission.
 
-ACS_P1_DSN enables isolated-schema integration tests. These fixtures explicitly
-seed Node admission bindings; they are not evidence of actual Node execution.
+ACS_P1_DSN enables isolated-schema integration tests. Node/Runtime/Attempt setup
+uses actual signed enrollment APIs; metadata is not Node/Harness conformance.
 ACS_DOMAIN_EVIDENCE_FILE optionally selects the independent candidate module.
 """
 from __future__ import annotations
@@ -15,7 +15,6 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from types import SimpleNamespace
 
 import psycopg
@@ -41,6 +40,7 @@ from runtime.models import (
     TransitionRequest,
     WorkItemState,
 )
+from runtime_tests.enrollment_fixture import register_execution_fixture
 
 
 def authority_class():
@@ -88,48 +88,32 @@ def runtime(tmp_path):
     store = LocalArtifactStore(tmp_path / "cas")
     cls = authority_class()
     try:
-        # Load fresh schema directly so the standalone candidate can be tested
-        # without copying the schema next to its source or invoking bootstrap.
-        schema_source = Path(sys.modules[DefaultAuthority.__module__].__file__).with_name("schema.sql")
-        with psycopg.connect(dsn) as conn:
-            conn.execute(schema_source.read_text(encoding="utf-8"))
-            conn.execute(Path(__file__).with_name("evidence-schema.sql").read_text(encoding="utf-8"))
-            conn.execute("INSERT INTO authority_instances VALUES ('acs-p1-authority','local-1','active',now())")
-            conn.execute("INSERT INTO scopes(scope_id,tenant_id,policy,status) VALUES ('local-scope','local-tenant','{}','active')")
-            conn.execute("INSERT INTO agent_slots(agent_slot_id,tenant_id,scope_id,status) VALUES ('local-slot','local-tenant','local-scope','active')")
         def domain(name):
             return cls(dsn, context=AuthenticatedContext("local-tenant", "acs-p1-authority", "local-1",
                                                        f"agent:{name}", f"grant:{name}"), artifact_store=store)
         engineer, node, reviewer, finalizer = map(domain, ("engineer", "node", "reviewer", "finalizer"))
+        engineer.initialize()  # Production schema 1.6; no sidecar-schema injection.
         engineer.bootstrap_local_grant()
-        node.bootstrap_local_grant(("execution.record", "work_item.read"))
+        node.bootstrap_local_grant(("runtime.register", "attempt.register", "execution.record", "work_item.read"))
         reviewer.bootstrap_local_grant(("review.record", "work_item.read"))
         finalizer.bootstrap_local_grant(("work_item.transition", "acceptance.finalize", "review.assign", "work_item.read"))
         engineer.create_work_item(command(engineer, "work_item.create"), "local-scope", "local-slot", "baseline-1")
         output = store.put_bytes(b"candidate output", kind="output")
         candidate_ref = "source-candidate:fixture-commit:output"
         readback = store.put_bytes(b"independent artifact readback", kind="readback")
+        enrolled = register_execution_fixture(engineer, node=node, work_item_id="work",
+            runtime_id="runtime-1", attempt_id="attempt-1", provider="fixture-node", candidate_ref=candidate_ref)
         now = datetime.now(UTC)
         receipt = ExecutionReceipt(
             receipt_id="receipt-1", work_item_id="work", attempt_id="attempt-1", runtime_id="runtime-1",
-            provider="fixture-node", command_id="execution-command-1", operation_id="execution-operation-1",
-            event_id="execution-event-1", source_baseline="baseline-1", candidate_ref=candidate_ref,
+            provider="fixture-node", command_id=enrolled.attempt["execution_command_id"],
+            operation_id=enrolled.attempt["execution_operation_id"], event_id=enrolled.attempt["execution_event_id"],
+            source_baseline="baseline-1", candidate_ref=candidate_ref,
             source_commit="fixture-commit", source_tree="fixture-tree", test_commands=("pytest tests",),
             test_exit_codes=(0,), test_exit_code=0, os="linux", toolchain="python-test-fixture",
-            artifact_refs=(output,), readback_refs=(readback,), source_sync="fixture-seeded",
+            artifact_refs=(output,), readback_refs=(readback,), source_sync="formally-enrolled-test-fixture",
             status="succeeded", observed_at=now,
         )
-        with psycopg.connect(dsn) as conn:
-            conn.execute(
-                "INSERT INTO attempts(attempt_id,tenant_id,work_item_id,agent_slot_id,status,producer_ref,"
-                "runtime_id,scope_id,grant_ref,authority_id,authority_incarnation,observer_ref,observer_grant_ref,"
-                "execution_command_id,execution_operation_id,execution_event_id,provider,source_baseline,"
-                "source_commit,source_tree,candidate_ref,execution_started_at) VALUES ("
-                "'attempt-1','local-tenant','work','local-slot','running','agent:engineer','runtime-1',"
-                "'local-scope','grant:engineer','acs-p1-authority','local-1','agent:node','grant:node',"
-                "'execution-command-1','execution-operation-1','execution-event-1','fixture-node','baseline-1',"
-                "'fixture-commit','fixture-tree',%s,%s)", (candidate_ref, now - timedelta(seconds=1)),
-            )
         bundle = EvidenceBundle(
             evidence_id="evidence-1", work_item_id="work", source_baseline="baseline-1",
             candidate_ref=candidate_ref, producer_ref="agent:engineer", observer_ref="agent:node",
@@ -140,21 +124,29 @@ def runtime(tmp_path):
         evidence = EvidenceRecord(
             evidence_id="evidence-1", work_item_id="work", observer_ref="agent:node",
             source_class="directly_verified", baseline_ref="baseline-1", artifact_sha256=output.sha256,
-            summary="Explicitly seeded trusted execution fixture", bundle_ref="evidence-1", candidate_ref=candidate_ref,
+            summary="Signed enrolled test observation; no OS or Harness conformance claim",
+            bundle_ref="evidence-1", candidate_ref=candidate_ref,
             execution_receipt_ref="receipt-1", evidence_state="complete", producer_ref="agent:engineer",
             attempt_id="attempt-1", test_exit_code=0, artifact_refs=(output,), readback_refs=(readback,),
         )
         yield SimpleNamespace(dsn=dsn, engineer=engineer, node=node, reviewer=reviewer,
                               finalizer=finalizer, store=store, receipt=receipt, evidence=evidence,
-                              bundle=bundle, output=output, readback=readback)
+                              bundle=bundle, output=output, readback=readback, enrollment=enrolled)
     finally:
         store.close()
         with psycopg.connect(base, autocommit=True) as admin:
             admin.execute(sql.SQL("DROP SCHEMA {} CASCADE").format(sql.Identifier(schema)))
 
 
+def prepare_receipt(f, receipt=None, cmd=None):
+    receipt = receipt or f.receipt
+    cmd = cmd or command(f.node, "execution.record")
+    return cmd, f.enrollment.receipt_proof(cmd, receipt)
+
+
 def register(f):
-    return f.node.record_execution_receipt(command(f.node, "execution.record"), f.receipt)
+    cmd, proof = prepare_receipt(f)
+    return f.node.record_execution_receipt(cmd, f.receipt, node_proof=proof)
 
 
 def review(f):
@@ -193,19 +185,24 @@ def test_trusted_receipt_review_ready_accepted(runtime):
 
 def test_engineer_cannot_mint_trusted_receipt(runtime):
     f = runtime
+    cmd = command(f.engineer, "execution.record")
+    proof = f.enrollment.receipt_proof(cmd, f.receipt)
     before = counts(f)
     with pytest.raises(AuthorizationDenied):
-        f.engineer.record_execution_receipt(command(f.engineer, "execution.record"), f.receipt)
+        f.engineer.record_execution_receipt(cmd, f.receipt, node_proof=proof)
     assert counts(f) == before
 
 
 @pytest.mark.parametrize("changed", ["runtime_id", "command_id", "operation_id", "event_id", "source_commit", "candidate_ref"])
 def test_node_cannot_replace_registered_attempt_identity(runtime, changed):
     f = runtime
-    before = counts(f)
     altered = f.receipt.model_copy(update={changed: "forged"})
-    with pytest.raises(AcceptanceGuardFailed, match="receipt does not match trusted execution attempt"):
-        f.node.record_execution_receipt(command(f.node, "execution.record"), altered)
+    cmd, proof = prepare_receipt(f, receipt=altered)
+    before = counts(f)
+    reason = ("execution receipt enrollment target differs" if changed == "runtime_id"
+              else "receipt does not match trusted execution attempt")
+    with pytest.raises(AcceptanceGuardFailed, match=reason):
+        f.node.record_execution_receipt(cmd, altered, node_proof=proof)
     assert counts(f) == before
 
 
@@ -320,8 +317,8 @@ def test_completed_effect_requires_live_callback_but_not_live_writer_lease(runti
 
 def test_successful_evidence_replay_precedes_revision_check_and_seals_bundle(runtime):
     f = runtime
-    receipt_command = command(f.node, "execution.record")
-    receipt_result = f.node.record_execution_receipt(receipt_command, f.receipt)
+    receipt_command, receipt_proof = prepare_receipt(f)
+    receipt_result = f.node.record_execution_receipt(receipt_command, f.receipt, node_proof=receipt_proof)
     evidence_command = command(f.engineer, "evidence.record")
     original = f.engineer.record_evidence(evidence_command, f.evidence, f.bundle)
     with psycopg.connect(f.dsn) as conn:
@@ -329,7 +326,7 @@ def test_successful_evidence_replay_precedes_revision_check_and_seals_bundle(run
     before = counts(f)
     replay = f.engineer.record_evidence(evidence_command, f.evidence, f.bundle)
     assert replay.duplicate and replay.operation_id == original.operation_id
-    receipt_replay = f.node.record_execution_receipt(receipt_command, f.receipt)
+    receipt_replay = f.node.record_execution_receipt(receipt_command, f.receipt, node_proof=receipt_proof)
     assert receipt_replay.duplicate and receipt_replay.operation_id == receipt_result.operation_id
     with pytest.raises(IdempotencyConflict):
         f.engineer.record_evidence(evidence_command, f.evidence, f.bundle.model_copy(update={"expires_at": datetime.now(UTC) + timedelta(days=1)}))
@@ -483,6 +480,8 @@ def test_concurrent_effect_insert_cannot_escape_acceptance_enumeration(runtime):
 @pytest.mark.parametrize("phase", ["registration", "after_ready"])
 def test_revoked_execution_slot_blocks_receipt_registration_and_final_acceptance(runtime, phase):
     f = runtime
+    if phase == "registration":
+        receipt_command, receipt_proof = prepare_receipt(f)
     if phase == "after_ready":
         register(f)
         review(f)
@@ -490,9 +489,11 @@ def test_revoked_execution_slot_blocks_receipt_registration_and_final_acceptance
     with psycopg.connect(f.dsn) as conn:
         conn.execute("UPDATE agent_slots SET status='revoked' WHERE agent_slot_id='local-slot'")
     before = counts(f)
-    with pytest.raises(AcceptanceGuardFailed, match="trusted execution attempt binding is missing or unauthorized"):
+    reason = ("enrollment Scope/AgentSlot binding is unavailable" if phase == "registration"
+              else "trusted execution attempt binding is missing or unauthorized")
+    with pytest.raises(AcceptanceGuardFailed, match=reason):
         if phase == "registration":
-            register(f)
+            f.node.record_execution_receipt(receipt_command, f.receipt, node_proof=receipt_proof)
         else:
             transition(f, WorkItemState.ACCEPTED, 1)
     assert counts(f) == before

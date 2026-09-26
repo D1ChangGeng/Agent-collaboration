@@ -565,3 +565,107 @@ $$;
 DROP TRIGGER IF EXISTS acs_registered_effect_identity_guard ON effects;
 CREATE TRIGGER acs_registered_effect_identity_guard BEFORE UPDATE ON effects
 FOR EACH ROW EXECUTE FUNCTION acs_registered_effect_identity_guard();
+
+-- Runtime 1.6 signed Node enrollment and execution provenance.
+-- Domain event targets are explicit. Existing WorkItem rows keep their original
+-- work_item_id/from_state/to_state meanings; non-WorkItem events do not invent one.
+ALTER TABLE domain_events ALTER COLUMN work_item_id DROP NOT NULL;
+ALTER TABLE domain_events ADD COLUMN IF NOT EXISTS target_kind TEXT NOT NULL DEFAULT 'work_item';
+ALTER TABLE domain_events ADD COLUMN IF NOT EXISTS target_id TEXT;
+ALTER TABLE domain_events ADD COLUMN IF NOT EXISTS related_work_item_id TEXT;
+UPDATE domain_events SET target_id=work_item_id WHERE target_id IS NULL;
+CREATE OR REPLACE FUNCTION acs_domain_event_target() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.target_id IS NULL THEN NEW.target_id := NEW.work_item_id; END IF;
+    IF NEW.target_kind='work_item' AND (NEW.work_item_id IS NULL OR NEW.target_id<>NEW.work_item_id) THEN
+        RAISE EXCEPTION 'WorkItem event target differs' USING ERRCODE='23514';
+    END IF;
+    IF NEW.target_kind<>'work_item' AND NEW.work_item_id IS NOT NULL THEN
+        RAISE EXCEPTION 'non-WorkItem event cannot impersonate a WorkItem event' USING ERRCODE='23514';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+DROP TRIGGER IF EXISTS acs_domain_event_target ON domain_events;
+CREATE TRIGGER acs_domain_event_target BEFORE INSERT OR UPDATE ON domain_events
+FOR EACH ROW EXECUTE FUNCTION acs_domain_event_target();
+ALTER TABLE domain_events ALTER COLUMN target_id SET NOT NULL;
+
+CREATE TABLE IF NOT EXISTS enrolled_nodes (
+    tenant_id TEXT NOT NULL, node_id TEXT NOT NULL,
+    scope_id TEXT NOT NULL REFERENCES scopes(scope_id), agent_slot_id TEXT NOT NULL REFERENCES agent_slots(agent_slot_id),
+    observer_ref TEXT NOT NULL, observer_grant_ref TEXT NOT NULL REFERENCES grants(grant_ref),
+    authority_id TEXT NOT NULL, authority_incarnation TEXT NOT NULL,
+    revision BIGINT NOT NULL, current_binding_revision BIGINT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('active','revoked')),
+    enrolled_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    revoked_at TIMESTAMPTZ, revocation_policy TEXT,
+    PRIMARY KEY(tenant_id,node_id)
+);
+CREATE TABLE IF NOT EXISTS enrolled_node_keys (
+    key_id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL, node_id TEXT NOT NULL,
+    public_key TEXT NOT NULL CHECK(public_key ~ '^[a-f0-9]{64}$'),
+    fingerprint TEXT NOT NULL UNIQUE CHECK(fingerprint ~ '^[a-f0-9]{64}$'),
+    status TEXT NOT NULL CHECK(status IN ('active','retired','revoked')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(), retired_at TIMESTAMPTZ,
+    FOREIGN KEY(tenant_id,node_id) REFERENCES enrolled_nodes(tenant_id,node_id)
+);
+CREATE TABLE IF NOT EXISTS enrolled_node_bindings (
+    tenant_id TEXT NOT NULL, node_id TEXT NOT NULL, binding_revision BIGINT NOT NULL,
+    key_id TEXT NOT NULL REFERENCES enrolled_node_keys(key_id), machine_id TEXT NOT NULL, boot_incarnation TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('active','retired','revoked')),
+    valid_from TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(), expires_at TIMESTAMPTZ NOT NULL,
+    retired_at TIMESTAMPTZ, command_id TEXT NOT NULL, operation_id TEXT NOT NULL, event_id TEXT,
+    PRIMARY KEY(tenant_id,node_id,binding_revision), UNIQUE(tenant_id,node_id,boot_incarnation),
+    FOREIGN KEY(tenant_id,node_id) REFERENCES enrolled_nodes(tenant_id,node_id)
+);
+CREATE TABLE IF NOT EXISTS enrolled_runtimes (
+    tenant_id TEXT NOT NULL, runtime_id TEXT NOT NULL, node_id TEXT NOT NULL, node_binding_revision BIGINT NOT NULL,
+    node_boot_incarnation TEXT NOT NULL, scope_id TEXT NOT NULL, agent_slot_id TEXT NOT NULL,
+    producer_ref TEXT NOT NULL, producer_grant_ref TEXT NOT NULL,
+    observer_ref TEXT NOT NULL, observer_grant_ref TEXT NOT NULL,
+    authority_id TEXT NOT NULL, authority_incarnation TEXT NOT NULL, provider TEXT NOT NULL,
+    revision BIGINT NOT NULL DEFAULT 1, status TEXT NOT NULL CHECK(status IN ('active','retired','revoked')),
+    registered_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(), expires_at TIMESTAMPTZ NOT NULL, retired_at TIMESTAMPTZ,
+    command_id TEXT NOT NULL, operation_id TEXT NOT NULL, event_id TEXT,
+    PRIMARY KEY(tenant_id,runtime_id),
+    FOREIGN KEY(tenant_id,node_id,node_binding_revision)
+      REFERENCES enrolled_node_bindings(tenant_id,node_id,binding_revision)
+);
+CREATE TABLE IF NOT EXISTS enrolled_node_challenges (
+    challenge_id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL, node_id TEXT NOT NULL, node_binding_revision BIGINT NOT NULL,
+    purpose TEXT NOT NULL, purpose_command_id TEXT NOT NULL, purpose_hash TEXT NOT NULL,
+    message_hex TEXT NOT NULL, expires_at TIMESTAMPTZ NOT NULL,
+    issued_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(), consumed_by TEXT,
+    issuance_command_id TEXT NOT NULL, issuance_operation_id TEXT NOT NULL,
+    FOREIGN KEY(tenant_id,node_id,node_binding_revision)
+      REFERENCES enrolled_node_bindings(tenant_id,node_id,binding_revision)
+);
+CREATE TABLE IF NOT EXISTS enrolled_node_command_proofs (
+    challenge_id TEXT PRIMARY KEY REFERENCES enrolled_node_challenges(challenge_id),
+    tenant_id TEXT NOT NULL, node_id TEXT NOT NULL, node_binding_revision BIGINT NOT NULL,
+    command_id TEXT NOT NULL, purpose TEXT NOT NULL, signature TEXT NOT NULL,
+    command_json JSONB NOT NULL, input_json JSONB NOT NULL,
+    verified_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+-- Authentication can refresh independently of a command's business identity.
+-- One challenge has one immutable proof; one business command can have many.
+CREATE INDEX IF NOT EXISTS enrolled_node_proof_command_lookup
+    ON enrolled_node_command_proofs(tenant_id,command_id);
+CREATE TABLE IF NOT EXISTS enrollment_command_views (
+    tenant_id TEXT NOT NULL, command_id TEXT NOT NULL, view_json JSONB NOT NULL,
+    PRIMARY KEY(tenant_id,command_id)
+);
+ALTER TABLE attempts ADD COLUMN IF NOT EXISTS enrollment_runtime_id TEXT;
+ALTER TABLE attempts ADD COLUMN IF NOT EXISTS enrollment_node_id TEXT;
+ALTER TABLE attempts ADD COLUMN IF NOT EXISTS enrollment_node_binding_revision BIGINT;
+ALTER TABLE attempts ADD COLUMN IF NOT EXISTS enrollment_boot_incarnation TEXT;
+ALTER TABLE attempts ADD COLUMN IF NOT EXISTS enrollment_registered_at TIMESTAMPTZ;
+ALTER TABLE attempts ADD COLUMN IF NOT EXISTS enrollment_proof_ref TEXT;
+ALTER TABLE attempts ADD COLUMN IF NOT EXISTS enrollment_revision BIGINT;
+ALTER TABLE execution_receipts ADD COLUMN IF NOT EXISTS enrollment_node_id TEXT;
+ALTER TABLE execution_receipts ADD COLUMN IF NOT EXISTS enrollment_node_binding_revision BIGINT;
+ALTER TABLE execution_receipts ADD COLUMN IF NOT EXISTS enrollment_runtime_id TEXT;
+ALTER TABLE execution_receipts ADD COLUMN IF NOT EXISTS enrollment_proof_ref TEXT;
+ALTER TABLE execution_receipts ADD COLUMN IF NOT EXISTS enrollment_recorded_at TIMESTAMPTZ;
+ALTER TABLE execution_receipts ADD COLUMN IF NOT EXISTS registration_command_id TEXT;
