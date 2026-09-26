@@ -138,6 +138,10 @@ class SourceService:
     LocalArtifactStore, verified by actual-byte SHA-256 readback, and referenced
     by an immutable SourceSnapshot manifest.
 
+    Excluded tracked secrets are locally streamed into a blob hash solely to
+    verify unchanged HEAD/index/worktree identity. Their bytes are never
+    persisted as Source artifacts, included in Git diffs, or emitted in logs.
+
     The first implementation is intentionally Linux-only because the existing
     LocalArtifactStore is a Linux dirfd/O_NOFOLLOW backend. Unsupported host
     backends fail closed before any source filesystem read or mutation.
@@ -1059,14 +1063,14 @@ class SourceService:
         self,
         root: Path,
         git_dir: Path | None = None,
-    ) -> dict[str, str]:
+    ) -> dict[str, tuple[str, str]]:
         raw = self._run_git(
             root,
             ["ls-tree", "-r", "-z", "--full-tree", "HEAD"],
             git_dir=git_dir,
             output_limit=self._max_metadata_bytes,
         )
-        entries: dict[str, str] = {}
+        entries: dict[str, tuple[str, str]] = {}
 
         for record in raw.split(b"\x00"):
             if not record:
@@ -1080,7 +1084,7 @@ class SourceService:
             if len(fields) != 3:
                 raise SourceRepositoryError("malformed Git tree header")
 
-            mode_bytes, object_type, _object_id = fields
+            mode_bytes, object_type, object_id = fields
             path = self._validate_relative_path(self._decode_git_path(path_bytes))
             mode = mode_bytes.decode("ascii", "strict")
 
@@ -1093,13 +1097,113 @@ class SourceService:
                 raise SourcePathError(
                     f"tracked Git symlink is not admissible: {path}"
                 )
-
-            entries[path] = mode
+            oid = object_id.decode("ascii", "strict")
+            if not re.fullmatch(r"(?:[a-f0-9]{40}|[a-f0-9]{64})", oid):
+                raise SourceRepositoryError("malformed tracked Git object identity")
+            entries[path] = (mode, oid)
 
         if not entries:
             raise SourceRepositoryError("Git HEAD tree contains no files")
 
         return entries
+
+    def _index_entries(self, root: Path) -> dict[str, tuple[str, str, str]]:
+        raw = self._run_git(
+            root, ["ls-files", "--stage", "-z"],
+            output_limit=self._max_metadata_bytes,
+        )
+        entries: dict[str, tuple[str, str, str]] = {}
+        for record in raw.split(b"\x00"):
+            if not record:
+                continue
+            try:
+                header, path_bytes = record.split(b"\t", 1)
+                mode_bytes, oid_bytes, stage_bytes = header.split(b" ")
+                path = self._validate_relative_path(self._decode_git_path(path_bytes))
+                mode = mode_bytes.decode("ascii", "strict")
+                oid = oid_bytes.decode("ascii", "strict")
+                stage = stage_bytes.decode("ascii", "strict")
+            except (ValueError, UnicodeError) as exc:
+                raise SourceRepositoryError("malformed Git index record") from exc
+            if not re.fullmatch(r"(?:[a-f0-9]{40}|[a-f0-9]{64})", oid):
+                raise SourceRepositoryError("malformed Git index object identity")
+            if path in entries:
+                # Unmerged paths have multiple stages; secret handling below
+                # must never treat a conflicted index as a clean secret.
+                entries[path] = (mode, oid, "conflict")
+            else:
+                entries[path] = (mode, oid, stage)
+        return entries
+
+    def _hash_tracked_secret(
+        self, root: Path, path: str, mode: str, oid: str, remaining: int,
+    ) -> int:
+        """Stream a secret into a Git blob digest; never persist or emit its bytes."""
+        try:
+            descriptor = self._open_relative(root, path)
+        except (OSError, SourcePathError):
+            raise SourceSecretError(f"tracked secret path is unavailable: {path}") from None
+        try:
+            before = os.fstat(descriptor)
+            if (not stat.S_ISREG(before.st_mode) or before.st_size > remaining
+                    or mode not in {"100644", "100755"}):
+                raise SourceSecretError(f"tracked secret path cannot be verified: {path}")
+            expected_mode = "100755" if before.st_mode & 0o111 else "100644"
+            if expected_mode != mode:
+                raise SourceSecretError(f"tracked secret mode changed: {path}")
+            digest = hashlib.sha1() if len(oid) == 40 else hashlib.sha256()
+            digest.update(f"blob {before.st_size}\0".encode("ascii"))
+            read_bytes = 0
+            while chunk := os.read(descriptor, min(64 * 1024, remaining - read_bytes + 1)):
+                read_bytes += len(chunk)
+                if read_bytes > remaining:
+                    raise SourceSecretError(f"tracked secret exceeded verification bound: {path}")
+                digest.update(chunk)
+            after = os.fstat(descriptor)
+            signature = lambda info: (
+                info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns,
+                info.st_ctime_ns, stat.S_IMODE(info.st_mode), info.st_nlink,
+            )
+            if read_bytes != before.st_size or signature(before) != signature(after):
+                raise SourceSecretError(f"tracked secret changed during verification: {path}")
+            try:
+                current_path = self._stat_relative(root, path)
+            except (OSError, SourcePathError):
+                raise SourceSecretError(
+                    f"tracked secret path changed during verification: {path}"
+                ) from None
+            if (not stat.S_ISREG(current_path.st_mode)
+                    or signature(after) != signature(current_path)):
+                raise SourceSecretError(
+                    f"tracked secret path changed during verification: {path}"
+                )
+            if digest.hexdigest() != oid:
+                raise SourceSecretError(f"changed tracked secret path is excluded: {path}")
+            return read_bytes
+        finally:
+            os.close(descriptor)
+
+    def _verify_tracked_secrets(
+        self,
+        root: Path,
+        tree_entries: Mapping[str, tuple[str, str]],
+        patterns: tuple[str, ...],
+        *,
+        explicit_paths: Iterable[str] = (),
+        max_bytes: int,
+    ) -> None:
+        explicit = set(explicit_paths)
+        is_secret = lambda path: path in explicit or self._is_secret_path(path, patterns)
+        secret_head = {path: value for path, value in tree_entries.items() if is_secret(path)}
+        secret_index = {
+            path: value for path, value in self._index_entries(root).items() if is_secret(path)
+        }
+        if (set(secret_head) != set(secret_index)
+                or any(secret_index[path] != (*value, "0") for path, value in secret_head.items())):
+            raise SourceSecretError("tracked secret index differs from HEAD")
+        remaining = max_bytes
+        for path, (mode, oid) in sorted(secret_head.items()):
+            remaining -= self._hash_tracked_secret(root, path, mode, oid, remaining)
 
     def _status_entries(self, raw: bytes) -> list[tuple[str, str]]:
         records = raw.split(b"\x00")
@@ -1181,6 +1285,20 @@ class SourceService:
             os.close(descriptor)
         os.close(root_fd)
         return file_fd
+
+    def _stat_relative(self, root: Path, relative_path: str) -> os.stat_result:
+        """Stat the current pathname through authorized, non-symlink dirfds."""
+        parts = self._validate_relative_path(relative_path).split("/")
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+        directory_fd = self._open_authorized_directory(root)
+        try:
+            for part in parts[:-1]:
+                child_fd = os.open(part, flags, dir_fd=directory_fd)
+                os.close(directory_fd)
+                directory_fd = child_fd
+            return os.stat(parts[-1], dir_fd=directory_fd, follow_symlinks=False)
+        finally:
+            os.close(directory_fd)
 
     def _read_bounded(
         self,
@@ -1485,9 +1603,15 @@ class SourceService:
         )
         if changed_secret_paths:
             raise SourceSecretError(
-                "changed credential/secret paths are excluded and cannot be "
-                f"read or diffed: {changed_secret_paths}"
+                "changed credential/secret paths are excluded from Source "
+                f"artifacts and diffs: {changed_secret_paths}"
             )
+        # Git's stat cache can miss a same-size edit immediately after commit.
+        # Stream only tracked secret bytes into an in-process blob hash before
+        # any Source artifact or diff is created; plaintext is not persisted.
+        self._verify_tracked_secrets(
+            root, tree_entries, secret_patterns, max_bytes=max_bytes,
+        )
 
         if dirty and not request.allow_dirty:
             raise SourceDirtyError(
@@ -1717,6 +1841,12 @@ class SourceService:
                     f"Source bytes changed during final readback: {path}"
                 )
 
+        # Status may miss a same-size rename after the first secret hash. The
+        # last admission boundary must verify the current pathname again.
+        self._verify_tracked_secrets(
+            root, tree_entries, secret_patterns, max_bytes=max_bytes,
+        )
+
         return snapshot
 
     def readback(
@@ -1812,6 +1942,16 @@ class SourceService:
                     )
                 stored_files[item.path] = (stored_bytes, item.mode)
             current_tree_entries = self._tree_entries(root)
+            try:
+                self._verify_tracked_secrets(
+                    root, current_tree_entries, self._secret_patterns_for(request),
+                    explicit_paths=snapshot.excluded_paths,
+                    max_bytes=self._effective_max_bytes(request),
+                )
+            except SourceSecretError:
+                raise SourceChangedDuringSnapshot(
+                    "tracked secret changed after Source admission"
+                ) from None
             current_status_entries = self._status_entries(current_status)
             current_diff_paths: set[str] = set(current_tree_entries)
             for xy, path in current_status_entries:
@@ -1854,6 +1994,16 @@ class SourceService:
                     raise SourceChangedDuringSnapshot(
                         f"Source file mode changed after admission: {item.path}"
                     )
+            try:
+                self._verify_tracked_secrets(
+                    root, current_tree_entries, self._secret_patterns_for(request),
+                    explicit_paths=snapshot.excluded_paths,
+                    max_bytes=self._effective_max_bytes(request),
+                )
+            except SourceSecretError:
+                raise SourceChangedDuringSnapshot(
+                    "tracked secret changed after Source admission"
+                ) from None
         except SourceError:
             raise
         except Exception as exc:
