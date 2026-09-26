@@ -243,6 +243,50 @@ class GateRunnerTests(unittest.TestCase):
         with self.assertRaises(runner.EvidenceError):
             runner.audit_run(self.run_dir, self.source, self.contract_path)
 
+    def test_unmanifested_candidate_file_is_rejected_on_resume_audit(self):
+        self.initialize()
+        (self.run_dir / "unsealed.json").write_text("{}\n", encoding="utf-8")
+        with self.assertRaisesRegex(runner.EvidenceError, "exact file closure"):
+            runner.audit_run(self.run_dir, self.source, self.contract_path)
+
+    def test_consecutive_audits_emit_an_immutable_manifest_closure_chain(self):
+        self.initialize()
+        runner.audit_run(self.run_dir, self.source, self.contract_path)
+        runner.audit_run(self.run_dir, self.source, self.contract_path)
+
+        state = runner.load_state(self.run_dir)
+        history = runner.load_audit_history(self.run_dir, state)
+        self.assertEqual([item["sequence"] for item in history], [1, 2])
+        self.assertTrue(all(item["status"] == "passed" for item in history))
+        self.assertTrue(all(item["all_scenarios_passed"] is False for item in history))
+        self.assertEqual(
+            history[1]["previous_receipt_sha256"],
+            runner.digest_bytes(
+                (self.run_dir / "audit-history" / "000001" / "receipt.json").read_bytes()
+            ),
+        )
+        self.assertEqual(
+            history[0]["candidate_files_sha256"], history[1]["candidate_files_sha256"],
+        )
+
+        second_input = runner.strict_json(
+            (self.run_dir / "audit-history" / "000002" / "input-manifest.json").read_bytes()
+        )
+        for prior in (self.run_dir / "audit-history" / "000001").iterdir():
+            name = prior.relative_to(self.run_dir).as_posix()
+            self.assertEqual(
+                second_input["files"][name], runner.digest_bytes(prior.read_bytes()),
+            )
+        current, _data = runner.verify_run_manifest(self.run_dir, state)
+        latest = "audit-history/000002/receipt.json"
+        self.assertEqual(
+            current["files"][latest],
+            runner.digest_bytes((self.run_dir / latest).read_bytes()),
+        )
+        gate = runner.strict_json((self.run_dir / "gate-record.json").read_bytes())
+        self.assertEqual(gate["audit_history"]["count"], 2)
+        self.assertEqual(gate["audit_history"]["latest_receipt"]["path"], latest)
+
     def test_command_evidence_ref_cannot_point_to_other_scenario_or_command(self):
         state = self.initialize()
         scenario = next(iter(self.plan["scenarios"]))

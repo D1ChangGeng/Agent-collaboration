@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-09-22.6.
+is determined by the named Gate records. Contract revision: 2026-09-22.7.
 
 ## Authority and inputs
 
@@ -212,6 +212,13 @@ preservation inventory. Runtime Gate scenarios are defined in
 [gate-contract.json](gate-contract.json). `tools/runtime/validate_gate.py` checks evidence
 completeness and digests; a passing validator is not an independent runtime test
 or authorization to accept/publish.
+
+P1 independent Review attachment requires two consecutive audits after every
+mandatory scenario has passed. Each audit writes an immutable numbered receipt
+with its authenticated input state, exact input manifest and candidate-scoped
+postflight. The next audit's input manifest must close the prior receipt, and the
+current run manifest must close the latest receipt. Both receipts must bind the
+same unchanged candidate-file digest; command output alone is not audit proof.
 
 Every passing scenario binds source baseline, Machine/Node/OS, Core/Provider,
 Driver/Harness/database/protocol versions, Credential Scope, Direction, Policy,

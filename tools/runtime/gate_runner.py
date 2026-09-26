@@ -35,6 +35,8 @@ PLAN_SCHEMA = "acs-p1-gate-runner-plan/1"
 STATE_SCHEMA = "acs-p1-gate-runner-state/1"
 PROBE_SCHEMA = "acs-p1-gate-probe-result/1"
 MANIFEST_SCHEMA = "acs-p1-gate-run-manifest/1"
+AUDIT_RECEIPT_SCHEMA = "acs-p1-gate-audit-receipt/1"
+AUDIT_HISTORY_NAME = "audit-history"
 STATE_KEY_NAME = ".runner-state.key"
 MACHINE_SCHEMA = "acs-machine-observation/1"
 GATE_RECORD_SCHEMA = "acs-gate-record/1"
@@ -2882,7 +2884,7 @@ def invoke_validator(
     }
 
 
-def build_manifest(run_dir: Path, state: dict[str, Any]) -> dict[str, Any]:
+def manifest_files(run_dir: Path) -> dict[str, str]:
     files = {}
     for path in sorted(run_dir.rglob("*")):
         relative = path.relative_to(run_dir)
@@ -2892,6 +2894,11 @@ def build_manifest(run_dir: Path, state: dict[str, Any]) -> dict[str, Any]:
             and relative.parts[0] not in {"source-snapshot", "workspaces"}
         ):
             files[path.relative_to(run_dir).as_posix()] = digest_bytes(path.read_bytes())
+    return files
+
+
+def build_manifest(run_dir: Path, state: dict[str, Any]) -> dict[str, Any]:
+    files = manifest_files(run_dir)
     return {
         "schema_version": MANIFEST_SCHEMA,
         "run_id": state["run_id"],
@@ -2907,11 +2914,216 @@ def build_manifest(run_dir: Path, state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def verify_run_manifest(run_dir: Path, state: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
+    """Verify both every listed digest and the exact eligible-file closure."""
+    path = run_dir / "RUN-MANIFEST.json"
+    data = path.read_bytes()
+    manifest = strict_json(data)
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("schema_version") != MANIFEST_SCHEMA
+        or manifest.get("run_id") != state["run_id"]
+        or manifest.get("source_commit") != state["source_commit"]
+        or manifest.get("source_tree") != state["source_tree"]
+        or manifest.get("binding_sha256") != state["binding_sha256"]
+    ):
+        raise EvidenceError("run manifest identity mismatch")
+    recorded = manifest.get("files")
+    actual = manifest_files(run_dir)
+    if not isinstance(recorded, dict) or recorded != actual:
+        raise EvidenceError("run manifest exact file closure mismatch")
+    return manifest, data
+
+
+def _candidate_files_digest(files: dict[str, str]) -> str:
+    mutable = {
+        "current-postflight.json",
+        "gate-record.json",
+        "redaction-audit.json",
+        "state.json",
+        "validation.json",
+    }
+    return digest({
+        name: value for name, value in files.items()
+        if name not in mutable and not name.startswith(AUDIT_HISTORY_NAME + "/")
+    })
+
+
+def load_audit_history(run_dir: Path, state: dict[str, Any]) -> list[dict[str, Any]]:
+    """Validate immutable audit receipts and their manifest-closure chain."""
+    root = run_dir / AUDIT_HISTORY_NAME
+    if not root.exists():
+        return []
+    if root.is_symlink() or not root.is_dir():
+        raise EvidenceError("audit history root is not a regular directory")
+    entries = sorted(root.iterdir())
+    if any(path.is_symlink() or not path.is_dir() for path in entries):
+        raise EvidenceError("audit history contains a non-directory entry")
+    receipts: list[dict[str, Any]] = []
+    previous_directory: Path | None = None
+    previous_receipt: Path | None = None
+    for sequence, directory in enumerate(entries, 1):
+        if directory.name != f"{sequence:06d}":
+            raise EvidenceError("audit history sequence is not contiguous")
+        required = {
+            "input-manifest.json", "input-state.json", "postflight.json", "receipt.json",
+        }
+        members = list(directory.iterdir())
+        children = {path.name for path in members}
+        if children != required or any(path.is_symlink() or not path.is_file() for path in members):
+            raise EvidenceError("audit receipt file set is incomplete")
+        receipt_path = directory / "receipt.json"
+        receipt = strict_json(receipt_path.read_bytes())
+        if not isinstance(receipt, dict):
+            raise EvidenceError("audit receipt is not an object")
+        expected_identity = {
+            "schema_version": AUDIT_RECEIPT_SCHEMA,
+            "sequence": sequence,
+            "run_id": state["run_id"],
+            "source_commit": state["source_commit"],
+            "source_tree": state["source_tree"],
+            "binding_sha256": state["binding_sha256"],
+            "status": "passed",
+        }
+        if any(receipt.get(key) != value for key, value in expected_identity.items()):
+            raise EvidenceError("audit receipt identity mismatch")
+        observed_at = stamp(receipt.get("observed_at"))
+        if observed_at > datetime.now(UTC):
+            raise EvidenceError("audit receipt observation is in the future")
+        input_manifest_path = validate_ref(receipt.get("input_manifest"), run_dir)
+        input_state_path = validate_ref(receipt.get("input_state"), run_dir)
+        postflight_path = validate_ref(receipt.get("postflight"), run_dir)
+        if (
+            input_manifest_path != directory / "input-manifest.json"
+            or input_state_path != directory / "input-state.json"
+            or postflight_path != directory / "postflight.json"
+        ):
+            raise EvidenceError("audit receipt references the wrong immutable files")
+        input_manifest = strict_json(input_manifest_path.read_bytes())
+        input_state = strict_json(input_state_path.read_bytes())
+        postflight = strict_json(postflight_path.read_bytes())
+        if (
+            not isinstance(input_manifest, dict)
+            or input_manifest.get("schema_version") != MANIFEST_SCHEMA
+            or input_manifest.get("run_id") != state["run_id"]
+            or input_manifest.get("source_commit") != state["source_commit"]
+            or input_manifest.get("source_tree") != state["source_tree"]
+            or input_manifest.get("binding_sha256") != state["binding_sha256"]
+            or not isinstance(input_manifest.get("files"), dict)
+        ):
+            raise EvidenceError("audit input manifest identity mismatch")
+        if (
+            not isinstance(input_state, dict)
+            or input_state.get("run_id") != state["run_id"]
+            or not hmac.compare_digest(
+                str(input_state.get("state_hmac", "")),
+                state_mac(input_state, read_state_key(run_dir)),
+            )
+            or input_manifest["files"].get("state.json")
+            != digest_bytes(input_state_path.read_bytes())
+        ):
+            raise EvidenceError("audit input state is not authenticated by its manifest")
+        if (
+            not isinstance(postflight, dict)
+            or postflight.get("run_id") != state["run_id"]
+            or postflight.get("source_commit") != state["source_commit"]
+            or postflight.get("source_tree") != state["source_tree"]
+            or postflight.get("binding_sha256") != state["binding_sha256"]
+            or postflight.get("status") not in {"clean", "not_applicable"}
+        ):
+            raise EvidenceError("audit postflight identity or status mismatch")
+        if input_state.get("runtime_profile") is not None and postflight.get("status") != "clean":
+            raise EvidenceError("runtime Profile audit requires a clean live postflight")
+        input_scenarios = input_state.get("scenarios")
+        all_passed = isinstance(input_scenarios, dict) and bool(input_scenarios) and all(
+            isinstance(item, dict) and item.get("status") == "passed"
+            for item in input_scenarios.values()
+        )
+        if (
+            receipt.get("all_scenarios_passed") is not all_passed
+            or receipt.get("candidate_files_sha256")
+            != _candidate_files_digest(input_manifest["files"])
+        ):
+            raise EvidenceError("audit receipt does not match its sealed candidate input")
+        expected_previous = (
+            digest_bytes(previous_receipt.read_bytes()) if previous_receipt is not None else None
+        )
+        if receipt.get("previous_receipt_sha256") != expected_previous:
+            raise EvidenceError("audit receipt chain mismatch")
+        if previous_directory is not None:
+            for prior in previous_directory.iterdir():
+                name = prior.relative_to(run_dir).as_posix()
+                if input_manifest["files"].get(name) != digest_bytes(prior.read_bytes()):
+                    raise EvidenceError("prior audit receipt was not closed by the next input manifest")
+        receipts.append(receipt)
+        previous_directory = directory
+        previous_receipt = receipt_path
+    return receipts
+
+
+def _write_audit_receipt(
+    run_dir: Path,
+    state: dict[str, Any],
+    manifest: dict[str, Any],
+    manifest_data: bytes,
+    postflight: dict[str, Any],
+    previous: list[dict[str, Any]],
+) -> dict[str, Any]:
+    sequence = len(previous) + 1
+    root = run_dir / AUDIT_HISTORY_NAME
+    root.mkdir(mode=0o700, exist_ok=True)
+    directory = root / f"{sequence:06d}"
+    if directory.exists():
+        raise EvidenceError("audit receipt destination already exists")
+    directory.mkdir(mode=0o700)
+    input_manifest_path = directory / "input-manifest.json"
+    input_state_path = directory / "input-state.json"
+    postflight_path = directory / "postflight.json"
+    write_atomic(input_manifest_path, manifest_data)
+    write_atomic(input_state_path, (run_dir / "state.json").read_bytes())
+    write_json(postflight_path, postflight)
+    previous_receipt_path = (
+        root / f"{sequence - 1:06d}" / "receipt.json" if sequence > 1 else None
+    )
+    receipt = {
+        "schema_version": AUDIT_RECEIPT_SCHEMA,
+        "sequence": sequence,
+        "run_id": state["run_id"],
+        "source_commit": state["source_commit"],
+        "source_tree": state["source_tree"],
+        "binding_sha256": state["binding_sha256"],
+        "observed_at": now_text(),
+        "status": "passed",
+        "all_scenarios_passed": bool(state.get("scenarios")) and all(
+            item.get("status") == "passed" for item in state["scenarios"].values()
+        ),
+        "candidate_files_sha256": _candidate_files_digest(manifest["files"]),
+        "previous_receipt_sha256": (
+            digest_bytes(previous_receipt_path.read_bytes())
+            if previous_receipt_path is not None else None
+        ),
+        "input_manifest": file_ref(input_manifest_path, run_dir),
+        "input_state": file_ref(input_state_path, run_dir),
+        "postflight": file_ref(postflight_path, run_dir),
+        "checks": [
+            "exact_manifest_closure",
+            "authenticated_state",
+            "command_evidence",
+            "candidate_postflight",
+            "secret_scan",
+            "workspace_integrity",
+        ],
+    }
+    write_json(directory / "receipt.json", receipt)
+    return receipt
+
+
 def finalize(
     run_dir: Path, source_root: Path, contract_path: Path, *, allow_pass: bool = True
 ) -> dict[str, Any]:
     state, plan, contract = load_run(run_dir, source_root, contract_path)
     audit_commands(state, plan, run_dir)
+    audit_history = load_audit_history(run_dir, state)
     scenario_records = [
         scenario_record(state, sid, run_dir) for sid in contract["gates"]["P1"]["scenarios"]
     ]
@@ -2929,6 +3141,16 @@ def finalize(
         "scenarios": scenario_records,
         "prerequisites": plan.get("prerequisites", {}),
         "review": plan.get("review", {}),
+        "audit_history": {
+            "count": len(audit_history),
+            "latest_receipt": (
+                file_ref(
+                    run_dir / AUDIT_HISTORY_NAME / f"{len(audit_history):06d}" / "receipt.json",
+                    run_dir,
+                )
+                if audit_history else None
+            ),
+        },
     }
     record_path = run_dir / "gate-record.json"
     write_json(record_path, record)
@@ -3375,16 +3597,22 @@ def run_scenario(
 def audit_run(run_dir: Path, source_root: Path, contract_path: Path) -> dict[str, Any]:
     state, plan, _contract = load_run(run_dir, source_root, contract_path)
     audit_commands(state, plan, run_dir)
-    manifest = strict_json((run_dir / "RUN-MANIFEST.json").read_bytes())
-    if (
-        manifest.get("schema_version") != MANIFEST_SCHEMA
-        or manifest.get("run_id") != state["run_id"]
-    ):
-        raise EvidenceError("run manifest identity mismatch")
-    for name, expected in manifest.get("files", {}).items():
-        path = run_dir / name
-        if not path.is_file() or digest_bytes(path.read_bytes()) != expected:
-            raise EvidenceError("run manifest file digest mismatch")
+    manifest, manifest_data = verify_run_manifest(run_dir, state)
+    previous_audits = load_audit_history(run_dir, state)
+    postflight = {
+        "schema_version": "acs-p1-current-postflight/1",
+        "run_id": state["run_id"],
+        "source_commit": state["source_commit"],
+        "source_tree": state["source_tree"],
+        "binding_sha256": state["binding_sha256"],
+        "observed_at": now_text(),
+        "candidate_processes": [],
+        "candidate_units": [],
+        "retained_evidence_roots": [],
+        "unsafe_evidence_roots": [],
+        "status": "not_applicable",
+        "scope": "no POSIX runtime Profile is bound to this candidate",
+    }
     if os.name == "posix" and state.get("runtime_profile") is not None:
         token = state["run_id"]
         processes = []
@@ -3479,6 +3707,10 @@ def audit_run(run_dir: Path, source_root: Path, contract_path: Path) -> dict[str
     ):
         if workspace.is_dir():
             audit_workspace(workspace, state, run_dir)
+    _write_audit_receipt(
+        run_dir, state, manifest, manifest_data, postflight, previous_audits,
+    )
+    load_audit_history(run_dir, state)
     return finalize(run_dir, source_root, contract_path)
 
 
@@ -3489,6 +3721,16 @@ def attach_review(
     state, plan, contract = load_run(run_dir, source_root, contract_path)
     if any(item.get("status") != "passed" for item in state["scenarios"].values()):
         raise EvidenceError("independent review requires all P1 scenarios passed")
+    verify_run_manifest(run_dir, state)
+    audit_history = load_audit_history(run_dir, state)
+    if (
+        len(audit_history) < 2
+        or not all(item["all_scenarios_passed"] for item in audit_history[-2:])
+        or len({item["candidate_files_sha256"] for item in audit_history[-2:]}) != 1
+    ):
+        raise EvidenceError(
+            "independent review requires two consecutive sealed post-scenario audits"
+        )
     if not review_dir.is_absolute() or review_dir.is_symlink() or not review_dir.is_dir():
         raise EvidenceError("review bundle must be an absolute regular directory")
     files = sorted(path for path in review_dir.iterdir() if path.is_file())
