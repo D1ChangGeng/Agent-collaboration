@@ -49,7 +49,8 @@ def complete():
             "assistant_ids": ["msg_answer_a"], "prompt_async_count": 1,
             "terminal_status": "completed", "assistant_text_exact": True,
             "delegation_attempt_requested": True,
-            "assistant_part_types": ["text"], "non_text_part_count": 0,
+            "assistant_part_types": ["step-start", "text", "step-finish"],
+            "delegation_part_count": 0,
         },
         "response": {
             "invocation_id": invocation, "disposition": "applied",
