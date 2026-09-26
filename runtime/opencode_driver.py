@@ -483,9 +483,12 @@ class OpenCodeNativeDriver:
             raise DriverRejected("message readback contains a different native session")
         for message in messages:
             message_id = native_id(message.get("info", {}).get("id"), "msg")
-            if not isinstance(message.get("parts"), list) or any(
+            parts = message.get("parts")
+            if not isinstance(parts, list) or any(not isinstance(part, dict) for part in parts):
+                raise DriverRejected("native message parts are malformed")
+            if any(
                 part.get("sessionID") != self.session_id or part.get("messageID") != message_id
-                for part in message["parts"]
+                for part in parts
             ):
                 raise DriverRejected("native message parts are cross-bound")
         return {"session": session, "status": status, "messages": messages}
@@ -538,8 +541,20 @@ class OpenCodeNativeDriver:
                 or info.get("agent") != self.profile.agent
                 or info.get("model", {}).get("providerID") != self.profile.provider_id
                 or info.get("model", {}).get("modelID") != self.profile.model_id
-                or info.get("tools") is not None or info.get("system") is not None
-                or not isinstance(parts, list) or len(parts) != 1
+                or info.get("tools") is not None or info.get("system") is not None):
+            raise DriverRejected("native message readback differs from the exact authorized input")
+        # OpenCode persists the exact user-message header before its text part.
+        # Only this narrow state is pending; callers retain their bounded readback
+        # window and never submit another prompt when that window is exhausted.
+        if not isinstance(parts, list) or any(not isinstance(part, dict) for part in parts):
+            raise DriverRejected("native message parts are malformed")
+        if parts == []:
+            self.journal.event(operation.operation_id, "message_readback_incomplete", {
+                "native_session_id": self.session_id, "native_message_id": message_id,
+                "reason": "parts_not_committed",
+            })
+            return None
+        if (not isinstance(parts, list) or len(parts) != 1
                 or parts[0].get("type") != "text" or parts[0].get("text") != payload["text"]
                 or parts[0].get("sessionID") != self.session_id or parts[0].get("messageID") != message_id
                 or parts[0].get("synthetic", False) or parts[0].get("ignored", False)):
