@@ -890,3 +890,44 @@ class DeliveryDispatcher:
                         "attempts": row["attempts"], "retry_after_seconds": row["retry_delay_seconds"]}
             finally:
                 cursor.execute("SELECT pg_advisory_unlock(%s)", (key,))
+
+    def reconcile_marked(self, identity):
+        """Reconcile one terminal uncertain Attempt without creating another Attempt."""
+        if set(identity) != {"tenant_id", "message_id", "operation_id"}:
+            raise DeliveryRejected("invalid_committed_operation_identity")
+        with self.service.authority._connect() as connection, connection.cursor() as cursor:
+            row = self._load(cursor, identity)
+            if row["state"] != "uncertain":
+                return {"status": row["state"], "message_id": row["message_id"]}
+            attempt = self._load_attempt(cursor, row)
+            if attempt["status"] != "uncertain" or attempt["invocation_json"] is None:
+                raise DeliveryRejected("marked_reconciliation_requires_uncertain_attempt")
+            invocation = InvocationRequest.model_validate_json(
+                json.dumps(attempt["invocation_json"]), strict=True,
+            )
+            cursor.execute(
+                "SELECT 1 FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s "
+                "AND layer='runtime_dispatched' AND attempt_id=%s AND dispatch_id=%s",
+                (row["tenant_id"], row["message_id"], invocation.attempt_id,
+                 invocation.dispatch_id),
+            )
+            if cursor.fetchone() is None:
+                raise DeliveryRejected("marked_reconciliation_receipt_missing")
+            _, endpoint = self._selected_endpoint(cursor, row, attempt)
+        observation = endpoint.reconcile_marked(invocation)
+        with self.service.authority._connect() as connection, connection.cursor() as cursor:
+            row = self._load(cursor, identity)
+            self._project(cursor, row, observation)
+            status = observation["status"]
+            cursor.execute(
+                "UPDATE delivery_messages SET state=%s,last_error=NULL WHERE tenant_id=%s AND message_id=%s",
+                (status, row["tenant_id"], row["message_id"]),
+            )
+            cursor.execute(
+                "UPDATE delivery_attempts SET status=%s,error_code=NULL,finished_at=clock_timestamp() "
+                "WHERE tenant_id=%s "
+                "AND message_id=%s AND attempt_id=%s",
+                (status, row["tenant_id"], row["message_id"], invocation.attempt_id),
+            )
+        return {"status": status, "message_id": row["message_id"],
+                "attempts": row["attempts"]}
