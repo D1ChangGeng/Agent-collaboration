@@ -13,9 +13,9 @@ order is P1, P2-CODEX, P2-OPENCODE, P2-MCP-WORKFLOW,
 P2-MANAGEMENT-WORKFLOW, then P2-REVIEW. The public collaboration and management
 surfaces are defined in docs/runtime/P2-MCP-WORKFLOW-CONTRACT.md and
 docs/runtime/P2-MANAGEMENT-WORKFLOW-CONTRACT.md at surface revision
-acs-p2-mcp-workflow/4. The Gates validate Profile-filtered discovery, explicit
+acs-p2-mcp-workflow/5. The Gates validate Profile-filtered discovery, explicit
 project context, closed schemas, discriminated results, executable follow-ups,
-Source reads and Skill workflows. Checked-in contracts remain preparation input
+Source reads, metadata-first Skill routing and selective references. Checked-in contracts remain preparation input
 until direct execution evidence is attached.
 
 Independent review follows a capability-first order. Reviewers inspect the

@@ -1,6 +1,6 @@
 {
-  "schema_version": "acs-p2-mcp-tool-contract/4",
-  "surface_revision": "acs-p2-mcp-workflow/4",
+  "schema_version": "acs-p2-mcp-tool-contract/5",
+  "surface_revision": "acs-p2-mcp-workflow/5",
   "server": "agent-collaboration-runtime",
   "naming_convention": "concise_action_phrase",
   "naming_principles": [
@@ -1319,7 +1319,16 @@
       "observed_at",
       "evidence_class"
     ],
-    "problem_result_type": "problem"
+    "problem_result_type": "problem",
+    "metadata_optional": [
+      "knowledge_hints"
+    ],
+    "knowledge_hint_required": [
+      "skill",
+      "topic",
+      "reason",
+      "reference"
+    ]
   },
   "result_types": {
     "harness_capacity_page": [

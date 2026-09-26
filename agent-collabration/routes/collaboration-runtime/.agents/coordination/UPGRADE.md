@@ -26,7 +26,7 @@ Root: `agent-collaboration-root`; Route: `collaboration-runtime`.
 | P2-MCP-SURFACE | Management + Runtime Engineering | Profile-filtered global, project, Source, collaboration, continuation and advanced tools with explicit project_id, exact schemas and discriminated results. |
 | P2-CONTINUATION | Runtime Engineering + Reviewer | Durable responses, subscriptions, Session-aware wake, project Inbox recovery, typed reads and control. |
 | P2-MANAGEMENT | Management + Runtime Engineering | Cross-project discovery, ProjectContextPack, Route and WorkItem management, Source reads, web OAuth/Tunnel access and remote Review. |
-| P2-SKILLS | Management + Reviewer | Setup, project management, delegation, handoff, review, finalization, recovery and portfolio Skills exercised through local and web clients. |
+| P2-SKILLS | Management + Reviewer | Setup lifecycle plus metadata-routed Project, collaboration, Runtime, continuity, Source/Evidence, Review/Acceptance, governance and web knowledge modules with selective references. |
 | P2-REVIEW | Independent Reviewer + product owner | Exact Profile review, limitations, evidence expiry and owner decision. |
 
 ## Current scoped observations

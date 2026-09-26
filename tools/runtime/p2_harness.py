@@ -16,7 +16,7 @@ from typing import Any
 INVENTORY_SCHEMA = "acs-p2-readonly-inventory/2"
 WORKSPACE_SCHEMA = "acs-p2-runner-workspace/3"
 MANIFEST_SCHEMA = "acs-p2-runner-manifest/1"
-MCP_SURFACE_REVISION = "acs-p2-mcp-workflow/4"
+MCP_SURFACE_REVISION = "acs-p2-mcp-workflow/5"
 REQUIRED_EVIDENCE = (
     "command_ids", "operation_ids", "message_ids", "event_ids", "receipts",
     "raw_outputs", "fault_injection", "source_readback", "artifact_readback",
@@ -50,7 +50,7 @@ FAULTS = {
     "P2-MCP-RESOURCE-MESSAGE-INBOX": "separate pure resource reads, message consumption and Inbox listing",
     "P2-MCP-TYPED-CONTROL": "apply notification, WorkItem and Attempt control with independent authorization",
     "P2-MCP-WAIT-AGGREGATION": "observe any and all response conditions with one completion revision",
-    "P2-MCP-SKILL-WORKFLOWS": "execute adopted Skill workflows through canonical tools",
+    "P2-MCP-SKILL-KNOWLEDGE-ROUTING": "route material questions to the smallest applicable knowledge Skill and reference",
     "P2-MGMT-PROJECT-ADOPTION-IDENTITY": "adopt one project and preserve Project and Root identity",
     "P2-MGMT-PROJECT-ID-ISOLATION": "reject cross-project handles and preserve explicit project context",
     "P2-MGMT-LOCAL-CONTEXT-HYDRATION": "load current AGENTS and manifest context from a local session",
@@ -62,7 +62,7 @@ FAULTS = {
     "P2-MGMT-EXTERNAL-SOURCE-COORDINATION": "coordinate external source-provider reads with ACS source identity",
     "P2-MGMT-WEB-REVIEWER-FLOW": "perform exact-baseline Review from a web-capable MCP client",
     "P2-MGMT-WATCH-INBOX-RECOVERY": "deliver subscribed change notification and recover through project Inbox",
-    "P2-MGMT-SKILL-STARTER-PROMPTS": "invoke each adopted Skill from its one-sentence user entry",
+    "P2-MGMT-SKILL-CONTEXT-PRESENTATION": "present metadata-first Skill knowledge with selective references and Project context",
 }
 SECRET = re.compile(
     r"(?i)\"?(password|passwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|authorization)\"?\s*[:=]"

@@ -1,7 +1,7 @@
 # P2 MCP collaboration and continuation contract
 
 Status: adopted P2 implementation contract. Surface revision:
-acs-p2-mcp-workflow/4.
+acs-p2-mcp-workflow/5.
 
 This contract defines the typed collaboration, messaging and continuation
 surface. Project and web management behavior is defined by
@@ -236,21 +236,32 @@ submit_command accepts one complete authenticated Domain SurfaceCommand for
 operator, migration and conformance flows. The run alias returns the same
 Domain disposition. Ordinary collaboration uses the typed tools.
 
-## Workflow layer
+## Knowledge Skill layer
 
-Reusable user workflows are Skills. Skills define tool order, context loading,
-partial-result handling, templates and completion criteria. MCP tools remain the
-data, authorization and action layer. Domain Command remains the internal
-deterministic state-transition protocol.
+The setup Skill owns guarded installation and migration procedures. Runtime
+Skills are domain knowledge modules rather than fixed task recipes. They explain
+entities, authority, invariants, decision axes, evidence boundaries and tool
+implications so an external Agent can compose actions for current and future
+goals.
 
-The adopted Skill catalog is in [skills/README.md](skills/README.md). Starter
-prompts provide one-sentence user entries. Harness slash aliases may invoke a
-Skill but do not define a separate workflow contract.
+The Harness initially receives Skill name and description. A semantic match,
+resource state, knowledge_hint or explicit invocation loads the applicable
+SKILL.md. The Agent follows one model, decisions or tools reference when that
+detail is material and expands into an adjacent Skill only when the task crosses
+its boundary.
+
+MCP tools remain the authenticated data and action layer. Domain Command remains
+the deterministic internal transition protocol. ProjectContextPack, AGENTS,
+SourceBindings and project knowledge supply current project facts.
+
+The adopted catalog is [skills/README.md](skills/README.md), the machine catalog
+is [p2-skill-contract.json](p2-skill-contract.json), and runtime presentation is
+[skills/RUNTIME-PRESENTATION.md](skills/RUNTIME-PRESENTATION.md).
 
 ## P2 acceptance
 
 P2-MCP-WORKFLOW proves typed collaboration, delivery, response, notification,
-reading, cancellation and Skill invocation from real Codex and OpenCode clients.
+reading, cancellation and Skill knowledge routing from real Codex and OpenCode clients.
 P2-MANAGEMENT-WORKFLOW then proves local and web context hydration, cross-project
 management, Source reads, Review workflows and project Inbox recovery. Each
 scenario binds exact source, Profile, versions, credentials, direction, policy,

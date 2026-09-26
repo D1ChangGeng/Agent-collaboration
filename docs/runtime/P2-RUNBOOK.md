@@ -91,7 +91,7 @@ unresolved items. Reused P1 evidence proves only the prerequisite.
   Inbox listing as independent contracts.
 - TYPED-CONTROL: exercise notification, WorkItem and Runtime Attempt controls.
 - WAIT-AGGREGATION: exercise any and all response conditions.
-- SKILL-WORKFLOWS: invoke adopted Skills through canonical tools.
+- SKILL-KNOWLEDGE-ROUTING: route material questions to one knowledge domain and the smallest applicable reference.
 
 ## P2-MANAGEMENT-WORKFLOW
 
@@ -107,11 +107,11 @@ unresolved items. Reused P1 evidence proves only the prerequisite.
   identity and revision.
 - WEB-REVIEWER-FLOW: perform exact-baseline Review from a web MCP client.
 - WATCH-INBOX-RECOVERY: deliver subscription change and recover it from Inbox.
-- SKILL-STARTER-PROMPTS: execute each Skill from its one-sentence user entry.
+- SKILL-CONTEXT-PRESENTATION: prove metadata-first discovery, selective references, knowledge hints and ProjectContextPack integration.
 
 Public MCP bytes, profile-filtered tool discovery, exact arguments, Domain rows,
 Inbox and Outbox, Source readback, OAuth scope, Node and Driver observations,
-Skill selection, Session activity and unresolved items are direct Gate evidence.
+Skill metadata, loaded references, knowledge hints, Session activity and unresolved items are direct Gate evidence.
 
 ## Fault safety
 

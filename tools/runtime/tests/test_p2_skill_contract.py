@@ -10,14 +10,16 @@ SKILL_CONTRACT = ROOT / "docs" / "runtime" / "p2-skill-contract.json"
 TOOL_CONTRACT = ROOT / "docs" / "runtime" / "p2-mcp-tool-contract.json"
 EXPECTED = {
     "agent-collaboration-setup": {"list_projects", "load_project"},
-    "acs-project-manager": {"load_project", "list_routes", "list_work"},
-    "acs-delegate-work": {"create_work", "send_message", "list_harnesses"},
-    "acs-handoff-work": {"handoff_work", "read_source"},
-    "acs-review-work": {"request_review", "submit_review", "read_diff"},
-    "acs-finalize-work": {"accept_work", "list_reviews", "list_evidence"},
-    "acs-recover-work": {"check_inbox", "list_activity", "read_source"},
-    "acs-portfolio-manager": {"list_projects", "load_project", "list_routes"},
+    "acs-project-context": {"list_projects", "load_project", "list_routes"},
+    "acs-collaboration-model": {"configure_team", "create_work", "handoff_work"},
+    "acs-runtime-model": {"list_connections", "list_harnesses", "stop_attempt"},
+    "acs-continuity-recovery": {"check_inbox", "wait_for_response", "watch_changes"},
+    "acs-source-evidence": {"list_sources", "read_source", "read_diff"},
+    "acs-review-acceptance": {"request_review", "submit_review", "accept_work"},
+    "acs-policy-governance": {"read_profile", "configure_team", "submit_command"},
+    "acs-web-collaboration": {"list_projects", "load_project", "read_file"},
 }
+KNOWLEDGE = set(EXPECTED) - {"agent-collaboration-setup"}
 
 
 def frontmatter(text: str) -> dict[str, str]:
@@ -32,56 +34,99 @@ def frontmatter(text: str) -> dict[str, str]:
 
 
 class P2SkillContractTests(unittest.TestCase):
-    def test_machine_catalog_matches_skill_specs_and_tools(self):
-        skill_contract = json.loads(SKILL_CONTRACT.read_text(encoding="utf-8"))
-        tool_contract = json.loads(TOOL_CONTRACT.read_text(encoding="utf-8"))
-        self.assertEqual(skill_contract["surface_revision"], tool_contract["surface_revision"])
-        self.assertEqual(set(skill_contract["skills"]), set(EXPECTED))
-        for name, entry in skill_contract["skills"].items():
+    @classmethod
+    def setUpClass(cls):
+        cls.skill_contract = json.loads(SKILL_CONTRACT.read_text(encoding="utf-8"))
+        cls.tool_contract = json.loads(TOOL_CONTRACT.read_text(encoding="utf-8"))
+
+    def test_machine_catalog_matches_specs_and_tools(self):
+        self.assertEqual(
+            self.skill_contract["surface_revision"],
+            self.tool_contract["surface_revision"],
+        )
+        self.assertEqual(self.skill_contract["model"], "metadata-first knowledge modules with lazy references")
+        self.assertEqual(set(self.skill_contract["skills"]), set(EXPECTED))
+        for name, entry in self.skill_contract["skills"].items():
             with self.subTest(skill=name):
                 self.assertEqual(entry["spec"], f"skills/{name}/SKILL.md")
-                self.assertTrue(entry["goal"])
-                self.assertTrue(entry["triggers"])
-                self.assertTrue(set(entry["required_tools"]) <= set(tool_contract["tools"]))
+                self.assertTrue(entry["description"])
+                self.assertTrue(entry["signals"])
+                self.assertTrue(set(EXPECTED[name]) <= set(self.tool_contract["tools"]))
+                self.assertTrue(set(entry.get("related_skills", [])) <= set(EXPECTED))
 
-    def test_runtime_skill_catalog_is_complete(self):
-        actual = {
-            path.parent.name
-            for path in SKILLS.glob("*/SKILL.md")
-        }
+    def test_runtime_catalog_has_one_setup_exception_and_eight_knowledge_modules(self):
+        actual = {path.parent.name for path in SKILLS.glob("*/SKILL.md")}
         self.assertEqual(actual, set(EXPECTED))
+        kinds = {
+            name: entry["kind"]
+            for name, entry in self.skill_contract["skills"].items()
+        }
+        self.assertEqual(kinds["agent-collaboration-setup"], "guarded_setup")
+        self.assertEqual(
+            {name for name, kind in kinds.items() if kind == "knowledge_module"},
+            KNOWLEDGE,
+        )
 
-    def test_each_skill_has_portable_identity_and_required_tools(self):
-        for name, tools in EXPECTED.items():
-            path = SKILLS / name / "SKILL.md"
-            text = path.read_text(encoding="utf-8")
+    def test_knowledge_skills_are_routers_with_lazy_references(self):
+        required_sections = {
+            "## Knowledge boundary",
+            "## Core invariants",
+            "## Retrieval map",
+            "## Tool vocabulary",
+            "## Application",
+            "## Related knowledge",
+        }
+        for name in KNOWLEDGE:
+            directory = SKILLS / name
+            text = (directory / "SKILL.md").read_text(encoding="utf-8")
             meta = frontmatter(text)
             with self.subTest(skill=name):
                 self.assertEqual(meta["name"], name)
-                self.assertTrue(meta["description"])
-                self.assertRegex(name, r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-                for tool in tools:
-                    self.assertIn(tool, text)
+                self.assertTrue(required_sections <= set(
+                    line for line in text.splitlines() if line.startswith("## ")
+                ))
+                for reference in ("model.md", "decisions.md", "tools.md"):
+                    path = directory / "references" / reference
+                    self.assertTrue(path.is_file())
+                    self.assertIn(f"references/{reference}", text)
+                    self.assertGreater(len(path.read_text(encoding="utf-8")), 200)
+                for tool in EXPECTED[name]:
+                    self.assertIn(tool, text + (directory / "references" / "tools.md").read_text(encoding="utf-8"))
 
-    def test_catalog_includes_setup_and_starter_prompts(self):
-        catalog = (SKILLS / "README.md").read_text(encoding="utf-8")
-        prompts = (SKILLS / "STARTER-PROMPTS.md").read_text(encoding="utf-8")
-        self.assertIn("agent-collaboration-setup", catalog)
-        for name in EXPECTED:
-            self.assertIn(name, catalog)
-        for section in (
-            "Project management", "Delegation", "Handoff", "Review",
-            "Finalization", "Recovery", "Portfolio",
+    def test_runtime_presentation_is_metadata_first_and_selective(self):
+        presentation = self.skill_contract["presentation"]
+        self.assertEqual(presentation["initial"], "name and description metadata only")
+        self.assertEqual(presentation["reference_loading"], "one named reference at a time")
+        self.assertEqual(
+            presentation["result_hint_fields"],
+            ["skill", "topic", "reason", "reference"],
+        )
+        doc = (SKILLS / "RUNTIME-PRESENTATION.md").read_text(encoding="utf-8")
+        for phrase in (
+            "Stage 1: metadata",
+            "Stage 2: domain router",
+            "Stage 3: targeted reference",
+            "Stage 4: project evidence",
+            "Recall and context tradeoff",
+            "Quality measures",
         ):
-            self.assertIn(f"## {section}", prompts)
+            self.assertIn(phrase, doc)
 
-    def test_workflow_authority_is_skill_based(self):
+    def test_setup_skill_remains_guarded_and_procedural(self):
+        text = (SKILLS / "agent-collaboration-setup" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("signed release installer", text)
+        self.assertIn("project setup CLI", text)
+        self.assertIn("OAuth", text)
+
+    def test_high_level_command_documents_are_absent(self):
         runtime_docs = ROOT / "docs" / "runtime"
         self.assertFalse(any(runtime_docs.rglob("*.command.md")))
         contract = (runtime_docs / "P2-MCP-WORKFLOW-CONTRACT.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("Reusable user workflows are Skills", contract)
+        self.assertIn("Skills are domain knowledge modules", contract)
         self.assertIn("Domain Command remains", contract)
 
 

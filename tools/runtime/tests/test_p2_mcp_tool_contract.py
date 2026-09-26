@@ -120,6 +120,11 @@ class P2McpToolContractTests(unittest.TestCase):
         self.assertEqual(
             envelope["follow_up_required"], ["rel", "tool", "arguments"]
         )
+        self.assertEqual(envelope["metadata_optional"], ["knowledge_hints"])
+        self.assertEqual(
+            envelope["knowledge_hint_required"],
+            ["skill", "topic", "reason", "reference"],
+        )
         self.assertEqual(
             self.gates["p2_surface_revision"], self.catalog["surface_revision"]
         )

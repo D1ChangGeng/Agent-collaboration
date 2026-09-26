@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-09-22.4.
+is determined by the named Gate records. Contract revision: 2026-09-22.5.
 
 ## Authority and inputs
 
@@ -124,9 +124,11 @@ role, Grant, Policy and budget bindings within an existing Scope. send_message
 commits response tracking and notification atomically. Async is the default and
 sync performs a bounded wait on the same response handle.
 
-Reusable user workflows are Skills. The MCP server provides live data,
-authorization and actions; Skills provide tool order, context hydration,
-incomplete-result handling, templates and completion criteria. Domain Command
+The setup Skill owns guarded installation and migration procedures. Runtime
+Skills are metadata-routed knowledge modules for ACS entities, authority,
+invariants, decision axes, evidence boundaries and tool implications. The
+Harness loads one applicable Skill and one named reference at a time, while
+ProjectContextPack and project sources provide current facts. Domain Command
 remains the deterministic internal protocol and submit_command remains an
 advanced Profile tool.
 
@@ -221,7 +223,7 @@ Representative evidence includes real Codex and OpenCode clients, a remote
 web-capable MCP client, explicit project isolation, local and web context
 hydration, profile-filtered tools, Source reads, default asynchronous and bounded
 synchronous messaging, Session-aware notification, Review, Inbox recovery and
-Skill workflows invoked from one-sentence user entries.
+metadata-first Skill routing, selective reference loading and Project context integration.
 
 ## External source reference
 
