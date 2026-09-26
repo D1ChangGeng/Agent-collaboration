@@ -1,4 +1,5 @@
 from nacl.signing import SigningKey
+import pytest
 
 from runtime.receiver_crypto import public_key
 from tools.runtime.p2_control_proof import answer, issue, validate
@@ -20,3 +21,6 @@ def test_signed_control_proof_is_one_use(tmp_path):
     )
 
     assert result["verified"] and not proof.exists()
+    with pytest.raises(ValueError, match="not fresh"):
+        issue(challenge, run_id="run", expected_host="windows-local",
+              expected_session="ssh-control-1")
