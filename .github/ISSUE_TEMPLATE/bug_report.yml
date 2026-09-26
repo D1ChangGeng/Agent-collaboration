@@ -1,0 +1,33 @@
+name: Bug report
+description: Report an installation, upgrade, compatibility, or protocol-scaffold defect.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Skill version
+      placeholder: "0.1.0"
+  - type: input
+    id: harness
+    attributes:
+      label: Harness and version
+      placeholder: "Codex / Claude Code / OpenCode / other"
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true

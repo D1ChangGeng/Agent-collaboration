@@ -1,0 +1,23 @@
+ACHP RELAY v1
+
+Message-ID:
+Project:
+Task:
+From:
+To:
+Intent:
+Reply-Required:
+
+Repository-Baseline:
+  Branch:
+  Commit:
+  Pushed:
+  Receiver-Sync:
+
+Context:
+
+Message:
+
+Acceptance-or-Response:
+
+Durable-Knowledge:
