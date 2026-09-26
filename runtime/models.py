@@ -55,7 +55,7 @@ class CommandEnvelope(BaseModel):
     authority_incarnation: str = Field(min_length=1, max_length=256)
     principal_ref: str = Field(min_length=1, max_length=256)
     grant_ref: str = Field(min_length=1, max_length=256)
-    target_kind: Literal["work_item", "message", "lease", "effect"]
+    target_kind: Literal["work_item", "message", "lease", "effect", "node", "runtime", "attempt"]
     target_id: str = Field(min_length=1, max_length=256)
     expected_revision: int = Field(ge=0)
     issued_at: datetime
