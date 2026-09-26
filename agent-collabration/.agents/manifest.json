@@ -1,0 +1,10 @@
+{
+  "execution_repository_required": false,
+  "kind": "project-collaboration-root",
+  "management_root": true,
+  "registry_path": ".agents/coordination/routes.yaml",
+  "root_id": "agent-collaboration-root",
+  "runtime_dependency_on_setup_skill": false,
+  "schema_version": "0.3",
+  "setup_skill": "agent-collaboration-setup"
+}

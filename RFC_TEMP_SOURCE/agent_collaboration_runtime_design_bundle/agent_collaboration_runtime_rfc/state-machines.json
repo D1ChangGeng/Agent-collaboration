@@ -1,0 +1,829 @@
+{
+  "status": "accepted_contract_not_implemented",
+  "scope_boundary": {
+    "agent_intelligence": "external_harness_owned",
+    "system_role": "validate_and_record_authenticated_commands; perform deterministic delivery, lifecycle, lease, recovery and read_back mechanics",
+    "external_principal_required_for": [
+      "goal_and_work_item_creation_or_revision",
+      "delegation_and_follow_up",
+      "review_and_repair_requests",
+      "acceptance_and_finalization_decisions",
+      "cancellation_and_manual_control"
+    ],
+    "system_must_not": [
+      "run_llm_reasoning_or_planning",
+      "compose_or_resize_agent_teams",
+      "decompose_goals_or_choose_next_agent_action",
+      "instantiate_an_internal_management_agent_or_agent_graph"
+    ],
+    "automatic_transitions": "Only observed provider facts and explicit policy guards may advance lifecycle projections; automatic transitions never originate new Agent decisions."
+  },
+  "command_lineage_contract": {
+    "external_command_required_for": [
+      "goal_and_work_item_creation_or_revision",
+      "delegation_and_follow_up",
+      "review_and_repair_requests",
+      "acceptance_and_finalization_decisions",
+      "cancellation_and_manual_control",
+      "runtime_spawn_attach_invoke_resume_or_replace"
+    ],
+    "external_command_fields": [
+      "command_id",
+      "idempotency_key",
+      "correlation_id",
+      "causation_id",
+      "principal_ref",
+      "grant_ref",
+      "authority_id",
+      "authority_incarnation",
+      "target_id",
+      "expected_revision",
+      "issued_at",
+      "deadline"
+    ],
+    "system_observation_fields": [
+      "observation_id",
+      "observed_at",
+      "source_ref",
+      "authority_id",
+      "authority_incarnation"
+    ],
+    "transition_record_fields": [
+      "from",
+      "to",
+      "initiated_by",
+      "lineage_mode",
+      "command_id_or_observation_id",
+      "resulting_revision",
+      "evidence_refs"
+    ],
+    "lineage_mode_values": [
+      "external_command",
+      "system_observation",
+      "external_command_or_system_observation"
+    ],
+    "validation_rule": "Every transition record must declare initiated_by and lineage_mode. A transition with lineage_mode external_command must carry external_command_fields. A transition with lineage_mode system_observation must carry system_observation_fields. A transition with lineage_mode external_command_or_system_observation must carry the fields for the branch actually used. The system must never synthesize a command lineage record for an Agent decision."
+  },
+  "machines": [
+    {
+      "object": "WorkItem",
+      "initial": "draft",
+      "states": [
+        "draft",
+        "ready",
+        "active",
+        "verifying",
+        "finalizing",
+        "accepted",
+        "blocked",
+        "failed",
+        "cancelled",
+        "superseded"
+      ],
+      "terminal_states": [
+        "accepted",
+        "failed",
+        "cancelled",
+        "superseded"
+      ],
+      "transition_profiles": {
+        "decision_owner": "authenticated_external_principal",
+        "profile_ref_required": true,
+        "system_must_not_select_profile": true,
+        "profile_selection_is_recorded_in": [
+          "command_lineage",
+          "WorkItem revision"
+        ],
+        "supported_profile_shape": "An external Agent may choose whether independent verification is required, provided every selected path still satisfies the acceptance guards and evidence contract.",
+        "optional_transition": {
+          "from": "active",
+          "to": "finalizing",
+          "profile": "direct_acceptance_after_integrated_evidence",
+          "guard": "profile_declares_review_not_required_and_integrated_baseline_passes_policy",
+          "effect_contract": "record_external_acceptance_ready_command",
+          "initiated_by": "authenticated_external_principal",
+          "required_command_type": "work_item.acceptance_ready"
+        },
+        "fixed_system_guards": [
+          "accepted_state_requires_required_surfaces_read_back_and_postflight_passed",
+          "system_observation_may_block_or_fail_only_under_explicit_policy",
+          "system_observation_may_not_create_review_repair_delegation_or_acceptance_decision"
+        ]
+      },
+      "note": "Common cancellation/block transitions are a contract family. All goal, delegation, review, repair and acceptance decisions originate from an authenticated external principal in an external Harness. The system validates and records those commands; it does not originate the decisions.",
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "ready",
+          "guard": "valid_scope_and_acceptance_contract",
+          "effect_contract": "record_external_ready_command_and_persist_revision",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "work_item.ready"
+        },
+        {
+          "from": "ready",
+          "to": "active",
+          "guard": "admission_and_grants_valid",
+          "effect_contract": "record_external_activation_command_and_create_execution_attempt",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "work_item.activate"
+        },
+        {
+          "from": "active",
+          "to": "verifying",
+          "guard": "candidate_evidence_sealed",
+          "effect_contract": "record_external_verification_request",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "work_item.request_verification"
+        },
+        {
+          "from": "verifying",
+          "to": "active",
+          "guard": "repair_required_and_authorized",
+          "effect_contract": "record_external_repair_or_followup_command",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "work_item.request_repair_or_followup"
+        },
+        {
+          "from": "verifying",
+          "to": "finalizing",
+          "guard": "integrated_baseline_passes_policy",
+          "effect_contract": "record_external_acceptance_ready_command",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "work_item.acceptance_ready"
+        },
+        {
+          "from": "finalizing",
+          "to": "accepted",
+          "guard": "required_surfaces_read_back_and_postflight_passed",
+          "effect_contract": "commit_external_acceptance_command_after_read_back",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "work_item.accept"
+        },
+        {
+          "from": "active",
+          "to": "blocked",
+          "guard": "recoverable_dependency_or_policy_block",
+          "effect_contract": "persist_resume_target_and_reason",
+          "initiated_by": "system_observation_or_authenticated_external_principal",
+          "lineage_mode": "external_command_or_system_observation"
+        },
+        {
+          "from": "blocked",
+          "to": "ready",
+          "guard": "block_resolved_and_revalidated",
+          "effect_contract": "record_external_resume_command_and_revalidate",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "work_item.resume"
+        },
+        {
+          "from": "active",
+          "to": "failed",
+          "guard": "retry_budget_exhausted_and_effects_reconciled",
+          "effect_contract": "record_policy_terminalization_and_failure_evidence",
+          "initiated_by": "system_observation_under_explicit_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "active",
+          "to": "cancelled",
+          "guard": "cancellation_acknowledged_or_policy_terminalized",
+          "effect_contract": "record_external_cancellation_and_residual_effects",
+          "initiated_by": "authenticated_external_principal_or_observed_provider_terminal",
+          "lineage_mode": "external_command_or_system_observation",
+          "required_command_type": "work_item.cancel"
+        },
+        {
+          "from": "draft",
+          "to": "superseded",
+          "guard": "replacement_contract_committed",
+          "effect_contract": "record_external_replacement_contract_and_link",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "work_item.supersede"
+        }
+      ],
+      "status": "accepted_contract_implementation_pending"
+    },
+    {
+      "object": "ExecutionAttempt",
+      "initial": "queued",
+      "states": [
+        "queued",
+        "admitted",
+        "running",
+        "evidence_ready",
+        "succeeded",
+        "lost",
+        "failed",
+        "cancelled"
+      ],
+      "terminal_states": [
+        "succeeded",
+        "lost",
+        "failed",
+        "cancelled"
+      ],
+      "note": "An external Agent Attempt succeeded does not mean WorkItem accepted. Retrying a lost external Agent Attempt creates a new attempt identity only after an authenticated external command or an explicit retry policy based on observed failure; the system does not decide what the Agent should do next.",
+      "transitions": [
+        {
+          "from": "queued",
+          "to": "admitted",
+          "guard": "resources_and_budget_granted",
+          "effect_contract": "reserve_resources_for_submitted_attempt",
+          "initiated_by": "system_admission_after_authenticated_external_request",
+          "lineage_mode": "external_command",
+          "required_command_type": "execution_attempt.admit"
+        },
+        {
+          "from": "admitted",
+          "to": "running",
+          "guard": "runtime_binding_verified",
+          "effect_contract": "record_start_receipt_for_external_agent_binding",
+          "initiated_by": "system_observation_under_grant",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "running",
+          "to": "evidence_ready",
+          "guard": "observed_result_and_artifacts_sealed",
+          "effect_contract": "persist_external_agent_receipt",
+          "initiated_by": "system_observation_under_grant",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "evidence_ready",
+          "to": "succeeded",
+          "guard": "attempt_output_contract_satisfied",
+          "effect_contract": "release_attempt_resources_after_external_output_contract",
+          "initiated_by": "system_validation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "running",
+          "to": "lost",
+          "guard": "external_agent_runtime_unrecoverable_or_binding_invalid",
+          "effect_contract": "reconcile_before_new_external_attempt_or_rebinding",
+          "initiated_by": "system_observation_under_policy_or_authenticated_external_command",
+          "lineage_mode": "external_command_or_system_observation"
+        },
+        {
+          "from": "running",
+          "to": "failed",
+          "guard": "execution_failure_observed",
+          "effect_contract": "persist_external_execution_failure",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "running",
+          "to": "cancelled",
+          "guard": "termination_contract_satisfied",
+          "effect_contract": "retain_observed_effects_after_external_cancellation",
+          "initiated_by": "authenticated_external_principal_or_observed_provider_terminal",
+          "lineage_mode": "external_command_or_system_observation",
+          "required_command_type": "execution_attempt.cancel"
+        }
+      ],
+      "status": "accepted_contract_implementation_pending"
+    },
+    {
+      "object": "AgentRuntime",
+      "initial": "requested",
+      "states": [
+        "requested",
+        "provisioning",
+        "ready",
+        "busy",
+        "draining",
+        "recovering",
+        "lost",
+        "stopped"
+      ],
+      "terminal_states": [
+        "lost",
+        "stopped"
+      ],
+      "note": "AgentRuntime is a lifecycle projection of an external Agent in a Harness. The system binds and observes that external Agent; it does not run its reasoning loop. A new OS boot or provider runtime identity is not silently assigned the authority of the old process.",
+      "transitions": [
+        {
+          "from": "requested",
+          "to": "provisioning",
+          "guard": "spawn_authorized",
+          "effect_contract": "journal_spawn_operation_requested_by_external_principal",
+          "initiated_by": "authenticated_external_principal_with_spawn_grant",
+          "lineage_mode": "external_command",
+          "required_command_type": "runtime.spawn"
+        },
+        {
+          "from": "provisioning",
+          "to": "ready",
+          "guard": "identity_and_invocation_probe_passed",
+          "effect_contract": "bind_external_agent_slot_after_provider_observation",
+          "initiated_by": "system_observation_under_grant",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "ready",
+          "to": "busy",
+          "guard": "task_invocation_admitted",
+          "effect_contract": "dispatch_external_agent_request_with_generation",
+          "initiated_by": "authenticated_external_principal_or_external_agent_command",
+          "lineage_mode": "external_command",
+          "required_command_type": "runtime.invoke"
+        },
+        {
+          "from": "busy",
+          "to": "ready",
+          "guard": "turn_finished_and_effects_observed",
+          "effect_contract": "record_external_agent_runtime_receipt",
+          "initiated_by": "system_observation_under_grant",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "busy",
+          "to": "recovering",
+          "guard": "communication_or_process_state_uncertain",
+          "effect_contract": "inspect_before_retry_or_rebinding",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "recovering",
+          "to": "ready",
+          "guard": "original_binding_verified_safe",
+          "effect_contract": "resume_external_agent_binding",
+          "initiated_by": "system_observation_after_external_resume_request",
+          "lineage_mode": "external_command_or_system_observation",
+          "required_command_type": "runtime.resume"
+        },
+        {
+          "from": "recovering",
+          "to": "lost",
+          "guard": "binding_cannot_be_recovered",
+          "effect_contract": "fence_old_runtime_generation_and_record_rebinding_required",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation",
+          "fencing_scope": [
+            "runtime_generation",
+            "associated_leases",
+            "protected_effect_gateway"
+          ],
+          "replacement_requires": "authenticated_external_principal_or_explicit_recovery_policy",
+          "replacement_must_create": [
+            "new_agent_runtime_id",
+            "new_execution_attempt_id_or_explicit_rebinding_record"
+          ],
+          "old_binding_must_remain": "historical_and_non_authoritative"
+        },
+        {
+          "from": "ready",
+          "to": "draining",
+          "guard": "shutdown_or_upgrade_requested",
+          "effect_contract": "reject_new_external_invocations",
+          "initiated_by": "authenticated_external_principal_or_upgrade_policy",
+          "lineage_mode": "external_command_or_system_observation",
+          "required_command_type": "runtime.drain"
+        },
+        {
+          "from": "draining",
+          "to": "stopped",
+          "guard": "no_active_work_and_stop_observed",
+          "effect_contract": "retire_external_agent_binding",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        }
+      ],
+      "status": "accepted_contract_implementation_pending"
+    },
+    {
+      "object": "Handoff",
+      "initial": "draft",
+      "states": [
+        "draft",
+        "offered",
+        "prepared",
+        "committed",
+        "completed",
+        "rejected",
+        "stale",
+        "expired",
+        "cancelled"
+      ],
+      "terminal_states": [
+        "completed",
+        "rejected",
+        "stale",
+        "expired",
+        "cancelled"
+      ],
+      "note": "This table is for ownership-transfer handoffs. Context-only handoffs must declare their narrower transfer type. Post-commit reversal is a new compensating handoff.",
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "offered",
+          "guard": "packet_and_target_contract_valid",
+          "effect_contract": "persist_offer",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "handoff.offer"
+        },
+        {
+          "from": "offered",
+          "to": "prepared",
+          "guard": "target_accepts_context_and_baseline",
+          "effect_contract": "record_target_readiness_without_write_authority",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "handoff.prepare"
+        },
+        {
+          "from": "prepared",
+          "to": "committed",
+          "guard": "ownership_transfer_transaction_and_fencing_ready",
+          "effect_contract": "switch_owner_and_generation",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "handoff.commit"
+        },
+        {
+          "from": "committed",
+          "to": "completed",
+          "guard": "target_receipt_and_authority_binding_verified",
+          "effect_contract": "close_transfer",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "offered",
+          "to": "rejected",
+          "guard": "target_rejects",
+          "effect_contract": "retain_old_authority",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "handoff.reject"
+        },
+        {
+          "from": "prepared",
+          "to": "stale",
+          "guard": "baseline_or_authority_changed",
+          "effect_contract": "invalidate_preparation",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "offered",
+          "to": "expired",
+          "guard": "offer_deadline_passed",
+          "effect_contract": "prevent_late_accept",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "prepared",
+          "to": "cancelled",
+          "guard": "authorized_cancel_before_commit",
+          "effect_contract": "release_prepared_resources",
+          "initiated_by": "authenticated_external_principal_or_system_policy",
+          "lineage_mode": "external_command_or_system_observation",
+          "required_command_type": "handoff.cancel"
+        }
+      ],
+      "status": "accepted_contract_implementation_pending"
+    },
+    {
+      "object": "Lease",
+      "initial": "requested",
+      "states": [
+        "requested",
+        "granted",
+        "releasing",
+        "released",
+        "denied",
+        "expired",
+        "revoked"
+      ],
+      "terminal_states": [
+        "released",
+        "denied",
+        "expired",
+        "revoked"
+      ],
+      "note": "A TTL does not terminate an old process. Protected effects must check fencing; unfenceable resources require isolation or confirmed termination.",
+      "transitions": [
+        {
+          "from": "requested",
+          "to": "granted",
+          "guard": "authority_resource_transaction_succeeds",
+          "effect_contract": "issue_fencing_token_and_expiry",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "lease.acquire"
+        },
+        {
+          "from": "requested",
+          "to": "denied",
+          "guard": "admission_conflict_or_policy_denial",
+          "effect_contract": "record_reason",
+          "initiated_by": "system_policy_after_external_request",
+          "lineage_mode": "external_command_or_system_observation",
+          "required_command_type": "lease.acquire"
+        },
+        {
+          "from": "granted",
+          "to": "granted",
+          "guard": "valid_owner_requests_authorized_renewal",
+          "effect_contract": "extend_expiry_without_reviving_expired_token",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "lease.renew"
+        },
+        {
+          "from": "granted",
+          "to": "releasing",
+          "guard": "release_requested",
+          "effect_contract": "stop_new_protected_effects",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "lease.release"
+        },
+        {
+          "from": "releasing",
+          "to": "released",
+          "guard": "release_contract_observed",
+          "effect_contract": "close_lease",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "granted",
+          "to": "expired",
+          "guard": "authority_expiry_reached",
+          "effect_contract": "reject_future_use_of_old_token",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "granted",
+          "to": "revoked",
+          "guard": "authorized_revocation",
+          "effect_contract": "enforce_rejection_at_effect_boundary",
+          "initiated_by": "authenticated_external_principal_or_system_policy",
+          "lineage_mode": "external_command_or_system_observation",
+          "required_command_type": "lease.revoke"
+        }
+      ],
+      "status": "accepted_contract_implementation_pending"
+    },
+    {
+      "object": "MachineConnectivity",
+      "initial": "enrolled",
+      "states": [
+        "enrolled",
+        "connecting",
+        "online",
+        "suspect",
+        "offline",
+        "retired"
+      ],
+      "terminal_states": [
+        "retired"
+      ],
+      "note": "Trust is a separate dimension: pending / trusted / quarantined / revoked. Connectivity does not grant trust.",
+      "transitions": [
+        {
+          "from": "enrolled",
+          "to": "connecting",
+          "guard": "enrollment_credentials_valid",
+          "effect_contract": "establish_authenticated_channel",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "machine.connect"
+        },
+        {
+          "from": "connecting",
+          "to": "online",
+          "guard": "node_identity_and_heartbeat_verified",
+          "effect_contract": "publish_scoped_capability_observations",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "online",
+          "to": "suspect",
+          "guard": "heartbeat_delayed",
+          "effect_contract": "probe_and_reconnect",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "suspect",
+          "to": "online",
+          "guard": "same_incarnation_reverified",
+          "effect_contract": "resume_channel",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "suspect",
+          "to": "offline",
+          "guard": "unavailable_within_health_policy",
+          "effect_contract": "disable_new_remote_admission",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "offline",
+          "to": "connecting",
+          "guard": "node_returns",
+          "effect_contract": "reconcile_incarnation_and_local_journal",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "offline",
+          "to": "retired",
+          "guard": "authorized_retirement",
+          "effect_contract": "revoke_enrollment",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "machine.retire"
+        }
+      ],
+      "status": "accepted_contract_implementation_pending"
+    },
+    {
+      "object": "HarnessSessionBinding",
+      "initial": "unbound",
+      "states": [
+        "unbound",
+        "binding",
+        "attached",
+        "detached",
+        "unavailable",
+        "retired"
+      ],
+      "terminal_states": [
+        "retired"
+      ],
+      "note": "A provider session may itself be stored durably. It remains replaceable and distinct from Root / Route / Task.",
+      "transitions": [
+        {
+          "from": "unbound",
+          "to": "binding",
+          "guard": "target_address_identified",
+          "effect_contract": "verify_provider_reference",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "runtime.bind_or_attach"
+        },
+        {
+          "from": "binding",
+          "to": "attached",
+          "guard": "address_and_scope_probe_passed",
+          "effect_contract": "bind_replaceable_session",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "attached",
+          "to": "detached",
+          "guard": "client_detaches",
+          "effect_contract": "retain_durable_task",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "attached",
+          "to": "unavailable",
+          "guard": "session_cannot_be_addressed",
+          "effect_contract": "trigger_recovery",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "detached",
+          "to": "binding",
+          "guard": "reattach_requested",
+          "effect_contract": "revalidate_scope_and_baseline",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "runtime.reattach_or_resume"
+        },
+        {
+          "from": "unavailable",
+          "to": "binding",
+          "guard": "recovery_provider_available",
+          "effect_contract": "probe_before_resume",
+          "initiated_by": "authenticated_external_principal_or_system_observation",
+          "lineage_mode": "external_command_or_system_observation",
+          "required_command_type": "runtime.resume_or_rebind"
+        },
+        {
+          "from": "unavailable",
+          "to": "retired",
+          "guard": "replacement_committed",
+          "effect_contract": "keep_historical_reference",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "runtime.replace_binding"
+        }
+      ],
+      "status": "accepted_contract_implementation_pending"
+    },
+    {
+      "object": "EffectOperation",
+      "initial": "prepared",
+      "states": [
+        "prepared",
+        "authorized",
+        "dispatched",
+        "uncertain",
+        "observed",
+        "verified",
+        "failed"
+      ],
+      "terminal_states": [
+        "verified",
+        "failed"
+      ],
+      "note": "Cancellation cannot erase real external effects; compensation requires an explicit operation.",
+      "transitions": [
+        {
+          "from": "prepared",
+          "to": "authorized",
+          "guard": "grant_and_payload_revision_approved",
+          "effect_contract": "freeze_effect_intent",
+          "initiated_by": "authenticated_external_principal_or_system_policy",
+          "lineage_mode": "external_command_or_system_observation",
+          "required_command_type": "effect.authorize"
+        },
+        {
+          "from": "authorized",
+          "to": "dispatched",
+          "guard": "fencing_and_deadline_valid_at_gateway",
+          "effect_contract": "record_external_operation_key",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "dispatched",
+          "to": "observed",
+          "guard": "actual_external_result_read_back",
+          "effect_contract": "persist_external_reference",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "dispatched",
+          "to": "uncertain",
+          "guard": "response_lost_or_timeout",
+          "effect_contract": "block_blind_non_idempotent_retry",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "uncertain",
+          "to": "observed",
+          "guard": "external_effect_discovered",
+          "effect_contract": "adopt_existing_result",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "uncertain",
+          "to": "authorized",
+          "guard": "absence_proven_and_retry_authorized",
+          "effect_contract": "retry_same_logical_effect",
+          "initiated_by": "authenticated_external_principal",
+          "lineage_mode": "external_command",
+          "required_command_type": "effect.retry"
+        },
+        {
+          "from": "observed",
+          "to": "verified",
+          "guard": "postflight_matches_frozen_contract",
+          "effect_contract": "record_final_evidence",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        },
+        {
+          "from": "observed",
+          "to": "failed",
+          "guard": "postflight_failure",
+          "effect_contract": "record_real_effect_and_remediation_need",
+          "initiated_by": "system_observation_under_policy",
+          "lineage_mode": "system_observation"
+        }
+      ],
+      "status": "accepted_contract_implementation_pending"
+    }
+  ]
+}

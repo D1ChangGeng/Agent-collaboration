@@ -1,0 +1,587 @@
+{
+  "research_date": "2026-09-07",
+  "uploaded_inputs": [
+    {
+      "id": "D1",
+      "filename": "Agent-Collaboration-System-Canonical-Spec.md",
+      "sha256": "b3e72592eecf4984d4cee71b68d5cbd0bd7e499c51f596db94de20740231b75c",
+      "basis": "user_uploaded_design_input",
+      "note": "Source documents are identified, not modified or silently superseded."
+    },
+    {
+      "id": "D2",
+      "filename": "taskquay_cross_harness_architecture_cn.md",
+      "sha256": "e7b35f8c143859d7db4b06328ec92d49517c66e8758550b927aa06cd238c0858",
+      "basis": "user_uploaded_design_input",
+      "note": "Source documents are identified, not modified or silently superseded."
+    }
+  ],
+  "sources": [
+    {
+      "id": "S01",
+      "title": "MCP Specification 2026-07-28",
+      "source_type": "normative_protocol",
+      "urls": [
+        "https://modelcontextprotocol.io/specification/2026-07-28"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S02",
+      "title": "MCP 2026-07-28 release and changelog",
+      "source_type": "official_release",
+      "urls": [
+        "https://blog.modelcontextprotocol.io/posts/2026-07-28/",
+        "https://modelcontextprotocol.io/specification/2026-07-28/changelog"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S03",
+      "title": "MCP Tasks extension",
+      "source_type": "normative_extension",
+      "urls": [
+        "https://modelcontextprotocol.io/extensions/tasks/overview"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S04",
+      "title": "A2A specification, latest observed version 1.0.0",
+      "source_type": "normative_protocol",
+      "urls": [
+        "https://a2a-protocol.org/latest/specification/"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S05",
+      "title": "A2A streaming, asynchronous operations and v1 changes",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://a2a-protocol.org/latest/topics/streaming-and-async/",
+        "https://github.com/a2aproject/A2A/blob/main/docs/whats-new-v1.md"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S06",
+      "title": "Agent Client Protocol overview",
+      "source_type": "normative_protocol",
+      "urls": [
+        "https://agentclientprotocol.com/protocol/v1/overview"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S07",
+      "title": "ACP schema and stabilized session resume",
+      "source_type": "normative_protocol",
+      "urls": [
+        "https://agentclientprotocol.com/protocol/v1/schema",
+        "https://agentclientprotocol.com/announcements/session-resume-stabilized"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S08",
+      "title": "TaskQuay project README and product boundaries",
+      "source_type": "project_source",
+      "urls": [
+        "https://github.com/wrfgup/taskquay",
+        "https://raw.githubusercontent.com/wrfgup/taskquay/main/AGENTS.md"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S09",
+      "title": "TaskQuay execution coordination and agent management",
+      "source_type": "project_source",
+      "urls": [
+        "https://raw.githubusercontent.com/wrfgup/taskquay/main/src/execution-coordinator.ts",
+        "https://raw.githubusercontent.com/wrfgup/taskquay/main/src/local-agent-manager.ts"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S10",
+      "title": "TaskQuay persistence, restart reconciliation and security",
+      "source_type": "project_source",
+      "urls": [
+        "https://raw.githubusercontent.com/wrfgup/taskquay/main/src/local-agent-store.ts",
+        "https://raw.githubusercontent.com/wrfgup/taskquay/main/docs/security.md"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S11",
+      "title": "Temporal workflow execution, determinism and deployment",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://docs.temporal.io/workflows",
+        "https://docs.temporal.io/workflow-definition",
+        "https://docs.temporal.io/self-hosted-guide/deployment"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S12",
+      "title": "Temporal Activities and idempotency",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://docs.temporal.io/activity-definition",
+        "https://temporal.io/blog/idempotency-and-durable-execution"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S13",
+      "title": "DBOS architecture and Python programming model",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://docs.dbos.dev/architecture",
+        "https://docs.dbos.dev/python/programming-guide"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S14",
+      "title": "Restate concepts and deployment",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://docs.restate.dev/foundations/key-concepts",
+        "https://docs.restate.dev/server/overview"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S15",
+      "title": "OpenHands SDK, Conversation and Agent Server architecture",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://docs.openhands.dev/sdk/arch/overview",
+        "https://docs.openhands.dev/sdk/arch/conversation",
+        "https://docs.openhands.dev/sdk/guides/agent-server/overview"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S16",
+      "title": "Coder control plane, provisioning and workspace architecture",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://coder.com/docs/admin/infrastructure/architecture",
+        "https://github.com/coder/coder"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S17",
+      "title": "Anthropic Managed Agents: session, harness and sandbox separation",
+      "source_type": "official_engineering",
+      "urls": [
+        "https://www.anthropic.com/engineering/managed-agents"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S18",
+      "title": "OpenAI: Unlocking the Codex harness",
+      "source_type": "official_engineering",
+      "urls": [
+        "https://openai.com/index/unlocking-the-codex-harness/"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S19",
+      "title": "LangGraph persistence and checkpoint semantics",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://docs.langchain.com/oss/python/langgraph/persistence",
+        "https://docs.langchain.com/oss/python/langgraph/thinking-in-langgraph"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption.",
+      "research_classification": "external_agent_technology_background; outside_collaboration_system_core_and_implementation_dependency"
+    },
+    {
+      "id": "S20",
+      "title": "NATS JetStream and durable consumers",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://docs.nats.io/concepts/jetstream",
+        "https://docs.nats.io/learn/jetstream/pull-consumers"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S21",
+      "title": "PostgreSQL LISTEN / NOTIFY",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://www.postgresql.org/docs/current/sql-listen.html",
+        "https://www.postgresql.org/docs/current/sql-notify.html"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S22",
+      "title": "Tailscale direct and relay connection paths",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://tailscale.com/docs/reference/connection-types",
+        "https://tailscale.com/docs/features/peer-relay"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S23",
+      "title": "Amazon S3 conditional writes",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html",
+        "https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes-enforce.html"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S24",
+      "title": "Keycloak OIDC and device authorization",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://www.keycloak.org/securing-apps/oidc-layers"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S25",
+      "title": "OPA and OpenFGA authorization models",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://openpolicyagent.org/docs",
+        "https://openpolicyagent.org/docs/management-bundles",
+        "https://openfga.dev/docs/concepts",
+        "https://openfga.dev/docs/modeling/conditions"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S26",
+      "title": "OpenBao secret leases and SPIRE workload identities",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://openbao.org/docs/concepts/lease/",
+        "https://spiffe.io/docs/latest/spire-about/spire-concepts/"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S27",
+      "title": "etcd lease and fencing analysis",
+      "source_type": "primary_analysis",
+      "urls": [
+        "https://etcd.io/blog/2020/jepsen-343-results/",
+        "https://jepsen.io/analyses/etcd-3.4.3"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S28",
+      "title": "MCP authorization security considerations",
+      "source_type": "normative_protocol",
+      "urls": [
+        "https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/security-considerations"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S29",
+      "title": "OpenTelemetry GenAI observability",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://opentelemetry.io/blog/2026/genai-observability/",
+        "https://github.com/open-telemetry/semantic-conventions-genai"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S30",
+      "title": "Stripe usage metering",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://docs.stripe.com/billing/subscriptions/usage-based/recording-usage"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S31",
+      "title": "Bazel Remote Execution API, CAS and remote caching",
+      "source_type": "project_source",
+      "urls": [
+        "https://github.com/bazelbuild/remote-apis",
+        "https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto",
+        "https://bazel.build/remote/caching"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S32",
+      "title": "SQLite atomic commit and hardware assumptions",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://www.sqlite.org/atomiccommit.html"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S33",
+      "title": "Temporal license, observed MIT",
+      "source_type": "license_text",
+      "urls": [
+        "https://raw.githubusercontent.com/temporalio/temporal/main/LICENSE"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S34",
+      "title": "DBOS Python license, observed MIT",
+      "source_type": "license_text",
+      "urls": [
+        "https://raw.githubusercontent.com/dbos-inc/dbos-transact-py/main/LICENSE"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S35",
+      "title": "OpenHands SDK license, observed MIT",
+      "source_type": "license_text",
+      "urls": [
+        "https://raw.githubusercontent.com/OpenHands/software-agent-sdk/main/LICENSE"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S36",
+      "title": "NATS Server license, observed Apache-2.0",
+      "source_type": "license_text",
+      "urls": [
+        "https://raw.githubusercontent.com/nats-io/nats-server/main/LICENSE"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S37",
+      "title": "Coder principal license, observed AGPL-3.0",
+      "source_type": "license_text",
+      "urls": [
+        "https://raw.githubusercontent.com/coder/coder/main/LICENSE"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S38",
+      "title": "Restate license and additional use grant, observed BSL 1.1",
+      "source_type": "license_text",
+      "urls": [
+        "https://github.com/restatedev/restate/blob/main/LICENSE"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S39",
+      "title": "Codex App Server API",
+      "source_type": "project_source",
+      "urls": [
+        "https://github.com/openai/codex/blob/main/codex-rs/app-server/README.md"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S40",
+      "title": "Claude Agent SDK sessions and hosting",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://code.claude.com/docs/en/agent-sdk/sessions",
+        "https://code.claude.com/docs/en/agent-sdk/hosting"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S41",
+      "title": "Gemini CLI headless execution and sessions",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://geminicli.com/docs/cli/headless/",
+        "https://geminicli.com/docs/cli/session-management/"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S42",
+      "title": "Cursor CLI headless, resume and structured output",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://cursor.com/docs/cli/headless",
+        "https://cursor.com/docs/cli/reference/parameters",
+        "https://cursor.com/docs/cli/reference/output-format"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S43",
+      "title": "OpenHands conversation persistence",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://docs.openhands.dev/sdk/guides/convo-persistence"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S44",
+      "title": "ACP optional session capabilities",
+      "source_type": "normative_protocol",
+      "urls": [
+        "https://agentclientprotocol.com/protocol/v1/schema"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S45",
+      "title": "MCP authorization",
+      "source_type": "normative_protocol",
+      "urls": [
+        "https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S46",
+      "title": "Claude Agent SDK overview and access context",
+      "source_type": "official_documentation",
+      "urls": [
+        "https://code.claude.com/docs/en/agent-sdk/overview"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S47",
+      "title": "Claude plan support for Agent SDK usage",
+      "source_type": "official_product_policy",
+      "urls": [
+        "https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    },
+    {
+      "id": "S48",
+      "title": "Claude Code legal and compliance",
+      "source_type": "official_product_policy",
+      "urls": [
+        "https://code.claude.com/docs/en/legal-and-compliance"
+      ],
+      "accessed_on": "2026-09-07",
+      "verification_scope": "public_documentation_or_source_review",
+      "version_note": "Mutable URLs reflect the research date; pin a release/commit and license before adoption."
+    }
+  ],
+  "limits": [
+    "Documentation/source inspection is not an environment capability probe.",
+    "No cross-machine Harness experiment or production benchmark was executed.",
+    "License review is an architecture input, not a legal opinion.",
+    "Proposed components and contracts are not existing product support claims."
+  ]
+}

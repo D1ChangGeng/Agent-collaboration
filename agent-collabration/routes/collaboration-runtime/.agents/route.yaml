@@ -1,0 +1,8 @@
+{
+  "kind": "development-route",
+  "path": "routes/collaboration-runtime",
+  "root_contract": "../../.agents/coordination/ROOT-BASELINE.md",
+  "root_id": "agent-collaboration-root",
+  "route_id": "collaboration-runtime",
+  "schema_version": "0.3"
+}

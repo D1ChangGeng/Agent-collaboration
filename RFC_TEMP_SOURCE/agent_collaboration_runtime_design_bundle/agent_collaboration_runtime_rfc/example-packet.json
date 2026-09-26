@@ -1,0 +1,67 @@
+{
+  "schema_version": "2.0-draft",
+  "message_id": "fixture_msg_001",
+  "type": "request",
+  "correlation_id": "fixture_cycle_001",
+  "created_at": "2026-09-07T12:00:00Z",
+  "deadline": "2026-09-08T12:00:00Z",
+  "tenant_id": "fixture_tenant",
+  "project_id": "fixture_project",
+  "root_id": "fixture_existing_root",
+  "route_id": "fixture_existing_route",
+  "task_id": "fixture_task",
+  "sender": {
+    "agent_slot_id": "fixture_management_slot"
+  },
+  "target": {
+    "agent_slot_id": "fixture_engineer_slot"
+  },
+  "authority": {
+    "authority_id": "fixture_authority",
+    "authority_incarnation": "fixture_incarnation_2",
+    "grant_ref": "fixture_scoped_grant",
+    "permitted_scope": [
+      "write:isolated-worktree",
+      "run:project-tests"
+    ]
+  },
+  "task": {
+    "goal": "Deliver a verified retry-safe task submission endpoint.",
+    "accepted_state": {
+      "revision_ref": "fixture_accepted_revision_4",
+      "summary": "The fixture baseline contains the existing task API and test harness."
+    },
+    "request": "Implement idempotency-key conflict handling and focused tests.",
+    "acceptance_criteria": [
+      "An identical retry returns the original logical operation.",
+      "Reusing the same key for different input returns a conflict."
+    ],
+    "constraints": [
+      "Do not publish a branch or create a PR.",
+      "Preserve unrelated user changes."
+    ]
+  },
+  "source": {
+    "relationship": "separate_clones",
+    "baseline_refs": [
+      "fixture_baseline_4"
+    ],
+    "evidence_refs": []
+  },
+  "knowledge": {
+    "references": [],
+    "inline_context": [
+      "This is a synthetic schema fixture, not a real project instruction."
+    ]
+  },
+  "artifacts": [],
+  "context_policy": "warm_compatible",
+  "response_contract": {
+    "expected_output": "Execution receipt with candidate baseline and unresolved items.",
+    "required_evidence": [
+      "Actual diff reference",
+      "Test command, exit code and output reference"
+    ],
+    "unresolved_questions": []
+  }
+}

@@ -1,0 +1,127 @@
+[
+  {
+    "path": "acceptance-scenarios.json",
+    "bytes": 26173,
+    "sha256": "eba97d16a578b33576f845f4b4f144d2f5d8dfaaba081b691c535d9995442ac7"
+  },
+  {
+    "path": "agent-boundary-contract.json",
+    "bytes": 1489,
+    "sha256": "255fd134d67f54efdb480bf5b9d75207158197dc7b1ee68d5019e881bcaa29d3"
+  },
+  {
+    "path": "architecture-decisions.json",
+    "bytes": 12194,
+    "sha256": "b9230a2bff35acd69d20dfd86a07ab5013ad964c9ccd091a872041700c6384a3"
+  },
+  {
+    "path": "Architecture-RFC.zh-CN.md",
+    "bytes": 74946,
+    "sha256": "ad2d43cf1f8a4ea1992b438942f3858e7e7462fb53acd41b792456436eadc4fa"
+  },
+  {
+    "path": "boundary-validation-results.json",
+    "bytes": 609,
+    "sha256": "0e041dbfb5c9aa1b8b0e8df0c1edcde3c1dfb6b1314293984eb5a235528a0be1"
+  },
+  {
+    "path": "build-buy-integrate-extend-matrix.md",
+    "bytes": 5334,
+    "sha256": "5ef151f9a55c86b4ad50dc28ba1b0f853987b9c13d124440ed73e18358515fb7"
+  },
+  {
+    "path": "capability-matrix.md",
+    "bytes": 3494,
+    "sha256": "348ff55d0a5e50c480c0af018e4893c26b481b30d0df4b7736641876569715d0"
+  },
+  {
+    "path": "capability-observation.schema.json",
+    "bytes": 4181,
+    "sha256": "d61ca2ca51d93e98f9d3cc307536ea8f8762372e2fa22e400458e9d58d0ec7db"
+  },
+  {
+    "path": "collaboration-packet.schema.json",
+    "bytes": 8071,
+    "sha256": "9bee07956508a09fab4bf4814bfe4b653dce2614624715b209a2484fd8eae2b8"
+  },
+  {
+    "path": "command.schema.json",
+    "bytes": 2322,
+    "sha256": "f30f8b29ddd565f0ded6e29bbc1535405ed737e74d377532b3b35cc0467c9a74"
+  },
+  {
+    "path": "deliverables.json",
+    "bytes": 3804,
+    "sha256": "560e66558f9010e2122e6b5da0d9287137bd87d182c46814c2eca2a580b73f7e"
+  },
+  {
+    "path": "evidence-ledger-2026-09-08.json",
+    "bytes": 5470,
+    "sha256": "f37ada7c24806266584fb2cd3e2aadc8a88c69b96c78d0e6b5d58355a3fbe750"
+  },
+  {
+    "path": "example-capability-observation.json",
+    "bytes": 793,
+    "sha256": "b1b1175e1e7584e552630c7411f4b6c1212a79f36cc368956c8569913d02508a"
+  },
+  {
+    "path": "example-command.json",
+    "bytes": 642,
+    "sha256": "ae1f3ea850a7b80df3ac18b61bd0a2e84fbfec7c4a628853040eb8b80a40cb6e"
+  },
+  {
+    "path": "example-packet.json",
+    "bytes": 2012,
+    "sha256": "040000e446cf3194f2092f35c4640561083604c862f06aac48de935fd387de9f"
+  },
+  {
+    "path": "not-run-product-facts.zh-CN.md",
+    "bytes": 14434,
+    "sha256": "0bef0104f7f241e4aa8c6657c757607cf6b3cf1b54046267c84647ea5768d5a9"
+  },
+  {
+    "path": "README.md",
+    "bytes": 4793,
+    "sha256": "3ab1bafe78290c15fd469f40a1d92e74de44551ceaf360dc39d730d93d9f4476"
+  },
+  {
+    "path": "scope-model.schema.json",
+    "bytes": 1955,
+    "sha256": "bdd7a5c649e50b0eb141064869d2571516fb02403d328a4e7ef18e0858b98737"
+  },
+  {
+    "path": "sources.json",
+    "bytes": 24578,
+    "sha256": "6ae1da098e5645fd05a3114cc2ac8b82459d78e880398035f84963467cffde37"
+  },
+  {
+    "path": "Sources.md",
+    "bytes": 11503,
+    "sha256": "c1d9942114ed54a8745892eaaa867ef23ba675ddbade1cb0c7b28e22247372d9"
+  },
+  {
+    "path": "state-machines.json",
+    "bytes": 31282,
+    "sha256": "dee9a0eb7c1dc44c82b32897a48cce4043fbb02f2a5625c2dc7ecda24d99ac72"
+  },
+  {
+    "path": "validate_boundary_surfaces.py",
+    "bytes": 2807,
+    "sha256": "0496a8256f0c3932d7ae5723db406df68f82ae80085b4916e78ef03c354bf368"
+  },
+  {
+    "path": "validate_schema_fixtures.py",
+    "bytes": 1902,
+    "sha256": "54866c9d8c388b0df39ef910a5cdd3893e6438c527f53ed067ccdbbda0890205"
+  },
+  {
+    "path": "validation-report.md",
+    "bytes": 4310,
+    "sha256": "4589d7477a4659d80de9fda0f7fae49522aaa8d16327f82b35d51e4fa5a40c69"
+  },
+  {
+    "path": "validation-results.json",
+    "bytes": 2985,
+    "sha256": "520966c25731bc91433e56a51408640fe3d7f2e84bb08cd64e985b3d5917a162"
+  }
+]

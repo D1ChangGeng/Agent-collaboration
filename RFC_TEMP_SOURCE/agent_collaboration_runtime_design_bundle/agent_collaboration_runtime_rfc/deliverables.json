@@ -1,0 +1,99 @@
+{
+  "status": "accepted_architecture_delivery_map",
+  "source_request": "pasted-text.txt",
+  "supporting_contracts": ["agent-boundary-contract.json", "scope-model.schema.json", "boundary-validation-results.json"],
+  "product_policy_artifacts": ["not-run-product-facts.zh-CN.md"],
+  "deliverables": [
+    {
+      "id": "D-01",
+      "name": "Architecture Decision",
+      "primary_artifact": "Architecture-RFC.zh-CN.md",
+      "sections": ["0", "1", "2", "3"],
+      "status": "accepted_architecture_baseline"
+    },
+    {
+      "id": "D-02",
+      "name": "Component Model",
+      "primary_artifact": "Architecture-RFC.zh-CN.md",
+      "sections": ["3"],
+      "status": "accepted_architecture_baseline"
+    },
+    {
+      "id": "D-03",
+      "name": "Canonical Domain Model",
+      "primary_artifact": "Architecture-RFC.zh-CN.md",
+      "sections": ["7", "8"],
+      "coverage": ["Scope", "ScopeBinding", "Root Scope", "Route Scope", "Engineer Source Scope", "external AgentSlot continuity"],
+      "status": "accepted_architecture_baseline"
+    },
+    {
+      "id": "D-04",
+      "name": "Protocol and API Model",
+      "primary_artifact": "Architecture-RFC.zh-CN.md",
+      "supporting_artifacts": ["collaboration-packet.schema.json", "command.schema.json", "agent-boundary-contract.json"],
+      "sections": ["4", "9"],
+      "coverage": ["external principal command provenance", "AgentSlot/Session binding references", "transport-independent collaboration packet"],
+      "status": "accepted_architecture_baseline"
+    },
+    {
+      "id": "D-05",
+      "name": "State Machines",
+      "primary_artifact": "state-machines.json",
+      "sections": ["12"],
+      "status": "accepted_contract_implementation_pending"
+    },
+    {
+      "id": "D-06",
+      "name": "Harness Capability Matrix",
+      "primary_artifact": "capability-matrix.md",
+      "supporting_artifacts": ["capability-observation.schema.json", "scope-model.schema.json"],
+      "sections": ["16"],
+      "status": "candidate_only_e2e_not_run"
+    },
+    {
+      "id": "D-07",
+      "name": "Failure and Recovery Model",
+      "primary_artifact": "Architecture-RFC.zh-CN.md",
+      "supporting_artifacts": ["acceptance-scenarios.json"],
+      "sections": ["11", "15"],
+      "status": "accepted_contract_tests_not_run"
+    },
+    {
+      "id": "D-08",
+      "name": "Security Model",
+      "primary_artifact": "Architecture-RFC.zh-CN.md",
+      "sections": ["17"],
+      "status": "accepted_architecture_validation_pending"
+    },
+    {
+      "id": "D-09",
+      "name": "Local, Hybrid, Cloud and Enterprise Deployment",
+      "primary_artifact": "Architecture-RFC.zh-CN.md",
+      "sections": ["18"],
+      "status": "accepted_architecture_baseline"
+    },
+    {
+      "id": "D-10",
+      "name": "Commercial Product Model",
+      "primary_artifact": "Architecture-RFC.zh-CN.md",
+      "sections": ["19"],
+      "status": "accepted_architecture_baseline"
+    },
+    {
+      "id": "D-11",
+      "name": "Migration Strategy",
+      "primary_artifact": "Architecture-RFC.zh-CN.md",
+      "sections": ["20"],
+      "status": "accepted_architecture_requires_migration_execution"
+    },
+    {
+      "id": "D-12",
+      "name": "End-to-End Reference Scenario",
+      "primary_artifact": "Architecture-RFC.zh-CN.md",
+      "supporting_artifacts": ["acceptance-scenarios.json"],
+      "sections": ["21", "22", "24"],
+      "status": "planned_not_run"
+    }
+  ],
+  "mapping_rule": "A primary artifact may satisfy multiple requested deliverables when the sections and supporting artifacts are explicit; this map records coverage, not implementation support. The not-run product policy is a supporting product contract, not a runtime support claim. External Agent reasoning and team decisions remain outside the Collaboration System boundary."
+}
