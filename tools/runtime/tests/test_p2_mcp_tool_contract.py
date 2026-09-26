@@ -16,27 +16,39 @@ class P2McpToolContractTests(unittest.TestCase):
         cls.catalog = json.loads(TOOL_CONTRACT.read_text(encoding="utf-8"))
         cls.gates = json.loads(GATE_CONTRACT.read_text(encoding="utf-8"))
 
-    def test_public_surface_uses_domain_object_action_names(self):
+    def test_public_surface_uses_concise_action_phrase_names(self):
         ordinary = [
-            "collaboration_plan_apply",
-            "harness_capacity_list",
-            "message_send",
-            "response_await",
-            "resource_read",
-            "inbox_list",
-            "response_notification_set",
-            "work_item_cancel",
-            "runtime_attempt_cancel",
+            "setup_collaboration",
+            "find_harnesses",
+            "send_message",
+            "wait_for_response",
+            "read_resource",
+            "check_inbox",
+            "set_notification",
+            "cancel_work",
+            "stop_attempt",
         ]
-        self.assertEqual(self.catalog["naming_convention"], "domain_object_action")
-        self.assertEqual(self.catalog["ordinary_tools"], ordinary)
-        self.assertEqual(self.catalog["advanced_tools"], ["domain_command_submit"])
+        self.assertEqual(self.catalog["naming_convention"], "concise_action_phrase")
         self.assertEqual(
-            set(self.catalog["tools"]), set(ordinary) | {"domain_command_submit"}
+            self.catalog["naming_principles"],
+            [
+                "intended_action",
+                "human_collaboration_phrase",
+                "runtime_or_domain_behavior",
+                "target_as_argument_when_contract_is_uniform",
+                "separate_tool_when_authorization_state_or_result_differs",
+            ],
+        )
+        self.assertEqual(self.catalog["ordinary_tools"], ordinary)
+        self.assertEqual(self.catalog["advanced_tools"], ["submit_command"])
+        for name in ordinary + ["submit_command"]:
+            self.assertIn(len(name.split("_")), (2, 3), name)
+        self.assertEqual(
+            set(self.catalog["tools"]), set(ordinary) | {"submit_command"}
         )
         self.assertEqual(
             self.catalog["compatibility_aliases"]["run"]["canonical_tool"],
-            "domain_command_submit",
+            "submit_command",
         )
 
     def test_every_tool_exposes_selection_and_result_metadata(self):
@@ -52,7 +64,7 @@ class P2McpToolContractTests(unittest.TestCase):
                 self.assertTrue(tool["input_schema"]["schema_version"])
                 self.assertIn(tool["result_type"], self.catalog["result_types"])
 
-    def test_message_send_defaults_and_modes_are_explicit(self):
+    def test_send_message_defaults_and_modes_are_explicit(self):
         self.assertEqual(
             self.catalog["defaults"],
             {
@@ -63,7 +75,7 @@ class P2McpToolContractTests(unittest.TestCase):
                 "wait_until": "response_received",
             },
         )
-        send = self.catalog["tools"]["message_send"]["input_schema"]
+        send = self.catalog["tools"]["send_message"]["input_schema"]
         self.assertEqual(send["response_modes"], ["async", "sync"])
         self.assertIn("queue_until_idle", send["delivery_policies"])
         self.assertNotIn("response_mode", send["required"])
@@ -102,22 +114,40 @@ class P2McpToolContractTests(unittest.TestCase):
         )
 
     def test_read_and_wait_contracts_cover_continuation(self):
-        read_tool = self.catalog["tools"]["resource_read"]
+        read_tool = self.catalog["tools"]["read_resource"]
         read = read_tool["input_schema"]
         self.assertTrue(
             {"summary", "result", "evidence", "history", "content"}
             <= set(read["views"])
         )
-        await_tool = self.catalog["tools"]["response_await"]
+        await_tool = self.catalog["tools"]["wait_for_response"]
         await_schema = await_tool["input_schema"]
         self.assertEqual(await_schema["modes"], ["any", "all"])
         self.assertFalse(read_tool["annotations"]["readOnlyHint"])
         self.assertFalse(await_tool["annotations"]["readOnlyHint"])
         self.assertTrue(
-            self.catalog["tools"]["inbox_list"]["annotations"]["readOnlyHint"]
+            self.catalog["tools"]["check_inbox"]["annotations"]["readOnlyHint"]
         )
         self.assertEqual(
-            self.catalog["tools"]["inbox_list"]["result_type"], "inbox_page"
+            self.catalog["tools"]["check_inbox"]["result_type"], "inbox_page"
+        )
+
+    def test_parameterized_tools_and_split_control_boundaries_are_explicit(self):
+        self.assertEqual(
+            self.catalog["tools"]["read_resource"]["input_schema"]["required"],
+            ["handle"],
+        )
+        self.assertIn(
+            "handles",
+            self.catalog["tools"]["wait_for_response"]["input_schema"]["required"],
+        )
+        self.assertIn(
+            "response_handle",
+            self.catalog["tools"]["set_notification"]["input_schema"]["required"],
+        )
+        self.assertNotEqual(
+            self.catalog["tools"]["cancel_work"]["result_type"],
+            self.catalog["tools"]["stop_attempt"]["result_type"],
         )
 
     def test_p2_workflow_gate_binds_the_surface_revision(self):

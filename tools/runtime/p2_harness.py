@@ -16,7 +16,7 @@ from typing import Any
 INVENTORY_SCHEMA = "acs-p2-readonly-inventory/2"
 WORKSPACE_SCHEMA = "acs-p2-runner-workspace/2"
 MANIFEST_SCHEMA = "acs-p2-runner-manifest/1"
-MCP_SURFACE_REVISION = "acs-p2-mcp-workflow/2"
+MCP_SURFACE_REVISION = "acs-p2-mcp-workflow/3"
 REQUIRED_EVIDENCE = (
     "command_ids", "operation_ids", "message_ids", "event_ids", "receipts",
     "raw_outputs", "fault_injection", "source_readback", "artifact_readback",
@@ -39,17 +39,17 @@ FAULTS = {
     "P2-OPENCODE-LATE-DEDUP": "deliver late duplicate after successful response",
     "P2-HUMAN-BRIDGE-RECOVERY": "exhaust automatic paths, manual return, successful reprobe race",
     "P2-SOURCE-ARTIFACT-EFFECT-READBACK": "mutate and read back source/artifact/effect boundaries",
-    "P2-MCP-COLLABORATION-APPLY": "apply one authorized plan through collaboration_plan_apply and read its accepted revision",
-    "P2-MCP-HARNESS-DISCOVERY": "list current eligible capacity through harness_capacity_list with scoped evidence",
-    "P2-MCP-SEND-ASYNC": "submit default asynchronous message_send and return its response handle and follow-ups",
-    "P2-MCP-SEND-SYNC": "submit one message_send and observe the same handle through bounded response_await",
-    "P2-MCP-BOUNDED-AWAIT-CONTINUITY": "retain durable response tracking across response_await timeout and MCP reconnect",
+    "P2-MCP-COLLABORATION-APPLY": "apply one authorized plan through setup_collaboration and read its accepted revision",
+    "P2-MCP-HARNESS-DISCOVERY": "list current eligible capacity through find_harnesses with scoped evidence",
+    "P2-MCP-SEND-ASYNC": "submit default asynchronous send_message and return its response handle and follow-ups",
+    "P2-MCP-SEND-SYNC": "submit one send_message and observe the same handle through bounded wait_for_response",
+    "P2-MCP-BOUNDED-AWAIT-CONTINUITY": "retain durable response tracking across wait_for_response timeout and MCP reconnect",
     "P2-MCP-TARGET-IDLE-DELIVERY": "commit a busy target Inbox item and invoke it after a current idle observation",
     "P2-MCP-COMPLETION-NOTIFICATION": "deliver one completion notification to the initiating AgentSlot",
     "P2-MCP-SESSION-CONTINUITY": "route completion to the current replacement Session for the initiating AgentSlot",
-    "P2-MCP-GENERIC-READ-INBOX": "recover inbox_list and read typed handles through resource_read",
+    "P2-MCP-GENERIC-READ-INBOX": "recover check_inbox and read typed handles through read_resource",
     "P2-MCP-CANCELLATION": "apply typed notification, WorkItem and Runtime Attempt control with independent authorization",
-    "P2-MCP-WAIT-AGGREGATION": "observe response_await any and all conditions with one completion revision",
+    "P2-MCP-WAIT-AGGREGATION": "observe wait_for_response any and all conditions with one completion revision",
     "P2-MCP-WORKFLOW-COMMANDS": "execute the adopted collaboration, review, results and cancellation workflows",
 }
 SECRET = re.compile(

@@ -75,14 +75,14 @@ unresolved items. Reused P1 evidence proves only the prerequisite.
 
 ## P2-MCP-WORKFLOW
 
-- `COLLABORATION-APPLY`: execute `collaboration_plan_apply` for an explicit
+- `COLLABORATION-APPLY`: execute `setup_collaboration` for an explicit
   Scope, AgentSlot, role, Grant, Policy and budget plan and read its revision.
-- `HARNESS-DISCOVERY`: execute `harness_capacity_list` using scoped, unexpired
+- `HARNESS-DISCOVERY`: execute `find_harnesses` using scoped, unexpired
   capability evidence.
-- `SEND-ASYNC`: use default asynchronous `message_send`, return a stable response
+- `SEND-ASYNC`: use default asynchronous `send_message`, return a stable response
   handle, exact follow-up calls and automatic completion notification state.
 - `SEND-SYNC`: use the same Message and response handle with bounded
-  `response_await` observation and the typed `message_submission` result.
+  `wait_for_response` observation and the typed `message_submission` result.
 - `BOUNDED-AWAIT-CONTINUITY`: retain response tracking and notification across
   await timeout, MCP disconnect and reconnect.
 - `TARGET-IDLE-DELIVERY`: commit the target Inbox while its Session is active,
@@ -91,11 +91,11 @@ unresolved items. Reused P1 evidence proves only the prerequisite.
   initiating AgentSlot according to its Session activity.
 - `SESSION-CONTINUITY`: route completion to the current Session binding after
   replacement while retaining logical AgentSlot and response identity.
-- `GENERIC-READ-INBOX`: recover `inbox_list` notifications and read Message,
-  response, Evidence and Artifact handles through `resource_read`.
-- `CANCELLATION`: exercise `response_notification_set`, `work_item_cancel` and
-  `runtime_attempt_cancel` through their respective Grants and state dimensions.
-- `WAIT-AGGREGATION`: exercise `response_await` `any` and `all` over response
+- `GENERIC-READ-INBOX`: recover `check_inbox` notifications and read Message,
+  response, Evidence and Artifact handles through `read_resource`.
+- `CANCELLATION`: exercise `set_notification`, `cancel_work` and
+  `stop_attempt` through their respective Grants and state dimensions.
+- `WAIT-AGGREGATION`: exercise `wait_for_response` `any` and `all` over response
   handles with one completion revision and one notification per aggregate.
 - `WORKFLOW-COMMANDS`: execute the adopted collaboration, review, results,
   status and cancellation command documents through the versioned tool contracts.

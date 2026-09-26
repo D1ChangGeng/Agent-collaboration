@@ -108,7 +108,7 @@ Gateway and ACP a Driver boundary, not alternative Domain authorities.
 The public P2 MCP surface is defined by
 [`P2-MCP-WORKFLOW-CONTRACT.md`](P2-MCP-WORKFLOW-CONTRACT.md). It exposes
 typed collaboration-plan, Harness-capacity, Message, response, resource, Inbox,
-notification, WorkItem and Runtime Attempt operations. `message_send` commits
+notification, WorkItem and Runtime Attempt operations. `send_message` commits
 response tracking and completion notification in the same authoritative
 operation. Asynchronous response handling is the default; synchronous response
 handling observes the same stable response handle for a bounded interval.
