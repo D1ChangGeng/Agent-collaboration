@@ -304,3 +304,114 @@ class LocalArtifactStore:
     def read(self, ref: ArtifactRef) -> bytes:
         with self._lock:
             return self._read_verified(ref)
+
+
+class WindowsArtifactStore:
+    """Scope-bound Windows CAS under an ACL-private, non-reparse root."""
+
+    def __init__(self, root: Path | str, scope_id: str = "local-scope", *,
+                 max_bytes: int = 16 * 1024 * 1024) -> None:
+        if os.name != "nt":
+            raise ArtifactError("Windows artifact backend requires Windows")
+        if type(max_bytes) is not int or max_bytes < 1:
+            raise ArtifactError("max_bytes must be a positive integer")
+        if (not isinstance(scope_id, str) or not 1 <= len(scope_id) <= 256
+                or scope_id in {".", ".."} or any(c in "/\\" or ord(c) < 32 for c in scope_id)):
+            raise ArtifactError("invalid artifact scope")
+        from runtime.receiver_paths import PathSecurityRejected, private_parent
+
+        self._root = Path(root).absolute()
+        self._scope_id = scope_id
+        self._max_bytes = max_bytes
+        self._lock = threading.RLock()
+        self._root.mkdir(parents=True, exist_ok=True)
+        try:
+            private_parent(self._root)
+        except PathSecurityRejected:
+            raise ArtifactError("Windows artifact root ACL or identity rejected") from None
+        marker = self._root / ".scope"
+        if marker.exists() and marker.read_bytes() != scope_id.encode():
+            raise ArtifactError("artifact scope binding differs")
+        if not marker.exists():
+            marker.write_bytes(scope_id.encode())
+        self._closed = False
+
+    @property
+    def root(self) -> Path:
+        return self._root
+
+    @property
+    def scope_id(self) -> str:
+        return self._scope_id
+
+    @property
+    def max_bytes(self) -> int:
+        return self._max_bytes
+
+    @staticmethod
+    def _relative_path(sha256: str) -> str:
+        return f"{sha256[:2]}/{sha256}"
+
+    def _validate_ref(self, ref: ArtifactRef) -> None:
+        if (not isinstance(ref, ArtifactRef) or ref.scope_id != self.scope_id
+                or ref.immutable is not True or not re.fullmatch(r"[a-f0-9]{64}", ref.sha256)
+                or ref.path != self._relative_path(ref.sha256)
+                or type(ref.size_bytes) is not int or not 0 <= ref.size_bytes <= self.max_bytes):
+            raise ArtifactError("invalid Windows artifact reference")
+
+    def put_bytes(self, data: bytes, *, kind: str = "other",
+                  media_type: str = "application/octet-stream") -> ArtifactRef:
+        with self._lock:
+            if self._closed:
+                raise ArtifactError("artifact store is closed")
+            if not isinstance(data, bytes) or len(data) > self.max_bytes:
+                raise ArtifactError("artifact bytes are invalid or exceed max_bytes")
+            digest = hashlib.sha256(data).hexdigest()
+            ref = ArtifactRef(
+                path=self._relative_path(digest), sha256=digest, size_bytes=len(data),
+                media_type=media_type, kind=kind, scope_id=self.scope_id, immutable=True,
+            )
+            target = self._root / ref.path
+            target.parent.mkdir(exist_ok=True)
+            if target.exists():
+                if target.read_bytes() != data:
+                    raise ArtifactError("existing Windows artifact is corrupt")
+                return ref
+            temporary = target.parent / (".artifact-" + secrets.token_hex(24))
+            try:
+                with temporary.open("xb") as stream:
+                    stream.write(data)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                try:
+                    os.link(temporary, target)
+                except FileExistsError:
+                    pass
+                if target.read_bytes() != data:
+                    raise ArtifactError("Windows artifact publication differs")
+            finally:
+                temporary.unlink(missing_ok=True)
+            return ref
+
+    def verify(self, ref: ArtifactRef) -> ArtifactRef:
+        self.read(ref)
+        return ref
+
+    def read(self, ref: ArtifactRef) -> bytes:
+        with self._lock:
+            self._validate_ref(ref)
+            data = (self._root / ref.path).read_bytes()
+            if len(data) != ref.size_bytes or hashlib.sha256(data).hexdigest() != ref.sha256:
+                raise ArtifactError("Windows artifact digest or size differs")
+            return data
+
+    def close(self) -> None:
+        self._closed = True
+
+    def __enter__(self) -> WindowsArtifactStore:
+        if self._closed:
+            raise ArtifactError("artifact store is closed")
+        return self
+
+    def __exit__(self, *_args) -> None:
+        self.close()
