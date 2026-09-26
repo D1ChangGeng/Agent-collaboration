@@ -10,7 +10,9 @@ from pathlib import Path
 import psycopg
 import pytest
 from psycopg.conninfo import make_conninfo
+from psycopg.types.json import Jsonb
 
+from tools.runtime import p1_identity_continuity_scene as identity_scene
 from tools.runtime import p1_profile_probe as probe
 
 pytestmark = pytest.mark.skipif(
@@ -65,6 +67,161 @@ def _profile(tmp_path: Path) -> Path:
     path.write_text(json.dumps(value))
     path.chmod(0o600)
     return path
+
+
+def test_identity_continuity_gate_qualification_and_live_tamper_fences(
+    tmp_path, monkeypatch,
+):
+    profile_path = _profile(tmp_path)
+    profile = json.loads(profile_path.read_text())
+    output = tmp_path / "identity-output"
+    run_id = "identity-gate-" + uuid.uuid4().hex
+    monkeypatch.setenv("ACS_GATE_RUN_ID", run_id)
+    monkeypatch.setenv("ACS_GATE_MACHINE_ID", "machine-" + uuid.uuid4().hex[:20])
+
+    def test_profile(path):
+        data = path.read_bytes()
+        return json.loads(data), probe._sha(data), ()
+
+    monkeypatch.setattr(probe, "_secure_profile", test_profile)
+    try:
+        results = [
+            probe.execute(
+                profile_path, "P1-IDENTITY-CONTINUITY", kind, output,
+            )
+            for kind in probe.KINDS
+        ]
+        assert {item["status"] for item in results} == {"passed"}
+        ledger = probe.ProbeLedger(output)
+        row = ledger.get("P1-IDENTITY-CONTINUITY")
+        lineage = json.loads(row["lineage_json"])
+        profile["machine_id"] = lineage["machine_id"]
+        proof = lineage["identity_continuity_proof"]
+        qualification = identity_scene.require_gate_qualification(
+            proof["gate_qualification"],
+        )
+        assert qualification["missing"] == []
+        assert proof["component_audit"]["status"] == "component_only"
+        assert proof["component_audit"]["gate_status"] == "not_run"
+        assert proof["component_audit"]["missing"] == [
+            "postgresql_live", "sqlite_live", "temporal_live", "os_restart_live",
+        ]
+        assert qualification["layers"]["sqlite"]["native_dispatch_count"] == 1
+
+        temporal_identity = {
+            key: proof[key] for key in ("tenant_id", "message_id", "operation_id")
+        }
+        for workflow_id, run_id_value in (
+            ("acs-delivery/forged-operation", proof["run_id"]),
+            (proof["workflow_id"], str(uuid.uuid4())),
+        ):
+            with pytest.raises(
+                identity_scene.IdentityContinuityRejected,
+                match="Temporal Workflow/Run live readback",
+            ):
+                identity_scene._temporal_readback(
+                    profile, workflow_id, run_id_value,
+                    temporal_identity, proof["queue"],
+                )
+
+        live_pid = {**proof, "old_core_pid": os.getpid()}
+        with pytest.raises(
+            identity_scene.IdentityContinuityRejected,
+            match="OS process/TLS/boot/cleanup",
+        ):
+            identity_scene._os_readback(live_pid)
+
+        scoped = make_conninfo(
+            profile["postgres_dsn"], options=f"-c search_path={row['pg_schema']}",
+        )
+
+        def pg_rejected():
+            with pytest.raises(
+                probe.ProbeRejected,
+                match="PostgreSQL Gate identity continuity",
+            ):
+                probe._read_layer(
+                    profile, "P1-IDENTITY-CONTINUITY", "postgresql", ledger, row,
+                )
+
+        with psycopg.connect(scoped) as connection:
+            connection.execute(
+                "INSERT INTO enrolled_node_bindings(tenant_id,node_id,binding_revision,key_id,"
+                "machine_id,boot_incarnation,status,expires_at,retired_at,command_id,operation_id,event_id) "
+                "SELECT tenant_id,node_id,3,key_id,machine_id,%s,'retired',expires_at,clock_timestamp(),"
+                "command_id,operation_id,event_id FROM enrolled_node_bindings "
+                "WHERE node_id=%s AND binding_revision=2",
+                ("forged-third-boot", proof["node_id"]),
+            )
+        try:
+            pg_rejected()
+        finally:
+            with psycopg.connect(scoped) as connection:
+                connection.execute(
+                    "DELETE FROM enrolled_node_bindings WHERE node_id=%s AND binding_revision=3",
+                    (proof["node_id"],),
+                )
+
+        with psycopg.connect(scoped) as connection:
+            connection.execute(
+                "INSERT INTO delivery_attempts(tenant_id,message_id,ordinal,attempt_id,operation_id,"
+                "endpoint_id,selection_revision,connection_ref,started_at,finished_at,deadline,status,"
+                "error_code,selection_json,selection_digest,selection_history_json,invocation_json,"
+                "invocation_digest,dispatch_id,runtime_dispatched_receipt_id) "
+                "SELECT tenant_id,message_id,2,%s,operation_id,endpoint_id,selection_revision,"
+                "connection_ref,started_at,clock_timestamp(),deadline,'delivered',NULL,selection_json,"
+                "selection_digest,selection_history_json,invocation_json,invocation_digest,%s,"
+                "runtime_dispatched_receipt_id FROM delivery_attempts WHERE attempt_id=%s",
+                ("forged-delivery-attempt", "forged-dispatch", proof["attempt_id"]),
+            )
+        try:
+            pg_rejected()
+        finally:
+            with psycopg.connect(scoped) as connection:
+                connection.execute(
+                    "DELETE FROM delivery_attempts WHERE attempt_id='forged-delivery-attempt'",
+                )
+
+        with psycopg.connect(scoped) as connection:
+            inbox = connection.execute(
+                "DELETE FROM inbox_messages WHERE message_id=%s "
+                "RETURNING tenant_id,message_id,target_agent_slot_id,payload,receipt_json,created_at",
+                (proof["message_id"],),
+            ).fetchone()
+        try:
+            pg_rejected()
+        finally:
+            with psycopg.connect(scoped) as connection:
+                connection.execute(
+                    "INSERT INTO inbox_messages(tenant_id,message_id,target_agent_slot_id,payload,"
+                    "receipt_json,created_at) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (*inbox[:3], Jsonb(inbox[3]), Jsonb(inbox[4]), inbox[5]),
+                )
+
+        receiver_ledger = Path(proof["receiver_ledger_path"])
+        with sqlite3.connect(receiver_ledger) as connection:
+            connection.execute("ALTER TABLE native_calls RENAME TO native_calls_original")
+            connection.execute(
+                "CREATE TABLE native_calls(dispatch_id TEXT NOT NULL,request_id TEXT NOT NULL,"
+                "called_at TEXT NOT NULL)",
+            )
+            connection.execute(
+                "INSERT INTO native_calls SELECT dispatch_id,request_id,called_at "
+                "FROM native_calls_original",
+            )
+            connection.execute(
+                "INSERT INTO native_calls SELECT dispatch_id,request_id,called_at "
+                "FROM native_calls_original",
+            )
+        with pytest.raises(
+            probe.ProbeRejected, match="receiver ledger has missing or duplicate effects",
+        ):
+            probe._read_layer(
+                profile, "P1-IDENTITY-CONTINUITY", "sqlite", ledger, row,
+            )
+    finally:
+        if output.exists():
+            probe.cleanup(profile_path, output)
 
 
 @pytest.mark.parametrize("mutated_layer", ["file", "marker", "postgresql"])
