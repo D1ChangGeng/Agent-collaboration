@@ -83,6 +83,7 @@ class TemporalAdapter:
         self._client: Any = None
         self._worker: Any = None
         self._worker_task: asyncio.Task[None] | None = None
+        self._close_task: asyncio.Task[None] | None = None
 
     @property
     def client(self) -> Any:
@@ -91,6 +92,13 @@ class TemporalAdapter:
         return self._client
 
     async def connect(self, *, start_worker: bool = True) -> None:
+        if (
+            self._client is not None
+            or self._worker is not None
+            or self._worker_task is not None
+            or (self._close_task is not None and not self._close_task.done())
+        ):
+            raise TemporalUnavailable("TemporalAdapter already owns a connection or worker")
         if not TEMPORAL_SDK_AVAILABLE:
             raise TemporalUnavailable("temporalio SDK is not installed")
         if not self.endpoint or not self.namespace:
@@ -107,6 +115,9 @@ class TemporalAdapter:
                 )
                 self._worker_task = asyncio.create_task(self._worker.run())
                 await asyncio.sleep(0)
+        except asyncio.CancelledError:
+            await self.close()
+            raise
         except (RPCError, RuntimeError, TypeError, ValueError) as exc:
             await self.close()
             raise TemporalUnavailable(f"unable to connect to Temporal at {self.endpoint}") from exc
@@ -187,15 +198,33 @@ class TemporalAdapter:
                 raise TemporalUnavailable(f"Temporal operation {operation_id} is unavailable") from result_exc
 
     async def close(self) -> None:
+        if self._close_task is None or self._close_task.done():
+            self._close_task = asyncio.create_task(self._shutdown_owned_worker())
+            # A caller may be cancelled before shutdown finishes. Retain the
+            # task for recovery and observe its error even without a waiter.
+            self._close_task.add_done_callback(self._observe_shutdown)
+        await asyncio.shield(self._close_task)
+
+    @staticmethod
+    def _observe_shutdown(task: asyncio.Task[None]) -> None:
+        if not task.cancelled():
+            task.exception()
+
+    async def _shutdown_owned_worker(self) -> None:
         worker = self._worker
         task = self._worker_task
-        self._worker = None
-        self._worker_task = None
-        self._client = None
         if worker is not None:
             await worker.shutdown()
-        if task is not None:
-            try:
+        try:
+            if task is not None:
                 await task
-            except asyncio.CancelledError:
-                pass
+        except asyncio.CancelledError:
+            if task is None or not task.cancelled():
+                raise
+        finally:
+            # Shutdown has completed. A terminal run error still propagates,
+            # but must not permanently retain already-stopped capacity.
+            if task is None or task.done():
+                self._worker = None
+                self._worker_task = None
+                self._client = None
