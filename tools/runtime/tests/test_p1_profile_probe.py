@@ -141,10 +141,9 @@ def test_plan_omits_model_gaps_and_contains_no_profile_secret(profile_file):
     assert status["available_scenarios"] == [
         "P1-DOMAIN-TRANSACTION", "P1-AUTH-REVOCATION", "P1-COMMAND-DEDUP",
         "P1-INBOX-ACK-LOSS", "P1-CORE-RESTART", "P1-NODE-RESTART",
-        "P1-PROVIDER-RESTART",
+        "P1-PROVIDER-RESTART", "P1-HARNESS-REPLACEMENT",
         "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT", "P1-STALE-BASELINE",
         "P1-PARTIAL-ARTIFACT", "P1-SURFACE-PARITY",
-        "P1-HARNESS-REPLACEMENT",
     ]
     assert len(status["not_run"]) == 5
     assert {
