@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import secrets
+import stat
 import subprocess
 from pathlib import Path
 
@@ -22,13 +23,25 @@ def private_root() -> Path:
 
 def local_provider_environment() -> tuple[Path, dict[str, str]]:
     root = private_root()
+    if root.is_symlink():
+        raise ValueError("provider directory path is unsafe")
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if not root.is_dir() or (os.name == "posix" and stat.S_IMODE(root.stat().st_mode) & 0o077):
+        raise ValueError("provider directory permissions are unsafe")
     secret_path = root / "local-providers.json"
     if secret_path.exists():
-        if secret_path.is_symlink():
+        if (
+            secret_path.is_symlink()
+            or not secret_path.is_file()
+            or (os.name == "posix" and stat.S_IMODE(secret_path.stat().st_mode) & 0o077)
+        ):
             raise ValueError("provider configuration path is unsafe")
         data = json.loads(secret_path.read_text(encoding="utf-8"))
-        if data.get("schema_version") != "acs-local-providers/1":
+        if (
+            data.get("schema_version") != "acs-local-providers/1"
+            or not isinstance(data.get("password"), str)
+            or len(data["password"]) < 48
+        ):
             raise ValueError("existing provider configuration differs")
     else:
         data = {"schema_version": "acs-local-providers/1", "password": secrets.token_urlsafe(40)}
