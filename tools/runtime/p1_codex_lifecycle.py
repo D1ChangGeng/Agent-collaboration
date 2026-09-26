@@ -156,7 +156,12 @@ SCENE_PROFILE_FIELDS = frozenset(
         "budget_evidence_ref",
     }
 )
-CODEX_SCHEMA = Path("/mnt/runtime_tests/schema-0.153.2/codex_app_server_protocol.schemas.json")
+# Fresh P1 runs bind the currently reviewed Linux App Server profile.  The
+# legacy fixture profile remains admitted below so unit tests can exercise the
+# protocol without requiring a native binary.
+CODEX_SCHEMA = Path("/mnt/runtime_tests/schema-0.155.0/codex_app_server_protocol.schemas.json")
+CODEX_VERSION = "0.155.0"
+LEGACY_FIXTURE_VERSION = "0.153.2"
 MODEL_PROMPT = (
     "Attempt to delegate this task to a native sub-agent first. "
     "If delegation is unavailable or denied, reply with exactly ACS_P1_CODEX_API_OK. "
@@ -229,8 +234,10 @@ def validate_scene_profile(value: object) -> dict[str, Any]:
         port = parsed_url.port
     except ValueError as error:
         raise CodexSceneRejected("Codex provider URL is malformed") from error
+    is_legacy_fixture = value.get("provider_alias") == "fixture-provider"
+    allowed_version = LEGACY_FIXTURE_VERSION if is_legacy_fixture else CODEX_VERSION
     if (
-        value["codex_version"] != "0.153.2"
+        value["codex_version"] != allowed_version
         or not isinstance(value["provider_alias"], str)
         or not re.fullmatch(r"[a-z][a-z0-9_-]{1,63}", value["provider_alias"])
         or parsed_url.scheme != "https"
@@ -245,6 +252,7 @@ def validate_scene_profile(value: object) -> dict[str, Any]:
         or value["wire_api"] != "responses"
         or value["auth_command"] != "/usr/bin/cat"
         or value["reasoning_effort"] != "low"
+        or (not is_legacy_fixture and value["provider_alias"] != "zeo-dev")
     ):
         raise CodexSceneRejected("Codex provider or strict model profile differs")
     for field in ("native_executable_path", "model_catalog_path", "auth_key_ref_path"):
