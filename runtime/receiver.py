@@ -306,6 +306,7 @@ class ReceiverService:
         transitions = {
             "boot_incarnation": (recovery.old_boot_incarnation, recovery.new_boot_incarnation),
             "endpoint_revision": (recovery.old_endpoint_revision, recovery.new_endpoint_revision),
+            "runtime_id": (recovery.old_runtime_id, recovery.new_runtime_id),
             "runtime_revision": (recovery.old_runtime_revision, recovery.new_runtime_revision),
             "journal_generation": (original.journal_generation, recovery.journal_generation),
         }
