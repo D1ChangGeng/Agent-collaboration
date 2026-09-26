@@ -606,6 +606,23 @@ class GateRunnerTests(unittest.TestCase):
             "",
         )
 
+    def test_guard_ignores_nonsensitive_ignored_runtime_cache(self):
+        before = runner.collect_source_guard(self.source)
+        cache = self.source / "ignored" / "__pycache__"
+        cache.mkdir(parents=True)
+        (cache / "module.cpython-312.pyc").write_bytes(b"transient bytecode")
+        after = runner.collect_source_guard(self.source)
+        self.assertEqual(after["inventory_sha256"], before["inventory_sha256"])
+
+    def test_guard_still_detects_sensitive_ignored_file(self):
+        before = runner.collect_source_guard(self.source)
+        ignored = self.source / "ignored"
+        ignored.mkdir()
+        (ignored / "credential-secret.key").write_text("private", encoding="utf-8")
+        after = runner.collect_source_guard(self.source)
+        self.assertNotEqual(after["inventory_sha256"], before["inventory_sha256"])
+        self.assertEqual(after["ignored_sensitive"], ["ignored/credential-secret.key"])
+
     def test_large_source_guard_is_chunked_outside_bounded_state_and_resumes(self):
         bulk = self.source / "bulk"
         bulk.mkdir()
