@@ -4,15 +4,19 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
+from runtime.delivery_models import DeliveryEnvelope, DeliveryPacket
+from runtime.delivery_node import invocation_for
 from runtime.receiver_deployment import inspect_factory
+from runtime.response_collector import NativeResponseCollector
 from runtime_deployment.receiver_codex import (
+    SCHEMA,
     CodexReceiverCapacity,
     CodexReceiverRejected,
-    SCHEMA,
     validate_settings,
 )
 
@@ -138,3 +142,30 @@ def test_factory_binding_digest_includes_settings(tmp_path):
     ).hexdigest() != hashlib.sha256(
         json.dumps(second.model_dump(mode="json"), sort_keys=True).encode()
     ).hexdigest()
+
+
+def test_projection_identity_adopts_only_a_newer_recovery_binding():
+    envelope = DeliveryEnvelope(
+        tenant_id="tenant", authority_id="authority", authority_incarnation="incarnation",
+        principal_ref="sender", grant_ref="grant", message_id="message",
+        command_id="command", operation_id="operation", endpoint_id="endpoint",
+        binding_revision=1, machine_id="machine", node_id="node",
+        boot_incarnation="boot-1", accepted_state_digest="a" * 64,
+        packet=DeliveryPacket(
+            work_item_id="work", target_scope_id="scope", target_agent_slot_id="slot",
+            accepted_revision=0, goal="Recover projection", accepted_state_summary="fixture",
+            request="observe current binding", source_baseline="fixture",
+            expected_response="done", activation="invoke",
+            deadline=datetime.now(UTC) + timedelta(minutes=1),
+        ),
+    )
+    recorded = invocation_for(envelope, "attempt")
+    old = NativeResponseCollector.dispatch_identity(recorded)
+    current = old.__class__(
+        **{**old.__dict__, "binding_revision": 2, "boot_incarnation": "boot-2"}
+    )
+    assert CodexReceiverCapacity._current_dispatch_identity(recorded, current) == current
+    with pytest.raises(CodexReceiverRejected, match="binding differs"):
+        CodexReceiverCapacity._current_dispatch_identity(
+            recorded, old.__class__(**{**old.__dict__, "node_id": "changed"})
+        )
