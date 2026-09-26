@@ -263,7 +263,7 @@ def test_pinned_native_copy_rejects_atomic_path_replacement_after_open(
         return descriptor
 
     monkeypatch.setattr(os, "open", open_then_replace)
-    with pytest.raises(NativeInventoryRejected, match="path changed"):
+    with pytest.raises(NativeInventoryRejected, match="changed (?:during copy|path)"):
         _copy_pinned(
             source, target, expected_sha256=expected,
             expected_size=len(b"pinned native bytes"),
