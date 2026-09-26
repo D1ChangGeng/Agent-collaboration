@@ -338,7 +338,7 @@ class OpenCodeNativeDriver:
             if self.client is None:
                 raise DriverRejected("owned native provider readback has no transport")
             _, provider_state = self.client.request(
-                "GET", "/provider", timeout=self.http_timeout, max_bytes=4 * 1024 * 1024,
+                "GET", "/provider", timeout=self.http_timeout, max_bytes=8 * 1024 * 1024,
                 before_send=lambda: self._auth(operation),
             )
             all_providers = provider_state.get("all") if isinstance(provider_state, dict) else None
