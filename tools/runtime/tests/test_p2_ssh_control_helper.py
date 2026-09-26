@@ -8,7 +8,7 @@ from tools.runtime import p2_ssh_control_helper as helper
 
 def test_helper_uses_ssh_and_scp_for_challenge_round_trip(tmp_path, monkeypatch):
     key = SigningKey.generate(); key_path = tmp_path / "key"
-    key_path.write_text(key.encode().hex())
+    key_path.write_text(key.encode().hex()); key_path.chmod(0o600)
     calls = []
 
     class Result:
