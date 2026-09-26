@@ -99,7 +99,7 @@ class JsonRpcClient:
                 for future in pending.values():
                     future.set_exception(RpcDisconnected(reason))
 
-    def _send(self, message):
+    def _send(self, message, *, before_send=None, on_dispatch=None):
         encoded = (
             json.dumps(message, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode()
             + b"\n"
@@ -109,6 +109,10 @@ class JsonRpcClient:
         with self._write_lock:
             if not self.connected:
                 raise RpcDisconnected("transport is disconnected")
+            if before_send is not None:
+                before_send()
+            if on_dispatch is not None:
+                on_dispatch()
             try:
                 view = memoryview(encoded)
                 while view:
@@ -121,7 +125,7 @@ class JsonRpcClient:
                 self._fail("transport write failed")
                 raise RpcDisconnected("transport write failed") from exc
 
-    def request(self, method, params, *, timeout=30, request_id=None):
+    def request(self, method, params, *, timeout=30, request_id=None, before_send=None, on_dispatch=None):
         request_id = request_id or uuid.uuid4().hex
         if not isinstance(request_id, str) or not request_id:
             raise ValueError("request_id must be a nonempty string")
@@ -136,7 +140,8 @@ class JsonRpcClient:
             self._issued_ids.add(request_id)
             self._pending[request_id] = future
         try:
-            self._send({"id": request_id, "method": method, "params": params})
+            self._send({"id": request_id, "method": method, "params": params},
+                       before_send=before_send, on_dispatch=on_dispatch)
             try:
                 return future.result(timeout)
             except TimeoutError as exc:
