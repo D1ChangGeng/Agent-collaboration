@@ -1,7 +1,7 @@
 {
   "schema_version": "acs-gate-contract/1",
   "contract_revision": "2026-09-11.1",
-  "p2_surface_revision": "acs-p2-mcp-workflow/1",
+  "p2_surface_revision": "acs-p2-mcp-workflow/2",
   "instruction_sha256": "0cffa4ab3888b3c05d61a72f0d7566dd9c03db07b4baffef29c9a6cbb7bb9e46",
   "supported_evidence_layers": ["explanation", "decision_logic", "real_mechanism", "invariants", "representative_e2e"],
   "binding_fields": ["profile", "machines", "nodes", "os", "core", "provider", "driver", "harness", "database", "protocol", "credential_scope", "policy", "direction", "expires_at"],

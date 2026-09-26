@@ -13,20 +13,48 @@ GATE_CONTRACT = ROOT / "docs" / "runtime" / "gate-contract.json"
 class P2McpToolContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tools = json.loads(TOOL_CONTRACT.read_text(encoding="utf-8"))
+        cls.catalog = json.loads(TOOL_CONTRACT.read_text(encoding="utf-8"))
         cls.gates = json.loads(GATE_CONTRACT.read_text(encoding="utf-8"))
 
-    def test_public_surface_is_exact_and_low_level_run_remains_distinct(self):
+    def test_public_surface_uses_domain_object_action_names(self):
+        ordinary = [
+            "collaboration_plan_apply",
+            "harness_capacity_list",
+            "message_send",
+            "response_await",
+            "resource_read",
+            "inbox_list",
+            "response_notification_set",
+            "work_item_cancel",
+            "runtime_attempt_cancel",
+        ]
+        self.assertEqual(self.catalog["naming_convention"], "domain_object_action")
+        self.assertEqual(self.catalog["ordinary_tools"], ordinary)
+        self.assertEqual(self.catalog["advanced_tools"], ["domain_command_submit"])
         self.assertEqual(
-            self.tools["ordinary_tools"],
-            ["collaboration_apply", "harnesses", "send", "await", "read", "inbox", "cancel"],
+            set(self.catalog["tools"]), set(ordinary) | {"domain_command_submit"}
         )
-        self.assertEqual(self.tools["advanced_tool"], "run")
-        self.assertEqual(set(self.tools["ordinary_tools"]), set(self.tools["tools"]))
-
-    def test_send_defaults_and_modes_are_explicit(self):
         self.assertEqual(
-            self.tools["defaults"],
+            self.catalog["compatibility_aliases"]["run"]["canonical_tool"],
+            "domain_command_submit",
+        )
+
+    def test_every_tool_exposes_selection_and_result_metadata(self):
+        annotation_fields = {
+            "readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"
+        }
+        for name, tool in self.catalog["tools"].items():
+            with self.subTest(tool=name):
+                self.assertTrue(tool["title"])
+                self.assertIn("Returns", tool["description"])
+                self.assertTrue(tool["selection_guidance"])
+                self.assertEqual(set(tool["annotations"]), annotation_fields)
+                self.assertTrue(tool["input_schema"]["schema_version"])
+                self.assertIn(tool["result_type"], self.catalog["result_types"])
+
+    def test_message_send_defaults_and_modes_are_explicit(self):
+        self.assertEqual(
+            self.catalog["defaults"],
             {
                 "activation": "invoke",
                 "delivery_policy": "queue_until_idle",
@@ -35,38 +63,71 @@ class P2McpToolContractTests(unittest.TestCase):
                 "wait_until": "response_received",
             },
         )
-        send = self.tools["tools"]["send"]
+        send = self.catalog["tools"]["message_send"]["input_schema"]
         self.assertEqual(send["response_modes"], ["async", "sync"])
         self.assertIn("queue_until_idle", send["delivery_policies"])
         self.assertNotIn("response_mode", send["required"])
         self.assertNotIn("wait_timeout_seconds", send["required"])
         self.assertTrue(
-            {"activation", "delivery_policy", "expect_response", "response_mode",
-             "wait_until", "wait_timeout_seconds"} <= set(send["optional"])
+            {
+                "activation", "delivery_policy", "expect_response", "response_mode",
+                "wait_until", "wait_timeout_seconds",
+            }
+            <= set(send["optional"])
         )
 
-    def test_common_result_is_self_describing(self):
-        required = set(self.tools["common_result"]["required"])
-        self.assertTrue({"operation", "delivery", "response", "read", "await", "metadata"} <= required)
+    def test_results_are_discriminated_and_supply_executable_follow_ups(self):
+        envelope = self.catalog["result_envelope"]
+        self.assertEqual(envelope["schema_version"], "acs-mcp-result/2")
         self.assertEqual(
-            self.tools["receipt_order"],
+            set(envelope["success_required"]),
+            {
+                "schema_version", "result_type", "ok", "state", "data",
+                "follow_ups", "metadata",
+            },
+        )
+        self.assertEqual(
+            envelope["follow_up_required"], ["rel", "tool", "arguments"]
+        )
+        self.assertEqual(
+            set(self.catalog["result_types"]["message_submission"]),
+            {"operation", "message", "delivery", "response", "notification"},
+        )
+        self.assertEqual(
+            self.catalog["receipt_order"],
             [
-                "accepted_by_authority", "target_inbox_committed", "runtime_dispatched",
-                "runtime_acknowledged", "response_received",
+                "accepted_by_authority", "target_inbox_committed",
+                "runtime_dispatched", "runtime_acknowledged", "response_received",
             ],
         )
 
-    def test_read_contract_covers_result_and_content_views(self):
-        read = self.tools["tools"]["read"]
-        self.assertEqual(read["result_schema"], "acs-mcp-read-result/1")
-        self.assertTrue({"summary", "result", "evidence", "history", "content"} <= set(read["views"]))
+    def test_read_and_wait_contracts_cover_continuation(self):
+        read_tool = self.catalog["tools"]["resource_read"]
+        read = read_tool["input_schema"]
+        self.assertTrue(
+            {"summary", "result", "evidence", "history", "content"}
+            <= set(read["views"])
+        )
+        await_tool = self.catalog["tools"]["response_await"]
+        await_schema = await_tool["input_schema"]
+        self.assertEqual(await_schema["modes"], ["any", "all"])
+        self.assertFalse(read_tool["annotations"]["readOnlyHint"])
+        self.assertFalse(await_tool["annotations"]["readOnlyHint"])
+        self.assertTrue(
+            self.catalog["tools"]["inbox_list"]["annotations"]["readOnlyHint"]
+        )
+        self.assertEqual(
+            self.catalog["tools"]["inbox_list"]["result_type"], "inbox_page"
+        )
 
-    def test_p2_workflow_gate_has_every_adopted_surface_scenario(self):
+    def test_p2_workflow_gate_binds_the_surface_revision(self):
         scenarios = self.gates["gates"]["P2-MCP-WORKFLOW"]["scenarios"]
-        self.assertEqual(self.gates["p2_surface_revision"], self.tools["surface_revision"])
+        self.assertEqual(self.gates["p2_surface_revision"], self.catalog["surface_revision"])
         self.assertEqual(len(scenarios), 12)
         self.assertEqual(len(set(scenarios)), 12)
-        self.assertEqual(self.gates["gates"]["P2-REVIEW"]["requires"], ["P2-MCP-WORKFLOW"])
+        self.assertEqual(
+            self.gates["gates"]["P2-REVIEW"]["requires"], ["P2-MCP-WORKFLOW"]
+        )
 
 
 if __name__ == "__main__":

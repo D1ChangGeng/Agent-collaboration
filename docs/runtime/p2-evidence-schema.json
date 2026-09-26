@@ -8,7 +8,7 @@
     "schema_version": {"const": "acs-p2-execution-plan/2"},
     "status": {"enum": ["not_run", "blocked"]},
     "execution_order": {"const": ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW"]},
-    "mcp_surface_revision": {"const": "acs-p2-mcp-workflow/1"},
+    "mcp_surface_revision": {"const": "acs-p2-mcp-workflow/2"},
     "machines": {
       "type": "array", "minItems": 2, "maxItems": 2,
       "items": {
