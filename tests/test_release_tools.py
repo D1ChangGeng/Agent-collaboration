@@ -36,6 +36,48 @@ class ReleaseToolTests(unittest.TestCase):
             observed = doctor.runtime_readback(Path("missing"), Path("missing"), "root_manager")
         self.assertEqual(observed, {"state": "unavailable", "reason": "runtime_readback_failed"})
 
+    def test_doctor_uses_configured_source_provider_for_project_context(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        import sys
+        from types import SimpleNamespace
+
+        configured = SimpleNamespace(
+            artifact_configs=lambda: [
+                SimpleNamespace(scope_id="local-scope", authorized_source_roots=("/source",))
+            ],
+            credential=lambda: "private-credential",
+        )
+        service = SimpleNamespace(
+            authenticate=lambda credential: None,
+            authority=SimpleNamespace(_artifact_store=object()),
+        )
+        source = mock.Mock()
+        project = mock.Mock()
+        project.execute.side_effect = [
+            ("observed", {"connection_state": "authorized", "profile": "root_manager",
+                          "grant": {"ref": "grant:root"}}, []),
+            ("observed", {"items": [{"project_id": "project-alpha"}]}, []),
+            ("current", {"root_handle": "project:project-alpha:root",
+                         "context_completeness": "current"}, []),
+        ]
+        project.available_tools.return_value = ["load_project"]
+        with tempfile.TemporaryDirectory() as td:
+            catalog = Path(td) / "catalog.json"
+            catalog.write_text("{}")
+            context = mock.MagicMock()
+            context.__enter__.return_value = (service, configured)
+            with (
+                mock.patch.dict(sys.modules, {
+                    "runtime.project_source": SimpleNamespace(ProjectSources=mock.Mock(return_value=source)),
+                    "runtime.project_service": SimpleNamespace(ProjectService=mock.Mock(return_value=project)),
+                    "runtime.surface_config": SimpleNamespace(configured_service=mock.Mock(return_value=context)),
+                }),
+            ):
+                result = doctor.runtime_readback(Path(td) / "config.json", catalog, "root_manager")
+        self.assertEqual(result["project_contexts"][0]["context_completeness"], "current")
+        self.assertEqual(result["tools"], ["load_project"])
+        source.close.assert_called_once()
+
     def test_install_preview_is_read_only_when_docker_missing(self):
         doctor = load("acs_doctor", "acs_doctor.py")
         import sys

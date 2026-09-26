@@ -30,6 +30,10 @@ The Source/CAS backend requires Linux. On Windows, have the Agent choose an
 admitted Linux or WSL Runtime environment, verify access to the project's
 Git checkout there, and connect the local Harness to that Runtime. The Windows
 client path needs its own cold-start readback before it is reported as ready.
+For a linked Git worktree, the Agent must also locate and explicitly authorize
+its Git control directory and common object directory. The Source service
+checks both paths through pinned directory handles; granting only the worktree
+directory leaves its Git metadata outside the admitted Source boundary.
 
 The local installer reports `local_services_ready` after the Python environment,
 Skills, PostgreSQL, Temporal and Management Root are checked. Continue with

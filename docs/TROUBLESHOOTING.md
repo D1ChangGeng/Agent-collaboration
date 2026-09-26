@@ -9,6 +9,7 @@ projects and discovered tools.
 | Observation | Check | Recovery |
 | --- | --- | --- |
 | Source backend unavailable on Windows | Linux or WSL Runtime environment and exact Git checkout access | Move the Source/CAS service to the admitted Linux environment, then repeat project registration and MCP readback. |
+| Linked worktree Source registration rejected | The worktree Git control directory, common object directory and authorized Source roots | Admit the exact Git metadata locations alongside the checkout, then repeat the guarded registration preview. |
 | Local providers unavailable | Docker Compose availability, engine state and the selected owner-local service profile | Have the Agent install or start the engine with your system approval; rerun the readiness and service health checks. |
 | Project missing from MCP | Management Root identity, Git source revision, registration preview and Domain membership | Complete the guarded project registration and read back `list_projects` and `load_project`. |
 | Tool denied | Current principal, Profile, Grant, project_id, scope and expiry | Ask the Root Agent to inspect the required permission and request an authorized Grant change. |

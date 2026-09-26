@@ -7,6 +7,7 @@ import json
 import shutil
 import subprocess
 import sys
+from contextlib import ExitStack
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,13 +33,28 @@ def command_version(name: str, *args: str) -> dict[str, str | bool]:
 def runtime_readback(config: Path, catalog: Path, profile: str) -> dict:
     try:
         from runtime.project_service import ProjectService
+        from runtime.project_source import ProjectSources
         from runtime.surface_config import configured_service
 
         contract = json.loads(catalog.read_text(encoding="utf-8"))
-        with configured_service(config) as (service, settings):
+        with configured_service(config) as (service, settings), ExitStack() as resources:
             credential = settings.credential()
             service.authenticate(credential)
-            projects = ProjectService(service, contract, profile=profile)
+            providers = settings.artifact_configs()
+            sources = None
+            if providers and any(item.authorized_source_roots for item in providers):
+                roots = (
+                    providers[0].authorized_source_roots
+                    if len(providers) == 1
+                    else {
+                        item.scope_id: item.authorized_source_roots
+                        for item in providers
+                        if item.authorized_source_roots
+                    }
+                )
+                sources = ProjectSources(service.authority._artifact_store, roots)
+                resources.callback(sources.close)
+            projects = ProjectService(service, contract, profile=profile, sources=sources)
             _, snapshot, _ = projects.execute("read_profile", {}, credential)
             _, found, _ = projects.execute("list_projects", {}, credential)
             contexts = []
