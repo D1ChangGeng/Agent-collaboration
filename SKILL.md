@@ -2,9 +2,8 @@
 name: agent-collaboration-setup
 description: Install, bootstrap, adopt, repair, upgrade, validate, or safely manage removal of the ACHP harness-agnostic collaboration scaffold in a source repository or Project Collaboration Workspace. Workspace removal is guarded until ownership is reviewed. Use only when the user explicitly asks to set up or change the collaboration mechanism itself. Do not use for normal project planning, coding, reviews, handoffs, Git synchronization, or knowledge maintenance after setup.
 license: MIT
-compatibility: Agent Skills compatible harness with filesystem read/write access; Git is optional for management workspaces; Python 3.9+ is recommended for deterministic setup scripts.
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   scope: "setup-only"
   protocol: "ACHP"
 ---
@@ -17,6 +16,29 @@ Collaboration Workspace that manages long-lived Routes and points to separate
 Execution Endpoints and Source Repositories.
 
 Its job is to install or maintain the ACHP project scaffold so future sessions can collaborate from repository-native instructions and state. After setup, ordinary collaboration MUST run from the project's `AGENTS.md` and `.agents/` files without loading this skill again.
+
+## Agent operating guide (read before choosing a lifecycle)
+
+When the user describes a goal in ordinary language, first read
+[references/OPERATING-GUIDE.md](references/OPERATING-GUIDE.md). It defines the
+Root/Route/Session/Endpoint mental model, the observe-before-ask sequence,
+minimum interview rule, natural-language intent mappings, lifecycle boundaries,
+and the exact point where the current Skill has no mechanism. Use the
+support-status vocabulary there rather than turning a design possibility into a
+capability claim.
+
+Use the supporting ledgers when you need a precise boundary or regression
+case:
+
+- [references/CAPABILITY-MATRIX.md](references/CAPABILITY-MATRIX.md) records
+  instruction, decision, mechanism, validation, evidence, and current status
+  for each capability.
+- [references/SCENARIO-MATRIX.md](references/SCENARIO-MATRIX.md) records the
+  representative Root, Route, topology, continuity, UX, safety, and
+  finalization scenarios.
+
+The references are decision aids, not a replacement for observed filesystem,
+Git, or Harness facts. Read only the reference needed for the current request.
 
 ## Use this skill only for
 
@@ -34,11 +56,26 @@ For a management workspace, use the explicit command families:
 - `workspace bootstrap|adopt|upgrade|repair|validate|uninstall`;
 - `route create|adopt|upgrade|list|validate|set-state|rename`.
 
+These command names are deterministic mechanisms, not a natural-language
+intent parser. Decide the lifecycle from the observed target and user intent
+before invoking one. A new Session, Engineer window, machine, or Endpoint does
+not by itself justify creating a new Route.
+
 Workspace commands use the exact supplied path and never climb to a Git root.
 Route adoption registers and minimally annotates a Route while preserving its
 existing `AGENTS.md`, `.agents/knowledge/`, references, and state.
 
-The current Workspace schema is 0.3, released as v0.3.0.
+For an existing target, preview first and treat ownership conflicts as a stop
+condition. `bootstrap` is for a genuinely new/empty target; `adopt` is for
+existing assets; `repair` is limited to a safe managed gap; and `upgrade` is the
+explicit boundary for refreshing managed protocol content. See
+[references/OPERATING-GUIDE.md](references/OPERATING-GUIDE.md) for the decision
+table and [references/UPGRADE-POLICY.md](references/UPGRADE-POLICY.md) for
+preservation rules.
+
+The current Workspace schema remains 0.3. This Skill release is v0.4.0 and
+hardens lifecycle safety, candidate selection, and Agent-readable operation
+guidance without changing the minimal Workspace state model.
 Readers remain compatible with schema 0.2 input. New writers use the smallest
 stable shape: Root identity and registry location in the manifest, Route
 identity in `route.yaml`, and Route lifecycle in the Root registry. Older
@@ -61,6 +98,13 @@ cursor. Session/context continuity remains the responsibility of the Harness,
 Git/source state, and the durable knowledge system.
 
 Do **not** use this skill merely because a project already uses ACHP.
+
+If the request is to continue an existing Route, replace a Session or
+Execution Endpoint, inspect source over SSH, or perform direct cross-session
+relay, preserve the existing identity and report the current support boundary.
+The setup Skill does not currently provide those runtime operations; do not
+invent a replacement Route, persist runtime-only recovery state, or claim an
+unverified adapter succeeded.
 
 ## Non-goals
 
@@ -143,6 +187,19 @@ python3 <skill-dir>/scripts/project_setup.py workspace adopt --root <workspace> 
 python3 <skill-dir>/scripts/project_setup.py workspace adopt --root <workspace>
 python3 <skill-dir>/scripts/project_setup.py workspace validate --root <workspace>
 python3 <skill-dir>/scripts/project_setup.py route list --workspace <workspace>
+```
+
+When an existing Workspace contains unregistered Route-like directories, list
+them without changing the registry, then include only the Route the user has
+identified as a long-lived workstream:
+
+```bash
+python3 <skill-dir>/scripts/project_setup.py workspace adopt \
+  --root <workspace> --list-candidates
+python3 <skill-dir>/scripts/project_setup.py workspace adopt \
+  --root <workspace> --include-route "C Route" --dry-run
+python3 <skill-dir>/scripts/project_setup.py workspace adopt \
+  --root <workspace> --include-route "C Route"
 ```
 
 Do not run the legacy repository `adopt` command against a management workspace.
