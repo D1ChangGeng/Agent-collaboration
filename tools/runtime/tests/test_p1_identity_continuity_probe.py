@@ -15,6 +15,7 @@ from runtime.receiver_models import ReadbackBody, RecoveryBody
 from runtime.remote_endpoint import RemoteNodeTransport, serve
 from runtime_tests import test_receiver_protocol as protocol
 from tools.runtime import p1_identity_continuity_scene as identity_scene
+from tools.runtime import p1_profile_probe as profile_probe
 from tools.runtime.p1_identity_continuity_probe import (
     AttemptReadback,
     ContinuityRejected,
@@ -179,6 +180,123 @@ def test_proof_written_before_ledger_put_resumes_exact_checkpoint_lineage(tmp_pa
     assert resumed["operation_id"] == checkpoint["operation_id"]
     assert ledger.get("P1-IDENTITY-CONTINUITY")["message_id"] == checkpoint["message_id"]
     assert _read_checkpoint(_checkpoint_path(ledger))["phase"] == "completed"
+
+
+def test_profile_probe_routes_proof_written_checkpoint_without_reprovisioning(
+    tmp_path, monkeypatch,
+):
+    ledger = profile_probe.ProbeLedger(tmp_path / "ledger")
+    run_id = "identity-proof-route-run"
+    suffix = "identity-proof-route-suffix"
+    ledger.claim("P1-IDENTITY-CONTINUITY", run_id)
+    profile = {
+        "postgres_dsn": "unused-dsn",
+        "machine_id": "machine-proof-route",
+        "node_id": "node-proof-route",
+    }
+    authority = __import__("runtime.domain", fromlist=["DomainAuthority"]).DomainAuthority(
+        "unused-dsn",
+    )
+    checkpoint = prepare_checkpoint(
+        profile, ledger, run_id=run_id, suffix=suffix, commit="e" * 40, tree="f" * 40,
+        work_id="work-proof-route", message_id="message-proof-route",
+        endpoint_id="endpoint-proof-route", machine_id=profile["machine_id"],
+        node_id=profile["node_id"], authority=authority,
+    )
+    checkpoint = identity_scene._checkpoint_update(checkpoint, phase="proof_written")
+    observed = {}
+
+    def resume(_profile, _ledger, actual, **kwargs):
+        observed["checkpoint"] = actual
+        observed["kwargs"] = kwargs
+        return {"status": "passed", "operation_id": checkpoint["operation_id"]}
+
+    monkeypatch.setattr(profile_probe, "_resume_identity_proof_written", resume)
+    monkeypatch.setattr(
+        identity_scene,
+        "provision",
+        lambda *_args, **_kwargs: pytest.fail("identity provisioning must not repeat"),
+    )
+    result = profile_probe._run_domain_transaction(
+        profile,
+        "P1-IDENTITY-CONTINUITY",
+        ledger,
+        "e" * 40,
+        "f" * 40,
+        run_id,
+        suffix,
+        datetime.now(UTC),
+    )
+    assert result["operation_id"] == checkpoint["operation_id"]
+    assert observed["checkpoint"]["phase"] == "proof_written"
+    assert observed["kwargs"] == {
+        "commit": "e" * 40,
+        "tree": "f" * 40,
+        "run_id": run_id,
+        "external_scenario": "P1-IDENTITY-CONTINUITY",
+    }
+
+
+def test_ledger_pending_reconcile_does_not_put_again(tmp_path, monkeypatch):
+    ledger = __import__("tools.runtime.p1_profile_probe", fromlist=["ProbeLedger"]).ProbeLedger(
+        tmp_path / "ledger",
+    )
+    run_id = "identity-ledger-pending-run"
+    suffix = "identity-ledger-pending-suffix"
+    ledger.claim("P1-IDENTITY-CONTINUITY", run_id)
+    profile = {"machine_id": "machine-ledger", "node_id": "node-ledger"}
+    authority = __import__("runtime.domain", fromlist=["DomainAuthority"]).DomainAuthority(
+        "unused-dsn",
+    )
+    checkpoint = prepare_checkpoint(
+        profile, ledger, run_id=run_id, suffix=suffix, commit="c" * 40, tree="d" * 40,
+        work_id="work-ledger", message_id="message-ledger", endpoint_id="endpoint-ledger",
+        machine_id=profile["machine_id"], node_id=profile["node_id"], authority=authority,
+    )
+    proof = {
+        key: checkpoint[key]
+        for key in (
+            "tenant_id", "authority_id", "authority_incarnation", "source_commit", "source_tree",
+            "work_item_id", "message_id", "command_id", "operation_id", "attempt_id",
+            "dispatch_id", "endpoint_id", "machine_id", "node_id", "old_boot", "new_boot",
+            "old_runtime_id", "new_runtime_id", "authority_key_id",
+        )
+    }
+    proof.update({
+        "checkpoint_sha256": checkpoint["identity_sha256"],
+        "workflow_id": "acs-delivery/" + checkpoint["operation_id"],
+        "run_id": "temporal-run-ledger", "queue": "identity-ledger-queue",
+        "gate_qualification": qualified_gate(),
+    })
+    proof_path = ledger.root / "P1-IDENTITY-CONTINUITY-proof.json"
+    proof_bytes = json.dumps(proof, sort_keys=True, separators=(",", ":")).encode()
+    proof_path.write_bytes(proof_bytes)
+    raw_path = ledger.root / "P1-IDENTITY-CONTINUITY-runtime.json"
+    lineage = {"identity_continuity_proof": proof}
+    raw_path.write_bytes(json.dumps({"lineage": lineage}).encode())
+    row = {
+        "scenario_id": "P1-IDENTITY-CONTINUITY", "run_id": run_id,
+        "operation_id": checkpoint["operation_id"], "message_id": checkpoint["message_id"],
+        "event_id": "event-ledger", "receipt_id": "receipt-ledger", "test_digest": "1" * 64,
+        "raw_path": raw_path.name, "pg_schema": checkpoint["pg_schema"],
+        "temporal_workflow_id": proof["workflow_id"], "temporal_run_id": proof["run_id"],
+        "lineage_json": json.dumps(lineage, sort_keys=True),
+        "source_commit": checkpoint["source_commit"], "source_tree": checkpoint["source_tree"],
+        "status": "passed", "created_at": datetime.now(UTC).isoformat(),
+    }
+    checkpoint = finalize_checkpoint(
+        {**checkpoint, "proof_sha256": __import__("hashlib").sha256(proof_bytes).hexdigest()},
+        lineage=lineage, row=row,
+        raw_sha256=__import__("hashlib").sha256(raw_path.read_bytes()).hexdigest(),
+    )
+    ledger.put(row)
+    monkeypatch.setattr(identity_scene, "_live_readbacks", lambda *_args, **_kwargs: qualified_gate()["layers"])
+    original_put = ledger.put
+    monkeypatch.setattr(ledger, "put", lambda _value: pytest.fail("ledger.put must not repeat"))
+    resumed = resume_ledger_pending(profile, ledger, checkpoint)
+    assert resumed == row
+    assert _read_checkpoint(_checkpoint_path(ledger))["phase"] == "completed"
+    monkeypatch.setattr(ledger, "put", original_put)
 
 
 def qualified_gate():

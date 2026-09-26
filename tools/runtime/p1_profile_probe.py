@@ -2537,6 +2537,11 @@ def _run_domain_transaction(
         endpoint_id = checkpoint["endpoint_id"]
         if checkpoint.get("phase") == "ledger_pending" and ledger.get(scenario) is None:
             return p1_identity_continuity_scene.resume_ledger_pending(profile, ledger, checkpoint)
+        if checkpoint.get("phase") == "proof_written":
+            return _resume_identity_proof_written(
+                profile, ledger, checkpoint, commit=commit, tree=tree,
+                run_id=run_id, external_scenario=external_scenario,
+            )
         if checkpoint_preexisting:
             raise ProbeRejected(
                 "identity continuity checkpoint cannot safely resume before proof completion",
@@ -3013,6 +3018,181 @@ def _run_domain_transaction(
     return value
 
 
+def _resume_identity_proof_written(
+    profile: dict[str, Any], ledger: ProbeLedger, checkpoint: dict[str, Any], *,
+    commit: str, tree: str, run_id: str, external_scenario: str,
+) -> dict[str, Any]:
+    """Recover the durable row from proof/readbacks without reprovisioning identity."""
+    proof, _layers = p1_identity_continuity_scene.resume_proof_written(
+        profile, ledger, checkpoint,
+    )
+    raw = ledger.root / f"{p1_identity_continuity_scene.SCENARIO}-runtime.json"
+    existing_raw: bytes | None = None
+    existing_lineage: dict[str, Any] | None = None
+    if raw.exists():
+        try:
+            existing_raw = raw.read_bytes()
+            raw_value = json.loads(existing_raw)
+        except (OSError, UnicodeError, ValueError) as exc:
+            raise ProbeRejected("proof-written identity raw evidence is unavailable") from exc
+        if checkpoint.get("raw_sha256") and _sha(existing_raw) != checkpoint["raw_sha256"]:
+            raise ProbeRejected("proof-written identity raw evidence changed")
+        existing_lineage = raw_value.get("lineage") if isinstance(raw_value, dict) else None
+        if (
+            not isinstance(existing_lineage, dict)
+            or raw_value.get("result") != "passed"
+            or raw_value.get("scenario_id") != external_scenario
+            or existing_lineage.get("identity_continuity_proof") != proof
+        ):
+            raise ProbeRejected("proof-written identity raw lineage is incomplete")
+    scoped_dsn = make_conninfo(
+        profile["postgres_dsn"], options=f"-c search_path={checkpoint['pg_schema']}",
+    )
+    authority = DomainAuthority(scoped_dsn)
+    with authority._connect() as connection:
+        attempts = connection.execute(
+            "SELECT ordinal,attempt_id,dispatch_id,status,selection_revision,"
+            "selection_json->>'boot_incarnation',selection_json->>'machine_id' "
+            "FROM delivery_attempts WHERE message_id=%s ORDER BY ordinal",
+            (checkpoint["message_id"],),
+        ).fetchall()
+        receipts = connection.execute(
+            "SELECT receipt_id,layer FROM delivery_receipts WHERE message_id=%s ORDER BY observed_at",
+            (checkpoint["message_id"],),
+        ).fetchall()
+        events = connection.execute(
+            "SELECT event_id FROM domain_events WHERE command_id=%s ORDER BY event_id",
+            (checkpoint["command_id"],),
+        ).fetchall()
+        message_state = connection.execute(
+            "SELECT state,last_error FROM delivery_messages WHERE message_id=%s",
+            (checkpoint["message_id"],),
+        ).fetchone()
+        inbox_count = connection.execute(
+            "SELECT count(*) FROM inbox_messages WHERE message_id=%s",
+            (checkpoint["message_id"],),
+        ).fetchone()[0]
+        grant_ref = connection.execute(
+            "SELECT command_json->>'grant_ref' FROM delivery_messages WHERE message_id=%s",
+            (checkpoint["message_id"],),
+        ).fetchone()[0]
+        grant_revoked = connection.execute(
+            "SELECT revoked_at IS NOT NULL FROM grants WHERE grant_ref=%s", (grant_ref,),
+        ).fetchone()[0]
+        dedup_details = connection.execute(
+            "SELECT canonical_hash,hash_version FROM command_dedup WHERE command_id=%s",
+            (checkpoint["command_id"],),
+        ).fetchone()
+        operation_details = connection.execute(
+            "SELECT status,provider FROM operations WHERE operation_id=%s",
+            (checkpoint["operation_id"],),
+        ).fetchone()
+        provider_refs = connection.execute(
+            "SELECT provider_workflow_id,provider_run_id FROM operations WHERE operation_id=%s",
+            (checkpoint["operation_id"],),
+        ).fetchone()
+        outbox_details = connection.execute(
+            "SELECT topic,delivered_at IS NOT NULL FROM outbox WHERE operation_id=%s",
+            (checkpoint["operation_id"],),
+        ).fetchone()
+        message_hashes = connection.execute(
+            "SELECT canonical_hash,envelope_hash FROM delivery_messages WHERE message_id=%s",
+            (checkpoint["message_id"],),
+        ).fetchone()
+        event_hashes = connection.execute(
+            "SELECT canonical_hash FROM domain_events WHERE command_id=%s ORDER BY event_id",
+            (checkpoint["command_id"],),
+        ).fetchall()
+        operation_count = connection.execute(
+            "SELECT count(*) FROM operations WHERE command_id=%s", (checkpoint["command_id"],),
+        ).fetchone()[0]
+        outbox_count = connection.execute(
+            "SELECT count(*) FROM outbox WHERE operation_id=%s", (checkpoint["operation_id"],),
+        ).fetchone()[0]
+    if (
+        len(attempts) != 1
+        or attempts[0][1:] != (
+            checkpoint["attempt_id"], checkpoint["dispatch_id"], "delivered", 1,
+            checkpoint["old_boot"], checkpoint["machine_id"],
+        )
+        or not receipts or not events or message_state != ("delivered", None)
+        or inbox_count != 1 or not dedup_details or not operation_details
+        or not provider_refs or not outbox_details or not message_hashes
+        or len(events) != 1 or operation_count != 1 or outbox_count != 1
+        or provider_refs != (proof["workflow_id"], proof["run_id"])
+    ):
+        raise ProbeRejected("proof-written identity Runtime lineage is incomplete")
+    node_journal = ledger.root / f"{p1_identity_continuity_scene.SCENARIO}-node.sqlite"
+    if not node_journal.is_file() or node_journal.is_symlink():
+        raise ProbeRejected("proof-written identity Node journal is unavailable")
+    lineage = {
+        "scenario_id": external_scenario,
+        "tenant_id": proof["tenant_id"], "grant_ref": grant_ref,
+        "machine_id": checkpoint["machine_id"], "node_id": checkpoint["node_id"],
+        "command_id": checkpoint["command_id"], "message_id": checkpoint["message_id"],
+        "operation_id": checkpoint["operation_id"], "attempt_id": checkpoint["attempt_id"],
+        "dispatch_id": checkpoint["dispatch_id"], "attempts": [{
+            "ordinal": item[0], "attempt_id": item[1], "dispatch_id": item[2],
+            "status": item[3], "selection_revision": item[4],
+            "selection_boot": item[5], "selection_machine": item[6],
+        } for item in attempts],
+        "event_ids": [str(item[0]) for item in events],
+        "receipts": [
+            {"receipt_id": item[0], "layer": item[1]} for item in receipts
+        ], "driver_calls": [], "node_journal": node_journal.name,
+        "conflict_rejected": True, "exact_replay": True,
+        "dispatch_status": "delivered", "message_state": message_state[0],
+        "last_error": message_state[1], "inbox_count": inbox_count,
+        "grant_revoked": grant_revoked, "ack_loss_observed": proof["ack_loss_observed"],
+        "core_crash_proof": None, "node_restart_proof": None,
+        "provider_restart_proof": None, "lease_proof": None,
+        "uncertain_effect_proof": None, "stale_baseline_proof": None,
+        "partial_artifact_proof": None, "harness_replacement_proof": None,
+        "native_multiagent_proof": None, "surface_parity_proof": None,
+        "identity_continuity_proof": proof, "dedup_details": list(dedup_details),
+        "operation_details": list(operation_details), "provider_refs": list(provider_refs),
+        "outbox_details": list(outbox_details), "message_hashes": list(message_hashes),
+        "event_hashes": [item[0] for item in event_hashes],
+    }
+    if existing_lineage is not None and existing_lineage != lineage:
+        raise ProbeRejected("proof-written identity Runtime lineage changed")
+    raw_bytes = existing_raw
+    if raw_bytes is None:
+        raw_bytes = _canonical({
+            "scenario_id": external_scenario,
+            "mechanism_profile": p1_identity_continuity_scene.SCENARIO,
+            "lineage": lineage, "result": "passed", "fault": external_scenario,
+        })
+        _private_json(raw, {
+            "scenario_id": external_scenario,
+            "mechanism_profile": p1_identity_continuity_scene.SCENARIO,
+            "lineage": lineage, "result": "passed", "fault": external_scenario,
+        })
+        raw_bytes = raw.read_bytes()
+    raw_sha256 = _sha(raw_bytes)
+    row = {
+        "scenario_id": p1_identity_continuity_scene.SCENARIO, "run_id": run_id,
+        "operation_id": checkpoint["operation_id"], "message_id": checkpoint["message_id"],
+        "event_id": str(events[-1][0]), "receipt_id": receipts[-1][0],
+        "test_digest": _sha(raw.read_bytes()), "raw_path": raw.name,
+        "pg_schema": checkpoint["pg_schema"], "temporal_workflow_id": proof["workflow_id"],
+        "temporal_run_id": proof["run_id"],
+        "lineage_json": json.dumps(lineage, sort_keys=True),
+        "source_commit": commit, "source_tree": tree, "status": "passed",
+        "created_at": datetime.now(UTC).isoformat(),
+    }
+    checkpoint = p1_identity_continuity_scene.finalize_checkpoint(
+        checkpoint, lineage=lineage, row=row, raw_sha256=raw_sha256,
+    )
+    existing = ledger.get(p1_identity_continuity_scene.SCENARIO)
+    if existing is not None and existing != row:
+        raise ProbeRejected("proof-written identity ledger row changed")
+    if existing is None:
+        ledger.put(row)
+    p1_identity_continuity_scene._checkpoint_update(checkpoint, phase="completed")
+    return existing or row
+
+
 def _run_codex_host_scene(
     profile: dict[str, Any],
     ledger: ProbeLedger,
@@ -3262,8 +3442,26 @@ def _run_tests(
     tree: str,
     fault: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
-    if ledger.get(scenario) is not None:
-        return ledger.get(scenario)
+    existing = ledger.get(scenario)
+    if scenario == "P1-IDENTITY-CONTINUITY":
+        checkpoint_path = p1_identity_continuity_scene._checkpoint_path(ledger)
+        if checkpoint_path.exists():
+            checkpoint = p1_identity_continuity_scene._read_checkpoint(checkpoint_path)
+            if checkpoint.get("phase") == "ledger_pending":
+                return p1_identity_continuity_scene.resume_ledger_pending(
+                    profile, ledger, checkpoint,
+                )
+            if checkpoint.get("phase") == "proof_written":
+                # The domain transaction path performs the proof/readback-only
+                # recovery before any provisioning or new mutation, even if a
+                # matching ledger row is already present.
+                existing = None
+            elif checkpoint.get("phase") == "completed":
+                if existing is None:
+                    raise ProbeRejected("identity continuity completed checkpoint has no ledger row")
+                return existing
+    if existing is not None:
+        return existing
     run_id = os.environ.get("ACS_GATE_RUN_ID", "standalone-" + _sha(os.urandom(16))[:24])
     suffix, issued_at = ledger.claim(scenario, run_id)
     if scenario not in ScenarioCatalog.LINEAGE_BOUND:
