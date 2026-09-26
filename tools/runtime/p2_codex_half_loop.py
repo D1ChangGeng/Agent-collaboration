@@ -49,6 +49,22 @@ from runtime.receiver_domain import (
 from runtime.receiver_models import EndpointBinding, EndpointRegistration
 
 
+MAX_ENDPOINT_TTL_SECONDS = 300
+
+
+def endpoint_ttl_seconds(value: str) -> int:
+    """Parse the endpoint lease TTL within the Node proof validity ceiling."""
+    try:
+        ttl = int(value)
+    except (TypeError, ValueError) as error:
+        raise argparse.ArgumentTypeError("endpoint TTL must be an integer") from error
+    if not 1 <= ttl <= MAX_ENDPOINT_TTL_SECONDS:
+        raise argparse.ArgumentTypeError(
+            f"endpoint TTL must be between 1 and {MAX_ENDPOINT_TTL_SECONDS} seconds"
+        )
+    return ttl
+
+
 def _json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -426,7 +442,10 @@ def main(argv=None):
         "--drop-response",
         choices=("delivery.prepare", "delivery.dispatch", "delivery.readback", "delivery.recover"),
     )
-    setup.add_argument("--endpoint-ttl-seconds", type=int, default=1800)
+    setup.add_argument(
+        "--endpoint-ttl-seconds", type=endpoint_ttl_seconds,
+        default=MAX_ENDPOINT_TTL_SECONDS,
+    )
     run = sub.add_parser("execute")
     run.add_argument("--windows-profile", type=Path, required=True)
     run.add_argument("--state", type=Path, required=True)
