@@ -41,6 +41,35 @@ INSTALL_CONTENT = (
     "tests",
 )
 REQUIRED_CONTENT = {"SKILL.md", "VERSION", "scripts"}
+KNOWLEDGE_SOURCE = Path("docs/runtime/skills")
+KNOWLEDGE_NAMES = (
+    "acs-collaboration-model", "acs-continuity-recovery", "acs-policy-governance",
+    "acs-project-context", "acs-review-acceptance", "acs-runtime-model",
+    "acs-source-evidence", "acs-web-collaboration",
+)
+
+
+def skill_payload_files(root: Path) -> list[Path]:
+    if root.name in KNOWLEDGE_NAMES and root.parent.name == "skills":
+        if not (root / "SKILL.md").is_file() or _is_reparse(root):
+            raise ValueError("runtime knowledge Skill source is unavailable")
+        files = []
+        for path in root.rglob("*"):
+            if _is_reparse(path):
+                raise ValueError("runtime knowledge Skill contains a link")
+            if path.is_file() and path.name != INSTALL_MARKER and not _ignored(path):
+                files.append(path)
+        return sorted(files, key=lambda item: item.relative_to(root).as_posix())
+    return _install_files(root)
+
+
+def skill_payload_entries(root: Path, require_core: bool = False) -> Tuple[Set[str], Set[str]]:
+    if root.name in KNOWLEDGE_NAMES and root.parent.name == "skills":
+        files = {path.relative_to(root).as_posix() for path in skill_payload_files(root)}
+        directories = {parent.as_posix() for file in files for parent in Path(file).parents
+                       if parent != Path(".")}
+        return files, directories
+    return _payload_entries(root, require_core=require_core)
 
 
 def repo_root() -> Path:
@@ -198,7 +227,7 @@ def _install_files(root: Path) -> List[Path]:
 def content_digest(root: Path) -> str:
     """Return a deterministic digest of the installable Skill payload."""
     digest = hashlib.sha256()
-    for path in _install_files(root):
+    for path in skill_payload_files(root):
         rel = path.relative_to(root).as_posix().encode("utf-8")
         data = path.read_bytes()
         digest.update(len(rel).to_bytes(4, "big"))
@@ -209,20 +238,21 @@ def content_digest(root: Path) -> str:
 
 
 def _marker_data(source: Path) -> Dict[str, str]:
-    _payload_entries(source, require_core=True)
-    version = (source / "VERSION").read_text(encoding="utf-8").strip()
+    skill_payload_entries(source, require_core=True)
+    version_path = source / "VERSION" if source.name not in KNOWLEDGE_NAMES else repo_root() / "VERSION"
+    version = version_path.read_text(encoding="utf-8").strip()
     if not version:
         raise ValueError("install payload VERSION is empty")
     return {
         "schema_version": "1",
-        "skill": SKILL_NAME,
+        "skill": source.name if source.name in KNOWLEDGE_NAMES else SKILL_NAME,
         "source": str(source.resolve()),
         "version": version,
         "content_sha256": content_digest(source),
     }
 
 
-def _read_marker(dest: Path) -> Optional[Dict[str, Any]]:
+def _read_marker(dest: Path, skill_name: str = SKILL_NAME) -> Optional[Dict[str, Any]]:
     marker = dest / INSTALL_MARKER
     if not marker.is_file() or _is_reparse(marker):
         return None
@@ -232,7 +262,7 @@ def _read_marker(dest: Path) -> Optional[Dict[str, Any]]:
         return None
     if not isinstance(value, dict):
         return None
-    if value.get("skill") != SKILL_NAME or value.get("schema_version") != "1":
+    if value.get("skill") != skill_name or value.get("schema_version") != "1":
         return None
     if not isinstance(value.get("source"), str) or not value["source"]:
         return None
@@ -247,7 +277,7 @@ def _read_marker(dest: Path) -> Optional[Dict[str, Any]]:
 def _owned_copy(dest: Path, source: Optional[Path] = None) -> bool:
     if not dest.is_dir() or _is_reparse(dest):
         return False
-    marker = _read_marker(dest)
+    marker = _read_marker(dest, source.name if source is not None and source.name in KNOWLEDGE_NAMES else SKILL_NAME)
     if marker is None:
         return False
     if source is not None:
@@ -259,7 +289,7 @@ def _owned_copy(dest: Path, source: Optional[Path] = None) -> bool:
 
 
 def _payload_matches_marker(source: Path, dest: Path) -> bool:
-    marker = _read_marker(dest)
+    marker = _read_marker(dest, source.name if source.name in KNOWLEDGE_NAMES else SKILL_NAME)
     if marker is None or not _owned_copy(dest, source):
         return False
     try:
@@ -269,7 +299,7 @@ def _payload_matches_marker(source: Path, dest: Path) -> bool:
 
 
 def _unknown_entries(source: Path, dest: Path) -> Set[str]:
-    source_files, source_dirs = _payload_entries(source, require_core=True)
+    source_files, source_dirs = skill_payload_entries(source, require_core=True)
     expected = source_files | source_dirs | {INSTALL_MARKER}
     unknown: Set[str] = set()
     for child in dest.rglob("*"):
@@ -288,9 +318,10 @@ def _refuse_unowned(dest: Path) -> ValueError:
 
 
 def _copy_skill(source: Path, dest: Path) -> None:
-    _payload_entries(source, require_core=True)
+    skill_payload_entries(source, require_core=True)
     dest.mkdir(parents=True)
-    for rel in INSTALL_CONTENT:
+    payload = INSTALL_CONTENT if source.name not in KNOWLEDGE_NAMES else ("SKILL.md", "references")
+    for rel in payload:
         src = source / rel
         if not src.exists():
             continue
@@ -352,7 +383,7 @@ def _remove_owned_destination(source: Path, dest: Path) -> None:
 
 def install_one(source: Path, dest: Path, mode: str) -> str:
     source = source.resolve()
-    _payload_entries(source, require_core=True)
+    skill_payload_entries(source, require_core=True)
     _reject_reparse_ancestors(
         dest,
         "Skill destination",
@@ -405,7 +436,7 @@ def check_one(source: Path, dest: Path) -> Tuple[bool, str]:
         return same_path(dest, source), f"symlink -> {dest.resolve()}"
     if not (dest / "SKILL.md").exists():
         return False, "SKILL.md missing"
-    marker = _read_marker(dest)
+    marker = _read_marker(dest, source.name if source.name in KNOWLEDGE_NAMES else SKILL_NAME)
     if marker is None:
         return False, "unowned or legacy copy; installation marker missing/invalid"
     if not _owned_copy(dest, source):
@@ -427,17 +458,36 @@ def main() -> int:
     parser.add_argument("--mode", choices=["auto", "symlink", "copy"], default="auto")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--uninstall", action="store_true")
+    parser.add_argument("--knowledge", action="store_true", help="include ACS runtime knowledge Skills")
     args = parser.parse_args()
     if args.check and args.uninstall:
         parser.error("--check and --uninstall cannot be combined")
 
     source = repo_root()
-    dests = destinations(args.harness, args.scope, args.project)
+    dests = [(source, dest) for dest in destinations(args.harness, args.scope, args.project)]
+    if args.knowledge:
+        hs = set(args.harness)
+        if "all" in hs:
+            hs = {"codex", "opencode", "claude"}
+        base = (Path.home() if args.scope == "user" else args.project)
+        if base is None:
+            parser.error("--project is required for project scope")
+        root = source / KNOWLEDGE_SOURCE
+        if not root.is_dir():
+            parser.error("runtime knowledge Skill source is unavailable")
+        for name in KNOWLEDGE_NAMES:
+            skill = root / name
+            if not skill.is_dir() or not (skill / "SKILL.md").is_file():
+                parser.error("runtime knowledge Skill is unavailable")
+            if {"codex", "opencode"} & hs:
+                dests.append((skill, base / ".agents" / "skills" / name))
+            if "claude" in hs:
+                dests.append((skill, base / ".claude" / "skills" / name))
     if args.check:
         failed = False
-        for dest in dests:
+        for skill_source, dest in dests:
             try:
-                ok, detail = check_one(source, dest)
+                ok, detail = check_one(skill_source, dest)
             except (OSError, UnicodeError, ValueError) as exc:
                 ok, detail = False, f"check refused: {exc}"
             print(f"[{'OK' if ok else 'FAIL'}] {dest}: {detail}")
@@ -446,13 +496,13 @@ def main() -> int:
 
     if args.uninstall:
         failed = False
-        for dest in dests:
-            if same_location(source, dest) and not dest.is_symlink():
+        for skill_source, dest in dests:
+            if same_location(skill_source, dest) and not dest.is_symlink():
                 print(f"[SKIP] {dest}: this is the source checkout")
                 continue
             if dest.exists() or dest.is_symlink():
                 try:
-                    _remove_owned_destination(source, dest)
+                    _remove_owned_destination(skill_source, dest)
                     print(f"[REMOVED] {dest}")
                 except (OSError, UnicodeError, ValueError) as exc:
                     print(f"[REFUSED] {exc}")
@@ -462,9 +512,9 @@ def main() -> int:
         return 1 if failed else 0
 
     failed = False
-    for dest in dests:
+    for skill_source, dest in dests:
         try:
-            result = install_one(source, dest, args.mode)
+            result = install_one(skill_source, dest, args.mode)
             print(f"[{result.upper()}] {dest}")
         except (OSError, UnicodeError, ValueError) as exc:
             print(f"[REFUSED] {exc}")

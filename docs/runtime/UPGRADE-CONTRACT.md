@@ -130,6 +130,12 @@ Global installation is project-independent; project adoption records one stable
 project_id in the Management Root AGENTS block and machine manifest. Every
 project-scoped runtime tool carries that ID.
 
+The P2 single-user ChatGPT private Tunnel profile binds a local stdio MCP
+process to the installation owner's existing principal, Grant and Profile.
+Its trust and test boundary is
+[P2-PRIVATE-TUNNEL-PROFILE.md](P2-PRIVATE-TUNNEL-PROFILE.md). The remote HTTPS
+resource-server profile retains its OAuth binding contract.
+
 Root Agent is an external Session role projection, while Project, Root, Route,
 Scope, AgentSlot and WorkItem retain durable identity. Local Sessions obtain
 project context from the Management Root. Web Sessions use list_projects and

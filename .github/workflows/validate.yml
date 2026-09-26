@@ -1,4 +1,4 @@
-name: Validate Skill
+name: Validate ACS
 
 on:
   push:
@@ -19,3 +19,32 @@ jobs:
         run: python scripts/validate_skill.py
       - name: Run tests
         run: python -m unittest discover -s tests -v
+
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.9"
+      - name: Install locked Runtime
+        run: uv sync --frozen --group dev
+      - name: Check release tooling
+        run: uv run --frozen ruff check scripts/acs_doctor.py scripts/acs_install.py scripts/build_release.py tests/test_release_tools.py
+      - name: Runtime component tests
+        run: uv run --frozen pytest runtime_tests -q
+      - name: Gate tooling tests
+        run: uv run --frozen python -m unittest discover -s tools/runtime/tests -q
+
+  package:
+    runs-on: ubuntu-latest
+    needs: [validate, runtime]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.9"
+      - name: Build Runtime wheel
+        run: uv build --wheel
+      - name: Assemble candidate distribution
+        run: python scripts/build_release.py --output dist/release --version 1.0.0

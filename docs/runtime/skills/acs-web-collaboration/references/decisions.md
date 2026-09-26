@@ -1,9 +1,11 @@
 # Web access decision map
 
-Use secure Tunnel for private local ACS access when the client and deployment
-support it. Use stable HTTPS for hosted or published service access. OAuth
-metadata and per-tool scopes express requested access; server verification is
-authoritative.
+Use the single-user private Tunnel profile for an installation owner's Linux
+stdio ACS server when the Host supports it. Keep the Tunnel in that owner's
+Platform organization and ChatGPT workspace, and keep its ACS credential bound
+to one existing Grant. Use stable HTTPS with OAuth for a shared or hosted
+resource server. In both paths, server-side Domain checks are authoritative.
+See [the private Tunnel profile](../../../P2-PRIVATE-TUNNEL-PROFILE.md).
 
 Use ACS filesystem tools for local Management Root, dirty state and Node-bound
 Evidence. Use official GitHub MCP or another repository provider for remote
