@@ -151,7 +151,7 @@ def provision(args):
     connection_ref="p2-windows-private"
     authority.register_receiver_connection(_command(authority,"receiver.connection.register","connection",
         connection_ref),ConnectionReferenceRegistration(connection_ref=connection_ref,revision=1,
-        locator_host=args.host,locator_port=args.port,route_class="private",
+        locator_host=args.host,locator_port=args.port,route_class=args.route_class,
         policy_digest=hashlib.sha256(args.tree.encode()).hexdigest(),
         expires_at=expiry-timedelta(minutes=5)))
     cert,tls_key,cert_sha=_certificate(root,args.host)
@@ -163,13 +163,17 @@ def provision(args):
         boot_incarnation=boot,scope_id="local-scope",agent_slot_id="local-slot",tls_certificate_sha256=cert_sha,
         config_sha256="0"*64,expires_at=datetime.now(UTC)+timedelta(minutes=4))
     binding=EndpointBinding(registration=provisional,locator_host=args.host,locator_port=args.port,
-        route_class="private",node_key_id=node_key_id,node_public_key=public_key(node_key),registration_signature=sign(node_key,provisional))
+        route_class=args.route_class,node_key_id=node_key_id,node_public_key=public_key(node_key),registration_signature=sign(node_key,provisional))
     settings=stage_capacity(root,runtime_id)
     factory,_,_,_=inspect_factory("runtime_deployment.receiver_codex:callbacks",settings=settings)
     config=ReceiverRuntimeConfig(binding=binding,authority_key_id=key_id,authority_key_revision=1,
         authority_public_key=public_key(authority_key),authority_public_key_fingerprint=hashlib.sha256(bytes.fromhex(public_key(authority_key))).hexdigest(),
         tls_cert_path=str(cert),tls_key_path=str(tls_key),node_signing_key_path=str(node_seed),ledger_path=str(root/"state/receiver.sqlite"),
         expected_boot_incarnation=boot,journal_generation=1)
+    if args.listen_host:
+        config = __import__("dataclasses").replace(
+            config, listen_host=args.listen_host, listen_port=args.listen_port,
+        )
     process=bind_process_config(config,factory,node_key); registration=process.runtime.binding.registration
     ec=_command(node,"endpoint.register","endpoint",registration.endpoint_id)
     ni={"registration":registration.model_dump(mode="json"),"registration_signature":process.runtime.binding.registration_signature}
@@ -288,7 +292,7 @@ def send(args):
 def main():
     p=argparse.ArgumentParser(); s=p.add_subparsers(dest="action",required=True)
     a=s.add_parser("provision"); a.add_argument("--profile",type=Path,required=True); a.add_argument("--output",type=Path,required=True)
-    a.add_argument("--host",required=True); a.add_argument("--port",type=int,required=True); a.add_argument("--machine-id",required=True); a.add_argument("--tree",required=True); a.add_argument("--commit",required=True); a.add_argument("--schema-name",required=True)
+    a.add_argument("--host",required=True); a.add_argument("--port",type=int,required=True); a.add_argument("--route-class",choices=("private","tunnel"),default="private"); a.add_argument("--listen-host"); a.add_argument("--listen-port",type=int); a.add_argument("--machine-id",required=True); a.add_argument("--tree",required=True); a.add_argument("--commit",required=True); a.add_argument("--schema-name",required=True)
     b=s.add_parser("serve"); b.add_argument("--config",type=Path,required=True)
     c=s.add_parser("send"); c.add_argument("--profile",type=Path,required=True); c.add_argument("--state",type=Path,required=True); c.add_argument("--authority-seed",type=Path,required=True); c.add_argument("--output",type=Path,required=True); c.add_argument("--suffix",required=True); c.add_argument("--linux-machine-id",required=True)
     x=p.parse_args(); return provision(x) if x.action=="provision" else run(x) if x.action=="serve" else send(x)
