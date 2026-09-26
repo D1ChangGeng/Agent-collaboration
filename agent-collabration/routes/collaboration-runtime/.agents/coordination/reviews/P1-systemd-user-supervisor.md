@@ -26,8 +26,8 @@ Reviewed candidate archive SHA-256:
 Formal integration hashes:
 
 - `runtime/systemd_supervisor.py`: `55a3b40c5b864de7eed01b11d544ce7a5aa063ac7b97b85196b82b357c4119e1`
-- `runtime/supervisor.py`: `841f37bb69c134ccdf9834e32ae0f57b145e9ccc4bbc20f64dcae8067d1d2c34`
-- `runtime/__init__.py`: `a78522293e55ce7a1238184f03e8e107db2d8540ee5046e13437f1940bb1aec6`
+- `runtime/supervisor.py`: `84c9ca3b06bdc3f8199bcab1b95d44d6381d29d6dce422fd0e702f601dc9645d`
+- `runtime/__init__.py`: `8e920161c9e1289caa5f1aa4512afde936452320057e7796a8a87c8a9af9014b`
 - `runtime_tests/test_systemd_supervisor.py`: `a71fdcf31dd29539a4cb6a4c193abe1abbdc7e369f0b583db698ca32a9bde052`
 - `runtime_tests/systemd_jsonl_fixture.py`: `3f234c7c1fe24a041123d9c4ef6be8a90e138664caa4c260920b2e85d6eee8a0`
 
