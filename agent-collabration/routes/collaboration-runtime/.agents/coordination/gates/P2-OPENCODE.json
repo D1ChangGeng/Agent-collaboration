@@ -1,0 +1,43 @@
+{
+  "schema_version": "acs-gate-record/1",
+  "contract_revision": "2026-09-11.1",
+  "gate": "P2-OPENCODE",
+  "status": "not_run",
+  "source_baseline": "a58c56c772d306cd5cef7cfca27deaf1ec240ebc",
+  "profile_intent": "local-first-reference-p1-p2",
+  "scenarios": [
+    {
+      "scenario_id": "P2-OPENCODE-CROSS-HARNESS-LOOP",
+      "status": "not_run"
+    },
+    {
+      "scenario_id": "P2-OPENCODE-CAPABILITY-PROBE",
+      "status": "not_run"
+    },
+    {
+      "scenario_id": "P2-OPENCODE-TRANSPORT-SWITCH",
+      "status": "not_run"
+    },
+    {
+      "scenario_id": "P2-OPENCODE-LIFECYCLE-RECOVERY",
+      "status": "not_run"
+    },
+    {
+      "scenario_id": "P2-OPENCODE-PERMISSION-DATA-POLICY",
+      "status": "not_run"
+    },
+    {
+      "scenario_id": "P2-OPENCODE-LATE-DEDUP",
+      "status": "not_run"
+    },
+    {
+      "scenario_id": "P2-HUMAN-BRIDGE-RECOVERY",
+      "status": "not_run"
+    },
+    {
+      "scenario_id": "P2-SOURCE-ARTIFACT-EFFECT-READBACK",
+      "status": "not_run"
+    }
+  ],
+  "scope_note": "Defined acceptance contract; Runtime evidence has not yet been accepted."
+}
