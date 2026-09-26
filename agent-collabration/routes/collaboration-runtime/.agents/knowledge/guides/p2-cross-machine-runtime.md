@@ -29,9 +29,12 @@ review_when:
   `SystemdUserSupervisor`, the reviewed bwrap helper and a digest-pinned Codex
   distribution. Both platforms terminate owned process trees on construction
   failure and Receiver shutdown.
-- A changed source HEAD invalidates Runtime execution evidence. Only promote a
-  run whose two clones, Drivers, schemas, receipts and readbacks bind the same
-  final commit/tree.
+- Runtime execution evidence retains the commit/tree, Machine/Harness bindings,
+  receipts and readbacks of the run that produced it. A later source HEAD does
+  not rewrite that historical result. Classify a source delta by the mechanisms
+  it affects; documentation and license changes do not imply changed Runtime
+  behavior. State separately which later-candidate claims are historical,
+  directly observed, or independently reviewed.
 
 ## Evidence boundary
 
@@ -40,5 +43,5 @@ These boundaries were last checked against source commit
 `docs/runtime/UPGRADE-CONTRACT.md`, `runtime/receiver*.py`,
 `runtime/codex_driver.py`, `runtime/supervisor.py`,
 `runtime/systemd_supervisor.py`, and `tools/runtime/p2_*.py`. A later candidate
-must revalidate the affected claims before updating this baseline or promoting
-new Gate evidence.
+uses a source-delta impact map to distinguish unchanged mechanisms from
+changed ones. Prior Gate records retain their original bindings and conclusions.
