@@ -132,6 +132,49 @@ class DomainAuthority:
             command, effect_id=effect_id,
         )
 
+    def bind_artifact_store(self, command: CommandEnvelope, store: Any) -> Any:
+        """Bind a filesystem CAS to the authenticated command's data policy.
+
+        The underlying store remains responsible for dirfd, ownership, scope,
+        immutability and digest checks.  This adapter adds a fresh Domain Grant
+        check before each protected byte operation; callers must create it for
+        the concrete command that is reading or writing the artifact.
+        """
+        from runtime.data_policy import DomainBoundArtifactStore
+
+        return DomainBoundArtifactStore(store, self, command)
+
+    def bind_artifact_store_for_command(
+        self, command: CommandEnvelope, store: Any,
+    ) -> Any:
+        return self.bind_artifact_store(command, store)
+
+    def source_authorizer(self, command: CommandEnvelope):
+        """Return a command-bound Source callback requiring ``source.read``."""
+        from runtime.data_policy import source_authorizer
+
+        return source_authorizer(self, command)
+
+    def admit_source(self, service: Any, command: CommandEnvelope, request: Any) -> Any:
+        """Admit a Source snapshot through the live Domain data-policy boundary."""
+        from runtime.data_policy import artifact_authorizer
+
+        return service.admit(
+            request,
+            self.source_authorizer(command),
+            artifact_authorize=artifact_authorizer(self, command),
+        )
+
+    def readback_source(self, service: Any, command: CommandEnvelope, snapshot: Any) -> Any:
+        """Read back Source/CAS bytes through the same authenticated Grant."""
+        from runtime.data_policy import artifact_authorizer
+
+        return service.readback(
+            snapshot,
+            self.source_authorizer(command),
+            artifact_authorize=artifact_authorizer(self, command),
+        )
+
     @property
     def enrollment(self):
         from runtime.enrollment import EnrollmentAuthority
@@ -268,6 +311,10 @@ class DomainAuthority:
             "lease.release",
             "lease.revoke",
             "effect.write",
+            "effect.read",
+            "source.read",
+            "artifact.read",
+            "artifact.write",
             "work_item.read",
         ),
     ) -> None:
