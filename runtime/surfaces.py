@@ -44,6 +44,11 @@ from runtime.models import (
     LeaseRequest,
     TransitionRequest,
 )
+from runtime.receiver_domain import (
+    AuthorityTransportKeyRegistration,
+    ConnectionReferenceRegistration,
+    EndpointRegistrationCommand,
+)
 
 
 class SurfaceCommand(BaseModel):
@@ -56,7 +61,10 @@ class SurfaceCommand(BaseModel):
     idempotency_key: str = Field(min_length=1, max_length=256)
     correlation_id: str = Field(min_length=1, max_length=256)
     causation_id: str | None = Field(default=None, max_length=256)
-    target_kind: Literal["work_item", "message", "lease", "effect", "node", "runtime", "attempt"] = "work_item"
+    target_kind: Literal[
+        "work_item", "message", "lease", "effect", "node", "runtime", "attempt",
+        "authority_transport_key", "connection", "endpoint",
+    ] = "work_item"
     issued_at: datetime
     deadline: datetime
     payload: dict[str, JsonValue] = Field(default_factory=dict)
@@ -82,7 +90,7 @@ class SurfaceCommand(BaseModel):
 
     def to_domain(self, context) -> CommandEnvelope:
         business_payload = dict(self.payload)
-        if self.command_type in {"runtime.register", "attempt.register"}:
+        if self.command_type in {"runtime.register", "attempt.register", "endpoint.register"}:
             business_payload.update(self.node_input())
             business_payload.pop("proof", None)
         elif self.command_type == "execution.record":
@@ -105,6 +113,14 @@ class SurfaceCommand(BaseModel):
         elif self.command_type in {"runtime.register", "attempt.register"}:
             model = RuntimeRegistration if self.command_type == "runtime.register" else AttemptRegistration
             key = "request"
+        elif self.command_type == "endpoint.register":
+            value = EndpointRegistrationCommand.model_validate_json(
+                json.dumps(self.payload), strict=True,
+            )
+            return {
+                "registration": value.registration.model_dump(mode="json"),
+                "registration_signature": value.registration_signature,
+            }
         else:
             raise ValueError("this command does not use a Node proof")
         value = model.model_validate_json(json.dumps(self.payload[key]), strict=True)
@@ -244,6 +260,9 @@ PAYLOADS = {
     "work_item.read": PayloadModel,
     "message.bind": EndpointBindingRequest, "message.send": MessageSend, "message.read": PayloadModel,
     "delivery.scan": DeliveryScan, "delivery.dispatch": DeliveryDispatch,
+    "receiver.key.register": AuthorityTransportKeyRegistration,
+    "receiver.connection.register": ConnectionReferenceRegistration,
+    "endpoint.register": EndpointRegistrationCommand,
 }
 
 
@@ -297,6 +316,12 @@ class SharedService:
         elif name in {"runtime.register", "attempt.register"}:
             method = authority.register_runtime if name == "runtime.register" else authority.register_attempt
             result = method(envelope, payload.request, payload.proof)
+        elif name == "receiver.key.register":
+            result = authority.register_authority_transport_key(envelope, payload)
+        elif name == "receiver.connection.register":
+            result = authority.register_receiver_connection(envelope, payload)
+        elif name == "endpoint.register":
+            result = authority.register_receiver_endpoint(envelope, payload)
         elif name == "lease.acquire":
             result = authority.leases.acquire_lease(envelope, payload)
         elif name.startswith("lease."):

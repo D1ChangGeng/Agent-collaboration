@@ -40,9 +40,10 @@ class DomainAuthority:
     """PostgreSQL Domain authority for the local Runtime profile."""
 
     SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.7"
+    SCHEMA_VERSION = "1.8"
 
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.7", "a3eb11f7afdccfedab5e7f7c41c861f3b9d8f4853460cdd948b8fc77e23d8132"),
         ("1.6", "89400be6a5c44f419ef73fe6661f907c858c11a397407662270fe0a79e169c73"),
         ("1.5", "c5faeecc4a9a6b152eb288f8f5d6cf3a1b4492d464f10d931535d3f737421fee"),
         ("1.4", "8f12aa29f385194b436f930422d5dafebc432d15bdf1a4bafe94294d8f744deb"),
@@ -130,6 +131,21 @@ class DomainAuthority:
     def enrollment(self):
         from runtime.enrollment import EnrollmentAuthority
         return EnrollmentAuthority(self)
+
+    @property
+    def receiver_transport(self):
+        from runtime.receiver_domain import ReceiverTransportAuthority
+
+        return ReceiverTransportAuthority(self)
+
+    def register_authority_transport_key(self, command, request):
+        return self.receiver_transport.register_authority_key(command, request)
+
+    def register_receiver_connection(self, command, request):
+        return self.receiver_transport.register_connection(command, request)
+
+    def register_receiver_endpoint(self, command, request):
+        return self.receiver_transport.register_endpoint(command, request)
 
     def enroll_node(self, command, request):
         return self.enrollment.enroll_node(command, request)

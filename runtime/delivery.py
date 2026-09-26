@@ -28,7 +28,10 @@ from runtime.node import RECEIPT_LAYERS, OperationIdentityConflict
 
 
 def digest(value):
-    encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+    encoded = json.dumps(
+        value, sort_keys=True, separators=(",", ":"), default=str,
+        ensure_ascii=False, allow_nan=False,
+    )
     return hashlib.sha256(encoded.encode()).hexdigest()
 
 
