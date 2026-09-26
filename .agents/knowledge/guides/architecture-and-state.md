@@ -4,10 +4,8 @@ status: active
 scope:
   - ".agents/manifest.json"
   - ".agents/config.yaml"
-  - ".agents/runtime/**"
   - "assets/scaffold/.agents/README.md"
   - "assets/scaffold/.agents/config.yaml"
-  - "assets/scaffold/.agents/runtime/**"
 use_when:
   - "changing ACHP runtime semantics"
   - "designing a handoff, relay, or repository synchronization flow"
@@ -32,10 +30,10 @@ not protocol authority and must not become a prerequisite for normal work.
 
 # Local versus durable state
 
-`.agents/runtime/` holds machine/session-local capability observations and is
-ignored by Git. It must not be used as universal project truth. In contrast,
-`.agents/knowledge/` is the project-level shared Knowledge Plane and can be
-committed when the finding passes the future-action-value test.
+Harness/session context holds machine-local capability observations. It is not a
+project surface or universal source of truth. In contrast, `.agents/knowledge/`
+is the project-level shared Knowledge Plane and can be committed when the
+finding passes the future-action-value test.
 
 The installed scaffold under `assets/scaffold/.agents/` is a template for other
 projects. The root `.agents/` tree is the state of this repository itself; never

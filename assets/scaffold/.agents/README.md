@@ -9,6 +9,7 @@ The root `AGENTS.md` is the runtime entry point. This directory contains deeper 
 - `protocol/` — stable ACHP semantics.
 - `coordination/` — project profile, roles, tasks, handoffs, templates.
 - `knowledge/` — durable shared project knowledge.
-- `runtime/` — machine/session-local capability observations; Git-ignored.
+- Harness/session context — machine/session-local capability observations; not a
+  required project directory.
 
 The `agent-collaboration-setup` Skill is not a runtime dependency.

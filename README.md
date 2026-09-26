@@ -44,7 +44,7 @@ agent-collaboration-setup (this Skill)
 Repository project                 Project Collaboration Workspace
 ├── AGENTS.md                       ├── AGENTS.md       <- Root identity/router
 └── .agents/                        ├── .agents/        <- Root control plane
-                                    ├── Route A/        <- Route-owned state
+                                    ├── Route A/        <- durable Route goals/knowledge
                                     ├── Route B/
                                     └── Route N/
 ```
@@ -178,20 +178,37 @@ python3 scripts/project_setup.py route adopt \
   --path "Existing Route"
 ```
 
-The Root registry stores stable identity, path, lifecycle, and pointers. Dynamic
-engineering status remains Route-owned. Source Repository and Execution Endpoint
-fields start as `unknown`; historical paths or Harness names do not establish a
-current baseline.
+The Root registry stores only the canonical Route fields: ID, path, display name,
+and lifecycle status. Current Session progress remains in Harness context.
+Verified Source Repository facts may use an optional Route-owned
+`.agents/state/source-state.yaml` record when they need to survive across
+Sessions; Route creation does not create an empty record. Historical paths or
+Harness names do not establish a current baseline.
 
-### Schema 0.2 operation boundary
+### Workspace schema 0.3 operation boundary
 
 The Workspace commands `bootstrap`, `adopt`, `upgrade`, `repair`, and `validate`
 are implemented against the exact supplied path. `workspace uninstall` is
 currently guarded: it refuses to change files until a reviewed ownership plan is
-available. Route `rename` changes only the display metadata; it does not move the
-Route directory or alter its registry path. Split/merge, path-moving rename,
-Endpoint replacement, restore, and rollback remain future migration contracts
-requiring explicit evidence, review, and a reversible recovery plan.
+available. Schema 0.2 registries and Route metadata remain readable. New writes
+use a minimal schema: stable Route identity and lifecycle in the Root registry;
+Route metadata contains only identity and the explicit Root contract pointer.
+`route upgrade` is the explicit metadata migration boundary and preserves
+unrecognized extension fields. `route set-state` and `route rename` update the
+registry only; they do not create a second lifecycle source in `route.yaml`.
+Schema 0.2 data remains readable and can be validated or handled as an
+idempotent no-op. Adding a new Route to a schema 0.2 registry is refused until
+the Workspace has gone through the explicit upgrade boundary, so a legacy
+registry is never left with a mixed old/new entry shape.
+Split/merge, path-moving rename, Endpoint replacement, restore, and rollback
+remain future migration contracts requiring explicit evidence, review, and a
+reversible recovery plan.
+
+Installer hashes and preflight checks record setup integrity. Live execution
+continuity belongs to the Harness/session context; source identity belongs to
+Git or Route Source State; and durable knowledge belongs to self-evolution. The
+setup Skill configures these boundaries and does not own Session execution
+recovery.
 
 ## Deterministic repository setup CLI
 
@@ -258,7 +275,7 @@ CLAUDE.md                     # only a thin @AGENTS.md compatibility route
 │   ├── decisions/
 │   ├── observations/
 │   └── archive/
-└── runtime/                  # ignored by Git
+└── (Harness/session context)  # local execution context; not installed state
 ```
 
 The installer uses bounded managed blocks in `AGENTS.md`, `CLAUDE.md`, and `.gitignore`. Existing content outside those blocks is preserved.
@@ -273,7 +290,7 @@ Project Collaboration Root
     stable project identity, Route registry, shared constraints
 
 Development Route Node
-    long-lived goal/architecture route and route-owned continuity
+    long-lived goals, decisions, knowledge, and verified source evidence
 
 Execution Endpoint
     replaceable engineer/agent/session/host capacity
