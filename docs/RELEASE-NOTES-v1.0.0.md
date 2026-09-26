@@ -1,6 +1,6 @@
-# Agent Collaboration System v1.0.0 candidate
+# Agent Collaboration System v1.0.0
 
-This candidate packages the Agent Collaboration System as a guided distribution
+This release packages the Agent Collaboration System as a guided distribution
 for local AI Harnesses and a private MCP connection path for a single installation
 owner.
 
@@ -38,11 +38,3 @@ For ChatGPT, the installation owner completes the current OpenAI Platform Tunnel
 permissions and ChatGPT developer-mode connection. The Agent then verifies
 `read_profile`, `list_projects`, `load_project`, a bounded write, denied access,
 reconnect and Grant revocation against the exact project.
-
-## Acceptance record
-
-The candidate is ready for final P2 review when the selected integrated commit
-has current Linux Runtime and Windows Harness observations, formal Control Parity
-evidence, an independent Review, product-owner decision and public-candidate
-installation readback. The final tag and GitHub Release are created only from
-that accepted commit.
