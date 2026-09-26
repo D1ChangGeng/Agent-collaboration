@@ -393,3 +393,109 @@ def test_receiver_dispatch_enters_native_adapter_once(tmp_path, monkeypatch):
         assert native.state["turn_calls"] == 1
     finally:
         fixture.close()
+
+
+def test_receiver_recovery_rebinds_native_adapter_to_current_boot(tmp_path, monkeypatch):
+    if os.name != "posix":
+        pytest.skip("receiver runtime is POSIX-only")
+    receiver_env = receiver_fixture.env.__wrapped__(tmp_path)
+    old_service = ReceiverService(
+        receiver_env.config, receiver_env.node_key,
+        authorize_current=receiver_fixture.fixture_authority_current,
+    )
+    old_service.claim_boot("boot-1", 1)
+    envelope = DeliveryEnvelope(
+        tenant_id="tenant", authority_id="authority",
+        authority_incarnation="authority-incarnation",
+        principal_ref="sender", grant_ref="grant", message_id="message",
+        command_id="command", operation_id="operation", endpoint_id="endpoint",
+        binding_revision=1, machine_id="machine", node_id="node",
+        boot_incarnation="boot-1", accepted_state_digest="a" * 64,
+        packet=DeliveryPacket(
+            work_item_id="work", target_scope_id="scope", target_agent_slot_id="slot",
+            accepted_revision=0, goal="Recover receiver boot",
+            accepted_state_summary="fixture", request="one current boot turn",
+            source_baseline="fixture", expected_response="native ACK", activation="invoke",
+            deadline=datetime.now(UTC) + timedelta(seconds=30),
+        ),
+    )
+    invocation = invocation_for(envelope, "attempt")
+    recovery_identity = DeliveryIdentity(
+        message_id=invocation.message_id, command_id=invocation.command_id,
+        operation_id=invocation.operation_id, attempt_id=invocation.attempt_id,
+        dispatch_id=invocation.dispatch_id, accepted_revision=invocation.accepted_revision,
+        accepted_state_digest=invocation.accepted_state_digest,
+        envelope_digest=invocation.envelope_digest,
+        selection_digest=invocation.selection_digest,
+        invocation_digest=sha256(invocation.model_dump(mode="json")),
+        deadline=envelope.packet.deadline,
+    )
+    old_factory = AdmissionFactory(
+        receiver_env.config, receiver_env.authority_key, recovery_identity,
+    )
+    prepare = old_factory.request(
+        "delivery.prepare",
+        PrepareBody(
+            envelope=envelope.model_dump(mode="json"),
+            invocation=invocation.model_dump(mode="json"),
+            selection={
+                "endpoint_id": envelope.endpoint_id,
+                "binding_revision": envelope.binding_revision,
+                "machine_id": envelope.machine_id,
+                "node_id": envelope.node_id,
+                "boot_incarnation": envelope.boot_incarnation,
+                "target_scope_id": envelope.packet.target_scope_id,
+                "target_agent_slot_id": envelope.packet.target_agent_slot_id,
+            },
+        ),
+    )
+    old_service.prepare(prepare)
+    current = receiver_fixture.recovered_env(receiver_env, isolation_ref="isolated")
+    native_root = tmp_path / "native-recovery"
+    native_root.mkdir(mode=0o700)
+    profile = codex_fixture.profile.__wrapped__(native_root)
+    fixture = codex_fixture.native.__wrapped__(native_root, profile, monkeypatch)
+    native = next(fixture)
+    try:
+        native.driver.identity = native.driver.identity.__class__(
+            "node", "boot-2", "runtime-1", "attempt-1", "slot", 2,
+        )
+        native.driver.spawn(codex_fixture.operation("receiver-recovery-spawn"))
+        adapter = NativeDeliveryAdapter(
+            native.driver,
+            authorize_invocation=lambda value, _binding: AuthorizedOperation(
+                value.invocation_id, value.command_id, value.message_id,
+                "receiver-native-fixture", value.envelope.packet.deadline,
+            ),
+        )
+        bridge = ReceiverNativeDeliveryBridge(
+            receiver_env.config.ledger_path, adapter,
+            read_domain_marker=lambda _value: True,
+        )
+        service = ReceiverService(
+            current.config, receiver_env.node_key,
+            authorize_current=receiver_fixture.fixture_authority_current,
+        )
+        service.claim_boot("boot-2", 2, old_boot_isolation_ref="isolated")
+        current_factory = AdmissionFactory(
+            current.config, receiver_env.authority_key, recovery_identity,
+        )
+        recovery = current_factory.request(
+            "delivery.recover",
+            receiver_fixture.RecoveryBody(
+                prepare_request_id=prepare.admission.request_id,
+                marker_receipt_id=invocation.runtime_dispatched_receipt_id,
+                old_boot_incarnation="boot-1", new_boot_incarnation="boot-2",
+                journal_generation=2, old_boot_isolation_ref="isolated",
+                old_endpoint_revision=1, new_endpoint_revision=2,
+                old_runtime_revision=1, new_runtime_revision=1,
+            ),
+            boot_incarnation="boot-2", journal_generation=2,
+        )
+        receipt = service.recover(recovery, bridge)
+        assert receipt.receipt.state == "runtime_acknowledged"
+        assert native.state["turn_calls"] == 1
+        record = native.driver.journal.read(invocation.invocation_id)
+        assert record["input"]["payload"]["binding"]["node_boot_id"] == "boot-2"
+    finally:
+        fixture.close()
