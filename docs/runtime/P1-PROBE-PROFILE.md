@@ -1,11 +1,12 @@
 # P1 real-resource probe profile
 
 This harness prepares executable evidence commands for the 18 P1 scenarios.
-It does not write a formal Gate. Eight scenarios currently have an actual
+It does not write a formal Gate. Nine scenarios currently have an actual
 fixed-identity Runtime lineage adapter: `P1-DOMAIN-TRANSACTION`,
 `P1-AUTH-REVOCATION`, `P1-COMMAND-DEDUP`, and `P1-INBOX-ACK-LOSS`.
 `P1-CORE-RESTART`, `P1-NODE-RESTART`, `P1-PROVIDER-RESTART` and
-`P1-LEASE-FENCING` are the remaining adapters. The other 10 have no runnable
+`P1-LEASE-FENCING` and `P1-UNCERTAIN-EFFECT` are the remaining adapters.
+The other 9 have no runnable
 command and remain `NOT_RUN`.
 
 Each runnable scenario commits its own command, operation, event, Outbox,
@@ -75,6 +76,19 @@ Node journal, effect inode/content and auxiliary Temporal workflow. Fencing
 tokens remain in owner-only Gateway/PG state; probe results contain only their
 digests. This is a local file effect, not a native model-produced artifact or
 an acceptance decision.
+
+`P1-UNCERTAIN-EFFECT` uses the delivered message's WorkItem and DeliveryAttempt
+ID for a signed Node execution Attempt. A real CAS output, signed execution
+receipt, independent Review and ready revision establish the Domain's candidate
+binding before its PostgreSQL Lease. The file Gateway is interrupted after the
+target replacement and fsync but before its completion marker. A real
+`effect.register` observes the prepared marker and stores `uncertain`. Only the
+original operation is resumed from readback; a counted target replacement must
+remain exactly one. `effect.reconcile` then observes the completed original
+marker, with exact command replay, an independent historical reader and late
+old-owner fence. Every Gate layer checks the same message, Attempt, Lease,
+effect operation, Node Machine and source identity. This is a local file effect
+and uses no model call.
 
 `P1-HARNESS-REPLACEMENT` remains `NOT_RUN` while Runtime lacks an authoritative
 versioned HarnessSessionBinding command and readback. Reattaching a Driver or
