@@ -217,6 +217,15 @@ class GateRunnerTests(unittest.TestCase):
         validation = json.loads((self.run_dir / "validation.json").read_text())
         self.assertTrue(validation["output"]["valid"], validation)
 
+    def test_review_attach_requires_all_scenarios_passed(self):
+        self.initialize()
+        review = self.base / "review"
+        review.mkdir(mode=0o700)
+        with self.assertRaisesRegex(runner.EvidenceError, "all P1 scenarios passed"):
+            runner.attach_review(
+                self.run_dir, self.source, self.contract_path, review,
+            )
+
     def test_missing_evidence_kinds_and_fields_remains_not_run(self):
         self.initialize()
         scenario = self.contract["gates"]["P1"]["scenarios"][0]
