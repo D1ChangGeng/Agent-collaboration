@@ -369,7 +369,7 @@ class ReceiverTransportAuthority:
             )
             return cursor.fetchone() is not None
 
-    def current_authority(self, admission) -> bool:
+    def current_authority(self, admission, *, clock_skew_seconds: int = 0) -> bool:
         try:
             with self.authority._connect() as connection, connection.cursor() as cursor:
                 cursor.execute(
@@ -396,9 +396,21 @@ class ReceiverTransportAuthority:
                 ):
                     return False
                 command = _model(CommandEnvelope, row[0])
-                self.authority._authorize(command, cursor, "message.send", admission.scope_id)
+                self.authority._authorize(
+                    command,
+                    cursor,
+                    "message.send",
+                    admission.scope_id,
+                    clock_skew_seconds=clock_skew_seconds,
+                )
                 if admission.purpose in {"delivery.dispatch", "delivery.recover"}:
-                    self.authority._authorize(command, cursor, "runtime.invoke", admission.scope_id)
+                    self.authority._authorize(
+                        command,
+                        cursor,
+                        "runtime.invoke",
+                        admission.scope_id,
+                        clock_skew_seconds=clock_skew_seconds,
+                    )
                 return command.deadline > datetime.now(UTC) and admission.deadline > datetime.now(UTC)
         except (AuthorizationDenied, AcceptanceGuardFailed, ValueError):
             return False

@@ -1,6 +1,6 @@
 {
   "schema_version": "acs-gate-contract/1",
-  "contract_revision": "2026-09-22.7",
+  "contract_revision": "2026-09-22.8",
   "p2_surface_revision": "acs-p2-mcp-workflow/5",
   "instruction_sha256": "0cffa4ab3888b3c05d61a72f0d7566dd9c03db07b4baffef29c9a6cbb7bb9e46",
   "supported_evidence_layers": [

@@ -436,7 +436,10 @@ class CodexReceiverCapacity:
             thread.start()
 
     def authorize_current(self, admission) -> bool:
-        return self.authority.receiver_transport.current_authority(admission)
+        return self.authority.receiver_transport.current_authority(
+            admission,
+            clock_skew_seconds=self.config.clock_skew_seconds,
+        )
 
     def native_invoke(self, admission):
         invocation = self.bridge._invocation(admission)

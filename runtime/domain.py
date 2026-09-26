@@ -346,18 +346,24 @@ class DomainAuthority:
         cursor: psycopg.Cursor | None = None,
         permission: str = "work_item.read",
         scope_id: str | None = None,
+        *,
+        clock_skew_seconds: int = 0,
     ) -> None:
         if cursor is None:
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
+        if type(clock_skew_seconds) is not int or not 0 <= clock_skew_seconds <= 30:
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+
         now = datetime.now(UTC)
+        clock_skew = timedelta(seconds=clock_skew_seconds)
         current = self.context
 
         if (
             command.issued_at.tzinfo is None
             or command.deadline.tzinfo is None
             or command.deadline <= now
-            or command.issued_at > now
+            or command.issued_at > now + clock_skew
         ):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 

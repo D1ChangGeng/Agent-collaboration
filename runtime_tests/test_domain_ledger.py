@@ -156,6 +156,43 @@ def test_exact_replay_still_checks_current_authority(authority, change):
     assert counts(authority) == (1, 1, 1, 1)
 
 
+def test_receiver_authorization_admits_only_explicit_bounded_clock_skew(authority):
+    now = datetime.now(UTC)
+    future = command(
+        authority,
+        issued_at=now + timedelta(seconds=2),
+        deadline=now + timedelta(minutes=5),
+    )
+    with (
+        authority._connect() as connection,
+        connection.cursor() as cursor,
+        pytest.raises(AuthorizationDenied),
+    ):
+        authority._authorize(
+            future, cursor, "work_item.create", "local-scope",
+        )
+    with authority._connect() as connection, connection.cursor() as cursor:
+        authority._authorize(
+            future,
+            cursor,
+            "work_item.create",
+            "local-scope",
+            clock_skew_seconds=5,
+        )
+    with (
+        authority._connect() as connection,
+        connection.cursor() as cursor,
+        pytest.raises(AuthorizationDenied),
+    ):
+        authority._authorize(
+            future,
+            cursor,
+            "work_item.create",
+            "local-scope",
+            clock_skew_seconds=31,
+        )
+
+
 def test_command_body_cannot_impersonate_authenticated_context(authority):
     reviewer = add_reviewer(authority)
     with pytest.raises(AuthorizationDenied):

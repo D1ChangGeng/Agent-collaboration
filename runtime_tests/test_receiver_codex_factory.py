@@ -140,6 +140,24 @@ def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_p
         assert path[:2] == [str(executable.parent), "/opt/acs/codex-sandbox/bin"]
 
 
+def test_codex_receiver_current_authority_uses_configured_clock_skew():
+    observed = {}
+
+    class Transport:
+        def current_authority(self, admission, *, clock_skew_seconds):
+            observed.update(admission=admission, clock_skew_seconds=clock_skew_seconds)
+            return True
+
+    capacity = object.__new__(CodexReceiverCapacity)
+    capacity.config = SimpleNamespace(clock_skew_seconds=5)
+    capacity.authority = SimpleNamespace(
+        receiver_transport=Transport(),
+    )
+    admission = object()
+    assert capacity.authorize_current(admission) is True
+    assert observed == {"admission": admission, "clock_skew_seconds": 5}
+
+
 @pytest.mark.skipif(os.name != "posix", reason="deployment factory binding is POSIX-owned")
 def test_factory_binding_digest_includes_settings(tmp_path):
     value = settings(tmp_path)
