@@ -30,10 +30,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
+from runtime.driver_claim import ClaimRejected, KernelClaim
+
 if __package__:
-    from .codex_jsonrpc import JsonRpcClient
+    from .codex_jsonrpc import JsonRpcClient, RpcError
 else:
-    from codex_jsonrpc import JsonRpcClient
+    from codex_jsonrpc import JsonRpcClient, RpcError
 
 
 def canonical(value):
@@ -170,6 +172,8 @@ class DriverJournal:
 
     def __init__(self, path):
         self.path = str(path)
+        self._claims = set()
+        self._claim_mutex = threading.RLock()
         with self._connect() as conn:
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS driver_operations(
@@ -194,23 +198,48 @@ class DriverJournal:
 
     def claim(self, binding_id):
         path = self.path + "." + digest(binding_id) + ".lock"
-        fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
         try:
-            if os.name == "nt":
-                import msvcrt
+            claim = KernelClaim(path, binding_id)
+            with self._claim_mutex:
+                self._claims.add(claim)
+            return claim.public_fd
+        except (OSError, ClaimRejected):
+            raise DriverRejected("binding is already owned or kernel ownership is unavailable") from None
 
-                if os.fstat(fd).st_size == 0:
-                    os.write(fd, b"0")
-                os.lseek(fd, 0, os.SEEK_SET)
-                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
-            else:
-                import fcntl
+    def claim_token(self, binding_id, descriptor):
+        with self._claim_mutex:
+            matches = [claim for claim in self._claims if claim.binding_id == binding_id and claim.public_fd == descriptor]
+            if len(matches) != 1:
+                raise DriverRejected("claim is not registered by this journal")
+            self.validate_claim(matches[0], binding_id, descriptor)
+            return matches[0]
 
-                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            return fd
-        except OSError:
-            os.close(fd)
-            raise DriverRejected("binding already owned by a local Driver") from None
+    def validate_claim(self, token, binding_id, descriptor):
+        with self._claim_mutex:
+            if token not in self._claims or token.binding_id != binding_id:
+                raise DriverRejected("claim token belongs to another binding")
+            try:
+                token.validate(descriptor)
+            except ClaimRejected:
+                raise DriverRejected("kernel claim continuity is unavailable") from None
+
+    def release_claim(self, token):
+        with self._claim_mutex:
+            if token in self._claims:
+                token.close()
+                self._claims.remove(token)
+
+    def claim_ownership(self, binding_id):
+        """Allocate and validate one token, cleaning up any later lookup error."""
+        descriptor = self.claim(binding_id)
+        try:
+            return descriptor, self.claim_token(binding_id, descriptor)
+        except BaseException:
+            with self._claim_mutex:
+                matches = [claim for claim in self._claims if claim.binding_id == binding_id and claim.public_fd == descriptor]
+                for claim in matches:
+                    self.release_claim(claim)
+            raise
 
     def read(self, operation_id):
         with self._connect() as conn:
@@ -308,7 +337,7 @@ class CodexAppServerDriver:
             raise DriverRejected("Node current-authorization callback is required")
         self.identity, self.check_current = identity, check_current
         self.supervisor, self.rpc_timeout = supervisor, rpc_timeout
-        self._claim_fd = journal.claim(binding_id)
+        self._claim_journal = journal
         self._lock = threading.RLock()
         self.client = None
         self.owned = None
@@ -316,8 +345,16 @@ class CodexAppServerDriver:
         self.session_id = None
         self.ownership = "unbound"
         self._initialized = False
+        self._history_observed = False
+        self._turn_start_dispatched = False
+        self._turn_start_attempted = False
+        self._initial_thread_snapshot = None
+        self._initial_context_response = None
+        # Kernel ownership is the final constructor operation. There is no
+        # fallible initialization after a claim has been issued to this Driver.
+        self._claim_fd, self._claim_token = journal.claim_ownership(binding_id)
 
-    def _rpc(self, operation, method, params):
+    def _rpc(self, operation, method, params, *, on_dispatch=None):
         operation.validate()
         self.check_current(operation, self.identity)
         request_id = uuid.uuid4().hex
@@ -337,8 +374,46 @@ class CodexAppServerDriver:
         self.check_current(operation, self.identity)
         operation.validate()
         remaining = (operation.deadline - datetime.now(UTC)).total_seconds()
+        def before_send():
+            operation.validate()
+            self.check_current(operation, self.identity)
+            operation.validate()
+
+        def dispatch():
+            previous_attempted = self._turn_start_attempted
+            if method == "turn/start":
+                self._turn_start_attempted = True
+            try:
+                if on_dispatch is not None:
+                    on_dispatch()
+            except BaseException as error:
+                from runtime.delivery_node import InvocationPreCallRejected
+                if method == "turn/start" and isinstance(error, (DriverRejected, InvocationPreCallRejected)):
+                    # The transport has not written turn bytes. Restore the
+                    # initial-context guard only after confirming that the
+                    # callback did not leave native dispatch evidence.
+                    try:
+                        with self.journal._connect() as connection:
+                            evidence = connection.execute(
+                                "SELECT body FROM driver_events WHERE operation_id=? AND kind='rpc_dispatch'",
+                                (operation.operation_id,),
+                            ).fetchall()
+                        dispatched = any(json.loads(row[0]).get("method") == "turn/start" for row in evidence)
+                    except Exception as read_error:
+                        raise OutcomeUncertain("native dispatch evidence could not be verified") from read_error
+                    if not dispatched:
+                        self._turn_start_attempted = previous_attempted
+                    if isinstance(error, InvocationPreCallRejected):
+                        raise DriverRejected("native dispatch callback rejected before write") from error
+                raise
+            if method == "turn/start":
+                self._turn_start_dispatched = True
+            self.journal.event(operation.operation_id, "rpc_dispatch",
+                               {"request_id": request_id, "method": method, "binding": asdict(self.identity)})
+
         result = self.client.request(
-            method, params, timeout=min(self.rpc_timeout, remaining), request_id=request_id
+            method, params, timeout=min(self.rpc_timeout, remaining), request_id=request_id,
+            before_send=before_send, on_dispatch=dispatch,
         )
         self.journal.event(
             operation.operation_id, "rpc_response", {"request_id": request_id, "result": result}
@@ -394,8 +469,8 @@ class CodexAppServerDriver:
                             (operation.operation_id,),
                         ).fetchall()
                     if not any(
-                        kind == "process_intent"
-                        or kind == "rpc_intent"
+                        kind == "process_dispatch"
+                        or kind == "rpc_dispatch"
                         and json.loads(body).get("method")
                         in {"thread/start", "thread/resume", "turn/start", "turn/interrupt"}
                         for kind, body in events
@@ -487,6 +562,8 @@ class CodexAppServerDriver:
             )
             self.check_current(operation, self.identity)
             operation.validate()
+            self.journal.event(operation.operation_id, "process_dispatch",
+                               {"argv": argv, "profile": self.profile.binding(), "binding": asdict(self.identity)})
             if self.supervisor is not None:
                 self.owned = self.supervisor.launch(
                     argv, cwd=self.profile.cwd, env=env, label=operation.operation_id
@@ -525,6 +602,8 @@ class CodexAppServerDriver:
             thread = self._native_thread(response)
             self.thread_id, self.session_id = thread["id"], thread["sessionId"]
             self._settings(operation, response)
+            self._initial_thread_snapshot = json.loads(json.dumps(thread))
+            self._initial_context_response = json.loads(json.dumps(response))
             return self._binding_receipt("runtime_acknowledged")
 
         return self._run(operation, "spawn", {"profile": self.profile.binding()}, perform)
@@ -561,9 +640,19 @@ class CodexAppServerDriver:
         }
 
     def _inspect(self, operation):
-        response = self._rpc(
-            operation, "thread/read", {"threadId": self.thread_id, "includeTurns": False}
-        )
+        try:
+            response = self._rpc(
+                operation, "thread/read", {"threadId": self.thread_id, "includeTurns": False}
+            )
+        except RpcError as error:
+            cached = self._initial_thread_snapshot
+            if (self._history_observed or self._turn_start_attempted or self._turn_start_dispatched
+                    or not isinstance(cached, dict)
+                    or (cached.get("id"), cached.get("sessionId")) != (self.thread_id, self.session_id)
+                    or error.error.get("code") != -32600
+                    or error.error.get("message") != f"no rollout found for thread id {self.thread_id}"):
+                raise
+            response = {"thread": json.loads(json.dumps(cached))}
         thread = self._native_thread(response)
         turns, cursor = [], None
         for _ in range(20):
@@ -575,7 +664,18 @@ class CodexAppServerDriver:
             }
             if cursor:
                 params["cursor"] = cursor
-            page = self._rpc(operation, "thread/turns/list", params)
+            try:
+                page = self._rpc(operation, "thread/turns/list", params)
+            except RpcError as error:
+                expected = (f"thread {self.thread_id} is not materialized yet; "
+                            "thread/turns/list is unavailable before first user message")
+                if (cursor is not None or turns or self._history_observed or self._turn_start_attempted or self._turn_start_dispatched
+                        or thread.get("status", {}).get("type") != "idle"
+                        or error.error.get("code") != -32600 or error.error.get("message") != expected):
+                    raise
+                page = {"data": []}
+            else:
+                self._history_observed = True
             turns.extend(page["data"])
             cursor = page.get("nextCursor")
             if not cursor:
@@ -613,7 +713,7 @@ class CodexAppServerDriver:
                     matched.append(turn)
         return matched
 
-    def invoke(self, operation, text):
+    def invoke(self, operation, text, *, on_dispatch=None):
         if not isinstance(text, str) or not text or len(text.encode()) > 1024 * 1024:
             raise DriverRejected("only bounded authorized text input is supported")
 
@@ -632,6 +732,7 @@ class CodexAppServerDriver:
                     "clientUserMessageId": operation.message_id,
                     "input": [{"type": "text", "text": text, "text_elements": []}],
                 },
+                on_dispatch=on_dispatch,
             )
             turn = response.get("turn", {})
             if not isinstance(turn.get("id"), str) or not turn["id"]:
@@ -645,11 +746,23 @@ class CodexAppServerDriver:
     def resume(self, operation):
         def perform():
             self._owned_mutation()
+            if (not self._history_observed and not self._turn_start_attempted and not self._turn_start_dispatched
+                    and self._initial_thread_snapshot is not None and self._initial_context_response is not None):
+                view = self._inspect(operation)
+                if (not self._history_observed and not view["turns"]
+                        and view["thread"].get("status", {}).get("type") == "idle"):
+                    self.profile.validate()
+                    self._native_thread(self._initial_context_response)
+                    self._settings(operation, self._initial_context_response)
+                    return self._binding_receipt("context_resumed", native_context="unmaterialized_initial",
+                                                 native_mutation=False)
             response = self._rpc(
                 operation, "thread/resume", {"threadId": self.thread_id, "excludeTurns": True}
             )
             self._native_thread(response)
             self._settings(operation, response)
+            self._initial_thread_snapshot = json.loads(json.dumps(response["thread"]))
+            self._initial_context_response = json.loads(json.dumps(response))
             return self._binding_receipt("context_resumed")
 
         return self._run(operation, "resume", {"thread_id": self.thread_id}, perform)
@@ -796,10 +909,25 @@ class CodexAppServerDriver:
             return result
 
     def detach_transport(self):
-        """Release local transport/lock only; makes no process termination claim."""
+        """Release a read-only transport or a verifiably terminated owned capacity."""
         with self._lock:
+            if self.ownership == "exclusive_owned" and self.owned is not None:
+                if self.supervisor is None:
+                    raise DriverRejected("exclusive capacity cannot detach without termination proof")
+                proof = self.supervisor.inspect(self.owned)
+                if (proof.get("verified") is not True
+                        or proof.get("birth_ref") != self.owned.birth_ref
+                        or proof.get("containment_id") != self.owned.containment_id
+                        or proof.get("root_exited") is not True or proof.get("remaining_pids") != []
+                        or self.owned.process.poll() is None):
+                    raise DriverRejected("live exclusive capacity must be terminated before detach")
             if self.client:
                 self.client.close()
-            if self._claim_fd is not None:
-                os.close(self._claim_fd)
+            self.client = self.owned = self.thread_id = self.session_id = None
+            self._initial_thread_snapshot = None
+            self._initial_context_response = None
+            self.ownership = "unbound"
+            if self._claim_token is not None:
+                self._claim_journal.release_claim(self._claim_token)
+                self._claim_token = None
                 self._claim_fd = None
