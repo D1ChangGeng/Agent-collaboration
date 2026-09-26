@@ -1,0 +1,14 @@
+{
+  "evidence_class": "actual_no_load_parser_check",
+  "host_alias": "1302-1",
+  "os": "Ubuntu 24.04",
+  "parser_version": "AppArmor parser version 4.0.1",
+  "profile_sha256": "7b2beb270c7218b549883337f53cbdca903d4e93803704af42788f63f93583a1",
+  "command": "/usr/sbin/apparmor_parser --skip-kernel-load --skip-cache /tmp/acs-codex-nomodel-probe-047acf/acs-bwrap-userns.profile",
+  "exit_code": 0,
+  "kernel_load_performed": false,
+  "cache_access_performed": false,
+  "post_install_verification": "not_run",
+  "administrator_installation": "not_run",
+  "source": "direct command execution and remote SHA256 readback in this task"
+}
