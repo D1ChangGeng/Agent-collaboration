@@ -213,7 +213,18 @@ class OpenCodeHostUnixServer:
                     data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"uncertain"}\n'
             except HostNodeRejected:
                 data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"rejected"}\n'
-            except Exception:  # noqa: BLE001 -- unknown dispatch outcome stays uncertain
+            except Exception as error:  # noqa: BLE001 -- unknown dispatch outcome stays uncertain
+                driver = getattr(getattr(self.endpoint, "driver", None), "driver", None)
+                journal = getattr(driver, "journal", None)
+                if journal is not None:
+                    try:
+                        journal.event(
+                            getattr(self.endpoint, "policy", None).run_id + "-spawn",
+                            "host_server_error",
+                            {"error_type": type(error).__name__, "detail": str(error)[:300]},
+                        )
+                    except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
+                        pass
                 data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"uncertain"}\n'
             try:
                 peer.settimeout(2)
