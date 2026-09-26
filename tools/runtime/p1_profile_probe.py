@@ -105,6 +105,7 @@ class ScenarioCatalog:
         "P1-PROVIDER-RESTART", "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT",
         "P1-STALE-BASELINE", "P1-PARTIAL-ARTIFACT",
         "P1-SURFACE-PARITY",
+        "P1-INTEGRATED-ACCEPTANCE",
         "P1-CODEX-LIFECYCLE",
         "P1-HARNESS-REPLACEMENT", "P1-OPENCODE-LIFECYCLE",
         "P1-NATIVE-MULTIAGENT-OFF",
@@ -157,6 +158,9 @@ class ScenarioCatalog:
             "runtime_tests/test_artifact_store.py::test_fsync_order_and_failed_write_cleanup",
             "runtime_tests/test_domain_evidence.py::test_final_acceptance_requires_complete_matching_effect_readback_proof",
         ),
+        "P1-INTEGRATED-ACCEPTANCE": (
+            "runtime_tests/test_acceptance_gateway_integration.py::test_real_ready_publication_historical_callback_and_acceptance",
+        ),
         "P1-SURFACE-PARITY": (
             "runtime_tests/test_surfaces.py::test_real_mcp_cli_http_share_pg_identity_and_conflicts",
             "runtime_tests/test_recovery_surfaces.py::test_recovery_status_uses_same_actual_cli_mcp_and_http_surface",
@@ -175,9 +179,6 @@ class ScenarioCatalog:
         "P1-IDENTITY-CONTINUITY": (
             "runtime_tests/test_receiver_protocol.py::test_actual_tls13_two_process_signed_delivery_and_readback",
             "runtime_tests/test_enrollment.py::test_fresh_authentication_cannot_replace_same_command_business_input",
-        ),
-        "P1-INTEGRATED-ACCEPTANCE": (
-            "runtime_tests/test_acceptance_gateway_integration.py::test_real_ready_publication_historical_callback_and_acceptance",
         ),
     }
     MODEL_REQUIREMENTS: ClassVar[dict[str, str]] = {
