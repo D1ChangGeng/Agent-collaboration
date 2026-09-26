@@ -15,6 +15,8 @@ executable/version/schema digests; Node records effective settings before dispat
 |---|---|---|
 | Codex / Windows | `0.152.1` | [`5adb68a49933ae446bf11935662c83dba55a0804`][c152] |
 | Codex / Linux | `0.153.2` | [`657a993cbee87acf52d14b758ce49dbd46d1b8eb`][c153] |
+| Codex / Linux P2 factory | `0.155.0` | Exact installed executable plus generated schema/config/catalog digests |
+| Codex / Windows P2 factory | `0.155.0-alpha.2.6` | Exact installed executable plus generated schema/config/catalog digests |
 | OpenCode / Windows | `1.18.27` | [`4b7e19e315cca414121ba1d61523fef74bb3ae8b`][o127] |
 | OpenCode / Linux | `1.18.30` | [`3104c1428ec91f809e5ab86631300de41eb6952e`][o130] |
 | MCP Python reference SDK | `mcp==2.2.0` | [`9972c21aa42054fb1450c5fc614761ed11847ec6`][m220] |
@@ -22,6 +24,15 @@ executable/version/schema digests; Node records effective settings before dispat
 Generate Codex schemas from each binary; capture OpenCode's served OpenAPI and
 health/version response. Unknown versions/methods require a new capability probe.
 Each deployed profile needs executable and conformance evidence; documentation explains the interface.
+
+The P2 factory profiles accept only the two exact version strings above. Linux retains the named
+`achp-engineer` permission profile; `:workspace` is admitted only for the reviewed Windows profile.
+`tools/runtime/p2_codex_factory.py` invokes the pinned executable's
+`app-server generate-json-schema --out` command in owner-private storage and emits
+`factory-settings.json` plus the existing `inspect_factory` binding. Those artifacts contain
+executable/schema/config/catalog hashes and source commit/tree identity, but only provider auth
+command/reference strings, never credential values. A generated binding is implementation evidence,
+not P1/P2 Gate acceptance.
 
 ## Lifecycle mapping
 

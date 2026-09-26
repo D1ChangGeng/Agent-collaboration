@@ -5,33 +5,34 @@ import argparse
 import hashlib
 import json
 import os
-import shutil
 import subprocess
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from nacl.signing import SigningKey
 import psycopg
+from nacl.signing import SigningKey
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
+from runtime.delivery import DeliveryDispatcher, DeliveryService
+from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
+from runtime.domain import DomainAuthority
+from runtime.enrollment_models import NodeEnrollment, RuntimeRegistration
 from runtime.receiver_config import ReceiverRuntimeConfig
 from runtime.receiver_crypto import public_key, sign
+from runtime.receiver_delivery import RemoteNodeEndpointAdapter, RemoteSenderDeployment
 from runtime.receiver_deployment import bind_process_config, dump_process_config, inspect_factory
+from runtime.receiver_domain import (
+    AuthorityTransportKeyRegistration,
+    ConnectionReferenceRegistration,
+    EndpointRegistrationCommand,
+)
 from runtime.receiver_entry import load_callbacks, load_process_config
 from runtime.receiver_models import EndpointBinding, EndpointRegistration
 from runtime.remote_endpoint import serve
+from tools.runtime.p2_codex_factory import stage_factory
 from tools.runtime.p2_codex_half_loop import _certificate, _command, _json, _proof, _write
-from runtime.domain import DomainAuthority
-from runtime.enrollment_models import NodeEnrollment, RuntimeRegistration
-from runtime.receiver_domain import (
-    AuthorityTransportKeyRegistration, ConnectionReferenceRegistration,
-    EndpointRegistrationCommand,
-)
-from runtime.delivery import DeliveryDispatcher, DeliveryService
-from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
-from runtime.receiver_delivery import RemoteNodeEndpointAdapter, RemoteSenderDeployment
 
 
 def _private(path: Path) -> None:
@@ -50,66 +51,18 @@ def _lock_file(path: Path) -> None:
     subprocess.run(["icacls.exe", str(path), "/grant:r", f"{user}:F"], check=True, capture_output=True)
 
 
-def stage_capacity(root: Path, runtime_id: str) -> dict:
-    for name in ("bin", "codex-home", "cwd", "home", "tmp", "artifacts", "state"):
-        _private(root / name)
-    native = next((Path(os.environ["LOCALAPPDATA"]) / "OpenAI/Codex/bin").rglob("codex.exe"))
-    shutil.copyfile(native, root / "bin/codex.exe")
-    for helper_name in (
-        "codex-code-mode-host.exe", "codex-command-runner.exe",
-        "codex-windows-sandbox-setup.exe",
-    ):
-        helper = native.parent / helper_name
-        if not helper.is_file():
-            raise RuntimeError("reviewed Windows Codex helper is missing: " + helper_name)
-        shutil.copyfile(helper, root / "bin" / helper_name)
-    import tomllib
-    original = tomllib.loads((Path.home() / ".codex/config.toml").read_text(encoding="utf-8"))
-    provider = original["model_providers"]["custom"]
-    catalog_source = Path.home() / ".codex/models_cache.json"
-    catalog = root / "codex-home/models.json"
-    shutil.copyfile(catalog_source, catalog)
-    quote = json.dumps
-    config = "\n".join((
-        f"model = {quote(original['model'])}",
-        'model_reasoning_effort = "low"', 'model_provider = "custom"',
-        f"model_catalog_json = {quote(str(catalog))}", 'approval_policy = "never"',
-        'default_permissions = ":workspace"', 'allow_login_shell = false',
-        'web_search = "disabled"', "", "[features]", "multi_agent = false",
-        "multi_agent_v2 = false", "shell_tool = false", "request_permissions_tool = false",
-        "apps = false", "plugins = false", "recommended_plugins = false", "",
-        "[windows]", 'sandbox = "unelevated"', "", 
-        "[shell_environment_policy]", 'inherit = "none"', "", 
-        "[model_providers.custom]",
-        f"name = {quote(provider['name'])}", f"base_url = {quote(provider['base_url'])}",
-        f"wire_api = {quote(provider['wire_api'])}",
-        f"env_key = {quote(provider['env_key'])}",
-        f"requires_openai_auth = {str(bool(provider.get('requires_openai_auth'))).lower()}", "",
-    ))
-    config_path = root / "codex-home/config.toml"
-    config_path.write_text(config, encoding="utf-8")
-    schema = (
-        Path(__file__).resolve().parents[2]
-        / "runtime_tests/schema-0.153.4/codex_app_server_protocol.schemas.json"
+def stage_capacity(root: Path, runtime_id: str, args) -> dict:
+    native = args.codex_executable or next(
+        (Path(os.environ["LOCALAPPDATA"]) / "OpenAI/Codex/bin").rglob("codex.exe")
     )
-    settings = {
-        "schema_version":"acs-receiver-codex-factory/1", "binding_id":"p2-windows-codex",
-        "capacity_attempt_id":"p2-windows-capacity", "executable":str(root / "bin/codex.exe"),
-        "executable_sha256":hashlib.sha256((root / "bin/codex.exe").read_bytes()).hexdigest(),
-        "codex_version":"0.153.4", "protocol_schema":str(schema),
-        "protocol_schema_sha256":hashlib.sha256(schema.read_bytes()).hexdigest(),
-        "cwd":str(root / "cwd"), "codex_home":str(root / "codex-home"),
-        "config_sha256":hashlib.sha256(config_path.read_bytes()).hexdigest(),
-        "permission_profile":":workspace", "model":original["model"],
-        "driver_journal":str(root / "state/driver.sqlite"),
-        "node_journal":str(root / "state/node.sqlite"),
-        "systemd_environment_dir":str(root / "state/windows-job"),
-        "artifact_root":str(root / "artifacts"), "runtime_id":runtime_id,
-        "spawn_operation_id":"p2-windows-spawn", "spawn_command_id":"p2-windows-spawn-command",
-        "spawn_message_id":"p2-windows-spawn-message", "close_operation_id":"p2-windows-close",
-        "close_command_id":"p2-windows-close-command", "close_message_id":"p2-windows-close-message",
-        "collector_max_reads":120, "collector_interval_seconds":0.5,
-    }
+    settings = stage_factory(
+        root=root / "codex-factory", executable=native, catalog_source=args.model_catalog,
+        runtime_id=runtime_id, source_commit=args.commit, source_tree=args.tree,
+        model=args.model, provider_alias=args.provider_alias,
+        provider_name=args.provider_name, provider_url=args.provider_url,
+        wire_api=args.wire_api, auth_command=args.auth_command,
+        auth_reference=args.auth_reference,
+    )["settings"]
     for path in root.rglob("*"):
         if path.is_file(): _lock_file(path)
     return settings
@@ -164,7 +117,7 @@ def provision(args):
         config_sha256="0"*64,expires_at=datetime.now(UTC)+timedelta(seconds=280))
     binding=EndpointBinding(registration=provisional,locator_host=args.host,locator_port=args.port,
         route_class=args.route_class,node_key_id=node_key_id,node_public_key=public_key(node_key),registration_signature=sign(node_key,provisional))
-    settings=stage_capacity(root,runtime_id)
+    settings=stage_capacity(root,runtime_id,args)
     factory,_,_,_=inspect_factory("runtime_deployment.receiver_codex:callbacks",settings=settings)
     config=ReceiverRuntimeConfig(binding=binding,authority_key_id=key_id,authority_key_revision=1,
         authority_public_key=public_key(authority_key),authority_public_key_fingerprint=hashlib.sha256(bytes.fromhex(public_key(authority_key))).hexdigest(),
@@ -301,6 +254,7 @@ def main():
     p=argparse.ArgumentParser(); s=p.add_subparsers(dest="action",required=True)
     a=s.add_parser("provision"); a.add_argument("--profile",type=Path,required=True); a.add_argument("--output",type=Path,required=True)
     a.add_argument("--host",required=True); a.add_argument("--port",type=int,required=True); a.add_argument("--route-class",choices=("private","tunnel"),default="private"); a.add_argument("--listen-host"); a.add_argument("--listen-port",type=int); a.add_argument("--machine-id",required=True); a.add_argument("--tree",required=True); a.add_argument("--commit",required=True); a.add_argument("--schema-name",required=True)
+    a.add_argument("--codex-executable",type=Path); a.add_argument("--model-catalog",type=Path,required=True); a.add_argument("--model",required=True); a.add_argument("--provider-alias",default="custom"); a.add_argument("--provider-name",required=True); a.add_argument("--provider-url",required=True); a.add_argument("--wire-api",choices=("responses",),required=True); a.add_argument("--auth-command",required=True); a.add_argument("--auth-reference",required=True)
     b=s.add_parser("serve"); b.add_argument("--config",type=Path,required=True)
     c=s.add_parser("send"); c.add_argument("--profile",type=Path,required=True); c.add_argument("--state",type=Path,required=True); c.add_argument("--authority-seed",type=Path,required=True); c.add_argument("--output",type=Path,required=True); c.add_argument("--suffix",required=True); c.add_argument("--linux-machine-id",required=True)
     x=p.parse_args(); return provision(x) if x.action=="provision" else run(x) if x.action=="serve" else send(x)

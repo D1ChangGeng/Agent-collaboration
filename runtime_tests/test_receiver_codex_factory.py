@@ -34,11 +34,15 @@ def settings(tmp_path: Path):
         "codex_version": "0.153.2",
         "protocol_schema": str(root / "schema.json"),
         "protocol_schema_sha256": "b" * 64,
+        "model_catalog": str(root / "models.json"),
+        "model_catalog_sha256": "d" * 64,
         "cwd": str(root / "cwd"),
         "codex_home": str(root / "codex-home"),
         "config_sha256": "c" * 64,
         "permission_profile": "achp-engineer",
         "model": "gpt-5.6-sol",
+        "source_commit": "a" * 40,
+        "source_tree": "b" * 40,
         "driver_journal": str(root / "driver.sqlite"),
         "node_journal": str(root / "node.sqlite"),
         "systemd_environment_dir": str(root / "systemd-env"),
@@ -58,6 +62,8 @@ def settings(tmp_path: Path):
 
 def test_codex_receiver_settings_are_exact_and_bounded(tmp_path):
     value = settings(tmp_path)
+    Path(value["model_catalog"]).write_text("{}", encoding="utf-8")
+    value["model_catalog_sha256"] = hashlib.sha256(b"{}").hexdigest()
     assert validate_settings(value) == value
     for field, replacement in (
         ("schema_version", "changed"),
@@ -74,6 +80,9 @@ def test_codex_receiver_settings_are_exact_and_bounded(tmp_path):
 
 def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_path, monkeypatch):
     value = settings(tmp_path)
+    catalog = Path(value["model_catalog"])
+    catalog.write_text("{}", encoding="utf-8")
+    value["model_catalog_sha256"] = hashlib.sha256(b"{}").hexdigest()
     executable = Path(value["executable"])
     executable.write_bytes(b"codex")
     value["executable_sha256"] = hashlib.sha256(b"codex").hexdigest()
