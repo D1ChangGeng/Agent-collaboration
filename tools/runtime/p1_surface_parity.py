@@ -48,10 +48,14 @@ def _private(path: Path, data: bytes) -> None:
 
 
 def _child_env(source_root: Path, private_home: Path) -> dict[str, str]:
+    pythonpath = str(source_root)
+    inherited = os.environ.get("PYTHONPATH")
+    if inherited:
+        pythonpath += os.pathsep + inherited
     return {
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
         "HOME": str(private_home),
-        "PYTHONPATH": str(source_root),
+        "PYTHONPATH": pythonpath,
         "PYTHONDONTWRITEBYTECODE": "1",
         "LC_ALL": "C.UTF-8",
     }
