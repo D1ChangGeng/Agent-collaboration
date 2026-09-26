@@ -290,7 +290,10 @@ class RemoteNodeEndpointAdapter:
         try:
             dispatched = self._send(dispatch_request)
         except (RemoteTransportRejected, ValueError, RuntimeError):
-            observed = self.inspect_delivery(invocation.operation_id, "uncertain")
+            try:
+                observed = self.inspect_delivery(invocation.operation_id, "uncertain")
+            except Exception:
+                observed = {"status": "uncertain", "receipts": []}
             prepared_projection = self._projection([prepared], observed["status"])
             prepared_projection["receipts"].extend(observed["receipts"])
             return prepared_projection

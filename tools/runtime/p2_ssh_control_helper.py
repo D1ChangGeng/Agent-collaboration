@@ -60,16 +60,17 @@ def run(arguments) -> dict:
         command([
             arguments.ssh, arguments.target, "chmod", "600", arguments.remote_proof,
         ])
-        command([
+        consumed = command([
             arguments.ssh, arguments.target, "test", "-f", arguments.remote_proof,
-        ])
+        ], check=False)
     evidence = {
         "schema_version": "acs-p2-ssh-control-evidence/1",
         "target": arguments.target, "host": arguments.host,
         "session": arguments.session, "observed_at": datetime.now(UTC).isoformat(),
         "proof_public_key": value["body"]["public_key"],
         "challenge_run_id": value["body"]["run_id"],
-        "transcript": transcript, "status": "answered",
+        "transcript": transcript,
+        "status": "answered" if consumed.returncode == 0 else "consumed_by_receiver",
     }
     arguments.evidence.write_text(json.dumps(evidence, sort_keys=True, separators=(",", ":")))
     print(json.dumps(evidence, sort_keys=True))
