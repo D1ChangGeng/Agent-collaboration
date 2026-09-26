@@ -48,7 +48,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         "create_work", "send_message", "read_message", "check_inbox", "wait_for_response",
         "list_sources", "list_files", "search_files", "read_file", "read_source", "read_diff",
         "configure_team", "list_collaborators", "list_harnesses",
-        "revise_work", "handoff_work", "request_review", "submit_review",
+        "revise_work", "handoff_work", "acknowledge_handoff", "withdraw_handoff",
+        "request_review", "submit_review",
         "read_resource", "list_evidence", "list_reviews", "list_activity",
         "accept_work", "cancel_work", "stop_attempt",
         "watch_changes", "set_notification",
@@ -66,6 +67,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         "read_source": ("artifact.read",),
         "read_diff": ("artifact.read",),
         "request_review": ("review.assign",),
+        "handoff_work": ("message.send",),
         "submit_review": ("review.record",),
         "accept_work": ("work_item.transition", "acceptance.finalize"),
         "cancel_work": ("work.manage",),
@@ -102,6 +104,20 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
                 "VALUES ('acs-project-runtime','1',%s) ON CONFLICT(schema_name) DO NOTHING",
                 (checksum,),
+            )
+            control = Path(__file__).with_name("project_control_schema.sql").read_bytes()
+            control_checksum = hashlib.sha256(control).hexdigest()
+            current = connection.execute(
+                "SELECT schema_version,schema_checksum FROM runtime_schema_metadata "
+                "WHERE schema_name='acs-project-control' FOR UPDATE",
+            ).fetchone()
+            if current and current != ("1", control_checksum):
+                raise ValueError("project control schema requires explicit migration")
+            connection.execute(control)
+            connection.execute(
+                "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
+                "VALUES ('acs-project-control','1',%s) ON CONFLICT(schema_name) DO NOTHING",
+                (control_checksum,),
             )
 
     def admit_project(self, command: CommandEnvelope, *, project_id: str, root_id: str,
@@ -1013,8 +1029,12 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             assigned = parse_handle(assigned, "collaborator", args["project_id"])
         states, blocked = args.get("states", []), args.get("blocked")
         cursor.execute(
-            "SELECT w.work_item_id,w.revision,w.state,w.execution_status,w.source_baseline,w.agent_slot_id,l.route_id "
+            "SELECT w.work_item_id,w.revision,w.state,w.execution_status,w.source_baseline,w.agent_slot_id,l.route_id,"
+            "h.handoff_id,h.state "
             "FROM collaboration_work_links l JOIN work_items w USING(tenant_id,work_item_id) "
+            "LEFT JOIN LATERAL (SELECT handoff_id,state FROM collaboration_handoffs h "
+            "WHERE h.tenant_id=w.tenant_id AND h.work_item_id=w.work_item_id "
+            "ORDER BY assigned_work_revision DESC LIMIT 1) h ON TRUE "
             "WHERE l.tenant_id=%s AND l.project_id=%s AND (%s::text[] IS NULL OR w.scope_id=ANY(%s)) "
             "AND (%s::text IS NULL OR l.route_id=%s) AND (%s::text IS NULL OR w.agent_slot_id=%s) "
             "AND w.work_item_id>%s AND (%s::timestamptz IS NULL OR w.updated_at>%s) "
@@ -1026,7 +1046,9 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         rows = [{"work_handle": handle("work", args["project_id"], row[0]),
             "revision": row[1], "state": row[2], "execution_status": row[3],
             "source_baseline": row[4], "assigned_to": row[5],
-            "route_handle": handle("route", args["project_id"], row[6])} for row in cursor.fetchall()]
+            "route_handle": handle("route", args["project_id"], row[6]),
+            "handoff_handle": handle("handoff", args["project_id"], row[7]) if row[7] else None,
+            "acknowledgement": row[8] if row[7] else "not_required"} for row in cursor.fetchall()]
         return self._page_result(args["project_id"], rows, args, "work_handle")
 
     def _create_work(self, authority, cursor, project, command, args, _credential):

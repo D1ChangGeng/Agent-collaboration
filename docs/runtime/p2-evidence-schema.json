@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/acs/p2-execution-plan-3.schema.json",
+  "$id": "https://example.invalid/acs/p2-execution-plan-4.schema.json",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -13,7 +13,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "acs-p2-execution-plan/3"
+      "const": "acs-p2-execution-plan/4"
     },
     "status": {
       "enum": [
@@ -27,11 +27,12 @@
         "P2-CODEX",
         "P2-OPENCODE",
         "P2-MCP-WORKFLOW",
-        "P2-MANAGEMENT-WORKFLOW"
+        "P2-MANAGEMENT-WORKFLOW",
+        "P2-CONTROL-PARITY"
       ]
     },
     "mcp_surface_revision": {
-      "const": "acs-p2-mcp-workflow/5"
+      "const": "acs-p2-mcp-workflow/6"
     },
     "machines": {
       "type": "array",
@@ -90,7 +91,8 @@
         "P2-CODEX",
         "P2-OPENCODE",
         "P2-MCP-WORKFLOW",
-        "P2-MANAGEMENT-WORKFLOW"
+        "P2-MANAGEMENT-WORKFLOW",
+        "P2-CONTROL-PARITY"
       ],
       "properties": {
         "P2-CODEX": {
@@ -103,6 +105,9 @@
           "$ref": "#/$defs/gate"
         },
         "P2-MANAGEMENT-WORKFLOW": {
+          "$ref": "#/$defs/gate"
+        },
+        "P2-CONTROL-PARITY": {
           "$ref": "#/$defs/gate"
         }
       }

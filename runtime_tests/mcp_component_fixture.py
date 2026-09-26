@@ -94,7 +94,7 @@ class McpRuntime:
         self.database = Path(database)
         self.catalog_path = Path(catalog)
         self.catalog = json.loads(self.catalog_path.read_text(encoding="utf-8"))
-        if self.catalog.get("schema_version") != "acs-p2-mcp-tool-contract/5":
+        if self.catalog.get("schema_version") != "acs-p2-mcp-tool-contract/6":
             raise McpRuntimeError("contract_changed", "MCP tool contract revision differs")
         profiles = self.catalog.get("profiles", {})
         if profile not in profiles or not isinstance(subject, str) or not subject:

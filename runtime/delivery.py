@@ -137,6 +137,17 @@ class DeliveryService:
         work = cursor.fetchone()
         if work is None or work[:3] != (packet.target_scope_id, command.expected_revision, packet.source_baseline):
             raise DeliveryRejected("work_item_precondition_changed")
+        # A Root assignment is distinct from the receiving Agent's acceptance.
+        # Only its own durable acknowledgement request may cross this boundary.
+        cursor.execute("SELECT to_regclass('collaboration_handoffs')")
+        if cursor.fetchone()[0] is not None:
+            cursor.execute("SELECT state,message_id FROM collaboration_handoffs "
+                           "WHERE tenant_id=%s AND work_item_id=%s "
+                           "ORDER BY assigned_work_revision DESC LIMIT 1",
+                           (command.tenant_id, packet.work_item_id))
+            handoff = cursor.fetchone()
+            if handoff and handoff[0] in {"pending", "rejected", "withdrawn"} and handoff[1] != command.target_id:
+                raise DeliveryRejected("handoff_acknowledgement_required")
         # Context ownership is independent of the receiving long-lived AgentSlot.
         # Cross-Scope delivery needs a separate explicit relationship policy;
         # this initial profile accepts only a target in the WorkItem's Scope.

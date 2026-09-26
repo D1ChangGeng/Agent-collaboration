@@ -1,7 +1,7 @@
 # ACS knowledge Skill catalog
 
 Status: adopted P2 knowledge contract for MCP surface
-acs-p2-mcp-workflow/5. The machine-readable catalog is
+acs-p2-mcp-workflow/6. The machine-readable catalog is
 [p2-skill-contract.json](../p2-skill-contract.json).
 
 ACS uses four instruction layers:

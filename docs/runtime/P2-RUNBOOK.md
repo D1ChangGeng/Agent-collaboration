@@ -25,7 +25,9 @@ facts are not current inputs.
    OpenCode MCP clients.
 8. Execute P2-MANAGEMENT-WORKFLOW through local and remote web-capable MCP
    clients, including ProjectContextPack, Source reads and Skills.
-9. Perform the complete P2 independent review and retain the product-owner
+9. Execute [P2-CONTROL-PARITY](P2-CONTROL-PARITY-CONTRACT.md) for Web receiver
+   wake and Root-managed handoff acknowledgement.
+10. Perform the complete P2 independent review and retain the product-owner
    decision boundary.
 
 Each scenario must produce its own command, operation, message and event IDs;
@@ -112,6 +114,21 @@ unresolved items. Reused P1 evidence proves only the prerequisite.
 Public MCP bytes, profile-filtered tool discovery, exact arguments, Domain rows,
 Inbox and Outbox, Source readback, OAuth scope, Node and Driver observations,
 Skill metadata, loaded references, knowledge hints, Session activity and unresolved items are direct Gate evidence.
+
+## P2-CONTROL-PARITY
+
+- WEB-RECEIVER-WAKE: a program Harness addresses a current web AgentSlot and
+  proves native web Turn start or resume, not merely Inbox recovery.
+- HANDOFF-ACK: an authorized Root Agent hands existing Work to an already
+  addressable B Slot; B's authenticated, exact-handoff response closes the
+  pending acknowledgement after Inbox commit, without duplicate handoff or
+  silent owner drift. Root can explicitly withdraw an unanswered intent.
+
+These are focused capability probes. See the
+[Gate contract](P2-CONTROL-PARITY-CONTRACT.md) for the exact preconditions,
+receipts, readbacks and authorization boundaries. Prior Web reads, Web
+create_work, project Inbox consumption and older-baseline Runtime Gates retain
+their original scopes and do not by themselves pass this Gate.
 
 ## Fault safety
 

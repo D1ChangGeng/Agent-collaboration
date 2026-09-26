@@ -129,8 +129,16 @@ class P2McpToolContractTests(unittest.TestCase):
             self.gates["p2_surface_revision"], self.catalog["surface_revision"]
         )
         self.assertEqual(
-            self.gates["gates"]["P2-REVIEW"]["requires"],
+            self.gates["gates"]["P2-CONTROL-PARITY"]["requires"],
             ["P2-MANAGEMENT-WORKFLOW"],
+        )
+        self.assertEqual(
+            self.gates["gates"]["P2-CONTROL-PARITY"]["scenarios"],
+            ["P2-CONTROL-WEB-RECEIVER-WAKE", "P2-CONTROL-HANDOFF-ACK"],
+        )
+        self.assertEqual(
+            self.gates["gates"]["P2-REVIEW"]["requires"],
+            ["P2-CONTROL-PARITY"],
         )
         for gate in ("P2-MCP-WORKFLOW", "P2-MANAGEMENT-WORKFLOW"):
             scenarios = self.gates["gates"][gate]["scenarios"]

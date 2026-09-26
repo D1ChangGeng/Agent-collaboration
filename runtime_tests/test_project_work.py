@@ -5,25 +5,30 @@ import hashlib
 import json
 import sys
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from dataclasses import asdict, replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import psycopg
 import pytest
 
 from runtime.auth import LocalCredentialAuthenticator
 from runtime.codex_driver import BindingIdentity, DriverJournal, DriverRejected, OutcomeUncertain
+from runtime.delivery import DeliveryDispatcher, DeliveryService
+from runtime.delivery_models import EndpointBindingRequest
 from runtime.delivery_node import LocalNodeEndpoint
 from runtime.domain import DomainAuthority
+from runtime.errors import AcceptanceGuardFailed
 from runtime.mcp_runtime import McpRuntime
-from runtime.models import EvidenceBundle, EvidenceRecord, ExecutionReceipt
+from runtime.models import EvidenceBundle, EvidenceRecord, ExecutionReceipt, TransitionRequest, WorkItemState
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.node import NodeJournal
 from runtime.project_service import ProjectService
 from runtime.surfaces import SharedService
 from runtime_tests.enrollment_fixture import enrollment_command, register_execution_fixture
 from runtime_tests.test_project_management import managed as managed_fixture
-from runtime_tests.test_project_management import team_args
+from runtime_tests.test_project_management import bind_worker, team_args, worker_client
 from runtime_tests.test_project_service import CATALOG, deadline, ok, scalar, send_args, work_args
 from runtime_tests.test_project_source import source_project as source_fixture
 
@@ -63,9 +68,7 @@ def test_revise_cannot_change_intent_during_pending_delivery(managed_work):
     assert scalar(f, "SELECT revision FROM work_items WHERE work_item_id='mcp-work'") == 0
 
 
-def test_handoff_records_source_sync_scope_and_new_owner(managed_work):
-    f = managed_work
-    ok(f, "configure_team", team_args())
+def handoff_args(**changes):
     args = {"client_request_id": "handoff-1", "project_id": "project-alpha",
         "work_handle": "work:project-alpha:mcp-work", "expected_revision": 0,
         "from_agent_slot": "local-slot", "to_agent_slot": "team-worker",
@@ -73,14 +76,372 @@ def test_handoff_records_source_sync_scope_and_new_owner(managed_work):
                          "tree": "fixture-tree", "working_tree": "clean", "push": "not_pushed",
                          "receiver_sync": "pull-required"}, "context_handles": [],
         "evidence_handles": [], "unresolved_items": ["receiver needs source sync"],
-        "require_ack": True, "deadline": deadline()}
+        "require_ack": True,
+        "deadline": (datetime.now(UTC) + timedelta(minutes=2)).isoformat()}
+    args.update(changes)
+    return args
+
+
+def prepared_handoff(f):
+    ok(f, "configure_team", team_args())
+    f.handoff_delivery = bind_worker(f)
+    child, _ = worker_client(f)
+    child.service.bind_notification_session("project-alpha", "worker-session-1",
+                                            "worker-connection-1", child.credential_provider())
+    return child
+
+
+def deliver_handoff(delivery_service, sent):
+    delivery = DeliveryDispatcher(delivery_service)
+    queued = next(item for item in delivery.pending()
+                  if item["message_id"] == sent["message_handle"].split(":")[-1])
+    return delivery.dispatch(queued)
+
+
+def test_handoff_records_source_sync_scope_and_new_owner(managed_work):
+    f = managed_work
+    child = prepared_handoff(f)
+    args = handoff_args()
     result = ok(f, "handoff_work", args)
+    assert result["state"] == "pending"
     assert result["data"]["source_state"]["receiver_sync"] == "pull-required"
     assert result["data"]["source_observation_class"] == "sender_reported"
     assert result["data"]["acknowledgement"] == "pending"
     assert scalar(f, "SELECT agent_slot_id FROM work_items WHERE work_item_id='mcp-work'") == "team-worker"
+    assert scalar(f, "SELECT execution_status FROM work_items WHERE work_item_id='mcp-work'") == "blocked"
+    assert scalar(f, "SELECT count(*) FROM delivery_messages") == 1
+    assert scalar(f, "SELECT count(*) FROM outbox WHERE topic='message.delivery'") == 1
+    assert ok(f, "handoff_work", args)["data"] == result["data"]
+    assert scalar(f, "SELECT count(*) FROM collaboration_handoffs") == 1
+    handoff = result["data"]["handoff_handle"]
+    deliver_handoff(f.handoff_delivery, result["data"])
+    inbox = child.call("check_inbox", {"project_id": "project-alpha", "kinds": ["message"]})
+    assert not inbox["isError"], inbox
+    assert result["data"]["message_handle"] in [item["handle"] for item in inbox["structuredContent"]["data"]["items"]]
+    assert scalar(f, "SELECT state FROM collaboration_handoffs") == "pending"
+    detail = ok(f, "read_resource", {"project_id": "project-alpha", "handle": handoff,
+                                     "view": "detail"})["data"]
+    assert detail["state"] == "pending" and detail["source_digest"] == result["data"]["source_digest"]
+    assert child.call("read_resource", {"project_id": "project-alpha", "handle": handoff})["isError"] is False
+    assert f.mcp.call("send_message", dict(send_args(), client_request_id="blocked-send",
+        expected_work_revision=1, target={"scope_id": "local-scope", "agent_slot_id": "team-worker"}))["isError"]
+    ack = {"client_request_id": "worker-ack", "project_id": "project-alpha",
+           "handoff_handle": handoff, "expected_handoff_revision": 1,
+           "expected_work_revision": 1, "source_digest": result["data"]["source_digest"],
+           "decision": "accepted", "reason": "source and unresolved items reviewed", "deadline": deadline()}
+    assert f.mcp.call("acknowledge_handoff", ack)["structuredContent"]["data"]["code"] == "authorization_denied"
+    child.service.bind_notification_session("project-alpha", "worker-session-2",
+                                            "worker-connection-2", child.credential_provider())
+    accepted = child.call("acknowledge_handoff", ack)
+    assert not accepted["isError"], accepted
+    assert accepted["structuredContent"]["data"]["acknowledgement"] == "accepted"
+    assert child.call("acknowledge_handoff", ack)["structuredContent"]["data"] == accepted["structuredContent"]["data"]
+    assert scalar(f, "SELECT execution_status FROM work_items WHERE work_item_id='mcp-work'") == "ready"
+    assert ok(f, "read_resource", {"project_id": "project-alpha", "handle": handoff})["data"]["state"] == "accepted"
     wrong = dict(args, client_request_id="wrong-project", project_id="project-other")
     assert f.mcp.call("handoff_work", wrong)["isError"]
+
+
+def test_rejected_handoff_keeps_assignment_blocked(managed_work):
+    f = managed_work
+    child = prepared_handoff(f)
+    sent = ok(f, "handoff_work", handoff_args())["data"]
+    deliver_handoff(f.handoff_delivery, sent)
+    ack = {"client_request_id": "worker-reject", "project_id": "project-alpha",
+           "handoff_handle": sent["handoff_handle"], "expected_handoff_revision": 1,
+           "expected_work_revision": 1, "source_digest": sent["source_digest"],
+           "decision": "rejected", "reason": "source not synchronized", "deadline": deadline()}
+    wrong = child.call("acknowledge_handoff", dict(ack, client_request_id="wrong-source",
+        source_digest="0" * 64))
+    assert wrong["isError"]
+    rejected = child.call("acknowledge_handoff", ack)
+    assert not rejected["isError"], rejected
+    work = ok(f, "read_resource", {"project_id": "project-alpha",
+        "handle": "work:project-alpha:mcp-work"})["data"]
+    assert work["agent_slot_id"] == "team-worker" and work["execution_status"] == "blocked"
+    assert work["acknowledgement"] == "rejected" and work["revision"] == 2
+    assert f.mcp.call("send_message", dict(send_args(), client_request_id="rejected-send",
+        expected_work_revision=2, target={"scope_id": "local-scope", "agent_slot_id": "team-worker"}))["isError"]
+
+
+def test_handoff_delivery_failure_rolls_back_assignment(managed_work):
+    f = managed_work
+    prepared_handoff(f)
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("ALTER TABLE delivery_messages ADD CONSTRAINT injected_handoff_failure "
+                           "CHECK (message_id='impossible-test-value')")
+    assert f.mcp.call("handoff_work", handoff_args())["isError"]
+    assert scalar(f, "SELECT revision FROM work_items WHERE work_item_id='mcp-work'") == 0
+    assert scalar(f, "SELECT agent_slot_id FROM work_items WHERE work_item_id='mcp-work'") == "local-slot"
+    assert scalar(f, "SELECT count(*) FROM collaboration_handoffs") == 0
+    assert scalar(f, "SELECT count(*) FROM delivery_messages") == 0
+
+
+def test_expired_receiving_session_blocks_ack_handoff(managed_work):
+    f = managed_work
+    prepared_handoff(f)
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("UPDATE collaboration_notification_sessions "
+                           "SET expires_at=clock_timestamp()-interval '1 second' "
+                           "WHERE owner_ref='agent:team-worker'")
+    response = f.mcp.call("handoff_work", handoff_args())
+    assert response["structuredContent"]["data"]["code"] == "guard_rejected"
+    assert scalar(f, "SELECT revision FROM work_items WHERE work_item_id='mcp-work'") == 0
+    assert scalar(f, "SELECT count(*) FROM collaboration_handoffs") == 0
+
+
+def test_handoff_requires_recipient_ack_grant(managed_work):
+    f = managed_work
+    prepared_handoff(f)
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("UPDATE grants SET permissions=permissions - 'handoff.ack' "
+                           "WHERE grant_ref='grant:team-worker'")
+    response = f.mcp.call("handoff_work", handoff_args())
+    assert response["structuredContent"]["data"]["code"] == "authorization_denied"
+    assert scalar(f, "SELECT revision FROM work_items WHERE work_item_id='mcp-work'") == 0
+    assert scalar(f, "SELECT count(*) FROM collaboration_handoffs") == 0
+
+
+def test_pending_handoff_blocks_signed_attempt_and_raw_acceptance(managed_work):
+    f = managed_work
+    prepared_handoff(f)
+    ok(f, "handoff_work", handoff_args())
+    with pytest.raises(AcceptanceGuardFailed, match="handoff acknowledgement"):
+        register_execution_fixture(f.authority, work_item_id="mcp-work",
+            runtime_id="pending-runtime", attempt_id="pending-attempt")
+    assert scalar(f, "SELECT count(*) FROM attempts") == 0
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("UPDATE grants SET permissions=permissions || '[\"work_item.transition\"]'::jsonb "
+                           "WHERE grant_ref='grant:p1'")
+    with pytest.raises(AcceptanceGuardFailed, match="handoff acknowledgement"):
+        f.authority.transition_work_item(
+            enrollment_command(f.authority, "work_item.transition", "work_item", "mcp-work", revision=1),
+            TransitionRequest(to_state=WorkItemState.ACCEPTANCE_READY))
+    assert scalar(f, "SELECT count(*) FROM accepted_state_revisions") == 0
+
+
+def test_root_reassignment_after_rejection_replaces_latest_ack_state(managed_work):
+    f = managed_work
+    child = prepared_handoff(f)
+    sent = ok(f, "handoff_work", handoff_args())["data"]
+    deliver_handoff(f.handoff_delivery, sent)
+    ack = {"client_request_id": "reject-before-reassign", "project_id": "project-alpha",
+           "handoff_handle": sent["handoff_handle"], "expected_handoff_revision": 1,
+           "expected_work_revision": 1, "source_digest": sent["source_digest"],
+           "decision": "rejected", "reason": "receiver cannot take ownership", "deadline": deadline()}
+    assert not child.call("acknowledge_handoff", ack)["isError"]
+    team = team_args(revision=1, identity="replace-b")
+    team["members"][0].update(agent_slot_id="replacement-worker", principal_ref="agent:replacement",
+                              grant_ref="grant:replacement")
+    ok(f, "configure_team", team)
+    reassigned = ok(f, "handoff_work", handoff_args(client_request_id="reassign-after-reject",
+        expected_revision=2, from_agent_slot="team-worker", to_agent_slot="replacement-worker",
+        require_ack=False))["data"]
+    assert reassigned["acknowledgement"] == "not_required" and reassigned["revision"] == 3
+    work = ok(f, "read_resource", {"project_id": "project-alpha",
+        "handle": "work:project-alpha:mcp-work"})["data"]
+    assert work["agent_slot_id"] == "replacement-worker"
+    assert work["execution_status"] == "ready"
+    assert work["acknowledgement"] == "not_required"
+    assert work["handoff_handle"] == reassigned["handoff_handle"]
+    with psycopg.connect(f.dsn) as connection, connection.cursor() as cursor:
+        f.authority._require_confirmed_project_handoff(cursor, "mcp-work")
+
+
+def test_rejected_handoff_then_revised_work_can_be_reassigned(managed_work):
+    f = managed_work
+    child = prepared_handoff(f)
+    sent = ok(f, "handoff_work", handoff_args())["data"]
+    deliver_handoff(f.handoff_delivery, sent)
+    rejected = {"client_request_id": "reject-before-revision", "project_id": "project-alpha",
+        "handoff_handle": sent["handoff_handle"], "expected_handoff_revision": 1,
+        "expected_work_revision": 1, "source_digest": sent["source_digest"],
+        "decision": "rejected", "reason": "need a revised goal", "deadline": deadline()}
+    assert not child.call("acknowledge_handoff", rejected)["isError"]
+    ok(f, "revise_work", dict(revise_args(), client_request_id="revise-after-rejection",
+        expected_revision=2))
+    team = team_args(revision=1, identity="replace-after-revision")
+    team["members"][0].update(agent_slot_id="replacement-worker", principal_ref="agent:replacement",
+                              grant_ref="grant:replacement")
+    ok(f, "configure_team", team)
+    reassigned = ok(f, "handoff_work", handoff_args(client_request_id="reassign-revision",
+        expected_revision=3, from_agent_slot="team-worker", to_agent_slot="replacement-worker",
+        require_ack=False))["data"]
+    assert reassigned["revision"] == 4
+    assert scalar(f, "SELECT execution_status FROM work_items WHERE work_item_id='mcp-work'") == "ready"
+
+
+def test_receiving_slot_can_ack_after_current_grant_rotation(managed_work):
+    f = managed_work
+    prepared_handoff(f)
+    sent = ok(f, "handoff_work", handoff_args())["data"]
+    deliver_handoff(f.handoff_delivery, sent)
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("INSERT INTO grants(grant_ref,tenant_id,principal_ref,authority_id,"
+                           "authority_incarnation,scope_id,permissions,expires_at) "
+                           "SELECT 'grant:team-worker-rotated',tenant_id,principal_ref,authority_id,"
+                           "authority_incarnation,scope_id,permissions,expires_at FROM grants "
+                           "WHERE grant_ref='grant:team-worker'")
+        connection.execute("INSERT INTO grant_delegations(grant_ref,parent_grant_ref,tenant_id,"
+                           "command_id,parent_policy_digest) SELECT 'grant:team-worker-rotated',"
+                           "parent_grant_ref,tenant_id,command_id,parent_policy_digest "
+                           "FROM grant_delegations WHERE grant_ref='grant:team-worker'")
+        connection.execute("UPDATE collaboration_team_members SET grant_ref='grant:team-worker-rotated' "
+                           "WHERE agent_slot_id='team-worker'")
+        connection.execute("UPDATE collaboration_memberships SET grant_ref='grant:team-worker-rotated' "
+                           "WHERE agent_slot_id='team-worker'")
+        connection.execute("UPDATE grants SET revoked_at=clock_timestamp() "
+                           "WHERE grant_ref='grant:team-worker'")
+    secret = "rotated-private-" + uuid.uuid4().hex
+    context = replace(f.authority.context, principal_ref="agent:team-worker",
+                      grant_ref="grant:team-worker-rotated",
+                      credential_hash=hashlib.sha256(secret.encode()).hexdigest())
+    rotated_authority = DomainAuthority(f.dsn, context=context)
+    rotated = McpRuntime(ProjectService(SharedService(rotated_authority,
+        LocalCredentialAuthenticator(context)), CATALOG, profile="engineer"), lambda: secret)
+    rotated.service.bind_notification_session("project-alpha", "worker-rotated-session",
+                                               "worker-rotated-connection", secret)
+    ack = {"client_request_id": "rotated-ack", "project_id": "project-alpha",
+           "handoff_handle": sent["handoff_handle"], "expected_handoff_revision": 1,
+           "expected_work_revision": 1, "source_digest": sent["source_digest"],
+           "decision": "accepted", "reason": "current Grant verified", "deadline": deadline()}
+    response = rotated.call("acknowledge_handoff", ack)
+    assert not response["isError"], response
+    assert response["structuredContent"]["data"]["acknowledgement"] == "accepted"
+    assert scalar(f, "SELECT decided_grant_ref FROM collaboration_handoffs") == "grant:team-worker-rotated"
+
+
+def test_running_attempt_prevents_handoff(managed_work):
+    f = managed_work
+    prepared_handoff(f)
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("INSERT INTO attempts(attempt_id,tenant_id,work_item_id,agent_slot_id,status) "
+                           "VALUES ('active-attempt','local-tenant','mcp-work','local-slot','running')")
+    assert scalar(f, "SELECT execution_status FROM work_items WHERE work_item_id='mcp-work'") == "ready"
+    response = f.mcp.call("handoff_work", handoff_args())
+    assert response["structuredContent"]["data"]["code"] == "guard_rejected"
+    assert scalar(f, "SELECT revision FROM work_items WHERE work_item_id='mcp-work'") == 0
+
+
+def test_root_withdraws_pending_handoff_before_reassignment(managed_work):
+    f = managed_work
+    child = prepared_handoff(f)
+    sent = ok(f, "handoff_work", handoff_args())["data"]
+    withdrawal = {"client_request_id": "withdraw-unanswered", "project_id": "project-alpha",
+        "handoff_handle": sent["handoff_handle"], "expected_handoff_revision": 1,
+        "expected_work_revision": 1, "reason": "recipient Session cannot continue", "deadline": deadline()}
+    result = ok(f, "withdraw_handoff", withdrawal)
+    assert result["data"]["acknowledgement"] == "withdrawn"
+    assert ok(f, "withdraw_handoff", withdrawal)["data"] == result["data"]
+    late = child.call("acknowledge_handoff", {"client_request_id": "late-ack",
+        "project_id": "project-alpha", "handoff_handle": sent["handoff_handle"],
+        "expected_handoff_revision": 1, "expected_work_revision": 1,
+        "source_digest": sent["source_digest"], "decision": "accepted",
+        "reason": "late response", "deadline": deadline()})
+    assert late["isError"]
+    team = team_args(revision=1, identity="replace-after-withdraw")
+    team["members"][0].update(agent_slot_id="replacement-worker", principal_ref="agent:replacement",
+                              grant_ref="grant:replacement")
+    ok(f, "configure_team", team)
+    reassigned = ok(f, "handoff_work", handoff_args(client_request_id="reassign-withdrawn",
+        expected_revision=2, from_agent_slot="team-worker", to_agent_slot="replacement-worker",
+        require_ack=False))["data"]
+    assert reassigned["acknowledgement"] == "not_required"
+    assert scalar(f, "SELECT execution_status FROM work_items WHERE work_item_id='mcp-work'") == "ready"
+
+
+def test_ack_waits_for_committed_recipient_inbox(managed_work):
+    f = managed_work
+    child = prepared_handoff(f)
+    sent = ok(f, "handoff_work", handoff_args())["data"]
+    ack = {"client_request_id": "ack-after-delivery", "project_id": "project-alpha",
+        "handoff_handle": sent["handoff_handle"], "expected_handoff_revision": 1,
+        "expected_work_revision": 1, "source_digest": sent["source_digest"],
+        "decision": "accepted", "reason": "inbox received", "deadline": deadline()}
+    early = child.call("acknowledge_handoff", ack)
+    assert early["structuredContent"]["data"]["code"] == "guard_rejected"
+    assert scalar(f, "SELECT state FROM collaboration_handoffs") == "pending"
+    deliver_handoff(f.handoff_delivery, sent)
+    accepted = child.call("acknowledge_handoff", ack)
+    assert not accepted["isError"], accepted
+    assert scalar(f, "SELECT count(*) FROM delivery_receipts WHERE layer='target_inbox_committed'") == 1
+
+
+def test_rejected_handoff_then_new_receiver_accepts_and_unfreezes(managed_work):
+    f = managed_work
+    child = prepared_handoff(f)
+    sent = ok(f, "handoff_work", handoff_args())["data"]
+    deliver_handoff(f.handoff_delivery, sent)
+    rejected = {"client_request_id": "first-rejected", "project_id": "project-alpha",
+        "handoff_handle": sent["handoff_handle"], "expected_handoff_revision": 1,
+        "expected_work_revision": 1, "source_digest": sent["source_digest"],
+        "decision": "rejected", "reason": "cannot receive", "deadline": deadline()}
+    assert not child.call("acknowledge_handoff", rejected)["isError"]
+    team = team_args(revision=1, identity="replace-for-ack")
+    team["members"][0].update(agent_slot_id="replacement-worker", principal_ref="agent:replacement",
+                              grant_ref="grant:replacement")
+    ok(f, "configure_team", team)
+    endpoint = LocalNodeEndpoint(f.team_journal, "local-scope", "replacement-worker", f.driver)
+    replacement_delivery = DeliveryService(f.authority, {"replacement-endpoint": endpoint})
+    replacement_delivery.bind_endpoint(
+        enrollment_command(f.authority, "message.bind", "message", "replacement-endpoint"),
+        EndpointBindingRequest(scope_id="local-scope", agent_slot_id="replacement-worker",
+                               expires_at=datetime.now(UTC)+timedelta(minutes=5)))
+    secret = "replacement-private-" + uuid.uuid4().hex
+    context = replace(f.authority.context, principal_ref="agent:replacement",
+                      grant_ref="grant:replacement",
+                      credential_hash=hashlib.sha256(secret.encode()).hexdigest())
+    recipient = McpRuntime(ProjectService(SharedService(DomainAuthority(f.dsn, context=context),
+        LocalCredentialAuthenticator(context)), CATALOG, profile="engineer"), lambda: secret)
+    recipient.service.bind_notification_session("project-alpha", "replacement-session",
+                                                "replacement-connection", secret)
+    second = ok(f, "handoff_work", handoff_args(client_request_id="second-handoff",
+        expected_revision=2, from_agent_slot="team-worker", to_agent_slot="replacement-worker"))["data"]
+    deliver_handoff(replacement_delivery, second)
+    assert scalar(f, "SELECT execution_status FROM work_items WHERE work_item_id='mcp-work'") == "blocked"
+    accepted = recipient.call("acknowledge_handoff", {"client_request_id": "replacement-ack",
+        "project_id": "project-alpha", "handoff_handle": second["handoff_handle"],
+        "expected_handoff_revision": 1, "expected_work_revision": 3,
+        "source_digest": second["source_digest"], "decision": "accepted",
+        "reason": "source synchronized", "deadline": deadline()})
+    assert not accepted["isError"], accepted
+    assert scalar(f, "SELECT execution_status FROM work_items WHERE work_item_id='mcp-work'") == "ready"
+    assert scalar(f, "SELECT count(*) FROM collaboration_handoffs") == 2
+
+
+def test_ack_and_root_cancel_do_not_deadlock(managed_work):
+    f = managed_work
+    child = prepared_handoff(f)
+    sent = ok(f, "handoff_work", handoff_args())["data"]
+    deliver_handoff(f.handoff_delivery, sent)
+    ack = {"client_request_id": "racing-ack", "project_id": "project-alpha",
+        "handoff_handle": sent["handoff_handle"], "expected_handoff_revision": 1,
+        "expected_work_revision": 1, "source_digest": sent["source_digest"],
+        "decision": "accepted", "reason": "ready", "deadline": deadline()}
+    cancel = cancel_args(client_request_id="racing-cancel", expected_revision=1)
+    ready = Barrier(2)
+    def run_ack():
+        ready.wait(timeout=5)
+        return child.call("acknowledge_handoff", ack)
+    def run_cancel():
+        ready.wait(timeout=5)
+        return f.mcp.call("cancel_work", cancel)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        a = pool.submit(run_ack)
+        b = pool.submit(run_cancel)
+        responses = [a.result(timeout=20), b.result(timeout=20)]
+    assert sum(not item["isError"] for item in responses) == 1
+    assert all(item["structuredContent"]["data"].get("code") != "service_unavailable"
+               for item in responses)
+
+
+def test_handoff_rejects_unresolved_context_handle(managed_work):
+    f = managed_work
+    prepared_handoff(f)
+    response = f.mcp.call("handoff_work", handoff_args(
+        context_handles=["route:project-alpha:missing-route"]))
+    assert response["structuredContent"]["data"]["code"] == "not_found"
+    assert scalar(f, "SELECT revision FROM work_items WHERE work_item_id='mcp-work'") == 0
 
 
 def test_known_transport_credential_is_never_persisted_as_intent(managed_work):
@@ -505,7 +866,7 @@ def test_handoff_preserves_verified_historical_execution_for_review(review_proje
         "source_state": {"branch": "fixture", "commit": f.commit, "tree": f.tree,
                          "working_tree": "clean", "push": "not-measured", "receiver_sync": "not-measured"},
         "context_handles": [], "evidence_handles": f.evidence_handles, "unresolved_items": [],
-        "require_ack": True, "deadline": deadline()})
+        "require_ack": False, "deadline": deadline()})
     assert handed["data"]["revision"] == 1
     review = request_review(f, revision=1)
     result = f.reviewer.call("submit_review", submit_args(f, review))

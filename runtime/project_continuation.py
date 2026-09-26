@@ -37,6 +37,10 @@ class ContinuationActions:
             if prior and prior[0] == "retired":
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
             if prior and prior[2] == connection_ref:
+                cursor.execute("UPDATE collaboration_notification_sessions SET expires_at="
+                               "clock_timestamp()+interval '300 seconds' WHERE tenant_id=%s "
+                               "AND project_id=%s AND owner_ref=%s AND session_ref=%s",
+                               (self.context.tenant_id, project_id, self.context.principal_ref, session_ref))
                 return prior[1]
             cursor.execute("SELECT COALESCE(MAX(revision),0) FROM collaboration_notification_sessions "
                            "WHERE tenant_id=%s AND project_id=%s AND owner_ref=%s",
@@ -45,9 +49,12 @@ class ContinuationActions:
             cursor.execute("UPDATE collaboration_notification_sessions SET state='retired' WHERE tenant_id=%s "
                            "AND project_id=%s AND owner_ref=%s AND session_ref<>%s AND state='active'",
                            (self.context.tenant_id, project_id, self.context.principal_ref, session_ref))
-            cursor.execute("INSERT INTO collaboration_notification_sessions VALUES (%s,%s,%s,%s,%s,%s,'active') "
+            cursor.execute("INSERT INTO collaboration_notification_sessions(tenant_id,project_id,owner_ref,"
+                           "session_ref,connection_ref,revision,state,expires_at) "
+                           "VALUES (%s,%s,%s,%s,%s,%s,'active',clock_timestamp()+interval '300 seconds') "
                            "ON CONFLICT(tenant_id,project_id,owner_ref,session_ref) DO UPDATE "
-                           "SET connection_ref=EXCLUDED.connection_ref,revision=EXCLUDED.revision",
+                           "SET connection_ref=EXCLUDED.connection_ref,revision=EXCLUDED.revision,"
+                           "expires_at=EXCLUDED.expires_at",
                            (self.context.tenant_id, project_id, self.context.principal_ref,
                             session_ref, connection_ref, revision))
         return revision
@@ -58,7 +65,8 @@ class ContinuationActions:
         with (self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor):
             bound, project, command = self._authorize(authority, cursor, project_id, "check_inbox", {"project_id": project_id})
             cursor.execute("SELECT 1 FROM collaboration_notification_sessions WHERE tenant_id=%s "
-                           "AND project_id=%s AND owner_ref=%s AND session_ref=%s AND connection_ref=%s AND state='active'",
+                           "AND project_id=%s AND owner_ref=%s AND session_ref=%s AND connection_ref=%s "
+                           "AND state='active' AND expires_at>clock_timestamp()",
                            (self.context.tenant_id, project_id, self.context.principal_ref, session_ref, connection_ref))
             if cursor.fetchone() is None:
                 return []
