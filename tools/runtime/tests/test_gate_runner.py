@@ -404,6 +404,70 @@ class GateRunnerTests(unittest.TestCase):
         record = json.loads((self.run_dir / "gate-record.json").read_text())
         self.assertEqual(record["status"], "not_run")
 
+    @unittest.skipUnless(os.name == "posix", "sandbox mount target is POSIX-only")
+    def test_sandbox_creates_private_srv_target_and_preserves_output_evidence(self):
+        state = self.initialize()
+        if not state["sandbox"]["available"]:
+            self.skipTest("reviewed bubblewrap unavailable")
+        scenario = next(iter(self.plan["scenarios"]))
+        command = {
+            "command_id": "srv-private-readback",
+            "kind": "command_output",
+            "argv": [
+                "/usr/bin/python3",
+                "-c",
+                (
+                    "import json,os,pathlib;"
+                    "from datetime import datetime,timezone;"
+                    "parent=pathlib.Path('/srv/receiver-private');"
+                    "parent.mkdir(mode=0o700);parent.chmod(0o700);"
+                    "srv=os.stat('/srv');nested=os.stat(parent);"
+                    "v={k.lower().replace('acs_gate_',''):os.environ[k] for k in "
+                    "['ACS_GATE_RUN_ID','ACS_GATE_SCENARIO_ID','ACS_GATE_COMMAND_ID',"
+                    "'ACS_GATE_EVIDENCE_KIND','ACS_GATE_SOURCE_COMMIT','ACS_GATE_SOURCE_TREE',"
+                    "'ACS_GATE_BINDING_SHA256','ACS_GATE_PROFILE','ACS_GATE_MACHINE_ID',"
+                    "'ACS_GATE_NODE_ID','ACS_GATE_DIRECTION']};"
+                    "v.update(schema_version='acs-p1-gate-probe-result/1',status='passed',"
+                    "versions=json.loads(os.environ['ACS_GATE_VERSIONS_JSON']),"
+                    "observed_at=datetime.now(timezone.utc).isoformat(),"
+                    "expires_at=os.environ['ACS_GATE_EXPIRES_AT'],operation_ids=['op'],"
+                    "message_ids=['msg'],event_ids=['evt'],receipt_ids=['rcpt'],"
+                    "observer='observer',owner='owner',facts={"
+                    "'srv_uid':srv.st_uid,'srv_mode':srv.st_mode & 0o777,"
+                    "'receiver_parent_uid':nested.st_uid,"
+                    "'receiver_parent_mode':nested.st_mode & 0o777});"
+                    "print(json.dumps(v))"
+                ),
+            ],
+            "evidence_fields": ["raw_outputs"],
+        }
+        environment = runner.probe_environment(state, scenario, command)
+        wrapped, output = runner.sandbox_command(
+            state, self.plan, self.run_dir, scenario, command, environment,
+        )
+        bind_index = next(
+            index for index in range(len(wrapped) - 2)
+            if wrapped[index:index + 3] == ["--bind", str(output.resolve()), "/srv"]
+        )
+        private_dir = ["--perms", "0700", "--dir", "/srv"]
+        private_dir_index = next(
+            index for index in range(len(wrapped) - len(private_dir) + 1)
+            if wrapped[index:index + len(private_dir)] == private_dir
+        )
+        self.assertLess(private_dir_index, bind_index)
+
+        result = runner.execute_command(
+            state, self.plan, scenario, command, self.run_dir, self.source,
+        )
+        evidence = json.loads(runner.validate_ref(result["output"], self.run_dir).read_text())
+        self.assertEqual(result["status"], "passed")
+        self.assertEqual(evidence["facts"]["srv_uid"], os.geteuid())
+        self.assertEqual(evidence["facts"]["srv_mode"], 0o700)
+        self.assertEqual(evidence["facts"]["receiver_parent_uid"], os.geteuid())
+        self.assertEqual(evidence["facts"]["receiver_parent_mode"], 0o700)
+        self.assertEqual(output.stat().st_mode & 0o777, 0o700)
+        self.assertEqual(output.parent.stat().st_mode & 0o777, 0o700)
+
     def test_secret_output_is_redacted_and_blocked(self):
         state = self.initialize()
         scenario = next(iter(self.plan["scenarios"]))
