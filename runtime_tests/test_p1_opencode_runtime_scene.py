@@ -123,7 +123,6 @@ def test_restricted_host_temporal_pg_node_one_fake_turn(setup, tmp_path, current
         driver = OpenCodeNativeDriver(
             run_id + "-binding", profile, DriverJournal(roots["ledger"] / "driver.sqlite"),
             identity=binding, check_current=current, supervisor=supervisor,
-            required_provider_url="https://provider.example.invalid/v1",
         )
 
         def authorize(invocation, observed):
