@@ -135,12 +135,12 @@ may exist only in this file. Plans, argv, environment evidence, raw test output
 and emitted probe results are scanned so the password does not leave the
 profile boundary.
 
-The Codex strict Driver uses a separate no-network helper profile. No Codex
-model evidence for this source baseline is currently admitted, so `P1-CODEX-LIFECYCLE` remains
-`NOT_RUN`. OpenCode model evidence must say `pass`, bind the current source
-commit, contain exactly one prompt and prove process-tree cleanup; stale
-evidence is not admitted. Integrated acceptance remains `NOT_RUN` until both
-model lifecycle scenarios are complete.
+The Codex strict Driver uses a separate no-network helper profile. Neither
+model lifecycle scenario is admitted by a historical receipt.
+`P1-CODEX-LIFECYCLE` and `P1-OPENCODE-LIFECYCLE` remain `NOT_RUN` until their
+owner-pinned same-run host scenes, one-request decisions, terminal readbacks
+and process-tree postflights are executed and reviewed. Integrated acceptance
+requires both completed lifecycle records in that same authenticated Gate run.
 
 The Gate runner's `runtime_profile` provisions a digest-pinned, read-only
 profile at `/run/acs-p1/profile.json` and a reviewed Runtime Python environment

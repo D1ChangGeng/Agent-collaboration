@@ -176,7 +176,7 @@ class ScenarioCatalog:
     MODEL_REQUIREMENTS: ClassVar[dict[str, str]] = {
         "P1-HARNESS-REPLACEMENT": "native_harness_replacement_evidence",
         "P1-CODEX-LIFECYCLE": "same_run_codex_host",
-        "P1-OPENCODE-LIFECYCLE": "opencode_model_evidence",
+        "P1-OPENCODE-LIFECYCLE": "same_run_opencode_host",
         "P1-INTEGRATED-ACCEPTANCE": "all_model_scenarios",
     }
 
@@ -296,10 +296,10 @@ def _model_evidence_current(profile: dict[str, Any], field: str, commit: str) ->
 
 
 def availability(profile: dict[str, Any], commit: str) -> dict[str, dict[str, Any]]:
-    # A historical model receipt cannot authorize this same-run host scene.
+    # Historical model receipts cannot authorize same-run host scenes.
     codex = False
     codex_scene_planned = profile.get("codex_scene_mode") == "same-run-host-node"
-    opencode = _model_evidence_current(profile, "opencode_model_evidence", commit)
+    opencode = False
     values = {}
     for scenario in ScenarioCatalog.TESTS:
         requirement = ScenarioCatalog.MODEL_REQUIREMENTS.get(scenario)
@@ -307,7 +307,7 @@ def availability(profile: dict[str, Any], commit: str) -> dict[str, dict[str, An
             requirement is None
             or requirement == "same_run_codex_host"
             and codex_scene_planned
-            or requirement == "opencode_model_evidence"
+            or requirement == "same_run_opencode_host"
             and opencode
             or requirement == "all_model_scenarios"
             and codex
@@ -322,8 +322,8 @@ def availability(profile: dict[str, Any], commit: str) -> dict[str, dict[str, An
                 if requirement == "native_harness_replacement_evidence"
                 else "Codex same-run restricted host lifecycle is NOT_RUN"
                 if requirement == "same_run_codex_host"
-                else "OpenCode actual model evidence is absent or stale"
-                if requirement == "opencode_model_evidence"
+                else "OpenCode same-run host scene and owner budget are NOT_RUN"
+                if requirement == "same_run_opencode_host"
                 else "integrated acceptance waits for both actual model lifecycle scenarios"
             )
         else:

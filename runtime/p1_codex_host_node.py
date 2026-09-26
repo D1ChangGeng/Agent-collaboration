@@ -174,21 +174,7 @@ class CodexHostNodeEndpoint:
         if endpoint is None or endpoint.driver is None:
             raise HostNodeRejected("host-pinned native endpoint is unavailable")
         if not fixture_mode:
-            adapter = endpoint.driver
-            if (
-                not isinstance(adapter, NativeDeliveryAdapter)
-                or not isinstance(adapter.driver, CodexAppServerDriver)
-                or not isinstance(adapter.driver.supervisor, SystemdUserSupervisor)
-            ):
-                raise HostNodeRejected("host endpoint requires Codex with host Systemd supervision")
-            profile = adapter.driver.profile
-            if (
-                Path(profile.executable) != self.native_path
-                or Path(profile.codex_home) / "config.toml" != self.config_path
-                or profile.executable_sha256 != policy.native_sha256
-                or profile.config_sha256 != policy.config_sha256
-            ):
-                raise HostNodeRejected("host Codex profile differs from pinned native artifacts")
+            self._validate_native_adapter(endpoint.driver)
         try:
             ensure_private_database(self.ledger_path)
         except PathSecurityRejected as error:
@@ -208,6 +194,22 @@ class CodexHostNodeEndpoint:
 
     def _connect(self) -> sqlite3.Connection:
         return sqlite3.connect(self.ledger_path, timeout=10, isolation_level=None)
+
+    def _validate_native_adapter(self, adapter: NativeDeliveryAdapter) -> None:
+        if (
+            not isinstance(adapter, NativeDeliveryAdapter)
+            or not isinstance(adapter.driver, CodexAppServerDriver)
+            or not isinstance(adapter.driver.supervisor, SystemdUserSupervisor)
+        ):
+            raise HostNodeRejected("host endpoint requires Codex with host Systemd supervision")
+        profile = adapter.driver.profile
+        if (
+            Path(profile.executable) != self.native_path
+            or Path(profile.codex_home) / "config.toml" != self.config_path
+            or profile.executable_sha256 != self.policy.native_sha256
+            or profile.config_sha256 != self.policy.config_sha256
+        ):
+            raise HostNodeRejected("host Codex profile differs from pinned native artifacts")
 
     def _verify_artifacts(self) -> None:
         if _sha256_owner_file(self.native_path, executable=True) != self.policy.native_sha256:
@@ -313,6 +315,7 @@ class CodexHostNodeEndpoint:
             return driver
         if not isinstance(driver, NativeDeliveryAdapter):
             raise HostNodeRejected("host native adapter changed")
+        self._validate_native_adapter(driver)
         return driver.driver
 
     @contextmanager
