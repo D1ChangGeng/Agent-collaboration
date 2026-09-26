@@ -1,13 +1,13 @@
 # P1 real-resource probe profile
 
 This harness prepares executable evidence commands for the 18 P1 scenarios.
-It does not write a formal Gate. Nine scenarios currently have an actual
+It does not write a formal Gate. Ten scenarios currently have an actual
 fixed-identity Runtime lineage adapter: `P1-DOMAIN-TRANSACTION`,
 `P1-AUTH-REVOCATION`, `P1-COMMAND-DEDUP`, and `P1-INBOX-ACK-LOSS`.
 `P1-CORE-RESTART`, `P1-NODE-RESTART`, `P1-PROVIDER-RESTART` and
-`P1-LEASE-FENCING` and `P1-UNCERTAIN-EFFECT` are the remaining adapters.
-The other 9 have no runnable
-command and remain `NOT_RUN`.
+`P1-LEASE-FENCING`, `P1-UNCERTAIN-EFFECT` and `P1-STALE-BASELINE` are
+the remaining adapters. The other 8 have no runnable command and remain
+`NOT_RUN`.
 
 Each runnable scenario commits its own command, operation, event, Outbox,
 message and receipt lineage in a dedicated PostgreSQL schema. It records
@@ -89,6 +89,27 @@ marker, with exact command replay, an independent historical reader and late
 old-owner fence. Every Gate layer checks the same message, Attempt, Lease,
 effect operation, Node Machine and source identity. This is a local file effect
 and uses no model call.
+
+`P1-STALE-BASELINE` starts from the delivered message's WorkItem and
+DeliveryAttempt ID. A signed Node execution receipt, real CAS output/readback,
+independent Review and ready revision bind the actual source commit. The
+prepared CAS output is first invalidated and the real finalizer rejects
+acceptance without leaving command rows; the original bytes are restored.
+An owner-private temporary Git checkout is copied from the Gate source
+snapshot. Its first commit must have exactly the Gate source tree; a second
+commit changes one tracked file and records its HEAD, tree, parent and raw
+diff. Driver and OS layers independently recreate both commits from the fixed
+source snapshot and verify the same identities. A scoped
+PostgreSQL fault then sets the WorkItem's authoritative source baseline to
+that actual second commit while the signed Attempt, receipt and ready snapshot
+retain the original baseline. The real finalizer's acceptance command and exact retry both
+reject; no AcceptedStateRevision, denial command ledger row or protected Effect is
+committed. PG, Node SQLite, auxiliary Temporal, CAS and OS source readback
+compare the stale baseline to the same message/Attempt/source lineage. The
+baseline change is explicit test fault injection; no Runtime baseline-update
+command or mutation of the Gate's fixed source checkout is claimed. The second
+Git commit exists in owner-private temporary storage while being verified;
+the Gate output keeps only the source identities and safe one-file diff.
 
 `P1-HARNESS-REPLACEMENT` remains `NOT_RUN` while Runtime lacks an authoritative
 versioned HarnessSessionBinding command and readback. Reattaching a Driver or
