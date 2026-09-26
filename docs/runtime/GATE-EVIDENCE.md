@@ -94,6 +94,29 @@ requires the Gate's named Harnesses and distinct Machine/Session observations.
 
 ## Prerequisites and review
 
+### Review priority
+
+Independent review is primarily a technical and product-capability assessment.
+The Reviewer first determines whether the implementation provides the promised
+Runtime behavior and architecture: authoritative domain transactions,
+authorization and revision fencing, durable recovery, Node and Driver
+read-back, Harness lifecycle behavior, cross-Harness or cross-Machine delivery
+where claimed, and user-visible end-to-end results. Conclusions must trace to
+direct evidence, fault injection, read-back and cleanup.
+
+Structural checks remain hard entry conditions. Source identity, evidence
+integrity, expiry, validator scope, review identity and authorization lineage
+must be valid before a Gate can pass, but a structurally complete packet does
+not establish a product capability by itself. Component-only, fixture-only,
+no-model, single-normal-delivery or offline-validator evidence retains its
+declared scope and cannot close a Runtime or product Gate.
+
+For every scenario, the review result separates implementation and architecture
+findings, actual product-behavior findings, evidence and authorization
+prerequisites, and the exact next observation or implementation needed to
+resolve each item. Identity continuity, Harness replacement and integrated
+acceptance require live read-back at the layers named by their contracts.
+
 Each prerequisite is a digest-pinned record, not just an outer `status=passed`.
 The validator reads prerequisite contents recursively and rejects cycles,
 unpassed prerequisites and incompatible baselines or Profiles. Prerequisite
