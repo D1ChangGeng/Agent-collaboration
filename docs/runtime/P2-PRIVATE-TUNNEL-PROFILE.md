@@ -27,10 +27,13 @@ profile.
    The installer receipt and live project readback establish the local service
    state before the Tunnel connection is configured.
 2. The installation owner creates or selects a Tunnel in OpenAI Platform,
-   grants the required Tunnel permissions, supplies the runtime key through the
-   platform's private mechanism, and enables ChatGPT developer mode when the
-   account permits it. The Agent may configure and diagnose the local
-   `tunnel-client` after these owner actions.
+   grants Tunnels Read + Manage for creation and Read + Use for the running
+   client, associates the target ChatGPT workspace, and supplies the runtime
+   key through the platform's private mechanism. The owner enables ChatGPT
+   developer mode when the workspace permits it. The Agent downloads the
+   current `tunnel-client`, runs `init` for the exact ACS stdio command, then
+   runs `doctor --profile <name> --explain` and keeps `run --profile <name>`
+   healthy while ChatGPT discovers the app.
 3. The owner connects the Tunnel in ChatGPT. The Agent checks the current
    official setup documentation and explains the page actions shown at that
    time. The Agent verifies the app's discovered tool set and then reads the
