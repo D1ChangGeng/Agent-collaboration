@@ -107,14 +107,15 @@ Gateway and ACP a Driver boundary, not alternative Domain authorities.
 
 The public P2 MCP surface is defined by
 [`P2-MCP-WORKFLOW-CONTRACT.md`](P2-MCP-WORKFLOW-CONTRACT.md). It exposes
-collaboration plan application, Harness discovery, send, bounded await, generic
-read, Inbox recovery and scoped cancellation. `send` commits response tracking
-and completion notification in the same authoritative operation. Asynchronous
-response handling is the default; synchronous response handling observes the
-same stable response handle for a bounded interval. Completion notification is
-addressed to the initiating AgentSlot and follows its current Session binding.
-Session activity controls queue-versus-invoke admission, with
-`queue_until_idle` as the default delivery policy.
+typed collaboration-plan, Harness-capacity, Message, response, resource, Inbox,
+notification, WorkItem and Runtime Attempt operations. `message_send` commits
+response tracking and completion notification in the same authoritative
+operation. Asynchronous response handling is the default; synchronous response
+handling observes the same stable response handle for a bounded interval.
+Completion notification is addressed to the initiating AgentSlot and follows
+its current Session binding. Session activity controls queue-versus-invoke
+admission, with `queue_until_idle` as the default delivery policy. Every result
+uses a result-type discriminator and executable follow-up calls.
 
 Directed CommunicationBinding resolves an authorized DeliveryPlan: addressing,
 message, activation and receipt providers plus policy constraints. Candidate
@@ -188,8 +189,8 @@ prove Collaboration Runtime delivery.
 P2 completion also requires the `P2-MCP-WORKFLOW` Gate. Representative evidence
 must include real Codex and OpenCode clients, default asynchronous and bounded
 synchronous send, Session-activity-aware delivery, completion notification,
-Session replacement, generic read and Inbox recovery, cancellation, aggregate
-waiting and high-level command workflows.
+Session replacement, resource read and Inbox recovery, typed notification and
+execution control, aggregate waiting and high-level command workflows.
 
 ## External source reference
 

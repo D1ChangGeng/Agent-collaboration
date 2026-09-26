@@ -11,5 +11,8 @@ identities only. Initialization reobserves the current local Machine and Git
 commit/tree; execution must independently reobserve the remote Machine. Gate
 order is P1, P2-CODEX, P2-OPENCODE, P2-MCP-WORKFLOW, then P2-REVIEW. The public
 tool surface and continuation contract are defined in
-`docs/runtime/P2-MCP-WORKFLOW-CONTRACT.md`. The checked-in tools and documents
-remain preparation inputs until each Gate has direct execution evidence.
+`docs/runtime/P2-MCP-WORKFLOW-CONTRACT.md` at surface revision
+`acs-p2-mcp-workflow/2`. The Gate validates canonical object/action names,
+selection-oriented descriptions, closed input schemas, discriminated results
+and executable follow-up calls. The checked-in tools and documents remain
+preparation inputs until each Gate has direct execution evidence.

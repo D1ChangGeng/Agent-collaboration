@@ -94,7 +94,7 @@ class GateIntegrationTests(unittest.TestCase):
             workspace["execution_order"],
             ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW"],
         )
-        self.assertEqual(workspace["mcp_surface_revision"], "acs-p2-mcp-workflow/1")
+        self.assertEqual(workspace["mcp_surface_revision"], "acs-p2-mcp-workflow/2")
         observation = json.loads((output / "runtime-observation.json").read_text())
         current = subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=self.source,
