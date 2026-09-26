@@ -17,6 +17,8 @@ from runtime.recovery import (
 from runtime.recovery_models import (
     BoundaryRejected,
     DispatchIdentity,
+    HarnessAttemptContext,
+    HarnessSessionProof,
     NativeResponseObservation,
     StateConflict,
     response_receipt_id,
@@ -214,6 +216,25 @@ class NodeResponseOutboxTests(unittest.TestCase):
         self.assertEqual(restarted.collect(object(), "operation", collection()), first)
         self.assertEqual(restarted_driver.collect_calls, 0)
         self.assertEqual(restarted_store, [])
+
+    def test_cached_terminal_cannot_change_harness_proof(self):
+        proof = HarnessSessionProof(
+            "harness-binding", 1, "codex", "session",
+            HarnessAttemptContext("work", "scope", "slot", "runtime", "attempt",
+                                  "message", "machine", "node", "boot", 1, "endpoint", 1),
+        )
+        driver = FixtureDriver()
+        collector = DriverCollectorAdapter(
+            driver, self.outbox, lambda _value: ("artifact:fixture", "d" * 64),
+        )
+        first = collector.collect(object(), "operation", collection(harness_proof=proof))
+        self.assertEqual(first.harness_proof, proof)
+        with self.assertRaises(BoundaryRejected):
+            collector.collect(
+                object(), "operation",
+                collection(harness_proof=replace(proof, binding_id="different")),
+            )
+        self.assertEqual(driver.collect_calls, 1)
 
     def test_collector_cache_hit_requires_complete_dispatch_identity(self):
         self.outbox.record(observation())

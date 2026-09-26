@@ -15,6 +15,7 @@ from runtime.recovery import NodeResponseOutbox, ProjectionDisposition
 from runtime.recovery_models import (
     BoundaryRejected,
     DispatchIdentity,
+    HarnessSessionProof,
     NativeResponseObservation,
     canonical_digest,
     response_receipt_id,
@@ -30,6 +31,7 @@ class NativeResponseCollector:
         outbox: NodeResponseOutbox,
         response_store: Callable[[dict[str, Any]], tuple[str, str]],
         project: Callable[[NativeResponseObservation], ProjectionDisposition],
+        harness_proof: HarnessSessionProof | None = None,
     ) -> None:
         if not isinstance(native_adapter, NativeDeliveryAdapter):
             raise TypeError("a bound NativeDeliveryAdapter is required")
@@ -39,6 +41,7 @@ class NativeResponseCollector:
         self.outbox = outbox
         self.response_store = response_store
         self.project = project
+        self.harness_proof = harness_proof
 
     @staticmethod
     def dispatch_identity(invocation: InvocationRequest) -> DispatchIdentity:
@@ -64,6 +67,8 @@ class NativeResponseCollector:
         identity = self.dispatch_identity(invocation)
         cached = self.outbox.by_invocation(identity)
         if cached is not None:
+            if cached.harness_proof != self.harness_proof:
+                raise BoundaryRejected("cached terminal Harness proof differs")
             return cached
         adapter = self.native_adapter
         operation = adapter._operation(invocation)
@@ -114,6 +119,26 @@ class NativeResponseCollector:
             raise BoundaryRejected("collector driver type is unsupported")
         if any(value in (None, "", []) for value in native.values()):
             raise BoundaryRejected("Driver terminal native identity is incomplete")
+        proof = self.harness_proof
+        if proof is not None:
+            bound = driver.identity
+            context = proof.context
+            kind = "opencode" if isinstance(driver, OpenCodeNativeDriver) else "codex"
+            if (proof.driver_kind != kind
+                    or native["session_id"] != proof.native_session_ref
+                    or context.runtime_id != bound.runtime_id
+                    or context.attempt_id != bound.attempt_id
+                    or context.agent_slot_id != bound.agent_slot_id
+                    or context.node_id != bound.node_id
+                    or context.node_boot_incarnation != bound.node_boot_id
+                    or context.node_binding_revision != bound.revision
+                    or context.work_item_id != invocation.envelope.packet.work_item_id
+                    or context.scope_id != invocation.envelope.packet.target_scope_id
+                    or context.message_id != invocation.message_id
+                    or context.machine_id != invocation.envelope.machine_id
+                    or context.endpoint_id != invocation.envelope.endpoint_id
+                    or context.endpoint_binding_revision != invocation.envelope.binding_revision):
+                raise BoundaryRejected("terminal Harness proof differs from Driver or Dispatch")
         if outcome not in {"completed", "failed", "interrupted"}:
             raise BoundaryRejected("Driver terminal outcome is unsupported")
         stable_result = {key: value for key, value in result.items() if key != "observed_at"}
@@ -139,6 +164,7 @@ class NativeResponseCollector:
             response_digest=response_digest,
             evidence_digest=evidence_digest,
             observed_at=observed_at,
+            harness_proof=proof,
         )
         self.outbox.record(observation)
         return observation

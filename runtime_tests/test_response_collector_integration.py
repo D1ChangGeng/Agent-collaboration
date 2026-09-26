@@ -1,7 +1,10 @@
 """Formal NativeDeliveryAdapter to Node response Outbox integration."""
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+
+import pytest
 
 from runtime.codex_driver import AuthorizedOperation
 from runtime.delivery_models import DeliveryEnvelope, DeliveryPacket
@@ -9,7 +12,12 @@ from runtime.delivery_node import invocation_for
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.node import NodeJournal
 from runtime.recovery import NodeResponseOutbox, ProjectionDisposition
-from runtime.recovery_models import canonical_digest
+from runtime.recovery_models import (
+    BoundaryRejected,
+    HarnessAttemptContext,
+    HarnessSessionProof,
+    canonical_digest,
+)
 from runtime.response_collector import NativeResponseCollector
 from runtime_tests.test_opencode_driver import native as native  # noqa: PLC0414
 from runtime_tests.test_opencode_driver import operation, prompts
@@ -104,11 +112,29 @@ def test_delayed_opencode_response_is_collected_once_and_projection_only_retries
             "applied",
         )
 
-    collector = NativeResponseCollector(adapter, outbox, store, project)
+    proof = HarnessSessionProof(
+        binding_id="harness-binding-1", revision=1, driver_kind="opencode",
+        native_session_ref="ses_test",
+        context=HarnessAttemptContext(
+            work_item_id="work", scope_id="scope", agent_slot_id="slot",
+            runtime_id="runtime", attempt_id="attempt", message_id="packet-invoke",
+            machine_id="machine", node_id="node", node_boot_incarnation="boot",
+            node_binding_revision=1, endpoint_id="endpoint", endpoint_binding_revision=1,
+        ),
+    )
+    wrong = NativeResponseCollector(
+        adapter, outbox, store, project,
+        harness_proof=replace(proof, native_session_ref="ses_other"),
+    )
+    with pytest.raises(BoundaryRejected, match="terminal Harness proof"):
+        wrong.collect_and_project(invocation)
+    assert outbox.recover() == ()
+    collector = NativeResponseCollector(adapter, outbox, store, project, harness_proof=proof)
     first_projection = collector.collect_and_project(invocation)
     second_projection = collector.collect_and_project(invocation)
     assert first_projection == second_projection
-    assert collect_calls == 1
+    assert collect_calls == 2
     assert len(prompts(native.peer)) == 1
     assert projected == [first_projection.projection_id, first_projection.projection_id]
+    assert outbox.by_invocation(collector.dispatch_identity(invocation)).harness_proof == proof
     assert outbox.recover() == ()
