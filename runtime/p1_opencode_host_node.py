@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import socket
 import struct
@@ -89,6 +90,44 @@ class OpenCodeHostNodeEndpoint(CodexHostNodeEndpoint):
             or profile.config_sha256 != self.policy.config_sha256
         ):
             raise HostNodeRejected("host OpenCode profile differs from pinned native artifacts")
+
+    def _verify_artifacts(self) -> None:
+        """Recheck the live OpenCode policy after its config normalization.
+
+        The initial factory/profile admission already verifies the exact
+        owner-pinned config bytes before spawn. OpenCode may normalize and
+        rewrite that file while creating a session, so later HostNode
+        preflights must bind the effective provider/model/permission contract
+        instead of rejecting a byte-level rewrite that preserves the contract.
+        """
+        if _sha256_owner_file(self.native_path, executable=True) != self.policy.native_sha256:
+            raise HostNodeRejected("pinned native binary digest changed")
+        try:
+            config = json.loads(self.config_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ValueError) as error:
+            raise HostNodeRejected("effective OpenCode config is unreadable") from error
+        endpoint = self.dispatcher.service.endpoints.get(self.policy.endpoint_id)
+        adapter = getattr(endpoint, "driver", None) if endpoint is not None else None
+        driver = getattr(adapter, "driver", adapter)
+        profile = getattr(driver, "profile", None)
+        provider_id = getattr(profile, "provider_id", None)
+        model_id = getattr(profile, "model_id", None)
+        provider_url = getattr(driver, "required_provider_url", None)
+        agent = getattr(profile, "agent", None)
+        selected = config.get("provider", {}).get(provider_id, {}) if isinstance(config, dict) else {}
+        selected_agent = config.get("agent", {}).get(agent, {}) if isinstance(config, dict) else {}
+        if (
+            not isinstance(config, dict)
+            or config.get("model") != f"{provider_id}/{model_id}"
+            or config.get("default_agent") != agent
+            or config.get("permission") != {"*": "deny", "task": "deny"}
+            or selected_agent.get("model") != f"{provider_id}/{model_id}"
+            or selected_agent.get("permission") != {"*": "deny", "task": "deny"}
+            or not isinstance(selected, dict)
+            or selected.get("npm") != "@ai-sdk/openai"
+            or selected.get("options") != {"baseURL": provider_url}
+        ):
+            raise HostNodeRejected("effective OpenCode config contract changed")
 
     def handle(self, request):
         """Accept the public OpenCode request while reusing the shared core.
