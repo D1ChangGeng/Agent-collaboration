@@ -182,6 +182,37 @@ class ReleaseToolTests(unittest.TestCase):
               self.assertRaisesRegex(ValueError, "health readback")):
             installer.provider_readback(environment)
 
+    def test_harness_entries_preserve_existing_config_and_retry(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        with mock.patch.dict(sys.modules, {"acs_doctor": doctor}):
+            installer = load("acs_install", "acs_install.py")
+        with tempfile.TemporaryDirectory() as td:
+            home = Path(td)
+            root = home / "distribution"
+            python = root / (".venv/Scripts/python.exe" if sys.platform == "win32" else ".venv/bin/python")
+            python.parent.mkdir(parents=True)
+            python.touch()
+            codex = home / ".codex/config.toml"
+            codex.parent.mkdir()
+            codex.write_text("model = 'gpt-6'\n")
+            opencode = home / ".config/opencode/opencode.json"
+            opencode.parent.mkdir(parents=True)
+            opencode.write_text(json.dumps({"provider": {"existing": {}}}))
+            with (mock.patch.object(installer, "ROOT", root),
+                  mock.patch.object(installer.Path, "home", return_value=home),
+                  mock.patch.object(installer, "private_root", return_value=home / "private")):
+                result = installer.configure_harnesses(["codex", "opencode"], home / "surface.json")
+                self.assertEqual(set(result), {"codex", "opencode"})
+                first_codex = codex.read_bytes()
+                first_opencode = opencode.read_bytes()
+                installer.configure_harnesses(["codex", "opencode"], home / "surface.json")
+                self.assertEqual(codex.read_bytes(), first_codex)
+                self.assertEqual(opencode.read_bytes(), first_opencode)
+                self.assertIn("model = 'gpt-6'", codex.read_text())
+                self.assertIn("existing", json.loads(opencode.read_text())["provider"])
+                backups = list((home / "private/rollback").glob("*/codex-config.toml"))
+                self.assertEqual(len(backups), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
