@@ -1,0 +1,14 @@
+{
+  "schema_version": "acs-p2-gate-status/1",
+  "gate": "P2-CONTROL-PARITY",
+  "contract_revision": "2026-09-25.1",
+  "status": "blocked_pending_formal_review",
+  "source_baseline": "cc070b41b8c46117534a88fe2446d734cc1ed110",
+  "source_tree": "6c841cde7e9b08c1d451cee351826e60974bd20d",
+  "required_scenarios": ["P2-CONTROL-HANDOFF-ACK"],
+  "current_candidate_observation": {"installer_and_mcp": "verified", "codex_tools_discovered": 36, "opencode_tools_discovered": 36, "project_context": "current", "ci_run": "36271870055"},
+  "scoped_prior_evidence": {"source_baseline": "8e6429b6035017d900683f64b83646df78fd196d", "source_tree": "a1a3aed1fb1a684f50264ccece8ee8edd47acd0a", "decision": "pass_scoped_product_capability", "scope": "message_only Inbox delivery and B-side acknowledgement/rejection/recovery", "expiry": "2026-09-24T22:42:33.227337Z"},
+  "blockers": ["The scoped handoff evidence is bound to an earlier source commit and has expired.", "A formal current-candidate Gate record with complete evidence layers has not been independently reviewed.", "ChatGPT private Tunnel read/write/deny/reconnect/revoke evidence is not attached to this candidate.", "Windows and OpenCode link-only cold-start evidence is not attached to this candidate."],
+  "review": {"status": "pending", "independent_reviewer": null},
+  "product_owner_decision": {"status": "pending"}
+}

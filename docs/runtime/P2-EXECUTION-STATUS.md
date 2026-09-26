@@ -71,9 +71,9 @@ required scenario in revision `2026-09-25.1`.
 
 ### v1.0.0 release candidate checkpoint — 2026-09-26
 
-The tested public candidate snapshot on `codex/p2-v1-release` was commit
-`bec582b52c98568f8eeee393d1d769c293f6ee49`, tree
-`e2585dc1caac53504bd939edbccb00818d95735f`. The branch includes the
+The tested public candidate snapshot on `codex/p2-v1-release` is commit
+`cc070b41b8c46117534a88fe2446d734cc1ed110`, tree
+`6c841cde7e9b08c1d451cee351826e60974bd20d`. The branch includes the
 committed P1/P2 implementation, the owner-local installer, setup and knowledge
 Skills, and product documentation under Sustainable Use License 1.0.
 
@@ -88,12 +88,13 @@ registration, MCP, Work and Review tests. These are scoped source and local
 service observations; no ChatGPT Tunnel or cross-host first-use journey is
 claimed by them.
 
-Source-bound zip and tar archives were built at this candidate. Their SHA-256
-values are `42831f88be15895d06fb381faf73c45d1ab9348e4bf1c95a174e158731f22c52`
-and `655649bfcdefc1aa6d1c1827b968fc7fd7b5549c373de50e25b9550545b77aee`
-respectively. The package manifest names the same commit/tree. A later public
-repository rerun passed the complete CI matrix; the final candidate still needs
-one fresh run after any subsequent commit.
+Source-bound zip and tar archives were built at this candidate. The automated
+preflight rebuild recorded ZIP SHA-256
+`0b908e202d2b01c0104c8ff28952538f455d636a678a32247185ffbd38505573` and TAR
+SHA-256 `4ef7956ebd2f14602fd8ec5d1be55e8894ae23817f8cbee09bb20f277c828826`.
+The package manifest names the same commit/tree. Hosted CI run `36271870055`
+passed Python 3.9, 3.11 and 3.12 validation, Runtime tests, Gate tooling and
+package assembly.
 
 Control Parity formal assembly, current-candidate independent review,
 ChatGPT private Tunnel read/write/deny/reconnect/revoke, Windows and OpenCode
@@ -103,14 +104,8 @@ historical reviewed Gate records retain their original source and expiry.
 ### Public repository and CI recovery — 2026-09-27
 
 The repository is public and its candidate branch is accessible through the
-GitHub URL. GitHub Actions run `36249826843`, attempt 2, passed on commit
-`e5f69096f72be2ec5778309aad8ef95e36f0e6c5`: Python 3.9, 3.11 and 3.12
-setup validation, Runtime component tests, Gate tooling tests and package build
-all completed on hosted runners. Earlier zero-step failures were runner
-allocation failures while the repository was private; they are preserved as
-platform observations. Later changes to release preflight require a fresh
-successful run at the final candidate commit. See [RELEASE-GATE.md](RELEASE-GATE.md)
-for the exact preflight checks and publication order.
+GitHub URL. See [RELEASE-GATE.md](RELEASE-GATE.md) for the exact preflight
+checks and publication order.
 
 `P2-INDEPENDENT-GATE-REVIEW` and `P2-PRODUCT-OWNER-DECISION` remain `not_run`.
 Before deciding the final Gate, bind the chosen integrated commit/tree, resolve
