@@ -198,7 +198,6 @@ vm.runInNewContext(script, {document: probeDocument,
   await tick();
   assert.equal(followUps.length, 1);
   assert.equal(cleared, true);
-  assert.equal(probeDocument.documentElement.dataset.theme, 'dark');
   assert.equal(probeElements.phase.textContent, 'SUBMITTED');
   assert.equal(bridge.widgetState.privateContent.phase, 'SUBMITTED');
   const uncertainElements = {status: {textContent: ''}, phase: {textContent: ''}};

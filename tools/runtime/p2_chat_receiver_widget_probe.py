@@ -28,7 +28,7 @@ from runtime.surface_config import configured_service
 PROJECT = "project-portfolio-sandbox"
 TOOL = "open_chat_receiver_probe"
 CLAIM_TOOL = "claim_chat_receiver_probe_wake"
-URI = "ui://acs/chat-receiver-probe/v3.html"
+URI = "ui://acs/chat-receiver-probe/v4.html"
 LEASE_SECONDS = 300
 
 
@@ -85,27 +85,24 @@ class ProbeJournal:
 HTML = r"""<!doctype html>
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  :root { color-scheme: light dark; --panel: #f7fafb; --ink: #13202b; --muted: #405568;
-          --line: #c6d6dc; --accent: #087d78; --accent-ink: #075a57; }
-  @media (prefers-color-scheme: dark) {
-    :root { --panel: #17232c; --ink: #f2f8fa; --muted: #bdcbd2;
-            --line: #40545f; --accent: #74e0d3; --accent-ink: #b1f5eb; }
-  }
-  :root[data-theme="light"] { color-scheme: light; --panel: #f7fafb; --ink: #13202b;
-    --muted: #405568; --line: #c6d6dc; --accent: #087d78; --accent-ink: #075a57; }
-  :root[data-theme="dark"] { color-scheme: dark; --panel: #17232c; --ink: #f2f8fa;
-    --muted: #bdcbd2; --line: #40545f; --accent: #74e0d3; --accent-ink: #b1f5eb; }
+  :root { color-scheme: dark; --panel: #0a0a0a; --ink: #fafafa;
+          --muted: #a1a1a1; --line: #303030; --raised: #171717; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--panel); color: var(--ink);
-         font: 14px/1.45 "Segoe UI Variable", "Aptos", system-ui, sans-serif; }
-  main { min-height: 116px; padding: 18px 20px; border-top: 3px solid var(--accent); }
+         font: 14px/1.5 "Geist", "Segoe UI Variable", system-ui, sans-serif; }
+  main { min-height: 116px; padding: 20px 24px 22px; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .eyebrow { color: var(--accent-ink); font-size: 11px; font-weight: 750;
-             letter-spacing: .09em; text-transform: uppercase; }
-  #phase { color: var(--accent-ink); border: 1px solid var(--line); border-radius: 999px;
-           padding: 3px 9px; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
-  h1 { margin: 11px 0 4px; font-size: 17px; font-weight: 650; letter-spacing: -.025em; }
-  #status { margin: 0; color: var(--muted); white-space: pre-wrap;
+  .eyebrow { display: inline-flex; align-items: center; color: var(--muted);
+             font: 600 11px/1.2 ui-monospace, "SFMono-Regular", Consolas, monospace;
+             letter-spacing: .075em; text-transform: uppercase; }
+  .eyebrow::before { content: ""; width: 7px; height: 7px; margin-right: 9px;
+                     background: var(--ink); border-radius: 1px; }
+  #phase { color: var(--ink); background: var(--raised); border: 1px solid var(--line);
+           border-radius: 6px; padding: 4px 8px;
+           font: 600 10px/1 ui-monospace, "SFMono-Regular", Consolas, monospace;
+           letter-spacing: .045em; }
+  h1 { margin: 14px 0 6px; font-size: 18px; font-weight: 600; letter-spacing: -.03em; }
+  #status { margin: 0; color: var(--muted); font-size: 13px; white-space: pre-wrap;
             overflow-wrap: anywhere; line-height: 1.5; }
 </style>
 <main>
@@ -139,9 +136,6 @@ function expired() {
 }
 function initialize() {
   const bridge = window.openai;
-  if (bridge?.theme === 'light' || bridge?.theme === 'dark') {
-    document.documentElement.dataset.theme = bridge.theme;
-  }
   const output = bridge?.toolOutput;
   if (!bridge || typeof bridge.callTool !== 'function' ||
       typeof bridge.sendFollowUpMessage !== 'function' || !output?.project_id ||
