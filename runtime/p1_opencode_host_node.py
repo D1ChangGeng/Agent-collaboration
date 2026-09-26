@@ -212,7 +212,8 @@ class OpenCodeHostUnixServer:
                 if len(data) > self.MAX_RESPONSE:
                     data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"uncertain"}\n'
             except HostNodeRejected as error:
-                driver = getattr(getattr(self.endpoint, "driver", None), "driver", None)
+                candidate = getattr(self.endpoint, "driver", None)
+                driver = getattr(candidate, "driver", candidate)
                 journal = getattr(driver, "journal", None)
                 if journal is not None:
                     try:
@@ -225,7 +226,8 @@ class OpenCodeHostUnixServer:
                         pass
                 data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"rejected"}\n'
             except Exception as error:  # noqa: BLE001 -- unknown dispatch outcome stays uncertain
-                driver = getattr(getattr(self.endpoint, "driver", None), "driver", None)
+                candidate = getattr(self.endpoint, "driver", None)
+                driver = getattr(candidate, "driver", candidate)
                 journal = getattr(driver, "journal", None)
                 if journal is not None:
                     try:
