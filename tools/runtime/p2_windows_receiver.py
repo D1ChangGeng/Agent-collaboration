@@ -155,7 +155,7 @@ def provision(args):
         "listen_host": process.runtime.listen_host,
         "listen_port": process.runtime.listen_port,
         "tls_certificate_sha256": registration.tls_certificate_sha256,
-        "endpoint_expires_at": registration.expires_at,
+        "endpoint_expires_at": registration.expires_at.isoformat(),
         "authority_seed_path": str(authority_seed),
         "receiver_process_sha256": hashlib.sha256((root / "receiver-process.json").read_bytes()).hexdigest(),
     }
