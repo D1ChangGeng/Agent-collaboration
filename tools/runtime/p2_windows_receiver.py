@@ -32,7 +32,15 @@ from runtime.receiver_entry import load_callbacks, load_process_config
 from runtime.receiver_models import EndpointBinding, EndpointRegistration
 from runtime.remote_endpoint import serve
 from tools.runtime.p2_codex_factory import stage_factory
-from tools.runtime.p2_codex_half_loop import _certificate, _command, _json, _proof, _write
+from tools.runtime.p2_codex_half_loop import (
+    MAX_ENDPOINT_TTL_SECONDS,
+    _certificate,
+    _command,
+    _json,
+    _proof,
+    _write,
+    endpoint_ttl_seconds,
+)
 
 
 def _private(path: Path) -> None:
@@ -256,7 +264,7 @@ def main():
     p=argparse.ArgumentParser(); s=p.add_subparsers(dest="action",required=True)
     a=s.add_parser("provision"); a.add_argument("--profile",type=Path,required=True); a.add_argument("--output",type=Path,required=True)
     a.add_argument("--host",required=True); a.add_argument("--port",type=int,required=True); a.add_argument("--route-class",choices=("private","tunnel"),default="private"); a.add_argument("--listen-host"); a.add_argument("--listen-port",type=int); a.add_argument("--machine-id",required=True); a.add_argument("--tree",required=True); a.add_argument("--commit",required=True); a.add_argument("--schema-name",required=True)
-    a.add_argument("--codex-executable",type=Path); a.add_argument("--model-catalog",type=Path,required=True); a.add_argument("--model",required=True); a.add_argument("--provider-alias",default="custom"); a.add_argument("--provider-name",required=True); a.add_argument("--provider-url",required=True); a.add_argument("--wire-api",choices=("responses",),required=True); a.add_argument("--auth-command",required=True); a.add_argument("--auth-reference",required=True); a.add_argument("--endpoint-ttl-seconds",type=int,default=1800)
+    a.add_argument("--codex-executable",type=Path); a.add_argument("--model-catalog",type=Path,required=True); a.add_argument("--model",required=True); a.add_argument("--provider-alias",default="custom"); a.add_argument("--provider-name",required=True); a.add_argument("--provider-url",required=True); a.add_argument("--wire-api",choices=("responses",),required=True); a.add_argument("--auth-command",required=True); a.add_argument("--auth-reference",required=True); a.add_argument("--endpoint-ttl-seconds",type=endpoint_ttl_seconds,default=MAX_ENDPOINT_TTL_SECONDS)
     b=s.add_parser("serve"); b.add_argument("--config",type=Path,required=True)
     c=s.add_parser("send"); c.add_argument("--profile",type=Path,required=True); c.add_argument("--state",type=Path,required=True); c.add_argument("--authority-seed",type=Path,required=True); c.add_argument("--output",type=Path,required=True); c.add_argument("--suffix",required=True); c.add_argument("--linux-machine-id",required=True)
     x=p.parse_args(); return provision(x) if x.action=="provision" else run(x) if x.action=="serve" else send(x)
