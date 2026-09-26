@@ -134,6 +134,8 @@ def prepare_codex_host_capacity(
         or plan_expires_at.tzinfo is None
     ):
         raise HostSceneUncertain("Codex host runtime identity is incomplete")
+    if scene.get("platform", "posix") != "posix":
+        raise HostSceneUncertain("POSIX Codex host cannot execute a non-POSIX scene")
     connection = conninfo_to_dict(loopback.get("postgres_dsn", ""))
     if (connection.get("host"), connection.get("port"), connection.get("dbname")) != (
         "127.0.0.1",
@@ -160,12 +162,16 @@ def prepare_codex_host_capacity(
         scene["native_executable_size"],
     )
     staged = stage_codex_home(root, scene)
-    schema_name = (
-        "schema-0.153.2"
-        if scene["codex_version"] == "0.153.2"
-        else "schema-0.155.0"
-    )
-    schema_file = source_snapshot / f"runtime_tests/{schema_name}/codex_app_server_protocol.schemas.json"
+    schema_file = Path(scene.get("schema_path", ""))
+    if not schema_file.is_absolute():
+        schema_name = (
+            "schema-0.153.2"
+            if scene["codex_version"] == "0.153.2"
+            else "schema-0.155.0"
+        )
+        schema_file = source_snapshot / (
+            f"runtime_tests/{schema_name}/codex_app_server_protocol.schemas.json"
+        )
     if (
         not schema_file.is_file()
         or schema_file.is_symlink()

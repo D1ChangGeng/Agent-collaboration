@@ -21,7 +21,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -167,6 +167,7 @@ MODEL_PROMPT = (
     "If delegation is unavailable or denied, reply with exactly ACS_P1_CODEX_API_OK. "
     "Do not call any other tools."
 )
+SCENE_PROFILE_OPTIONAL_FIELDS = frozenset({"platform", "permission_profile", "schema_path"})
 DECISION_ID = "P1-CODEX-LIFECYCLE-ONE-TURN-01"
 
 
@@ -218,7 +219,10 @@ def verify_budget_decision(
 
 def validate_scene_profile(value: object) -> dict[str, Any]:
     """Validate public references only; the runner attests hidden host files."""
-    if not isinstance(value, dict) or set(value) != SCENE_PROFILE_FIELDS:
+    if not isinstance(value, dict) or not (
+        set(value) == SCENE_PROFILE_FIELDS
+        or set(value) == SCENE_PROFILE_FIELDS | SCENE_PROFILE_OPTIONAL_FIELDS
+    ):
         raise CodexSceneRejected("Codex scene profile fields differ")
     if value["schema_version"] != "acs-p1-codex-scene/1":
         raise CodexSceneRejected("Codex scene profile schema differs")
@@ -235,7 +239,17 @@ def validate_scene_profile(value: object) -> dict[str, Any]:
     except ValueError as error:
         raise CodexSceneRejected("Codex provider URL is malformed") from error
     is_legacy_fixture = value.get("provider_alias") == "fixture-provider"
+    platform = value.get("platform", "posix")
+    permission_profile = value.get("permission_profile", "achp-engineer")
     allowed_version = LEGACY_FIXTURE_VERSION if is_legacy_fixture else CODEX_VERSION
+    if value["codex_version"] == "0.155.0-alpha.2.6":
+        allowed_version = value["codex_version"]
+        if platform != "windows" or permission_profile != ":workspace":
+            raise CodexSceneRejected("Windows Codex profile binding differs")
+    elif value["codex_version"] == CODEX_VERSION and (
+        platform != "posix" or permission_profile != "achp-engineer"
+    ):
+        raise CodexSceneRejected("Linux Codex profile binding differs")
     if (
         value["codex_version"] != allowed_version
         or not isinstance(value["provider_alias"], str)
@@ -250,20 +264,35 @@ def validate_scene_profile(value: object) -> dict[str, Any]:
         or parsed_url.fragment
         or not parsed_url.path.startswith("/")
         or value["wire_api"] != "responses"
-        or value["auth_command"] != "/usr/bin/cat"
+        or (
+            value["auth_command"] != "/usr/bin/cat"
+            if platform != "windows"
+            else (
+                not isinstance(value["auth_command"], str)
+                or not PureWindowsPath(value["auth_command"]).is_absolute()
+            )
+        )
         or value["reasoning_effort"] != "low"
         or (not is_legacy_fixture and value["provider_alias"] != "zeo-dev")
     ):
         raise CodexSceneRejected("Codex provider or strict model profile differs")
+    path_type = PureWindowsPath if platform == "windows" else PurePosixPath
     for field in ("native_executable_path", "model_catalog_path", "auth_key_ref_path"):
         path = value[field]
         if (
             not isinstance(path, str)
-            or not PurePosixPath(path).is_absolute()
-            or ".." in PurePosixPath(path).parts
+            or not path_type(path).is_absolute()
+            or ".." in path_type(path).parts
             or any(ord(char) < 32 for char in path)
         ):
             raise CodexSceneRejected(f"{field} is not a bounded absolute host reference")
+    schema_path = value.get("schema_path")
+    if schema_path is not None and (
+        not isinstance(schema_path, str)
+        or not path_type(schema_path).is_absolute()
+        or ".." in path_type(schema_path).parts
+    ):
+        raise CodexSceneRejected("schema_path is not a bounded absolute host reference")
     if (
         type(value["native_executable_size"]) is not int
         or not 1_000_000 <= value["native_executable_size"] <= 500_000_000
