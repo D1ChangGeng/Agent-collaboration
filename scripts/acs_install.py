@@ -10,6 +10,8 @@ import secrets
 import socket
 import stat
 import subprocess
+import time
+import tomllib
 from pathlib import Path
 from urllib.parse import quote
 
@@ -100,6 +102,58 @@ def git_observation(source: Path, *arguments: str) -> str:
     result = subprocess.run(["git", "-C", str(source), *arguments], capture_output=True,
                             text=True, check=True, timeout=30)
     return result.stdout.strip()
+
+
+def configure_harnesses(harnesses: list[str], config_path: Path) -> dict[str, str]:
+    python = ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    if not python.is_file():
+        raise ValueError("locked Runtime interpreter is unavailable")
+    catalog = ROOT / "docs/runtime/p2-mcp-tool-contract.json"
+    command = [str(python), "-m", "runtime.project_entry", "--config", str(config_path),
+               "--catalog", str(catalog), "--profile", "root_manager"]
+    configured: dict[str, str] = {}
+    rollback = private_root() / "rollback" / ("harness-" + str(int(time.time())))
+    changes = []
+    for harness in harnesses:
+        if harness not in {"codex", "opencode"}:
+            raise ValueError("unsupported Harness configuration target")
+        if harness == "codex":
+            path = Path.home() / ".codex" / "config.toml"
+            marker = "[mcp_servers.agent_collaboration]"
+            block = marker + "\ncommand = " + json.dumps(command[0]) + "\nargs = " + json.dumps(command[1:]) + "\n"
+            if path.exists():
+                text = path.read_text(encoding="utf-8")
+                entry = tomllib.loads(text).get("mcp_servers", {}).get("agent_collaboration")
+                if entry is not None and (entry.get("command"), entry.get("args")) != (
+                    command[0], command[1:]
+                ):
+                    raise ValueError("existing Codex ACS MCP entry differs; review it explicitly")
+                if entry is None:
+                    changes.append((path, text.rstrip() + "\n\n" + block, "codex-config.toml"))
+            else:
+                changes.append((path, block, "codex-config.toml"))
+            configured[harness] = str(path)
+        elif harness == "opencode":
+            path = Path.home() / ".config" / "opencode" / "opencode.json"
+            entry = {"type": "local", "command": command, "enabled": True}
+            data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+            if not isinstance(data, dict) or not isinstance(data.get("mcp", {}), dict):
+                raise ValueError("OpenCode configuration shape requires explicit review")
+            servers = data.setdefault("mcp", {})
+            if "agent_collaboration" in servers and servers["agent_collaboration"] != entry:
+                raise ValueError("existing OpenCode ACS MCP entry differs; review it explicitly")
+            if "agent_collaboration" not in servers:
+                servers["agent_collaboration"] = entry
+                changes.append((path, json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                                "opencode.json"))
+            configured[harness] = str(path)
+    for path, content, backup_name in changes:
+        if path.exists():
+            rollback.mkdir(parents=True, exist_ok=True, mode=0o700)
+            (rollback / backup_name).write_bytes(path.read_bytes())
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    return configured
 
 
 def source_metadata_roots(source: Path) -> list[str]:
@@ -409,8 +463,9 @@ def install(
             result["registration"] = register_local_project(project, project_id, config_path,
                                                             source.name)
             result["state"] = "project_registered"
+    result["harness_configs"] = configure_harnesses(harnesses, config_path)
     result["remaining"].append(
-        "Configure Codex and OpenCode MCP entries and verify tools/list from each client."
+        "Open the Management Root as a Root Agent and verify tools/list."
     )
     result["readback"] = inspect(project, config=config_path)
     return result

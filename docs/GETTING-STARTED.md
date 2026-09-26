@@ -39,7 +39,9 @@ The local installer reports `local_authority_ready` after the Python environment
 Skills, PostgreSQL, Temporal and private owner Authority are checked. For a clean
 committed Source, it also registers the project and reports `project_registered`
 with a live context readback. The Agent completes any project commit and then
-configures MCP clients. It reports readiness after actual MCP calls pass.
+configures local MCP clients with rollback copies. It reports readiness after
+actual MCP calls pass. A Windows Harness connecting to a separate Linux Runtime
+host uses an admitted remote connection and its own client readback.
 
 ## Start a project
 

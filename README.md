@@ -114,8 +114,9 @@ The Linux setup entry prints a plan first. With `--apply`, it installs the
 locked Python environment and nine Skills, starts owner-local services,
 initializes a private owner authority and adopts a specified Management Root.
 For a clean committed project Source, it registers the project and reads back
-its context. The Agent configures Harness MCP connections and verifies tool
-discovery before reporting collaboration ready.
+its context. On the Runtime host it configures local Codex and OpenCode MCP
+entries with rollback copies; the Agent verifies tool discovery in each client
+before reporting collaboration ready.
 See [getting started](docs/GETTING-STARTED.md) and
 [troubleshooting](docs/TROUBLESHOOTING.md).
 
