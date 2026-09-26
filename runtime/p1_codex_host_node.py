@@ -94,6 +94,8 @@ class CodexHostResult(_Strict):
     pg_receipts: tuple[dict, ...] = ()
     node_receipts: tuple[dict, ...] = ()
     os_observation: dict | None = None
+    scene_readback: dict | None = None
+    scene_readback_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
 
 def _json_digest(value: object) -> str:
@@ -496,20 +498,31 @@ class CodexHostNodeEndpoint:
 
     def inspect_native(self) -> dict:
         """Read-only host process-tree evidence, with no guest-selected unit/PID."""
+        with closing(self._connect()) as connection:
+            row = connection.execute(
+                "SELECT state,proof_json FROM codex_host_boot WHERE run_id=?",
+                (self.policy.run_id,),
+            ).fetchone()
+        if row is None or row[1] is None:
+            raise HostNodeRejected("host native boot proof is unavailable")
+        if row[0] == "stopped":
+            proof = json.loads(row[1])
+            if (
+                proof.get("verified") is not True
+                or proof.get("remaining_pids") != []
+                or self.policy.run_id not in proof.get("unit", "")
+            ):
+                raise HostNodeRejected("host stored termination proof is incomplete")
+            return proof
+        if row[0] != "started":
+            raise HostNodeRejected("host native boot is unresolved")
         driver = self._host_driver()
         owned = getattr(driver, "owned", None)
         supervisor = getattr(driver, "supervisor", None)
         if owned is None or supervisor is None:
             raise HostNodeRejected("host native process identity is unavailable")
         proof = supervisor.inspect(owned)
-        with closing(self._connect()) as connection:
-            row = connection.execute(
-                "SELECT proof_json FROM codex_host_boot WHERE run_id=? AND state='started'",
-                (self.policy.run_id,),
-            ).fetchone()
-        if row is None:
-            raise HostNodeRejected("host native boot proof is unavailable")
-        original = json.loads(row[0])
+        original = json.loads(row[1])
         for field in ("unit", "containment_id", "birth_ref", "invocation_id"):
             if proof.get(field) != original.get(field):
                 raise HostNodeRejected("host native process identity changed")

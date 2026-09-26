@@ -41,6 +41,15 @@ from runtime.p1_codex_host_node import (
 )
 from runtime.systemd_supervisor import SystemdUserSupervisor
 from runtime_tests.test_delivery import command, query
+from tools.runtime.p1_codex_host_scene import (
+    CodexHostSceneService,
+    TemporalHostDispatcher,
+)
+from tools.runtime.p1_codex_lifecycle import (
+    DECISION_ID,
+    MODEL_PROMPT,
+    project_original_terminal,
+)
 
 
 def _scope_policy_hash(setup):
@@ -539,7 +548,7 @@ def test_bwrap_guest_only_sees_fixed_host_socket(setup, tmp_path):
     guest_code = (
         "import json,os,socket,sys;"
         "assert not os.path.exists('/run/user/%s/bus'%os.getuid());"
-        "assert not os.path.exists('/home/changgeng/Agent-collaboration');"
+        "assert os.listdir('/home') == [];"
         "s=socket.socket(socket.AF_UNIX);s.connect('/run/acs/host.sock');"
         "s.sendall(sys.stdin.buffer.read());"
         "sys.stdout.buffer.write(s.recv(262144))"
@@ -599,6 +608,9 @@ def test_bwrap_guest_only_sees_fixed_host_socket(setup, tmp_path):
         stopped = host.stop_native()
         assert stopped["verified"] and stopped["remaining_pids"] == []
         assert host.policy.run_id in stopped["unit"]
+        assert (
+            host.handle(request.model_copy(update={"action": "readback"})).os_observation == stopped
+        )
     finally:
         server.close()
         supervisor.close()
@@ -785,9 +797,19 @@ def test_spawn_final_deadline_after_birth_stops_unit_without_node_effect(setup, 
         supervisor.close()
 
 
-def test_production_codex_driver_path_with_real_systemd_and_no_model(setup, tmp_path):
+@pytest.mark.parametrize("through_temporal", [False, True])
+def test_production_codex_driver_path_with_real_systemd_and_no_model(
+    setup,
+    tmp_path,
+    through_temporal,
+):
     if not sys.platform.startswith("linux") or os.geteuid() == 0:
         pytest.skip("non-root Linux user manager is required")
+    if through_temporal and (
+        os.environ.get("ACS_P1_TEMPORAL_ENDPOINT") != "127.0.0.1:7239"
+        or not os.environ.get("ACS_P1_TEMPORAL_NAMESPACE")
+    ):
+        pytest.skip("real local Temporal namespace is required")
     private = tmp_path / "codex-host"
     private.mkdir(mode=0o700)
     native = private / "codex"
@@ -899,9 +921,18 @@ def test_production_codex_driver_path_with_real_systemd_and_no_model(setup, tmp_
             expires_at=datetime.now(UTC) + timedelta(minutes=2),
         ),
     )
+    temporal = None
+    if through_temporal:
+        temporal = TemporalHostDispatcher(
+            setup.dispatcher,
+            endpoint="127.0.0.1:7239",
+            namespace=os.environ["ACS_P1_TEMPORAL_NAMESPACE"],
+            task_queue="p1-host-" + policy.run_id,
+            deadline=policy.deadline,
+        )
     host = CodexHostNodeEndpoint(
         policy,
-        setup.dispatcher,
+        temporal or setup.dispatcher,
         private / "runs.sqlite",
         native_path=native,
         config_path=config,
@@ -915,6 +946,61 @@ def test_production_codex_driver_path_with_real_systemd_and_no_model(setup, tmp_
         policy.deadline,
     )
     try:
+        if through_temporal:
+            budget = private / "fixture-budget.json"
+            budget.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "acs-p1-model-request-budget/1",
+                        "decision_id": DECISION_ID,
+                        "source_commit": policy.source_commit,
+                        "source_tree": "b" * 40,
+                        "scene_profile_sha256": "c" * 64,
+                        "scenario_id": "P1-CODEX-LIFECYCLE",
+                        "provider_alias": "fixture-provider",
+                        "model": "gpt-5.6-sol",
+                        "reasoning_effort": "low",
+                        "prompt": MODEL_PROMPT,
+                        "max_turn_starts": 1,
+                        "max_collect_reads": 6,
+                        "max_elapsed_seconds": 120,
+                        "retry_policy": "No second turn/start after uncertainty.",
+                        "spend_status": "Provider monetary cap not observed; cost unknown.",
+                        "tool_policy": "No tool invocation or delegation.",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            budget.chmod(0o600)
+            scene = CodexHostSceneService(
+                host,
+                setup.journal,
+                driver,
+                setup.endpoint.driver,
+                temporal,
+                source_tree="b" * 40,
+                scene_sha256="c" * 64,
+                budget_path=budget,
+                budget_sha256=hashlib.sha256(budget.read_bytes()).hexdigest(),
+                artifact_root=private / "artifacts",
+                environment_dir=Path(f"/run/user/{os.geteuid()}") / "acs-systemd-supervisor-env",
+                provider_alias="fixture-provider",
+                model="gpt-5.6-sol",
+            )
+            result = scene.handle(request)
+            assert result.status == "delivered" and result.scene_readback
+            assert result.scene_readback["temporal"]["run_id"] == temporal.last["provider_run_id"]
+            assert result.scene_readback["response"]["disposition"] == "applied"
+            assert result.scene_readback["os"]["remaining_pids"] == []
+            assert scene.handle(request.model_copy(update={"action": "readback"})) == result
+            assert scene.handle(request).scene_readback_sha256 == result.scene_readback_sha256
+            with driver.journal._connect() as connection:
+                starts = connection.execute(
+                    "SELECT count(*) FROM driver_events WHERE kind='rpc_dispatch' "
+                    "AND body LIKE '%turn/start%'"
+                ).fetchone()[0]
+            assert starts == 1
+            return
         boot = host.start_native(request, spawn)
         assert boot["verified"] and policy.run_id in boot["unit"]
         result = host.handle(request)
@@ -924,6 +1010,39 @@ def test_production_codex_driver_path_with_real_systemd_and_no_model(setup, tmp_
             (request.message_id,),
         )
         assert result.os_observation and result.os_observation["verified"]
+        dispatch = {
+            "authority": setup.authority,
+            "service": setup.service,
+            "endpoint": setup.endpoint,
+            "adapter": setup.endpoint.driver,
+            "identity": {
+                "tenant_id": request.tenant_id,
+                "message_id": request.message_id,
+                "operation_id": request.operation_id,
+            },
+            "attempt_id": result.attempt_id,
+            "invocation_id": "delivery-invocation:" + result.attempt_id,
+            "dispatch_id": result.dispatch_id,
+        }
+        projection = project_original_terminal(
+            dispatch,
+            setup.journal,
+            driver,
+            private / "artifacts",
+            pause=lambda _seconds: None,
+        )
+        assert projection["disposition"] == "applied"
+        assert query(
+            setup,
+            "SELECT count(*) FROM native_response_observations WHERE invocation_id=%s",
+            (dispatch["invocation_id"],),
+        ) == [(1,)]
+        assert query(
+            setup,
+            "SELECT count(*) FROM delivery_receipts "
+            "WHERE message_id=%s AND layer='response_received'",
+            (request.message_id,),
+        ) == [(1,)]
         with driver.journal._connect() as connection:
             rows = connection.execute(
                 "SELECT body FROM driver_events WHERE kind='rpc_dispatch'"
@@ -937,6 +1056,9 @@ def test_production_codex_driver_path_with_real_systemd_and_no_model(setup, tmp_
         assert sum(json.loads(row[0]).get("method") == "turn/start" for row in rows) == 1
         stopped = host.stop_native()
         assert stopped["verified"] and stopped["remaining_pids"] == []
+        assert (
+            host.handle(request.model_copy(update={"action": "readback"})).os_observation == stopped
+        )
     finally:
         supervisor.close()
         driver.detach_transport()

@@ -3,6 +3,7 @@
 The runner captures evidence for one local P1 profile.  It does not infer Gate
 success from component test summaries and it never edits the formal Gate files.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -37,9 +38,7 @@ MANIFEST_SCHEMA = "acs-p1-gate-run-manifest/1"
 STATE_KEY_NAME = ".runner-state.key"
 MACHINE_SCHEMA = "acs-machine-observation/1"
 GATE_RECORD_SCHEMA = "acs-gate-record/1"
-EVIDENCE_KINDS = frozenset(
-    {"command_output", "postgresql", "sqlite", "temporal", "driver", "os"}
-)
+EVIDENCE_KINDS = frozenset({"command_output", "postgresql", "sqlite", "temporal", "driver", "os"})
 EVIDENCE_FIELDS = (
     "receipts",
     "raw_outputs",
@@ -49,6 +48,7 @@ EVIDENCE_FIELDS = (
     "effect_readback",
     "recovery_trace",
 )
+_ACTIVE_CODEX_RUNS: set[str] = set()
 READBACK_FLAGS = {
     "source_readback": "source_readback_verified",
     "artifact_readback": "artifact_readback_verified",
@@ -65,14 +65,30 @@ MAX_COMMANDS = 64
 MAX_TIMEOUT_SECONDS = 3600
 UNKNOWN = {"", "unknown", "unverified", "not_run", "not-measured", "tbd", "n/a"}
 PLAN_KEYS = {
-    "schema_version", "profile", "node_id", "engineer", "direction", "expires_at",
-    "core_version", "temporal_version", "postgresql_version", "protocol_version",
-    "credential_scope", "policy", "harness_versions", "driver_versions",
-    "scenarios", "prerequisites", "review", "runtime_profile",
+    "schema_version",
+    "profile",
+    "node_id",
+    "engineer",
+    "direction",
+    "expires_at",
+    "core_version",
+    "temporal_version",
+    "postgresql_version",
+    "protocol_version",
+    "credential_scope",
+    "policy",
+    "harness_versions",
+    "driver_versions",
+    "scenarios",
+    "prerequisites",
+    "review",
+    "runtime_profile",
 }
 COMMAND_KEYS = {"command_id", "kind", "argv", "evidence_fields", "timeout_seconds", "cwd"}
 SECRET_PATTERNS = (
-    re.compile(r"(?i)\b(?:password|passwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token)\b\s*[:=]\s*[^\s,;]+"),
+    re.compile(
+        r"(?i)\b(?:password|passwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token)\b\s*[:=]\s*[^\s,;]+"
+    ),
     re.compile(r"(?i)\bauthorization\s*:\s*(?:bearer|basic)\s+[^\s]+"),
     re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{12,}"),
     re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
@@ -169,7 +185,9 @@ def write_atomic(path: Path, data: bytes) -> None:
 
 
 def write_json(path: Path, value: object) -> None:
-    write_atomic(path, json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False).encode() + b"\n")
+    write_atomic(
+        path, json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False).encode() + b"\n"
+    )
 
 
 def remove_private_stage(stage: Path) -> None:
@@ -219,7 +237,8 @@ def write_state(run_dir: Path, state: dict[str, Any]) -> None:
 def load_state(run_dir: Path) -> dict[str, Any]:
     state = strict_json((run_dir / "state.json").read_bytes())
     if not isinstance(state, dict) or not hmac.compare_digest(
-        str(state.get("state_hmac", "")), state_mac(state, read_state_key(run_dir)),
+        str(state.get("state_hmac", "")),
+        state_mac(state, read_state_key(run_dir)),
     ):
         raise RunnerError("runner state HMAC verification failed")
     return state
@@ -263,12 +282,18 @@ def _secure_owner_file(path: Path, expected_sha256: str) -> bytes:
     parent_fd = _owner_directory(path.parent)
     try:
         descriptor = os.open(
-            path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=parent_fd,
+            path.name,
+            os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+            dir_fd=parent_fd,
         )
         try:
             info = os.fstat(descriptor)
-            if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid()
-                    or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1):
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_uid != os.geteuid()
+                or stat.S_IMODE(info.st_mode) != 0o600
+                or info.st_nlink != 1
+            ):
                 raise PlanError("runtime profile file must be owner 0600 single-link")
             data = b""
             while chunk := os.read(descriptor, 65536):
@@ -296,19 +321,23 @@ def _owner_directory(path: Path) -> int:
         parts = path.parts[1:]
         for index, part in enumerate(parts):
             next_fd = os.open(
-                part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                part,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
                 dir_fd=descriptor,
             )
             info = os.fstat(next_fd)
             mode = stat.S_IMODE(info.st_mode)
             final = index == len(parts) - 1
-            permitted_ancestor = (
-                info.st_uid in {0, os.geteuid()}
-                and (not mode & 0o022 or info.st_uid == 0 and mode & stat.S_ISVTX)
+            permitted_ancestor = info.st_uid in {0, os.geteuid()} and (
+                not mode & 0o022 or info.st_uid == 0 and mode & stat.S_ISVTX
             )
-            if (not stat.S_ISDIR(info.st_mode)
-                    or final and (info.st_uid != os.geteuid() or mode != 0o700)
-                    or not final and not permitted_ancestor):
+            if (
+                not stat.S_ISDIR(info.st_mode)
+                or final
+                and (info.st_uid != os.geteuid() or mode != 0o700)
+                or not final
+                and not permitted_ancestor
+            ):
                 os.close(next_fd)
                 raise PlanError("owner-private directory ancestor is invalid")
             os.close(descriptor)
@@ -329,7 +358,8 @@ def _private_evidence_directory(run_dir: Path, scenario_id: str, command_id: str
             except FileExistsError:
                 pass
             following = os.open(
-                part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                part,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
                 dir_fd=descriptor,
             )
             info = os.fstat(following)
@@ -351,18 +381,24 @@ def _member_file(root_fd: int, name: str, expected: dict[str, Any]) -> None:
     try:
         for part in parts[:-1]:
             following = os.open(
-                part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                part,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
                 dir_fd=directory,
             )
             info = os.fstat(following)
-            if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid()
-                    or stat.S_IMODE(info.st_mode) != 0o700):
+            if (
+                not stat.S_ISDIR(info.st_mode)
+                or info.st_uid != os.geteuid()
+                or stat.S_IMODE(info.st_mode) != 0o700
+            ):
                 os.close(following)
                 raise PlanError("runtime environment member directory is invalid")
             os.close(directory)
             directory = following
         descriptor = os.open(
-            parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=directory,
+            parts[-1],
+            os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+            dir_fd=directory,
         )
         try:
             info = os.fstat(descriptor)
@@ -374,10 +410,14 @@ def _member_file(root_fd: int, name: str, expected: dict[str, Any]) -> None:
                     raise PlanError("runtime environment file exceeds runner bound")
                 value.update(chunk)
             after = os.stat(parts[-1], dir_fd=directory, follow_symlinks=False)
-            if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid()
-                    or stat.S_IMODE(info.st_mode) != expected["mode"] or info.st_nlink != 1
-                    or (after.st_dev, after.st_ino) != (info.st_dev, info.st_ino)
-                    or value.hexdigest() != expected["sha256"]):
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_uid != os.geteuid()
+                or stat.S_IMODE(info.st_mode) != expected["mode"]
+                or info.st_nlink != 1
+                or (after.st_dev, after.st_ino) != (info.st_dev, info.st_ino)
+                or value.hexdigest() != expected["sha256"]
+            ):
                 raise PlanError("runtime environment file verification failed")
         finally:
             os.close(descriptor)
@@ -387,8 +427,11 @@ def _member_file(root_fd: int, name: str, expected: dict[str, Any]) -> None:
 
 @contextmanager
 def pinned_runtime_mounts(
-    plan: dict[str, Any], *, state: dict[str, Any] | None = None,
-    scenario_id: str | None = None, command: dict[str, Any] | None = None,
+    plan: dict[str, Any],
+    *,
+    state: dict[str, Any] | None = None,
+    scenario_id: str | None = None,
+    command: dict[str, Any] | None = None,
     run_dir: Path | None = None,
 ):
     configured = plan.get("runtime_profile")
@@ -405,7 +448,8 @@ def pinned_runtime_mounts(
         profile_parent_fd = _owner_directory(profile_path.parent)
         descriptors.append(profile_parent_fd)
         profile_fd = os.open(
-            profile_path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+            profile_path.name,
+            os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
             dir_fd=profile_parent_fd,
         )
         descriptors.append(profile_fd)
@@ -419,12 +463,15 @@ def pinned_runtime_mounts(
             peer.settimeout(2.0)
             peer.connect(f"/proc/self/fd/{bus_parent_fd}/bus")
             _pid, peer_uid, _gid = struct.unpack(
-                "3i", peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12),
+                "3i",
+                peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12),
             )
             if peer_uid != os.geteuid():
                 raise SandboxUnavailable("reviewed user bus peer changed")
         for path, descriptor in (
-            (profile_path, profile_fd), (root_path, root_fd), (bus_parent, bus_parent_fd),
+            (profile_path, profile_fd),
+            (root_path, root_fd),
+            (bus_parent, bus_parent_fd),
         ):
             actual = path.stat(follow_symlinks=False)
             held = os.fstat(descriptor)
@@ -441,48 +488,163 @@ def pinned_runtime_mounts(
                 raise SandboxUnavailable("host OS readback requires runner identity")
             uid = os.geteuid()
             host_environment = {
-                "PATH": "/usr/bin:/bin", "XDG_RUNTIME_DIR": f"/run/user/{uid}",
+                "PATH": "/usr/bin:/bin",
+                "XDG_RUNTIME_DIR": f"/run/user/{uid}",
                 "DBUS_SESSION_BUS_ADDRESS": f"unix:path=/run/user/{uid}/bus",
             }
             try:
                 systemd = subprocess.run(
                     ["/usr/bin/systemctl", "--user", "show-environment"],
-                    env=host_environment, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                    timeout=10, check=False,
+                    env=host_environment,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=10,
+                    check=False,
                 )
             except (OSError, subprocess.TimeoutExpired) as error:
                 raise SandboxUnavailable("host user-manager readback is unavailable") from error
             if systemd.returncode:
                 raise SandboxUnavailable("host user-manager readback failed")
-            host_path = _private_evidence_directory(
-                run_dir, scenario_id, command["command_id"],
-            ) / "host-os.json"
-            write_json(host_path, {
-                "schema_version": "acs-p1-host-os-attestation/1",
-                "run_id": state["run_id"], "scenario_id": scenario_id,
-                "command_id": command["command_id"],
-                "source_commit": state["source_commit"],
-                "source_tree": state["source_tree"],
-                "binding_sha256": state["binding_sha256"],
-                "host_uid": uid, "bus_peer_uid": peer_uid,
-                "systemd_user_exit": systemd.returncode,
-                "observed_at": now_text(),
-            })
+            host_path = (
+                _private_evidence_directory(
+                    run_dir,
+                    scenario_id,
+                    command["command_id"],
+                )
+                / "host-os.json"
+            )
+            write_json(
+                host_path,
+                {
+                    "schema_version": "acs-p1-host-os-attestation/1",
+                    "run_id": state["run_id"],
+                    "scenario_id": scenario_id,
+                    "command_id": command["command_id"],
+                    "source_commit": state["source_commit"],
+                    "source_tree": state["source_tree"],
+                    "binding_sha256": state["binding_sha256"],
+                    "host_uid": uid,
+                    "bus_peer_uid": peer_uid,
+                    "systemd_user_exit": systemd.returncode,
+                    "observed_at": now_text(),
+                },
+            )
             host_ref = file_ref(host_path, run_dir)
             host_parent_fd = _owner_directory(host_path.parent)
             descriptors.append(host_parent_fd)
             host_fd = os.open(
-                host_path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                host_path.name,
+                os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
                 dir_fd=host_parent_fd,
             )
             descriptors.append(host_fd)
             if hashlib.sha256(host_path.read_bytes()).hexdigest() != host_ref["sha256"]:
                 raise SandboxUnavailable("host OS attestation changed before mount")
-            sources.update({
-                "host_os": f"/proc/self/fd/{host_fd}",
-                "host_os_ref": host_ref,
-                "host_os_path": host_path,
-            })
+            sources.update(
+                {
+                    "host_os": f"/proc/self/fd/{host_fd}",
+                    "host_os_ref": host_ref,
+                    "host_os_path": host_path,
+                }
+            )
+        if scenario_id == "P1-CODEX-LIFECYCLE" and "codex_scene_profile" in configured:
+            pinned = []
+            for name in ("codex_scene_profile", "budget_decision"):
+                reference = configured[name]
+                path = Path(reference["path"])
+                parent_fd = _owner_directory(path.parent)
+                descriptors.append(parent_fd)
+                file_fd = os.open(
+                    path.name,
+                    os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                    dir_fd=parent_fd,
+                )
+                descriptors.append(file_fd)
+                info = os.fstat(file_fd)
+                data = b""
+                while block := os.read(file_fd, 65536):
+                    data += block
+                    if len(data) > MAX_OUTPUT_BYTES:
+                        raise SandboxUnavailable("Codex owner file exceeds mount bound")
+                if (
+                    not stat.S_ISREG(info.st_mode)
+                    or info.st_uid != os.geteuid()
+                    or stat.S_IMODE(info.st_mode) != 0o600
+                    or info.st_nlink != 1
+                    or digest_bytes(data) != reference["sha256"]
+                ):
+                    raise SandboxUnavailable("Codex owner file changed before mount")
+                pinned.append((path, parent_fd, file_fd, reference["sha256"]))
+                sources[name] = f"/proc/self/fd/{file_fd}"
+            sources["codex_pins"] = pinned
+            if state is None:
+                raise SandboxUnavailable("Codex host socket requires the current run")
+            observer = Path(f"/run/user/{os.geteuid()}/acs-p1-codex") / state["run_id"] / "observer"
+            observer_fd = _owner_directory(observer)
+            descriptors.append(observer_fd)
+            ready_fd = os.open(
+                "ready.json", os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=observer_fd
+            )
+            descriptors.append(ready_fd)
+            ready_data = b""
+            while block := os.read(ready_fd, 65536):
+                ready_data += block
+                if len(ready_data) > 65536:
+                    raise SandboxUnavailable("Codex host ready record exceeds bound")
+            ready = strict_json(ready_data)
+            ready_sha = digest_bytes(ready_data)
+            ready_info = os.fstat(ready_fd)
+            if (
+                not stat.S_ISREG(ready_info.st_mode)
+                or ready_info.st_uid != os.geteuid()
+                or stat.S_IMODE(ready_info.st_mode) != 0o600
+                or ready_info.st_nlink != 1
+            ):
+                raise SandboxUnavailable("Codex host ready file identity is unsafe")
+            if (
+                not isinstance(ready, dict)
+                or ready.get("schema_version") != "acs-p1-codex-host-ready/1"
+                or ready.get("run_id") != state["run_id"]
+                or ready.get("source_commit") != state["source_commit"]
+                or ready.get("source_tree") != state["source_tree"]
+                or ready.get("scene_sha256") != configured["codex_scene_profile"]["sha256"]
+                or ready.get("budget_sha256") != configured["budget_decision"]["sha256"]
+            ):
+                raise SandboxUnavailable("Codex host ready identity changed")
+            socket_info = os.stat("host.sock", dir_fd=observer_fd, follow_symlinks=False)
+            if (
+                not stat.S_ISSOCK(socket_info.st_mode)
+                or socket_info.st_uid != os.geteuid()
+                or stat.S_IMODE(socket_info.st_mode) != 0o600
+            ):
+                raise SandboxUnavailable("Codex host socket identity is unsafe")
+            socket_fd = os.open(
+                "host.sock", os.O_PATH | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=observer_fd
+            )
+            descriptors.append(socket_fd)
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as peer:
+                peer.settimeout(2)
+                peer.connect(str(observer / "host.sock"))
+                _pid, peer_uid, _gid = struct.unpack(
+                    "3i",
+                    peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12),
+                )
+                if peer_uid != os.geteuid():
+                    raise SandboxUnavailable("Codex host socket peer changed")
+            sources.update(
+                {
+                    "codex_host_ready": f"/proc/self/fd/{ready_fd}",
+                    "codex_host_ready_sha256": ready_sha,
+                    "codex_host_socket": str(observer / "host.sock"),
+                    "codex_host_pin": (
+                        observer,
+                        observer_fd,
+                        ready_fd,
+                        socket_fd,
+                        (socket_info.st_dev, socket_info.st_ino),
+                    ),
+                }
+            )
         yield sources, tuple(descriptors)
     finally:
         if bus_parent_fd is not None:
@@ -492,7 +654,9 @@ def pinned_runtime_mounts(
 
 
 def assert_runtime_mounts_unchanged(
-    plan: dict[str, Any], sources: dict[str, Any], descriptors: tuple[int, ...],
+    plan: dict[str, Any],
+    sources: dict[str, Any],
+    descriptors: tuple[int, ...],
 ) -> None:
     if plan.get("runtime_profile") is None:
         return
@@ -506,7 +670,8 @@ def assert_runtime_mounts_unchanged(
         fresh = _owner_directory(path)
         try:
             if (os.fstat(fresh).st_dev, os.fstat(fresh).st_ino) != (
-                os.fstat(held).st_dev, os.fstat(held).st_ino,
+                os.fstat(held).st_dev,
+                os.fstat(held).st_ino,
             ):
                 raise SandboxUnavailable("runtime mount ancestor changed")
         finally:
@@ -522,55 +687,152 @@ def assert_runtime_mounts_unchanged(
         host_path = sources["host_os_path"]
         current = os.stat(host_path.name, dir_fd=descriptors[3], follow_symlinks=False)
         held = os.fstat(descriptors[4])
-        if ((current.st_dev, current.st_ino) != (held.st_dev, held.st_ino)
-                or not stat.S_ISREG(current.st_mode) or current.st_uid != os.geteuid()
-                or stat.S_IMODE(current.st_mode) != 0o600 or current.st_nlink != 1
-                or hashlib.sha256(host_path.read_bytes()).hexdigest()
-                != sources["host_os_ref"]["sha256"]):
+        if (
+            (current.st_dev, current.st_ino) != (held.st_dev, held.st_ino)
+            or not stat.S_ISREG(current.st_mode)
+            or current.st_uid != os.geteuid()
+            or stat.S_IMODE(current.st_mode) != 0o600
+            or current.st_nlink != 1
+            or hashlib.sha256(host_path.read_bytes()).hexdigest()
+            != sources["host_os_ref"]["sha256"]
+        ):
             raise SandboxUnavailable("host OS attestation changed before mount")
+    for path, parent_fd, file_fd, expected_sha in sources.get("codex_pins", []):
+        parent = _owner_directory(path.parent)
+        try:
+            if (os.fstat(parent).st_dev, os.fstat(parent).st_ino) != (
+                os.fstat(parent_fd).st_dev,
+                os.fstat(parent_fd).st_ino,
+            ):
+                raise SandboxUnavailable("Codex owner file parent changed")
+        finally:
+            os.close(parent)
+        current = os.stat(path.name, dir_fd=parent_fd, follow_symlinks=False)
+        held = os.fstat(file_fd)
+        if (current.st_dev, current.st_ino) != (held.st_dev, held.st_ino):
+            raise SandboxUnavailable("Codex owner file inode changed")
+        os.lseek(file_fd, 0, os.SEEK_SET)
+        digest = hashlib.sha256()
+        while block := os.read(file_fd, 65536):
+            digest.update(block)
+        if digest.hexdigest() != expected_sha:
+            raise SandboxUnavailable("Codex owner file digest changed")
+    if "codex_host_pin" in sources:
+        observer, observer_fd, ready_fd, socket_fd, socket_identity = sources["codex_host_pin"]
+        current_parent = _owner_directory(observer)
+        try:
+            if (os.fstat(current_parent).st_dev, os.fstat(current_parent).st_ino) != (
+                os.fstat(observer_fd).st_dev,
+                os.fstat(observer_fd).st_ino,
+            ):
+                raise SandboxUnavailable("Codex host observer directory changed")
+        finally:
+            os.close(current_parent)
+        ready = os.stat("ready.json", dir_fd=observer_fd, follow_symlinks=False)
+        socket_now = os.stat("host.sock", dir_fd=observer_fd, follow_symlinks=False)
+        if (
+            (ready.st_dev, ready.st_ino) != (os.fstat(ready_fd).st_dev, os.fstat(ready_fd).st_ino)
+            or (socket_now.st_dev, socket_now.st_ino) != socket_identity
+            or (os.fstat(socket_fd).st_dev, os.fstat(socket_fd).st_ino) != socket_identity
+        ):
+            raise SandboxUnavailable("Codex host ready/socket inode changed")
 
 
 def validate_runtime_profile(value: object) -> dict[str, Any] | None:
     if value is None:
         return None
     keys = {
-        "profile_path", "profile_sha256", "runtime_environment_root",
-        "runtime_environment_manifest_sha256", "network_mode",
-        "postgresql_endpoint", "temporal_endpoint",
+        "profile_path",
+        "profile_sha256",
+        "runtime_environment_root",
+        "runtime_environment_manifest_sha256",
+        "network_mode",
+        "postgresql_endpoint",
+        "temporal_endpoint",
     }
-    if not isinstance(value, dict) or set(value) != keys:
+    extended = keys | {"codex_scene_profile", "budget_decision"}
+    if not isinstance(value, dict) or set(value) not in (keys, extended):
         raise PlanError("runtime_profile fields are invalid")
     if value["network_mode"] != "host_loopback_providers":
         raise PlanError("runtime profile network mode is invalid")
-    if (value["postgresql_endpoint"] != "127.0.0.1:54329"
-            or value["temporal_endpoint"] != "127.0.0.1:7239"):
+    if (
+        value["postgresql_endpoint"] != "127.0.0.1:54329"
+        or value["temporal_endpoint"] != "127.0.0.1:7239"
+    ):
         raise PlanError("runtime profile endpoints must be reviewed loopback providers")
     profile_path = Path(value["profile_path"])
     profile = strict_json(_secure_owner_file(profile_path, value["profile_sha256"]))
     profile_keys = {
-        "schema_version", "profile", "source_root", "python", "sandbox_python",
-        "postgres_dsn", "temporal_endpoint", "temporal_namespace", "versions",
-        "node_id", "direction", "codex_model_evidence", "opencode_model_evidence",
+        "schema_version",
+        "profile",
+        "source_root",
+        "python",
+        "sandbox_python",
+        "postgres_dsn",
+        "temporal_endpoint",
+        "temporal_namespace",
+        "versions",
+        "node_id",
+        "direction",
+        "codex_model_evidence",
+        "opencode_model_evidence",
     }
-    if (not isinstance(profile, dict) or set(profile) != profile_keys
-            or profile.get("schema_version") != "acs-p1-loopback-probe-profile/1"):
+    with_scene = set(value) == extended
+    expected_profile_keys = profile_keys | {"codex_scene_mode"} if with_scene else profile_keys
+    expected_schema = (
+        "acs-p1-loopback-probe-profile/2" if with_scene else "acs-p1-loopback-probe-profile/1"
+    )
+    if (
+        not isinstance(profile, dict)
+        or set(profile) != expected_profile_keys
+        or profile.get("schema_version") != expected_schema
+        or with_scene
+        and profile.get("codex_scene_mode") != "same-run-host-node"
+    ):
         raise PlanError("runtime profile JSON schema is invalid")
-    if (profile.get("profile") != "p1-loopback-provider"
-            or not known_text(profile.get("source_root"))
-            or not Path(profile["source_root"]).is_absolute()
-            or not known_text(profile.get("python")) or not Path(profile["python"]).is_absolute()
-            or profile.get("sandbox_python") != "/run/acs-p1/runtime/bin/python"
-            or not known_text(profile.get("postgres_dsn"))
-            or profile.get("temporal_endpoint") != value["temporal_endpoint"]
-            or not known_text(profile.get("temporal_namespace"))
-            or not isinstance(profile.get("versions"), dict)
-            or not known_text(profile.get("node_id"))
-            or not known_text(profile.get("direction"))):
+    scene_sha = None
+    budget_sha = None
+    if with_scene:
+        from tools.runtime.p1_codex_lifecycle import validate_scene_profile
+
+        for name in ("codex_scene_profile", "budget_decision"):
+            reference = value[name]
+            if (
+                not isinstance(reference, dict)
+                or set(reference) != {"path", "sha256"}
+                or not isinstance(reference["path"], str)
+            ):
+                raise PlanError("Codex owner file reference is invalid")
+            _secure_owner_file(Path(reference["path"]), reference["sha256"])
+        scene_bytes = _secure_owner_file(
+            Path(value["codex_scene_profile"]["path"]),
+            value["codex_scene_profile"]["sha256"],
+        )
+        validate_scene_profile(strict_json(scene_bytes))
+        scene_sha = value["codex_scene_profile"]["sha256"]
+        budget_sha = value["budget_decision"]["sha256"]
+    if (
+        profile.get("profile") != "p1-loopback-provider"
+        or not known_text(profile.get("source_root"))
+        or not Path(profile["source_root"]).is_absolute()
+        or not known_text(profile.get("python"))
+        or not Path(profile["python"]).is_absolute()
+        or profile.get("sandbox_python") != "/run/acs-p1/runtime/bin/python"
+        or not known_text(profile.get("postgres_dsn"))
+        or profile.get("temporal_endpoint") != value["temporal_endpoint"]
+        or not known_text(profile.get("temporal_namespace"))
+        or not isinstance(profile.get("versions"), dict)
+        or not known_text(profile.get("node_id"))
+        or not known_text(profile.get("direction"))
+    ):
         raise PlanError("runtime profile provider identity is invalid")
     try:
         dsn = urlsplit(profile["postgres_dsn"])
-        if (dsn.scheme not in {"postgres", "postgresql"} or dsn.hostname != "127.0.0.1"
-                or dsn.port != 54329):
+        if (
+            dsn.scheme not in {"postgres", "postgresql"}
+            or dsn.hostname != "127.0.0.1"
+            or dsn.port != 54329
+        ):
             raise PlanError("runtime profile PostgreSQL DSN is not reviewed loopback")
     except ValueError as error:
         raise PlanError("runtime profile PostgreSQL DSN is invalid") from error
@@ -580,41 +842,58 @@ def validate_runtime_profile(value: object) -> dict[str, Any] | None:
     root_fd = _owner_directory(root)
     try:
         manifest_path = root / "manifest.json"
-        manifest = strict_json(_secure_owner_file(
-            manifest_path, value["runtime_environment_manifest_sha256"],
-        ))
+        manifest = strict_json(
+            _secure_owner_file(
+                manifest_path,
+                value["runtime_environment_manifest_sha256"],
+            )
+        )
         files = manifest.get("files") if isinstance(manifest, dict) else None
-        if (not isinstance(manifest, dict) or set(manifest) != {"schema_version", "files"}
-                or manifest.get("schema_version") != "acs-p1-runtime-environment/1"
-                or not isinstance(files, dict) or "bin/python" not in files):
+        if (
+            not isinstance(manifest, dict)
+            or set(manifest) != {"schema_version", "files"}
+            or manifest.get("schema_version") != "acs-p1-runtime-environment/1"
+            or not isinstance(files, dict)
+            or "bin/python" not in files
+        ):
             raise PlanError("runtime environment manifest is invalid")
         directories = [path for path in root.rglob("*") if path.is_dir()]
-        if any(path.is_symlink() or path.stat().st_uid != os.geteuid()
-               or stat.S_IMODE(path.stat().st_mode) != 0o700 for path in directories):
+        if any(
+            path.is_symlink()
+            or path.stat().st_uid != os.geteuid()
+            or stat.S_IMODE(path.stat().st_mode) != 0o700
+            for path in directories
+        ):
             raise PlanError("runtime environment directory verification failed")
         actual = {
-            path.relative_to(root).as_posix() for path in root.rglob("*")
+            path.relative_to(root).as_posix()
+            for path in root.rglob("*")
             if path.is_file() and path != manifest_path
         }
         if actual != set(files) or any(
-            Path(name).is_absolute() or ".." in Path(name).parts or "\\" in name
-            or any(not re.fullmatch(r"[A-Za-z0-9_.][A-Za-z0-9._-]{0,127}", part)
-                   for part in Path(name).parts)
+            Path(name).is_absolute()
+            or ".." in Path(name).parts
+            or "\\" in name
+            or any(
+                not re.fullmatch(r"[A-Za-z0-9_.][A-Za-z0-9._-]{0,127}", part)
+                for part in Path(name).parts
+            )
             for name in files
         ):
             raise PlanError("runtime environment contains extra or missing files")
         for name, expected in files.items():
-            if (not isinstance(expected, dict) or set(expected) != {"sha256", "mode"}
-                    or expected["mode"] not in {0o600, 0o700}):
+            if (
+                not isinstance(expected, dict)
+                or set(expected) != {"sha256", "mode"}
+                or expected["mode"] not in {0o600, 0o700}
+            ):
                 raise PlanError("runtime environment file manifest is invalid")
             _member_file(root_fd, name, expected)
     finally:
         os.close(root_fd)
     return {
         "profile_sha256": value["profile_sha256"],
-        "runtime_environment_manifest_sha256": value[
-            "runtime_environment_manifest_sha256"
-        ],
+        "runtime_environment_manifest_sha256": value["runtime_environment_manifest_sha256"],
         "network_mode": value["network_mode"],
         "postgresql_endpoint": value["postgresql_endpoint"],
         "temporal_endpoint": value["temporal_endpoint"],
@@ -622,18 +901,48 @@ def validate_runtime_profile(value: object) -> dict[str, Any] | None:
         "node_id": profile["node_id"],
         "direction": profile["direction"],
         "versions_sha256": digest(profile["versions"]),
-        "plan_versions_sha256": digest({
-            "core": profile["versions"].get("core"),
-            "provider": {"temporal": profile["versions"].get("provider", {}).get("temporal")},
-            "database": {
-                "postgresql": profile["versions"].get("database", {}).get("postgresql")
-            },
-            "protocol": profile["versions"].get("protocol"),
-            "harness": profile["versions"].get("harness"),
-            "driver": profile["versions"].get("driver"),
-        }),
+        "plan_versions_sha256": digest(
+            {
+                "core": profile["versions"].get("core"),
+                "provider": {"temporal": profile["versions"].get("provider", {}).get("temporal")},
+                "database": {
+                    "postgresql": profile["versions"].get("database", {}).get("postgresql")
+                },
+                "protocol": profile["versions"].get("protocol"),
+                "harness": profile["versions"].get("harness"),
+                "driver": profile["versions"].get("driver"),
+            }
+        ),
         "source_root_sha256": digest(str(Path(profile["source_root"]).resolve(strict=True))),
+        "codex_scene_mode": profile.get("codex_scene_mode"),
+        "codex_scene_profile_sha256": scene_sha,
+        "budget_decision_sha256": budget_sha,
     }
+
+
+def verify_codex_budget_binding(
+    plan: dict[str, Any],
+    source_commit: str,
+    source_tree: str,
+) -> None:
+    configured = plan.get("runtime_profile")
+    if not isinstance(configured, dict) or "codex_scene_profile" not in configured:
+        return
+    from tools.runtime.p1_codex_lifecycle import DECISION_ID, verify_budget_decision
+
+    scene = configured["codex_scene_profile"]
+    decision = configured["budget_decision"]
+    scene_profile = strict_json(_secure_owner_file(Path(scene["path"]), scene["sha256"]))
+    verify_budget_decision(
+        Path(decision["path"]),
+        decision["sha256"],
+        source_commit=source_commit,
+        source_tree=source_tree,
+        scene_profile_sha256=scene["sha256"],
+        decision_id=DECISION_ID,
+        provider_alias=scene_profile["provider_alias"],
+        model=scene_profile["model"],
+    )
 
 
 def secret_findings(data: bytes) -> list[str]:
@@ -656,7 +965,10 @@ class SourceIdentity:
 
 def git_value(source_root: Path, *args: str) -> str:
     result = subprocess.run(
-        ["git", "-C", str(source_root), *args], capture_output=True, text=True, timeout=30,
+        ["git", "-C", str(source_root), *args],
+        capture_output=True,
+        text=True,
+        timeout=30,
         check=False,
     )
     if result.returncode or not result.stdout.strip():
@@ -676,7 +988,10 @@ def source_identity(source_root: Path) -> SourceIdentity:
 
 def git_value_allow_empty(source_root: Path, *args: str) -> str:
     result = subprocess.run(
-        ["git", "-C", str(source_root), *args], capture_output=True, text=True, timeout=30,
+        ["git", "-C", str(source_root), *args],
+        capture_output=True,
+        text=True,
+        timeout=30,
         check=False,
     )
     if result.returncode:
@@ -686,7 +1001,9 @@ def git_value_allow_empty(source_root: Path, *args: str) -> str:
 
 def git_bytes(source_root: Path, *args: str) -> bytes:
     result = subprocess.run(
-        ["git", "-C", str(source_root), *args], capture_output=True, timeout=60,
+        ["git", "-C", str(source_root), *args],
+        capture_output=True,
+        timeout=60,
         check=False,
     )
     if result.returncode:
@@ -697,7 +1014,8 @@ def git_bytes(source_root: Path, *args: str) -> bytes:
 def listed_paths(source_root: Path, *args: str) -> set[str]:
     return {
         value.decode("utf-8", errors="surrogateescape")
-        for value in git_bytes(source_root, *args).split(b"\0") if value
+        for value in git_bytes(source_root, *args).split(b"\0")
+        if value
     }
 
 
@@ -738,28 +1056,33 @@ def collect_source_guard(source_root: Path) -> dict[str, Any]:
     tracked = listed_paths(source_root, "ls-files", "-z", "--cached")
     untracked = listed_paths(source_root, "ls-files", "-z", "--others", "--exclude-standard")
     ignored = {
-        name for name in listed_paths(
-            source_root, "ls-files", "-z", "--others", "--ignored", "--exclude-standard",
-        ) if sensitive_ignored(name)
+        name
+        for name in listed_paths(
+            source_root,
+            "ls-files",
+            "-z",
+            "--others",
+            "--ignored",
+            "--exclude-standard",
+        )
+        if sensitive_ignored(name)
     }
     gates_root = source_root / "gates"
     protected = {"gates"}
     if gates_root.is_dir() and not gates_root.is_symlink():
-        protected.update(
-            path.relative_to(source_root).as_posix()
-            for path in gates_root.rglob("*")
-        )
+        protected.update(path.relative_to(source_root).as_posix() for path in gates_root.rglob("*"))
     names = sorted(tracked | untracked | ignored | protected)
     entries = {name: inventory_entry(source_root / name) for name in names}
     status = git_bytes(
-        source_root, "status", "--porcelain=v2", "--untracked-files=all", "--ignored=matching",
+        source_root,
+        "status",
+        "--porcelain=v2",
+        "--untracked-files=all",
+        "--ignored=matching",
     )
     git_dir = Path(git_value(source_root, "rev-parse", "--absolute-git-dir"))
     index_full = inventory_entry(git_dir / "index")
-    index = {
-        key: index_full.get(key)
-        for key in ("kind", "mode", "size", "sha256")
-    }
+    index = {key: index_full.get(key) for key in ("kind", "mode", "size", "sha256")}
     result = {
         "schema_version": "acs-p1-source-guard/1",
         "head": git_value(source_root, "rev-parse", "HEAD"),
@@ -807,19 +1130,30 @@ def persist_source_guard(run_dir: Path, guard: dict[str, Any]) -> dict[str, Any]
             raise RunnerError("source guard exceeds runner bound")
         path = directory / f"chunk-{len(chunks):06d}.json"
         write_atomic(path, payload + b"\n")
-        chunks.append({
-            **file_ref(path, run_dir),
-            "count": len(batch),
-            "first": batch[0]["path"],
-            "last": batch[-1]["path"],
-        })
+        chunks.append(
+            {
+                **file_ref(path, run_dir),
+                "count": len(batch),
+                "first": batch[0]["path"],
+                "last": batch[-1]["path"],
+            }
+        )
         batch = []
 
     for record in records:
         candidate = [*batch, record]
-        if batch and len(canonical({
-            "schema_version": "acs-p1-source-guard-chunk/1", "entries": candidate,
-        })) > SOURCE_GUARD_CHUNK_BYTES:
+        if (
+            batch
+            and len(
+                canonical(
+                    {
+                        "schema_version": "acs-p1-source-guard-chunk/1",
+                        "entries": candidate,
+                    }
+                )
+            )
+            > SOURCE_GUARD_CHUNK_BYTES
+        ):
             flush()
         batch.append(record)
     flush()
@@ -851,7 +1185,10 @@ def persist_source_guard(run_dir: Path, guard: dict[str, Any]) -> dict[str, Any]
 def load_source_guard(state: dict[str, Any], run_dir: Path) -> dict[str, Any]:
     summary = state.get("source_guard")
     if not isinstance(summary, dict) or set(summary) != {
-        "manifest", "inventory_sha256", "entry_count", "category_counts",
+        "manifest",
+        "inventory_sha256",
+        "entry_count",
+        "category_counts",
     }:
         raise EvidenceError("source guard state summary is invalid")
     manifest = strict_json(validate_ref(summary["manifest"], run_dir).read_bytes())
@@ -869,7 +1206,11 @@ def load_source_guard(state: dict[str, Any], run_dir: Path) -> dict[str, Any]:
     previous = None
     for chunk in chunks:
         if not isinstance(chunk, dict) or set(chunk) != {
-            "path", "sha256", "count", "first", "last",
+            "path",
+            "sha256",
+            "count",
+            "first",
+            "last",
         }:
             raise EvidenceError("source guard chunk reference is invalid")
         raw = validate_ref({key: chunk[key] for key in ("path", "sha256")}, run_dir).read_bytes()
@@ -878,33 +1219,45 @@ def load_source_guard(state: dict[str, Any], run_dir: Path) -> dict[str, Any]:
             raise EvidenceError("source guard exceeds runner bound")
         payload = strict_json(raw)
         values = payload.get("entries") if isinstance(payload, dict) else None
-        if (payload.get("schema_version") != "acs-p1-source-guard-chunk/1"
-                or not isinstance(values, list) or len(values) != chunk["count"]
-                or not values or values[0].get("path") != chunk["first"]
-                or values[-1].get("path") != chunk["last"]):
+        if (
+            payload.get("schema_version") != "acs-p1-source-guard-chunk/1"
+            or not isinstance(values, list)
+            or len(values) != chunk["count"]
+            or not values
+            or values[0].get("path") != chunk["first"]
+            or values[-1].get("path") != chunk["last"]
+        ):
             raise EvidenceError("source guard chunk identity is invalid")
         for record in values:
             if not isinstance(record, dict) or set(record) != {"path", "categories", "entry"}:
                 raise EvidenceError("source guard record is invalid")
             name = record["path"]
             kinds = record["categories"]
-            if (not isinstance(name, str) or not isinstance(kinds, list)
-                    or any(kind not in categories for kind in kinds)
-                    or len(kinds) != len(set(kinds)) or name in entries
-                    or previous is not None and name <= previous):
+            if (
+                not isinstance(name, str)
+                or not isinstance(kinds, list)
+                or any(kind not in categories for kind in kinds)
+                or len(kinds) != len(set(kinds))
+                or name in entries
+                or previous is not None
+                and name <= previous
+            ):
                 raise EvidenceError("source guard ordering or category is invalid")
             previous = name
             entries[name] = record["entry"]
             for kind in kinds:
                 paths[kind].append(name)
-    if (len(entries) != manifest.get("entry_count")
-            or len(entries) != summary.get("entry_count")
-            or total_bytes != manifest.get("canonical_chunk_bytes")):
+    if (
+        len(entries) != manifest.get("entry_count")
+        or len(entries) != summary.get("entry_count")
+        or total_bytes != manifest.get("canonical_chunk_bytes")
+    ):
         raise EvidenceError("source guard count is invalid")
-    if ({name: len(paths[name]) for name in categories} != manifest.get("category_counts")
-            or manifest.get("category_counts") != summary.get("category_counts")
-            or {name: digest(paths[name]) for name in categories}
-            != manifest.get("category_digests")):
+    if (
+        {name: len(paths[name]) for name in categories} != manifest.get("category_counts")
+        or manifest.get("category_counts") != summary.get("category_counts")
+        or {name: digest(paths[name]) for name in categories} != manifest.get("category_digests")
+    ):
         raise EvidenceError("source guard category manifest is invalid")
     result = {
         "schema_version": "acs-p1-source-guard/1",
@@ -916,8 +1269,7 @@ def load_source_guard(state: dict[str, Any], run_dir: Path) -> dict[str, Any]:
         "entries": entries,
     }
     expected = digest(result)
-    if (expected != manifest.get("inventory_sha256")
-            or expected != summary.get("inventory_sha256")):
+    if expected != manifest.get("inventory_sha256") or expected != summary.get("inventory_sha256"):
         raise EvidenceError("source guard inventory digest mismatch")
     return {**result, "inventory_sha256": expected}
 
@@ -925,11 +1277,22 @@ def load_source_guard(state: dict[str, Any], run_dir: Path) -> dict[str, Any]:
 def source_guard_delta(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
     names = set(before.get("entries", {})) | set(after.get("entries", {}))
     changed = sorted(
-        name for name in names
+        name
+        for name in names
         if before.get("entries", {}).get(name) != after.get("entries", {}).get(name)
     )
     metadata = [
-        field for field in ("head", "tree", "index", "status_sha256", "tracked", "untracked", "ignored_sensitive", "protected")
+        field
+        for field in (
+            "head",
+            "tree",
+            "index",
+            "status_sha256",
+            "tracked",
+            "untracked",
+            "ignored_sensitive",
+            "protected",
+        )
         if before.get(field) != after.get(field)
     ]
     return {
@@ -941,7 +1304,11 @@ def source_guard_delta(before: dict[str, Any], after: dict[str, Any]) -> dict[st
 
 
 def record_source_mutation(
-    run_dir: Path, state: dict[str, Any], before: dict[str, Any], after: dict[str, Any], stage: str,
+    run_dir: Path,
+    state: dict[str, Any],
+    before: dict[str, Any],
+    after: dict[str, Any],
+    stage: str,
 ) -> None:
     report = {
         "schema_version": "acs-p1-source-mutation/1",
@@ -960,7 +1327,10 @@ def record_source_mutation(
 
 
 def verify_source_guard(
-    state: dict[str, Any], source_root: Path, run_dir: Path, stage: str,
+    state: dict[str, Any],
+    source_root: Path,
+    run_dir: Path,
+    stage: str,
 ) -> dict[str, Any]:
     current = collect_source_guard(source_root)
     baseline = load_source_guard(state, run_dir)
@@ -1019,32 +1389,66 @@ def audit_workspace(workspace: Path, state: dict[str, Any], run_dir: Path) -> No
         if digest_bytes(data) != baseline.get(relative) and secret_findings(data):
             secret_paths.append(relative)
     if secret_paths:
-        state["redaction_events"].append({
-            "scenario_id": workspace.name,
-            "command_id": "workspace-audit",
-            "detected": len(secret_paths),
-            "paths_sha256": digest(secret_paths),
-            "at": now_text(),
-        })
+        state["redaction_events"].append(
+            {
+                "scenario_id": workspace.name,
+                "command_id": "workspace-audit",
+                "detected": len(secret_paths),
+                "paths_sha256": digest(secret_paths),
+                "at": now_text(),
+            }
+        )
         raise EvidenceError("secret-like material detected in private workspace output")
 
 
 def sandbox_observation() -> dict[str, Any]:
     if os.name != "posix":
-        return {"provider": "unavailable", "available": False, "reason": "Windows sandbox not proven"}
+        return {
+            "provider": "unavailable",
+            "available": False,
+            "reason": "Windows sandbox not proven",
+        }
     dedicated = Path("/opt/acs/codex-sandbox/bin/bwrap")
     executable = str(dedicated) if dedicated.is_file() else shutil.which("bwrap")
     if not executable:
         return {"provider": "bubblewrap", "available": False, "reason": "bubblewrap missing"}
     path = Path(executable).resolve(strict=True)
-    identity = {"provider": "bubblewrap", "path": str(path), "sha256": digest_bytes(path.read_bytes())}
+    identity = {
+        "provider": "bubblewrap",
+        "path": str(path),
+        "sha256": digest_bytes(path.read_bytes()),
+    }
     probe = subprocess.run(
-        [str(path), "--ro-bind", "/", "/", "--tmpfs", "/home", "--tmpfs", "/root",
-         "--tmpfs", "/tmp", "--tmpfs", "/opt", "--dev", "/dev", "--proc", "/proc",
-         "--unshare-user", "--unshare-pid",
-         "--unshare-uts", "--unshare-ipc", "--share-net", "--die-with-parent",
-         "--new-session", "--", "/bin/true"],
-        capture_output=True, timeout=10, check=False,
+        [
+            str(path),
+            "--ro-bind",
+            "/",
+            "/",
+            "--tmpfs",
+            "/home",
+            "--tmpfs",
+            "/root",
+            "--tmpfs",
+            "/tmp",
+            "--tmpfs",
+            "/opt",
+            "--dev",
+            "/dev",
+            "--proc",
+            "/proc",
+            "--unshare-user",
+            "--unshare-pid",
+            "--unshare-uts",
+            "--unshare-ipc",
+            "--share-net",
+            "--die-with-parent",
+            "--new-session",
+            "--",
+            "/bin/true",
+        ],
+        capture_output=True,
+        timeout=10,
+        check=False,
     )
     if probe.returncode:
         return {**identity, "available": False, "reason": "bubblewrap capability probe failed"}
@@ -1056,8 +1460,11 @@ def verify_sandbox(state: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(observed, dict) or observed.get("available") is not True:
         raise SandboxUnavailable("OS-level probe sandbox is unavailable; scenario remains NOT_RUN")
     path = Path(observed.get("path", ""))
-    if (not path.is_absolute() or not path.is_file()
-            or digest_bytes(path.read_bytes()) != observed.get("sha256")):
+    if (
+        not path.is_absolute()
+        or not path.is_file()
+        or digest_bytes(path.read_bytes()) != observed.get("sha256")
+    ):
         raise EvidenceError("sandbox executable identity changed")
     return observed
 
@@ -1089,8 +1496,12 @@ def verify_source_snapshot(run_dir: Path, state: dict[str, Any]) -> None:
 
 
 def sandbox_command(
-    state: dict[str, Any], plan: dict[str, Any], run_dir: Path, scenario_id: str,
-    command: dict[str, Any], environment: dict[str, str],
+    state: dict[str, Any],
+    plan: dict[str, Any],
+    run_dir: Path,
+    scenario_id: str,
+    command: dict[str, Any],
+    environment: dict[str, str],
     mount_sources: dict[str, Any] | None = None,
 ) -> tuple[list[str], Path]:
     sandbox = verify_sandbox(state)
@@ -1111,35 +1522,101 @@ def sandbox_command(
         if mount_sources is None:
             raise SandboxUnavailable("runtime mounts require held descriptors")
         runtime_mounts = [
-            "--perms", "0700", "--dir", "/run/acs-p1",
-            "--ro-bind", mount_sources["profile"], "/run/acs-p1/profile.json",
-            "--ro-bind", mount_sources["environment"], "/run/acs-p1/runtime",
+            "--perms",
+            "0700",
+            "--dir",
+            "/run/acs-p1",
+            "--ro-bind",
+            mount_sources["profile"],
+            "/run/acs-p1/profile.json",
+            "--ro-bind",
+            mount_sources["environment"],
+            "/run/acs-p1/runtime",
         ]
         if "host_os" in mount_sources:
-            runtime_mounts.extend((
-                "--ro-bind", mount_sources["host_os"], "/run/acs-p1/host-os.json",
-            ))
+            runtime_mounts.extend(
+                (
+                    "--ro-bind",
+                    mount_sources["host_os"],
+                    "/run/acs-p1/host-os.json",
+                )
+            )
+        if "codex_scene_profile" in mount_sources:
+            runtime_mounts.extend(
+                (
+                    "--ro-bind",
+                    mount_sources["codex_scene_profile"],
+                    "/run/acs-p1/codex-profile.json",
+                    "--ro-bind",
+                    mount_sources["budget_decision"],
+                    "/run/acs-p1/budget-decision.json",
+                )
+            )
+        if "codex_host_socket" in mount_sources:
+            runtime_mounts.extend(
+                (
+                    "--ro-bind",
+                    mount_sources["codex_host_ready"],
+                    "/run/acs-p1/codex-ready.json",
+                    "--ro-bind",
+                    mount_sources["codex_host_socket"],
+                    "/run/acs-p1/codex-host.sock",
+                )
+            )
     argv = [
-        sandbox["path"], "--ro-bind", "/", "/", "--tmpfs", "/home", "--tmpfs", "/root",
-        "--tmpfs", "/tmp", "--tmpfs", "/opt", "--tmpfs", "/run",
-        "--dev", "/dev", "--proc", "/proc",
-        "--unshare-user", "--unshare-pid",
-        "--unshare-uts", "--unshare-ipc", "--share-net", "--die-with-parent", "--new-session",
+        sandbox["path"],
+        "--ro-bind",
+        "/",
+        "/",
+        "--tmpfs",
+        "/home",
+        "--tmpfs",
+        "/root",
+        "--tmpfs",
+        "/tmp",
+        "--tmpfs",
+        "/opt",
+        "--tmpfs",
+        "/run",
+        "--dev",
+        "/dev",
+        "--proc",
+        "/proc",
+        "--unshare-user",
+        "--unshare-pid",
+        "--unshare-uts",
+        "--unshare-ipc",
+        "--share-net",
+        "--die-with-parent",
+        "--new-session",
         *runtime_mounts,
-        "--ro-bind", str((run_dir / "source-snapshot").resolve()), "/mnt",
-        "--bind", str(output.resolve()), "/srv", "--chdir", target_cwd, "--clearenv",
+        "--ro-bind",
+        str((run_dir / "source-snapshot").resolve()),
+        "/mnt",
+        "--bind",
+        str(output.resolve()),
+        "/srv",
+        "--chdir",
+        target_cwd,
+        "--clearenv",
     ]
     for name, value in sorted(environment.items()):
         argv.extend(("--setenv", name, value))
     wrapper = (
         "test -r /mnt && test -w /srv && "
         "! /bin/sh -c 'printf x > /mnt/.runner-write-test' 2>/dev/null && "
-        "printf x > /srv/.runner-write-test && rm -f /srv/.runner-write-test && exec \"$@\""
+        'printf x > /srv/.runner-write-test && rm -f /srv/.runner-write-test && exec "$@"'
     )
-    argv.extend((
-        "--", "/bin/sh", "-c", wrapper,
-        "p1-sandbox", *command["argv"],
-    ))
+    argv.extend(
+        (
+            "--",
+            "/bin/sh",
+            "-c",
+            wrapper,
+            "p1-sandbox",
+            *command["argv"],
+        )
+    )
     return argv, output
 
 
@@ -1170,7 +1647,13 @@ def host_fingerprint() -> tuple[str, dict[str, str]]:
         "architecture": platform.machine(),
         "sqlite": sqlite3.sqlite_version,
     }
-    fingerprint = digest({"hostname": facts["hostname"], "machine_id": machine_id, "architecture": facts["architecture"]})
+    fingerprint = digest(
+        {
+            "hostname": facts["hostname"],
+            "machine_id": machine_id,
+            "architecture": facts["architecture"],
+        }
+    )
     return fingerprint, facts
 
 
@@ -1187,15 +1670,27 @@ def load_contract(contract_path: Path) -> dict[str, Any]:
 def validate_command(command: object) -> None:
     if not isinstance(command, dict) or set(command) - COMMAND_KEYS:
         raise PlanError("invalid command fields")
-    if not known_text(command.get("command_id")) or not re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", command["command_id"]):
+    if not known_text(command.get("command_id")) or not re.fullmatch(
+        r"[A-Za-z0-9._:-]{1,128}", command["command_id"]
+    ):
         raise PlanError("bounded command_id required")
     if command.get("kind") not in EVIDENCE_KINDS:
         raise PlanError("unsupported evidence kind")
     argv = command.get("argv")
-    if not isinstance(argv, list) or not argv or len(argv) > 64 or any(not known_text(v) or len(v) > 4096 for v in argv):
+    if (
+        not isinstance(argv, list)
+        or not argv
+        or len(argv) > 64
+        or any(not known_text(v) or len(v) > 4096 for v in argv)
+    ):
         raise PlanError("argv must be a bounded nonempty string list")
     fields = command.get("evidence_fields")
-    if not isinstance(fields, list) or not fields or len(set(fields)) != len(fields) or any(v not in EVIDENCE_FIELDS for v in fields):
+    if (
+        not isinstance(fields, list)
+        or not fields
+        or len(set(fields)) != len(fields)
+        or any(v not in EVIDENCE_FIELDS for v in fields)
+    ):
         raise PlanError("invalid evidence_fields")
     timeout = command.get("timeout_seconds", 300)
     if type(timeout) is not int or not 1 <= timeout <= MAX_TIMEOUT_SECONDS:
@@ -1206,11 +1701,23 @@ def validate_command(command: object) -> None:
 
 
 def validate_plan(plan: object, contract: dict[str, Any]) -> dict[str, Any]:
-    if not isinstance(plan, dict) or set(plan) - PLAN_KEYS or plan.get("schema_version") != PLAN_SCHEMA:
+    if (
+        not isinstance(plan, dict)
+        or set(plan) - PLAN_KEYS
+        or plan.get("schema_version") != PLAN_SCHEMA
+    ):
         raise PlanError("invalid plan schema or fields")
     for field in (
-        "profile", "node_id", "engineer", "direction", "core_version", "temporal_version",
-        "postgresql_version", "protocol_version", "credential_scope", "policy",
+        "profile",
+        "node_id",
+        "engineer",
+        "direction",
+        "core_version",
+        "temporal_version",
+        "postgresql_version",
+        "protocol_version",
+        "credential_scope",
+        "policy",
     ):
         if not known_text(plan.get(field)):
             raise PlanError(f"known {field} required")
@@ -1218,7 +1725,11 @@ def validate_plan(plan: object, contract: dict[str, Any]) -> dict[str, Any]:
         raise PlanError("plan expiry must be in the future")
     for field in ("harness_versions", "driver_versions"):
         value = plan.get(field)
-        if not isinstance(value, dict) or set(value) != {"codex", "opencode"} or not all(known_text(v) for v in value.values()):
+        if (
+            not isinstance(value, dict)
+            or set(value) != {"codex", "opencode"}
+            or not all(known_text(v) for v in value.values())
+        ):
             raise PlanError(f"{field} must pin Codex and OpenCode")
     runtime_profile = validate_runtime_profile(plan.get("runtime_profile"))
     if runtime_profile is not None:
@@ -1230,10 +1741,12 @@ def validate_plan(plan: object, contract: dict[str, Any]) -> dict[str, Any]:
             "harness": plan["harness_versions"],
             "driver": plan["driver_versions"],
         }
-        if (runtime_profile["profile"] != plan["profile"]
-                or runtime_profile["node_id"] != plan["node_id"]
-                or runtime_profile["direction"] != plan["direction"]
-                or runtime_profile["plan_versions_sha256"] != digest(plan_versions)):
+        if (
+            runtime_profile["profile"] != plan["profile"]
+            or runtime_profile["node_id"] != plan["node_id"]
+            or runtime_profile["direction"] != plan["direction"]
+            or runtime_profile["plan_versions_sha256"] != digest(plan_versions)
+        ):
             raise PlanError("runtime profile identity or versions differ from plan")
     scenario_map = plan.get("scenarios")
     expected = contract["gates"]["P1"]["scenarios"]
@@ -1247,7 +1760,32 @@ def validate_plan(plan: object, contract: dict[str, Any]) -> dict[str, Any]:
         ids = [command["command_id"] for command in commands]
         if len(ids) != len(set(ids)):
             raise PlanError(f"{scenario_id}: duplicate command_id")
-    if not isinstance(plan.get("prerequisites", {}), dict) or not isinstance(plan.get("review", {}), dict):
+    codex_commands = scenario_map["P1-CODEX-LIFECYCLE"]
+    if codex_commands:
+        if (
+            runtime_profile is None
+            or runtime_profile.get("codex_scene_mode") != "same-run-host-node"
+        ):
+            raise PlanError("Codex lifecycle requires the pinned same-run host profile")
+        for command in codex_commands:
+            expected = [
+                "/run/acs-p1/runtime/bin/python",
+                "/mnt/tools/runtime/p1_profile_probe.py",
+                "run",
+                "--profile",
+                "/run/acs-p1/profile.json",
+                "--scenario",
+                "P1-CODEX-LIFECYCLE",
+                "--kind",
+                command["kind"],
+                "--output",
+                "/srv",
+            ]
+            if command["argv"] != expected:
+                raise PlanError("Codex lifecycle probe argv differs from fixed adapter")
+    if not isinstance(plan.get("prerequisites", {}), dict) or not isinstance(
+        plan.get("review", {}), dict
+    ):
         raise PlanError("prerequisites and review must be objects")
     return plan
 
@@ -1256,13 +1794,21 @@ def plan_complete(commands: list[dict[str, Any]]) -> tuple[bool, str]:
     kinds = {command["kind"] for command in commands}
     fields = {field for command in commands for field in command["evidence_fields"]}
     if kinds != EVIDENCE_KINDS:
-        return False, "scenario lacks required command/PostgreSQL/SQLite/Temporal/Driver/OS evidence kinds"
+        return (
+            False,
+            "scenario lacks required command/PostgreSQL/SQLite/Temporal/Driver/OS evidence kinds",
+        )
     if fields != set(EVIDENCE_FIELDS):
-        return False, "scenario lacks receipt/raw/fault/source/artifact/effect/recovery evidence fields"
+        return (
+            False,
+            "scenario lacks receipt/raw/fault/source/artifact/effect/recovery evidence fields",
+        )
     return True, ""
 
 
-def initialize(plan_path: Path, run_dir: Path, source_root: Path, contract_path: Path) -> dict[str, Any]:
+def initialize(
+    plan_path: Path, run_dir: Path, source_root: Path, contract_path: Path
+) -> dict[str, Any]:
     require_external_run_dir(run_dir, source_root)
     if run_dir.exists():
         raise RunnerError("run directory already exists; use run/audit to resume")
@@ -1272,10 +1818,12 @@ def initialize(plan_path: Path, run_dir: Path, source_root: Path, contract_path:
         raise PlanError("secret-like material is forbidden in the runner plan")
     plan = validate_plan(strict_json(plan_bytes), contract)
     runtime_profile = validate_runtime_profile(plan.get("runtime_profile"))
-    if (runtime_profile is not None and runtime_profile["source_root_sha256"]
-            != digest(str(source_root.resolve(strict=True)))):
+    if runtime_profile is not None and runtime_profile["source_root_sha256"] != digest(
+        str(source_root.resolve(strict=True))
+    ):
         raise PlanError("runtime profile source root differs from runner source")
     identity = source_identity(source_root)
+    verify_codex_budget_binding(plan, identity.commit, identity.tree)
     guard = collect_source_guard(source_root)
     fingerprint, os_facts = host_fingerprint()
     machine_id = "machine-" + fingerprint[:20]
@@ -1289,83 +1837,89 @@ def initialize(plan_path: Path, run_dir: Path, source_root: Path, contract_path:
         create_state_key(stage)
         write_atomic(stage / "plan.json", plan_bytes)
         snapshot = create_source_snapshot(source_root, stage / "source-snapshot")
-        write_json(stage / "source-snapshot.json", {
-        "schema_version": "acs-p1-source-snapshot/1",
-        "source_commit": identity.commit,
-        "source_tree": identity.tree,
-        "archive_tree": snapshot["tree"],
-        "files": snapshot["files"],
-        })
+        write_json(
+            stage / "source-snapshot.json",
+            {
+                "schema_version": "acs-p1-source-snapshot/1",
+                "source_commit": identity.commit,
+                "source_tree": identity.tree,
+                "archive_tree": snapshot["tree"],
+                "files": snapshot["files"],
+            },
+        )
         guard_summary = persist_source_guard(stage, guard)
         raw_path = stage / "evidence" / "machine" / "raw-os.json"
         write_json(raw_path, {"schema_version": "acs-runner-os-observation/1", **os_facts})
         raw_ref = file_ref(raw_path, stage)
         observation_path = stage / "evidence" / "machine" / "observation.json"
         observation = {
-        "schema_version": MACHINE_SCHEMA,
-        "machine_id": machine_id,
-        "node_id": plan["node_id"],
-        "profile": plan["profile"],
-        "host_fingerprint": fingerprint,
-        "os": os_facts["os"],
-        "observed_at": observed,
-        "expires_at": expiry,
-        "evidence_class": "directly_verified",
-        "evidence": raw_ref,
+            "schema_version": MACHINE_SCHEMA,
+            "machine_id": machine_id,
+            "node_id": plan["node_id"],
+            "profile": plan["profile"],
+            "host_fingerprint": fingerprint,
+            "os": os_facts["os"],
+            "observed_at": observed,
+            "expires_at": expiry,
+            "evidence_class": "directly_verified",
+            "evidence": raw_ref,
         }
         write_json(observation_path, observation)
         binding = {
-        "profile": plan["profile"],
-        "machines": [machine_id],
-        "nodes": [plan["node_id"]],
-        "os": {machine_id: os_facts["os"]},
-        "core": plan["core_version"],
-        "provider": {"temporal": plan["temporal_version"]},
-        "driver": plan["driver_versions"],
-        "harness": plan["harness_versions"],
-        "database": {"postgresql": plan["postgresql_version"], "sqlite": os_facts["sqlite"]},
-        "protocol": plan["protocol_version"],
-        "credential_scope": plan["credential_scope"],
-        "policy": plan["policy"],
-        "direction": plan["direction"],
-        "expires_at": expiry,
-        "machine_evidence": {machine_id: file_ref(observation_path, stage)},
-        "session_evidence": [],
+            "profile": plan["profile"],
+            "machines": [machine_id],
+            "nodes": [plan["node_id"]],
+            "os": {machine_id: os_facts["os"]},
+            "core": plan["core_version"],
+            "provider": {"temporal": plan["temporal_version"]},
+            "driver": plan["driver_versions"],
+            "harness": plan["harness_versions"],
+            "database": {"postgresql": plan["postgresql_version"], "sqlite": os_facts["sqlite"]},
+            "protocol": plan["protocol_version"],
+            "credential_scope": plan["credential_scope"],
+            "policy": plan["policy"],
+            "direction": plan["direction"],
+            "expires_at": expiry,
+            "machine_evidence": {machine_id: file_ref(observation_path, stage)},
+            "session_evidence": [],
         }
         version_binding = {
-        "core": binding["core"],
-        "provider": binding["provider"],
-        "database": binding["database"],
-        "protocol": binding["protocol"],
-        "harness": binding["harness"],
-        "driver": binding["driver"],
-        "os": binding["os"],
+            "core": binding["core"],
+            "provider": binding["provider"],
+            "database": binding["database"],
+            "protocol": binding["protocol"],
+            "harness": binding["harness"],
+            "driver": binding["driver"],
+            "os": binding["os"],
         }
         state = {
-        "schema_version": STATE_SCHEMA,
-        "run_id": run_id,
-        "created_at": observed,
-        "updated_at": observed,
-        "plan_sha256": digest_bytes(plan_bytes),
-        "contract_sha256": digest_bytes(contract_path.read_bytes()),
-        "contract_revision": contract["contract_revision"],
-        "source_commit": identity.commit,
-        "source_tree": identity.tree,
-        "source_root": str(source_root.resolve()),
-        "run_dir": str(run_dir.resolve()),
-        "source_guard": guard_summary,
-        "source_snapshot": file_ref(stage / "source-snapshot.json", stage),
-        "source_compromised": False,
-        "sandbox": sandbox_observation(),
-        "runtime_profile": runtime_profile,
-        "machine_id": machine_id,
-        "host_fingerprint": fingerprint,
-        "node_id": plan["node_id"],
-        "binding": binding,
-        "binding_sha256": digest(binding),
-        "version_binding": version_binding,
-        "scenarios": {sid: {"status": "not_run", "commands": {}, "reason": "not executed"} for sid in plan["scenarios"]},
-        "redaction_events": [],
+            "schema_version": STATE_SCHEMA,
+            "run_id": run_id,
+            "created_at": observed,
+            "updated_at": observed,
+            "plan_sha256": digest_bytes(plan_bytes),
+            "contract_sha256": digest_bytes(contract_path.read_bytes()),
+            "contract_revision": contract["contract_revision"],
+            "source_commit": identity.commit,
+            "source_tree": identity.tree,
+            "source_root": str(source_root.resolve()),
+            "run_dir": str(run_dir.resolve()),
+            "source_guard": guard_summary,
+            "source_snapshot": file_ref(stage / "source-snapshot.json", stage),
+            "source_compromised": False,
+            "sandbox": sandbox_observation(),
+            "runtime_profile": runtime_profile,
+            "machine_id": machine_id,
+            "host_fingerprint": fingerprint,
+            "node_id": plan["node_id"],
+            "binding": binding,
+            "binding_sha256": digest(binding),
+            "version_binding": version_binding,
+            "scenarios": {
+                sid: {"status": "not_run", "commands": {}, "reason": "not executed"}
+                for sid in plan["scenarios"]
+            },
+            "redaction_events": [],
         }
         write_state(stage, state)
         finalize(stage, source_root, contract_path, allow_pass=False)
@@ -1384,7 +1938,9 @@ def initialize(plan_path: Path, run_dir: Path, source_root: Path, contract_path:
         raise
 
 
-def load_run(run_dir: Path, source_root: Path, contract_path: Path) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+def load_run(
+    run_dir: Path, source_root: Path, contract_path: Path
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     require_external_run_dir(run_dir, source_root)
     state = load_state(run_dir)
     plan_bytes = (run_dir / "plan.json").read_bytes()
@@ -1395,18 +1951,24 @@ def load_run(run_dir: Path, source_root: Path, contract_path: Path) -> tuple[dic
         raise RunnerError("invalid run state")
     if state.get("source_compromised") is True:
         raise SourceMutationError("run is blocked by a prior formal source mutation")
-    if state.get("plan_sha256") != digest_bytes(plan_bytes) or state.get("contract_sha256") != digest_bytes(contract_bytes):
+    if state.get("plan_sha256") != digest_bytes(plan_bytes) or state.get(
+        "contract_sha256"
+    ) != digest_bytes(contract_bytes):
         raise RunnerError("plan or contract digest changed")
     current_guard = collect_source_guard(source_root)
     baseline_guard = load_source_guard(state, run_dir)
     if current_guard.get("inventory_sha256") != baseline_guard.get("inventory_sha256"):
-        record_source_mutation(run_dir, state, baseline_guard or {}, current_guard, "resume-preflight")
+        record_source_mutation(
+            run_dir, state, baseline_guard or {}, current_guard, "resume-preflight"
+        )
         raise SourceMutationError("mixed or changed Git baseline/source inventory")
     if (state.get("source_commit"), state.get("source_tree")) != (
-        current_guard.get("head"), current_guard.get("tree"),
+        current_guard.get("head"),
+        current_guard.get("tree"),
     ):
         record_source_mutation(run_dir, state, baseline_guard, current_guard, "resume-identity")
         raise SourceMutationError("mixed or changed Git baseline")
+    verify_codex_budget_binding(plan, state["source_commit"], state["source_tree"])
     validate_ref(state.get("source_snapshot"), run_dir)
     if state.get("binding_sha256") != digest(state.get("binding")):
         raise RunnerError("binding digest changed")
@@ -1422,8 +1984,9 @@ def load_run(run_dir: Path, source_root: Path, contract_path: Path) -> tuple[dic
     if state.get("version_binding") != expected_versions:
         raise RunnerError("version binding changed")
     current_runtime_profile = validate_runtime_profile(plan.get("runtime_profile"))
-    if (current_runtime_profile is not None and current_runtime_profile["source_root_sha256"]
-            != digest(str(source_root.resolve(strict=True)))):
+    if current_runtime_profile is not None and current_runtime_profile[
+        "source_root_sha256"
+    ] != digest(str(source_root.resolve(strict=True))):
         raise RunnerError("runtime profile source root changed")
     if state.get("runtime_profile") != current_runtime_profile:
         raise RunnerError("runtime profile binding changed")
@@ -1433,13 +1996,46 @@ def load_run(run_dir: Path, source_root: Path, contract_path: Path) -> tuple[dic
     for ref in machine_refs.values():
         validate_ref(ref, run_dir)
     current_fingerprint, _current_facts = host_fingerprint()
-    if (state.get("host_fingerprint") != current_fingerprint
-            or state.get("machine_id") != "machine-" + current_fingerprint[:20]):
+    if (
+        state.get("host_fingerprint") != current_fingerprint
+        or state.get("machine_id") != "machine-" + current_fingerprint[:20]
+    ):
         raise RunnerError("physical Machine observation changed")
+    if (
+        current_runtime_profile is not None
+        and current_runtime_profile.get("codex_scene_profile_sha256")
+        and state["run_id"] not in _ACTIVE_CODEX_RUNS
+        and state["scenarios"]["P1-CODEX-LIFECYCLE"]["status"] != "passed"
+    ):
+        root = Path(f"/run/user/{os.geteuid()}/acs-p1-codex") / state["run_id"]
+        if root.exists():
+            from tools.runtime.p1_codex_host_scene import postflight_run
+
+            try:
+                proof = postflight_run(root, state["run_id"])
+            except Exception as error:
+                raise RunnerError("prior Codex host postflight is unavailable") from error
+            path = (
+                _private_evidence_directory(
+                    run_dir,
+                    "P1-CODEX-LIFECYCLE",
+                    "codex-recovery-postflight",
+                )
+                / "postflight.json"
+            )
+            write_json(path, proof)
+            scenario = state["scenarios"]["P1-CODEX-LIFECYCLE"]
+            scenario["status"] = "blocked"
+            scenario["reason"] = "prior Codex host attempt cannot reattach or re-invoke"
+            state["updated_at"] = now_text()
+            write_state(run_dir, state)
+            raise RunnerError("prior Codex host attempt requires independent review")
     return state, plan, contract
 
 
-def probe_environment(state: dict[str, Any], scenario_id: str, command: dict[str, Any]) -> dict[str, str]:
+def probe_environment(
+    state: dict[str, Any], scenario_id: str, command: dict[str, Any]
+) -> dict[str, str]:
     environment = {
         "ACS_GATE_RUN_ID": state["run_id"],
         "ACS_GATE_SCENARIO_ID": scenario_id,
@@ -1461,6 +2057,16 @@ def probe_environment(state: dict[str, Any], scenario_id: str, command: dict[str
         environment["ACS_GATE_RUNTIME_PROFILE"] = "/run/acs-p1/profile.json"
         environment["ACS_GATE_RUNTIME_ROOT"] = "/run/acs-p1/runtime"
         environment["ACS_GATE_NETWORK_MODE"] = "host_loopback_providers"
+        if scenario_id == "P1-CODEX-LIFECYCLE" and state["runtime_profile"].get(
+            "codex_scene_profile_sha256"
+        ):
+            environment["ACS_GATE_CODEX_PROFILE"] = "/run/acs-p1/codex-profile.json"
+            environment["ACS_GATE_CODEX_PROFILE_SHA256"] = state["runtime_profile"][
+                "codex_scene_profile_sha256"
+            ]
+            environment["ACS_GATE_BUDGET_DECISION_SHA256"] = state["runtime_profile"][
+                "budget_decision_sha256"
+            ]
     return environment
 
 
@@ -1472,14 +2078,23 @@ def validate_probe(
     started: datetime,
     finished: datetime,
 ) -> dict[str, Any]:
-    if not isinstance(value, dict) or value.get("schema_version") != PROBE_SCHEMA or value.get("status") != "passed":
+    if (
+        not isinstance(value, dict)
+        or value.get("schema_version") != PROBE_SCHEMA
+        or value.get("status") != "passed"
+    ):
         raise EvidenceError("probe did not return a passed runner result")
     expected = {
-        "run_id": state["run_id"], "scenario_id": scenario_id,
-        "command_id": command["command_id"], "evidence_kind": command["kind"],
-        "source_commit": state["source_commit"], "source_tree": state["source_tree"],
-        "binding_sha256": state["binding_sha256"], "profile": state["binding"]["profile"],
-        "machine_id": state["machine_id"], "node_id": state["node_id"],
+        "run_id": state["run_id"],
+        "scenario_id": scenario_id,
+        "command_id": command["command_id"],
+        "evidence_kind": command["kind"],
+        "source_commit": state["source_commit"],
+        "source_tree": state["source_tree"],
+        "binding_sha256": state["binding_sha256"],
+        "profile": state["binding"]["profile"],
+        "machine_id": state["machine_id"],
+        "node_id": state["node_id"],
         "direction": state["binding"]["direction"],
     }
     if any(value.get(key) != expected_value for key, expected_value in expected.items()):
@@ -1488,15 +2103,26 @@ def validate_probe(
         raise EvidenceError("probe version binding mismatch")
     observed = stamp(value.get("observed_at"))
     expiry = stamp(value.get("expires_at"))
-    if observed < started or observed > finished or not finished < expiry <= stamp(state["binding"]["expires_at"]):
+    if (
+        observed < started
+        or observed > finished
+        or not finished < expiry <= stamp(state["binding"]["expires_at"])
+    ):
         raise EvidenceError("probe time interval is stale, future or outside binding")
     for field in ID_FIELDS:
         values = value.get(field)
-        if not isinstance(values, list) or not values or len(values) != len(set(values)) or not all(known_text(v) for v in values):
+        if (
+            not isinstance(values, list)
+            or not values
+            or len(values) != len(set(values))
+            or not all(known_text(v) for v in values)
+        ):
             raise EvidenceError(f"probe requires unique {field}")
     receipts = value.get("receipt_ids")
     if "receipts" in command["evidence_fields"] and (
-        not isinstance(receipts, list) or not receipts or len(receipts) != len(set(receipts))
+        not isinstance(receipts, list)
+        or not receipts
+        or len(receipts) != len(set(receipts))
         or not all(known_text(v) for v in receipts)
     ):
         raise EvidenceError("receipt evidence requires concrete receipt IDs")
@@ -1512,8 +2138,12 @@ def validate_probe(
 
 
 def execute_command(
-    state: dict[str, Any], plan: dict[str, Any], scenario_id: str,
-    command: dict[str, Any], run_dir: Path, source_root: Path,
+    state: dict[str, Any],
+    plan: dict[str, Any],
+    scenario_id: str,
+    command: dict[str, Any],
+    run_dir: Path,
+    source_root: Path,
 ) -> dict[str, Any]:
     before = verify_source_guard(state, source_root, run_dir, "command-preflight")
     evidence_directory = digest(command["command_id"])
@@ -1521,7 +2151,8 @@ def execute_command(
     if any(source_text.casefold() in value.casefold() for value in command["argv"]):
         raise EvidenceError("probe argv must not receive the formal source or gates path")
     environment = {
-        key: value for key, value in os.environ.items()
+        key: value
+        for key, value in os.environ.items()
         if key in {"PATH", "PATHEXT", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "LANG", "LC_ALL", "TZ"}
         and source_text.casefold() not in value.casefold()
     }
@@ -1529,20 +2160,40 @@ def execute_command(
         environment["PATH"] = "/usr/bin:/bin"
     environment.update(probe_environment(state, scenario_id, command))
     with pinned_runtime_mounts(
-        plan, state=state, scenario_id=scenario_id, command=command, run_dir=run_dir,
+        plan,
+        state=state,
+        scenario_id=scenario_id,
+        command=command,
+        run_dir=run_dir,
     ) as (mount_sources, pass_fds):
         if "host_os" in mount_sources:
             environment["ACS_GATE_HOST_OS_ATTESTATION"] = "/run/acs-p1/host-os.json"
             environment["ACS_GATE_HOST_OS_SHA256"] = mount_sources["host_os_ref"]["sha256"]
+        if "codex_host_ready" in mount_sources:
+            environment["ACS_GATE_CODEX_HOST_READY"] = "/run/acs-p1/codex-ready.json"
+            environment["ACS_GATE_CODEX_HOST_READY_SHA256"] = mount_sources[
+                "codex_host_ready_sha256"
+            ]
+            environment["ACS_GATE_CODEX_HOST_SOCKET"] = "/run/acs-p1/codex-host.sock"
         wrapped_argv, output = sandbox_command(
-            state, plan, run_dir, scenario_id, command, environment, mount_sources,
+            state,
+            plan,
+            run_dir,
+            scenario_id,
+            command,
+            environment,
+            mount_sources,
         )
         assert_runtime_mounts_unchanged(plan, mount_sources, pass_fds)
         started = datetime.now(UTC)
         try:
             result = subprocess.run(
-                wrapped_argv, cwd=run_dir, env={}, capture_output=True,
-                timeout=command.get("timeout_seconds", 300), check=False,
+                wrapped_argv,
+                cwd=run_dir,
+                env={},
+                capture_output=True,
+                timeout=command.get("timeout_seconds", 300),
+                check=False,
                 pass_fds=pass_fds,
             )
         except (OSError, subprocess.TimeoutExpired) as error:
@@ -1558,10 +2209,14 @@ def execute_command(
         raise EvidenceError("probe output exceeds runner bound")
     findings = secret_findings(result.stdout) + secret_findings(result.stderr)
     if findings:
-        state["redaction_events"].append({
-            "scenario_id": scenario_id, "command_id": command["command_id"],
-            "detected": len(findings), "at": now_text(),
-        })
+        state["redaction_events"].append(
+            {
+                "scenario_id": scenario_id,
+                "command_id": command["command_id"],
+                "detected": len(findings),
+                "at": now_text(),
+            }
+        )
         failure = run_dir / "evidence" / scenario_id / evidence_directory / "redacted-failure.txt"
         write_atomic(failure, redacted(result.stdout + b"\n" + result.stderr))
         raise EvidenceError("secret-like material detected and redacted")
@@ -1571,31 +2226,50 @@ def execute_command(
         raise EvidenceError(f"probe command exited {result.returncode}")
     if result.stderr:
         raise EvidenceError("successful probe emitted unmanaged stderr")
-    probe = validate_probe(strict_json(result.stdout), state, scenario_id, command, started, finished)
+    probe = validate_probe(
+        strict_json(result.stdout), state, scenario_id, command, started, finished
+    )
     output_path = run_dir / "evidence" / scenario_id / evidence_directory / "stdout.json"
     write_atomic(output_path, result.stdout)
     output_ref = file_ref(output_path, run_dir)
     result_record = {
-        "status": "passed", "kind": command["kind"],
-        "evidence_fields": command["evidence_fields"], "argv_sha256": digest(command["argv"]),
-        "output": output_ref, "observed_at": probe["observed_at"],
+        "status": "passed",
+        "kind": command["kind"],
+        "evidence_fields": command["evidence_fields"],
+        "argv_sha256": digest(command["argv"]),
+        "output": output_ref,
+        "observed_at": probe["observed_at"],
         "expires_at": probe["expires_at"],
-        "operation_ids": probe["operation_ids"], "message_ids": probe["message_ids"],
-        "event_ids": probe["event_ids"], "receipt_ids": probe.get("receipt_ids", []),
-        "observer": probe.get("observer"), "owner": probe.get("owner"),
+        "operation_ids": probe["operation_ids"],
+        "message_ids": probe["message_ids"],
+        "event_ids": probe["event_ids"],
+        "receipt_ids": probe.get("receipt_ids", []),
+        "observer": probe.get("observer"),
+        "owner": probe.get("owner"),
     }
     if "host_os" in mount_sources:
         result_record["host_os_attestation"] = mount_sources["host_os_ref"]
     return result_record
 
 
-def scenario_record(state: dict[str, Any], scenario_id: str) -> dict[str, Any]:
+def scenario_record(
+    state: dict[str, Any],
+    scenario_id: str,
+    run_dir: Path | None = None,
+) -> dict[str, Any]:
     scenario = state["scenarios"][scenario_id]
     if scenario["status"] != "passed":
         return {"scenario_id": scenario_id, "status": scenario["status"]}
     commands = list(scenario["commands"].values())
-    observers, owners = {item["observer"] for item in commands}, {item["owner"] for item in commands}
-    if len(observers) != 1 or len(owners) != 1 or not all(known_text(v) for v in (*observers, *owners)):
+    observers, owners = (
+        {item["observer"] for item in commands},
+        {item["owner"] for item in commands},
+    )
+    if (
+        len(observers) != 1
+        or len(owners) != 1
+        or not all(known_text(v) for v in (*observers, *owners))
+    ):
         raise EvidenceError("scenario observer/owner identity is inconsistent")
     output_refs = [item["output"] for item in commands]
     output_refs.extend(
@@ -1622,7 +2296,29 @@ def scenario_record(state: dict[str, Any], scenario_id: str) -> dict[str, Any]:
         if field == "raw_outputs":
             record[field] = output_refs
         else:
-            record[field] = [item["output"] for item in commands if field in item["evidence_fields"]]
+            record[field] = [
+                item["output"] for item in commands if field in item["evidence_fields"]
+            ]
+    if scenario_id == "P1-CODEX-LIFECYCLE":
+        if run_dir is None:
+            raise EvidenceError("Codex host postflight run directory is missing")
+        path = (
+            run_dir / "evidence" / scenario_id / digest("codex-host-postflight") / "postflight.json"
+        )
+        postflight = strict_json(path.read_bytes())
+        if (
+            postflight.get("schema_version") != "acs-p1-codex-postflight/1"
+            or postflight.get("run_id") != state["run_id"]
+            or postflight.get("status") != "clean"
+            or postflight.get("boot_state") != "stopped"
+            or postflight.get("remaining_pids") != []
+            or postflight.get("quarantined_units") != []
+        ):
+            raise EvidenceError("Codex host postflight is not a clean original run")
+        reference = file_ref(path, run_dir)
+        record["raw_outputs"].append(reference)
+        record["recovery_trace"].append(reference)
+        record["source_readback"].append(reference)
     return record
 
 
@@ -1633,9 +2329,11 @@ def audit_commands(state: dict[str, Any], plan: dict[str, Any], run_dir: Path) -
             raise EvidenceError("stored command is absent from the sealed plan")
         for command_id, result in scenario.get("commands", {}).items():
             command = planned[command_id]
-            if (result.get("kind") != command["kind"]
-                    or result.get("evidence_fields") != command["evidence_fields"]
-                    or result.get("argv_sha256") != digest(command["argv"])):
+            if (
+                result.get("kind") != command["kind"]
+                or result.get("evidence_fields") != command["evidence_fields"]
+                or result.get("argv_sha256") != digest(command["argv"])
+            ):
                 raise EvidenceError("stored command differs from the sealed plan")
             path = validate_ref(result.get("output"), run_dir)
             expected_path = (
@@ -1644,10 +2342,14 @@ def audit_commands(state: dict[str, Any], plan: dict[str, Any], run_dir: Path) -
             if result["output"].get("path") != expected_path:
                 raise EvidenceError("stored evidence path differs from command identity")
             value = strict_json(path.read_bytes())
-            if (value.get("run_id") != state["run_id"] or value.get("scenario_id") != scenario_id
-                    or value.get("command_id") != command_id or value.get("source_commit") != state["source_commit"]
-                    or value.get("source_tree") != state["source_tree"]
-                    or value.get("binding_sha256") != state["binding_sha256"]):
+            if (
+                value.get("run_id") != state["run_id"]
+                or value.get("scenario_id") != scenario_id
+                or value.get("command_id") != command_id
+                or value.get("source_commit") != state["source_commit"]
+                or value.get("source_tree") != state["source_tree"]
+                or value.get("binding_sha256") != state["binding_sha256"]
+            ):
                 raise EvidenceError("stored evidence no longer binds this run")
             if command["kind"] == "os" and state.get("runtime_profile") is not None:
                 host_ref = result.get("host_os_attestation")
@@ -1659,31 +2361,39 @@ def audit_commands(state: dict[str, Any], plan: dict[str, Any], run_dir: Path) -
                 host_parent_fd = _owner_directory(host_path.parent)
                 try:
                     host_info = os.stat(
-                        host_path.name, dir_fd=host_parent_fd, follow_symlinks=False,
+                        host_path.name,
+                        dir_fd=host_parent_fd,
+                        follow_symlinks=False,
                     )
-                    if (not stat.S_ISREG(host_info.st_mode)
-                            or host_info.st_uid != os.geteuid()
-                            or stat.S_IMODE(host_info.st_mode) != 0o600
-                            or host_info.st_nlink != 1):
+                    if (
+                        not stat.S_ISREG(host_info.st_mode)
+                        or host_info.st_uid != os.geteuid()
+                        or stat.S_IMODE(host_info.st_mode) != 0o600
+                        or host_info.st_nlink != 1
+                    ):
                         raise EvidenceError("host OS attestation file mode changed")
                 finally:
                     os.close(host_parent_fd)
-                if (host_ref.get("path") != expected_host_path
-                        or not isinstance(host, dict)
-                        or host.get("schema_version") != "acs-p1-host-os-attestation/1"
-                        or host.get("run_id") != state["run_id"]
-                        or host.get("scenario_id") != scenario_id
-                        or host.get("command_id") != command_id
-                        or host.get("source_commit") != state["source_commit"]
-                        or host.get("source_tree") != state["source_tree"]
-                        or host.get("binding_sha256") != state["binding_sha256"]
-                        or host.get("host_uid") != os.geteuid()
-                        or host.get("bus_peer_uid") != os.geteuid()
-                        or host.get("systemd_user_exit") != 0):
+                if (
+                    host_ref.get("path") != expected_host_path
+                    or not isinstance(host, dict)
+                    or host.get("schema_version") != "acs-p1-host-os-attestation/1"
+                    or host.get("run_id") != state["run_id"]
+                    or host.get("scenario_id") != scenario_id
+                    or host.get("command_id") != command_id
+                    or host.get("source_commit") != state["source_commit"]
+                    or host.get("source_tree") != state["source_tree"]
+                    or host.get("binding_sha256") != state["binding_sha256"]
+                    or host.get("host_uid") != os.geteuid()
+                    or host.get("bus_peer_uid") != os.geteuid()
+                    or host.get("systemd_user_exit") != 0
+                ):
                     raise EvidenceError("host OS attestation no longer binds command")
 
 
-def invoke_validator(record_path: Path, run_dir: Path, source_root: Path, require_passed: bool) -> dict[str, Any]:
+def invoke_validator(
+    record_path: Path, run_dir: Path, source_root: Path, require_passed: bool
+) -> dict[str, Any]:
     validator = source_root / "tools" / "runtime" / "validate_gate.py"
     command = [sys.executable, str(validator), str(record_path), "--evidence-root", str(run_dir)]
     if require_passed:
@@ -1693,15 +2403,23 @@ def invoke_validator(record_path: Path, run_dir: Path, source_root: Path, requir
         output = strict_json(result.stdout)
     except EvidenceError:
         output = {"valid": False, "errors": ["validator returned invalid JSON"]}
-    return {"argv_sha256": digest(command), "exit_code": result.returncode, "output": output, "invoked_at": now_text()}
+    return {
+        "argv_sha256": digest(command),
+        "exit_code": result.returncode,
+        "output": output,
+        "invoked_at": now_text(),
+    }
 
 
 def build_manifest(run_dir: Path, state: dict[str, Any]) -> dict[str, Any]:
     files = {}
     for path in sorted(run_dir.rglob("*")):
         relative = path.relative_to(run_dir)
-        if (path.is_file() and path.name not in {"RUN-MANIFEST.json", STATE_KEY_NAME}
-                and relative.parts[0] not in {"source-snapshot", "workspaces"}):
+        if (
+            path.is_file()
+            and path.name not in {"RUN-MANIFEST.json", STATE_KEY_NAME}
+            and relative.parts[0] not in {"source-snapshot", "workspaces"}
+        ):
             files[path.relative_to(run_dir).as_posix()] = digest_bytes(path.read_bytes())
     return {
         "schema_version": MANIFEST_SCHEMA,
@@ -1718,10 +2436,14 @@ def build_manifest(run_dir: Path, state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def finalize(run_dir: Path, source_root: Path, contract_path: Path, *, allow_pass: bool = True) -> dict[str, Any]:
+def finalize(
+    run_dir: Path, source_root: Path, contract_path: Path, *, allow_pass: bool = True
+) -> dict[str, Any]:
     state, plan, contract = load_run(run_dir, source_root, contract_path)
     audit_commands(state, plan, run_dir)
-    scenario_records = [scenario_record(state, sid) for sid in contract["gates"]["P1"]["scenarios"]]
+    scenario_records = [
+        scenario_record(state, sid, run_dir) for sid in contract["gates"]["P1"]["scenarios"]
+    ]
     statuses = {item["status"] for item in scenario_records}
     candidate_pass = allow_pass and statuses == {"passed"}
     status = "passed" if candidate_pass else "not_run" if statuses == {"not_run"} else "blocked"
@@ -1748,17 +2470,116 @@ def finalize(run_dir: Path, source_root: Path, contract_path: Path, *, allow_pas
     state["updated_at"] = now_text()
     write_state(run_dir, state)
     write_json(run_dir / "validation.json", validation)
-    write_json(run_dir / "redaction-audit.json", {
-        "schema_version": "acs-p1-redaction-audit/1",
-        "run_id": state["run_id"], "events": state["redaction_events"],
-        "status": "passed" if not state["redaction_events"] else "blocked",
-    })
+    write_json(
+        run_dir / "redaction-audit.json",
+        {
+            "schema_version": "acs-p1-redaction-audit/1",
+            "run_id": state["run_id"],
+            "events": state["redaction_events"],
+            "status": "passed" if not state["redaction_events"] else "blocked",
+        },
+    )
     write_json(run_dir / "RUN-MANIFEST.json", build_manifest(run_dir, state))
     return record
 
 
+@contextmanager
+def _codex_capacity_context(
+    state: dict[str, Any],
+    plan: dict[str, Any],
+    run_dir: Path,
+    scenario_id: str,
+):
+    if scenario_id != "P1-CODEX-LIFECYCLE":
+        yield None
+        return
+    configured = plan.get("runtime_profile")
+    if not isinstance(configured, dict) or "codex_scene_profile" not in configured:
+        raise SandboxUnavailable("Codex same-run host profile and budget are unavailable")
+    from tools.runtime.p1_codex_host_factory import prepare_codex_host_capacity
+    loopback = strict_json(
+        _secure_owner_file(
+            Path(configured["profile_path"]),
+            configured["profile_sha256"],
+        )
+    )
+    scene_ref = configured["codex_scene_profile"]
+    scene = strict_json(_secure_owner_file(Path(scene_ref["path"]), scene_ref["sha256"]))
+    budget = configured["budget_decision"]
+    capacity = None
+    try:
+        capacity = prepare_codex_host_capacity(
+            loopback,
+            scene,
+            run_id=state["run_id"],
+            source_commit=state["source_commit"],
+            source_tree=state["source_tree"],
+            machine_id=state["machine_id"],
+            source_snapshot=run_dir / "source-snapshot",
+            scene_sha256=scene_ref["sha256"],
+            budget_path=Path(budget["path"]),
+            budget_sha256=budget["sha256"],
+            plan_expires_at=stamp(plan["expires_at"]),
+        )
+        capacity.start()
+        _ACTIVE_CODEX_RUNS.add(state["run_id"])
+    except Exception as error:
+        root = Path(f"/run/user/{os.geteuid()}/acs-p1-codex") / state["run_id"]
+        if capacity is not None:
+            try:
+                proof = capacity.close()
+            except Exception as cleanup_error:
+                raise EvidenceError("Codex host setup cleanup is unverified") from cleanup_error
+        elif root.exists():
+            from tools.runtime.p1_codex_host_scene import postflight_run
+
+            try:
+                proof = postflight_run(root, state["run_id"])
+            except Exception as cleanup_error:
+                raise EvidenceError("Codex host setup postflight is unverified") from cleanup_error
+        else:
+            proof = None
+        if proof is not None:
+            path = (
+                _private_evidence_directory(
+                    run_dir,
+                    scenario_id,
+                    "codex-host-setup-postflight",
+                )
+                / "postflight.json"
+            )
+            write_json(path, proof)
+            if proof["status"] != "clean":
+                raise EvidenceError("Codex host setup left an uncertain run") from error
+        raise SandboxUnavailable("Codex same-run host capacity is unavailable") from error
+    try:
+        yield capacity
+    finally:
+        failed = sys.exc_info()[0] is not None
+        try:
+            proof = capacity.close()
+        except Exception as error:
+            raise EvidenceError("Codex host postflight failed") from error
+        finally:
+            _ACTIVE_CODEX_RUNS.discard(state["run_id"])
+        path = (
+            _private_evidence_directory(
+                run_dir,
+                scenario_id,
+                "codex-host-postflight",
+            )
+            / "postflight.json"
+        )
+        write_json(path, proof)
+        if proof["status"] != "clean" and not failed:
+            raise EvidenceError("Codex host postflight is uncertain")
+
+
 def run_scenario(
-    run_dir: Path, source_root: Path, contract_path: Path, scenario_id: str,
+    run_dir: Path,
+    source_root: Path,
+    contract_path: Path,
+    scenario_id: str,
 ) -> dict[str, Any]:
     state, plan, contract = load_run(run_dir, source_root, contract_path)
     if scenario_id not in contract["gates"]["P1"]["scenarios"]:
@@ -1773,38 +2594,71 @@ def run_scenario(
         raise EvidenceError(reason)
     scenario = state["scenarios"][scenario_id]
     scenario["reason"] = "running"
-    for command in commands:
-        command_id = command["command_id"]
-        if command_id in scenario["commands"]:
-            validate_ref(scenario["commands"][command_id]["output"], run_dir)
-            continue
-        try:
-            scenario["commands"][command_id] = execute_command(
-                state, plan, scenario_id, command, run_dir, source_root,
-            )
-            write_state(run_dir, state)
-        except SandboxUnavailable as error:
+    try:
+        with _codex_capacity_context(state, plan, run_dir, scenario_id):
+            for command in commands:
+                command_id = command["command_id"]
+                if command_id in scenario["commands"]:
+                    validate_ref(scenario["commands"][command_id]["output"], run_dir)
+                    continue
+                try:
+                    scenario["commands"][command_id] = execute_command(
+                        state,
+                        plan,
+                        scenario_id,
+                        command,
+                        run_dir,
+                        source_root,
+                    )
+                    write_state(run_dir, state)
+                except SandboxUnavailable as error:
+                    scenario["status"] = "not_run"
+                    scenario["reason"] = str(error)
+                    state["updated_at"] = now_text()
+                    write_state(run_dir, state)
+                    finalize(run_dir, source_root, contract_path, allow_pass=False)
+                    raise
+                except SourceMutationError as error:
+                    scenario["status"] = "blocked"
+                    scenario["reason"] = str(error)
+                    state["source_compromised"] = True
+                    state["gate_status"] = "blocked"
+                    state["updated_at"] = now_text()
+                    write_state(run_dir, state)
+                    raise
+                except EvidenceError as error:
+                    scenario["status"] = "blocked"
+                    scenario["reason"] = str(error)
+                    state["updated_at"] = now_text()
+                    write_state(run_dir, state)
+                    finalize(run_dir, source_root, contract_path, allow_pass=False)
+                    raise
+    except SandboxUnavailable as error:
+        if scenario.get("status") == "running":
             scenario["status"] = "not_run"
             scenario["reason"] = str(error)
             state["updated_at"] = now_text()
             write_state(run_dir, state)
             finalize(run_dir, source_root, contract_path, allow_pass=False)
-            raise
-        except SourceMutationError as error:
-            scenario["status"] = "blocked"
-            scenario["reason"] = str(error)
-            state["source_compromised"] = True
-            state["gate_status"] = "blocked"
-            state["updated_at"] = now_text()
-            write_state(run_dir, state)
-            raise
-        except EvidenceError as error:
+        raise
+    except EvidenceError as error:
+        if scenario.get("status") == "running":
             scenario["status"] = "blocked"
             scenario["reason"] = str(error)
             state["updated_at"] = now_text()
             write_state(run_dir, state)
             finalize(run_dir, source_root, contract_path, allow_pass=False)
+        raise
+    except Exception as error:
+        if scenario_id != "P1-CODEX-LIFECYCLE":
             raise
+        if scenario.get("status") == "running":
+            scenario["status"] = "blocked"
+            scenario["reason"] = "Codex host or probe failed unexpectedly"
+            state["updated_at"] = now_text()
+            write_state(run_dir, state)
+            finalize(run_dir, source_root, contract_path, allow_pass=False)
+        raise EvidenceError("Codex host or probe failed unexpectedly") from error
     scenario["status"] = "passed"
     scenario["reason"] = "complete direct evidence"
     state["updated_at"] = now_text()
@@ -1825,16 +2679,23 @@ def audit_run(run_dir: Path, source_root: Path, contract_path: Path) -> dict[str
     audit_commands(state, plan, run_dir)
     for path in run_dir.rglob("*"):
         relative = path.relative_to(run_dir)
-        if (path.is_file() and path.name not in {"RUN-MANIFEST.json", STATE_KEY_NAME}
-                and relative.parts[0] not in {"source-snapshot", "workspaces"}
-                and secret_findings(path.read_bytes())):
+        if (
+            path.is_file()
+            and path.name not in {"RUN-MANIFEST.json", STATE_KEY_NAME}
+            and relative.parts[0] not in {"source-snapshot", "workspaces"}
+            and secret_findings(path.read_bytes())
+        ):
             raise EvidenceError(f"secret-like material in {path.relative_to(run_dir)}")
-    for workspace in ((run_dir / "scenario-output").glob("*")
-                      if (run_dir / "scenario-output").exists() else ()):
+    for workspace in (
+        (run_dir / "scenario-output").glob("*") if (run_dir / "scenario-output").exists() else ()
+    ):
         if workspace.is_dir():
             audit_workspace(workspace, state, run_dir)
     manifest = strict_json((run_dir / "RUN-MANIFEST.json").read_bytes())
-    if manifest.get("schema_version") != MANIFEST_SCHEMA or manifest.get("run_id") != state["run_id"]:
+    if (
+        manifest.get("schema_version") != MANIFEST_SCHEMA
+        or manifest.get("run_id") != state["run_id"]
+    ):
         raise EvidenceError("run manifest identity mismatch")
     for name, expected in manifest.get("files", {}).items():
         path = run_dir / name
@@ -1861,10 +2722,18 @@ def main(argv: list[str] | None = None) -> int:
         source_root = args.source_root.resolve(strict=True)
         contract_path = args.contract.resolve(strict=True)
         if args.action == "init":
-            state = initialize(args.plan.resolve(strict=True), args.run_dir.absolute(), source_root, contract_path)
-            output = {"status": "not_run", "run_id": state["run_id"], "run_dir": str(args.run_dir.absolute())}
+            state = initialize(
+                args.plan.resolve(strict=True), args.run_dir.absolute(), source_root, contract_path
+            )
+            output = {
+                "status": "not_run",
+                "run_id": state["run_id"],
+                "run_dir": str(args.run_dir.absolute()),
+            }
         elif args.action == "run":
-            record = run_scenario(args.run_dir.resolve(strict=True), source_root, contract_path, args.scenario)
+            record = run_scenario(
+                args.run_dir.resolve(strict=True), source_root, contract_path, args.scenario
+            )
             output = {"status": record["status"], "scenario": args.scenario}
         else:
             record = audit_run(args.run_dir.resolve(strict=True), source_root, contract_path)

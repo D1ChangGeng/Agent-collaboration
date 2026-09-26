@@ -89,6 +89,56 @@ class GateRuntimeProvisionTests(unittest.TestCase):
         self.assertFalse(self.destination.exists())
         self.assertEqual(list(self.root.glob(".installed.stage-*")), [])
 
+    def test_codex_owner_refs_are_paired_and_attached_to_plan(self):
+        from tools.runtime.tests.test_p1_codex_lifecycle import scene_profile
+
+        private = self.root / "codex-private"
+        private.mkdir(mode=0o700)
+        scene = private / "scene.json"
+        scene.write_text(json.dumps(scene_profile()), encoding="utf-8")
+        scene.chmod(0o600)
+        budget = private / "budget.json"
+        budget.write_text("{}", encoding="utf-8")
+        budget.chmod(0o600)
+        loopback = json.loads(self.profile.read_text(encoding="utf-8"))
+        loopback["schema_version"] = "acs-p1-loopback-probe-profile/2"
+        loopback["codex_scene_mode"] = "same-run-host-node"
+        self.profile.write_text(json.dumps(loopback), encoding="utf-8")
+        self.profile.chmod(0o600)
+        with self.assertRaisesRegex(RuntimeError, "must be paired"):
+            provisioner.provision(
+                self.source,
+                self.destination,
+                self.profile,
+                codex_scene_profile=scene,
+            )
+        self.assertFalse(self.destination.exists())
+        budget.chmod(0o644)
+        with self.assertRaisesRegex(RuntimeError, "bounded 0600"):
+            provisioner.provision(
+                self.source,
+                self.destination,
+                self.profile,
+                codex_scene_profile=scene,
+                budget_decision=budget,
+            )
+        self.assertFalse(self.destination.exists())
+        budget.chmod(0o600)
+        result = provisioner.provision(
+            self.source,
+            self.destination,
+            self.profile,
+            codex_scene_profile=scene,
+            budget_decision=budget,
+        )
+        plan = self.root / "codex-plan.json"
+        plan.write_text('{"runtime_profile":null}', encoding="utf-8")
+        provisioner.attach_plan(plan, result)
+        attached = json.loads(plan.read_text(encoding="utf-8"))["runtime_profile"]
+        for name, path in (("codex_scene_profile", scene), ("budget_decision", budget)):
+            self.assertEqual(attached[name]["path"], str(path))
+            self.assertEqual(attached[name]["sha256"], provisioner.sha256(path))
+
 
 class GateRuntimeProvisionWindowsTests(unittest.TestCase):
     def test_windows_fails_closed_before_destination_creation(self):

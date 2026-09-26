@@ -99,6 +99,7 @@ class ScenarioCatalog:
         "P1-AUTH-REVOCATION", "P1-CORE-RESTART", "P1-NODE-RESTART",
         "P1-PROVIDER-RESTART", "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT",
         "P1-STALE-BASELINE", "P1-PARTIAL-ARTIFACT",
+        "P1-CODEX-LIFECYCLE",
     })
     TESTS: ClassVar[dict[str, tuple[str, ...]]] = {
         "P1-DOMAIN-TRANSACTION": (
@@ -172,7 +173,7 @@ class ScenarioCatalog:
         ),
     }
     MODEL_REQUIREMENTS: ClassVar[dict[str, str]] = {
-        "P1-CODEX-LIFECYCLE": "codex_model_evidence",
+        "P1-CODEX-LIFECYCLE": "same_run_codex_host",
         "P1-OPENCODE-LIFECYCLE": "opencode_model_evidence",
         "P1-INTEGRATED-ACCEPTANCE": "all_model_scenarios",
     }
@@ -197,15 +198,22 @@ def _secure_profile(path: Path) -> tuple[dict[str, Any], str, tuple[bytes, ...]]
         raise ProbeRejected("P1 loopback provider profile requires an absolute POSIX path")
     parent = path.parent
     parent_info = parent.stat(follow_symlinks=False)
-    if (not stat.S_ISDIR(parent_info.st_mode) or parent_info.st_uid != os.geteuid()
-            or stat.S_IMODE(parent_info.st_mode) != 0o700):
+    if (
+        not stat.S_ISDIR(parent_info.st_mode)
+        or parent_info.st_uid != os.geteuid()
+        or stat.S_IMODE(parent_info.st_mode) != 0o700
+    ):
         raise ProbeRejected("P1 profile directory must be owner-only")
     descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
     try:
         info = os.fstat(descriptor)
-        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid()
-                or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1
-                or info.st_size > 65_536):
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_uid != os.geteuid()
+            or stat.S_IMODE(info.st_mode) != 0o600
+            or info.st_nlink != 1
+            or info.st_size > 65_536
+        ):
             raise ProbeRejected("P1 profile file must be one owner-only regular file")
         data = os.read(descriptor, 65_537)
     finally:
@@ -215,20 +223,42 @@ def _secure_profile(path: Path) -> tuple[dict[str, Any], str, tuple[bytes, ...]]
     except (UnicodeError, ValueError):
         raise ProbeRejected("P1 profile JSON is invalid") from None
     required = {
-        "schema_version", "profile", "source_root", "python", "postgres_dsn",
+        "schema_version",
+        "profile",
+        "source_root",
+        "python",
+        "postgres_dsn",
         "sandbox_python",
-        "temporal_endpoint", "temporal_namespace", "versions", "node_id",
-        "direction", "codex_model_evidence", "opencode_model_evidence",
+        "temporal_endpoint",
+        "temporal_namespace",
+        "versions",
+        "node_id",
+        "direction",
+        "codex_model_evidence",
+        "opencode_model_evidence",
     }
-    if not isinstance(value, dict) or set(value) != required or value["schema_version"] != SCHEMA:
+    profile_v2 = (
+        isinstance(value, dict) and value.get("schema_version") == "acs-p1-loopback-probe-profile/2"
+    )
+    expected = required | {"codex_scene_mode"} if profile_v2 else required
+    if (
+        not isinstance(value, dict)
+        or set(value) != expected
+        or value["schema_version"] != ("acs-p1-loopback-probe-profile/2" if profile_v2 else SCHEMA)
+        or profile_v2
+        and value.get("codex_scene_mode") != "same-run-host-node"
+    ):
         raise ProbeRejected("P1 profile fields are invalid")
     connection = conninfo_to_dict(value["postgres_dsn"])
-    if (connection.get("host") != "127.0.0.1" or connection.get("port") != "54329"
-            or not connection.get("password") or value["temporal_endpoint"] != "127.0.0.1:7239"):
+    if (
+        connection.get("host") != "127.0.0.1"
+        or connection.get("port") != "54329"
+        or not connection.get("password")
+        or value["temporal_endpoint"] != "127.0.0.1:7239"
+    ):
         raise ProbeRejected("P1 providers must be the declared loopback targets")
     secrets = tuple(
-        item.encode() for item in (connection.get("password"),)
-        if isinstance(item, str) and item
+        item.encode() for item in (connection.get("password"),) if isinstance(item, str) and item
     )
     return value, _sha(data), secrets
 
@@ -264,21 +294,30 @@ def _model_evidence_current(profile: dict[str, Any], field: str, commit: str) ->
 
 
 def availability(profile: dict[str, Any], commit: str) -> dict[str, dict[str, Any]]:
-    codex = _model_evidence_current(profile, "codex_model_evidence", commit)
+    # A historical model receipt cannot authorize this same-run host scene.
+    codex = False
+    codex_scene_planned = profile.get("codex_scene_mode") == "same-run-host-node"
     opencode = _model_evidence_current(profile, "opencode_model_evidence", commit)
     values = {}
     for scenario in ScenarioCatalog.TESTS:
         requirement = ScenarioCatalog.MODEL_REQUIREMENTS.get(scenario)
-        resource_ready = requirement is None or requirement == "codex_model_evidence" and codex \
-            or requirement == "opencode_model_evidence" and opencode \
-            or requirement == "all_model_scenarios" and codex and opencode
+        resource_ready = (
+            requirement is None
+            or requirement == "same_run_codex_host"
+            and codex_scene_planned
+            or requirement == "opencode_model_evidence"
+            and opencode
+            or requirement == "all_model_scenarios"
+            and codex
+            and opencode
+        )
         ready = scenario in ScenarioCatalog.LINEAGE_BOUND and resource_ready
         if ready:
             reason = "ready"
         elif not resource_ready:
             reason = (
-                "Codex actual model/login evidence is NOT_RUN"
-                if requirement == "codex_model_evidence"
+                "Codex same-run restricted host lifecycle is NOT_RUN"
+                if requirement == "same_run_codex_host"
                 else "OpenCode actual model evidence is absent or stale"
                 if requirement == "opencode_model_evidence"
                 else "integrated acceptance waits for both actual model lifecycle scenarios"
@@ -314,6 +353,10 @@ class ProbeLedger:
                     observed_at TEXT NOT NULL,PRIMARY KEY(scenario_id,kind));
                 CREATE TABLE IF NOT EXISTS schema_reservations(
                     pg_schema TEXT PRIMARY KEY,created_at TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS codex_host_requests(
+                    scenario_id TEXT PRIMARY KEY,request_json TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS codex_faults(
+                    scenario_id TEXT PRIMARY KEY,fault_json TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS scenario_claims(
                     scenario_id TEXT PRIMARY KEY,run_id TEXT NOT NULL,suffix TEXT NOT NULL,
                     state TEXT NOT NULL CHECK(state IN ('pending','completed')),
@@ -339,7 +382,8 @@ class ProbeLedger:
         columns = tuple(value)
         with self._connect() as connection:
             existing = connection.execute(
-                "SELECT * FROM scenario_runs WHERE scenario_id=?", (value["scenario_id"],),
+                "SELECT * FROM scenario_runs WHERE scenario_id=?",
+                (value["scenario_id"],),
             ).fetchone()
             if existing is not None:
                 if dict(existing) != value:
@@ -373,6 +417,53 @@ class ProbeLedger:
                 "INSERT OR IGNORE INTO schema_reservations VALUES (?,?)",
                 (pg_schema, datetime.now(UTC).isoformat()),
             )
+
+    def put_codex_request(self, scenario: str, request_json: str) -> None:
+        with self._connect() as connection:
+            previous = connection.execute(
+                "SELECT request_json FROM codex_host_requests WHERE scenario_id=?",
+                (scenario,),
+            ).fetchone()
+            if previous is not None and previous[0] != request_json:
+                raise ProbeRejected("Codex original host request changed")
+            connection.execute(
+                "INSERT OR IGNORE INTO codex_host_requests VALUES (?,?)",
+                (scenario, request_json),
+            )
+
+    def codex_request(self, scenario: str) -> str:
+        with closing(self._connect()) as connection:
+            row = connection.execute(
+                "SELECT request_json FROM codex_host_requests WHERE scenario_id=?",
+                (scenario,),
+            ).fetchone()
+        if row is None:
+            raise ProbeRejected("Codex original host request is unavailable")
+        return row[0]
+
+    def put_codex_fault(self, scenario: str, fault: dict[str, Any]) -> None:
+        encoded = json.dumps(fault, sort_keys=True, separators=(",", ":"))
+        with self._connect() as connection:
+            prior = connection.execute(
+                "SELECT fault_json FROM codex_faults WHERE scenario_id=?",
+                (scenario,),
+            ).fetchone()
+            if prior is not None and prior[0] != encoded:
+                raise ProbeRejected("Codex ACK-loss fault record changed")
+            connection.execute(
+                "INSERT OR IGNORE INTO codex_faults VALUES (?,?)",
+                (scenario, encoded),
+            )
+
+    def codex_fault(self, scenario: str) -> dict[str, Any]:
+        with closing(self._connect()) as connection:
+            row = connection.execute(
+                "SELECT fault_json FROM codex_faults WHERE scenario_id=?",
+                (scenario,),
+            ).fetchone()
+        if row is None:
+            raise ProbeRejected("Codex ACK-loss fault record is unavailable")
+        return json.loads(row[0])
 
     def claim(self, scenario: str, run_id: str) -> tuple[str, datetime]:
         suffix = _sha(f"{run_id}:{scenario}".encode())[:24]
@@ -2704,17 +2795,272 @@ def _run_domain_transaction(
     return value
 
 
-def _run_tests(profile: dict[str, Any], scenario: str, ledger: ProbeLedger,
-               commit: str, tree: str,
-               fault: Callable[[str], None] | None = None) -> dict[str, Any]:
+def _run_codex_host_scene(
+    profile: dict[str, Any],
+    ledger: ProbeLedger,
+    commit: str,
+    tree: str,
+    run_id: str,
+    suffix: str,
+    issued_at: datetime,
+) -> dict[str, Any]:
+    from runtime.p1_codex_host_node import CodexHostRequest
+    from runtime.receiver_paths import open_validated_file
+    from tools.runtime.p1_codex_lifecycle import (
+        DECISION_ID,
+        _host_result_from_socket,
+        dispatch_host_without_ack,
+        load_scene_profile,
+        validate_lineage,
+        verify_budget_decision,
+    )
+
+    scene_path = Path(os.environ.get("ACS_GATE_CODEX_PROFILE", ""))
+    scene_sha = os.environ.get("ACS_GATE_CODEX_PROFILE_SHA256", "")
+    budget_sha = os.environ.get("ACS_GATE_BUDGET_DECISION_SHA256", "")
+    ready_path = Path(os.environ.get("ACS_GATE_CODEX_HOST_READY", ""))
+    ready_sha = os.environ.get("ACS_GATE_CODEX_HOST_READY_SHA256", "")
+    if (
+        scene_path != Path("/run/acs-p1/codex-profile.json")
+        or ready_path != Path("/run/acs-p1/codex-ready.json")
+        or os.environ.get("ACS_GATE_CODEX_HOST_SOCKET") != "/run/acs-p1/codex-host.sock"
+    ):
+        raise ProbeUnavailable("restricted Codex host mounts are unavailable")
+    scene = load_scene_profile(scene_path, scene_sha)
+    verify_budget_decision(
+        Path("/run/acs-p1/budget-decision.json"),
+        budget_sha,
+        source_commit=commit,
+        source_tree=tree,
+        scene_profile_sha256=scene_sha,
+        decision_id=DECISION_ID,
+        provider_alias=scene["provider_alias"],
+        model=scene["model"],
+    )
+    try:
+        descriptor, _ = open_validated_file(ready_path, private=True)
+        try:
+            ready_data = os.read(descriptor, 65537)
+        finally:
+            os.close(descriptor)
+    except OSError as error:
+        raise ProbeRejected("Codex host ready file is unavailable") from error
+    if len(ready_data) > 65536 or _sha(ready_data) != ready_sha:
+        raise ProbeRejected("Codex host ready file digest differs")
+    ready = json.loads(ready_data)
+    expected_ready = {
+        "schema_version",
+        "run_id",
+        "schema",
+        "endpoint_id",
+        "endpoint_descriptor",
+        "binding_revision",
+        "node_id",
+        "machine_id",
+        "boot_incarnation",
+        "source_commit",
+        "source_tree",
+        "scene_sha256",
+        "budget_sha256",
+        "config_sha256",
+        "deadline",
+    }
+    if (
+        not isinstance(ready, dict)
+        or set(ready) != expected_ready
+        or ready["schema_version"] != "acs-p1-codex-host-ready/1"
+        or ready["run_id"] != run_id
+        or ready["source_commit"] != commit
+        or ready["source_tree"] != tree
+        or ready["scene_sha256"] != scene_sha
+        or ready["budget_sha256"] != budget_sha
+        or ready["node_id"] != profile["node_id"]
+        or ready["machine_id"] != os.environ.get("ACS_GATE_MACHINE_ID")
+        or ready["schema"] != "p1_codex_" + run_id.removeprefix("p1-run-")[:24]
+        or ready["endpoint_id"] != "codex-endpoint-" + run_id.removeprefix("p1-run-")[:24]
+        or ready["binding_revision"] != 1
+        or not isinstance(ready["endpoint_descriptor"], dict)
+        or ready["endpoint_descriptor"].get("evidence_class") != "native_driver_observation"
+        or ready["endpoint_descriptor"].get("supports_invoke") is not True
+        or ready["endpoint_descriptor"].get("boot_incarnation") != ready["boot_incarnation"]
+        or ready["endpoint_descriptor"].get("machine_id") != ready["machine_id"]
+        or ready["endpoint_descriptor"].get("node_id") != ready["node_id"]
+        or not re.fullmatch(r"[a-f0-9]{64}", ready["config_sha256"])
+    ):
+        raise ProbeRejected("Codex host ready identity differs")
+    deadline = datetime.fromisoformat(ready["deadline"])
+    if deadline.tzinfo is None or deadline <= datetime.now(UTC) + timedelta(seconds=1):
+        raise ProbeUnavailable("Codex host deadline ended before original command")
+    ledger.reserve_schema(ready["schema"])
+    scoped = make_conninfo(profile["postgres_dsn"], options=f"-c search_path={ready['schema']}")
+    authority = DomainAuthority(scoped)
+    work_id = "codex-work-" + suffix
+    message_id = "codex-message-" + suffix
+
+    def command(name: str, target_kind: str, target_id: str) -> CommandEnvelope:
+        return CommandEnvelope(
+            command_id=f"p1-codex:{suffix}:{name}",
+            idempotency_key=f"p1-codex:{suffix}:{name}:key",
+            correlation_id=run_id,
+            command_type=name,
+            tenant_id=authority.tenant_id,
+            authority_id=authority.context.authority_id,
+            authority_incarnation=authority.context.authority_incarnation,
+            principal_ref=authority.context.principal_ref,
+            grant_ref=authority.context.grant_ref,
+            target_kind=target_kind,
+            target_id=target_id,
+            expected_revision=0,
+            issued_at=issued_at,
+            deadline=deadline,
+        )
+
+    authority.create_work_item(
+        command("work_item.create", "work_item", work_id),
+        "local-scope",
+        "local-slot",
+        commit,
+    )
+    packet = DeliveryPacket(
+        work_item_id=work_id,
+        target_scope_id="local-scope",
+        target_agent_slot_id="local-slot",
+        accepted_revision=0,
+        goal="Observe one authorized Codex lifecycle turn",
+        accepted_state_summary="revision zero",
+        request="Reply with exactly ACS_P1_CODEX_API_OK. Do not call tools.",
+        source_baseline=commit,
+        expected_response="ACS_P1_CODEX_API_OK",
+        activation="invoke",
+        deadline=deadline - timedelta(seconds=1),
+        maximum_attempts=1,
+    )
+    send = command("message.send", "message", message_id)
+    service = DeliveryService(authority, {})
+    sent = service.send_message(send, packet, endpoint_id=ready["endpoint_id"], binding_revision=1)
+    request = CodexHostRequest(
+        action="dispatch",
+        run_id=run_id,
+        tenant_id=authority.tenant_id,
+        message_id=message_id,
+        command_id=send.command_id,
+        operation_id=sent.operation_id,
+        endpoint_id=ready["endpoint_id"],
+        source_commit=commit,
+        native_sha256=scene["native_executable_sha256"],
+        config_sha256=ready["config_sha256"],
+    )
+    identity = {
+        "run_id": run_id,
+        "message_id": message_id,
+        "command_id": send.command_id,
+        "operation_id": sent.operation_id,
+    }
+    dispatch_host_without_ack(request)
+    readback_request = request.model_copy(update={"action": "readback"})
+    received = _host_result_from_socket(
+        readback_request,
+        identity,
+        timeout_seconds=120,
+    )
+    lineage = received.scene_readback
+    if (
+        not isinstance(lineage, dict)
+        or received.scene_readback_sha256 != _sha(_canonical(lineage))
+        or lineage["run_id"] != run_id
+        or lineage["source_commit"] != commit
+        or lineage["source_tree"] != tree
+        or lineage["machine_id"] != profile["machine_id"]
+        or lineage["node_id"] != profile["node_id"]
+        or lineage["command_id"] != send.command_id
+        or lineage["message_id"] != message_id
+        or lineage["operation_id"] != sent.operation_id
+        or lineage["attempt_id"] != received.attempt_id
+        or lineage["dispatch_id"] != received.dispatch_id
+    ):
+        raise ProbeRejected("Codex host original terminal lineage differs")
+    validate_lineage(lineage)
+    raw = ledger.root / "P1-CODEX-LIFECYCLE-runtime.json"
+    data = _private_json(raw, lineage)
+    with authority._connect() as connection:
+        event = connection.execute(
+            "SELECT event_id FROM domain_events WHERE tenant_id=%s AND command_id=%s",
+            (authority.tenant_id, send.command_id),
+        ).fetchall()
+        receipt = connection.execute(
+            "SELECT receipt_id FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s "
+            "AND layer='response_received'",
+            (authority.tenant_id, message_id),
+        ).fetchall()
+    if len(event) != 1 or len(receipt) != 1:
+        raise ProbeRejected("Codex Domain event/response receipt is incomplete")
+    row = {
+        "scenario_id": "P1-CODEX-LIFECYCLE",
+        "run_id": run_id,
+        "operation_id": sent.operation_id,
+        "message_id": message_id,
+        "event_id": str(event[0][0]),
+        "receipt_id": receipt[0][0],
+        "test_digest": _sha(data),
+        "raw_path": raw.name,
+        "pg_schema": ready["schema"],
+        "temporal_workflow_id": lineage["temporal"]["workflow_id"],
+        "temporal_run_id": lineage["temporal"]["run_id"],
+        "lineage_json": json.dumps(lineage, sort_keys=True),
+        "source_commit": commit,
+        "source_tree": tree,
+        "status": "passed",
+        "created_at": datetime.now(UTC).isoformat(),
+    }
+    ledger.put_codex_request(
+        "P1-CODEX-LIFECYCLE",
+        readback_request.model_dump_json(),
+    )
+    ledger.put_codex_fault(
+        "P1-CODEX-LIFECYCLE",
+        {
+            "schema_version": "acs-p1-codex-ack-loss/1",
+            "run_id": run_id,
+            "command_id": send.command_id,
+            "message_id": message_id,
+            "operation_id": sent.operation_id,
+            "dispatch_request_sha256": _sha(request.model_dump_json().encode()),
+            "closed_without_reply": True,
+            "readback_request_sha256": _sha(readback_request.model_dump_json().encode()),
+            "readback_sha256": received.scene_readback_sha256,
+            "native_turn_starts": lineage["driver"]["turn_start_dispatch_count"],
+        },
+    )
+    ledger.put(row)
+    return row
+
+
+def _run_tests(
+    profile: dict[str, Any],
+    scenario: str,
+    ledger: ProbeLedger,
+    commit: str,
+    tree: str,
+    fault: Callable[[str], None] | None = None,
+) -> dict[str, Any]:
     if ledger.get(scenario) is not None:
         return ledger.get(scenario)
     run_id = os.environ.get("ACS_GATE_RUN_ID", "standalone-" + _sha(os.urandom(16))[:24])
     suffix, issued_at = ledger.claim(scenario, run_id)
     if scenario not in ScenarioCatalog.LINEAGE_BOUND:
         raise ProbeUnavailable("scenario has no real Runtime lineage adapter")
+    if scenario == "P1-CODEX-LIFECYCLE":
+        return _run_codex_host_scene(profile, ledger, commit, tree, run_id, suffix, issued_at)
     return _run_domain_transaction(
-        profile, scenario, ledger, commit, tree, run_id, suffix, issued_at, fault,
+        profile,
+        scenario,
+        ledger,
+        commit,
+        tree,
+        run_id,
+        suffix,
+        issued_at,
+        fault,
     )
 
 
@@ -3287,6 +3633,36 @@ def _stale_source_readback(profile, ledger, row, proof):
 def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 ledger: ProbeLedger, row: dict[str, Any]) -> dict[str, Any]:
     lineage = json.loads(row["lineage_json"])
+    if scenario == "P1-CODEX-LIFECYCLE":
+        from runtime.p1_codex_host_node import CodexHostRequest
+        from tools.runtime.p1_codex_lifecycle import read_codex_layer
+
+        host_request = ledger.codex_request(scenario)
+        layer = read_codex_layer(
+            profile,
+            ledger.root,
+            {**row, "host_request_json": host_request},
+            kind,
+        )
+        if kind == "command_output":
+            readback = CodexHostRequest.model_validate_json(host_request, strict=True)
+            dispatch = readback.model_copy(update={"action": "dispatch"})
+            fault = ledger.codex_fault(scenario)
+            if (
+                fault.get("schema_version") != "acs-p1-codex-ack-loss/1"
+                or fault.get("run_id") != lineage["run_id"]
+                or fault.get("command_id") != lineage["command_id"]
+                or fault.get("message_id") != lineage["message_id"]
+                or fault.get("operation_id") != lineage["operation_id"]
+                or fault.get("dispatch_request_sha256") != _sha(dispatch.model_dump_json().encode())
+                or fault.get("readback_request_sha256") != _sha(readback.model_dump_json().encode())
+                or fault.get("readback_sha256") != _sha(_canonical(lineage))
+                or fault.get("closed_without_reply") is not True
+                or fault.get("native_turn_starts") != 1
+            ):
+                raise ProbeRejected("Codex original ACK-loss fault is unproven")
+            layer["ack_loss_injected"] = True
+        return layer
     required_lineage = {
         "tenant_id", "command_id", "message_id", "operation_id", "attempt_id",
         "dispatch_id", "attempts", "event_ids", "receipts", "driver_calls",
