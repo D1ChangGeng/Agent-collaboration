@@ -355,7 +355,7 @@ class DomainAuthority:
                 "authority_incarnation,scope_id,permissions,expires_at,revoked_at) "
                 "VALUES (%s,%s,%s,%s,%s,'local-scope',%s,"
                 "now()+interval '365 days',NULL) "
-                ("ON CONFLICT (grant_ref) DO NOTHING" if preserve_existing else
+                + ("ON CONFLICT (grant_ref) DO NOTHING" if preserve_existing else
                  "ON CONFLICT (grant_ref) DO UPDATE SET "
                  "tenant_id=EXCLUDED.tenant_id,"
                  "principal_ref=EXCLUDED.principal_ref,"
