@@ -1,0 +1,365 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agent-collaboration:proposed:packet:2.0-draft",
+  "title": "Proposed Collaboration Packet — not an adopted standard",
+  "$comment": "Structure only. Does not establish authentication, authorization, evidence truth, artifact availability, signature integrity, idempotency or delivery. DeliveryAttempt/provider state is intentionally not part of the logical packet.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0-draft"
+    },
+    "message_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "type": {
+      "enum": [
+        "request",
+        "response",
+        "followup",
+        "status"
+      ]
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "causation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "in_reply_to": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "supersedes": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "root_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "route_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "sender": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "agent_slot_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "runtime_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "agent_slot_id"
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "agent_slot_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "agent_slot_id"
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "authority_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "authority_incarnation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "grant_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "permitted_scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "authority_id",
+        "authority_incarnation",
+        "grant_ref",
+        "permitted_scope"
+      ]
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "goal": {
+          "type": "string",
+          "minLength": 1
+        },
+        "accepted_state": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "revision_ref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "revision_ref",
+            "summary"
+          ]
+        },
+        "request": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "goal",
+        "accepted_state",
+        "request",
+        "acceptance_criteria",
+        "constraints"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "relationship": {
+          "enum": [
+            "unbound",
+            "shared_checkout",
+            "separate_clones",
+            "remote_access",
+            "evidence_only"
+          ]
+        },
+        "baseline_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "required": [
+        "relationship",
+        "baseline_refs",
+        "evidence_refs"
+      ]
+    },
+    "knowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "artifact_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "artifact_id",
+              "sha256",
+              "purpose"
+            ]
+          }
+        },
+        "inline_context": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "references",
+        "inline_context"
+      ]
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "artifact_id",
+          "sha256",
+          "purpose"
+        ]
+      }
+    },
+    "context_policy": {
+      "enum": [
+        "warm_compatible",
+        "fresh",
+        "sanitized_finalization"
+      ]
+    },
+    "response_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expected_output": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "unresolved_questions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "expected_output",
+        "required_evidence",
+        "unresolved_questions"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "message_id",
+    "type",
+    "correlation_id",
+    "created_at",
+    "tenant_id",
+    "project_id",
+    "root_id",
+    "route_id",
+    "task_id",
+    "sender",
+    "target",
+    "authority",
+    "task",
+    "source",
+    "knowledge",
+    "artifacts",
+    "context_policy",
+    "response_contract"
+  ]
+}

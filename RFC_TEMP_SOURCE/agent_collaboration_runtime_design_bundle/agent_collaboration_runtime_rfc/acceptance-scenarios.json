@@ -1,0 +1,639 @@
+{
+  "status": "planned_not_executed",
+  "scope": "Implementation conformance and real-environment fault injection",
+  "scenarios": [
+    {
+      "id": "E2E-01",
+      "title": "核心跨机器异构协作",
+      "status": "not_run",
+      "given": "Two enrolled machines and different Harnesses; native multi-agent disabled",
+      "fault_or_change": "None",
+      "action": "External Management/Route Agents explicitly submit binding and invocation commands for two external Agent instances in different Harnesses; those Agents decide to exchange request/response, review, integrate and finalize through Collaboration Packets",
+      "assertions": [
+        "No human message forwarding",
+        "Root/Route/Task IDs unchanged",
+        "Evidence matches integrated baseline",
+        "The system delivers and records the requested collaboration; it does not decide team composition, communication or next steps"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-02",
+      "title": "用户退出",
+      "status": "not_run",
+      "given": "External Management Agent has submitted an authorized durable goal and an external Agent Session is active or bound",
+      "fault_or_change": "Close UI and terminate MCP client connection",
+      "action": "Close UI and MCP client; continue already submitted operations while the external Session remains available, or preserve pending state and let an external Management Agent explicitly rebind a new Session before further reasoning",
+      "assertions": [
+        "Submitted operations do not depend on client connection",
+        "No implicit Agent reasoning, new delegation or new WorkItem occurs after Session loss",
+        "New entry reconstructs current durable state",
+        "Further reasoning resumes only after an external Management Agent Session is available"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-03",
+      "title": "Harness 崩溃",
+      "status": "not_run",
+      "given": "An external Agent Runtime/Harness Session modifying an isolated worktree",
+      "fault_or_change": "Kill Harness during an action",
+      "action": "Inspect effects and fence the old Attempt; after an explicit external recovery command, resume the external Session or bind a new external Agent Runtime",
+      "assertions": [
+        "No blind overwrite",
+        "New attempt identity",
+        "Task continuity preserved"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-04",
+      "title": "网络分区",
+      "status": "not_run",
+      "given": "Two nodes and hosted authority",
+      "fault_or_change": "Partition one node",
+      "action": "Exercise within-grant private work and attempt protected publication",
+      "assertions": [
+        "No global offline lease renewal",
+        "Protected publication denied without valid authority",
+        "Reconcile after reconnect"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-05",
+      "title": "Node 重启",
+      "status": "not_run",
+      "given": "Spawn operation journaled",
+      "fault_or_change": "Restart Node after spawn before acknowledgement",
+      "action": "Inspect operation labels and provider state",
+      "assertions": [
+        "No unjustified duplicate spawn",
+        "PID reuse does not prove runtime identity"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-06",
+      "title": "机器重启",
+      "status": "not_run",
+      "given": "Active Runtime with saved checkpoint",
+      "fault_or_change": "Reboot host",
+      "action": "Enroll same device with new boot/incarnation and reconcile",
+      "assertions": [
+        "Old process binding invalidated",
+        "Evidence and Task survive according to durability profile"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-07",
+      "title": "Core 提交后崩溃",
+      "status": "not_run",
+      "given": "Task command transaction commits",
+      "fault_or_change": "Kill Core before outbox dispatch",
+      "action": "Restart dispatcher",
+      "assertions": [
+        "One logical task",
+        "Committed outbox delivered",
+        "Repeated command returns original result"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-08",
+      "title": "收件 ACK 丢失",
+      "status": "not_run",
+      "given": "Target inbox commit succeeds",
+      "fault_or_change": "Drop acknowledgement",
+      "action": "Retry the same message",
+      "assertions": [
+        "Same message_id",
+        "One logical inbox consumption",
+        "Known receipt returned"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-09",
+      "title": "外部效果响应丢失",
+      "status": "not_run",
+      "given": "Authorized PR creation",
+      "fault_or_change": "External creation succeeds; response lost",
+      "action": "Query external operation marker and read back",
+      "assertions": [
+        "No blind second PR creation",
+        "Actual external object becomes evidence"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-10",
+      "title": "租约过期的旧执行者",
+      "status": "not_run",
+      "given": "A holds fenced resource; B is granted a newer generation",
+      "fault_or_change": "Pause A until its lease expires, then resume",
+      "action": "Attempt protected writes from both",
+      "assertions": [
+        "Old generation rejected",
+        "Only current authorized owner can commit"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-11",
+      "title": "不可 fencing 的共享设备",
+      "status": "not_run",
+      "given": "Exclusive device without a fencing API",
+      "fault_or_change": "Owner is unreachable but may still run",
+      "action": "Attempt reassignment",
+      "assertions": [
+        "Reassignment blocked until isolation or stop is confirmed",
+        "TTL alone is not treated as proof"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-12",
+      "title": "基线过期",
+      "status": "not_run",
+      "given": "Queued source-sensitive task",
+      "fault_or_change": "Modify a required input after packet creation",
+      "action": "Perform baseline preflight",
+      "assertions": [
+        "Task is stale or replanned",
+        "No silent acceptance of changed inputs"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-13",
+      "title": "集成后回归",
+      "status": "not_run",
+      "given": "Two branches independently pass tests",
+      "fault_or_change": "Introduce integration-only conflict",
+      "action": "Test the actual integrated candidate",
+      "assertions": [
+        "Branch-only tests insufficient",
+        "AcceptedState not advanced on integrated failure"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-14",
+      "title": "真正的 Human Bridge",
+      "status": "not_run",
+      "given": "Fixture blocks every authorized configured automatic path",
+      "fault_or_change": "Recovery budget exhausted and collaboration must continue",
+      "action": "Create incident and render packet",
+      "assertions": [
+        "Attempted paths and reasons recorded",
+        "User only transports a self-contained packet",
+        "Policy remains enforced"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-15",
+      "title": "新事实触发自动升级",
+      "status": "not_run",
+      "given": "Temporary HumanBridgeIncident",
+      "fault_or_change": "User reports newly available native or Node capability",
+      "action": "Probe bidirectional execution path and update binding",
+      "assertions": [
+        "Claim treated as evidence, not automatic confirmation",
+        "Automatic transport chosen after validation",
+        "New human relay requests cease"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-16",
+      "title": "旧人工包晚到",
+      "status": "not_run",
+      "given": "Same logical message already delivered after upgrade",
+      "fault_or_change": "Import delayed human-transported packet",
+      "action": "Validate identity, deadline and revision",
+      "assertions": [
+        "No duplicate side effect",
+        "Late/obsolete packet explicitly classified"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-17",
+      "title": "双向路径不对称",
+      "status": "not_run",
+      "given": "A→B native; B→A backend relay",
+      "fault_or_change": "Disable one native direction",
+      "action": "Resolve directed bindings independently",
+      "assertions": [
+        "Full request/response still works",
+        "No false bidirectional native claim"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-18",
+      "title": "无唤醒能力的 MCP 客户端",
+      "status": "not_run",
+      "given": "A Harness only offers tools during foreground interaction",
+      "fault_or_change": "Close the interaction session",
+      "action": "Attempt admission of an externally submitted execution request and resolve the required capabilities",
+      "assertions": [
+        "No fabricated wake capability",
+        "A separate authorized headless external Agent Runtime is required or the task is blocked"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-19",
+      "title": "订阅窗口竞态",
+      "status": "not_run",
+      "given": "Query snapshot then subscribe",
+      "fault_or_change": "Commit event during transition",
+      "action": "Resume via atomic snapshot/cursor contract",
+      "assertions": [
+        "No missed durable event",
+        "Duplicates handled"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-20",
+      "title": "cursor 过期",
+      "status": "not_run",
+      "given": "Disconnected subscriber beyond event retention window",
+      "fault_or_change": "Resume with expired cursor",
+      "action": "Return explicit expiry and bootstrap snapshot",
+      "assertions": [
+        "No silent data gap",
+        "Task state restored"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-21",
+      "title": "取消与超时",
+      "status": "not_run",
+      "given": "An external Agent execution Attempt is in progress",
+      "fault_or_change": "Wait timeout, then explicit task cancellation",
+      "action": "Inspect the external action and record the explicit cancellation command and observed cancellation state",
+      "assertions": [
+        "Wait timeout alone does not cancel",
+        "Real effects retained",
+        "Cancellation state reflects observed outcome"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-22",
+      "title": "权限撤销",
+      "status": "not_run",
+      "given": "Trusted Node and active grants",
+      "fault_or_change": "Revoke membership or machine trust",
+      "action": "Attempt new messages, invocations and effects",
+      "assertions": [
+        "New privileged actions denied",
+        "Human Bridge cannot bypass revocation"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-23",
+      "title": "跨租户隔离",
+      "status": "not_run",
+      "given": "Two organizations with similar object identifiers",
+      "fault_or_change": "Forge tenant_id, artifact reference or mailbox target",
+      "action": "Exercise all surfaces",
+      "assertions": [
+        "Authenticated context prevails",
+        "No cross-tenant state or blob disclosure"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-24",
+      "title": "恶意项目指令",
+      "status": "not_run",
+      "given": "Untrusted repository and tool output",
+      "fault_or_change": "Inject instructions requesting control-plane secrets and extra scope",
+      "action": "Run bounded agent task",
+      "assertions": [
+        "No automatic privilege escalation",
+        "Control secrets absent from sandbox",
+        "Disallowed egress/effects denied"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-25",
+      "title": "磁盘满与部分上传",
+      "status": "not_run",
+      "given": "Node journal and artifact upload active",
+      "fault_or_change": "Exhaust local disk or interrupt blob upload",
+      "action": "Attempt ACK and evidence sealing",
+      "assertions": [
+        "No false durable ACK",
+        "Incomplete blob not accepted as evidence",
+        "Backpressure visible"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-26",
+      "title": "Durable Operation Provider 服务停机",
+      "status": "not_run",
+      "given": "Domain DB remains available",
+      "fault_or_change": "Stop the Durable Operation Provider service after command commit",
+      "action": "Query state while the Durable Operation Provider is unavailable, then restore the service and process committed outbox items and explicitly submitted attempts",
+      "assertions": [
+        "Domain fact remains visible",
+        "Outbox/reconciliation advances committed work after recovery",
+        "No new Agent decision, delegation or WorkItem is generated by the provider"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-27",
+      "title": "灾备回退旧快照",
+      "status": "not_run",
+      "given": "Older database backup plus surviving Durable Operation Provider processes and external Agent Harness processes",
+      "fault_or_change": "Restore backup",
+      "action": "Rotate authority incarnation and reconcile external effects",
+      "assertions": [
+        "Old grants rejected",
+        "No fencing counter rollback vulnerability",
+        "Existing effects not blindly replayed"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-28",
+      "title": "人工接管与归还",
+      "status": "not_run",
+      "given": "An external Agent Runtime owns the workspace under a Lease",
+      "fault_or_change": "Acquire manual control and modify files",
+      "action": "Pause new invocations for the bound external Agent Runtime, acquire manual control, then explicitly reattach the external Agent",
+      "assertions": [
+        "Single explicit control owner",
+        "Baseline refreshed",
+        "Prior tests marked stale where affected",
+        "The system does not create or schedule an Agent turn during manual control"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-29",
+      "title": "滚动升级",
+      "status": "not_run",
+      "given": "Long-running workflow and old/new Nodes coexist",
+      "fault_or_change": "Upgrade protocol, Node, Driver and Durable Operation Provider process versions",
+      "action": "Negotiate capabilities and drain incompatible Durable Operation Provider workers or Node processes while preserving external Agent decisions and bindings",
+      "assertions": [
+        "Unknown required semantics rejected",
+        "Task and accepted-state continuity maintained"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-30",
+      "title": "预算与背压",
+      "status": "not_run",
+      "given": "Many routes compete for limited inference and GPU resources",
+      "fault_or_change": "Burst tasks and duplicate usage delivery",
+      "action": "Apply admission, fairness and metering",
+      "assertions": [
+        "No unbounded fan-out",
+        "No duplicate accounting",
+        "No inference starts while merely waiting for a resource"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-31",
+      "title": "旧项目迁移",
+      "status": "not_run",
+      "given": "Existing Root/Route IDs, user AGENTS content and knowledge",
+      "fault_or_change": "Interrupt and repeat migration",
+      "action": "Inspect, import, validate and attach",
+      "assertions": [
+        "IDs and user files preserved",
+        "Repeated operations converge",
+        "No silent autonomous launch or source upload"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-32",
+      "title": "本地到云 authority 切换",
+      "status": "not_run",
+      "given": "Active local authority and registered Nodes",
+      "fault_or_change": "Interrupt authority migration",
+      "action": "Drain/fence/export/import using migration record",
+      "assertions": [
+        "No two independent writers",
+        "Task/effect state retained",
+        "Rollback preserves newly durable work"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-33",
+      "title": "最终表面被外部修改",
+      "status": "not_run",
+      "given": "Frozen commit/PR content",
+      "fault_or_change": "Hook or external platform changes actual output",
+      "action": "Read back and postflight",
+      "assertions": [
+        "Old preflight cannot prove changed output",
+        "Final user report reflects actual content"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    },
+    {
+      "id": "E2E-34",
+      "title": "Capability 过期或权限改变",
+      "status": "not_run",
+      "given": "Previously confirmed runtime observation",
+      "fault_or_change": "Change credentials, Harness version or endpoint binding",
+      "action": "Resolve communication again",
+      "assertions": [
+        "Old scope confirmation invalidated",
+        "Unknown is not confirmed",
+        "Fallback is reevaluated"
+      ],
+      "required_evidence": [
+        "Pinned Harness/Driver/OS/protocol versions and policy",
+        "Correlated domain events, command IDs and receipts",
+        "Relevant source/artifact/external-effect read-back",
+        "Failure injection and recovery trace with timestamps"
+      ]
+    }
+  ]
+}

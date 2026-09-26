@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "status": "accepted_architecture_baseline",
+  "external_agent_hierarchy": [
+    "management",
+    "route",
+    "engineer",
+    "reviewer",
+    "specialist",
+    "finalizer"
+  ],
+  "system_role": "horizontal_collaboration_infrastructure",
+  "external_agent_owns": [
+    "reasoning",
+    "planning",
+    "delegation",
+    "team_composition",
+    "task_decomposition",
+    "priority",
+    "communication_intent",
+    "review_strategy",
+    "acceptance_judgment"
+  ],
+  "system_owns": [
+    "scope",
+    "scope_binding",
+    "identity",
+    "persistence",
+    "discovery",
+    "addressability",
+    "messaging",
+    "transport",
+    "runtime_binding",
+    "handoff",
+    "lease",
+    "fencing",
+    "evidence_recording",
+    "accepted_state_validation",
+    "recovery",
+    "durable_knowledge_boundary"
+  ],
+  "durable_operation_provider_role": [
+    "timer",
+    "retry",
+    "wait",
+    "outbox",
+    "delivery_reconciliation",
+    "lease_reconciliation",
+    "effect_reconciliation",
+    "submitted_operation_recovery"
+  ],
+  "prohibited_system_components": [
+    "internal_management_agent",
+    "agent_planner",
+    "team_builder",
+    "supervisor_agent",
+    "agent_graph",
+    "llm_orchestration",
+    "implicit_task_decomposition"
+  ],
+  "command_provenance": "Goal, WorkItem, AgentSlot, delegation, handoff, review and acceptance changes require an authenticated external principal command; infrastructure retries retain originating command lineage."
+}
