@@ -1,0 +1,28 @@
+{
+  "schema_version": "acs-p2-readonly-inventory/2",
+  "p1_gate_status": "not_run",
+  "machines": [
+    {
+      "machine_id": "windows-local",
+      "host_label": "Local",
+      "os_family": "windows",
+      "runtime_observation": "not_run",
+      "credentials_present": false
+    },
+    {
+      "machine_id": "linux-1302-1",
+      "host_label": "1302-1",
+      "os_family": "linux",
+      "runtime_observation": "not_run",
+      "credentials_present": false
+    }
+  ],
+  "authentication": {
+    "linux_codex_login": "not_run",
+    "login_attempted_by_harness": false
+  },
+  "services": {
+    "linux_receiver": "not_run",
+    "linux_node": "not_run"
+  }
+}
