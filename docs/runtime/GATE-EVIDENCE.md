@@ -26,6 +26,38 @@ The Profile binds machines, nodes, OS, Core, Provider, Driver, Harness, database
 protocol, Credential Scope, Policy, Direction and expiry. `binding.os` maps
 Machine IDs to pinned OS versions and must match their observations.
 
+`binding.harness` and `binding.driver` each accept either a uniform version map
+or an explicit `by_machine` map. The uniform form, for example
+`{"codex":"0.152.1","opencode":"1.18.27"}`, asserts those versions on every
+Machine in this binding. Use `by_machine` when installed versions differ:
+
+```json
+{
+  "harness": {
+    "by_machine": {
+      "windows-machine": {"codex": "0.152.1", "opencode": "1.18.27"},
+      "linux-machine": {"codex": "0.153.2", "opencode": "1.18.30"}
+    }
+  },
+  "driver": {
+    "by_machine": {
+      "windows-machine": {"codex": "0.1.0-example-windows", "opencode": "0.1.0-example-windows"},
+      "linux-machine": {"codex": "0.1.0-example-linux", "opencode": "0.1.0-example-linux"}
+    }
+  }
+}
+```
+
+This is a format example, not a measured deployment. Replace Machine IDs and
+Driver pins with the actual observations. `by_machine` must be the sole outer
+key and cover `binding.machines` exactly; missing, extra or mixed mappings are
+rejected. Every inner map contains named, pinned version strings. Each Machine's
+Harness and Driver maps must declare the same Harness names; the whole binding
+must include both Codex and OpenCode. A Machine may declare a subset of those
+Harnesses. Uniform and explicit forms may be mixed between components or Gates
+when their normalized per-Machine values agree. The digest always seals the
+original binding representation, including its observations.
+
 Evidence references are objects with `path` and lowercase SHA-256 `sha256`.
 Paths are relative to the supplied evidence root. Absolute paths, traversal and
 symlink references are rejected. All referenced bytes must exist and match.
@@ -55,6 +87,11 @@ observation/expiry times, evidence class and raw evidence. Keep real Machine/Nod
 and Harness associations visible. A native session receipt only proves its
 observation layer, not the Collaboration Runtime loop.
 
+Every supplied Session observation, including one supplied by P1, must match
+the declared Harness and Driver versions for its own Machine and its observed
+Node. A version observed on another Machine cannot satisfy that check. P2 still
+requires the Gate's named Harnesses and distinct Machine/Session observations.
+
 ## Prerequisites and review
 
 Each prerequisite is a digest-pinned record, not just an outer `status=passed`.
@@ -66,6 +103,22 @@ its historical setup `source_baseline`, contract revision, expiry and
 `preservation_inventory` reference; its actual audit report, checks and logs
 must validate. A historical setup baseline is not a Runtime implementation
 baseline.
+
+The same program Profile may expand from a local P1 Machine/Node set to a larger
+P2 set. Every prerequisite Machine and Node must remain present; source baseline,
+Profile, Core, Provider, database, protocol, Credential Scope and Policy remain
+equal. For each retained Machine, its OS, Node association, physical host
+fingerprint, and existing Harness/Driver version tuples must remain compatible.
+Fresh observation timestamps and raw references may change when those identity
+and version facts agree. Removing a declared tuple or changing its version
+requires fresh prerequisite evidence for that configuration.
+
+A new Machine/Harness tuple, including an added Harness on an existing Machine,
+requires a matching Session observation referenced by the dependent Gate itself.
+The dependent Gate must also provide its complete scenario evidence and exact
+binding review. Prerequisite evidence establishes ordering and compatibility;
+it does not transfer support to the expanded scope. `supported` continues to
+require all five layers sealed to the dependent Gate's own binding and baseline.
 
 `review.evidence` points to an `acs-gate-review/1` JSON record binding Gate,
 contract revision, Profile, source baseline, binding digest, Engineer, Reviewer,
