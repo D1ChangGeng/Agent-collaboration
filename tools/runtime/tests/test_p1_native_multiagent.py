@@ -237,3 +237,35 @@ def test_pinned_native_copy_uses_private_mode_and_rejects_source_race(
             expected_size=len(b"pinned native bytes"),
         )
     assert changed and not raced_target.exists()
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="O_NOFOLLOW Linux copy")
+def test_pinned_native_copy_rejects_atomic_path_replacement_after_open(
+    tmp_path, monkeypatch,
+):
+    private = tmp_path / "private"
+    private.mkdir(mode=0o700)
+    source = tmp_path / "source"
+    source.write_bytes(b"pinned native bytes")
+    expected = hashlib.sha256(source.read_bytes()).hexdigest()
+    target = private / "replaced"
+    original_open = os.open
+    swapped = False
+
+    def open_then_replace(path, flags, mode=0o777, *, dir_fd=None):
+        nonlocal swapped
+        descriptor = original_open(path, flags, mode, dir_fd=dir_fd)
+        if path == source and not swapped:
+            swapped = True
+            replacement = tmp_path / "replacement"
+            replacement.write_bytes(b"changed native bytes")
+            os.replace(replacement, source)
+        return descriptor
+
+    monkeypatch.setattr(os, "open", open_then_replace)
+    with pytest.raises(NativeInventoryRejected, match="path changed"):
+        _copy_pinned(
+            source, target, expected_sha256=expected,
+            expected_size=len(b"pinned native bytes"),
+        )
+    assert swapped and not target.exists()
