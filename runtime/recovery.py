@@ -1030,12 +1030,24 @@ class PostgresHumanBridgeAuthority:
                 "payload_digest": receipt.payload_digest,
             }
             stored_bridge = normal[1].get("human_bridge")
-            if stored_bridge != bridge_evidence:
+            native = normal[1].get("native")
+            existing_native_terminal = (
+                isinstance(native, dict)
+                and set(native) == {"response_ref", "outcome"}
+                and isinstance(native.get("response_ref"), str)
+                and 0 < len(native["response_ref"]) <= 4096
+                and native.get("outcome") == "completed"
+            )
+            if (
+                stored_bridge is None and not existing_native_terminal
+                or stored_bridge is not None and stored_bridge != bridge_evidence
+            ):
                 raise BoundaryRejected("normal receipt does not bind the current manual packet")
             # The normal transport receipt remains immutable. Human Bridge may
-            # reference it only when the receipt itself carries the exact
-            # incident/generation/packet binding; matching a message/Attempt
-            # alone cannot turn an unrelated response into a manual return.
+            # reference either an exact incident/generation/packet binding or
+            # an already committed completed native terminal receipt on the
+            # exact Message/Attempt/Dispatch. Arbitrary evidence cannot turn
+            # an unrelated response into a manual return.
             if normal[2] != receipt.attempt_id or normal[3] != receipt.dispatch_id:
                 raise BoundaryRejected("normal receipt attempt or dispatch changed")
             actual_evidence_digest = canonical_digest({
