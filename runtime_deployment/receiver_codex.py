@@ -330,7 +330,18 @@ class CodexReceiverCapacity:
         ).fetchone()
         if endpoint is None:
             raise CodexReceiverRejected("current receiver endpoint is absent")
-        recovery = self.authority.receiver_transport.dispatch_admission(
+        same_binding = (
+            endpoint[0] == recorded.envelope.endpoint_id
+            and endpoint[1] == recorded.envelope.binding_revision
+            and endpoint[2] == recorded.envelope.runtime_id
+            and endpoint[3] == recorded.envelope.runtime_revision
+            and endpoint[4] == recorded.envelope.machine_id
+            and endpoint[5] == recorded.envelope.node_id
+            and endpoint[6] == recorded.envelope.boot_incarnation
+            and endpoint[7] == recorded.envelope.packet.target_scope_id
+            and endpoint[8] == recorded.envelope.packet.target_agent_slot_id
+        )
+        recovery = None if same_binding else self.authority.receiver_transport.dispatch_admission(
             recorded.operation_id
         )
         committed = self._current_dispatch_identity(
