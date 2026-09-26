@@ -778,6 +778,300 @@ def test_terminal_output_keeps_original_operation_and_binding(native):
     assert native.state["turn_calls"] == 1
 
 
+def fallback_turns_reply(native, monkeypatch, *, mutate=None, mutate_response=None, code=-32601,
+                         message="list_turns is not supported yet"):
+    original = native.peer.handler
+
+    def handler(peer, frame):
+        if frame.get("method") == "thread/turns/list":
+            return RpcError({"code": code, "message": message})
+        if (frame.get("method") == "thread/read"
+                and frame.get("params", {}).get("includeTurns") is True):
+            response = json.loads(json.dumps(original(peer, frame)))
+            response["thread"]["turns"] = [
+                {**json.loads(json.dumps(turn)), "itemsView": "full"}
+                for turn in native.state["turns"]
+            ]
+            if mutate is not None:
+                mutate(response["thread"])
+            if mutate_response is not None:
+                mutate_response(response)
+            return response
+        return original(peer, frame)
+
+    monkeypatch.setattr(native.peer, "handler", handler)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("turnsBackwardsCursor", "more-turns"),
+    ("itemsBackwardsCursor", "more-items"),
+    ("nextCursor", "more-history"),
+    ("nextCursor", None),
+    ("unexpected", {}),
+])
+def test_fallback_rejects_any_extra_top_level_thread_read_field(
+    native, monkeypatch, field, value,
+):
+    driver = native.driver
+    driver.spawn(operation("topcursor-spawn"))
+    invoked = operation("topcursor-invoke")
+    driver.invoke(invoked, "fixed topcursor text")
+    native.state["turns"][0]["status"] = "completed"
+    native.state["turns"][0]["items"].append(
+        {"id": "topcursor-answer", "type": "agentMessage", "text": "valid final answer"}
+    )
+    fallback_turns_reply(
+        native, monkeypatch,
+        mutate_response=lambda response: response.__setitem__(field, value),
+    )
+    with pytest.raises(OutcomeUncertain, match="top-level shape"):
+        driver.collect_result(operation("topcursor-collect"), invoked.operation_id)
+    stored = driver.journal.read(invoked.operation_id)
+    assert stored["state"] == "acknowledged"
+    assert stored["result"]["receipt_layer"] == "runtime_acknowledged"
+    assert driver.journal.first_event_observed_at(
+        invoked.operation_id, "terminal_observation",
+    ) is None
+    assert native.state["turn_calls"] == 1
+    assert [request["method"] for request in native.peer.requests].count("turn/start") == 1
+
+
+def test_exact_unavailable_turns_list_reads_acknowledged_turn_without_reinvoke(native, monkeypatch):
+    driver = native.driver
+    driver.spawn(operation("fallback-spawn"))
+    invoked = operation("fallback-invoke")
+    acknowledged = driver.invoke(invoked, "fixed fallback text")
+    fallback_turns_reply(native, monkeypatch)
+    pending = driver.collect_result(operation("fallback-pending"), invoked.operation_id)
+    assert pending["receipt_layer"] == "runtime_acknowledged"
+    assert pending["turn_id"] == acknowledged["turn_id"]
+    native.state["turns"][0]["status"] = "completed"
+    native.state["turns"][0]["items"].append(
+        {"id": "answer", "type": "agentMessage", "text": "late final answer"}
+    )
+    terminal = driver.collect_result(operation("fallback-terminal"), invoked.operation_id)
+    repeated = driver.collect_result(operation("fallback-terminal-repeat"), invoked.operation_id)
+    assert terminal["receipt_layer"] == repeated["receipt_layer"] == "response_received"
+    assert terminal["assistant_messages"][0]["text"] == "late final answer"
+    assert terminal["native_terminal_observed_at"] == repeated["native_terminal_observed_at"]
+    assert native.state["turn_calls"] == 1
+    methods = [request["method"] for request in native.peer.requests]
+    assert methods.count("turn/start") == 1
+    assert methods.count("thread/read") >= 3
+    assert "thread/resume" not in methods and "turn/interrupt" not in methods
+
+
+@pytest.mark.parametrize("seam", ["missing_rollout", "unmaterialized_turns"])
+def test_collect_early_32600_is_uncertain_and_never_reinvokes(native, monkeypatch, seam):
+    driver = native.driver
+    driver.spawn(operation("early-spawn"))
+    invoked = operation("early-invoke")
+    driver.invoke(invoked, "fixed early text")
+    original = native.peer.handler
+
+    def handler(peer, frame):
+        if seam == "missing_rollout" and frame.get("method") == "thread/read":
+            return RpcError({"code": -32600, "message": "no rollout found for thread id thread-1"})
+        if seam == "unmaterialized_turns" and frame.get("method") == "thread/turns/list":
+            return RpcError({"code": -32600, "message": (
+                "thread thread-1 is not materialized yet; "
+                "thread/turns/list is unavailable before first user message"
+            )})
+        return original(peer, frame)
+
+    monkeypatch.setattr(native.peer, "handler", handler)
+    with pytest.raises(OutcomeUncertain, match="not yet materialized"):
+        driver.collect_result(operation("early-collect"), invoked.operation_id)
+    assert native.state["turn_calls"] == 1
+    assert not any(
+        request["method"] == "thread/read" and request["params"].get("includeTurns") is True
+        for request in native.peer.requests
+    )
+
+
+@pytest.mark.parametrize("code,message", [
+    (-32601, "different history failure"), (-32602, "list_turns is not supported yet"),
+    (-32603, "list_turns is not supported yet"),
+])
+def test_collect_does_not_swallow_unknown_history_rpc_error(native, monkeypatch, code, message):
+    driver = native.driver
+    driver.spawn(operation("unknown-spawn"))
+    invoked = operation("unknown-invoke")
+    driver.invoke(invoked, "fixed unknown text")
+    fallback_turns_reply(native, monkeypatch, code=code, message=message)
+    with pytest.raises(RpcError) as error:
+        driver.collect_result(operation("unknown-collect"), invoked.operation_id)
+    assert error.value.error == {"code": code, "message": message}
+    assert native.state["turn_calls"] == 1
+
+
+@pytest.mark.parametrize("change", [
+    "wrong_thread", "wrong_session", "wrong_client", "wrong_text",
+    "duplicate_turn", "moved_client",
+])
+def test_fallback_rejects_replaced_native_lineage(native, monkeypatch, change):
+    driver = native.driver
+    driver.spawn(operation("lineage-spawn"))
+    invoked = operation("lineage-invoke")
+    driver.invoke(invoked, "fixed lineage text")
+
+    def mutate(thread):
+        turns = thread["turns"]
+        if change == "wrong_thread":
+            thread["id"] = "replacement-thread"
+        elif change == "wrong_session":
+            thread["sessionId"] = "replacement-session"
+        elif change == "wrong_client":
+            turns[0]["items"][0]["clientId"] = "replacement-client"
+        elif change == "wrong_text":
+            turns[0]["items"][0]["content"][0]["text"] = "replacement-text"
+        elif change == "duplicate_turn":
+            turns.append(json.loads(json.dumps(turns[0])))
+        elif change == "moved_client":
+            turns[0]["id"] = "replacement-turn"
+
+    fallback_turns_reply(native, monkeypatch, mutate=mutate)
+    with pytest.raises(DriverRejected):
+        driver.collect_result(operation("lineage-collect"), invoked.operation_id)
+    assert native.state["turn_calls"] == 1
+
+
+@pytest.mark.parametrize("change", [
+    "missing_turns", "not_array", "summary_items", "cursor", "oversized", "missing_user",
+    "completed_without_agent",
+])
+def test_fallback_incomplete_or_paged_read_remains_uncertain(native, monkeypatch, change):
+    driver = native.driver
+    driver.spawn(operation("incomplete-spawn"))
+    invoked = operation("incomplete-invoke")
+    driver.invoke(invoked, "fixed incomplete text")
+
+    def mutate(thread):
+        turns = thread["turns"]
+        if change == "missing_turns":
+            thread.pop("turns")
+        elif change == "not_array":
+            thread["turns"] = {"id": turns[0]["id"]}
+        elif change == "summary_items":
+            turns[0]["itemsView"] = "summary"
+        elif change == "cursor":
+            thread["turnsBackwardsCursor"] = "more-native-history"
+        elif change == "oversized":
+            thread["turns"] = [
+                {"id": f"other-{index}", "itemsView": "full", "items": []}
+                for index in range(2001)
+            ]
+        elif change == "missing_user":
+            turns[0]["items"] = []
+        elif change == "completed_without_agent":
+            turns[0]["status"] = "completed"
+
+    fallback_turns_reply(native, monkeypatch, mutate=mutate)
+    with pytest.raises(OutcomeUncertain):
+        driver.collect_result(operation("incomplete-collect"), invoked.operation_id)
+    assert native.state["turn_calls"] == 1
+
+
+def test_fallback_requires_acknowledged_original_turn(native, monkeypatch):
+    driver = native.driver
+    driver.spawn(operation("noack-spawn"))
+    invoked = operation("noack-invoke")
+    driver.invoke(invoked, "fixed noack text")
+    with driver.journal._connect() as connection:
+        connection.execute(
+            "UPDATE driver_operations SET result_json=NULL WHERE operation_id=?",
+            (invoked.operation_id,),
+        )
+    fallback_turns_reply(native, monkeypatch)
+    with pytest.raises(RpcError, match="not supported yet"):
+        driver.collect_result(operation("noack-collect"), invoked.operation_id)
+    assert not any(
+        request["method"] == "thread/read" and request["params"].get("includeTurns") is True
+        for request in native.peer.requests
+    )
+
+
+def test_generic_inspect_does_not_adopt_exact_collect_fallback(native, monkeypatch):
+    driver = native.driver
+    driver.spawn(operation("generic-inspect-spawn"))
+    driver.invoke(operation("generic-inspect-invoke"), "fixed generic text")
+    fallback_turns_reply(native, monkeypatch)
+    with pytest.raises(RpcError, match="list_turns is not supported yet"):
+        driver.inspect(operation("generic-inspect"))
+    assert not any(
+        request["method"] == "thread/read" and request["params"].get("includeTurns") is True
+        for request in native.peer.requests
+    )
+
+
+@pytest.mark.parametrize("response", [
+    None,
+    {"thread": None},
+    {"thread": {"id": "thread-1", "sessionId": "session-1", "turns": None}},
+    {"thread": {"id": "thread-1", "sessionId": "session-1", "turns": [None]}},
+])
+def test_fallback_unknown_full_read_shape_is_controlled(native, monkeypatch, response):
+    driver = native.driver
+    driver.spawn(operation("unknown-shape-spawn"))
+    invoked = operation("unknown-shape-invoke")
+    driver.invoke(invoked, "fixed unknown shape text")
+    original = native.peer.handler
+
+    def handler(peer, frame):
+        if frame.get("method") == "thread/turns/list":
+            return RpcError({"code": -32601, "message": "list_turns is not supported yet"})
+        if (frame.get("method") == "thread/read"
+                and frame.get("params", {}).get("includeTurns") is True):
+            return response
+        return original(peer, frame)
+
+    monkeypatch.setattr(native.peer, "handler", handler)
+    with pytest.raises((DriverRejected, OutcomeUncertain)):
+        driver.collect_result(operation("unknown-shape-collect"), invoked.operation_id)
+    assert native.state["turn_calls"] == 1
+
+
+def test_uncertain_lost_ack_still_collects_unique_normal_history(native):
+    driver = native.driver
+    driver.spawn(operation("lost-ack-spawn"))
+    invoked = operation("lost-ack-invoke")
+    native.state["drop_invoke_ack"] = True
+    with pytest.raises(RpcTimeout):
+        driver.invoke(invoked, "fixed lost ack text")
+    assert driver.journal.read(invoked.operation_id)["state"] == "uncertain"
+    native.state["turns"][0]["status"] = "completed"
+    native.state["turns"][0]["items"].append(
+        {"id": "late-answer", "type": "agentMessage", "text": "late response"}
+    )
+    result = driver.collect_result(operation("lost-ack-collect"), invoked.operation_id)
+    assert result["receipt_layer"] == "response_received"
+    assert result["assistant_messages"][0]["text"] == "late response"
+    assert native.state["turn_calls"] == 1
+
+
+@pytest.mark.parametrize("field", ["thread_id", "session_id", "turn_id"])
+def test_fallback_rejects_changed_acknowledged_identity(native, monkeypatch, field):
+    driver = native.driver
+    driver.spawn(operation("changed-ack-spawn"))
+    invoked = operation("changed-ack-invoke")
+    driver.invoke(invoked, "fixed acknowledged text")
+    with driver.journal._connect() as connection:
+        row = connection.execute(
+            "SELECT result_json FROM driver_operations WHERE operation_id=?",
+            (invoked.operation_id,),
+        ).fetchone()
+        value = json.loads(row[0])
+        value[field] = "wrong-acknowledgement"
+        connection.execute(
+            "UPDATE driver_operations SET result_json=? WHERE operation_id=?",
+            (json.dumps(value), invoked.operation_id),
+        )
+    fallback_turns_reply(native, monkeypatch)
+    with pytest.raises(DriverRejected):
+        driver.collect_result(operation("changed-ack-collect"), invoked.operation_id)
+    assert native.state["turn_calls"] == 1
+
+
 def test_disconnect_fails_outstanding_request():
     peer = WirePeer(lambda *_: OMIT)
     client = JsonRpcClient(peer.stdout, peer.stdin)
