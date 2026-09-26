@@ -1,25 +1,32 @@
 {
-  "schema_version": "acs-p2-mcp-tool-contract/2",
-  "surface_revision": "acs-p2-mcp-workflow/2",
+  "schema_version": "acs-p2-mcp-tool-contract/3",
+  "surface_revision": "acs-p2-mcp-workflow/3",
   "server": "agent-collaboration-runtime",
-  "naming_convention": "domain_object_action",
-  "ordinary_tools": [
-    "collaboration_plan_apply",
-    "harness_capacity_list",
-    "message_send",
-    "response_await",
-    "resource_read",
-    "inbox_list",
-    "response_notification_set",
-    "work_item_cancel",
-    "runtime_attempt_cancel"
+  "naming_convention": "concise_action_phrase",
+  "naming_principles": [
+    "intended_action",
+    "human_collaboration_phrase",
+    "runtime_or_domain_behavior",
+    "target_as_argument_when_contract_is_uniform",
+    "separate_tool_when_authorization_state_or_result_differs"
   ],
-  "advanced_tools": ["domain_command_submit"],
+  "ordinary_tools": [
+    "setup_collaboration",
+    "find_harnesses",
+    "send_message",
+    "wait_for_response",
+    "read_resource",
+    "check_inbox",
+    "set_notification",
+    "cancel_work",
+    "stop_attempt"
+  ],
+  "advanced_tools": ["submit_command"],
   "compatibility_aliases": {
     "run": {
-      "canonical_tool": "domain_command_submit",
+      "canonical_tool": "submit_command",
       "exposure": "advanced_compatibility",
-      "removal_condition": "all admitted clients use domain_command_submit"
+      "removal_condition": "all admitted clients use submit_command"
     }
   },
   "defaults": {
@@ -42,38 +49,38 @@
     "isError": "false for accepted observations and state transitions; true for rejected or failed tool execution"
   },
   "tools": {
-    "collaboration_plan_apply": {
-      "title": "Apply collaboration plan",
-      "description": "Atomically create or revise an explicit collaboration plan containing Scope, AgentSlot, role, Grant, Policy and budget bindings. Returns the accepted collaboration handle and revision.",
+    "setup_collaboration": {
+      "title": "Set up collaboration",
+      "description": "Set up or revise an explicit collaboration plan containing Scope, AgentSlot, role, Grant, Policy and budget bindings. Returns the accepted collaboration handle and revision.",
       "selection_guidance": "Use when an Agent has already decided the collaboration topology and needs ACS to authorize and persist it.",
       "annotations": {"readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
       "input_schema": {
-        "schema_version": "acs-mcp-collaboration-plan-apply/2",
+        "schema_version": "acs-mcp-setup-collaboration/3",
         "required": ["client_request_id", "expected_revision", "deadline", "scope", "agent_slots"],
         "optional": ["roles", "grants", "policies", "budgets"]
       },
       "result_type": "collaboration_plan_result"
     },
-    "harness_capacity_list": {
-      "title": "List eligible Harness capacity",
-      "description": "List current Harness capacities eligible for a Scope, role and capability set. Returns bounded Machine, Node, Driver, Harness, direction, readiness, evidence and expiry metadata.",
+    "find_harnesses": {
+      "title": "Find eligible Harnesses",
+      "description": "Find current Harness capacities eligible for a Scope, role and capability set. Returns bounded Machine, Node, Driver, Harness, direction, readiness, evidence and expiry metadata.",
       "selection_guidance": "Use before assigning work to discover capacities supported by current observations.",
       "annotations": {"readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
       "input_schema": {
-        "schema_version": "acs-mcp-harness-capacity-list/2",
+        "schema_version": "acs-mcp-find-harnesses/3",
         "required": ["scope_id", "required_capabilities"],
         "optional": ["role", "harness_kinds", "require_current_until", "cursor", "limit"],
         "defaults": {"cursor": null, "limit": 20}
       },
       "result_type": "harness_capacity_page"
     },
-    "message_send": {
+    "send_message": {
       "title": "Send collaboration message",
       "description": "Commit one collaboration Message, its delivery intent, response expectation and completion notification. Returns delivery state, the stable response handle and executable follow-up calls. Async is the default; sync adds one bounded observation of the same response handle.",
       "selection_guidance": "Use for delegation, review requests, handoffs and other addressed collaboration work.",
       "annotations": {"readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": true},
       "input_schema": {
-        "schema_version": "acs-mcp-message-send/2",
+        "schema_version": "acs-mcp-send-message/3",
         "required": ["client_request_id", "work_item_id", "expected_work_item_revision", "target", "goal", "request", "constraints", "accepted_revision", "required_evidence", "deadline"],
         "optional": ["activation", "delivery_policy", "expect_response", "response_mode", "wait_until", "wait_timeout_seconds"],
         "response_modes": ["async", "sync"],
@@ -82,25 +89,25 @@
       },
       "result_type": "message_submission"
     },
-    "response_await": {
-      "title": "Await collaboration response",
-      "description": "Observe one or more existing response handles until any or all reach a named receipt or terminal condition, bounded by the supplied timeout. Returns satisfied, pending and terminal handles while durable tracking and completion notification continue.",
-      "selection_guidance": "Use when the calling Agent chooses to pause for responses that message_send is already tracking.",
+    "wait_for_response": {
+      "title": "Wait for response",
+      "description": "Wait for one or more existing response handles until any or all reach a named receipt or terminal condition, bounded by the supplied timeout. Returns satisfied, pending and terminal handles while durable tracking and completion notification continue.",
+      "selection_guidance": "Use when the calling Agent chooses to pause for responses that send_message is already tracking.",
       "annotations": {"readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
       "input_schema": {
-        "schema_version": "acs-mcp-response-await/2",
+        "schema_version": "acs-mcp-wait-for-response/3",
         "required": ["handles", "mode", "until", "timeout_seconds"],
         "modes": ["any", "all"]
       },
       "result_type": "response_observation"
     },
-    "resource_read": {
+    "read_resource": {
       "title": "Read collaboration resource",
       "description": "Read one authorized typed handle for a collaboration plan, Message, response, WorkItem, Evidence or Artifact. Returns bounded metadata, relations, content or content reference, evidence handles and continuation state.",
       "selection_guidance": "Use the exact handle and view returned by another ACS tool or Inbox item.",
       "annotations": {"readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
       "input_schema": {
-        "schema_version": "acs-mcp-resource-read/2",
+        "schema_version": "acs-mcp-read-resource/3",
         "required": ["handle"],
         "optional": ["view", "observe", "cursor", "limit", "max_inline_bytes"],
         "views": ["summary", "result", "evidence", "history", "content"],
@@ -108,59 +115,59 @@
       },
       "result_type": "resource_snapshot"
     },
-    "inbox_list": {
-      "title": "List AgentSlot Inbox",
-      "description": "List durable Messages and completion notifications addressed to the authenticated AgentSlot. Returns stable handles, delivery state, completion revision and executable resource_read calls.",
+    "check_inbox": {
+      "title": "Check AgentSlot Inbox",
+      "description": "Check durable Messages and completion notifications addressed to the authenticated AgentSlot. Returns stable handles, delivery state, completion revision and executable read_resource calls.",
       "selection_guidance": "Use at startup, reconnect or recovery to resume collaboration from the durable AgentSlot Inbox.",
       "annotations": {"readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
       "input_schema": {
-        "schema_version": "acs-mcp-inbox-list/2",
+        "schema_version": "acs-mcp-check-inbox/3",
         "required": [],
         "optional": ["cursor", "limit", "states", "kinds"],
         "defaults": {"cursor": null, "limit": 50}
       },
       "result_type": "inbox_page"
     },
-    "response_notification_set": {
+    "set_notification": {
       "title": "Set response notification",
       "description": "Enable or disable automatic completion notification for an existing response handle using an expected subscription revision. Returns the updated subscription state while preserving response tracking.",
-      "selection_guidance": "Use only to change the automatic notification created by message_send.",
+      "selection_guidance": "Use only to change the automatic notification created by send_message.",
       "annotations": {"readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
       "input_schema": {
-        "schema_version": "acs-mcp-response-notification-set/2",
+        "schema_version": "acs-mcp-set-notification/3",
         "required": ["client_request_id", "response_handle", "enabled", "expected_revision", "reason", "deadline"]
       },
       "result_type": "notification_update_receipt"
     },
-    "work_item_cancel": {
-      "title": "Cancel WorkItem",
-      "description": "Request cancellation of one WorkItem at its expected revision and record the authorized reason. Returns WorkItem state and any Runtime Attempts that still require observation or separate cancellation.",
+    "cancel_work": {
+      "title": "Cancel collaboration work",
+      "description": "Cancel one WorkItem at its expected revision and record the authorized reason. Returns WorkItem state and any Runtime Attempts that still require observation or separate control.",
       "selection_guidance": "Use to end the durable collaboration work objective represented by a WorkItem.",
       "annotations": {"readOnlyHint": false, "destructiveHint": true, "idempotentHint": true, "openWorldHint": true},
       "input_schema": {
-        "schema_version": "acs-mcp-work-item-cancel/2",
+        "schema_version": "acs-mcp-cancel-work/3",
         "required": ["client_request_id", "work_item_id", "expected_revision", "reason", "deadline"]
       },
       "result_type": "work_item_cancellation_receipt"
     },
-    "runtime_attempt_cancel": {
-      "title": "Cancel Runtime Attempt",
-      "description": "Request cancellation of one concrete Runtime Attempt at its expected revision and report the Driver acknowledgement boundary. Returns Attempt state and effect uncertainty requiring readback.",
+    "stop_attempt": {
+      "title": "Stop Runtime Attempt",
+      "description": "Stop one concrete Runtime Attempt at its expected revision and report the Driver acknowledgement boundary. Returns Attempt state and effect uncertainty requiring readback.",
       "selection_guidance": "Use for a specific execution attempt after its owning WorkItem policy authorizes attempt-level control.",
       "annotations": {"readOnlyHint": false, "destructiveHint": true, "idempotentHint": true, "openWorldHint": true},
       "input_schema": {
-        "schema_version": "acs-mcp-runtime-attempt-cancel/2",
+        "schema_version": "acs-mcp-stop-attempt/3",
         "required": ["client_request_id", "runtime_attempt_id", "expected_revision", "reason", "deadline"]
       },
       "result_type": "runtime_attempt_cancellation_receipt"
     },
-    "domain_command_submit": {
+    "submit_command": {
       "title": "Submit Domain command",
       "description": "Submit one fully formed authenticated Domain SurfaceCommand. Returns the canonical Domain disposition and references used by operator, migration, conformance and advanced automation flows.",
       "selection_guidance": "Use when the caller owns the complete versioned Domain command contract; ordinary Agent collaboration uses the typed tools.",
       "annotations": {"readOnlyHint": false, "destructiveHint": true, "idempotentHint": true, "openWorldHint": true},
       "input_schema": {
-        "schema_version": "acs-mcp-domain-command-submit/2",
+        "schema_version": "acs-mcp-submit-command/3",
         "required": ["request"]
       },
       "result_type": "domain_command_receipt"

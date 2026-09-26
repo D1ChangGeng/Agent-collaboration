@@ -23,7 +23,7 @@ Root: `agent-collaboration-root`; Route: `collaboration-runtime`.
 | P1-INTEGRATE | Management + Reviewer | Sealed integrated candidate and complete named local Profile evidence. |
 | P2-CODEX | Two Machine Nodes + external Codex Agents | Dual-machine/session collaboration and fault recovery after P1. |
 | P2-OPENCODE | Codex + OpenCode Agents | Separate cross-Harness loop and recovery after P2-CODEX. |
-| P2-MCP-SURFACE | Management + Runtime Engineering | Public `collaboration_plan_apply`, `harness_capacity_list`, `message_send`, `response_await`, `resource_read`, `inbox_list`, notification control and typed execution-control tools with exact exposure metadata and discriminated result templates. |
+| P2-MCP-SURFACE | Management + Runtime Engineering | Public `setup_collaboration`, `find_harnesses`, `send_message`, `wait_for_response`, `read_resource`, `check_inbox`, `set_notification`, `cancel_work` and `stop_attempt` tools with exact exposure metadata and discriminated result templates. |
 | P2-CONTINUATION | Runtime Engineering + Reviewer | Durable response handles, Session-activity-aware delivery, completion notification, generic read, aggregate waiting and cancellation. |
 | P2-WORKFLOW-COMMANDS | Management + Reviewer | Collaboration, review, results, status and cancellation command documents exercised through Codex and OpenCode. |
 | P2-REVIEW | Independent Reviewer + product owner | Exact Profile review, limitations, evidence expiry and owner decision. |
