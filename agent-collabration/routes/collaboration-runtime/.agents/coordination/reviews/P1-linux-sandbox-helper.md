@@ -59,6 +59,11 @@ Actual readback established:
 Private repeat-verification JSON is retained at
 `/home/changgeng/Agent-collaboration/.omo/review-912/admin-helper-installed/verify.json`,
 SHA-256 `2434c9e2de06058ba5aad8ff4910fc2df21970fc7055952a0f70e7ab41e5773c`.
+An independent Reviewer repeated the host-namespace verify, confirmed the
+installed owner/mode/hash and manifest shape, both enforcing profiles and both
+unchanged user-namespace sysctls. Its separately captured JSON is byte-identical
+at the same SHA-256. It also found no live helper/profile-labelled capacity or
+verification-fixture residue. Decision was PASS for deployment/postflight only.
 
 The explicit rollback entry remains:
 
