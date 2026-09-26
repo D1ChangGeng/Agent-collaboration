@@ -51,7 +51,23 @@ class OpenCodeTemporalDispatcher:
                 result = await asyncio.wait_for(handle.result(), timeout=remaining)
                 return result, handle.id, description.run_id
 
-        result, workflow_id, provider_run_id = asyncio.run(original_run())
+        try:
+            result, workflow_id, provider_run_id = asyncio.run(original_run())
+        except BaseException as error:
+            endpoints = tuple(self.service.endpoints.values())
+            endpoint = endpoints[0] if len(endpoints) == 1 else None
+            driver = getattr(endpoint, "driver", None)
+            journal = getattr(driver, "journal", None)
+            if journal is not None:
+                try:
+                    journal.event(
+                        identity["operation_id"],
+                        "temporal_dispatch_error",
+                        {"error_type": type(error).__name__, "detail": str(error)[:300]},
+                    )
+                except (OSError, RuntimeError, TypeError, ValueError):
+                    return
+            raise
         if workflow_id != "acs-delivery/" + identity["operation_id"]:
             raise RuntimeError("OpenCode original Temporal Workflow differs")
         if not isinstance(result, dict) or result.get("status") not in {
