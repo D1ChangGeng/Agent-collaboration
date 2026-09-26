@@ -300,12 +300,22 @@ class DriverJournal:
                 )
         return {**self.read(operation.operation_id), "created": row is None}
 
-    def event(self, operation_id, kind, body):
+    def event(self, operation_id, kind, body, *, observed_at=None):
         with self._connect() as conn:
             conn.execute(
                 "INSERT INTO driver_events(operation_id,kind,body,observed_at) VALUES(?,?,?,?)",
-                (operation_id, kind, canonical(body), datetime.now(UTC).isoformat()),
+                (operation_id, kind, canonical(body),
+                 observed_at or datetime.now(UTC).isoformat()),
             )
+
+    def first_event_observed_at(self, operation_id, kind):
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT observed_at FROM driver_events WHERE operation_id=? AND kind=? "
+                "ORDER BY sequence LIMIT 1",
+                (operation_id, kind),
+            ).fetchone()
+        return row[0] if row else None
 
     def finish(self, operation_id, state, result):
         with self._connect() as conn:
@@ -891,6 +901,9 @@ class CodexAppServerDriver:
             messages = [
                 item for item in turn.get("items", []) if item.get("type") == "agentMessage"
             ]
+            terminal_observed_at = self.journal.first_event_observed_at(
+                invocation_operation_id, "terminal_observation",
+            ) or datetime.now(UTC).isoformat()
             result = self._binding_receipt(
                 "response_received" if terminal else "runtime_acknowledged",
                 operation_id=invocation_operation_id,
@@ -900,11 +913,13 @@ class CodexAppServerDriver:
                 native_status=turn.get("status"),
                 native_error=turn.get("error"),
                 assistant_messages=messages,
+                native_terminal_observed_at=terminal_observed_at,
             )
             self.journal.event(
                 invocation_operation_id,
                 "terminal_observation" if terminal else "turn_observation",
                 result,
+                observed_at=terminal_observed_at,
             )
             return result
 

@@ -49,6 +49,8 @@ from runtime.receiver_domain import (
     ConnectionReferenceRegistration,
     EndpointRegistrationCommand,
 )
+from runtime.recovery_models import BoundaryRejected, StateConflict
+from runtime.recovery_service import RecoveryService
 
 
 class SurfaceCommand(BaseModel):
@@ -63,7 +65,7 @@ class SurfaceCommand(BaseModel):
     causation_id: str | None = Field(default=None, max_length=256)
     target_kind: Literal[
         "work_item", "message", "lease", "effect", "node", "runtime", "attempt",
-        "authority_transport_key", "connection", "endpoint",
+        "authority_transport_key", "connection", "endpoint", "recovery", "projection",
     ] = "work_item"
     issued_at: datetime
     deadline: datetime
@@ -249,6 +251,63 @@ class DeliveryDispatch(PayloadModel):
     operation_id: str = Field(min_length=1, max_length=256)
 
 
+class NativeProjection(PayloadModel):
+    observation: dict[str, JsonValue]
+
+
+class ProjectionStatus(PayloadModel):
+    projection_id: str = Field(min_length=1, max_length=512)
+    scope_id: str = Field(min_length=1, max_length=256)
+
+
+class RecoveryPathPayload(PayloadModel):
+    path_id: str = Field(min_length=1, max_length=256)
+    status: Literal["failed", "unavailable", "unsupported", "budget_exhausted"]
+    attempt_refs: tuple[str, ...] = Field(min_length=1, max_length=16)
+    evidence_refs: tuple[str, ...] = Field(min_length=1, max_length=16)
+
+
+class IncidentOpen(PayloadModel):
+    incident_id: str = Field(min_length=1, max_length=256)
+    generation: int = Field(ge=1, strict=True)
+    message_id: str = Field(min_length=1, max_length=256)
+    operation_id: str = Field(min_length=1, max_length=256)
+    source_scope_id: str = Field(min_length=1, max_length=256)
+    target_scope_id: str = Field(min_length=1, max_length=256)
+    accepted_revision: int = Field(ge=0, strict=True)
+    accepted_state_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
+    expires_at: datetime
+    eligible_path_ids: tuple[str, ...] = Field(min_length=1, max_length=16)
+    paths: tuple[RecoveryPathPayload, ...] = Field(min_length=1, max_length=16)
+
+
+class HumanRequest(PayloadModel):
+    incident_id: str = Field(min_length=1, max_length=256)
+    request_id: str = Field(min_length=1, max_length=256)
+
+
+class RecoveryReprobe(PayloadModel):
+    incident_id: str = Field(min_length=1, max_length=256)
+    reprobe_id: str = Field(min_length=1, max_length=256)
+    observation_ref: str = Field(min_length=1, max_length=512)
+    succeeded: bool
+
+
+class ManualReceive(PayloadModel):
+    incident_id: str = Field(min_length=1, max_length=256)
+    packet: dict[str, JsonValue]
+
+
+class ManualConfirm(PayloadModel):
+    incident_id: str = Field(min_length=1, max_length=256)
+    receipt: dict[str, JsonValue]
+
+
+class IncidentTarget(PayloadModel):
+    incident_id: str = Field(min_length=1, max_length=256)
+    scope_id: str = Field(min_length=1, max_length=256)
+
+
 PAYLOADS = {
     "work_item.create": WorkCreate, "work_item.transition": WorkTransition,
     "evidence.record": EvidencePayload, "execution.record": ExecutionPayload,
@@ -260,6 +319,16 @@ PAYLOADS = {
     "work_item.read": PayloadModel,
     "message.bind": EndpointBindingRequest, "message.send": MessageSend, "message.read": PayloadModel,
     "delivery.scan": DeliveryScan, "delivery.dispatch": DeliveryDispatch,
+    "delivery.project_native_response": NativeProjection,
+    "delivery.projection.status": ProjectionStatus,
+    "delivery.response.consume": ProjectionStatus,
+    "recovery.incident.open": IncidentOpen,
+    "recovery.human.request": HumanRequest,
+    "recovery.automatic.reprobe": RecoveryReprobe,
+    "recovery.manual.receive": ManualReceive,
+    "recovery.manual.confirm": ManualConfirm,
+    "recovery.incident.expire": IncidentTarget,
+    "recovery.incident.status": IncidentTarget,
     "receiver.key.register": AuthorityTransportKeyRegistration,
     "receiver.connection.register": ConnectionReferenceRegistration,
     "endpoint.register": EndpointRegistrationCommand,
@@ -270,6 +339,7 @@ class SharedService:
     def __init__(self, authority: DomainAuthority, authenticator: LocalCredentialAuthenticator | None = None):
         self.authority, self.authenticator = authority, authenticator
         self.delivery_operations = DeliveryOperations(authority)
+        self.recovery = RecoveryService(authority)
 
     def authenticate(self, credential):
         if self.authenticator is None:
@@ -339,6 +409,8 @@ class SharedService:
             result = self.delivery_operations.scan(envelope, **payload.model_dump())
         elif name == "delivery.dispatch":
             result = self.delivery_operations.dispatch(envelope, **payload.model_dump())
+        elif name in RecoveryService.PERMISSIONS:
+            result = self.recovery.execute(envelope, name, payload.model_dump(mode="python"))
         else:
             if envelope.deadline <= datetime.now(UTC) or envelope.issued_at > datetime.now(UTC):
                 raise AuthorizationDenied(envelope.principal_ref, envelope.grant_ref)
@@ -359,7 +431,7 @@ class SharedService:
             return failure("UNAUTHENTICATED")
         except AuthorizationDenied:
             return failure("AUTHORIZATION_DENIED")
-        except IdempotencyConflict:
+        except (IdempotencyConflict, StateConflict):
             return failure("IDEMPOTENCY_CONFLICT")
         except RevisionConflict:
             return failure("REVISION_CONFLICT")
@@ -367,7 +439,8 @@ class SharedService:
             return failure("NOT_FOUND")
         except (ValidationError, ValueError, TypeError, RecursionError):
             return failure("INPUT_INVALID")
-        except (AcceptanceGuardFailed, InvalidTransition, LeaseRejected, FencingRejected, EffectUnavailable, DeliveryRejected):
+        except (AcceptanceGuardFailed, InvalidTransition, LeaseRejected, FencingRejected,
+                EffectUnavailable, DeliveryRejected, BoundaryRejected):
             return failure("GUARD_REJECTED")
         except Exception:  # noqa: BLE001 - transport boundary must not expose private backend exception text
             # Never return raw database exceptions, private references or input.
