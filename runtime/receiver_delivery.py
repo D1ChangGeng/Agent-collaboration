@@ -132,7 +132,10 @@ class RemoteNodeEndpointAdapter:
 
     def __init__(self, authority, endpoint_id: str,
                  deployment: ReceiverDeployment | RemoteSenderDeployment,
-                 *, timeout: float = 5.0):
+                 *, timeout: float = 5.0, after_dispatch_mark=None):
+        if after_dispatch_mark is not None and not callable(after_dispatch_mark):
+            raise TypeError("after_dispatch_mark must be callable")
+        self.after_dispatch_mark = after_dispatch_mark
         self.authority = authority
         self.store = authority.receiver_transport
         committed = self.store.load_endpoint(endpoint_id)
@@ -274,6 +277,12 @@ class RemoteNodeEndpointAdapter:
              "receiver_prepare_receipt_id": prepared.receipt.receipt_id,
              "receiver_prepare_request_id": prepared.receipt.request_id},
         )
+        # The Domain callback returns only after the runtime_dispatched marker
+        # is committed.  Fault scenarios may use this single hook to isolate
+        # the transport at that exact boundary; normal production callers leave
+        # it unset.
+        if self.after_dispatch_mark is not None:
+            self.after_dispatch_mark(invocation)
         dispatch_body = DispatchBody(
             prepare_request_id=prepared.receipt.request_id,
             marker_receipt_id=invocation.runtime_dispatched_receipt_id,
