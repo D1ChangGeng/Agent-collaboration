@@ -31,6 +31,7 @@ from runtime.receiver_config import (
     ConnectionTarget,
     EndpointBootstrap,
     NodeIdentity,
+    ReceiverClientConfig,
     ReceiverRuntimeConfig,
 )
 from runtime.receiver_crypto import (
@@ -346,6 +347,23 @@ def test_endpoint_registration_is_node_signed_and_locator_is_configuration_only(
     unknown = env.registration.model_copy(update={"registration_id": "unknown", "connection_ref": "unknown"})
     with pytest.raises(BootstrapRejected, match="allowlisted"):
         env.bootstrap.register(unknown, sign(env.node_key, unknown))
+
+
+def test_sender_client_config_has_no_receiver_local_path_dependency(env):
+    client = ReceiverClientConfig(
+        binding=env.config.binding,
+        authority_key_id=env.config.authority_key_id,
+        authority_key_revision=env.config.authority_key_revision,
+        authority_public_key=env.config.authority_public_key,
+        authority_public_key_fingerprint=env.config.authority_public_key_fingerprint,
+        expected_boot_incarnation=env.config.expected_boot_incarnation,
+        journal_generation=env.config.journal_generation,
+    )
+    client.validate()
+    assert not any(
+        name in client.__dataclass_fields__
+        for name in ("tls_cert_path", "tls_key_path", "node_signing_key_path", "ledger_path")
+    )
 
 
 def test_prepare_exact_replay_and_signature_body_nonce_mutations(env):
