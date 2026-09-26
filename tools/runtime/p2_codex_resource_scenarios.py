@@ -221,11 +221,13 @@ def _write_ledger(output: Path, report: dict[str, Any]) -> None:
     ledger.chmod(0o600)
 
 
-def execute(profile_path: Path, scenario: str, output: Path, machine_id: str) -> dict[str, Any]:
+def execute(profile_path: Path, scenario: str, output: Path, machine_id: str,
+            source_root: Path) -> dict[str, Any]:
     if scenario not in SCENARIOS or not machine_id or "/" in machine_id or "\\" in machine_id:
         raise ScenarioRejected("P2 resource scenario identity is invalid")
     profile, profile_sha, secrets = engine._secure_profile(profile_path)
-    source = Path(profile["source_root"]).resolve(strict=True)
+    source = source_root.resolve(strict=True)
+    profile = dict(profile, source_root=str(source))
     output = output.resolve(strict=False)
     if output == source or output.is_relative_to(source) or output.exists():
         raise ScenarioRejected("P2 output must be a new directory outside source")
@@ -350,8 +352,9 @@ def execute(profile_path: Path, scenario: str, output: Path, machine_id: str) ->
                 os.environ[name] = value
 
 
-def audit(profile_path: Path, output: Path) -> dict[str, Any]:
+def audit(profile_path: Path, output: Path, source_root: Path) -> dict[str, Any]:
     profile, _profile_sha, _secrets = engine._secure_profile(profile_path)
+    profile = dict(profile, source_root=str(source_root.resolve(strict=True)))
     evidence_files = list(output.glob("P2-CODEX-*-evidence.json"))
     if len(evidence_files) != 1:
         raise ScenarioRejected("one P2 resource evidence file is required")
@@ -421,17 +424,19 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--scenario", choices=tuple(SCENARIOS), required=True)
     run.add_argument("--output", type=Path, required=True)
     run.add_argument("--machine-id", required=True)
+    run.add_argument("--source-root", type=Path, required=True)
     check = sub.add_parser("audit")
     check.add_argument("--profile", type=Path, required=True)
     check.add_argument("--output", type=Path, required=True)
+    check.add_argument("--source-root", type=Path, required=True)
     clean = sub.add_parser("cleanup")
     clean.add_argument("--profile", type=Path, required=True)
     clean.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         result = (
-            execute(args.profile, args.scenario, args.output, args.machine_id)
-            if args.action == "run" else audit(args.profile, args.output)
+            execute(args.profile, args.scenario, args.output, args.machine_id, args.source_root)
+            if args.action == "run" else audit(args.profile, args.output, args.source_root)
             if args.action == "audit" else cleanup(args.profile, args.output)
         )
         print(json.dumps(result, sort_keys=True, separators=(",", ":")))
