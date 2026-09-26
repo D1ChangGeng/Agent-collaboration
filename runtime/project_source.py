@@ -8,10 +8,51 @@ import json
 from collections.abc import Mapping
 from pathlib import PurePosixPath
 
+from runtime.artifacts import ArtifactError
 from runtime.data_policy import artifact_authorizer, source_authorizer
 from runtime.models import ArtifactRef
 from runtime.source import SourceError, SourcePathError, SourceReadbackError, SourceService
 from runtime.source_models import SourceFile, SourceRequest, SourceSnapshot
+
+
+def read_artifact_reference(store, reference, maximum, authority, command):
+    """Read a complete typed reference through its exact Scope provider."""
+    maximum = ProjectSources.bound(maximum)
+    try:
+        reference = ArtifactRef.model_validate(reference, strict=True)
+        provider = (store.for_scope(reference.scope_id)
+                    if hasattr(store, "for_scope") else store)
+        if provider.scope_id != reference.scope_id:
+            raise SourceError("artifact Scope has no admitted provider")
+        artifact_authorizer(authority, command)(reference, "read")
+        data = provider.read(reference)
+    except SourceError:
+        raise
+    except (ArtifactError, ValueError, TypeError) as error:
+        raise SourceReadbackError("artifact readback failed") from error
+    if (len(data) != reference.size_bytes
+            or hashlib.sha256(data).hexdigest() != reference.sha256):
+        raise SourceReadbackError("artifact bytes differ from the typed reference")
+    return reference, data if len(data) <= maximum else None
+
+
+def read_response_artifact(store, scope_id, digest, maximum, authority, command):
+    """Authorize, verify and optionally inline one native response artifact."""
+    maximum = ProjectSources.bound(maximum)
+    try:
+        provider = store.for_scope(scope_id) if hasattr(store, "for_scope") else store
+        if provider.scope_id != scope_id:
+            raise SourceError("response artifact Scope has no admitted provider")
+        reference = provider.reference_for_digest(
+            digest, kind="readback", media_type="application/json",
+        )
+        return read_artifact_reference(
+            store, reference, maximum, authority, command,
+        )
+    except SourceError:
+        raise
+    except ArtifactError as error:
+        raise SourceReadbackError("response artifact readback failed") from error
 
 
 class ProjectSources:
@@ -105,6 +146,11 @@ class ProjectSources:
         if len(data) != item.size_bytes or hashlib.sha256(data).hexdigest() != item.sha256:
             raise SourceReadbackError("Source file digest changed")
         return data, item
+
+    def response_artifact(self, scope_id, digest, maximum, authority, command):
+        return read_response_artifact(
+            self.store, scope_id, digest, maximum, authority, command,
+        )
 
     def read_file(self, snapshot, args, authority, command):
         data, item = self.file_bytes(snapshot, args["path"], authority, command)

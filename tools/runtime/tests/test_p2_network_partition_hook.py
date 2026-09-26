@@ -34,6 +34,7 @@ def test_after_dispatch_mark_runs_after_marker_and_before_dispatch():
         model_dump=lambda mode: {"invocation": True},
     )
     envelope = SimpleNamespace(
+        packet=SimpleNamespace(delivery_policy="immediate"),
         model_dump=lambda mode: {"envelope": True}
     )
     adapter._selection = lambda value: {"selection": True}

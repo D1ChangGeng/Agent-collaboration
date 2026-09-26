@@ -35,3 +35,6 @@ class ScopedArtifactStores:
         if not isinstance(reference, ArtifactRef):
             raise ArtifactError("a complete typed artifact reference is required")
         return self.for_scope(reference.scope_id).verify(reference)
+
+    def reference_for_digest(self, scope_id, digest, **kwargs):
+        return self.for_scope(scope_id).reference_for_digest(digest, **kwargs)

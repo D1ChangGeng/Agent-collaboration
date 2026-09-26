@@ -1,7 +1,14 @@
 ---
-title: P2 cross-machine Runtime execution boundaries
+kind: guide
 status: active
-verified_at: 2026-09-14
+scope:
+  - "**"
+use_when:
+  - "implementing or reviewing P2 cross-machine Runtime delivery"
+  - "changing Receiver, tunnel, Driver, or supervised process boundaries"
+  - "deciding whether cross-machine evidence can be promoted after a source change"
+review_when:
+  - "the Receiver protocol, Driver profile, supervisor, or P2 Gate contract changes"
 ---
 
 # P2 cross-machine Runtime execution boundaries
@@ -25,3 +32,13 @@ verified_at: 2026-09-14
 - A changed source HEAD invalidates Runtime execution evidence. Only promote a
   run whose two clones, Drivers, schemas, receipts and readbacks bind the same
   final commit/tree.
+
+## Evidence boundary
+
+These boundaries were last checked against source commit
+`d43c37f72e59d72c94ee49c8dcce9ae6b49be3d2`, including
+`docs/runtime/UPGRADE-CONTRACT.md`, `runtime/receiver*.py`,
+`runtime/codex_driver.py`, `runtime/supervisor.py`,
+`runtime/systemd_supervisor.py`, and `tools/runtime/p2_*.py`. A later candidate
+must revalidate the affected claims before updating this baseline or promoting
+new Gate evidence.
