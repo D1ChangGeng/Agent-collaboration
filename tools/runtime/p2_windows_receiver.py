@@ -78,6 +78,7 @@ def stage_capacity(root: Path, runtime_id: str, args) -> dict:
 
 def provision(args):
     root = args.output.resolve(); _private(root)
+    _private(root / "state")
     base = _json(args.profile)["postgres_dsn"]
     with psycopg.connect(base, autocommit=True) as admin:
         admin.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(args.schema_name)))

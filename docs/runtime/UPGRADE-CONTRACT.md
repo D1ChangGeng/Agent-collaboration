@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-09-22.7.
+is determined by the named Gate records. Contract revision: 2026-09-22.8.
 
 ## Authority and inputs
 
@@ -66,6 +66,12 @@ Body fields cannot grant permissions. Separate send, invoke, source read/write,
 publish and accept. Revocation, expiry, budget and policy changes must be checked
 at the actual protected boundary, including dispatch and retry. Internal recovery
 keeps the original command lineage and cannot expand its scope.
+
+Cross-Machine receiver admission and its current-authority recheck use the same
+explicit bounded clock-skew allowance, between zero and thirty seconds. The
+reference receiver uses five seconds. This allowance applies only to a slightly
+future `issued_at`; command/admission deadlines, Grant expiry, revocation,
+authority incarnation, endpoint revision and protected permissions remain strict.
 
 Scope, Root, Route, AgentSlot and WorkItem identity survive Machine, Node,
 Runtime, Session, directory and transport changes. Keep versioned ScopeBinding
