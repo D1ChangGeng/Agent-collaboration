@@ -14,9 +14,9 @@ from pathlib import Path
 from typing import Any
 
 INVENTORY_SCHEMA = "acs-p2-readonly-inventory/2"
-WORKSPACE_SCHEMA = "acs-p2-runner-workspace/2"
+WORKSPACE_SCHEMA = "acs-p2-runner-workspace/3"
 MANIFEST_SCHEMA = "acs-p2-runner-manifest/1"
-MCP_SURFACE_REVISION = "acs-p2-mcp-workflow/3"
+MCP_SURFACE_REVISION = "acs-p2-mcp-workflow/4"
 REQUIRED_EVIDENCE = (
     "command_ids", "operation_ids", "message_ids", "event_ids", "receipts",
     "raw_outputs", "fault_injection", "source_readback", "artifact_readback",
@@ -39,18 +39,30 @@ FAULTS = {
     "P2-OPENCODE-LATE-DEDUP": "deliver late duplicate after successful response",
     "P2-HUMAN-BRIDGE-RECOVERY": "exhaust automatic paths, manual return, successful reprobe race",
     "P2-SOURCE-ARTIFACT-EFFECT-READBACK": "mutate and read back source/artifact/effect boundaries",
-    "P2-MCP-COLLABORATION-APPLY": "apply one authorized plan through setup_collaboration and read its accepted revision",
-    "P2-MCP-HARNESS-DISCOVERY": "list current eligible capacity through find_harnesses with scoped evidence",
-    "P2-MCP-SEND-ASYNC": "submit default asynchronous send_message and return its response handle and follow-ups",
-    "P2-MCP-SEND-SYNC": "submit one send_message and observe the same handle through bounded wait_for_response",
-    "P2-MCP-BOUNDED-AWAIT-CONTINUITY": "retain durable response tracking across wait_for_response timeout and MCP reconnect",
-    "P2-MCP-TARGET-IDLE-DELIVERY": "commit a busy target Inbox item and invoke it after a current idle observation",
-    "P2-MCP-COMPLETION-NOTIFICATION": "deliver one completion notification to the initiating AgentSlot",
-    "P2-MCP-SESSION-CONTINUITY": "route completion to the current replacement Session for the initiating AgentSlot",
-    "P2-MCP-GENERIC-READ-INBOX": "recover check_inbox and read typed handles through read_resource",
-    "P2-MCP-CANCELLATION": "apply typed notification, WorkItem and Runtime Attempt control with independent authorization",
-    "P2-MCP-WAIT-AGGREGATION": "observe wait_for_response any and all conditions with one completion revision",
-    "P2-MCP-WORKFLOW-COMMANDS": "execute the adopted collaboration, review, results and cancellation workflows",
+    "P2-MCP-TEAM-CONFIGURE": "configure an existing Scope team and read its accepted revision",
+    "P2-MCP-HARNESS-LIST": "list eligible Harness capacity with scoped evidence",
+    "P2-MCP-SEND-ASYNC": "submit asynchronous send_message and return response follow-ups",
+    "P2-MCP-SEND-SYNC": "submit send_message and observe the same handle through bounded wait_for_response",
+    "P2-MCP-BOUNDED-WAIT-CONTINUITY": "retain response tracking across timeout and MCP reconnect",
+    "P2-MCP-TARGET-IDLE-DELIVERY": "commit a busy target Inbox item and invoke after idle",
+    "P2-MCP-COMPLETION-NOTIFICATION": "deliver one completion notification to the initiating context",
+    "P2-MCP-SESSION-CONTINUITY": "route completion to the current replacement Session",
+    "P2-MCP-RESOURCE-MESSAGE-INBOX": "separate pure resource reads, message consumption and Inbox listing",
+    "P2-MCP-TYPED-CONTROL": "apply notification, WorkItem and Attempt control with independent authorization",
+    "P2-MCP-WAIT-AGGREGATION": "observe any and all response conditions with one completion revision",
+    "P2-MCP-SKILL-WORKFLOWS": "execute adopted Skill workflows through canonical tools",
+    "P2-MGMT-PROJECT-ADOPTION-IDENTITY": "adopt one project and preserve Project and Root identity",
+    "P2-MGMT-PROJECT-ID-ISOLATION": "reject cross-project handles and preserve explicit project context",
+    "P2-MGMT-LOCAL-CONTEXT-HYDRATION": "load current AGENTS and manifest context from a local session",
+    "P2-MGMT-WEB-CONTEXT-HYDRATION": "load a complete ProjectContextPack from a remote web session",
+    "P2-MGMT-CROSS-PROJECT-LIST": "list multiple authorized projects without state conflation",
+    "P2-MGMT-ROUTE-WORK-COLLABORATOR-LISTS": "list Routes, WorkItems and collaborators with stable handles",
+    "P2-MGMT-EVIDENCE-REVIEW-LISTS": "list Evidence and Reviews and read exact referenced resources",
+    "P2-MGMT-FILESYSTEM-SOURCE-READ": "list, search and read SourceBinding files and diffs",
+    "P2-MGMT-EXTERNAL-SOURCE-COORDINATION": "coordinate external source-provider reads with ACS source identity",
+    "P2-MGMT-WEB-REVIEWER-FLOW": "perform exact-baseline Review from a web-capable MCP client",
+    "P2-MGMT-WATCH-INBOX-RECOVERY": "deliver subscribed change notification and recover through project Inbox",
+    "P2-MGMT-SKILL-STARTER-PROMPTS": "invoke each adopted Skill from its one-sentence user entry",
 }
 SECRET = re.compile(
     r"(?i)\"?(password|passwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|authorization)\"?\s*[:=]"
@@ -104,7 +116,7 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def contract_scenarios(contract: dict[str, Any]) -> dict[str, list[str]]:
     gates = contract.get("gates", {})
-    counts = {"P2-CODEX": 8, "P2-OPENCODE": 8, "P2-MCP-WORKFLOW": 12}
+    counts = {"P2-CODEX": 8, "P2-OPENCODE": 8, "P2-MCP-WORKFLOW": 12, "P2-MANAGEMENT-WORKFLOW": 12}
     result = {
         gate: gates.get(gate, {}).get("scenarios")
         for gate in counts
@@ -266,7 +278,7 @@ def initialize(inventory_path: Path, contract_path: Path, output: Path, source_r
     workspace = {
         "schema_version": WORKSPACE_SCHEMA,
         "status": "not_run",
-        "execution_order": ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW"],
+        "execution_order": ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW", "P2-MANAGEMENT-WORKFLOW"],
         "mcp_surface_revision": MCP_SURFACE_REVISION,
         "blockers": blocked,
         "credentials_copied": False,
@@ -283,6 +295,15 @@ def initialize(inventory_path: Path, contract_path: Path, output: Path, source_r
     write_json(
         output / "P2-MCP-WORKFLOW.json",
         gate_record("P2-MCP-WORKFLOW", scenarios["P2-MCP-WORKFLOW"], workflow_blockers),
+    )
+    management_blockers = blocked + ["P2-MCP-WORKFLOW prerequisite has not passed"]
+    write_json(
+        output / "P2-MANAGEMENT-WORKFLOW.json",
+        gate_record(
+            "P2-MANAGEMENT-WORKFLOW",
+            scenarios["P2-MANAGEMENT-WORKFLOW"],
+            management_blockers,
+        ),
     )
     write_json(output / "RUN-MANIFEST.json", build_manifest(output, inventory))
     return workspace

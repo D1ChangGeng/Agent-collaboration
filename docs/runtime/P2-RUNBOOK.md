@@ -21,10 +21,11 @@ facts are not current inputs.
 5. Execute all eight `P2-CODEX` scenarios and independently review that Gate.
 6. Execute all eight `P2-OPENCODE` scenarios, including Human Bridge, and review
    that Gate. A P2-CODEX component result cannot satisfy an OpenCode scenario.
-7. Implement and execute the `P2-MCP-WORKFLOW` surface from
-   [P2-MCP-WORKFLOW-CONTRACT.md](P2-MCP-WORKFLOW-CONTRACT.md) through real Codex
-   and OpenCode MCP clients.
-8. Perform the complete P2 independent review and retain the product-owner
+7. Implement and execute the P2-MCP-WORKFLOW surface through real Codex and
+   OpenCode MCP clients.
+8. Execute P2-MANAGEMENT-WORKFLOW through local and remote web-capable MCP
+   clients, including ProjectContextPack, Source reads and Skills.
+9. Perform the complete P2 independent review and retain the product-owner
    decision boundary.
 
 Each scenario must produce its own command, operation, message and event IDs;
@@ -75,36 +76,42 @@ unresolved items. Reused P1 evidence proves only the prerequisite.
 
 ## P2-MCP-WORKFLOW
 
-- `COLLABORATION-APPLY`: execute `setup_collaboration` for an explicit
-  Scope, AgentSlot, role, Grant, Policy and budget plan and read its revision.
-- `HARNESS-DISCOVERY`: execute `find_harnesses` using scoped, unexpired
-  capability evidence.
-- `SEND-ASYNC`: use default asynchronous `send_message`, return a stable response
-  handle, exact follow-up calls and automatic completion notification state.
-- `SEND-SYNC`: use the same Message and response handle with bounded
-  `wait_for_response` observation and the typed `message_submission` result.
-- `BOUNDED-AWAIT-CONTINUITY`: retain response tracking and notification across
-  await timeout, MCP disconnect and reconnect.
-- `TARGET-IDLE-DELIVERY`: commit the target Inbox while its Session is active,
-  then dispatch exactly once after a current idle observation.
-- `COMPLETION-NOTIFICATION`: queue and deliver one completion Message to the
-  initiating AgentSlot according to its Session activity.
-- `SESSION-CONTINUITY`: route completion to the current Session binding after
-  replacement while retaining logical AgentSlot and response identity.
-- `GENERIC-READ-INBOX`: recover `check_inbox` notifications and read Message,
-  response, Evidence and Artifact handles through `read_resource`.
-- `CANCELLATION`: exercise `set_notification`, `cancel_work` and
-  `stop_attempt` through their respective Grants and state dimensions.
-- `WAIT-AGGREGATION`: exercise `wait_for_response` `any` and `all` over response
-  handles with one completion revision and one notification per aggregate.
-- `WORKFLOW-COMMANDS`: execute the adopted collaboration, review, results,
-  status and cancellation command documents through the versioned tool contracts.
+- TEAM-CONFIGURE: configure AgentSlot, role, Grant, Policy and budget bindings
+  inside an existing Scope through configure_team.
+- HARNESS-LIST: execute list_harnesses with scoped, unexpired capability
+  evidence.
+- SEND-ASYNC: use default asynchronous send_message and return stable response
+  and notification handles.
+- SEND-SYNC: observe the same response through bounded wait_for_response.
+- BOUNDED-WAIT-CONTINUITY: retain tracking across timeout and MCP reconnect.
+- TARGET-IDLE-DELIVERY: commit a busy target Inbox item and invoke after idle.
+- COMPLETION-NOTIFICATION: deliver one deduplicated completion notification.
+- SESSION-CONTINUITY: route completion to the current replacement Session.
+- RESOURCE-MESSAGE-INBOX: prove pure resource reads, Message consumption and
+  Inbox listing as independent contracts.
+- TYPED-CONTROL: exercise notification, WorkItem and Runtime Attempt controls.
+- WAIT-AGGREGATION: exercise any and all response conditions.
+- SKILL-WORKFLOWS: invoke adopted Skills through canonical tools.
 
-The public MCP result bytes, result-type discriminators, executable follow-up
-calls, Domain rows, Inbox/Outbox,
-Temporal history, Node/Driver observations, Session activity transitions and
-completion readback are direct Gate evidence. A tool description or generated
-schema alone is not execution evidence.
+## P2-MANAGEMENT-WORKFLOW
+
+- PROJECT-ADOPTION-IDENTITY: preserve Project and Root identity during setup.
+- PROJECT-ID-ISOLATION: reject a mismatched project_id and typed handle.
+- LOCAL-CONTEXT-HYDRATION: load current AGENTS, manifest and source identity.
+- WEB-CONTEXT-HYDRATION: load a complete ProjectContextPack remotely.
+- CROSS-PROJECT-LIST: enumerate multiple authorized projects independently.
+- ROUTE-WORK-COLLABORATOR-LISTS: return stable handles and revisions.
+- EVIDENCE-REVIEW-LISTS: discover Review and Evidence resources.
+- FILESYSTEM-SOURCE-READ: list, search and read files, source state and diff.
+- EXTERNAL-SOURCE-COORDINATION: bind external provider reads to ACS source
+  identity and revision.
+- WEB-REVIEWER-FLOW: perform exact-baseline Review from a web MCP client.
+- WATCH-INBOX-RECOVERY: deliver subscription change and recover it from Inbox.
+- SKILL-STARTER-PROMPTS: execute each Skill from its one-sentence user entry.
+
+Public MCP bytes, profile-filtered tool discovery, exact arguments, Domain rows,
+Inbox and Outbox, Source readback, OAuth scope, Node and Driver observations,
+Skill selection, Session activity and unresolved items are direct Gate evidence.
 
 ## Fault safety
 

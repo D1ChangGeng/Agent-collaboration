@@ -1,27 +1,19 @@
 {
-  "schema_version": "acs-p2-mcp-tool-contract/3",
-  "surface_revision": "acs-p2-mcp-workflow/3",
+  "schema_version": "acs-p2-mcp-tool-contract/4",
+  "surface_revision": "acs-p2-mcp-workflow/4",
   "server": "agent-collaboration-runtime",
   "naming_convention": "concise_action_phrase",
   "naming_principles": [
     "intended_action",
     "human_collaboration_phrase",
     "runtime_or_domain_behavior",
+    "list_for_enumeration",
     "target_as_argument_when_contract_is_uniform",
     "separate_tool_when_authorization_state_or_result_differs"
   ],
-  "ordinary_tools": [
-    "setup_collaboration",
-    "find_harnesses",
-    "send_message",
-    "wait_for_response",
-    "read_resource",
-    "check_inbox",
-    "set_notification",
-    "cancel_work",
-    "stop_attempt"
+  "advanced_tools": [
+    "submit_command"
   ],
-  "advanced_tools": ["submit_command"],
   "compatibility_aliases": {
     "run": {
       "canonical_tool": "submit_command",
@@ -34,7 +26,9 @@
     "delivery_policy": "queue_until_idle",
     "expect_response": true,
     "response_mode": "async",
-    "wait_until": "response_received"
+    "wait_until": "response_received",
+    "list_limit": 50,
+    "max_inline_bytes": 16384
   },
   "receipt_order": [
     "accepted_by_authority",
@@ -45,151 +39,1696 @@
   ],
   "tool_result_transport": {
     "content": "one concise text summary for the calling Agent",
-    "structuredContent": "one acs-mcp-result/2 success or problem envelope",
+    "structuredContent": "one acs-mcp-result/3 success or problem envelope",
     "isError": "false for accepted observations and state transitions; true for rejected or failed tool execution"
   },
   "tools": {
-    "setup_collaboration": {
-      "title": "Set up collaboration",
-      "description": "Set up or revise an explicit collaboration plan containing Scope, AgentSlot, role, Grant, Policy and budget bindings. Returns the accepted collaboration handle and revision.",
-      "selection_guidance": "Use when an Agent has already decided the collaboration topology and needs ACS to authorize and persist it.",
-      "annotations": {"readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
-      "input_schema": {
-        "schema_version": "acs-mcp-setup-collaboration/3",
-        "required": ["client_request_id", "expected_revision", "deadline", "scope", "agent_slots"],
-        "optional": ["roles", "grants", "policies", "budgets"]
+    "read_profile": {
+      "title": "Read connection profile",
+      "description": "Read the authenticated subject, tenant, granted profiles, connection state and OAuth scope summary.",
+      "selection_guidance": "Use at the start of a global or web session.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       },
-      "result_type": "collaboration_plan_result"
+      "input_schema": {
+        "schema_version": "acs-mcp-read-profile/1",
+        "required": [],
+        "optional": []
+      },
+      "result_type": "profile_snapshot",
+      "security_scopes": [
+        "profile.read"
+      ]
     },
-    "find_harnesses": {
-      "title": "Find eligible Harnesses",
-      "description": "Find current Harness capacities eligible for a Scope, role and capability set. Returns bounded Machine, Node, Driver, Harness, direction, readiness, evidence and expiry metadata.",
-      "selection_guidance": "Use before assigning work to discover capacities supported by current observations.",
-      "annotations": {"readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
-      "input_schema": {
-        "schema_version": "acs-mcp-find-harnesses/3",
-        "required": ["scope_id", "required_capabilities"],
-        "optional": ["role", "harness_kinds", "require_current_until", "cursor", "limit"],
-        "defaults": {"cursor": null, "limit": 20}
+    "list_projects": {
+      "title": "List accessible projects",
+      "description": "List visible projects with stable Project IDs, Root handles and lifecycle summaries.",
+      "selection_guidance": "Use when project_id is unknown or more than one project is involved.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       },
-      "result_type": "harness_capacity_page"
+      "input_schema": {
+        "schema_version": "acs-mcp-list-projects/1",
+        "required": [],
+        "optional": [
+          "states",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "project_page",
+      "security_scopes": [
+        "projects.read"
+      ]
+    },
+    "list_connections": {
+      "title": "List ACS connections",
+      "description": "List authorized Node, Tunnel, Source Provider and remote MCP connections with current capabilities.",
+      "selection_guidance": "Use to inspect local, web and source access paths.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-connections/1",
+        "required": [],
+        "optional": [
+          "project_id",
+          "kinds",
+          "states",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "connection_page",
+      "security_scopes": [
+        "connections.read"
+      ]
+    },
+    "load_project": {
+      "title": "Load project context",
+      "description": "Load a ProjectContextPack containing Root identity, instruction manifests, Routes, knowledge indexes, SourceBindings, policy and active work.",
+      "selection_guidance": "Use before project-scoped management, analysis, review or finalization when context is absent or stale.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-load-project/1",
+        "required": [
+          "project_id"
+        ],
+        "optional": [
+          "context_view",
+          "include",
+          "at_revision",
+          "max_inline_bytes"
+        ],
+        "context_views": [
+          "root_management",
+          "route_management",
+          "reviewer",
+          "finalizer"
+        ],
+        "defaults": {
+          "context_view": "root_management",
+          "max_inline_bytes": 65536
+        }
+      },
+      "result_type": "project_context",
+      "security_scopes": [
+        "projects.read",
+        "context.read"
+      ]
+    },
+    "list_routes": {
+      "title": "List project routes",
+      "description": "List registered development Routes with lifecycle, Scope, goal, source-state and active-work summaries.",
+      "selection_guidance": "Use to discover existing development lines.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-routes/1",
+        "required": [
+          "project_id"
+        ],
+        "optional": [
+          "states",
+          "updated_since",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "route_page",
+      "security_scopes": [
+        "routes.read"
+      ]
+    },
+    "list_work": {
+      "title": "List collaboration work",
+      "description": "List WorkItems with execution, review, acceptance, assignment, dependency and blocker summaries.",
+      "selection_guidance": "Use to recover active work or inspect backlog state.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-work/1",
+        "required": [
+          "project_id"
+        ],
+        "optional": [
+          "route_handle",
+          "states",
+          "assigned_to",
+          "blocked",
+          "updated_since",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "work_page",
+      "security_scopes": [
+        "work.read"
+      ]
+    },
+    "list_collaborators": {
+      "title": "List project collaborators",
+      "description": "List AgentSlots, roles, assignments, Session activity and Harness bindings.",
+      "selection_guidance": "Use before team configuration, delegation or handoff.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-collaborators/1",
+        "required": [
+          "project_id"
+        ],
+        "optional": [
+          "scope_handle",
+          "roles",
+          "states",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "collaborator_page",
+      "security_scopes": [
+        "collaborators.read"
+      ]
+    },
+    "list_harnesses": {
+      "title": "List eligible Harnesses",
+      "description": "List current Harness capacity eligible for a project Scope, role and capability set. Returns bounded readiness and evidence metadata.",
+      "selection_guidance": "Use before assignment when execution capacity is undecided.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-harnesses/1",
+        "required": [
+          "project_id",
+          "scope_handle",
+          "required_capabilities"
+        ],
+        "optional": [
+          "role",
+          "harness_kinds",
+          "require_current_until",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 20
+        }
+      },
+      "result_type": "harness_capacity_page",
+      "security_scopes": [
+        "harnesses.read"
+      ]
+    },
+    "list_sources": {
+      "title": "List project sources",
+      "description": "List local Node, Git and remote SourceBindings with repository identity, revision and capabilities.",
+      "selection_guidance": "Use before source reads or provider selection.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-sources/1",
+        "required": [
+          "project_id"
+        ],
+        "optional": [
+          "providers",
+          "states",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "source_page",
+      "security_scopes": [
+        "source.read"
+      ]
+    },
+    "list_activity": {
+      "title": "List project activity",
+      "description": "List bounded Domain events with actor lineage, revisions and evidence class.",
+      "selection_guidance": "Use for status, recovery, audit and continuity.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-activity/1",
+        "required": [
+          "project_id"
+        ],
+        "optional": [
+          "target_handle",
+          "event_kinds",
+          "after_revision",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "activity_page",
+      "security_scopes": [
+        "activity.read"
+      ]
+    },
+    "list_evidence": {
+      "title": "List collaboration evidence",
+      "description": "List Evidence and Artifact references attached to a project, Route, WorkItem, candidate or Review.",
+      "selection_guidance": "Use before review, acceptance or status reporting.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-evidence/1",
+        "required": [
+          "project_id",
+          "target_handle"
+        ],
+        "optional": [
+          "kinds",
+          "evidence_classes",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "evidence_page",
+      "security_scopes": [
+        "evidence.read"
+      ]
+    },
+    "list_reviews": {
+      "title": "List project reviews",
+      "description": "List requested, active and completed Reviews with candidate, baseline, decision and unresolved summaries.",
+      "selection_guidance": "Use to discover review work and verify coverage.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-reviews/1",
+        "required": [
+          "project_id"
+        ],
+        "optional": [
+          "target_handle",
+          "states",
+          "review_types",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "review_page",
+      "security_scopes": [
+        "reviews.read"
+      ]
+    },
+    "read_resource": {
+      "title": "Read collaboration resource",
+      "description": "Read one known Project, Route, WorkItem, Evidence, Artifact or AcceptedState handle at an exact revision without consuming Inbox state.",
+      "selection_guidance": "Use after a list or result supplies a stable handle.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-read-resource/4",
+        "required": [
+          "project_id",
+          "handle"
+        ],
+        "optional": [
+          "view",
+          "at_revision",
+          "include",
+          "cursor",
+          "limit",
+          "content_mode",
+          "max_inline_bytes"
+        ],
+        "views": [
+          "summary",
+          "detail",
+          "content",
+          "history",
+          "evidence"
+        ],
+        "content_modes": [
+          "inline",
+          "reference"
+        ],
+        "defaults": {
+          "view": "summary",
+          "cursor": null,
+          "limit": 50,
+          "content_mode": "reference",
+          "max_inline_bytes": 16384
+        }
+      },
+      "result_type": "resource_snapshot",
+      "security_scopes": [
+        "resources.read"
+      ]
+    },
+    "read_message": {
+      "title": "Read collaboration message",
+      "description": "Read one Message or response and atomically record owner consumption when requested.",
+      "selection_guidance": "Use for Inbox Messages and completed responses.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-read-message/1",
+        "required": [
+          "project_id",
+          "handle"
+        ],
+        "optional": [
+          "consume",
+          "max_inline_bytes"
+        ],
+        "defaults": {
+          "consume": true,
+          "max_inline_bytes": 16384
+        }
+      },
+      "result_type": "message_snapshot",
+      "security_scopes": [
+        "messages.read"
+      ]
+    },
+    "check_inbox": {
+      "title": "Check project Inbox",
+      "description": "List durable Messages, response completions, Review requests and recovery notifications available to the authenticated project-management or AgentSlot context. Returns exact read_message follow-ups.",
+      "selection_guidance": "Use at session start, reconnect or recovery.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-check-inbox/4",
+        "required": [
+          "project_id"
+        ],
+        "optional": [
+          "scope_handle",
+          "cursor",
+          "limit",
+          "states",
+          "kinds"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "inbox_page",
+      "security_scopes": [
+        "messages.read"
+      ]
+    },
+    "list_files": {
+      "title": "List source files",
+      "description": "List files below one SourceBinding path at an exact revision.",
+      "selection_guidance": "Use for directory discovery from web or local management sessions.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-files/1",
+        "required": [
+          "project_id",
+          "source_id",
+          "path",
+          "revision"
+        ],
+        "optional": [
+          "depth",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "depth": 1,
+          "cursor": null,
+          "limit": 100
+        }
+      },
+      "result_type": "file_page",
+      "security_scopes": [
+        "source.read"
+      ]
+    },
+    "search_files": {
+      "title": "Search source files",
+      "description": "Search authorized paths or content in one SourceBinding at an exact revision.",
+      "selection_guidance": "Use when a target path or content location is unknown.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-search-files/1",
+        "required": [
+          "project_id",
+          "source_id",
+          "query",
+          "revision"
+        ],
+        "optional": [
+          "path",
+          "glob",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "search_page",
+      "security_scopes": [
+        "source.read"
+      ]
+    },
+    "read_file": {
+      "title": "Read source file",
+      "description": "Read a bounded line range from one SourceBinding path at an exact revision.",
+      "selection_guidance": "Use after context loading, file listing or search.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-read-file/1",
+        "required": [
+          "project_id",
+          "source_id",
+          "path",
+          "revision"
+        ],
+        "optional": [
+          "start_line",
+          "end_line",
+          "max_inline_bytes"
+        ],
+        "defaults": {
+          "start_line": 1,
+          "max_inline_bytes": 32768
+        }
+      },
+      "result_type": "file_snapshot",
+      "security_scopes": [
+        "source.read"
+      ]
+    },
+    "read_source": {
+      "title": "Read source state",
+      "description": "Read repository identity, branch, commit, tree, worktree, push and receiver-sync observations.",
+      "selection_guidance": "Use before source-dependent delegation, review, handoff or acceptance.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-read-source/1",
+        "required": [
+          "project_id",
+          "source_id"
+        ],
+        "optional": [
+          "revision",
+          "include"
+        ]
+      },
+      "result_type": "source_snapshot",
+      "security_scopes": [
+        "source.read"
+      ]
+    },
+    "read_diff": {
+      "title": "Read source diff",
+      "description": "Read a bounded diff between two exact revisions in one SourceBinding.",
+      "selection_guidance": "Use for engineering review, architecture impact analysis and acceptance.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-read-diff/1",
+        "required": [
+          "project_id",
+          "source_id",
+          "base_revision",
+          "target_revision"
+        ],
+        "optional": [
+          "paths",
+          "max_inline_bytes"
+        ],
+        "defaults": {
+          "max_inline_bytes": 65536
+        }
+      },
+      "result_type": "diff_snapshot",
+      "security_scopes": [
+        "source.read"
+      ]
+    },
+    "create_route": {
+      "title": "Create development Route",
+      "description": "Create one long-lived Route and Route Scope under an existing project Root.",
+      "selection_guidance": "Use for a new durable development line.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-create-route/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "root_handle",
+          "expected_root_revision",
+          "route_id",
+          "display_name",
+          "goal",
+          "source_binding_ids",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "route_receipt",
+      "security_scopes": [
+        "routes.manage"
+      ]
+    },
+    "update_route": {
+      "title": "Update development Route",
+      "description": "Apply one versioned lifecycle or management-metadata change to an existing Route.",
+      "selection_guidance": "Use for lifecycle, goal-summary or display changes.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-update-route/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "route_handle",
+          "expected_revision",
+          "changes",
+          "reason",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "route_receipt",
+      "security_scopes": [
+        "routes.manage"
+      ]
+    },
+    "configure_team": {
+      "title": "Configure collaboration team",
+      "description": "Create or revise AgentSlot, role, Grant, Policy and budget bindings inside an existing project Scope. Returns the accepted team revision and collaborator handles.",
+      "selection_guidance": "Use after the Scope exists and an Agent has decided the team topology.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-configure-team/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "scope_handle",
+          "expected_revision",
+          "members",
+          "policies",
+          "budgets",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "team_configuration",
+      "security_scopes": [
+        "collaborators.manage",
+        "grants.manage"
+      ]
+    },
+    "create_work": {
+      "title": "Create collaboration work",
+      "description": "Create one WorkItem with goal, accepted state, constraints, baseline, evidence requirements, budget and deadline.",
+      "selection_guidance": "Use before delegation when no suitable WorkItem exists.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-create-work/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "route_handle",
+          "expected_route_revision",
+          "work_item_id",
+          "goal",
+          "accepted_state",
+          "constraints",
+          "source_baseline",
+          "required_evidence",
+          "budget",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "work_receipt",
+      "security_scopes": [
+        "work.manage"
+      ]
+    },
+    "revise_work": {
+      "title": "Revise collaboration work",
+      "description": "Apply one versioned change to WorkItem intent, dependencies, baseline, evidence contract, budget or schedule.",
+      "selection_guidance": "Use when authorized work intent changes.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-revise-work/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "work_handle",
+          "expected_revision",
+          "changes",
+          "reason",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "work_receipt",
+      "security_scopes": [
+        "work.manage"
+      ]
+    },
+    "handoff_work": {
+      "title": "Hand off collaboration work",
+      "description": "Transfer WorkItem responsibility with exact source state, context, evidence, unresolved items and acknowledgement policy.",
+      "selection_guidance": "Use for Session, AgentSlot or role ownership transfer.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-handoff-work/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "work_handle",
+          "expected_revision",
+          "from_agent_slot",
+          "to_agent_slot",
+          "source_state",
+          "context_handles",
+          "evidence_handles",
+          "unresolved_items",
+          "require_ack",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "handoff_receipt",
+      "security_scopes": [
+        "work.manage",
+        "messages.send"
+      ]
     },
     "send_message": {
       "title": "Send collaboration message",
       "description": "Commit one collaboration Message, its delivery intent, response expectation and completion notification. Returns delivery state, the stable response handle and executable follow-up calls. Async is the default; sync adds one bounded observation of the same response handle.",
       "selection_guidance": "Use for delegation, review requests, handoffs and other addressed collaboration work.",
-      "annotations": {"readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": true},
-      "input_schema": {
-        "schema_version": "acs-mcp-send-message/3",
-        "required": ["client_request_id", "work_item_id", "expected_work_item_revision", "target", "goal", "request", "constraints", "accepted_revision", "required_evidence", "deadline"],
-        "optional": ["activation", "delivery_policy", "expect_response", "response_mode", "wait_until", "wait_timeout_seconds"],
-        "response_modes": ["async", "sync"],
-        "activation_modes": ["message_only", "invoke"],
-        "delivery_policies": ["queue_until_idle", "steer_active_turn"]
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
       },
-      "result_type": "message_submission"
+      "input_schema": {
+        "schema_version": "acs-mcp-send-message/4",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "work_handle",
+          "expected_work_revision",
+          "target",
+          "goal",
+          "request",
+          "constraints",
+          "accepted_revision",
+          "required_evidence",
+          "deadline"
+        ],
+        "optional": [
+          "activation",
+          "delivery_policy",
+          "expect_response",
+          "response_mode",
+          "wait_until",
+          "wait_timeout_seconds"
+        ],
+        "response_modes": [
+          "async",
+          "sync"
+        ],
+        "activation_modes": [
+          "message_only",
+          "invoke"
+        ],
+        "delivery_policies": [
+          "queue_until_idle",
+          "steer_active_turn"
+        ]
+      },
+      "result_type": "message_submission",
+      "security_scopes": [
+        "messages.send"
+      ]
+    },
+    "request_review": {
+      "title": "Request independent review",
+      "description": "Create one Review request bound to a candidate, exact baseline, criteria, evidence requirements and reviewer constraints.",
+      "selection_guidance": "Use for architecture, engineering, evidence or finalization review.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-request-review/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "work_handle",
+          "expected_work_revision",
+          "review_type",
+          "candidate_ref",
+          "source_baseline",
+          "criteria",
+          "required_evidence",
+          "reviewer_requirements",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "review_request_receipt",
+      "security_scopes": [
+        "reviews.manage"
+      ]
+    },
+    "submit_review": {
+      "title": "Submit structured review",
+      "description": "Submit one reviewer decision with findings, exact source readback, evidence handles and unresolved items.",
+      "selection_guidance": "Use after authorized independent inspection.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-submit-review/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "review_handle",
+          "expected_revision",
+          "decision",
+          "findings",
+          "evidence_handles",
+          "source_readback",
+          "unresolved_items",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "review_submission_receipt",
+      "security_scopes": [
+        "reviews.submit"
+      ]
+    },
+    "accept_work": {
+      "title": "Accept collaboration work",
+      "description": "Commit one acceptance decision for an exact candidate after required reviews, evidence and effect readback.",
+      "selection_guidance": "Use from an authorized Finalizer or product-owner boundary.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-accept-work/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "work_handle",
+          "expected_revision",
+          "candidate_ref",
+          "review_handles",
+          "evidence_bundle_handles",
+          "source_readback",
+          "effect_readback",
+          "decision",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "acceptance_receipt",
+      "security_scopes": [
+        "acceptance.commit"
+      ]
+    },
+    "watch_changes": {
+      "title": "Watch project changes",
+      "description": "Create or revise a durable subscription for project, Route, WorkItem, Review, Source or recovery events.",
+      "selection_guidance": "Use when a management or reviewer Session should receive future notifications.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-watch-changes/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "target_handles",
+          "event_kinds",
+          "delivery_policy",
+          "expected_revision",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "subscription_receipt",
+      "security_scopes": [
+        "subscriptions.manage"
+      ]
     },
     "wait_for_response": {
       "title": "Wait for response",
       "description": "Wait for one or more existing response handles until any or all reach a named receipt or terminal condition, bounded by the supplied timeout. Returns satisfied, pending and terminal handles while durable tracking and completion notification continue.",
       "selection_guidance": "Use when the calling Agent chooses to pause for responses that send_message is already tracking.",
-      "annotations": {"readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
-      "input_schema": {
-        "schema_version": "acs-mcp-wait-for-response/3",
-        "required": ["handles", "mode", "until", "timeout_seconds"],
-        "modes": ["any", "all"]
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       },
-      "result_type": "response_observation"
-    },
-    "read_resource": {
-      "title": "Read collaboration resource",
-      "description": "Read one authorized typed handle for a collaboration plan, Message, response, WorkItem, Evidence or Artifact. Returns bounded metadata, relations, content or content reference, evidence handles and continuation state.",
-      "selection_guidance": "Use the exact handle and view returned by another ACS tool or Inbox item.",
-      "annotations": {"readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
       "input_schema": {
-        "schema_version": "acs-mcp-read-resource/3",
-        "required": ["handle"],
-        "optional": ["view", "observe", "cursor", "limit", "max_inline_bytes"],
-        "views": ["summary", "result", "evidence", "history", "content"],
-        "defaults": {"view": "summary", "observe": false, "cursor": null, "limit": 50, "max_inline_bytes": 16384}
+        "schema_version": "acs-mcp-wait-for-response/4",
+        "required": [
+          "project_id",
+          "handles",
+          "mode",
+          "until",
+          "timeout_seconds"
+        ],
+        "optional": [],
+        "modes": [
+          "any",
+          "all"
+        ]
       },
-      "result_type": "resource_snapshot"
-    },
-    "check_inbox": {
-      "title": "Check AgentSlot Inbox",
-      "description": "Check durable Messages and completion notifications addressed to the authenticated AgentSlot. Returns stable handles, delivery state, completion revision and executable read_resource calls.",
-      "selection_guidance": "Use at startup, reconnect or recovery to resume collaboration from the durable AgentSlot Inbox.",
-      "annotations": {"readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
-      "input_schema": {
-        "schema_version": "acs-mcp-check-inbox/3",
-        "required": [],
-        "optional": ["cursor", "limit", "states", "kinds"],
-        "defaults": {"cursor": null, "limit": 50}
-      },
-      "result_type": "inbox_page"
+      "result_type": "response_observation",
+      "security_scopes": [
+        "messages.read"
+      ]
     },
     "set_notification": {
       "title": "Set response notification",
       "description": "Enable or disable automatic completion notification for an existing response handle using an expected subscription revision. Returns the updated subscription state while preserving response tracking.",
       "selection_guidance": "Use only to change the automatic notification created by send_message.",
-      "annotations": {"readOnlyHint": false, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false},
-      "input_schema": {
-        "schema_version": "acs-mcp-set-notification/3",
-        "required": ["client_request_id", "response_handle", "enabled", "expected_revision", "reason", "deadline"]
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       },
-      "result_type": "notification_update_receipt"
+      "input_schema": {
+        "schema_version": "acs-mcp-set-notification/4",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "target_handle",
+          "enabled",
+          "expected_revision",
+          "reason",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "notification_update_receipt",
+      "security_scopes": [
+        "subscriptions.manage"
+      ]
     },
     "cancel_work": {
       "title": "Cancel collaboration work",
       "description": "Cancel one WorkItem at its expected revision and record the authorized reason. Returns WorkItem state and any Runtime Attempts that still require observation or separate control.",
       "selection_guidance": "Use to end the durable collaboration work objective represented by a WorkItem.",
-      "annotations": {"readOnlyHint": false, "destructiveHint": true, "idempotentHint": true, "openWorldHint": true},
-      "input_schema": {
-        "schema_version": "acs-mcp-cancel-work/3",
-        "required": ["client_request_id", "work_item_id", "expected_revision", "reason", "deadline"]
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
       },
-      "result_type": "work_item_cancellation_receipt"
+      "input_schema": {
+        "schema_version": "acs-mcp-cancel-work/4",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "work_handle",
+          "expected_revision",
+          "reason",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "work_item_cancellation_receipt",
+      "security_scopes": [
+        "work.manage"
+      ]
     },
     "stop_attempt": {
       "title": "Stop Runtime Attempt",
       "description": "Stop one concrete Runtime Attempt at its expected revision and report the Driver acknowledgement boundary. Returns Attempt state and effect uncertainty requiring readback.",
       "selection_guidance": "Use for a specific execution attempt after its owning WorkItem policy authorizes attempt-level control.",
-      "annotations": {"readOnlyHint": false, "destructiveHint": true, "idempotentHint": true, "openWorldHint": true},
-      "input_schema": {
-        "schema_version": "acs-mcp-stop-attempt/3",
-        "required": ["client_request_id", "runtime_attempt_id", "expected_revision", "reason", "deadline"]
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
       },
-      "result_type": "runtime_attempt_cancellation_receipt"
+      "input_schema": {
+        "schema_version": "acs-mcp-stop-attempt/4",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "attempt_handle",
+          "expected_revision",
+          "reason",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "runtime_attempt_cancellation_receipt",
+      "security_scopes": [
+        "runtime.control"
+      ]
+    },
+    "apply_patch": {
+      "title": "Apply source patch",
+      "description": "Apply one structured patch to an authorized isolated SourceBinding workspace at an exact tree.",
+      "selection_guidance": "Use only with Source write capability.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-apply-patch/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "source_id",
+          "work_handle",
+          "expected_tree",
+          "patch",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "source_mutation_receipt",
+      "security_scopes": [
+        "source.write"
+      ]
+    },
+    "create_branch": {
+      "title": "Create source branch",
+      "description": "Create one branch from an exact source revision and bind it to a WorkItem.",
+      "selection_guidance": "Use when SourceProvider branch creation is admitted.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-create-branch/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "source_id",
+          "work_handle",
+          "base_revision",
+          "branch_name",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "source_mutation_receipt",
+      "security_scopes": [
+        "source.write"
+      ]
+    },
+    "commit_changes": {
+      "title": "Commit source changes",
+      "description": "Commit an exact SourceBinding tree with WorkItem lineage and return commit and tree readback.",
+      "selection_guidance": "Use after authorized changes and validation.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-commit-changes/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "source_id",
+          "work_handle",
+          "expected_tree",
+          "message",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "source_mutation_receipt",
+      "security_scopes": [
+        "source.write"
+      ]
+    },
+    "push_changes": {
+      "title": "Push source changes",
+      "description": "Push an exact branch head to an authorized remote and return remote ref and tree readback.",
+      "selection_guidance": "Use after commit when publication policy admits the target.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-push-changes/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "source_id",
+          "branch",
+          "expected_commit",
+          "remote",
+          "deadline"
+        ],
+        "optional": []
+      },
+      "result_type": "source_mutation_receipt",
+      "security_scopes": [
+        "source.publish"
+      ]
     },
     "submit_command": {
       "title": "Submit Domain command",
       "description": "Submit one fully formed authenticated Domain SurfaceCommand. Returns the canonical Domain disposition and references used by operator, migration, conformance and advanced automation flows.",
       "selection_guidance": "Use when the caller owns the complete versioned Domain command contract; ordinary Agent collaboration uses the typed tools.",
-      "annotations": {"readOnlyHint": false, "destructiveHint": true, "idempotentHint": true, "openWorldHint": true},
-      "input_schema": {
-        "schema_version": "acs-mcp-submit-command/3",
-        "required": ["request"]
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
       },
-      "result_type": "domain_command_receipt"
+      "input_schema": {
+        "schema_version": "acs-mcp-submit-command/4",
+        "required": [
+          "request"
+        ],
+        "optional": []
+      },
+      "result_type": "domain_command_receipt",
+      "security_scopes": [
+        "operator.command"
+      ]
     }
   },
   "result_envelope": {
-    "schema_version": "acs-mcp-result/2",
-    "success_required": ["schema_version", "result_type", "ok", "state", "data", "follow_ups", "metadata"],
-    "problem_required": ["schema_version", "result_type", "ok", "state", "error", "follow_ups", "metadata"],
-    "follow_up_required": ["rel", "tool", "arguments"],
+    "schema_version": "acs-mcp-result/3",
+    "success_required": [
+      "schema_version",
+      "result_type",
+      "ok",
+      "state",
+      "data",
+      "follow_ups",
+      "metadata"
+    ],
+    "problem_required": [
+      "schema_version",
+      "result_type",
+      "ok",
+      "state",
+      "error",
+      "follow_ups",
+      "metadata"
+    ],
+    "follow_up_required": [
+      "rel",
+      "tool",
+      "arguments"
+    ],
+    "metadata_required": [
+      "observed_at",
+      "evidence_class"
+    ],
     "problem_result_type": "problem"
   },
   "result_types": {
-    "collaboration_plan_result": ["operation", "collaboration_handle", "revision", "scope_id", "agent_slot_ids"],
-    "harness_capacity_page": ["items", "next_cursor"],
-    "message_submission": ["operation", "message", "delivery", "response", "notification"],
-    "response_observation": ["condition", "mode", "satisfied_handles", "pending_handles", "terminal_handles", "completion_revision", "notification_states"],
-    "resource_snapshot": ["resource", "relations", "content", "evidence_handles", "unresolved_items", "next_cursor"],
-    "inbox_page": ["items", "next_cursor"],
-    "notification_update_receipt": ["operation", "response_handle", "subscription_revision", "notification_state", "response_state"],
-    "work_item_cancellation_receipt": ["operation", "work_item_id", "work_item_revision", "work_item_state", "runtime_attempts"],
-    "runtime_attempt_cancellation_receipt": ["operation", "runtime_attempt_id", "runtime_attempt_revision", "runtime_attempt_state", "driver_acknowledgement", "effect_state"],
-    "domain_command_receipt": ["operation", "disposition", "resource_handles"]
+    "harness_capacity_page": [
+      "items",
+      "next_cursor"
+    ],
+    "message_submission": [
+      "operation",
+      "message",
+      "delivery",
+      "response",
+      "notification"
+    ],
+    "response_observation": [
+      "condition",
+      "mode",
+      "satisfied_handles",
+      "pending_handles",
+      "terminal_handles",
+      "completion_revision",
+      "notification_states"
+    ],
+    "resource_snapshot": [
+      "resource",
+      "view",
+      "data",
+      "relations",
+      "available_views",
+      "next_cursor",
+      "unresolved_items"
+    ],
+    "inbox_page": [
+      "items",
+      "next_cursor"
+    ],
+    "notification_update_receipt": [
+      "operation",
+      "target_handle",
+      "subscription_revision",
+      "notification_state"
+    ],
+    "work_item_cancellation_receipt": [
+      "operation",
+      "work_item_id",
+      "work_item_revision",
+      "work_item_state",
+      "runtime_attempts"
+    ],
+    "runtime_attempt_cancellation_receipt": [
+      "operation",
+      "runtime_attempt_id",
+      "runtime_attempt_revision",
+      "runtime_attempt_state",
+      "driver_acknowledgement",
+      "effect_state"
+    ],
+    "domain_command_receipt": [
+      "operation",
+      "disposition",
+      "resource_handles"
+    ],
+    "profile_snapshot": [
+      "subject",
+      "tenant",
+      "profiles",
+      "oauth_scopes",
+      "connections"
+    ],
+    "project_page": [
+      "items",
+      "next_cursor"
+    ],
+    "connection_page": [
+      "items",
+      "next_cursor"
+    ],
+    "project_context": [
+      "project",
+      "management_root",
+      "instructions",
+      "routes",
+      "knowledge_indexes",
+      "source_bindings",
+      "active_work_summary",
+      "policies",
+      "context_completeness",
+      "missing_context"
+    ],
+    "route_page": [
+      "items",
+      "next_cursor"
+    ],
+    "work_page": [
+      "items",
+      "next_cursor"
+    ],
+    "collaborator_page": [
+      "items",
+      "next_cursor"
+    ],
+    "source_page": [
+      "items",
+      "next_cursor"
+    ],
+    "activity_page": [
+      "items",
+      "next_cursor"
+    ],
+    "evidence_page": [
+      "items",
+      "next_cursor"
+    ],
+    "review_page": [
+      "items",
+      "next_cursor"
+    ],
+    "message_snapshot": [
+      "message",
+      "content",
+      "delivery",
+      "response",
+      "evidence_handles",
+      "notification_state"
+    ],
+    "file_page": [
+      "source",
+      "path",
+      "items",
+      "next_cursor"
+    ],
+    "search_page": [
+      "source",
+      "query",
+      "items",
+      "next_cursor"
+    ],
+    "file_snapshot": [
+      "source",
+      "path",
+      "revision",
+      "content",
+      "sha256",
+      "media_type"
+    ],
+    "source_snapshot": [
+      "source",
+      "repository",
+      "branch",
+      "commit",
+      "tree",
+      "worktree",
+      "push_state",
+      "receiver_sync"
+    ],
+    "diff_snapshot": [
+      "source",
+      "base_revision",
+      "target_revision",
+      "changed_paths",
+      "content"
+    ],
+    "route_receipt": [
+      "operation",
+      "route_handle",
+      "route_revision"
+    ],
+    "team_configuration": [
+      "operation",
+      "team_handle",
+      "team_revision",
+      "scope_handle",
+      "member_handles"
+    ],
+    "work_receipt": [
+      "operation",
+      "work_handle",
+      "work_revision",
+      "state"
+    ],
+    "handoff_receipt": [
+      "operation",
+      "handoff_handle",
+      "work_handle",
+      "handoff_state",
+      "acknowledgement"
+    ],
+    "review_request_receipt": [
+      "operation",
+      "review_handle",
+      "review_revision",
+      "state"
+    ],
+    "review_submission_receipt": [
+      "operation",
+      "review_handle",
+      "review_revision",
+      "decision",
+      "finding_count"
+    ],
+    "acceptance_receipt": [
+      "operation",
+      "work_handle",
+      "accepted_state_handle",
+      "accepted_revision"
+    ],
+    "subscription_receipt": [
+      "operation",
+      "subscription_handle",
+      "subscription_revision",
+      "state"
+    ],
+    "source_mutation_receipt": [
+      "operation",
+      "source",
+      "before_revision",
+      "after_revision",
+      "readback"
+    ]
+  },
+  "result_revision": "acs-mcp-result/3",
+  "tool_groups": {
+    "global": [
+      "read_profile",
+      "list_projects",
+      "list_connections"
+    ],
+    "project_context": [
+      "load_project"
+    ],
+    "project_lists": [
+      "list_routes",
+      "list_work",
+      "list_collaborators",
+      "list_harnesses",
+      "list_sources",
+      "list_activity",
+      "list_evidence",
+      "list_reviews"
+    ],
+    "project_reads": [
+      "read_resource",
+      "read_message",
+      "check_inbox"
+    ],
+    "source_reads": [
+      "list_files",
+      "search_files",
+      "read_file",
+      "read_source",
+      "read_diff"
+    ],
+    "project_actions": [
+      "create_route",
+      "update_route",
+      "configure_team",
+      "create_work",
+      "revise_work",
+      "handoff_work",
+      "send_message",
+      "request_review",
+      "submit_review",
+      "accept_work"
+    ],
+    "continuation": [
+      "watch_changes",
+      "wait_for_response",
+      "set_notification",
+      "cancel_work",
+      "stop_attempt"
+    ],
+    "source_writes": [
+      "apply_patch",
+      "create_branch",
+      "commit_changes",
+      "push_changes"
+    ],
+    "advanced": [
+      "submit_command"
+    ]
+  },
+  "project_context_rule": {
+    "global_tools": [
+      "read_profile",
+      "list_projects",
+      "list_connections"
+    ],
+    "project_id_required_for_all_other_tools": true,
+    "handle_project_must_match_argument": true,
+    "local_source": "managed AGENTS.md block and .agents/manifest.json",
+    "web_source": "list_projects followed by load_project"
+  },
+  "profiles": {
+    "root_manager": [
+      "read_profile",
+      "list_projects",
+      "list_connections",
+      "load_project",
+      "list_routes",
+      "list_work",
+      "list_collaborators",
+      "list_harnesses",
+      "list_sources",
+      "list_activity",
+      "list_evidence",
+      "list_reviews",
+      "read_resource",
+      "read_message",
+      "check_inbox",
+      "list_files",
+      "search_files",
+      "read_file",
+      "read_source",
+      "read_diff",
+      "create_route",
+      "update_route",
+      "configure_team",
+      "create_work",
+      "revise_work",
+      "handoff_work",
+      "send_message",
+      "request_review",
+      "accept_work",
+      "watch_changes",
+      "wait_for_response",
+      "set_notification",
+      "cancel_work",
+      "stop_attempt"
+    ],
+    "reviewer": [
+      "read_profile",
+      "list_projects",
+      "load_project",
+      "list_routes",
+      "list_work",
+      "list_collaborators",
+      "list_sources",
+      "list_activity",
+      "list_evidence",
+      "list_reviews",
+      "read_resource",
+      "read_message",
+      "check_inbox",
+      "list_files",
+      "search_files",
+      "read_file",
+      "read_source",
+      "read_diff",
+      "submit_review",
+      "watch_changes",
+      "wait_for_response"
+    ],
+    "route_manager": [
+      "read_profile",
+      "load_project",
+      "list_routes",
+      "list_work",
+      "list_collaborators",
+      "list_harnesses",
+      "list_sources",
+      "list_activity",
+      "list_evidence",
+      "list_reviews",
+      "read_resource",
+      "read_message",
+      "check_inbox",
+      "list_files",
+      "search_files",
+      "read_file",
+      "read_source",
+      "read_diff",
+      "configure_team",
+      "create_work",
+      "revise_work",
+      "handoff_work",
+      "send_message",
+      "request_review",
+      "watch_changes",
+      "wait_for_response",
+      "set_notification",
+      "cancel_work",
+      "stop_attempt"
+    ],
+    "engineer": [
+      "read_profile",
+      "load_project",
+      "list_work",
+      "list_sources",
+      "list_activity",
+      "list_evidence",
+      "read_resource",
+      "read_message",
+      "check_inbox",
+      "list_files",
+      "search_files",
+      "read_file",
+      "read_source",
+      "read_diff",
+      "send_message",
+      "wait_for_response",
+      "apply_patch",
+      "create_branch",
+      "commit_changes",
+      "push_changes"
+    ],
+    "operator": [
+      "read_profile",
+      "list_projects",
+      "list_connections",
+      "submit_command"
+    ]
   }
 }

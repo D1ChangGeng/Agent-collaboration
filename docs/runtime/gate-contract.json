@@ -1,54 +1,149 @@
 {
   "schema_version": "acs-gate-contract/1",
-  "contract_revision": "2026-09-11.1",
-  "p2_surface_revision": "acs-p2-mcp-workflow/3",
+  "contract_revision": "2026-09-22.4",
+  "p2_surface_revision": "acs-p2-mcp-workflow/4",
   "instruction_sha256": "0cffa4ab3888b3c05d61a72f0d7566dd9c03db07b4baffef29c9a6cbb7bb9e46",
-  "supported_evidence_layers": ["explanation", "decision_logic", "real_mechanism", "invariants", "representative_e2e"],
-  "binding_fields": ["profile", "machines", "nodes", "os", "core", "provider", "driver", "harness", "database", "protocol", "credential_scope", "policy", "direction", "expires_at"],
-  "scenario_evidence_fields": ["command_ids", "operation_ids", "message_ids", "event_ids", "receipts", "raw_outputs", "fault_injection", "source_readback", "artifact_readback", "effect_readback", "recovery_trace", "observer", "owner", "unresolved_items"],
+  "supported_evidence_layers": [
+    "explanation",
+    "decision_logic",
+    "real_mechanism",
+    "invariants",
+    "representative_e2e"
+  ],
+  "binding_fields": [
+    "profile",
+    "machines",
+    "nodes",
+    "os",
+    "core",
+    "provider",
+    "driver",
+    "harness",
+    "database",
+    "protocol",
+    "credential_scope",
+    "policy",
+    "direction",
+    "expires_at"
+  ],
+  "scenario_evidence_fields": [
+    "command_ids",
+    "operation_ids",
+    "message_ids",
+    "event_ids",
+    "receipts",
+    "raw_outputs",
+    "fault_injection",
+    "source_readback",
+    "artifact_readback",
+    "effect_readback",
+    "recovery_trace",
+    "observer",
+    "owner",
+    "unresolved_items"
+  ],
   "gates": {
     "P1": {
-      "requires": ["BOOTSTRAP"],
+      "requires": [
+        "BOOTSTRAP"
+      ],
       "scenarios": [
-        "P1-DOMAIN-TRANSACTION", "P1-AUTH-REVOCATION", "P1-COMMAND-DEDUP",
-        "P1-INBOX-ACK-LOSS", "P1-CORE-RESTART", "P1-NODE-RESTART",
-        "P1-PROVIDER-RESTART", "P1-HARNESS-REPLACEMENT", "P1-LEASE-FENCING",
-        "P1-UNCERTAIN-EFFECT", "P1-STALE-BASELINE", "P1-PARTIAL-ARTIFACT",
-        "P1-SURFACE-PARITY", "P1-CODEX-LIFECYCLE", "P1-OPENCODE-LIFECYCLE",
-        "P1-NATIVE-MULTIAGENT-OFF", "P1-IDENTITY-CONTINUITY", "P1-INTEGRATED-ACCEPTANCE"
+        "P1-DOMAIN-TRANSACTION",
+        "P1-AUTH-REVOCATION",
+        "P1-COMMAND-DEDUP",
+        "P1-INBOX-ACK-LOSS",
+        "P1-CORE-RESTART",
+        "P1-NODE-RESTART",
+        "P1-PROVIDER-RESTART",
+        "P1-HARNESS-REPLACEMENT",
+        "P1-LEASE-FENCING",
+        "P1-UNCERTAIN-EFFECT",
+        "P1-STALE-BASELINE",
+        "P1-PARTIAL-ARTIFACT",
+        "P1-SURFACE-PARITY",
+        "P1-CODEX-LIFECYCLE",
+        "P1-OPENCODE-LIFECYCLE",
+        "P1-NATIVE-MULTIAGENT-OFF",
+        "P1-IDENTITY-CONTINUITY",
+        "P1-INTEGRATED-ACCEPTANCE"
       ]
     },
     "P2-CODEX": {
-      "requires": ["P1"],
+      "requires": [
+        "P1"
+      ],
       "scenarios": [
-        "P2-CODEX-TWO-MACHINE-LOOP", "P2-CODEX-UI-EXIT", "P2-CODEX-NETWORK-PARTITION",
-        "P2-CODEX-NODE-RESTART", "P2-CODEX-SESSION-REPLACEMENT", "P2-CODEX-ACK-LOSS",
-        "P2-CODEX-STALE-OWNER", "P2-CODEX-UNCERTAIN-EFFECT"
+        "P2-CODEX-TWO-MACHINE-LOOP",
+        "P2-CODEX-UI-EXIT",
+        "P2-CODEX-NETWORK-PARTITION",
+        "P2-CODEX-NODE-RESTART",
+        "P2-CODEX-SESSION-REPLACEMENT",
+        "P2-CODEX-ACK-LOSS",
+        "P2-CODEX-STALE-OWNER",
+        "P2-CODEX-UNCERTAIN-EFFECT"
       ]
     },
     "P2-OPENCODE": {
-      "requires": ["P2-CODEX"],
+      "requires": [
+        "P2-CODEX"
+      ],
       "scenarios": [
-        "P2-OPENCODE-CROSS-HARNESS-LOOP", "P2-OPENCODE-CAPABILITY-PROBE",
-        "P2-OPENCODE-TRANSPORT-SWITCH", "P2-OPENCODE-LIFECYCLE-RECOVERY",
-        "P2-OPENCODE-PERMISSION-DATA-POLICY", "P2-OPENCODE-LATE-DEDUP",
-        "P2-HUMAN-BRIDGE-RECOVERY", "P2-SOURCE-ARTIFACT-EFFECT-READBACK"
+        "P2-OPENCODE-CROSS-HARNESS-LOOP",
+        "P2-OPENCODE-CAPABILITY-PROBE",
+        "P2-OPENCODE-TRANSPORT-SWITCH",
+        "P2-OPENCODE-LIFECYCLE-RECOVERY",
+        "P2-OPENCODE-PERMISSION-DATA-POLICY",
+        "P2-OPENCODE-LATE-DEDUP",
+        "P2-HUMAN-BRIDGE-RECOVERY",
+        "P2-SOURCE-ARTIFACT-EFFECT-READBACK"
       ]
     },
     "P2-MCP-WORKFLOW": {
-      "requires": ["P2-OPENCODE"],
+      "requires": [
+        "P2-OPENCODE"
+      ],
       "scenarios": [
-        "P2-MCP-COLLABORATION-APPLY", "P2-MCP-HARNESS-DISCOVERY",
-        "P2-MCP-SEND-ASYNC", "P2-MCP-SEND-SYNC",
-        "P2-MCP-BOUNDED-AWAIT-CONTINUITY", "P2-MCP-TARGET-IDLE-DELIVERY",
-        "P2-MCP-COMPLETION-NOTIFICATION", "P2-MCP-SESSION-CONTINUITY",
-        "P2-MCP-GENERIC-READ-INBOX", "P2-MCP-CANCELLATION",
-        "P2-MCP-WAIT-AGGREGATION", "P2-MCP-WORKFLOW-COMMANDS"
+        "P2-MCP-TEAM-CONFIGURE",
+        "P2-MCP-HARNESS-LIST",
+        "P2-MCP-SEND-ASYNC",
+        "P2-MCP-SEND-SYNC",
+        "P2-MCP-BOUNDED-WAIT-CONTINUITY",
+        "P2-MCP-TARGET-IDLE-DELIVERY",
+        "P2-MCP-COMPLETION-NOTIFICATION",
+        "P2-MCP-SESSION-CONTINUITY",
+        "P2-MCP-RESOURCE-MESSAGE-INBOX",
+        "P2-MCP-TYPED-CONTROL",
+        "P2-MCP-WAIT-AGGREGATION",
+        "P2-MCP-SKILL-WORKFLOWS"
+      ]
+    },
+    "P2-MANAGEMENT-WORKFLOW": {
+      "requires": [
+        "P2-MCP-WORKFLOW"
+      ],
+      "scenarios": [
+        "P2-MGMT-PROJECT-ADOPTION-IDENTITY",
+        "P2-MGMT-PROJECT-ID-ISOLATION",
+        "P2-MGMT-LOCAL-CONTEXT-HYDRATION",
+        "P2-MGMT-WEB-CONTEXT-HYDRATION",
+        "P2-MGMT-CROSS-PROJECT-LIST",
+        "P2-MGMT-ROUTE-WORK-COLLABORATOR-LISTS",
+        "P2-MGMT-EVIDENCE-REVIEW-LISTS",
+        "P2-MGMT-FILESYSTEM-SOURCE-READ",
+        "P2-MGMT-EXTERNAL-SOURCE-COORDINATION",
+        "P2-MGMT-WEB-REVIEWER-FLOW",
+        "P2-MGMT-WATCH-INBOX-RECOVERY",
+        "P2-MGMT-SKILL-STARTER-PROMPTS"
       ]
     },
     "P2-REVIEW": {
-      "requires": ["P2-MCP-WORKFLOW"],
-      "scenarios": ["P2-INDEPENDENT-GATE-REVIEW", "P2-PRODUCT-OWNER-DECISION"]
+      "requires": [
+        "P2-MANAGEMENT-WORKFLOW"
+      ],
+      "scenarios": [
+        "P2-INDEPENDENT-GATE-REVIEW",
+        "P2-PRODUCT-OWNER-DECISION"
+      ]
     }
   }
 }

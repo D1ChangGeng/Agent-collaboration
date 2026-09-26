@@ -42,6 +42,7 @@ class P2HarnessTests(unittest.TestCase):
         self.assertEqual(len(scenarios["P2-CODEX"]), 8)
         self.assertEqual(len(scenarios["P2-OPENCODE"]), 8)
         self.assertEqual(len(scenarios["P2-MCP-WORKFLOW"]), 12)
+        self.assertEqual(len(scenarios["P2-MANAGEMENT-WORKFLOW"]), 12)
         self.assertEqual(
             {scenario for items in scenarios.values() for scenario in items}, set(harness.FAULTS)
         )
@@ -59,9 +60,9 @@ class P2HarnessTests(unittest.TestCase):
         self.assertEqual(workspace["status"], "not_run")
         self.assertEqual(
             workspace["execution_order"],
-            ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW"],
+            ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW", "P2-MANAGEMENT-WORKFLOW"],
         )
-        self.assertEqual(workspace["mcp_surface_revision"], "acs-p2-mcp-workflow/3")
+        self.assertEqual(workspace["mcp_surface_revision"], "acs-p2-mcp-workflow/4")
         observation = json.loads((self.output / "runtime-observation.json").read_text())
         commit = subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=self.source,
@@ -69,7 +70,7 @@ class P2HarnessTests(unittest.TestCase):
         ).stdout.strip()
         self.assertEqual(observation["source_commit"], commit)
         harness.audit(self.output, CONTRACT)
-        for gate in ("P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW"):
+        for gate in ("P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW", "P2-MANAGEMENT-WORKFLOW"):
             record = json.loads((self.output / f"{gate}.json").read_text())
             self.assertEqual(record["status"], "not_run")
             self.assertTrue(all(item["status"] == "not_run" for item in record["scenarios"]))

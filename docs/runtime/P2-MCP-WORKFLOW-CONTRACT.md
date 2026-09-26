@@ -1,518 +1,257 @@
 # P2 MCP collaboration and continuation contract
 
 Status: adopted P2 implementation contract. Surface revision:
-`acs-p2-mcp-workflow/3`.
+acs-p2-mcp-workflow/4.
 
-This contract defines the direct MCP entry used by external Agents to configure
-collaboration, discover eligible Harness capacity, send work, observe completion,
-read durable results, recover Inbox state and control authorized activity. The
-machine-readable companion is
-[`p2-mcp-tool-contract.json`](p2-mcp-tool-contract.json).
+This contract defines the typed collaboration, messaging and continuation
+surface. Project and web management behavior is defined by
+[P2-MANAGEMENT-WORKFLOW-CONTRACT.md](P2-MANAGEMENT-WORKFLOW-CONTRACT.md). The
+machine-readable catalog is
+[p2-mcp-tool-contract.json](p2-mcp-tool-contract.json).
 
 ## Responsibility boundary
 
-External Agents decide team composition, task decomposition, review strategy and
-the next intelligent action. ACS authenticates explicit decisions, applies
-authorization and revision checks, persists collaboration state, performs
-deterministic delivery and recovery, and returns evidence-bound observations.
-MCP, CLI and HTTP map to the same Application Core and Domain state transitions.
+External Agents decide goals, team composition, task decomposition, review
+strategy and the next intelligent action. ACS authenticates those decisions,
+applies authorization and revision checks, persists collaboration state,
+performs deterministic delivery and recovery, and returns evidence-bound
+observations.
 
-The public MCP surface contains typed Agent tools and one advanced Domain-command
-tool. Names use two or three familiar words and balance three signals: the action
-the Agent intends, the corresponding human collaboration phrase, and the actual
-Domain or Harness behavior. A typed argument carries the target object when one
-operation contract applies uniformly across target kinds. Separate tools mark
-different authorization, state-transition or result boundaries.
+Root Agent is a runtime role created by an authenticated external Agent Session
+acting on an explicit project_id with a management Grant. Durable identity
+belongs to Project, Root, Route, Scope, AgentSlot, WorkItem and accepted state.
 
-| Tool | Agent purpose | Primary result type |
-|---|---|---|
-| `setup_collaboration` | Persist an explicit Scope, AgentSlot, role, Grant, Policy and budget plan. | `collaboration_plan_result` |
-| `find_harnesses` | Discover current Harness capacity eligible for a Scope, role and capability set. | `harness_capacity_page` |
-| `send_message` | Submit addressed collaboration work and establish response tracking plus completion notification. | `message_submission` |
-| `wait_for_response` | Perform a bounded `any` or `all` observation of response handles already being tracked. | `response_observation` |
-| `read_resource` | Read a typed collaboration, Message, response, WorkItem, Evidence or Artifact handle. | `resource_snapshot` |
-| `check_inbox` | Recover durable Messages and completion notifications for the authenticated AgentSlot. | `inbox_page` |
-| `set_notification` | Enable or disable the completion notification attached to a response handle. | `notification_update_receipt` |
-| `cancel_work` | Request cancellation of a durable WorkItem objective. | `work_item_cancellation_receipt` |
-| `stop_attempt` | Request cancellation of one concrete Runtime Attempt. | `runtime_attempt_cancellation_receipt` |
-| `submit_command` | Submit a fully formed Domain `SurfaceCommand` for operator, migration, conformance and advanced automation flows. | `domain_command_receipt` |
+## Surface organization
 
-The existing `run` name is an advanced compatibility alias for
-`submit_command`. Typed Agent workflows use the canonical names above.
+The server filters tools/list by the caller's authenticated Profile.
 
-`read_resource` accepts every authorized handle kind through `handle` and
-`view`. `wait_for_response` accepts one or many response handles.
-`set_notification` selects its subscription through `response_handle` and
-`enabled`. `cancel_work` and `stop_attempt` remain separate because WorkItem
-termination and Runtime Attempt interruption use different Grants, state
-transitions, acknowledgements and effect readback.
+| Group | Tools |
+|---|---|
+| Global | read_profile, list_projects, list_connections |
+| Project context | load_project |
+| Project lists | list_routes, list_work, list_collaborators, list_harnesses, list_sources, list_activity, list_evidence, list_reviews |
+| Project reads | read_resource, read_message, check_inbox |
+| Source reads | list_files, search_files, read_file, read_source, read_diff |
+| Project actions | create_route, update_route, configure_team, create_work, revise_work, handoff_work, send_message, request_review, submit_review, accept_work |
+| Continuation | watch_changes, wait_for_response, set_notification, cancel_work, stop_attempt |
+| Optional Source writes | apply_patch, create_branch, commit_changes, push_changes |
+| Advanced | submit_command |
 
-## MCP exposure contract
+Enumeration uses list names. Search is reserved for query operations. Canonical
+tool names use two or three familiar words and align Agent intent, human
+collaboration language and Domain behavior.
 
-`tools/list` exposes, for every canonical tool:
+## Project context
 
-- `name` and `title`;
-- a selection-oriented `description` that states the action, authoritative
-  object, side effect and returned observation;
-- a closed `inputSchema` with required fields, enum values, formats, defaults
-  and `additionalProperties: false`;
-- an `outputSchema` for `acs-mcp-result/2` whose `result_type` selects the exact
-  `data` shape;
-- `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`.
+read_profile, list_projects and list_connections are global. Every other public
+tool requires project_id. A typed handle also carries project ownership, and ACS
+validates it against the argument.
 
-The description is sufficient for an Agent to distinguish dispatch, bounded
-observation, durable read, Inbox recovery, notification control and execution
-cancellation before it reads the input schema.
+Local Harnesses read project_id from the Management Root AGENTS block and
+machine manifest. Web clients call list_projects and load_project. Every result
+and executable follow-up repeats project_id.
 
-Example exposure for `send_message`:
+## MCP exposure
 
-```json
-{
-  "name": "send_message",
-  "title": "Send collaboration message",
-  "description": "Commit one collaboration Message, its delivery intent, response expectation and completion notification. Returns delivery state, the stable response handle and executable follow-up calls. Async is the default; sync adds one bounded observation of the same response handle.",
-  "inputSchema": {
-    "type": "object",
-    "additionalProperties": false,
-    "required": [
-      "client_request_id",
-      "work_item_id",
-      "expected_work_item_revision",
-      "target",
-      "goal",
-      "request",
-      "constraints",
-      "accepted_revision",
-      "required_evidence",
-      "deadline"
-    ]
-  },
-  "outputSchema": {"$ref": "acs-mcp-result/2#message_submission"},
-  "annotations": {
-    "readOnlyHint": false,
-    "destructiveHint": false,
-    "idempotentHint": true,
-    "openWorldHint": true
-  }
-}
-```
+Each tools/list entry contains:
 
-## Authentication and mutation context
+- canonical name and human title;
+- selection-oriented description;
+- closed inputSchema and outputSchema;
+- readOnlyHint, destructiveHint, idempotentHint and openWorldHint;
+- per-tool OAuth security scopes;
+- result_type discriminator.
 
-Tenant, Authority, principal, Grant, caller Scope and caller AgentSlot come from
-the authenticated MCP process binding. Handles identify resources inside that
-binding. Mutating tools require a stable `client_request_id`, an expected
-revision or equivalent precondition, and an absolute deadline. Replaying the
-same request identity with the same canonical input returns the committed
-disposition; changing canonical input produces a conflict.
+The MCP server instructions direct an Agent with missing or stale project
+context to list_projects and load_project before project-scoped work.
 
 ## Result wire format
 
-Every tool returns one native MCP result. `content` gives the calling Agent a
-short status sentence. `structuredContent` carries the authoritative typed
-payload. `isError` reports whether tool execution was accepted or rejected.
+Every tool returns native MCP content, structuredContent and isError fields.
+Success uses acs-mcp-result/3:
 
-```json
+~~~json
 {
-  "content": [
+  "schema_version": "acs-mcp-result/3",
+  "result_type": "message_submission",
+  "ok": true,
+  "state": "accepted",
+  "data": {},
+  "follow_ups": [
     {
-      "type": "text",
-      "text": "Message message-01 accepted and queued until runtime-reviewer is idle; response response:message-01 will notify management-agent."
+      "rel": "read_response",
+      "tool": "read_message",
+      "arguments": {
+        "project_id": "project-agent-collaboration",
+        "handle": "response:message-01",
+        "consume": true
+      }
     }
   ],
-  "structuredContent": {
-    "schema_version": "acs-mcp-result/2",
-    "result_type": "message_submission",
-    "ok": true,
-    "state": "accepted",
-    "data": {},
-    "follow_ups": [],
-    "metadata": {}
-  },
-  "isError": false
+  "metadata": {
+    "observed_at": "2026-09-22T15:30:00Z",
+    "evidence_class": "authority_committed"
+  }
 }
-```
+~~~
 
-A successful `structuredContent` contains:
+result_type selects the exact data contract. Fields unrelated to that type are
+absent. Each follow-up provides rel, canonical tool and complete arguments.
 
-| Field | Meaning |
-|---|---|
-| `schema_version` | Exact result-envelope version. |
-| `result_type` | Discriminator selecting the `data` contract. |
-| `ok` | `true` for an accepted state transition or completed observation. |
-| `state` | Domain disposition such as `accepted`, `queued`, `pending`, `completed` or `applied`. |
-| `data` | Result-type-specific facts. Fields unrelated to that result type are absent. |
-| `follow_ups` | Executable next calls, each with `rel`, canonical `tool` and complete `arguments`. |
-| `metadata` | Identity, revision, correlation, time, evidence class and expiry needed to interpret the observation. |
+A rejected command or failed observation uses result_type problem, ok false, a
+stable error code, retryability, details, conflict revision and recovery
+follow-ups. MCP isError is true for that result.
 
-A rejected command or failed observation uses `result_type=problem`, `ok=false`,
-an `error` object with stable `code`, `message`, `retryable`, `details` and
-`conflict_revision`, and recovery calls in `follow_ups`. The MCP result sets
-`isError=true` so the Harness can enter its tool-error recovery path.
+## Authentication and mutation context
 
-## `setup_collaboration`
+Tenant, Authority, subject and active Grant come from authenticated transport
+or enrollment context. A project_id selects an authorized Project; it does not
+grant access.
 
-Use this tool after the calling Agent has chosen the collaboration topology. It
-atomically authorizes and persists the supplied Scope, AgentSlots, roles, Grants,
-Policies and budgets.
+Every mutating tool requires client_request_id, an expected revision or exact
+precondition, and an absolute deadline. Equivalent replay returns the committed
+disposition. A changed canonical payload conflicts.
 
-Required arguments: `client_request_id`, `expected_revision`, `deadline`,
-`scope`, `agent_slots`. Optional arguments: inline `roles`, `grants`, `policies`
-and `budgets` referenced by the plan.
+## Team configuration
 
-```json
-{
-  "client_request_id": "setup-runtime-review-team-01",
-  "expected_revision": 0,
-  "deadline": "2026-09-22T16:00:00Z",
-  "scope": {
-    "scope_id": "route-runtime",
-    "kind": "route",
-    "policy_ref": "policy:runtime-p2/1"
-  },
-  "agent_slots": [
-    {
-      "agent_slot_id": "runtime-engineer-a",
-      "role": "engineer",
-      "grant_ref": "grant:runtime-engineer-a",
-      "budget_ref": "budget:runtime-engineer-a",
-      "harness_requirements": ["codex"]
-    },
-    {
-      "agent_slot_id": "runtime-reviewer",
-      "role": "reviewer",
-      "grant_ref": "grant:runtime-reviewer",
-      "budget_ref": "budget:runtime-reviewer",
-      "harness_requirements": ["codex", "opencode"]
-    }
-  ]
-}
-```
+configure_team operates inside an existing Scope. It creates or revises:
 
-The `collaboration_plan_result` data contains `operation`,
-`collaboration_handle`, accepted `revision`, `scope_id` and `agent_slot_ids`.
-Its `follow_ups` contains an exact `read_resource` call for the accepted plan.
+- AgentSlots;
+- roles;
+- Grants;
+- Policies;
+- budgets;
+- Harness capability requirements.
 
-## `find_harnesses`
+It returns team_configuration with operation, team_handle, team_revision,
+scope_handle and member_handles. list_collaborators and read_resource provide
+readback.
 
-Use this read-only tool to discover capacities whose Machine, Node, Runtime,
-Driver, Endpoint, credential scope, capability observation and expiry meet the
-assignment requirements.
+## Work and handoff
 
-Required arguments: `scope_id`, `required_capabilities`. Optional arguments:
-`role`, `harness_kinds`, `require_current_until`, `cursor`, `limit`.
+create_work creates the durable WorkItem before delegation. revise_work preserves
+prior revisions. handoff_work transfers existing responsibility and binds:
 
-```json
-{
-  "scope_id": "route-runtime",
-  "role": "reviewer",
-  "required_capabilities": ["invoke", "inspect", "response_readback"],
-  "harness_kinds": ["codex", "opencode"],
-  "require_current_until": "2026-09-22T16:00:00Z",
-  "cursor": null,
-  "limit": 20
-}
-```
+- exact source state;
+- context and evidence handles;
+- unresolved items;
+- origin and destination AgentSlots;
+- acknowledgement policy.
 
-Each `harness_capacity_page.items[]` entry contains `capacity_handle`, Harness
-and Driver versions, Machine and Node identity, supported directions,
-capabilities, readiness, `evidence_class`, `observed_at` and `expires_at`.
-Endpoint locators and credential values remain in their protected authorities.
+Message transport and Git synchronization remain independent. A handoff result
+states branch, commit, tree, worktree, push state and receiver sync evidence.
 
-## `send_message`
+## Messaging
 
-Use this tool for delegation, review requests, handoffs and other addressed
-collaboration work. The Authority commits the Message, Outbox entry, response
-expectation and completion notification in one operation.
+send_message commits one addressed Message, durable Outbox entry, response
+expectation and notification subscription.
 
-Required arguments:
+Required arguments include:
 
-- `client_request_id`, `work_item_id`, `expected_work_item_revision`;
-- `target.scope_id`, `target.agent_slot_id`;
-- `goal`, `request`, `constraints`;
-- `accepted_revision`, `required_evidence`, `deadline`.
+- client_request_id and project_id;
+- work_handle and expected_work_revision;
+- target Scope and AgentSlot;
+- goal, request and constraints;
+- accepted revision and required evidence;
+- deadline.
 
-Optional arguments and defaults:
+Defaults:
 
-```text
+~~~text
 activation=invoke
 delivery_policy=queue_until_idle
 expect_response=true
 response_mode=async
 wait_until=response_received
-wait_timeout_seconds=<required only when response_mode=sync>
-```
+~~~
 
-```json
-{
-  "client_request_id": "delegate-runtime-check-01",
-  "work_item_id": "work-runtime-check-01",
-  "expected_work_item_revision": 3,
-  "target": {
-    "scope_id": "route-runtime",
-    "agent_slot_id": "runtime-reviewer"
-  },
-  "goal": "Review the sealed runtime candidate",
-  "request": "Check the bound source and evidence and return a structured verdict.",
-  "constraints": ["read-only review", "bind the exact source baseline"],
-  "accepted_revision": 2,
-  "required_evidence": ["source_readback", "review"],
-  "deadline": "2026-09-22T16:00:00Z"
-}
-```
+Async returns after Authority commit and leaves the initiating Agent free to
+continue. Sync performs the same commit followed by bounded
+wait_for_response. Timeout returns pending state while delivery, response
+collection and notification continue.
 
-Default asynchronous result:
+message_submission contains operation, Message identity, delivery state,
+response handle and notification state. Follow-ups include read_message,
+wait_for_response and set_notification with complete arguments.
 
-```json
-{
-  "schema_version": "acs-mcp-result/2",
-  "result_type": "message_submission",
-  "ok": true,
-  "state": "accepted",
-  "data": {
-    "operation": {
-      "client_request_id": "delegate-runtime-check-01",
-      "operation_id": "operation-01",
-      "correlation_id": "correlation-01",
-      "causation_id": "causation-01",
-      "committed_at": "2026-09-22T15:30:00Z"
-    },
-    "message": {
-      "message_id": "message-01",
-      "handle": "message:message-01",
-      "work_item_id": "work-runtime-check-01"
-    },
-    "delivery": {
-      "state": "queued_for_idle",
-      "receipt_high_water": "accepted_by_authority",
-      "target_scope_id": "route-runtime",
-      "target_agent_slot_id": "runtime-reviewer",
-      "target_activity": "busy",
-      "next_transition": "dispatch_when_idle"
-    },
-    "response": {
-      "expected": true,
-      "mode": "async",
-      "handle": "response:message-01",
-      "state": "pending",
-      "completion_condition": "response_received"
-    },
-    "notification": {
-      "enabled": true,
-      "state": "tracking",
-      "subscription_revision": 1,
-      "reply_to_agent_slot_id": "management-agent",
-      "delivery_policy": "queue_until_idle"
-    }
-  },
-  "follow_ups": [
-    {
-      "rel": "read_response",
-      "tool": "read_resource",
-      "arguments": {"handle": "response:message-01", "view": "result", "observe": true}
-    },
-    {
-      "rel": "await_response",
-      "tool": "wait_for_response",
-      "arguments": {
-        "handles": ["response:message-01"],
-        "mode": "all",
-        "until": "response_received",
-        "timeout_seconds": 120
-      }
-    },
-    {
-      "rel": "set_notification",
-      "tool": "set_notification",
-      "arguments": {
-        "client_request_id": "set-notification-message-01-01",
-        "response_handle": "response:message-01",
-        "enabled": false,
-        "expected_revision": 1,
-        "reason": "The parent workflow will observe the response directly.",
-        "deadline": "2026-09-22T16:00:00Z"
-      }
-    }
-  ],
-  "metadata": {
-    "scope_id": "route-runtime",
-    "caller_agent_slot_id": "management-agent",
-    "work_item_revision": 3,
-    "accepted_revision": 2,
-    "deadline": "2026-09-22T16:00:00Z",
-    "observed_at": "2026-09-22T15:30:00Z",
-    "evidence_class": "authority_committed"
-  }
-}
-```
+## Waiting and notification
 
-`response_mode=sync` performs the same commit and then invokes the equivalent
-bounded `wait_for_response` observation. Timeout returns `state=pending` with the
-same Message and response identities. Completion, notification and later reads
-continue from those identities.
+watch_changes creates a durable event subscription. send_message automatically
+creates response tracking when a response is expected.
 
-## `wait_for_response`
+wait_for_response accepts one or more response handles, mode any or all, a
+receipt or terminal condition, and timeout_seconds. It holds no database
+transaction while waiting.
 
-Use this read-only observation tool when the initiating Agent chooses to pause
-for responses already tracked by `send_message`. It holds no database
-transaction during the wait.
+Completion notification uses response identity and completion revision for
+deduplication. Projection retry, duplicate native result, Node restart and
+Durable Operation retry converge on one notification. The current initiating
+Session receives a wake when its Harness supports it. Project or AgentSlot Inbox
+state remains available after Session replacement.
 
-Required arguments: `handles`, `mode`, `until`, `timeout_seconds`. `mode` is
-`any` or `all`.
+set_notification changes notification delivery while response state and Inbox
+history remain independent.
 
-```json
-{
-  "handles": ["response:message-01", "response:message-02"],
-  "mode": "all",
-  "until": "response_received",
-  "timeout_seconds": 120
-}
-```
+## Reading
 
-The `response_observation` data contains `condition`, `mode`,
-`satisfied_handles`, `pending_handles`, `terminal_handles`,
-`completion_revision` and `notification_states`. Every satisfied handle has an
-exact `read_resource` call in `follow_ups`; every pending observation can return
-an exact repeat `wait_for_response` call. Reaching the condition records the caller
-AgentSlot's completion observation. The durable Inbox item remains recoverable,
-and its native wake state converges to observed.
+read_resource is a pure typed-handle read for Project, Route, WorkItem, Evidence,
+Artifact and AcceptedState. It supports summary, detail, content, history and
+evidence views at an exact revision.
 
-## `read_resource`
+read_message reads Message or response content. consume defaults to true and
+records owner consumption atomically.
 
-Use this common read surface with a typed handle returned by another ACS tool.
+check_inbox lists durable Messages, response completions, Review requests and
+recovery notifications for the project management or AgentSlot context.
 
-Required argument: `handle`. Optional arguments: `view`, `observe`, `cursor`,
-`limit`, `max_inline_bytes`. Views are `summary`, `result`, `evidence`, `history`
-and `content`.
+## Review and acceptance
 
-```json
-{
-  "handle": "response:message-01",
-  "view": "result",
-  "observe": true,
-  "cursor": null,
-  "limit": 50,
-  "max_inline_bytes": 16384
-}
-```
+request_review binds the Review to candidate, exact source baseline, criteria,
+evidence requirements and reviewer constraints.
 
-The `resource_snapshot` data contains resource `handle`, `kind`, `state`,
-`revision`, observation metadata, typed `relations`, bounded `content`,
-`evidence_handles`, `unresolved_items` and `next_cursor`. Large content returns
-an Artifact handle, SHA-256 digest, media type and size. An owner read with
-`observe=true` records the completion observation and converges with any queued
-completion notification.
+submit_review records decision, findings, evidence handles, exact source
+readback and unresolved items.
 
-## `check_inbox`
+accept_work commits an accepted-state revision after authorization, required
+Review, evidence, source readback and protected-effect readback. Product-owner
+and Finalizer boundaries remain explicit Policy decisions.
 
-Use this read-only tool at startup, reconnect and recovery. The cursor belongs
-to the authenticated AgentSlot and survives Harness Session replacement.
+## Source access
 
-All arguments are optional: `cursor`, `limit`, `states`, `kinds`.
+Source read tools operate through authorized SourceBindings. Output is bounded
+and revision-specific. Larger file or diff content returns immutable Artifact
+references.
 
-```json
-{
-  "cursor": null,
-  "limit": 50,
-  "states": ["available", "queued_for_idle"],
-  "kinds": ["message", "response_available", "recovery_required"]
-}
-```
+Source write tools are exposed only by an admitted Source-write Profile. They
+bind WorkItem lineage and exact tree or commit preconditions and return protected
+readback.
 
-Each `inbox_page.items[]` entry contains `notification_id`, `kind`, `state`,
-Message and response handles, `completion_revision`, delivery observation and an
-executable `read_resource` follow-up. Listing preserves item state; observation
-is recorded by the corresponding resource read.
+External GitHub MCP remains a valid parallel Source Provider. The ACS Skill uses
+load_project SourceBinding metadata to coordinate GitHub reads without
+duplicating GitHub credentials or repository authority.
 
-## `set_notification`
+## Advanced command surface
 
-`send_message` creates automatic completion notification when a response is
-expected. This tool changes that subscription explicitly.
+submit_command accepts one complete authenticated Domain SurfaceCommand for
+operator, migration and conformance flows. The run alias returns the same
+Domain disposition. Ordinary collaboration uses the typed tools.
 
-Required arguments: `client_request_id`, `response_handle`, `enabled`,
-`expected_revision`, `reason`, `deadline`.
+## Workflow layer
 
-The `notification_update_receipt` data contains `operation`, `response_handle`,
-the new `subscription_revision`, `notification_state` and independent
-`response_state`. Its follow-up reads the response summary. Disabling a
-notification leaves response collection, response state and resource reads
-active.
+Reusable user workflows are Skills. Skills define tool order, context loading,
+partial-result handling, templates and completion criteria. MCP tools remain the
+data, authorization and action layer. Domain Command remains the internal
+deterministic state-transition protocol.
 
-## `cancel_work`
-
-Use this tool to end the durable work objective identified by a WorkItem.
-Required arguments: `client_request_id`, `work_item_id`, `expected_revision`,
-`reason`, `deadline`.
-
-The `work_item_cancellation_receipt` data contains `operation`, WorkItem identity,
-revision and state, plus each related Runtime Attempt and its current state.
-Follow-up calls read the WorkItem and any effects whose outcome requires
-authoritative readback.
-
-## `stop_attempt`
-
-Use this tool for one concrete execution attempt. Required arguments:
-`client_request_id`, `runtime_attempt_id`, `expected_revision`, `reason`,
-`deadline`.
-
-The `runtime_attempt_cancellation_receipt` data contains `operation`, Attempt
-identity, revision and state, Driver acknowledgement, and `effect_state`.
-Ambiguous external effects return a `read_resource` follow-up for their
-authoritative markers before another Attempt can be admitted.
-
-## `submit_command`
-
-This advanced tool accepts one complete versioned Domain `SurfaceCommand` as
-`request`. It returns `domain_command_receipt` with `operation`, canonical
-`disposition` and `resource_handles`. Operator, migration, conformance and
-advanced automation clients use this surface when they already own the Domain
-command schema. The `run` compatibility alias accepts the same input and returns
-the same bytes.
-
-## Delivery, waiting and wake behavior
-
-An initiating Agent keeps using authorized tools while response handles are
-pending. Response tracking is a Domain state dimension independent of Harness
-turn state. Async `send_message` creates durable response tracking and completion
-notification in the same Authority commit, then returns control to the Agent.
-
-The default `queue_until_idle` policy applies to work Messages and completion
-notifications. Current Session activity comes from an unexpired Driver/Node
-observation:
-
-- `idle` admits native invocation;
-- `busy` commits the Inbox item and schedules dispatch after an idle observation;
-- `offline` retains delivery for the next current Session binding;
-- `unknown` retains delivery until activity is observed again.
-
-Completion notification uses a stable identity derived from response handle and
-completion revision. Projection retry, duplicate native result, Node restart and
-Temporal retry converge on one notification and one native invocation. The
-initiating AgentSlot owns the subscription, so Session replacement routes the
-notification to its current binding. The notification tells the Agent which
-response completed and supplies the exact `read_resource` call.
-
-## High-level workflow commands
-
-P2 delivers reusable command documents that call the canonical tools and retain
-their structured results:
-
-- `acs-collaborate.command.md` applies an explicit topology, discovers capacity,
-  creates WorkItems and submits asynchronous work;
-- `acs-review.command.md` dispatches an exact-baseline review and binds its
-  result and evidence handles;
-- `acs-results.command.md` recovers Inbox state and reads completed results;
-- `acs-cancel.command.md` applies notification, WorkItem or Runtime Attempt
-  control through the corresponding typed tool;
-- `acs-status.command.md` presents observed collaboration, delivery, response
-  and recovery state with evidence class and validity.
+The adopted Skill catalog is in [skills/README.md](skills/README.md). Starter
+prompts provide one-sentence user entries. Harness slash aliases may invoke a
+Skill but do not define a separate workflow contract.
 
 ## P2 acceptance
 
-The `P2-MCP-WORKFLOW` Gate follows `P2-OPENCODE`. It exercises canonical tool
-discovery and invocation from real Codex and OpenCode clients against the same
-exact source and Domain Authority. Evidence includes `tools/list` descriptions,
-input and output schemas, native result bytes, Message/response/notification
-state, Driver/Node readback, Session activity transitions, completion delivery,
-Artifact and Evidence reads, typed cancellation authority, Temporal recovery and
-zero unresolved items.
+P2-MCP-WORKFLOW proves typed collaboration, delivery, response, notification,
+reading, cancellation and Skill invocation from real Codex and OpenCode clients.
+P2-MANAGEMENT-WORKFLOW then proves local and web context hydration, cross-project
+management, Source reads, Review workflows and project Inbox recovery. Each
+scenario binds exact source, Profile, versions, credentials, direction, policy,
+expiry and direct result bytes.
