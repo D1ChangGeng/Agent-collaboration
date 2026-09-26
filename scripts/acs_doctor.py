@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Read-only installation and project readiness report for ACS."""
 
 from __future__ import annotations

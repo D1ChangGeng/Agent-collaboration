@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Guarded local ACS installation entry point for an assisting Agent."""
 
 from __future__ import annotations
