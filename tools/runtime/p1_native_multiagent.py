@@ -45,9 +45,11 @@ from runtime.systemd_supervisor import SystemdUserSupervisor
 SCENARIO = "P1-NATIVE-MULTIAGENT-OFF"
 CODEX_VERSION = "0.155.0"
 CODEX_SCHEMA_RELATIVE = "runtime_tests/schema-0.155.0/codex_app_server_protocol.schemas.json"
-OPENCODE_SHA256 = "87bd160e053af86b5b409daabf71f8dc05bbc3a2a3a5f563f36011cdf706a999"
-OPENCODE_SIZE = 184_825_984
-OPENCODE_SCHEMA_SHA256 = "cf12e9739510a196c7f25eb938555cfb66d901957f66f840a12d4489ae440ac3"
+OPENCODE_SHA256 = "f9dab32248695e9ebd56b16a1921798fd85112cf5a69c7dfd0cabc1e17be4a11"
+OPENCODE_SIZE = 185_030_784
+OPENCODE_VERSION = "1.18.31"
+OPENCODE_SCHEMA_RELATIVE = "runtime_tests/schema-1.18.31-opencode-openapi.json"
+OPENCODE_SCHEMA_SHA256 = "00502bd13e9c86f3ca9e765e99a57e06fa9f434ca16f2a714766d1444f8d37f3"
 
 
 class NativeInventoryRejected(RuntimeError):
@@ -183,7 +185,7 @@ def opencode_effective_inventory(
             or len(set(names)) != len(names)):
         raise NativeInventoryRejected("OpenCode Agent names are malformed")
     return {
-        "native_version": "1.18.30",
+        "native_version": getattr(profile, "version", "1.18.31"),
         "effective_config_sha256": _sha(_canonical(config)),
         "effective_permission_sha256": _sha(_canonical({
             "global": config["permission"],
@@ -259,7 +261,7 @@ def capture_opencode_bootstrap(
     driver: OpenCodeNativeDriver, operation: AuthorizedOperation,
 ) -> dict[str, Any]:
     """Observe production /config, /agent and /tool/ids without prompt_async."""
-    if driver.profile.version != "1.18.30":
+    if driver.profile.version not in {"1.18.30", OPENCODE_VERSION}:
         raise NativeInventoryRejected("OpenCode native profile version differs")
     original_http = driver._http
     views: dict[str, Any] = {}
@@ -543,7 +545,7 @@ def opencode_no_model_driver(
     root: Path, native_source: Path, source_checkout: Path,
     binding: BindingIdentity, check_current,
 ) -> tuple[OpenCodeNativeDriver, SystemdUserSupervisor, Path, Path, dict[str, Any]]:
-    """Stage pinned 1.18.30 with deny-all selected Agent and no provider key."""
+    """Stage the reviewed OpenCode binary with deny-all selected Agent."""
     paths = _private_dirs(
         root, "bin", "home", "config", "data", "state", "cache",
         "input", "tmp", "ledger",
@@ -551,7 +553,7 @@ def opencode_no_model_driver(
     executable = paths["bin"] / "opencode"
     native_pin = _copy_pinned(native_source, executable,
                               expected_sha256=OPENCODE_SHA256, expected_size=OPENCODE_SIZE)
-    schema = source_checkout / "runtime_tests/schema-1.18.30/opencode-openapi.json"
+    schema = source_checkout / OPENCODE_SCHEMA_RELATIVE
     if _sha(schema.read_bytes()) != OPENCODE_SCHEMA_SHA256:
         raise NativeInventoryRejected("OpenCode reviewed schema differs")
     config_dir = paths["config"] / "opencode"
@@ -570,7 +572,7 @@ def opencode_no_model_driver(
     }))
     config.chmod(0o600)
     profile = OpenCodeLaunchProfile(
-        str(executable), OPENCODE_SHA256, "1.18.30",
+        str(executable), OPENCODE_SHA256, OPENCODE_VERSION,
         str(schema), OPENCODE_SCHEMA_SHA256,
         str(paths["input"]), str(paths["home"]), str(paths["config"]),
         str(paths["data"]), str(paths["state"]), str(paths["cache"]),

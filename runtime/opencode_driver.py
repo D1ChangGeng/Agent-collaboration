@@ -122,7 +122,7 @@ class OpenCodeLaunchProfile:
         return {key: value for key, value in asdict(self).items() if key != "environment"}
 
     def validate(self, *, executable=True, fresh=False):
-        if self.version not in {"1.18.27", "1.18.30"}:
+        if self.version not in {"1.18.27", "1.18.30", "1.18.31"}:
             raise DriverRejected("OpenCode version requires a separate reference profile")
         roots = [self.home, self.config_root, self.data_root, self.state_root,
                  self.cache_root, self.temp_root, self.cwd]

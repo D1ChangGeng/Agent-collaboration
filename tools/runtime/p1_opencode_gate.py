@@ -26,7 +26,10 @@ MODEL_PROMPT = (
     "If delegation is unavailable or denied, reply with exactly ACS_P1_OPENCODE_API_OK. "
     "Do not call any other tools."
 )
-SCHEMA_SHA256 = "cf12e9739510a196c7f25eb938555cfb66d901957f66f840a12d4489ae440ac3"
+SCHEMA_SHA256 = "00502bd13e9c86f3ca9e765e99a57e06fa9f434ca16f2a714766d1444f8d37f3"
+OPENCODE_VERSION = "1.18.31"
+LEGACY_OPENCODE_VERSION = "1.18.30"
+LEGACY_SCHEMA_SHA256 = "cf12e9739510a196c7f25eb938555cfb66d901957f66f840a12d4489ae440ac3"
 SCENE_FIELDS = {
     "schema_version", "native_executable_path", "native_executable_sha256",
     "native_executable_size", "opencode_version", "schema_sha256",
@@ -80,8 +83,12 @@ def validate_scene(value: object) -> dict[str, Any]:
         raise OpenCodeGateRejected("OpenCode scene fields differ")
     if (
         value["schema_version"] != "acs-p1-opencode-scene/2"
-        or value["opencode_version"] != "1.18.30"
-        or value["schema_sha256"] != SCHEMA_SHA256
+        or value["opencode_version"] not in {LEGACY_OPENCODE_VERSION, OPENCODE_VERSION}
+        or (
+            value["schema_sha256"] != SCHEMA_SHA256
+            if value["opencode_version"] == OPENCODE_VERSION
+            else value["schema_sha256"] != LEGACY_SCHEMA_SHA256
+        )
         or value["agent"] != "engineer"
         or type(value["native_executable_size"]) is not int
         or not 1_000_000 <= value["native_executable_size"] <= 500_000_000
