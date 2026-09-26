@@ -48,7 +48,7 @@ class P2HarnessTests(unittest.TestCase):
         blockers = harness.blockers(self.inventory)
         self.assertIn("both physical Machines require runtime reobservation", blockers[0])
         self.assertIn("P1 Gate has not passed", blockers)
-        self.assertIn("Linux Codex login is unavailable", blockers)
+        self.assertIn("Linux Codex zeo-dev API provider requires a fresh probe", blockers)
         self.assertIn("Linux receiver/Node supervised services are not active", blockers)
 
     def test_init_and_audit_emit_only_not_run(self):
@@ -98,7 +98,8 @@ class P2HarnessTests(unittest.TestCase):
 
     def test_authentication_remains_manual_and_unattempted(self):
         auth = self.inventory["authentication"]
-        self.assertEqual(auth["linux_codex_login"], "not_run")
+        self.assertEqual(auth["linux_codex_auth_mode"], "api_provider")
+        self.assertEqual(auth["linux_codex_provider"]["status"], "configured")
         self.assertFalse(auth["login_attempted_by_harness"])
 
     def test_old_source_or_machine_observation_claims_are_rejected(self):

@@ -18,7 +18,16 @@
     }
   ],
   "authentication": {
+    "linux_codex_auth_mode": "api_provider",
     "linux_codex_login": "not_run",
+    "linux_codex_provider": {
+      "alias": "zeo-dev",
+      "model": "gpt-5.6-sol",
+      "base_url": "https://api.payapionline.top/v1",
+      "wire_api": "responses",
+      "auth_command": "/usr/bin/cat",
+      "status": "configured"
+    },
     "login_attempted_by_harness": false
   },
   "services": {

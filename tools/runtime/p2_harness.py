@@ -124,14 +124,37 @@ def validate_inventory(inventory: dict[str, Any]) -> None:
     auth = inventory.get("authentication")
     if not isinstance(auth, dict) or auth.get("login_attempted_by_harness") is not False:
         raise HarnessError("harness must not initiate login")
+    mode = auth.get("linux_codex_auth_mode", "oauth")
+    if mode not in {"oauth", "api_provider"}:
+        raise HarnessError("Linux Codex authentication mode is invalid")
+    if mode == "api_provider":
+        provider = auth.get("linux_codex_provider")
+        if not isinstance(provider, dict):
+            raise HarnessError("API provider observation is required")
+        for field in ("alias", "model", "base_url", "wire_api", "auth_command"):
+            if not isinstance(provider.get(field), str) or not provider[field]:
+                raise HarnessError("API provider observation is incomplete")
+        if provider["alias"] != "zeo-dev" or provider["model"] != "gpt-5.6-sol":
+            raise HarnessError("API provider is outside the reviewed Sol profile")
+        if provider["wire_api"] != "responses" or not provider["base_url"].startswith("https://"):
+            raise HarnessError("API provider route is outside the reviewed bounded shape")
+        if provider["auth_command"] != "/usr/bin/cat":
+            raise HarnessError("API provider auth command is outside the reviewed shape")
+        if provider.get("status") not in {"configured", "verified"}:
+            raise HarnessError("API provider observation status is invalid")
 
 
 def blockers(inventory: dict[str, Any]) -> list[str]:
     result = ["both physical Machines require runtime reobservation on one exact source commit"]
     if inventory.get("p1_gate_status") not in {"passed", "supported"}:
         result.append("P1 Gate has not passed")
-    if inventory["authentication"].get("linux_codex_login") is not True:
-        result.append("Linux Codex login is unavailable")
+    auth = inventory["authentication"]
+    if auth.get("linux_codex_auth_mode", "oauth") == "api_provider":
+        provider = auth.get("linux_codex_provider", {})
+        if provider.get("status") != "verified":
+            result.append("Linux Codex zeo-dev API provider requires a fresh probe")
+    elif auth.get("linux_codex_login") is not True:
+        result.append("Linux Codex OAuth login is unavailable")
     services = inventory.get("services", {})
     if services.get("linux_receiver") != "active" or services.get("linux_node") != "active":
         result.append("Linux receiver/Node supervised services are not active")
@@ -232,6 +255,7 @@ def initialize(inventory_path: Path, contract_path: Path, output: Path, source_r
         "blockers": blocked,
         "credentials_copied": False,
         "login_attempted": False,
+        "authentication_mode": inventory["authentication"].get("linux_codex_auth_mode", "oauth"),
         "local_runtime_observation": "runtime-observation.json",
         "remote_runtime_reobservation": "required",
     }
