@@ -11,7 +11,7 @@ Continue the uploaded Agent Collaboration System upgrade through P1 acceptance, 
 - Formal tracked worktree: clean; ignored/untracked isolation material preserved.
 - Remote engineering checkout: `/home/changgeng/Agent-collaboration`, branch `codex/runtime-p1-hardening`, synced to the same HEAD/tree; existing untracked findings/progress/task_plan preserved.
 - Identity Continuity recovery fix: receiver recovery matcher conditionally enforces old/new Runtime ID transition and advances the transition field when IDs are present; legacy component fixtures without Runtime IDs remain valid.
-- Exact HEAD P1 runner: `p1-run-60ce56229b5cad7ae86281a6437bf4e7`, source `2b2c1c0`/tree `39405706`, 11/18 scenarios passed with complete six-kind evidence; 7 remain `not_run`. Runner audit passed; Gate status remains blocked.
+- Exact HEAD P1 runner: `p1-run-c15f30426991d3abc29a9ab1f1a1aa6b`, source `67a302b`/tree `254c4dca`, 11/18 scenarios passed with complete six-kind evidence; 7 remain `not_run`. Runner audit passed; Gate status remains blocked because BOOTSTRAP, independent review, and remaining scenario adapters are absent.
 - Passed scenarios: DOMAIN-TRANSACTION, AUTH-REVOCATION, COMMAND-DEDUP, INBOX-ACK-LOSS, CORE-RESTART, NODE-RESTART, PROVIDER-RESTART, LEASE-FENCING, UNCERTAIN-EFFECT, STALE-BASELINE, PARTIAL-ARTIFACT.
 - Not-run scenarios: HARNESS-REPLACEMENT, SURFACE-PARITY, CODEX-LIFECYCLE, OPENCODE-LIFECYCLE, NATIVE-MULTIAGENT-OFF, IDENTITY-CONTINUITY, INTEGRATED-ACCEPTANCE.
 - P2 preparation skeleton: `C:\\Users\\D26FO\\acs-p2-preparation-2b2c-r2\\run`; audit passed. Blockers: P1 not passed, two physical Machines need fresh same-commit observation, Linux Codex auth unavailable, Linux receiver/Node services inactive.
@@ -21,7 +21,7 @@ Continue the uploaded Agent Collaboration System upgrade through P1 acceptance, 
 
 - Remote Identity Continuity candidate: 4/4 real PG/TLS integration tests passed; component probe suite passed.
 - Remote full Runtime suite: exit 0.
-- P1 runner audit: passed; 11 scenario records passed with all six evidence kinds and digest checks.
+- P1 runner audit: passed; 11 scenario records passed with all six evidence kinds and digest checks. The runner's per-scenario CLI output is `blocked` after each pass because the offline finalizer correctly rejects an incomplete Gate prerequisite set; scenario state remains `passed`.
 - P2 skeleton audit: passed and remains `not_run`.
 
 ## Unresolved risks
