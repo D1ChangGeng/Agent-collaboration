@@ -153,6 +153,9 @@ def test_owner_budget_binds_source_scene_run_machine_and_one_prompt(tmp_path: Pa
     lineage = complete()
     lineage["run_id"] = RUN_ID
     lineage["os"]["unit"] = "acs-" + RUN_ID + ".service"
+    lineage["driver"]["session_replacement"]["operation_id"] = (
+        RUN_ID + "-session-replace"
+    )
     lineage["driver"]["auth"] = {
         "storage": "xdg-data-auth-json", "provider_id": "fixture-provider",
         "owner_mode": "0600", "same_reference": True,
