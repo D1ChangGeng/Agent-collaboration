@@ -269,7 +269,7 @@ def test_old_schema_adoption_and_verified_replay(isolated_dsn, version):
     before = query(domain, "SELECT legacy_record FROM command_dedup")[0][0]
     assert before["payload_hash"] == digest
     assert before["result_json"]["command_id"] == cmd.command_id
-    assert query(domain, "SELECT schema_version FROM runtime_schema_metadata") == [("1.6",)]
+    assert query(domain, "SELECT schema_version FROM runtime_schema_metadata") == [("1.7",)]
     result = create(domain, cmd)
     assert result.duplicate and result.operation_id == expected.operation_id
     assert counts(domain) == (1, 1, 0, 0)
