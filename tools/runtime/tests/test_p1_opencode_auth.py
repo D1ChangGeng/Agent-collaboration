@@ -100,6 +100,34 @@ def test_private_auth_stage_and_source_or_stage_tamper_rejected(fixture):
         stager.assert_current(profile)
 
 
+@pytest.mark.parametrize("line_ending", [b"\n", b"\r\n"])
+def test_private_auth_accepts_one_terminal_line_ending(fixture, line_ending):
+    admission, profile, root, key = fixture
+    key.write_bytes(b"fixture-only-key" + line_ending)
+    admission = OpenCodeGateAdmission.load(
+        root / "input" / "scene.json",
+        hashlib.sha256((root / "input" / "scene.json").read_bytes()).hexdigest(),
+        root / "input" / "budget.json",
+        hashlib.sha256((root / "input" / "budget.json").read_bytes()).hexdigest(),
+        source_commit="a" * 40,
+        source_tree="b" * 40,
+    ).bind_run(root.name, "machine-fixture", "node-fixture")
+    stager = PrivateOpenCodeAuth(admission)
+    assert stager.stage(profile)["same_reference"] is True
+    assert json.loads((root / "data" / "opencode" / "auth.json").read_text()) == {
+        "fixture-provider": {"type": "api", "key": "fixture-only-key"}
+    }
+
+
+@pytest.mark.parametrize("suffix", [b"\n\n", b"\nembedded"])
+def test_private_auth_rejects_nonterminal_or_repeated_line_endings(fixture, suffix):
+    admission, profile, _root, key = fixture
+    key.write_bytes(b"fixture-only-key" + suffix)
+    stager = PrivateOpenCodeAuth(admission)
+    with pytest.raises(OpenCodeGateRejected, match="unsafe bounded format"):
+        stager.stage(profile)
+
+
 def test_symlink_or_wrong_provider_namespace_rejected(fixture):
     admission, profile, root, key = fixture
     stager = PrivateOpenCodeAuth(admission)
