@@ -20,6 +20,7 @@ from runtime.receiver_models import (
     EndpointRegistration,
     PrepareBody,
     ReadbackBody,
+    RecoveryBody,
 )
 from runtime.remote_endpoint import RemoteNodeTransport, RemoteTransportRejected
 from runtime.sender import AdmissionFactory, DeliveryIdentity
@@ -254,7 +255,10 @@ class RemoteNodeEndpointAdapter:
         try:
             dispatched = self._send(self._issue(invocation, "delivery.dispatch", dispatch_body))
         except (RemoteTransportRejected, ValueError, RuntimeError):
-            return self.inspect_delivery(invocation.operation_id, "uncertain")
+            observed = self.inspect_delivery(invocation.operation_id, "uncertain")
+            prepared_projection = self._projection([prepared], observed["status"])
+            prepared_projection["receipts"].extend(observed["receipts"])
+            return prepared_projection
         state = dispatched.receipt.state
         status = "delivered" if state == "runtime_acknowledged" else state
         return self._projection([prepared, dispatched], status)
@@ -289,3 +293,78 @@ class RemoteNodeEndpointAdapter:
         stored_state = readback.receipt.evidence.get("stored_state")
         observed_status = "delivered" if stored_state == "runtime_acknowledged" else stored_state or status
         return self._projection([readback], observed_status)
+
+    def recover_prepared(self, invocation, original_prepare, original_receipt,
+                         authorize, mark_dispatched):
+        """Route one unmarked old-boot preparation through the current signed boot.
+
+        The caller owns the Domain Attempt lock/marker. A committed dispatch or
+        recovery admission is never replaced with a different native request.
+        """
+        authorized = authorize()
+        old = original_prepare.admission
+        current = self.identity
+        if (logical_payload(authorized) != logical_payload(invocation.envelope)
+                or old.purpose != "delivery.prepare"
+                or original_receipt.receipt.request_id != old.request_id
+                or original_receipt.receipt.state != "prepared"
+                or (old.message_id, old.command_id, old.operation_id, old.attempt_id,
+                    old.dispatch_id, old.envelope_digest, old.selection_digest,
+                    old.invocation_digest) != (
+                        invocation.message_id, invocation.command_id,
+                        invocation.operation_id, invocation.attempt_id,
+                        invocation.dispatch_id, invocation.envelope_digest,
+                        invocation.selection_digest,
+                        sha256(invocation.model_dump(mode="json")),
+                    )
+                or (old.tenant_id, old.authority_id, old.authority_incarnation,
+                    old.node_id, old.machine_id, old.scope_id, old.agent_slot_id,
+                    old.endpoint_id) != (
+                        current.tenant_id, current.authority_id,
+                        current.authority_incarnation, current.node_id,
+                        current.machine_id, current.scope_id,
+                        current.agent_slot_id, current.endpoint_id,
+                    )
+                or old.boot_incarnation == current.boot_incarnation
+                or old.endpoint_revision >= current.endpoint_revision
+                or self.config.journal_generation <= old.journal_generation
+                or not self.config.old_boot_isolation_ref):
+            raise InvocationPreCallRejected("receiver recovery identity rejected")
+        prior = self.store.dispatch_admission(invocation.operation_id)
+        if prior is not None and prior.admission.purpose != "delivery.recover":
+            raise InvocationPreCallRejected("marked receiver dispatch cannot recover")
+        body = RecoveryBody(
+            prepare_request_id=old.request_id,
+            marker_receipt_id=invocation.runtime_dispatched_receipt_id,
+            old_boot_incarnation=old.boot_incarnation,
+            new_boot_incarnation=current.boot_incarnation,
+            journal_generation=self.config.journal_generation,
+            old_boot_isolation_ref=self.config.old_boot_isolation_ref,
+            old_endpoint_revision=old.endpoint_revision,
+            new_endpoint_revision=current.endpoint_revision,
+            old_runtime_revision=old.runtime_revision,
+            new_runtime_revision=current.runtime_revision,
+            old_runtime_id=old.runtime_id,
+            new_runtime_id=current.runtime_id,
+        )
+        request = self._issue(invocation, "delivery.recover", body)
+        if prior is not None and prior != request:
+            raise InvocationPreCallRejected("receiver recovery admission changed")
+        mark_dispatched(invocation, {
+            "source": self.evidence_class,
+            "dispatch_id": invocation.dispatch_id,
+            "receiver_prepare_receipt_id": original_receipt.receipt.receipt_id,
+            "receiver_prepare_request_id": old.request_id,
+            "receiver_recovery_request_id": request.admission.request_id,
+            "old_boot_isolation_ref": self.config.old_boot_isolation_ref,
+        })
+        try:
+            recovered = self._send(request)
+        except (RemoteTransportRejected, ValueError, RuntimeError):
+            observed = self.inspect_delivery(invocation.operation_id, "uncertain")
+            prepared_projection = self._projection([original_receipt], observed["status"])
+            prepared_projection["receipts"].extend(observed["receipts"])
+            return prepared_projection
+        state = recovered.receipt.state
+        status = "delivered" if state == "runtime_acknowledged" else state
+        return self._projection([original_receipt, recovered], status)
