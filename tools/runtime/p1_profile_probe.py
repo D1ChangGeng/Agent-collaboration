@@ -2517,6 +2517,30 @@ def _run_domain_transaction(
         raise ProbeRejected("Gate lineage prefix is outside the reviewed bound")
     identity_prefix = lineage_prefix + "-" if lineage_prefix else ""
     pg_schema = "p1_probe_" + suffix
+    work_id = identity_prefix + "work-" + suffix
+    message_id = identity_prefix + "message-" + suffix
+    endpoint_id = identity_prefix + "endpoint-" + suffix
+    checkpoint = None
+    checkpoint_path = ledger.root / f"{p1_identity_continuity_scene.SCENARIO}-checkpoint.json"
+    checkpoint_preexisting = scenario == "P1-IDENTITY-CONTINUITY" and checkpoint_path.exists()
+    checkpoint_authority = DomainAuthority(profile["postgres_dsn"])
+    if scenario == "P1-IDENTITY-CONTINUITY":
+        checkpoint = p1_identity_continuity_scene.prepare_checkpoint(
+            profile, ledger, run_id=run_id, suffix=suffix, commit=commit, tree=tree,
+            work_id=work_id, message_id=message_id, endpoint_id=endpoint_id,
+            machine_id=profile["machine_id"], node_id=profile["node_id"],
+            authority=checkpoint_authority,
+        )
+        pg_schema = checkpoint["pg_schema"]
+        work_id = checkpoint["work_item_id"]
+        message_id = checkpoint["message_id"]
+        endpoint_id = checkpoint["endpoint_id"]
+        if checkpoint.get("phase") == "ledger_pending" and ledger.get(scenario) is None:
+            return p1_identity_continuity_scene.resume_ledger_pending(profile, ledger, checkpoint)
+        if checkpoint_preexisting:
+            raise ProbeRejected(
+                "identity continuity checkpoint cannot safely resume before proof completion",
+            )
     with psycopg.connect(profile["postgres_dsn"], autocommit=True) as admin:
         admin.execute(sql.SQL("CREATE SCHEMA IF NOT EXISTS {}").format(sql.Identifier(pg_schema)))
     ledger.reserve_schema(pg_schema)
@@ -2532,7 +2556,6 @@ def _run_domain_transaction(
         "runtime.invoke", "lease.acquire", "lease.release", "lease.inspect",
         "effect.write", "effect.read", "enrollment.manage", "receiver.manage",
     ))
-    work_id = identity_prefix + "work-" + suffix
     create = _domain_command(
         authority, "work_item.create", "work_item", work_id, suffix, issued_at,
     )
@@ -2550,13 +2573,13 @@ def _run_domain_transaction(
     Path(node._path).chmod(0o600)
     driver = (p1_harness_replacement.AcknowledgedFixtureDriver()
               if scenario == "P1-HARNESS-REPLACEMENT" else FixtureDriver())
-    endpoint_id = identity_prefix + "endpoint-" + suffix
     identity_resources = None
     if scenario == "P1-IDENTITY-CONTINUITY":
         try:
             identity_resources = p1_identity_continuity_scene.provision(
                 authority,
                 ledger,
+                checkpoint=checkpoint,
                 endpoint_id=endpoint_id,
                 machine_id=profile["machine_id"],
                 node_id=profile["node_id"],
@@ -2574,10 +2597,13 @@ def _run_domain_transaction(
     bind = _domain_command(
         authority, "message.bind", "message", endpoint_id, suffix, issued_at,
     )
-    message_id = identity_prefix + "message-" + suffix
     send = _domain_command(
         authority, "message.send", "message", message_id, suffix, issued_at,
     )
+    if checkpoint is not None:
+        if send.command_id != checkpoint["command_id"]:
+            raise ProbeRejected("identity checkpoint command lineage differs")
+        send = send.model_copy(update={"target_id": checkpoint["message_id"]})
     if scenario == "P1-NATIVE-MULTIAGENT-OFF":
         send = send.model_copy(update={"correlation_id": "p1-native-" + suffix})
     packet = DeliveryPacket(
@@ -2611,7 +2637,10 @@ def _run_domain_transaction(
         ))
         if identity_resources is not None:
             identity_resources.mutation_command_ids.append(bind.command_id)
-        sent = service.send_message(send, packet, endpoint_id=endpoint_id, binding_revision=1)
+        sent = service.send_message(
+            send, packet, endpoint_id=endpoint_id, binding_revision=1,
+            operation_id=checkpoint["operation_id"] if checkpoint is not None else None,
+        )
     identity = {
         "tenant_id": authority.tenant_id,
         "message_id": message_id,
@@ -2966,7 +2995,21 @@ def _run_domain_transaction(
         "source_commit": commit, "source_tree": tree, "status": "passed",
         "created_at": datetime.now(UTC).isoformat(),
     }
+    if checkpoint is not None:
+        checkpoint = p1_identity_continuity_scene._read_checkpoint(
+            p1_identity_continuity_scene._checkpoint_path(ledger),
+        )
+        checkpoint = p1_identity_continuity_scene.finalize_checkpoint(
+            checkpoint,
+            lineage=lineage,
+            row=value,
+            raw_sha256=_sha(raw.read_bytes()),
+        )
+        if fault is not None:
+            fault("after_identity_proof")
     ledger.put(value)
+    if checkpoint is not None:
+        p1_identity_continuity_scene._checkpoint_update(checkpoint, phase="completed")
     return value
 
 
