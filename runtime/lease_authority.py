@@ -73,10 +73,10 @@ class LeaseAuthority:
             expires_at = now + timedelta(seconds=request.ttl_seconds)
             cursor.execute(
                 """
-                INSERT INTO leases (lease_id, tenant_id, resource_id, owner_attempt_id, owner_runtime_id, authority_incarnation, generation, fencing_token, grant_ref, command_id, idempotency_key, scope_id, request_hash, expires_at, status)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'granted')
+                INSERT INTO leases (lease_id, tenant_id, resource_id, owner_attempt_id, owner_runtime_id, authority_id, authority_incarnation, generation, fencing_token, grant_ref, command_id, idempotency_key, scope_id, request_hash, expires_at, status)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'granted')
                 """,
-                (lease_id, self._store.tenant_id, request.resource_id, request.owner_attempt_id, request.owner_runtime_id, request.authority_incarnation, generation, token, request.grant_ref, command.command_id, command.idempotency_key, request.scope_id, request_hash, expires_at),
+                (lease_id, self._store.tenant_id, request.resource_id, request.owner_attempt_id, request.owner_runtime_id, self._store.authority_id, request.authority_incarnation, generation, token, request.grant_ref, command.command_id, command.idempotency_key, request.scope_id, request_hash, expires_at),
             )
         return {"lease_id": lease_id, "resource_id": request.resource_id, "generation": generation, "fencing_token": token, "expires_at": expires_at}
 

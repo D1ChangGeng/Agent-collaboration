@@ -56,7 +56,7 @@ def test_real_postgres_authority_retry_revocation_and_acceptance_guards() -> Non
     evidence = EvidenceRecord(
         evidence_id=f"evidence-{work_item_id}",
         work_item_id=work_item_id,
-        observer_ref="engineer-runtime-1302",
+        observer_ref=authority.context.principal_ref,
         source_class="directly_verified",
         baseline_ref="baseline-real",
         artifact_sha256="a" * 64,
@@ -82,6 +82,10 @@ def test_real_postgres_authority_retry_revocation_and_acceptance_guards() -> Non
 
     with pytest.raises(AcceptanceGuardFailed):
         authority.transition_work_item(make_command(authority, "work_item.transition", work_item_id, f"ready-{work_item_id}"), TransitionRequest(to_state=WorkItemState.ACCEPTANCE_READY, evidence_refs=(evidence.evidence_id,), review_ref=f"review-{work_item_id}"))
+
+    forged = evidence.model_copy(update={"observer_ref": "different-observer"})
+    with pytest.raises(AuthorizationDenied):
+        authority.record_evidence(make_command(authority, "evidence.record", work_item_id, f"forged-evidence-{work_item_id}"), forged)
 
 
 @pytest.mark.skipif(not DSN, reason="NOT_RUN: ACS_P1_DSN is not set")
