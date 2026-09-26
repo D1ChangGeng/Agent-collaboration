@@ -48,7 +48,7 @@ def _process_start(process_id: int) -> str:
             from runtime.supervisor import _WinAPI
 
             api = _WinAPI()
-            handle = api.dll.OpenProcess(0x00100000, False, process_id)
+            handle = api.dll.OpenProcess(0x1000, False, process_id)
             if not handle:
                 return ""
             try:
