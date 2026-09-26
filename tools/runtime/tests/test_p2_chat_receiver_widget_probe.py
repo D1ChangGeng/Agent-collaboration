@@ -192,7 +192,30 @@ vm.runInNewContext(script, {document: {getElementById: () => ({textContent: ''})
   assert.match(followUps[0].prompt, /claimed/);
   await tick();
   assert.equal(followUps.length, 1);
-  assert.equal(cleared, false);
+  assert.equal(cleared, true);
+  const uncertainStatus = {textContent: ''};
+  let uncertainTick;
+  let uncertainSends = 0;
+  const uncertainBridge = {
+    toolOutput: {project_id: 'project-portfolio-sandbox', probe_id: 'probe-2',
+      baseline_handles: [], expires_at: new Date(Date.now() + 300000).toISOString()},
+    async callTool(name) {
+      if (name === 'check_inbox') return {structuredContent: {ok: true,
+        data: {project_id: 'project-portfolio-sandbox', notifications: [
+          {notification_handle: 'uncertain', notification_enabled: true,
+           payload: {kind: 'team.configured'}}]}}};
+      return {structuredContent: {claimed: true}};
+    },
+    async sendFollowUpMessage() { uncertainSends++; throw new Error('host rejected'); }
+  };
+  vm.runInNewContext(script, {document: {getElementById: () => uncertainStatus},
+    window: {openai: uncertainBridge, addEventListener: () => {}},
+    setInterval: fn => {uncertainTick = fn; return 2}, clearInterval: () => {},
+    Date, Set, String, Number});
+  await uncertainTick();
+  await uncertainTick();
+  assert.match(uncertainStatus.textContent, /outcome_uncertain for uncertain/);
+  assert.equal(uncertainSends, 1);
 })().catch(error => { console.error(error); process.exitCode = 1; });
 """
     result = subprocess.run(["node", "-e", runner], input=HTML,

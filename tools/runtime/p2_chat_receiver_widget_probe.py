@@ -156,12 +156,19 @@ async function poll() {
       seen.add(handle);
       if (claimed?.claimed !== true) continue;
       fired = true;
+      if (timer !== null) clearInterval(timer);
       show('New ACS notification ' + handle + '. Requesting a native Chat follow-up.');
       const prompt = 'ACS Chat receiver probe notification ' + handle +
         '. Please call ACS read_message with project_id=' + projectId +
         ', handle=' + handle + ', consume=false; report the event_id and command_id.';
-      await window.openai.sendFollowUpMessage({prompt, scrollToBottom: false});
-      show('Chat follow-up submitted for ' + handle + '. Verify the native Turn and ACS readback.');
+      try {
+        await window.openai.sendFollowUpMessage({prompt, scrollToBottom: false});
+        show('Chat follow-up submitted for ' + handle + '. Verify the native Turn and ACS readback.');
+      } catch (error) {
+        show('outcome_uncertain for ' + handle +
+          ': wake claim recorded, but Host follow-up has no confirmed result. ' +
+          'Inspect the native Turn; no automatic retry.');
+      }
       break;
     }
   } catch (error) {
