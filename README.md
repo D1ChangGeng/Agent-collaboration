@@ -555,4 +555,4 @@ tests/
 
 ## License
 
-MIT. Replace the license before publishing if you prefer a different open-source license.
+This revision is offered under the [Sustainable Use License (SUL) 1.0](LICENSE), except for third-party components under their own licenses. SUL permits internal business use and personal or non-commercial use. Distribution or provision to others is permitted only free of charge for non-commercial purposes; other commercial offerings require a separate agreement with the relevant rights holders. SUL is a source-available license, not an OSI-approved open-source license. Earlier versions published under MIT retain their MIT license.
