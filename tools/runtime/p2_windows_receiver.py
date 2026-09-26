@@ -194,6 +194,13 @@ def provision(args):
         "node_id": node_id,
         "boot_incarnation": boot,
         "runtime_id": runtime_id,
+        "connection_ref": connection_ref,
+        "route_class": args.route_class,
+        "locator_host": args.host,
+        "locator_port": args.port,
+        "listen_host": process.runtime.listen_host,
+        "listen_port": process.runtime.listen_port,
+        "tls_certificate_sha256": registration.tls_certificate_sha256,
         "authority_seed_path": str(authority_seed),
         "receiver_process_sha256": hashlib.sha256((root / "receiver-process.json").read_bytes()).hexdigest(),
     }
