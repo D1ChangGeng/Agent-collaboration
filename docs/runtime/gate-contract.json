@@ -1,6 +1,6 @@
 {
   "schema_version": "acs-gate-contract/1",
-  "contract_revision": "2026-09-22.5",
+  "contract_revision": "2026-09-22.6",
   "p2_surface_revision": "acs-p2-mcp-workflow/5",
   "instruction_sha256": "0cffa4ab3888b3c05d61a72f0d7566dd9c03db07b4baffef29c9a6cbb7bb9e46",
   "supported_evidence_layers": [
@@ -55,7 +55,6 @@
         "P1-CORE-RESTART",
         "P1-NODE-RESTART",
         "P1-PROVIDER-RESTART",
-        "P1-HARNESS-REPLACEMENT",
         "P1-LEASE-FENCING",
         "P1-UNCERTAIN-EFFECT",
         "P1-STALE-BASELINE",
@@ -63,6 +62,7 @@
         "P1-SURFACE-PARITY",
         "P1-CODEX-LIFECYCLE",
         "P1-OPENCODE-LIFECYCLE",
+        "P1-HARNESS-REPLACEMENT",
         "P1-NATIVE-MULTIAGENT-OFF",
         "P1-IDENTITY-CONTINUITY",
         "P1-INTEGRATED-ACCEPTANCE"

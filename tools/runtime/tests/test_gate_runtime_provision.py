@@ -63,6 +63,22 @@ class GateRuntimeProvisionTests(unittest.TestCase):
         attached = json.loads(plan.read_text())["runtime_profile"]
         self.assertEqual(attached["runtime_environment_root"], str(self.destination))
         self.assertNotIn("file_count", attached)
+        status = self.root / "plan-status.json"
+        status.write_text(json.dumps({
+            "schema_version": "acs-p1-probe-plan-status/1",
+            "runner_integration": (
+                "pending Gate runner owner-only profile and reviewed runtime Python binds"
+            ),
+        }), encoding="utf-8")
+        provisioner.attach_status(status, result)
+        observed = json.loads(status.read_text(encoding="utf-8"))
+        self.assertEqual(observed["runner_integration"], "bound")
+        self.assertEqual(observed["runtime_environment_file_count"], result["file_count"])
+        self.assertEqual(
+            observed["runtime_environment_manifest_sha256"],
+            result["runtime_environment_manifest_sha256"],
+        )
+        self.assertEqual(observed["same_run_scene_inputs"], [])
 
     def test_symlink_source_and_postflight_failure_leave_no_destination(self):
         link = self.source / "linked.py"

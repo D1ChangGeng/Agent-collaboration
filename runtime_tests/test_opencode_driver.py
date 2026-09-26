@@ -104,6 +104,8 @@ class NativeHttpPeer:
         self.requests = []
         self.messages = []
         self.session = None
+        self.sessions = {}
+        self.session_messages = {}
         self.busy = False
         self.closed = False
         self.drop_prompt_ack = False
@@ -174,33 +176,52 @@ class NativeHttpPeer:
                         ],
                     )
                 elif path == "/session" and self.command == "POST":
-                    peer.session = {**body, "id": "ses_test", "directory": profile.cwd, "time": {"created": 1, "updated": 1}}
+                    session_id = "ses_test" if not peer.sessions else f"ses_test_{len(peer.sessions) + 1}"
+                    peer.session = {
+                        **body,
+                        "id": session_id,
+                        "directory": profile.cwd,
+                        "time": {"created": len(peer.sessions) + 1, "updated": len(peer.sessions) + 1},
+                    }
+                    peer.sessions[session_id] = peer.session
+                    peer.session_messages[session_id] = []
+                    peer.messages = peer.session_messages[session_id]
                     if peer.drop_session_ack:
                         self.close_connection = True
                         self.connection.shutdown(socket.SHUT_RDWR)
                         return
                     self.answer(200, peer.session)
                 elif path == "/session" and self.command == "GET":
-                    self.answer(200, ([peer.session] if peer.session else []) + peer.extra_sessions)
-                elif path == "/session/ses_test":
-                    self.answer(200, peer.session)
+                    self.answer(200, list(peer.sessions.values()) + peer.extra_sessions)
                 elif path == "/session/status":
-                    self.answer(200, {"ses_test": {"type": "busy"}} if peer.busy else {})
-                elif path == "/session/ses_test/message":
-                    self.answer(200, peer.messages)
-                elif path.startswith("/session/ses_test/message/msg_"):
-                    matches = [entry for entry in peer.messages if entry["info"]["id"] == path.rsplit("/", 1)[1]]
+                    self.answer(200, {peer.session["id"]: {"type": "busy"}} if peer.busy else {})
+                elif path.startswith("/session/") and path.count("/") == 2:
+                    self.answer(200, peer.sessions.get(path.rsplit("/", 1)[1]))
+                elif path.startswith("/session/") and path.endswith("/message"):
+                    session_id = path.split("/")[2]
+                    self.answer(200, peer.session_messages.get(session_id, []))
+                elif "/message/msg_" in path:
+                    session_id = path.split("/")[2]
+                    matches = [
+                        entry
+                        for entry in peer.session_messages.get(session_id, [])
+                        if entry["info"]["id"] == path.rsplit("/", 1)[1]
+                    ]
                     if peer.hide_message or not matches:
                         self.answer(404, {"error": "not found"})
                     else:
                         self.answer(200, matches[0])
-                elif path == "/session/ses_test/prompt_async":
+                elif path.startswith("/session/") and path.endswith("/prompt_async"):
+                    session_id = path.split("/")[2]
                     assert set(body) == {"messageID", "agent", "model", "parts"}
                     message_id = body["messageID"]
-                    peer.messages.append({"info": {"id": message_id, "sessionID": "ses_test", "role": "user",
+                    messages = peer.session_messages[session_id]
+                    peer.messages = messages
+                    peer.session = peer.sessions[session_id]
+                    messages.append({"info": {"id": message_id, "sessionID": session_id, "role": "user",
                                                    "time": {"created": len(peer.messages) + 1},
                                                    "agent": body["agent"], "model": body["model"]},
-                                          "parts": [{"id": "prt_text", "sessionID": "ses_test", "messageID": message_id,
+                                          "parts": [{"id": "prt_text", "sessionID": session_id, "messageID": message_id,
                                                      **body["parts"][0]}]})
                     peer.busy = True
                     if peer.drop_prompt_ack:
@@ -208,7 +229,7 @@ class NativeHttpPeer:
                         self.connection.shutdown(socket.SHUT_RDWR)
                         return
                     self.answer(204)
-                elif path == "/session/ses_test/abort":
+                elif path.startswith("/session/") and path.endswith("/abort"):
                     peer.abort_entered.set()
                     if peer.abort_release:
                         peer.abort_release.wait(3)
@@ -224,12 +245,13 @@ class NativeHttpPeer:
         self.thread.start()
 
     def finish(self, aborted=False):
+        session_id = self.session["id"]
         parent = [entry["info"]["id"] for entry in self.messages if entry["info"]["role"] == "user"][-1]
-        info = {"id": "msg_answer_" + str(len(self.messages)), "sessionID": "ses_test",
+        info = {"id": "msg_answer_" + str(len(self.messages)), "sessionID": session_id,
                 "role": "assistant", "parentID": parent, "time": {"created": 2, "completed": 3}}
         if aborted:
             info["error"] = {"name": "MessageAbortedError", "data": {"message": "fixture"}}
-        self.messages.append({"info": info, "parts": [{"id": "prt_answer", "sessionID": "ses_test",
+        self.messages.append({"info": info, "parts": [{"id": "prt_answer", "sessionID": session_id,
                                                        "messageID": info["id"], "type": "text", "text": "synthetic final answer"}]})
         self.busy = False
 
@@ -292,6 +314,22 @@ def test_spawn_uses_actual_http_identity_profile_and_denies(native):
     assert native.launch_args[0][1:3] == ["--pure", "serve"]
     assert native.launch_args[1]["env"]["OPENCODE_DISABLE_PROJECT_CONFIG"] == "1"
     assert prompts(native.peer) == []
+
+
+def test_owned_idle_session_replacement_is_read_back_before_prompt(native):
+    driver = native.driver
+    driver.spawn(operation("spawn"))
+    replacement = operation("replace")
+    receipt = driver.replace_session(replacement)
+    assert receipt["receipt_layer"] == "runtime_acknowledged"
+    assert receipt["previous_native_session_id"] == "ses_test"
+    assert receipt["native_session_id"] == "ses_test_2"
+    assert receipt["replacement_count"] == 1
+    assert receipt["observed_session_count"] == 2
+    assert driver.session_id == "ses_test_2"
+    assert set(native.peer.sessions) == {"ses_test", "ses_test_2"}
+    assert prompts(native.peer) == []
+    assert driver.replace_session(replacement) == receipt
 
 
 def test_204_requires_real_matching_readback_before_native_ack(native):

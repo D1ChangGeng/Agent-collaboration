@@ -741,9 +741,9 @@ def pinned_runtime_mounts(
                     (socket_info.st_dev, socket_info.st_ino),
                 ),
             })
-        if scenario_id == "P1-NATIVE-MULTIAGENT-OFF":
+        if scenario_id in {"P1-HARNESS-REPLACEMENT", "P1-NATIVE-MULTIAGENT-OFF"}:
             if state is None or run_dir is None:
-                raise SandboxUnavailable("native delegation readback requires the current run")
+                raise SandboxUnavailable("native lifecycle readback requires the current run")
             for lifecycle, target in (
                 ("P1-CODEX-LIFECYCLE", "codex_lifecycle"),
                 ("P1-OPENCODE-LIFECYCLE", "opencode_lifecycle"),
@@ -934,7 +934,7 @@ def validate_runtime_profile(value: object) -> dict[str, Any] | None:
         raise PlanError("runtime profile endpoints must be reviewed loopback providers")
     profile_path = Path(value["profile_path"])
     profile = strict_json(_secure_owner_file(profile_path, value["profile_sha256"]))
-    profile_keys = {
+    profile_base_keys = {
         "schema_version",
         "profile",
         "source_root",
@@ -946,17 +946,34 @@ def validate_runtime_profile(value: object) -> dict[str, Any] | None:
         "versions",
         "node_id",
         "direction",
-        "codex_model_evidence",
-        "opencode_model_evidence",
     }
+    legacy_model_fields = {"codex_model_evidence", "opencode_model_evidence"}
     with_codex = "codex_scene_profile" in value
     with_opencode = "opencode_scene_profile" in value
-    expected_profile_keys = profile_keys
+    scene_profile_keys = set()
     if with_codex:
-        expected_profile_keys = expected_profile_keys | {"codex_scene_mode"}
+        scene_profile_keys.add("codex_scene_mode")
     if with_opencode:
-        expected_profile_keys = expected_profile_keys | {"opencode_scene_mode"}
-    profile_version = 3 if with_codex and with_opencode else 2 if with_codex or with_opencode else 1
+        scene_profile_keys.add("opencode_scene_mode")
+    profile_v4 = (
+        with_codex
+        and with_opencode
+        and isinstance(profile, dict)
+        and set(profile) == profile_base_keys | scene_profile_keys
+        and profile.get("schema_version") == "acs-p1-loopback-probe-profile/4"
+    )
+    expected_profile_keys = profile_base_keys | scene_profile_keys
+    if not profile_v4:
+        expected_profile_keys |= legacy_model_fields
+    profile_version = (
+        4
+        if profile_v4
+        else 3
+        if with_codex and with_opencode
+        else 2
+        if with_codex or with_opencode
+        else 1
+    )
     expected_schema = f"acs-p1-loopback-probe-profile/{profile_version}"
     if (
         not isinstance(profile, dict)
@@ -2490,6 +2507,9 @@ def probe_environment(
             environment["ACS_GATE_OPENCODE_BUDGET_SHA256"] = state["runtime_profile"][
                 "opencode_budget_decision_sha256"
             ]
+        if scenario_id in {"P1-HARNESS-REPLACEMENT", "P1-NATIVE-MULTIAGENT-OFF"}:
+            environment["ACS_GATE_CODEX_LIFECYCLE"] = "/run/acs-p1/codex-lifecycle.json"
+            environment["ACS_GATE_OPENCODE_LIFECYCLE"] = "/run/acs-p1/opencode-lifecycle.json"
     return environment
 
 
@@ -3355,6 +3375,56 @@ def run_scenario(
 def audit_run(run_dir: Path, source_root: Path, contract_path: Path) -> dict[str, Any]:
     state, plan, _contract = load_run(run_dir, source_root, contract_path)
     audit_commands(state, plan, run_dir)
+    if os.name == "posix" and state.get("runtime_profile") is not None:
+        token = state["run_id"]
+        processes = []
+        proc_root = Path("/proc")
+        for entry in proc_root.iterdir():
+            if not entry.name.isdigit():
+                continue
+            try:
+                command = (entry / "cmdline").read_bytes().replace(b"\0", b" ").decode(
+                    "utf-8", errors="replace"
+                )
+            except (OSError, UnicodeError):
+                continue
+            if token in command:
+                processes.append({"pid": int(entry.name), "command_sha256": digest_bytes(command.encode())})
+        observed = subprocess.run(
+            ["systemctl", "--user", "list-units", "--all", "--no-legend", "--plain"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        if observed.returncode:
+            raise EvidenceError("candidate-scoped Systemd postflight is unavailable")
+        units = sorted(
+            line.split()[0]
+            for line in observed.stdout.splitlines()
+            if token in line and line.split()
+        )
+        private_roots = [
+            Path(f"/run/user/{os.geteuid()}/acs-p1-codex") / token,
+            Path(f"/run/user/{os.geteuid()}/acs-p1-opencode") / token,
+        ]
+        remaining_roots = [str(path) for path in private_roots if path.exists()]
+        postflight = {
+            "schema_version": "acs-p1-current-postflight/1",
+            "run_id": token,
+            "source_commit": state["source_commit"],
+            "source_tree": state["source_tree"],
+            "binding_sha256": state["binding_sha256"],
+            "observed_at": now_text(),
+            "candidate_processes": processes,
+            "candidate_units": units,
+            "candidate_private_roots": remaining_roots,
+            "status": "clean" if not processes and not units and not remaining_roots else "blocked",
+            "scope": "candidate run identity only; unrelated host services are excluded",
+        }
+        write_json(run_dir / "current-postflight.json", postflight)
+        if postflight["status"] != "clean":
+            raise EvidenceError("candidate-scoped live postflight found residual resources")
     for path in run_dir.rglob("*"):
         relative = path.relative_to(run_dir)
         if (

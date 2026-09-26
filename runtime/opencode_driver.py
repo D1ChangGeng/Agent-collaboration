@@ -424,6 +424,15 @@ class OpenCodeNativeDriver:
         return {"acs_binding_id": self.binding_id, "acs_binding": self._identity,
                 "acs_operation_id": operation_id}
 
+    def _session_payload(self, operation_id):
+        return {
+            "title": "ACS " + operation_id,
+            "agent": self.profile.agent,
+            "model": {"providerID": self.profile.provider_id, "id": self.profile.model_id},
+            "metadata": self._metadata(operation_id),
+            "permission": SESSION_RULES,
+        }
+
     def _session(self, value, *, expected_operation=None):
         if not isinstance(value, dict):
             raise DriverRejected("native session response is malformed")
@@ -569,16 +578,82 @@ class OpenCodeNativeDriver:
                     raise OutcomeUncertain("owned server did not expose a verified loopback listener")
                 time.sleep(0.05)
             self._observe_native_profile(operation)
-            _, session = self._http(operation, "POST", "/session", {
-                "title": "ACS " + operation.operation_id, "agent": self.profile.agent,
-                "model": {"providerID": self.profile.provider_id, "id": self.profile.model_id},
-                "metadata": self._metadata(operation.operation_id), "permission": SESSION_RULES,
-            })
+            _, session = self._http(
+                operation, "POST", "/session", self._session_payload(operation.operation_id)
+            )
             self._session(session, expected_operation=operation.operation_id)
             self.session_id = session["id"]
             self._start_events(operation)
             return self._receipt("runtime_acknowledged", native_ack_type="session_create_response")
         return self._run(operation, "spawn", {"profile": self.profile.binding()}, perform)
+
+    def replace_session(self, operation):
+        """Replace one owned idle Session without starting a second native process."""
+        recorded = self.journal.read(operation.operation_id)
+        previous = (
+            recorded.get("input", {}).get("payload", {}).get("previous_native_session_id")
+            if isinstance(recorded, dict)
+            else self.session_id
+        )
+
+        def perform():
+            self._owned_mutation()
+            if self.session_id != previous:
+                raise DriverRejected("native session changed before replacement")
+            before = self._inspect(operation)
+            if before["status"]["type"] != "idle" or before["messages"]:
+                raise DriverRejected("native session replacement requires one empty idle Session")
+            self._stop_events()
+            _, created = self._http(
+                operation, "POST", "/session", self._session_payload(operation.operation_id)
+            )
+            self.session_id = None
+            self._session(created, expected_operation=operation.operation_id)
+            replacement = created["id"]
+            if replacement == previous:
+                raise DriverRejected("native session replacement reused the old identity")
+            self.session_id = replacement
+            _, old_value = self._http(operation, "GET", "/session/" + previous)
+            old_metadata = old_value.get("metadata", {}) if isinstance(old_value, dict) else {}
+            if (
+                not isinstance(old_value, dict)
+                or old_value.get("id") != previous
+                or old_metadata.get("acs_binding_id") != self.binding_id
+                or old_metadata.get("acs_binding") != self._identity
+                or Path(old_value.get("directory", "")).resolve() != Path(self.profile.cwd).resolve()
+            ):
+                raise DriverRejected("retired native Session readback left the binding")
+            _, values = self._http(operation, "GET", "/session")
+            if (
+                not isinstance(values, list)
+                or len(values) > 4096
+                or [item.get("id") for item in values].count(previous) != 1
+                or [item.get("id") for item in values].count(replacement) != 1
+            ):
+                raise DriverRejected("native Session replacement list readback differs")
+            after = self._inspect(operation)
+            if after["status"]["type"] != "idle" or after["messages"]:
+                raise DriverRejected("replacement native Session is not empty and idle")
+            self._start_events(operation)
+            result = self._receipt(
+                "runtime_acknowledged",
+                native_ack_type="session_replace_readback",
+                previous_native_session_id=previous,
+                native_session_id=replacement,
+                previous_status="idle",
+                replacement_status="idle",
+                replacement_count=1,
+                observed_session_count=len(values),
+            )
+            self.journal.event(operation.operation_id, "session_replacement_readback", result)
+            return result
+
+        return self._run(
+            operation,
+            "replace_session",
+            {"previous_native_session_id": previous},
+            perform,
+        )
 
     def attach(self, operation, client, session_id):
         native_id(session_id, "ses")

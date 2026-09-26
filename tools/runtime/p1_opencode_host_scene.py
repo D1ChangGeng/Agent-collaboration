@@ -153,6 +153,7 @@ class OpenCodeHostSceneService:
         self._projection: dict[str, Any] | None = None
         self._os_proof: dict[str, Any] | None = None
         self._readback: dict[str, Any] | None = None
+        self._session_replacement: dict[str, Any] | None = None
         self._key_identity: tuple[int, int, int, int, int] | None = None
 
     def _current_admission(self) -> OpenCodeGateAdmission:
@@ -194,6 +195,10 @@ class OpenCodeHostSceneService:
             source_tree=self.admission.source_tree,
             auth_observation=self.driver.auth_observation,
         )
+        if self._session_replacement is None:
+            raise OpenCodeHostUncertain("OpenCode live Session replacement is unavailable")
+        if readback["driver"].get("session_replacement") != self._session_replacement:
+            raise OpenCodeHostUncertain("OpenCode Session replacement journal readback changed")
         self.admission.assert_final_lineage(readback)
         if self._readback is not None and readback != self._readback:
             raise OpenCodeHostUncertain("OpenCode final authority readback changed")
@@ -230,6 +235,42 @@ class OpenCodeHostSceneService:
                 raise OpenCodeHostUncertain("OpenCode native owner auth was not observed")
             if admission.key_reference_identity() != self._key_identity:
                 raise OpenCodeHostUncertain("OpenCode key reference changed before dispatch")
+            replacement_operation = AuthorizedOperation(
+                policy.run_id + "-session-replace",
+                policy.run_id + "-command-session-replace",
+                policy.run_id + "-message-session-replace",
+                self.host.dispatcher.service.authority.context.grant_ref,
+                policy.deadline,
+            )
+            replacement = self.driver.replace_session(replacement_operation)
+            if (
+                replacement.get("receipt_layer") != "runtime_acknowledged"
+                or replacement.get("replacement_count") != 1
+                or replacement.get("previous_native_session_id")
+                == replacement.get("native_session_id")
+                or replacement.get("replacement_status") != "idle"
+            ):
+                raise OpenCodeHostUncertain("OpenCode live Session replacement differs")
+            self._session_replacement = {
+                key: replacement[key]
+                for key in (
+                    "operation_id",
+                    "previous_native_session_id",
+                    "native_session_id",
+                    "previous_status",
+                    "replacement_status",
+                    "replacement_count",
+                    "observed_session_count",
+                )
+            }
+            self._session_replacement.update(
+                {
+                    "harness": "opencode",
+                    "harness_version": admission.scene["opencode_version"],
+                    "provider_id": admission.scene["provider_id"],
+                    "evidence_class": "direct_native_readback",
+                }
+            )
             try:
                 dispatched = self.host.handle(request)
             except BaseException as error:

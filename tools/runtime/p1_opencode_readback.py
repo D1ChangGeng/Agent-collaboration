@@ -112,6 +112,32 @@ def validate_opencode_lineage(value: object) -> dict[str, Any]:
         or auth["native_source"] not in {"api", "config"}
     ):
         raise OpenCodeReadbackRejected("OpenCode native owner auth readback differs")
+    replacement = driver.get("session_replacement")
+    if (
+        not isinstance(replacement, dict)
+        or set(replacement) != {
+            "operation_id", "previous_native_session_id", "native_session_id",
+            "previous_status", "replacement_status", "replacement_count",
+            "observed_session_count", "harness", "harness_version", "provider_id",
+            "evidence_class",
+        }
+        or replacement.get("operation_id") != value["run_id"] + "-session-replace"
+        or not re.fullmatch(
+            r"ses_[A-Za-z0-9_-]{1,250}",
+            str(replacement.get("previous_native_session_id", "")),
+        )
+        or replacement.get("native_session_id") != value["native_session_id"]
+        or replacement.get("previous_native_session_id") == value["native_session_id"]
+        or replacement.get("previous_status") != "idle"
+        or replacement.get("replacement_status") != "idle"
+        or replacement.get("replacement_count") != 1
+        or type(replacement.get("observed_session_count")) is not int
+        or replacement["observed_session_count"] < 2
+        or replacement.get("harness") != "opencode"
+        or replacement.get("harness_version") not in {"1.18.30", "1.18.31"}
+        or replacement.get("evidence_class") != "direct_native_readback"
+    ):
+        raise OpenCodeReadbackRejected("OpenCode live Session replacement differs")
     if (
         response.get("invocation_id") != value["invocation_id"]
         or response.get("disposition") != "applied"
@@ -242,8 +268,29 @@ def read_original_opencode_scene(
                and body.get("path", "").endswith("/prompt_async")]
     terminals = [body for kind, body in events if kind == "terminal_readback"]
     invoked = driver.journal.read(invocation_id)
+    replaced = driver.journal.read(run_id + "-session-replace")
     if invoked is None or not terminals:
         raise OpenCodeReadbackRejected("OpenCode original native terminal disappeared")
+    if (
+        not isinstance(replaced, dict)
+        or replaced.get("state") != "acknowledged"
+        or not isinstance(replaced.get("result"), dict)
+    ):
+        raise OpenCodeReadbackRejected("OpenCode Session replacement journal disappeared")
+    replacement_keys = {
+        "operation_id", "previous_native_session_id", "native_session_id",
+        "previous_status", "replacement_status", "replacement_count",
+        "observed_session_count",
+    }
+    if not replacement_keys <= set(replaced["result"]):
+        raise OpenCodeReadbackRejected("OpenCode Session replacement result is incomplete")
+    replacement = {key: replaced["result"][key] for key in replacement_keys}
+    replacement.update({
+        "harness": "opencode",
+        "harness_version": driver.profile.version,
+        "provider_id": driver.profile.provider_id,
+        "evidence_class": "direct_native_readback",
+    })
     receipt = terminals[-1]
     if (
         invoked["state"] != "acknowledged"
@@ -318,6 +365,7 @@ def read_original_opencode_scene(
             "assistant_part_types": receipt.get("assistant_part_types"),
             "delegation_part_count": receipt.get("delegation_part_count"),
             "delegation_attempt_requested": True,
+            "session_replacement": replacement,
             "terminal_sha256": hashlib.sha256(
                 json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
             ).hexdigest(),

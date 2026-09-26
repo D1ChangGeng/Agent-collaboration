@@ -308,6 +308,14 @@ class OpenCodeGateAdmission:
             or auth.get("native_route_equal") is not True
         ):
             raise OpenCodeGateRejected("OpenCode native auth consumption is unproven")
+        replacement = value["driver"].get("session_replacement")
+        if (
+            not isinstance(replacement, dict)
+            or replacement.get("harness_version") != self.scene["opencode_version"]
+            or replacement.get("provider_id") != self.scene["provider_id"]
+            or replacement.get("evidence_class") != "direct_native_readback"
+        ):
+            raise OpenCodeGateRejected("OpenCode live Session replacement is unproven")
         if self.run_id is None or self.machine_id is None or self.node_id is None:
             raise OpenCodeGateRejected("OpenCode final readback has no HMAC run binding")
         if (

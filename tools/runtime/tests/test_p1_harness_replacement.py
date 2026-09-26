@@ -60,8 +60,8 @@ def test_harness_fixture_adapter_does_not_enable_formal_gate_without_native_evid
     scenario = "P1-HARNESS-REPLACEMENT"
     assert scenario in probe.ScenarioCatalog.LINEAGE_BOUND
     available = probe.availability({}, "a" * 40)[scenario]
-    assert available["available"]
-    assert available["reason"] == "ready"
+    assert not available["available"]
+    assert "OpenCode same-run" in available["reason"]
 
 
 def test_same_invocation_cannot_claim_two_node_terminal_observations(tmp_path):
@@ -95,7 +95,18 @@ def test_harness_proof_readback_rejects_changed_bytes(tmp_path):
         "old_result_disposition": "fenced_late",
         "new_result_disposition": "current", "head_revision": 2,
         "response_received_count": 1, "accepted_revision_count": 0,
-        "no_model_calls": True,
+        "component_scope": {
+            "evidence_class": "no_model_binding_semantics", "model_calls": 0,
+            "old_session_kind": "fixture", "new_session_kind": "fixture",
+        },
+        "live_harness_replacement": {
+            "evidence_class": "same_run_live_harness_replacement",
+            "postflight_clean": True, "prompt_async_count": 1,
+            "harness_version": "1.18.31", "provider_id": "provider",
+            "source_commit": "a" * 40, "source_tree": "b" * 40,
+            "machine_id": "machine", "node_id": "node",
+        },
+        "evidence_class": "live_composite",
     }
     path = tmp_path / "P1-HARNESS-REPLACEMENT-proof.json"
     encoded = json.dumps(proof, sort_keys=True, separators=(",", ":")).encode()

@@ -75,8 +75,8 @@ def test_profile_document_points_to_catalog_and_current_inventory():
         Path(__file__).resolve().parents[3] / "docs/runtime/P1-PROBE-PROFILE.md"
     ).read_text(encoding="utf-8")
     assert "ScenarioCatalog" in document
-    assert "12 runnable" in document
-    assert "6 `NOT_RUN` gaps" in document
+    assert "13 runnable" in document
+    assert "5 `NOT_RUN` gaps" in document
     assert "Provider restart" in document and "Identity continuity" in document
     assert "acs-delivery/<operation>" in document
     assert "p1_profile_plan.py --profile" in document
@@ -153,14 +153,15 @@ def test_plan_omits_model_gaps_and_contains_no_profile_secret(profile_file):
     assert status["available_scenarios"] == [
         "P1-DOMAIN-TRANSACTION", "P1-AUTH-REVOCATION", "P1-COMMAND-DEDUP",
         "P1-INBOX-ACK-LOSS", "P1-CORE-RESTART", "P1-NODE-RESTART",
-        "P1-PROVIDER-RESTART", "P1-HARNESS-REPLACEMENT",
+        "P1-PROVIDER-RESTART",
         "P1-LEASE-FENCING", "P1-UNCERTAIN-EFFECT", "P1-STALE-BASELINE",
         "P1-PARTIAL-ARTIFACT", "P1-SURFACE-PARITY",
         "P1-IDENTITY-CONTINUITY",
     ]
-    assert len(status["not_run"]) == 4
+    assert len(status["not_run"]) == 5
     assert {
-        "P1-CODEX-LIFECYCLE", "P1-OPENCODE-LIFECYCLE", "P1-INTEGRATED-ACCEPTANCE",
+        "P1-CODEX-LIFECYCLE", "P1-OPENCODE-LIFECYCLE",
+        "P1-HARNESS-REPLACEMENT", "P1-INTEGRATED-ACCEPTANCE",
     } < set(status["not_run"])
     for scenario, commands in value["scenarios"].items():
         if scenario in status["not_run"]:
@@ -174,6 +175,23 @@ def test_plan_omits_model_gaps_and_contains_no_profile_secret(profile_file):
     encoded = json.dumps(value)
     assert "profile-test-only" not in encoded
     assert "postgresql://" not in encoded
+
+
+def test_same_run_v4_profile_removes_legacy_model_evidence_fields(profile_file):
+    path, value = profile_file
+    value.pop("codex_model_evidence")
+    value.pop("opencode_model_evidence")
+    value.update({
+        "schema_version": "acs-p1-loopback-probe-profile/4",
+        "codex_scene_mode": "same-run-host-node",
+        "opencode_scene_mode": "same-run-host-node",
+    })
+    path.write_text(json.dumps(value), encoding="utf-8")
+    path.chmod(0o600)
+    loaded, _digest, _secrets = probe._secure_profile(path)
+    assert loaded == value
+    status = probe.availability(loaded, probe._source_identity(Path(value["source_root"]))[0])
+    assert all(item["available"] for item in status.values())
 
 
 def test_historical_model_evidence_does_not_enable_same_run_lifecycle(profile_file, source):
