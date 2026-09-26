@@ -44,7 +44,7 @@ def test_exact_1_8_to_1_9_repeat_safe_and_preserves_rows():
         with psycopg.connect(isolated) as connection:
             assert connection.execute(
                 "SELECT schema_version FROM runtime_schema_metadata WHERE schema_name='acs-p1-runtime'"
-            ).fetchone() == ("1.9",)
+            ).fetchone() == ("1.10",)
             assert connection.execute(
                 "SELECT status FROM scopes WHERE scope_id='migration-sentinel'"
             ).fetchone() == ("active",)

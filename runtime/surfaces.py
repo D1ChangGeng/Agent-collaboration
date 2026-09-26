@@ -35,6 +35,7 @@ from runtime.errors import (
     NotFound,
     RevisionConflict,
 )
+from runtime.harness_sessions import BindingChange, BindingResult, BindingRetire
 from runtime.json_payload import MAX_COMMAND_BYTES, bounded_payload
 from runtime.models import (
     CommandEnvelope,
@@ -317,6 +318,11 @@ PAYLOADS = {
     "node.challenge": NodeChallengeRequest, "runtime.register": RuntimePayload, "attempt.register": AttemptPayload,
     "lease.acquire": LeaseRequest, "lease.renew": LeaseRenew, "lease.release": LeasePayload, "lease.revoke": LeasePayload,
     "work_item.read": PayloadModel,
+    "harness_session.attach": BindingChange,
+    "harness_session.replace": BindingChange,
+    "harness_session.retire": BindingRetire,
+    "harness_session.result": BindingResult,
+    "harness_session.read": PayloadModel,
     "message.bind": EndpointBindingRequest, "message.send": MessageSend, "message.read": PayloadModel,
     "delivery.scan": DeliveryScan, "delivery.dispatch": DeliveryDispatch,
     "delivery.project_native_response": NativeProjection,
@@ -405,6 +411,12 @@ class SharedService:
                                             binding_revision=payload.binding_revision)
         elif name == "message.read":
             result = authority.read_message(envelope, request.target_id)
+        elif name in {"harness_session.attach", "harness_session.replace", "harness_session.retire"}:
+            result = authority.harness_sessions.change(envelope, payload)
+        elif name == "harness_session.result":
+            result = authority.harness_sessions.admit_result(envelope, payload)
+        elif name == "harness_session.read":
+            result = authority.harness_sessions.read(envelope)
         elif name == "delivery.scan":
             result = self.delivery_operations.scan(envelope, **payload.model_dump())
         elif name == "delivery.dispatch":

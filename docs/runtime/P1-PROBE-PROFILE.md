@@ -10,7 +10,9 @@ adapters. The other 11 have no runnable command and remain `NOT_RUN`.
 Each runnable scenario commits its own command, operation, event, Outbox,
 message and receipt lineage in a dedicated PostgreSQL schema. It records
 Node and Driver observations in a private SQLite journal and emits six
-separately read-back probe results. For all scenarios except Provider restart,
+separately read-back probe results. The Gate-observed Machine ID is used by
+the Node Journal and must match the result, Node boot/journal, and PostgreSQL
+DeliveryAttempt selection on readback. For all scenarios except Provider restart,
 the distinct Temporal workflow ID is the delivery operation plus `:temporal`:
 it is an auxiliary recovery observation of the same scenario identity and
 does not claim that Temporal invoked the Delivery dispatcher. Provider restart

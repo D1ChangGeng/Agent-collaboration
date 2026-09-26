@@ -953,7 +953,7 @@ def _run_domain_transaction(
     )
     node = NodeJournal(
         ledger.root / (scenario + "-node.sqlite"),
-        machine_id="machine-" + suffix, node_id=profile["node_id"],
+        machine_id=profile["machine_id"], node_id=profile["node_id"],
         boot_incarnation=("reboot-" if resume_node_restart else "boot-") + suffix,
     )
     Path(node._path).chmod(0o600)
@@ -1109,7 +1109,8 @@ def _run_domain_transaction(
     with authority._connect() as connection:
         attempts = connection.execute(
             "SELECT ordinal,attempt_id,dispatch_id,status,selection_revision,"
-            "selection_json->>'boot_incarnation' FROM delivery_attempts "
+            "selection_json->>'boot_incarnation',selection_json->>'machine_id' "
+            "FROM delivery_attempts "
             "WHERE message_id=%s ORDER BY ordinal",
             (message_id,),
         ).fetchall()
@@ -1203,13 +1204,15 @@ def _run_domain_transaction(
         )
     lineage = {
         "tenant_id": authority.tenant_id, "grant_ref": authority.context.grant_ref,
+        "machine_id": node.machine_id, "node_id": node.node_id,
         "command_id": send.command_id,
         "message_id": message_id, "operation_id": sent.operation_id,
         "attempt_id": attempts[-1][1] if attempts else None,
         "dispatch_id": attempts[-1][2] if attempts else None,
         "attempts": [{"ordinal": item[0], "attempt_id": item[1],
                       "dispatch_id": item[2], "status": item[3],
-                      "selection_revision": item[4], "selection_boot": item[5]}
+                      "selection_revision": item[4], "selection_boot": item[5],
+                      "selection_machine": item[6]}
                      for item in attempts],
         "event_ids": [str(item[0]) for item in events],
         "receipts": [{"receipt_id": item[0], "layer": item[1]} for item in receipts],
@@ -1269,7 +1272,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
     required_lineage = {
         "tenant_id", "command_id", "message_id", "operation_id", "attempt_id",
         "dispatch_id", "attempts", "event_ids", "receipts", "driver_calls",
-        "node_journal", "grant_ref", "message_state", "inbox_count", "grant_revoked",
+        "node_journal", "grant_ref", "machine_id", "node_id", "message_state",
+        "inbox_count", "grant_revoked",
         "ack_loss_observed", "exact_replay", "conflict_rejected",
         "core_crash_proof", "node_restart_proof", "provider_restart_proof",
         "dedup_details", "operation_details", "outbox_details", "message_hashes",
@@ -1277,6 +1281,11 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
     }
     if set(lineage) < required_lineage:
         raise ProbeRejected("marker-only evidence is not an actual Runtime lineage")
+    if (lineage["machine_id"] != profile["machine_id"]
+            or lineage["node_id"] != profile["node_id"]
+            or any(item["selection_machine"] != lineage["machine_id"]
+                   for item in lineage["attempts"])):
+        raise ProbeRejected("Node/Attempt machine identity differs from Gate Machine")
     expected_auth_failure = scenario == "P1-AUTH-REVOCATION"
     if (
         lineage["message_state"] != ("blocked" if expected_auth_failure else "delivered")
@@ -1365,7 +1374,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
             ).fetchone()
             attempt_rows = connection.execute(
                 "SELECT ordinal,attempt_id,dispatch_id,status,selection_revision,"
-                "selection_json->>'boot_incarnation' FROM delivery_attempts "
+                "selection_json->>'boot_incarnation',selection_json->>'machine_id' "
+                "FROM delivery_attempts "
                 "WHERE message_id=%s ORDER BY ordinal",
                 (lineage["message_id"],),
             ).fetchall()
@@ -1401,7 +1411,8 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
         expected_receipts = [(item["receipt_id"], item["layer"]) for item in lineage["receipts"]]
         expected_attempts = [
             (item["ordinal"], item["attempt_id"], item["dispatch_id"], item["status"],
-             item["selection_revision"], item["selection_boot"])
+             item["selection_revision"], item["selection_boot"],
+             item["selection_machine"])
             for item in lineage["attempts"]
         ]
         if (
@@ -1432,6 +1443,10 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 "SELECT command_id,message_id FROM journal WHERE operation_id=?",
                 (lineage["operation_id"],),
             ).fetchone()
+            journal_node = connection.execute(
+                "SELECT machine_id,node_id FROM journal WHERE operation_id=?",
+                (lineage["operation_id"],),
+            ).fetchone()
             mailbox = connection.execute(
                 "SELECT operation_id FROM mailbox WHERE message_id=?",
                 (lineage["message_id"],),
@@ -1444,10 +1459,16 @@ def _read_layer(profile: dict[str, Any], scenario: str, kind: str,
                 "SELECT boot_incarnation,machine_id,node_id FROM node_boots "
                 "ORDER BY started_at,boot_incarnation",
             ).fetchall()
+        if not boot_rows or any(
+            (item[1], item[2]) != (lineage["machine_id"], lineage["node_id"])
+            for item in boot_rows
+        ):
+            raise ProbeRejected("SQLite Node boot differs from Gate Machine")
         if expected_auth_failure:
-            if journal is not None or mailbox is not None or node_receipts:
+            if any(item is not None for item in (journal, journal_node, mailbox)) or node_receipts:
                 raise ProbeRejected("revoked command reached the Node")
         elif (journal != (lineage["command_id"], lineage["message_id"])
+              or journal_node != (lineage["machine_id"], lineage["node_id"])
               or mailbox != (lineage["operation_id"],) or not node_receipts):
             raise ProbeRejected("SQLite Node lineage changed")
         if scenario == "P1-NODE-RESTART":
@@ -1630,7 +1651,7 @@ def _runner_result(profile: dict[str, Any], scenario: str, kind: str,
         "source_tree": os.environ.get("ACS_GATE_SOURCE_TREE", row["source_tree"]),
         "binding_sha256": os.environ.get("ACS_GATE_BINDING_SHA256", profile["binding_sha256"]),
         "profile": os.environ.get("ACS_GATE_PROFILE", profile["profile"]),
-        "machine_id": os.environ.get("ACS_GATE_MACHINE_ID", profile["machine_id"]),
+        "machine_id": profile["machine_id"],
         "node_id": os.environ.get("ACS_GATE_NODE_ID", profile["node_id"]),
         "direction": os.environ.get("ACS_GATE_DIRECTION", profile["direction"]),
         "versions": json.loads(os.environ.get("ACS_GATE_VERSIONS_JSON", json.dumps(profile["versions"]))),
@@ -1667,7 +1688,14 @@ def execute(
     if not available["available"]:
         raise ProbeUnavailable(available["reason"])
     profile["profile_digest"] = profile_digest
-    profile.setdefault("machine_id", "machine-" + _sha(platform.node().encode())[:20])
+    gate_machine = os.environ.get("ACS_GATE_MACHINE_ID")
+    profile["machine_id"] = (
+        _safe_name(gate_machine) if gate_machine is not None
+        else "machine-" + _sha(platform.node().encode())[:20]
+    )
+    gate_node = os.environ.get("ACS_GATE_NODE_ID")
+    if gate_node is not None and gate_node != profile["node_id"]:
+        raise ProbeRejected("Gate Node identity differs from reviewed profile")
     profile.setdefault("binding_sha256", _sha(_canonical({
         "profile": profile["profile"], "machine_id": profile["machine_id"],
         "node_id": profile["node_id"], "versions": profile["versions"],
