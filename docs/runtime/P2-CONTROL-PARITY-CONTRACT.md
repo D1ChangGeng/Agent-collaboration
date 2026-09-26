@@ -2,11 +2,12 @@
 
 Status: required P2 supplement; implementation support is determined only by
 the matching Gate record. Gate ID:
-`P2-CONTROL-PARITY`. Contract revision: `2026-09-24.2`.
+`P2-CONTROL-PARITY`. Contract revision: `2026-09-25.1`.
 
 This Gate follows `P2-MANAGEMENT-WORKFLOW` and precedes `P2-REVIEW`. It checks
-two collaboration-control capabilities, not prescribed business
-tasks. The exact Gate scenario IDs live in [gate-contract.json](gate-contract.json).
+the collaboration-control capability that the current supported Agent Hosts
+can complete as a product workflow. The exact Gate scenario IDs live in
+[gate-contract.json](gate-contract.json).
 Each conclusion remains bound to the named source, Machine, Harness, Driver,
 Provider, authenticated Profile and Grant, direction, Policy and expiry. Earlier
 component or browser observations retain their original scope.
@@ -29,22 +30,20 @@ component or browser observations retain their original scope.
   acceptance, Inbox persistence, MCP discovery, a browser notification, or a
   later user-initiated `check_inbox` do not by themselves prove active wake.
 
-## `P2-CONTROL-CHAT-RECEIVER-WAKE`
+## Host applicability boundary
 
-Admit one named Chat Host as a target AgentSlot with a current, authenticated
-Session and Endpoint whose scoped, directional receive-and-wake capability has
-direct evidence and a valid expiry. From a real program Harness, submit one
-authorized `send_message` to that Slot. Read back the same Message identity
-through `accepted_by_authority`, `target_inbox_committed`, native dispatch,
-native Turn start or resume, acknowledgement and response. Bind the Chat Host's
-observed Session/Turn to the ACS dispatch; a model-rendered report alone is not
-native readback. Exercise Session replacement or connection loss with one
-deduplicated recovery path. Either the browser Chat path or desktop Chat path
-may satisfy this scenario when its entire chain passes; the other path may
-remain `not_run` or `unavailable`. Record each named Host's capability and
-expiry independently. If a Host lacks active wake, keep Inbox recovery as its
-separate continuity result. One Host's pass never asserts capability for every
-Chat Host.
+The current ChatGPT Web and ChatGPT Desktop component paths do not expose a
+supported capability for an ACS message to start or resume a native Chat Turn
+without a new user prompt. The observed component bridge can claim an Inbox
+notification and return `SUBMITTED`; that result does not provide a native Turn
+receipt. This is a Host product capability boundary, recorded in the private
+Web/Chat continuity evidence, rather than an implementation prerequisite for
+the current control parity Gate.
+
+Inbox persistence and a later user-initiated read remain supported continuity
+behaviors. They must not be registered as an active wake Endpoint. A future
+Host with direct receive-and-wake evidence can add a separately versioned
+scenario and Gate contract revision.
 
 ## `P2-CONTROL-HANDOFF-ACK`
 

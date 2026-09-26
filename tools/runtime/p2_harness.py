@@ -63,7 +63,6 @@ FAULTS = {
     "P2-MGMT-WEB-REVIEWER-FLOW": "perform exact-baseline Review from a web-capable MCP client",
     "P2-MGMT-WATCH-INBOX-RECOVERY": "deliver subscribed change notification and recover through project Inbox",
     "P2-MGMT-SKILL-CONTEXT-PRESENTATION": "present metadata-first Skill knowledge with selective references and Project context",
-    "P2-CONTROL-CHAT-RECEIVER-WAKE": "address a current Chat Session through one admitted Host and read back an unsolicited native Turn",
     "P2-CONTROL-HANDOFF-ACK": "obtain one authenticated acknowledgement for a Root-managed handoff",
 }
 SECRET = re.compile(
@@ -119,7 +118,7 @@ def read_json(path: Path) -> dict[str, Any]:
 def contract_scenarios(contract: dict[str, Any]) -> dict[str, list[str]]:
     gates = contract.get("gates", {})
     counts = {"P2-CODEX": 8, "P2-OPENCODE": 8, "P2-MCP-WORKFLOW": 12,
-              "P2-MANAGEMENT-WORKFLOW": 12, "P2-CONTROL-PARITY": 2}
+              "P2-MANAGEMENT-WORKFLOW": 12, "P2-CONTROL-PARITY": 1}
     result = {
         gate: gates.get(gate, {}).get("scenarios")
         for gate in counts

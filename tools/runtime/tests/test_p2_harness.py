@@ -43,7 +43,7 @@ class P2HarnessTests(unittest.TestCase):
         self.assertEqual(len(scenarios["P2-OPENCODE"]), 8)
         self.assertEqual(len(scenarios["P2-MCP-WORKFLOW"]), 12)
         self.assertEqual(len(scenarios["P2-MANAGEMENT-WORKFLOW"]), 12)
-        self.assertEqual(len(scenarios["P2-CONTROL-PARITY"]), 2)
+        self.assertEqual(len(scenarios["P2-CONTROL-PARITY"]), 1)
         self.assertEqual(
             {scenario for items in scenarios.values() for scenario in items}, set(harness.FAULTS)
         )

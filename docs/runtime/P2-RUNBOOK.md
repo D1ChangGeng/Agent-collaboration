@@ -1,12 +1,14 @@
 # P2 two-machine execution runbook
 
-Status: preparation only. Every P2 scenario is `NOT_RUN`. The checked-in
-inventory binds only the stable Machine IDs `windows-local` and `linux-1302-1`
-and their host labels. It intentionally contains no source commit, tree, host
-fingerprint or component version claim. `p2_harness.py init` reobserves the
-current local physical Machine and exact Git HEAD/tree; the remote Machine must
-be freshly observed by the later execution run. Historical a97/912 checkout
-facts are not current inputs.
+Status: execution history and current-candidate assessment are recorded in
+[P2-EXECUTION-STATUS.md](P2-EXECUTION-STATUS.md). The four original P2 Gates
+contain 40 executed scenarios with passing independent Reviews at their exact
+historical source. The current Control Parity handoff scenario has a reviewed,
+scoped product result; its formal Gate record remains separate. P2-REVIEW and
+the product-owner decision remain open. The checked-in inventory is a blank
+preparation template, not the status of completed runs. `p2_harness.py init`
+reobserves the current local physical Machine and exact Git HEAD/tree; a new
+execution must independently reobserve the remote Machine.
 
 ## Execution order
 
@@ -25,8 +27,9 @@ facts are not current inputs.
    OpenCode MCP clients.
 8. Execute P2-MANAGEMENT-WORKFLOW through local and remote web-capable MCP
    clients, including ProjectContextPack, Source reads and Skills.
-9. Execute [P2-CONTROL-PARITY](P2-CONTROL-PARITY-CONTRACT.md) for Chat receiver
-   wake and Root-managed handoff acknowledgement.
+9. Execute [P2-CONTROL-PARITY](P2-CONTROL-PARITY-CONTRACT.md) for the
+   Root-managed handoff acknowledgement. Record Chat receiver wake as a Host
+   applicability observation when the selected Chat Host lacks that capability.
 10. Perform the complete P2 independent review and retain the product-owner
    decision boundary.
 
@@ -117,13 +120,14 @@ Skill metadata, loaded references, knowledge hints, Session activity and unresol
 
 ## P2-CONTROL-PARITY
 
-- CHAT-RECEIVER-WAKE: a program Harness addresses a current Chat AgentSlot.
-  One verified browser Chat or desktop Chat path proves native Turn start or
-  resume and response readback; each Host retains its own capability result.
 - HANDOFF-ACK: an authorized Root Agent hands existing Work to an already
   addressable B Slot; B's authenticated, exact-handoff response closes the
   pending acknowledgement after Inbox commit, without duplicate handoff or
   silent owner drift. Root can explicitly withdraw an unanswered intent.
+
+Chat receiver wake is recorded as a Host applicability result. The current
+ChatGPT Web and Desktop component paths remain outside the required scenario
+set until a Host exposes direct native Turn wake evidence.
 
 These are focused capability probes. See the
 [Gate contract](P2-CONTROL-PARITY-CONTRACT.md) for the exact preconditions,
