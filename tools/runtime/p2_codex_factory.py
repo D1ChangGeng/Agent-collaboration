@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -159,25 +160,29 @@ def detect_codex_version(executable: str | Path, *, host_platform: str | None = 
     native = _absolute(executable, "Codex executable")
     if not native.is_file():
         raise FactoryStageRejected("Codex executable is unavailable")
-    observed = subprocess.run(
-        [str(native), "--version"],
-        env=_command_environment(native, native.parent),
-        capture_output=True,
-        text=True,
-        check=True,
-        timeout=30,
-    )
-    output = observed.stdout.strip()
-    if len(output) > 128 or observed.stderr.strip():
-        raise FactoryStageRejected("Codex version output differs from the reviewed shape")
-    match = VERSION_OUTPUT.fullmatch(output)
-    if match is None or match.group(1) not in REVIEWED_FACTORY_PROFILES:
-        raise FactoryStageRejected("Codex version has no exact reviewed P2 factory profile")
-    version = match.group(1)
-    platform_name = host_platform or _platform()
-    if REVIEWED_FACTORY_PROFILES[version]["platform"] != platform_name:
-        raise FactoryStageRejected("Codex version is not reviewed for this host platform")
-    return version
+    with tempfile.TemporaryDirectory(prefix=".acs-version-probe-", dir=native.parent) as root:
+        probe_root = Path(root)
+        for name in ("home", "tmp", "codex-home"):
+            (probe_root / name).mkdir(parents=True, exist_ok=True)
+        observed = subprocess.run(
+            [str(native), "--version"],
+            env=_command_environment(native, probe_root),
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30,
+        )
+        output = observed.stdout.strip()
+        if len(output) > 128 or observed.stderr.strip():
+            raise FactoryStageRejected("Codex version output differs from the reviewed shape")
+        match = VERSION_OUTPUT.fullmatch(output)
+        if match is None or match.group(1) not in REVIEWED_FACTORY_PROFILES:
+            raise FactoryStageRejected("Codex version has no exact reviewed P2 factory profile")
+        version = match.group(1)
+        platform_name = host_platform or _platform()
+        if REVIEWED_FACTORY_PROFILES[version]["platform"] != platform_name:
+            raise FactoryStageRejected("Codex version is not reviewed for this host platform")
+        return version
 
 
 def _validate_catalog(path: Path) -> None:
