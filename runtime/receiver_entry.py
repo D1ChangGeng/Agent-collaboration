@@ -142,7 +142,7 @@ def main(argv=None):
             authorize_current=callbacks.authorize_current,
             native_invoke=callbacks.native_invoke,
             ready_check=ready_check,
+            shutdown_callback=callbacks.close,
         )
     finally:
-        if callbacks.close is not None:
-            callbacks.close()
+        pass
