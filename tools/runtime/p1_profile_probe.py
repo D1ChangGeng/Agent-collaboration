@@ -4848,7 +4848,11 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"status": "not_run", "reason": str(error)}, sort_keys=True))
         return 3
     except Exception as error:  # noqa: BLE001 - bounded command boundary
-        print(json.dumps({"status": "blocked", "error": type(error).__name__}, sort_keys=True))
+        print(json.dumps({
+            "status": "blocked",
+            "error": type(error).__name__,
+            "detail": str(error)[:300],
+        }, sort_keys=True))
         return 2
 
 
