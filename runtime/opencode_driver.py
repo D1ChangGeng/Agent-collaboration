@@ -121,7 +121,7 @@ class OpenCodeLaunchProfile:
     def binding(self):
         return {key: value for key, value in asdict(self).items() if key != "environment"}
 
-    def validate(self, *, executable=True, fresh=False):
+    def validate(self, *, executable=True, fresh=False, config_digest=True):
         if self.version not in {"1.18.27", "1.18.30", "1.18.31"}:
             raise DriverRejected("OpenCode version requires a separate reference profile")
         roots = [self.home, self.config_root, self.data_root, self.state_root,
@@ -137,8 +137,10 @@ class OpenCodeLaunchProfile:
             raise DriverRejected("executable/schema paths must be absolute")
         if executable and file_digest(self.executable) != self.executable_sha256:
             raise DriverRejected("OpenCode executable differs from the pinned profile")
-        if file_digest(self.schema_path) != self.schema_sha256 or file_digest(self.config_path) != self.config_sha256:
+        if file_digest(self.schema_path) != self.schema_sha256:
             raise DriverRejected("OpenCode schema/configuration changed")
+        if config_digest and file_digest(self.config_path) != self.config_sha256:
+            raise DriverRejected("OpenCode configuration changed before native startup")
         if not all(isinstance(value, str) and value for value in (self.agent, self.provider_id, self.model_id)):
             raise DriverRejected("trusted agent/provider/model selection is required")
         for path in Path(self.config_root).rglob("*"):
@@ -598,7 +600,7 @@ class OpenCodeNativeDriver:
     def _owned_mutation(self):
         if self.ownership != "exclusive_owned" or self.owned is None or self.session_id is None:
             raise DriverRejected("mutation requires exclusive owned native capacity")
-        self.profile.validate(executable=False)
+        self.profile.validate(executable=False, config_digest=False)
 
     def _inspect(self, operation):
         if self.client is None or self.session_id is None:
