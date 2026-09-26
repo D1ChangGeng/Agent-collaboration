@@ -83,10 +83,14 @@ def test_killed_host_owner_leaves_uncertain_intent_and_quarantines_run_unit():
         "env={'PATH':'/usr/bin:/bin','LANG':'C.UTF-8'},label=sys.argv[1]);"
         "os._exit(83)"
     )
+    inherited = os.environ.get("PYTHONPATH")
+    pythonpath = str(Path(__file__).parents[3])
+    if inherited:
+        pythonpath += os.pathsep + inherited
     environment = {
         "PATH": "/usr/bin:/bin",
         "LANG": "C.UTF-8",
-        "PYTHONPATH": str(Path(__file__).parents[3]),
+        "PYTHONPATH": pythonpath,
         "XDG_RUNTIME_DIR": f"/run/user/{os.geteuid()}",
         "DBUS_SESSION_BUS_ADDRESS": f"unix:path=/run/user/{os.geteuid()}/bus",
     }
