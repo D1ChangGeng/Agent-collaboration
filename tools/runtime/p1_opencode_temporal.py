@@ -43,18 +43,30 @@ class OpenCodeTemporalDispatcher:
 
         async def original_run():
             client = await Client.connect(self.endpoint, namespace=self.namespace)
-            async with delivery_worker(client, self.task_queue, self.dispatcher):
-                # The worker must have a poller registered before the first
-                # workflow is submitted. OpenCode starts a fresh task queue for
-                # every scene; a zero-yield race can otherwise leave the
-                # committed Domain operation queued with no Workflow/Run.
-                await asyncio.sleep(0.1)
+            worker = delivery_worker(client, self.task_queue, self.dispatcher)
+            worker_task = asyncio.create_task(worker.run())
+            try:
+                # Worker.__aenter__ only schedules Worker.run() and returns;
+                # it does not wait for the bridge validation or pollers. Wait
+                # for the actual running state before submitting the first
+                # workflow, otherwise a fresh per-scene queue can remain
+                # queued without a Workflow/Run or activity attempt.
+                ready_deadline = asyncio.get_running_loop().time() + min(10.0, remaining)
+                while not worker.is_running:
+                    if worker_task.done():
+                        await worker_task
+                    if asyncio.get_running_loop().time() >= ready_deadline:
+                        raise RuntimeError("OpenCode Temporal worker did not become ready")
+                    await asyncio.sleep(0.01)
                 handle = await submit_delivery(
                     client, self.task_queue, self.dispatcher, identity
                 )
                 description = await handle.describe()
                 result = await asyncio.wait_for(handle.result(), timeout=remaining)
                 return result, handle.id, description.run_id
+            finally:
+                await worker.shutdown()
+                await asyncio.gather(worker_task, return_exceptions=True)
 
         try:
             result, workflow_id, provider_run_id = asyncio.run(original_run())
