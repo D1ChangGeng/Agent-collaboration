@@ -256,8 +256,10 @@ class CodexReceiverCapacity:
                 raise CodexReceiverRejected("Codex Driver Attempt is unavailable")
             invocation = InvocationRequest.model_validate_json(json.dumps(row[0]), strict=True)
             command = CommandEnvelope.model_validate_json(json.dumps(row[1], default=str), strict=True)
-            self.authority._authorize(
-                command, connection.cursor(), "runtime.invoke",
+            self._authorize_domain_command(
+                command,
+                connection.cursor(),
+                "runtime.invoke",
                 invocation.envelope.packet.target_scope_id,
             )
         if (
@@ -267,6 +269,15 @@ class CodexReceiverCapacity:
         ):
             raise CodexReceiverRejected("Codex Driver operation lineage changed")
         return invocation
+
+    def _authorize_domain_command(self, command, cursor, permission, scope_id) -> None:
+        self.authority._authorize(
+            command,
+            cursor,
+            permission,
+            scope_id,
+            clock_skew_seconds=self.config.clock_skew_seconds,
+        )
 
     def _current(self, operation: AuthorizedOperation, observed: BindingIdentity) -> None:
         if observed != self.binding or operation.grant_ref != self.authority.context.grant_ref:
