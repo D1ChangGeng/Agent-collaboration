@@ -3408,7 +3408,33 @@ def audit_run(run_dir: Path, source_root: Path, contract_path: Path) -> dict[str
             Path(f"/run/user/{os.geteuid()}/acs-p1-codex") / token,
             Path(f"/run/user/{os.geteuid()}/acs-p1-opencode") / token,
         ]
-        remaining_roots = [str(path) for path in private_roots if path.exists()]
+        retained_roots = []
+        unsafe_roots = []
+        for path in private_roots:
+            if not path.exists():
+                continue
+            info = path.stat(follow_symlinks=False)
+            environment = path / "systemd-env"
+            socket_path = path / "observer" / "host.sock"
+            record = {
+                "path": str(path),
+                "owner_uid": info.st_uid,
+                "mode": stat.S_IMODE(info.st_mode),
+                "environment_files_remaining": (
+                    len(tuple(environment.iterdir())) if environment.is_dir() else 0
+                ),
+                "observer_socket_remaining": socket_path.exists(),
+            }
+            retained_roots.append(record)
+            if (
+                path.is_symlink()
+                or not stat.S_ISDIR(info.st_mode)
+                or info.st_uid != os.geteuid()
+                or stat.S_IMODE(info.st_mode) != 0o700
+                or record["environment_files_remaining"] != 0
+                or record["observer_socket_remaining"] is not False
+            ):
+                unsafe_roots.append(record)
         postflight = {
             "schema_version": "acs-p1-current-postflight/1",
             "run_id": token,
@@ -3418,9 +3444,13 @@ def audit_run(run_dir: Path, source_root: Path, contract_path: Path) -> dict[str
             "observed_at": now_text(),
             "candidate_processes": processes,
             "candidate_units": units,
-            "candidate_private_roots": remaining_roots,
-            "status": "clean" if not processes and not units and not remaining_roots else "blocked",
-            "scope": "candidate run identity only; unrelated host services are excluded",
+            "retained_evidence_roots": retained_roots,
+            "unsafe_evidence_roots": unsafe_roots,
+            "status": "clean" if not processes and not units and not unsafe_roots else "blocked",
+            "scope": (
+                "candidate run identity only; owner-private journals and artifacts are retained; "
+                "unrelated host services are excluded"
+            ),
         }
         write_json(run_dir / "current-postflight.json", postflight)
         if postflight["status"] != "clean":
