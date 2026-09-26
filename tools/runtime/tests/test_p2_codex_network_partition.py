@@ -36,6 +36,8 @@ def test_partition_stops_and_restores_only_the_relay(tmp_path):
         worker_port=worker, client_port=client, relay_pid_file=pid,
         partition_seconds=0.1, worker_reconnect_seconds=0.1,
         tunnel_script=script, token=token, relay_log=log,
+        control_challenge=tmp_path / "control-challenge",
+        control_proof=tmp_path / "control-proof", control_timeout_seconds=1,
     )
     partition = RelayPartition(args)
     invocation = SimpleNamespace(
@@ -43,6 +45,15 @@ def test_partition_stops_and_restores_only_the_relay(tmp_path):
         attempt_id="attempt", dispatch_id="dispatch",
     )
     try:
+        # The real scenario receives this proof over the retained SSH control
+        # channel. The component lifecycle test mirrors only the nonce handoff.
+        import threading
+        def control():
+            while not args.control_challenge.exists():
+                pass
+            args.control_proof.write_text(args.control_challenge.read_text())
+        threading.Thread(target=control, daemon=True).start()
+        partition.process = process
         partition(invocation)
         assert [event["phase"] for event in partition.events] == [
             "before_partition", "partitioned",
@@ -53,5 +64,7 @@ def test_partition_stops_and_restores_only_the_relay(tmp_path):
         ]
         assert partition.events[-1]["logical_message_id"] == "message"
     finally:
-        restored = int(pid.read_text())
-        os.kill(restored, 15)
+        restored = partition.process
+        if restored is not None and restored.poll() is None:
+            restored.terminate()
+            restored.wait(timeout=5)
