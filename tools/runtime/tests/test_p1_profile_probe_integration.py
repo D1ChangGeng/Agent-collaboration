@@ -276,6 +276,7 @@ def test_replacement_readback_precedes_old_owner_and_late_mutation_is_fenced(
     ("P1-NODE-RESTART", "after_node_child_result"),
     ("P1-PROVIDER-RESTART", "after_provider_crash_record"),
     ("P1-PROVIDER-RESTART", "after_provider_child_result"),
+    ("P1-IDENTITY-CONTINUITY", "after_identity_proof"),
     ("P1-LEASE-FENCING", "after_domain_dispatch"),
     ("P1-UNCERTAIN-EFFECT", "after_domain_dispatch"),
     ("P1-STALE-BASELINE", "after_domain_dispatch"),
@@ -309,7 +310,9 @@ def test_domain_crash_reuses_claim_and_cleans_schema(tmp_path, monkeypatch, scen
         assert row is not None
         lineage = json.loads(row["lineage_json"])
         assert lineage["driver_calls"] == (
-            [] if scenario in ("P1-NODE-RESTART", "P1-PROVIDER-RESTART")
+            [] if scenario in (
+                "P1-NODE-RESTART", "P1-PROVIDER-RESTART", "P1-IDENTITY-CONTINUITY",
+            )
             else [lineage["operation_id"]]
         )
         with sqlite3.connect(output / lineage["node_journal"]) as connection:

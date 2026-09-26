@@ -173,7 +173,15 @@ class DeliveryService:
             authority._authorize(command, cursor, "runtime.invoke", packet.target_scope_id)
         return binding, digest(work[3]), digest(accepted_state)
 
-    def send_message(self, command: CommandEnvelope, packet: DeliveryPacket, *, endpoint_id: str, binding_revision: int):
+    def send_message(
+        self,
+        command: CommandEnvelope,
+        packet: DeliveryPacket,
+        *,
+        endpoint_id: str,
+        binding_revision: int,
+        operation_id: str | None = None,
+    ):
         if command.command_type != "message.send" or command.target_kind != "message":
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         packet = DeliveryPacket.model_validate_json(packet.model_dump_json(), strict=True)
@@ -182,7 +190,7 @@ class DeliveryService:
         if not endpoint_id or type(binding_revision) is not int or binding_revision < 1:
             raise DeliveryRejected("invalid_endpoint_selection")
         extra = {"packet": packet.model_dump(mode="json"), "endpoint_id": endpoint_id, "binding_revision": binding_revision}
-        result = CommandResult(command_id=command.command_id, operation_id=f"op-{uuid.uuid4()}",
+        result = CommandResult(command_id=command.command_id, operation_id=operation_id or f"op-{uuid.uuid4()}",
                                target_id=command.target_id, revision=command.expected_revision, state="message_queued")
         with self.authority._connect() as connection, connection.cursor() as cursor:
             self.authority._authorize(command, cursor, "message.send", packet.target_scope_id)
@@ -257,8 +265,14 @@ class DeliveryDispatcher:
     interrupted attempt before retrying the same logical identities.
     """
 
-    def __init__(self, service: DeliveryService, *, worker_id="local-delivery-core"):
-        self.service, self.worker_id = service, worker_id
+    def __init__(
+        self,
+        service: DeliveryService,
+        *,
+        worker_id="local-delivery-core",
+        attempt_id: str | None = None,
+    ):
+        self.service, self.worker_id, self.attempt_id = service, worker_id, attempt_id
 
     def after_claim(self, identity):
         """After durable dispatch preparation, before any Node call; fault seam.
@@ -824,7 +838,7 @@ class DeliveryDispatcher:
                         else:
                             selection = self._selection(row, binding)
                             row["attempts"] += 1
-                            attempt_id = f"delivery-attempt-{uuid.uuid4()}"
+                            attempt_id = self.attempt_id or f"delivery-attempt-{uuid.uuid4()}"
                             endpoint = self.service.endpoints.get(row["endpoint_id"])
                             invocation = None
                             preparation_error = None
@@ -963,7 +977,7 @@ class DeliveryDispatcher:
                                 return {"status": "retry_wait", "message_id": identity["message_id"],
                                         "attempts": row["attempts"], "retry_after_seconds": 0,
                                         "endpoint_resolved": True}
-                        except DeliveryRejected:
+                        except DeliveryRejected:  # noqa: TRY203
                             raise
                     with self.service.authority._connect() as fail_connection, fail_connection.cursor() as fail_cursor:
                         row = self._load(fail_cursor, identity)

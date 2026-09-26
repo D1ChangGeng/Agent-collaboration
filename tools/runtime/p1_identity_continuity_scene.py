@@ -14,6 +14,8 @@ import multiprocessing
 import os
 import socket
 import sqlite3
+import stat
+import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
@@ -71,6 +73,7 @@ from tools.runtime.p1_identity_continuity_probe import (
 
 SCENARIO = "P1-IDENTITY-CONTINUITY"
 _LAYERS = ("postgresql", "sqlite", "temporal", "os")
+_CHECKPOINT_SCHEMA = "acs-p1-identity-continuity-checkpoint/1"
 
 
 class IdentityContinuityRejected(RuntimeError):
@@ -79,6 +82,9 @@ class IdentityContinuityRejected(RuntimeError):
 
 class PreparedRecoveryDispatcher(DeliveryDispatcher):
     """Temporal activity adapter for one already prepared receiver Attempt."""
+
+    def __init__(self, service, *, worker_id, attempt_id=None):
+        super().__init__(service, worker_id=worker_id, attempt_id=attempt_id)
 
     def dispatch(self, identity):
         return self.recover_prepared(identity)
@@ -114,6 +120,10 @@ class SceneResources:
     tls_key_path: Path
     cert_der_path: Path
     certificate_sha256: str
+    authority_seed_path: Path
+    old_node_seed_path: Path
+    new_node_seed_path: Path
+    checkpoint: dict[str, Any]
     mutation_command_ids: list[str]
     signed_command_ids: list[str]
     domain_command: Callable[..., Any]
@@ -122,6 +132,343 @@ class SceneResources:
     new_binding: EndpointBinding | None = None
     new_config: ReceiverRuntimeConfig | None = None
     new_receiver: multiprocessing.Process | None = None
+
+
+def _checkpoint_path(ledger) -> Path:
+    return ledger.root / f"{SCENARIO}-checkpoint.json"
+
+
+def _identity_digest(value: dict[str, Any]) -> str:
+    fields = (
+        "schema_version", "scenario_id", "run_id", "suffix", "source_commit", "source_tree",
+        "tenant_id", "authority_id", "authority_incarnation", "authority_key_id",
+        "work_item_id", "message_id", "command_id", "operation_id", "attempt_id", "dispatch_id",
+        "endpoint_id", "machine_id", "node_id", "old_boot", "new_boot", "old_runtime_id",
+        "new_runtime_id", "old_connection_ref", "new_connection_ref", "old_port", "new_port",
+        "pg_schema", "certificate_sha256", "material_refs",
+    )
+    return _hash({key: value.get(key) for key in fields})
+
+
+def _write_private_bytes(path: Path, value: bytes) -> str:
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if path.exists():
+        current = path.read_bytes()
+        if current != value:
+            raise IdentityContinuityRejected("identity checkpoint private material changed")
+        return _hash(current)
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC, 0o600)
+    try:
+        os.write(descriptor, value)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    return _hash(value)
+
+
+def _material_ref(path: Path) -> dict[str, str]:
+    try:
+        info = path.stat(follow_symlinks=False)
+        data = path.read_bytes()
+    except OSError as exc:
+        raise IdentityContinuityRejected("identity checkpoint material is unavailable") from exc
+    if (
+        not stat.S_ISREG(info.st_mode)
+        or info.st_uid != os.geteuid()
+        or stat.S_IMODE(info.st_mode) != 0o600
+        or info.st_nlink != 1
+    ):
+        raise IdentityContinuityRejected("identity checkpoint material permissions changed")
+    return {"path": str(path), "sha256": _hash(data)}
+
+
+def _write_checkpoint(path: Path, value: dict[str, Any]) -> dict[str, Any]:
+    core = dict(value)
+    core.pop("record_sha256", None)
+    if "identity_sha256" not in core:
+        core["identity_sha256"] = _identity_digest(core)
+    materialized = {**core, "record_sha256": _hash(_canonical(core))}
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    path.chmod(0o600) if path.exists() else None
+    descriptor, temporary = tempfile.mkstemp(
+        prefix=f".{path.name}.", dir=path.parent, text=False,
+    )
+    temporary_path = Path(temporary)
+    try:
+        os.fchmod(descriptor, 0o600)
+        os.write(descriptor, _canonical(materialized))
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    os.replace(temporary_path, path)
+    directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+    return materialized
+
+
+def _read_checkpoint(path: Path) -> dict[str, Any]:
+    try:
+        info = path.stat(follow_symlinks=False)
+        raw = path.read_bytes()
+        value = json.loads(raw)
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise IdentityContinuityRejected("identity continuity checkpoint is unreadable") from exc
+    if (
+        not stat.S_ISREG(info.st_mode)
+        or info.st_uid != os.geteuid()
+        or stat.S_IMODE(info.st_mode) != 0o600
+        or info.st_nlink != 1
+        or not isinstance(value, dict)
+    ):
+        raise IdentityContinuityRejected("identity continuity checkpoint permissions changed")
+    digest = value.get("record_sha256")
+    core = dict(value)
+    core.pop("record_sha256", None)
+    if digest != _hash(_canonical(core)):
+        raise IdentityContinuityRejected("identity continuity checkpoint digest changed")
+    if value.get("schema_version") != _CHECKPOINT_SCHEMA:
+        raise IdentityContinuityRejected("identity continuity checkpoint schema changed")
+    if not isinstance(value.get("identity_sha256"), str) or len(value["identity_sha256"]) != 64:
+        raise IdentityContinuityRejected("identity continuity checkpoint identity digest is missing")
+    if value["identity_sha256"] != _identity_digest(value):
+        raise IdentityContinuityRejected("identity continuity checkpoint identity digest changed")
+    return value
+
+
+def _checkpoint_update(checkpoint: dict[str, Any], *, phase: str, **changes: Any) -> dict[str, Any]:
+    updated = dict(checkpoint)
+    updated.update(changes)
+    updated["phase"] = phase
+    return _write_checkpoint(Path(checkpoint["checkpoint_path"]), updated)
+
+
+def _validate_checkpoint_identity(
+    checkpoint: dict[str, Any], *, profile: dict[str, Any], run_id: str,
+    commit: str, tree: str,
+) -> None:
+    if (
+        checkpoint.get("run_id") != run_id
+        or checkpoint.get("source_commit") != commit
+        or checkpoint.get("source_tree") != tree
+        or checkpoint.get("machine_id") != profile["machine_id"]
+        or checkpoint.get("node_id") != profile["node_id"]
+        or checkpoint.get("authority_id") != "acs-p1-authority"
+        or checkpoint.get("authority_incarnation") != "local-1"
+    ):
+        raise IdentityContinuityRejected("identity checkpoint Runtime lineage changed")
+    expected_dispatch = f"delivery-dispatch:{checkpoint.get('attempt_id')}"
+    if checkpoint.get("dispatch_id") != expected_dispatch:
+        raise IdentityContinuityRejected("identity checkpoint dispatch lineage changed")
+    for field in (
+        "work_item_id", "message_id", "command_id", "operation_id", "attempt_id",
+        "dispatch_id", "endpoint_id", "node_id", "machine_id", "old_boot", "new_boot",
+        "old_runtime_id", "new_runtime_id", "authority_key_id", "pg_schema",
+    ):
+        if not isinstance(checkpoint.get(field), str) or not checkpoint[field]:
+            raise IdentityContinuityRejected("identity checkpoint is missing immutable lineage")
+    refs = checkpoint.get("material_refs")
+    if not isinstance(refs, dict) or set(refs) != {
+        "authority_seed", "old_node_seed", "new_node_seed", "tls_cert", "tls_key", "cert_der",
+    }:
+        raise IdentityContinuityRejected("identity checkpoint receiver key/certificate lineage is incomplete")
+    for item in refs.values():
+        if (
+            not isinstance(item, dict)
+            or not isinstance(item.get("path"), str)
+            or not isinstance(item.get("sha256"), str)
+            or len(item["sha256"]) != 64
+        ):
+            raise IdentityContinuityRejected("identity checkpoint material reference is invalid")
+    if checkpoint.get("phase") == "prepared":
+        for item in refs.values():
+            if _material_ref(Path(item["path"])) != item:
+                raise IdentityContinuityRejected("identity checkpoint material digest changed")
+
+
+def _validate_proof_checkpoint_lineage(
+    checkpoint: dict[str, Any], proof: dict[str, Any], proof_bytes: bytes,
+) -> None:
+    if checkpoint.get("proof_sha256") != _hash(proof_bytes):
+        raise IdentityContinuityRejected("identity continuity proof digest differs from checkpoint")
+    for key in (
+        "source_commit", "source_tree", "work_item_id", "message_id", "command_id",
+        "operation_id", "attempt_id", "dispatch_id", "endpoint_id", "machine_id", "node_id",
+        "old_boot", "new_boot", "old_runtime_id", "new_runtime_id", "authority_key_id",
+    ):
+        if proof.get(key) != checkpoint.get(key):
+            raise IdentityContinuityRejected("identity continuity proof left the checkpoint lineage")
+    if proof.get("checkpoint_sha256") != checkpoint.get("identity_sha256"):
+        raise IdentityContinuityRejected("identity continuity proof checkpoint binding changed")
+
+
+def _live_readbacks(
+    profile: dict[str, Any], checkpoint: dict[str, Any], proof: dict[str, Any],
+    *, pg_schema: str,
+) -> dict[str, dict[str, Any]]:
+    identity = {
+        "tenant_id": proof["tenant_id"],
+        "message_id": proof["message_id"],
+        "operation_id": proof["operation_id"],
+    }
+    layers = {
+        "postgresql": _pg_readback(profile, pg_schema, proof),
+        "sqlite": _sqlite_readback(proof),
+        "temporal": _temporal_readback(
+            profile, proof["workflow_id"], proof["run_id"], identity, proof["queue"],
+        ),
+        "os": _os_readback(proof),
+    }
+    if layers != proof.get("gate_qualification", {}).get("layers"):
+        raise IdentityContinuityRejected("identity continuity live readback changed")
+    if proof.get("checkpoint_sha256") != checkpoint.get("identity_sha256"):
+        raise IdentityContinuityRejected("identity continuity live readback checkpoint changed")
+    return layers
+
+
+def finalize_checkpoint(
+    checkpoint: dict[str, Any], *, lineage: dict[str, Any], row: dict[str, Any],
+    raw_sha256: str,
+) -> dict[str, Any]:
+    """Seal the post-proof/pre-ledger state for crash-safe completion."""
+    return _checkpoint_update(
+        checkpoint,
+        phase="ledger_pending",
+        lineage_json=json.dumps(lineage, sort_keys=True),
+        row_json=json.dumps(row, sort_keys=True),
+        raw_sha256=raw_sha256,
+    )
+
+
+def resume_ledger_pending(profile: dict[str, Any], ledger, checkpoint: dict[str, Any]) -> dict[str, Any]:
+    """Complete a proof-written run without provisioning a new identity."""
+    if checkpoint.get("phase") != "ledger_pending":
+        raise IdentityContinuityRejected(
+            "identity continuity checkpoint is proof-written but not ledger-finalized",
+        )
+    proof_path = ledger.root / f"{SCENARIO}-proof.json"
+    raw_path = ledger.root / f"{SCENARIO}-runtime.json"
+    try:
+        proof_bytes = proof_path.read_bytes()
+        proof = json.loads(proof_bytes)
+        row = json.loads(checkpoint["row_json"])
+        lineage = json.loads(checkpoint["lineage_json"])
+    except (KeyError, OSError, UnicodeError, ValueError, TypeError) as exc:
+        raise IdentityContinuityRejected("identity continuity ledger checkpoint is incomplete") from exc
+    _validate_proof_checkpoint_lineage(checkpoint, proof, proof_bytes)
+    require_gate_qualification(proof.get("gate_qualification"))
+    _live_readbacks(profile, checkpoint, proof, pg_schema=checkpoint["pg_schema"])
+    if (
+        row.get("scenario_id") != SCENARIO
+        or row.get("status") != "passed"
+        or row.get("run_id") != checkpoint.get("run_id")
+        or row.get("operation_id") != checkpoint.get("operation_id")
+        or row.get("message_id") != checkpoint.get("message_id")
+        or json.loads(row.get("lineage_json", "{}")) != lineage
+        or not raw_path.is_file()
+        or _hash(raw_path.read_bytes()) != checkpoint.get("raw_sha256")
+        or lineage.get("identity_continuity_proof") != proof
+    ):
+        raise IdentityContinuityRejected("identity continuity ledger checkpoint changed")
+    ledger.put(row)
+    _checkpoint_update(checkpoint, phase="completed")
+    return row
+
+
+def prepare_checkpoint(
+    profile: dict[str, Any], ledger, *, run_id: str, suffix: str, commit: str, tree: str,
+    work_id: str, message_id: str, endpoint_id: str, machine_id: str, node_id: str,
+    authority: DomainAuthority,
+) -> dict[str, Any]:
+    """Persist immutable scene identity before the first Domain mutation."""
+    path = _checkpoint_path(ledger)
+    if path.exists():
+        checkpoint = _read_checkpoint(path)
+        _validate_checkpoint_identity(checkpoint, profile=profile, run_id=run_id, commit=commit, tree=tree)
+        if checkpoint.get("checkpoint_path") != str(path):
+            raise IdentityContinuityRejected("identity checkpoint path changed")
+        return checkpoint
+    command_prefix = os.environ.get("ACS_GATE_COMMAND_PREFIX", "p1")
+    if not __import__("re").fullmatch(r"[a-z0-9-]{1,32}", command_prefix):
+        raise IdentityContinuityRejected("identity checkpoint command prefix is invalid")
+    receiver_root = ledger.root / f"{SCENARIO}-receiver"
+    receiver_root.mkdir(mode=0o700, exist_ok=True)
+    authority_seed_path = receiver_root / "authority-transport.seed"
+    old_node_seed_path = receiver_root / "old-node-signing.seed"
+    new_node_seed_path = receiver_root / "new-node-signing.seed"
+    material_paths = (
+        authority_seed_path, old_node_seed_path, new_node_seed_path,
+        receiver_root / "receiver-cert.pem", receiver_root / "receiver-tls-key.pem",
+        receiver_root / "receiver-peer-certificate.der",
+    )
+    if any(path.exists() for path in material_paths):
+        raise IdentityContinuityRejected(
+            "identity continuity private material exists without its checkpoint",
+        )
+    cert_path, tls_key_path, cert_der_path, certificate_sha256 = _certificate(receiver_root)
+    authority_key = SigningKey.generate()
+    old_node_key = SigningKey.generate()
+    new_node_key = SigningKey.generate()
+    _write_private_bytes(authority_seed_path, authority_key.encode().hex().encode("ascii"))
+    _write_private_bytes(old_node_seed_path, old_node_key.encode().hex().encode("ascii"))
+    _write_private_bytes(new_node_seed_path, new_node_key.encode().hex().encode("ascii"))
+    old_port, new_port = _free_port(), _free_port()
+    checkpoint = {
+        "schema_version": _CHECKPOINT_SCHEMA,
+        "checkpoint_path": str(path),
+        "phase": "prepared",
+        "scenario_id": SCENARIO,
+        "run_id": run_id,
+        "suffix": suffix,
+        "source_commit": commit,
+        "source_tree": tree,
+        "tenant_id": authority.context.tenant_id,
+        "authority_id": authority.context.authority_id,
+        "authority_incarnation": authority.context.authority_incarnation,
+        "authority_key_id": "identity-authority-key-" + suffix,
+        "work_item_id": work_id,
+        "message_id": message_id,
+        "command_id": f"{command_prefix}:{suffix}:message.send",
+        "operation_id": "op-identity-" + suffix,
+        "attempt_id": "delivery-attempt-identity-" + suffix,
+        "dispatch_id": "delivery-dispatch:delivery-attempt-identity-" + suffix,
+        "endpoint_id": endpoint_id,
+        "machine_id": machine_id,
+        "node_id": node_id,
+        "old_boot": "identity-boot-1-" + suffix,
+        "new_boot": "identity-boot-2-" + suffix,
+        "old_runtime_id": "identity-runtime-1-" + suffix,
+        "new_runtime_id": "identity-runtime-2-" + suffix,
+        "old_connection_ref": "identity-loopback-1-" + suffix,
+        "new_connection_ref": "identity-loopback-2-" + suffix,
+        "old_port": old_port,
+        "new_port": new_port,
+        "pg_schema": "p1_probe_" + suffix,
+        "certificate_sha256": certificate_sha256,
+        "material_refs": {
+            "authority_seed": _material_ref(authority_seed_path),
+            "old_node_seed": _material_ref(old_node_seed_path),
+            "new_node_seed": _material_ref(new_node_seed_path),
+            "tls_cert": _material_ref(cert_path),
+            "tls_key": _material_ref(tls_key_path),
+            "cert_der": _material_ref(cert_der_path),
+        },
+    }
+    checkpoint = _write_checkpoint(path, checkpoint)
+    _validate_checkpoint_identity(checkpoint, profile=profile, run_id=run_id, commit=commit, tree=tree)
+    return checkpoint
+
+
+def _load_seed(path: Path, reference: dict[str, str]) -> SigningKey:
+    ref = _material_ref(path)
+    if ref != reference:
+        raise IdentityContinuityRejected("identity checkpoint signing key reference changed")
+    try:
+        return SigningKey(bytes.fromhex(path.read_text(encoding="ascii")))
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise IdentityContinuityRejected("identity checkpoint signing key is invalid") from exc
 
 
 def _canonical(value: Any) -> bytes:
@@ -378,6 +725,7 @@ def provision(
     authority: DomainAuthority,
     ledger,
     *,
+    checkpoint: dict[str, Any],
     endpoint_id: str,
     machine_id: str,
     node_id: str,
@@ -389,13 +737,17 @@ def provision(
     receiver_root = ledger.root / f"{SCENARIO}-receiver"
     receiver_root.mkdir(mode=0o700, exist_ok=True)
     receiver_ledger = receiver_root / "receiver.sqlite"
-    node_seed = receiver_root / "node-signing.seed"
-    cert_path, tls_key_path, cert_der_path, certificate_sha256 = _certificate(receiver_root)
-    authority_key = SigningKey.generate()
-    old_node_key = SigningKey.generate()
-    new_node_key = SigningKey.generate()
-    node_seed.write_text(old_node_key.encode().hex(), encoding="ascii")
-    node_seed.chmod(0o600)
+    refs = checkpoint["material_refs"]
+    authority_seed_path = Path(refs["authority_seed"]["path"])
+    old_node_seed_path = Path(refs["old_node_seed"]["path"])
+    new_node_seed_path = Path(refs["new_node_seed"]["path"])
+    cert_path = Path(refs["tls_cert"]["path"])
+    tls_key_path = Path(refs["tls_key"]["path"])
+    cert_der_path = Path(refs["cert_der"]["path"])
+    authority_key = _load_seed(authority_seed_path, refs["authority_seed"])
+    old_node_key = _load_seed(old_node_seed_path, refs["old_node_seed"])
+    new_node_key = _load_seed(new_node_seed_path, refs["new_node_seed"])
+    certificate_sha256 = checkpoint["certificate_sha256"]
     expiry = datetime.now(UTC) + timedelta(minutes=20)
     observer = DomainAuthority(authority._dsn, context=replace(
         authority.context,
@@ -408,12 +760,12 @@ def provision(
         "work_item.read",
     ))
     command_ids: list[str] = []
-    old_boot = "identity-boot-1-" + suffix
-    new_boot = "identity-boot-2-" + suffix
-    old_runtime_id = "identity-runtime-1-" + suffix
-    new_runtime_id = "identity-runtime-2-" + suffix
-    old_connection_ref = "identity-loopback-1-" + suffix
-    authority_key_id = "identity-authority-key-" + suffix
+    old_boot = checkpoint["old_boot"]
+    new_boot = checkpoint["new_boot"]
+    old_runtime_id = checkpoint["old_runtime_id"]
+    new_runtime_id = checkpoint["new_runtime_id"]
+    old_connection_ref = checkpoint["old_connection_ref"]
+    authority_key_id = checkpoint["authority_key_id"]
 
     enroll = domain_command(
         authority, "node.enroll", "node", node_id,
@@ -473,7 +825,7 @@ def provision(
     )
     command_ids.append(key_command.command_id)
 
-    old_port = _free_port()
+    old_port = checkpoint["old_port"]
     connection_command = domain_command(
         authority, "receiver.connection.register", "connection", old_connection_ref,
         suffix + ":identity-connection-1", issued_at,
@@ -524,7 +876,11 @@ def provision(
         old_config=None,  # type: ignore[arg-type]
         old_receiver=None,
         receiver_ledger=receiver_ledger,
-        node_seed=node_seed,
+        node_seed=old_node_seed_path,
+        authority_seed_path=authority_seed_path,
+        old_node_seed_path=old_node_seed_path,
+        new_node_seed_path=new_node_seed_path,
+        checkpoint=checkpoint,
         cert_path=cert_path,
         tls_key_path=tls_key_path,
         cert_der_path=cert_der_path,
@@ -547,7 +903,7 @@ def provision(
         authority_public_key_fingerprint=key_fingerprint(public_key(authority_key)),
         tls_cert_path=str(cert_path),
         tls_key_path=str(tls_key_path),
-        node_signing_key_path=str(node_seed),
+        node_signing_key_path=str(old_node_seed_path),
         ledger_path=str(receiver_ledger),
         expected_boot_incarnation=old_boot,
         journal_generation=1,
@@ -563,10 +919,14 @@ def provision(
     return resources
 
 
-def _core_crash_child(service: DeliveryService, identity: dict[str, str]) -> None:
+def _core_crash_child(
+    service: DeliveryService, identity: dict[str, str], attempt_id: str,
+) -> None:
     endpoint = next(iter(service.endpoints.values()))
     endpoint.after_prepare = lambda _invocation, _receipt: os._exit(83)
-    DeliveryDispatcher(service, worker_id="identity-old-core").dispatch(identity)
+    DeliveryDispatcher(
+        service, worker_id="identity-old-core", attempt_id=attempt_id,
+    ).dispatch(identity)
     os._exit(82)
 
 
@@ -579,11 +939,16 @@ def _provider_worker_child(
     run_id: str,
     mode: str,
     result_path: str,
+    attempt_id: str,
 ) -> None:
     dispatcher = (
-        CrashingRecoveryDispatcher(service, worker_id="identity-provider-crash")
+        CrashingRecoveryDispatcher(
+            service, worker_id="identity-provider-crash", attempt_id=attempt_id,
+        )
         if mode == "crash"
-        else PreparedRecoveryDispatcher(service, worker_id="identity-replacement-core")
+        else PreparedRecoveryDispatcher(
+            service, worker_id="identity-replacement-core", attempt_id=attempt_id,
+        )
     )
 
     async def exercise() -> None:
@@ -627,7 +992,7 @@ def _provider_worker_child(
 
 def _submit_temporal_child(
     profile: dict[str, Any], service: DeliveryService,
-    identity: dict[str, str], queue: str, result_path: str,
+    identity: dict[str, str], queue: str, result_path: str, attempt_id: str,
 ) -> None:
     async def submit() -> tuple[str, str]:
         adapter = TemporalAdapter(
@@ -638,7 +1003,7 @@ def _submit_temporal_child(
             handle = await submit_delivery(
                 adapter.client,
                 queue,
-                PreparedRecoveryDispatcher(service, worker_id="identity-submit"),
+                PreparedRecoveryDispatcher(service, worker_id="identity-submit", attempt_id=attempt_id),
                 identity,
             )
             description = await handle.describe()
@@ -806,7 +1171,7 @@ def _rotate_receiver(
     resources.signed_command_ids.append(runtime_command.command_id)
 
     new_connection_ref = "identity-loopback-2-" + resources.suffix
-    new_port = _free_port()
+    new_port = resources.checkpoint["new_port"]
     connection_command = resources.domain_command(
         authority, "receiver.connection.register", "connection", new_connection_ref,
         resources.suffix + ":identity-connection-2", resources.issued_at,
@@ -844,8 +1209,10 @@ def _rotate_receiver(
         resources, binding, resources.new_node_key,
         suffix=resources.suffix + ":identity-endpoint-2",
     )
-    resources.node_seed.write_text(resources.new_node_key.encode().hex(), encoding="ascii")
-    resources.node_seed.chmod(0o600)
+    _write_private_bytes(
+        resources.new_node_seed_path,
+        resources.new_node_key.encode().hex().encode("ascii"),
+    )
     config = ReceiverRuntimeConfig(
         binding=binding,
         authority_key_id=resources.authority_key_id,
@@ -854,7 +1221,7 @@ def _rotate_receiver(
         authority_public_key_fingerprint=key_fingerprint(public_key(resources.authority_key)),
         tls_cert_path=str(resources.cert_path),
         tls_key_path=str(resources.tls_key_path),
-        node_signing_key_path=str(resources.node_seed),
+        node_signing_key_path=str(resources.new_node_seed_path),
         ledger_path=str(resources.receiver_ledger),
         expected_boot_incarnation=resources.new_boot,
         journal_generation=2,
@@ -1262,8 +1629,31 @@ def _run_scene(
     """Run all required faults before ordinary DeliveryDispatcher dispatch."""
     proof_path = ledger.root / f"{SCENARIO}-proof.json"
     if proof_path.exists():
-        proof = json.loads(proof_path.read_text(encoding="utf-8"))
+        checkpoint = _read_checkpoint(_checkpoint_path(ledger))
+        proof_bytes = proof_path.read_bytes()
+        try:
+            proof = json.loads(proof_bytes)
+        except (UnicodeError, ValueError) as exc:
+            raise IdentityContinuityRejected("identity continuity proof is unreadable") from exc
+        _validate_proof_checkpoint_lineage(checkpoint, proof, proof_bytes)
         require_gate_qualification(proof.get("gate_qualification"))
+        identity = {
+            "tenant_id": proof["tenant_id"],
+            "message_id": proof["message_id"],
+            "operation_id": proof["operation_id"],
+        }
+        layers = {
+            "postgresql": _pg_readback(profile, pg_schema, proof),
+            "sqlite": _sqlite_readback(proof),
+            "temporal": _temporal_readback(
+                profile, proof["workflow_id"], proof["run_id"], identity, proof["queue"],
+            ),
+            "os": _os_readback(proof),
+        }
+        if layers != proof["gate_qualification"]["layers"]:
+            raise IdentityContinuityRejected("identity continuity live readback changed")
+        if checkpoint.get("phase") != "proof_written":
+            raise IdentityContinuityRejected("identity continuity proof checkpoint state is incomplete")
         return {"status": "delivered"}, proof, proof["workflow_id"], proof["run_id"]
     identity = {
         "tenant_id": resources.authority.tenant_id,
@@ -1274,7 +1664,10 @@ def _run_scene(
     if resources.old_receiver is not None:
         raise IdentityContinuityRejected("old receiver process was started more than once")
     resources.old_receiver = _start_receiver(resources.old_config, resources.authority)
-    core = context.Process(target=_core_crash_child, args=(resources.service, identity))
+    core = context.Process(
+        target=_core_crash_child,
+        args=(resources.service, identity, resources.checkpoint["attempt_id"]),
+    )
     core.start()
     core.join(35)
     if core.is_alive():
@@ -1307,7 +1700,10 @@ def _run_scene(
     submission_path = ledger.root / f"{SCENARIO}-provider-submission.json"
     submitter = context.Process(
         target=_submit_temporal_child,
-        args=(profile, resources.service, identity, queue, str(submission_path)),
+        args=(
+            profile, resources.service, identity, queue, str(submission_path),
+            resources.checkpoint["attempt_id"],
+        ),
     )
     submitter.start()
     submitter.join(30)
@@ -1328,7 +1724,7 @@ def _run_scene(
     crash_worker = context.Process(
         target=_provider_worker_child,
         args=(profile, resources.service, identity, queue, workflow_id, run_id,
-              "crash", str(result_path)),
+              "crash", str(result_path), resources.checkpoint["attempt_id"]),
     )
     crash_worker.start()
     crash_worker.join(50)
@@ -1350,7 +1746,7 @@ def _run_scene(
     replacement_worker = context.Process(
         target=_provider_worker_child,
         args=(profile, resources.service, identity, queue, workflow_id, run_id,
-              "recover", str(result_path)),
+              "recover", str(result_path), resources.checkpoint["attempt_id"]),
     )
     replacement_worker.start()
     replacement_worker.join(115)
@@ -1511,14 +1907,22 @@ def _run_scene(
         "receiver_ledger_path": str(resources.receiver_ledger),
         "removed_private_paths": [
             str(resources.node_seed), str(resources.cert_path), str(resources.tls_key_path),
+            str(resources.authority_seed_path), str(resources.old_node_seed_path),
+            str(resources.new_node_seed_path),
         ],
         "mutation_command_ids": resources.mutation_command_ids,
         "signed_command_ids": resources.signed_command_ids,
         "component_audit": audit,
         "temporal_submission_readback": temporal,
+        "checkpoint_sha256": resources.checkpoint["identity_sha256"],
     }
     if not ack_loss_observed:
         raise IdentityContinuityRejected("replacement receiver ACK loss was not observed")
+    for path in (resources.authority_seed_path, resources.new_node_seed_path):
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
     layers = {
         "postgresql": _pg_readback(profile, pg_schema, proof),
         "sqlite": _sqlite_readback(proof),
@@ -1536,7 +1940,12 @@ def _run_scene(
             crash_worker.exitcode == 84 and crash_worker.pid != replacement_worker.pid
         ),
     })
-    private_json(proof_path, proof)
+    proof_bytes = private_json(proof_path, proof)
+    resources.checkpoint = _checkpoint_update(
+        resources.checkpoint,
+        phase="proof_written",
+        proof_sha256=_hash(proof_bytes),
+    )
     return {"status": "delivered"}, proof, workflow_id, run_id
 
 
@@ -1546,7 +1955,11 @@ def cleanup_owned(resources: SceneResources | None) -> None:
         return
     _stop_owned(resources.old_receiver, "old receiver")
     _stop_owned(resources.new_receiver, "replacement receiver")
-    for path in (resources.node_seed, resources.cert_path, resources.tls_key_path):
+    for path in (
+        resources.node_seed, resources.cert_path, resources.tls_key_path,
+        resources.authority_seed_path, resources.old_node_seed_path,
+        resources.new_node_seed_path,
+    ):
         try:
             path.unlink()
         except FileNotFoundError:
@@ -1581,6 +1994,7 @@ def read_layer(profile, kind, ledger, row, lineage):
     ):
         raise IdentityContinuityRejected("identity continuity proof left the Runtime lineage")
     qualification = require_gate_qualification(proof.get("gate_qualification"))
+    _live_readbacks(profile, _read_checkpoint(_checkpoint_path(ledger)), proof, pg_schema=row["pg_schema"])
     if kind in {"command_output", "driver"}:
         raw = ledger.root / row["raw_path"]
         try:
