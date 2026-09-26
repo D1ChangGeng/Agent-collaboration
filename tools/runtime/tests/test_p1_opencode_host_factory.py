@@ -133,7 +133,9 @@ def test_actual_pg_native_capacity_prepare_and_clean_without_dispatch(tmp_path):
             "permission": {"*": "deny", "task": "deny"},
         }},
         "provider": {"fixture-provider": {
+            "npm": "@ai-sdk/openai",
             "options": {"baseURL": "https://provider.example.invalid/v1"},
+            "models": {"fixture-model": {"name": "Fixture"}},
         }},
         "plugin": [], "mcp": {},
     }), encoding="utf-8")

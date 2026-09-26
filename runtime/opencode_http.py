@@ -76,7 +76,7 @@ def listener_owner_pids(port):
 
 class LoopbackHttp:
     PATHS = re.compile(
-        r"^/(?:global/health|doc|config|agent|event|experimental/tool/ids|session"
+        r"^/(?:global/health|doc|config|agent|provider|event|experimental/tool/ids|session"
         r"(?:/status|/ses_[A-Za-z0-9_-]+(?:/abort|/prompt_async|/message(?:/msg_[A-Za-z0-9_-]+)?)?)?)$"
     )
 
@@ -108,6 +108,8 @@ class LoopbackHttp:
     ):
         if method not in ("GET", "POST") or not self.PATHS.fullmatch(path):
             raise HttpRejected("HTTP method/path is outside the native Driver allowlist")
+        if path == "/provider" and method != "GET":
+            raise HttpRejected("provider auth inspection is read-only")
         if method == "GET" and payload is not None:
             raise HttpRejected("GET request cannot carry a mutation body")
         if not self.verify_owner():
