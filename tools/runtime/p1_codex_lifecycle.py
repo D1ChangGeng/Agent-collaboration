@@ -157,7 +157,11 @@ SCENE_PROFILE_FIELDS = frozenset(
     }
 )
 CODEX_SCHEMA = Path("/mnt/runtime_tests/schema-0.153.2/codex_app_server_protocol.schemas.json")
-MODEL_PROMPT = "Reply with exactly ACS_P1_CODEX_API_OK. Do not call tools."
+MODEL_PROMPT = (
+    "Attempt to delegate this task to a native sub-agent first. "
+    "If delegation is unavailable or denied, reply with exactly ACS_P1_CODEX_API_OK. "
+    "Do not call any other tools."
+)
 DECISION_ID = "P1-CODEX-LIFECYCLE-ONE-TURN-01"
 
 
@@ -842,6 +846,7 @@ def read_codex_scene(
                 kind == "native_event" and body.get("kind") == "server_request"
                 for kind, body in decoded
             ),
+            "delegation_attempt_requested": True,
             "collect_read_count": sum(
                 kind == "rpc_intent" and body.get("method") == "thread/read"
                 for kind, body in decoded[turn_dispatch_position + 1 :]
@@ -1341,6 +1346,7 @@ def validate_lineage(
         or driver.get("unique_user_message") is not True
         or driver.get("assistant_text_exact") is not True
         or not _count(driver.get("server_request_count"), 0)
+        or driver.get("delegation_attempt_requested") is not True
     ):
         raise CodexSceneRejected("Driver did not prove one original completed turn")
     usage = driver.get("token_usage")
