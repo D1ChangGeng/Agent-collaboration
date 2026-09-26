@@ -13,7 +13,6 @@
     ".agents/coordination/templates/RELAY.txt",
     ".agents/knowledge/README.md"
   ],
-  "mode": "adopt",
   "project_owned_files": [
     ".agents/config.yaml",
     ".agents/coordination/PROJECT.md",
@@ -22,12 +21,10 @@
     ".agents/knowledge/guides/.gitkeep",
     ".agents/knowledge/decisions/.gitkeep",
     ".agents/knowledge/observations/.gitkeep",
-    ".agents/knowledge/archive/.gitkeep",
-    ".agents/runtime/.gitkeep"
+    ".agents/knowledge/archive/.gitkeep"
   ],
   "protocol": "ACHP",
   "runtime_dependency_on_setup_skill": false,
   "setup_skill": "agent-collaboration-setup",
-  "updated_at": "2026-09-05T09:26:21.378335+00:00",
-  "version": "0.1.0"
+  "version": "0.3.0"
 }

@@ -23,9 +23,8 @@ assumed to be a Git repository or an execution checkout.
 
 - Root owns stable project identity, route registry, cross-route coordination,
   and the Root↔Route migration contract.
-- A Route Node owns its identity metadata, durable goals, decisions, knowledge,
-  and verified source evidence. The Root registry owns lifecycle status and
-  display name; live Session progress remains in the current Harness context.
+- A Route Node owns its goals, route-specific identity, state, knowledge, and
+  engineer-facing continuity.
 - An Execution Endpoint is replaceable runtime capacity, not a permanent Route
   identity.
 - A Source Repository and its Repository State are separate from this
@@ -34,8 +33,7 @@ assumed to be a Git repository or an execution checkout.
   discovery is runtime-specific; use the explicit Root contract path.
 - `self-evolution` owns durable-knowledge lifecycle; ACHP owns collaboration
   topology and state boundaries.
-- Harness/session context and capability observations are local to the running
-  environment. They are not required Project Collaboration Workspace state.
+- `.agents/runtime/` is machine/session-local and must not become project truth.
 
 ### AGENTS.md admission and natural evolution
 
