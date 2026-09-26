@@ -323,6 +323,41 @@ class ReceiverTransportAuthority:
             row = cursor.fetchone()
             return _model(SignedRequest, row[0]) if row else None
 
+    def prepared_recovery_evidence(
+        self, operation_id: str, attempt_id: str, dispatch_id: str,
+    ) -> tuple[SignedRequest, SignedReceipt] | None:
+        """Read one unmarked prepare request and its signed receipt."""
+        with self.authority._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT signed_request_json FROM delivery_transport_admissions "
+                "WHERE tenant_id=%s AND operation_id=%s AND attempt_id=%s "
+                "AND dispatch_id=%s AND purpose='delivery.prepare' "
+                "ORDER BY recorded_at ASC LIMIT 1",
+                (self.authority.tenant_id, operation_id, attempt_id, dispatch_id),
+            )
+            request_row = cursor.fetchone()
+            if request_row is None:
+                return None
+            request = _model(SignedRequest, request_row[0])
+            cursor.execute(
+                "SELECT signed_receipt_json,state FROM delivery_receiver_receipts "
+                "WHERE tenant_id=%s AND request_id=%s ORDER BY recorded_at DESC LIMIT 1",
+                (self.authority.tenant_id, request.admission.request_id),
+            )
+            receipt_row = cursor.fetchone()
+            if receipt_row is None or receipt_row[1] != "prepared":
+                return None
+            receipt = _model(SignedReceipt, receipt_row[0])
+            if (
+                receipt.receipt.request_id != request.admission.request_id
+                or receipt.receipt.operation_id != operation_id
+                or receipt.receipt.attempt_id != attempt_id
+                or receipt.receipt.dispatch_id != dispatch_id
+                or receipt.receipt.state != "prepared"
+            ):
+                return None
+            return request, receipt
+
     def dispatch_marker_current(self, invocation) -> bool:
         with self.authority._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
