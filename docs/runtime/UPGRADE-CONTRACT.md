@@ -14,9 +14,10 @@ Original RFC files remain unchanged. This document records the adopted deltas
 needed to apply that input to the current implementation.
 
 The technical objective is P2 Cross-Machine Gate, in the order P1 local,
-Codex-to-Codex across machines and sessions, then Codex-to-OpenCode. P2 Gate
-Review requires the product owner's confirmation. P3 Hosted and P4 Ecosystem
-remain separate future product decisions and evidence scopes.
+Codex-to-Codex across machines and sessions, Codex-to-OpenCode, then the public
+MCP collaboration and continuation workflow. P2 Gate Review requires the
+product owner's confirmation. P3 Hosted and P4 Ecosystem remain separate future
+product decisions and evidence scopes.
 
 ## External Agent boundary
 
@@ -104,6 +105,17 @@ MCP, CLI and versioned HTTP invoke one Domain service and schema. Validate actua
 entry points, including unauthorized and duplicate commands. A2A is an optional
 Gateway and ACP a Driver boundary, not alternative Domain authorities.
 
+The public P2 MCP surface is defined by
+[`P2-MCP-WORKFLOW-CONTRACT.md`](P2-MCP-WORKFLOW-CONTRACT.md). It exposes
+collaboration plan application, Harness discovery, send, bounded await, generic
+read, Inbox recovery and scoped cancellation. `send` commits response tracking
+and completion notification in the same authoritative operation. Asynchronous
+response handling is the default; synchronous response handling observes the
+same stable response handle for a bounded interval. Completion notification is
+addressed to the initiating AgentSlot and follows its current Session binding.
+Session activity controls queue-versus-invoke admission, with
+`queue_until_idle` as the default delivery policy.
+
 Directed CommunicationBinding resolves an authorized DeliveryPlan: addressing,
 message, activation and receipt providers plus policy constraints. Candidate
 selection uses observed capabilities and a bounded recovery budget. Human Bridge
@@ -172,6 +184,12 @@ invariant verification and representative E2E evidence in the same named Profile
 Tests with fakes remain unit/fixture evidence. Two processes on one host do not
 prove dual-machine support. Bootstrap SSH or native Codex messaging does not
 prove Collaboration Runtime delivery.
+
+P2 completion also requires the `P2-MCP-WORKFLOW` Gate. Representative evidence
+must include real Codex and OpenCode clients, default asynchronous and bounded
+synchronous send, Session-activity-aware delivery, completion notification,
+Session replacement, generic read and Inbox recovery, cancellation, aggregate
+waiting and high-level command workflows.
 
 ## External source reference
 

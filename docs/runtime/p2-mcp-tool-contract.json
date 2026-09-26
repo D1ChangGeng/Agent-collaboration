@@ -1,0 +1,124 @@
+{
+  "schema_version": "acs-p2-mcp-tool-contract/1",
+  "surface_revision": "acs-p2-mcp-workflow/1",
+  "server": "agent-collaboration-runtime",
+  "ordinary_tools": [
+    "collaboration_apply",
+    "harnesses",
+    "send",
+    "await",
+    "read",
+    "inbox",
+    "cancel"
+  ],
+  "advanced_tool": "run",
+  "defaults": {
+    "activation": "invoke",
+    "delivery_policy": "queue_until_idle",
+    "expect_response": true,
+    "response_mode": "async",
+    "wait_until": "response_received"
+  },
+  "receipt_order": [
+    "accepted_by_authority",
+    "target_inbox_committed",
+    "runtime_dispatched",
+    "runtime_acknowledged",
+    "response_received"
+  ],
+  "tools": {
+    "collaboration_apply": {
+      "description": "Apply an explicitly supplied Scope, AgentSlot, role, Grant, Policy and budget collaboration plan.",
+      "required": ["schema_version", "client_request_id", "expected_revision", "deadline", "scope", "agent_slots"],
+      "result_schema": "acs-mcp-operation-result/1"
+    },
+    "harnesses": {
+      "description": "Read current eligible Harness capacity and bounded capability evidence for a Scope and role.",
+      "required": ["schema_version", "scope_id", "required_capabilities", "cursor", "limit"],
+      "optional": ["role", "harness_kinds"],
+      "result_schema": "acs-mcp-harness-list-result/1"
+    },
+    "send": {
+      "description": "Commit one collaboration Message, response expectation and completion notification policy, with optional bounded synchronous observation.",
+      "required": [
+        "schema_version",
+        "client_request_id",
+        "work_item_id",
+        "expected_work_item_revision",
+        "target",
+        "goal",
+        "request",
+        "constraints",
+        "accepted_revision",
+        "required_evidence",
+        "deadline"
+      ],
+      "optional": [
+        "activation",
+        "delivery_policy",
+        "expect_response",
+        "response_mode",
+        "wait_until",
+        "wait_timeout_seconds"
+      ],
+      "response_modes": ["async", "sync"],
+      "activation_modes": ["message_only", "invoke"],
+      "delivery_policies": ["queue_until_idle", "steer_active_turn"],
+      "result_schema": "acs-mcp-operation-result/1"
+    },
+    "await": {
+      "description": "Perform a bounded observation of existing response handles while durable tracking continues.",
+      "required": ["schema_version", "handles", "mode", "until", "timeout_seconds"],
+      "modes": ["any", "all"],
+      "result_schema": "acs-mcp-operation-result/1"
+    },
+    "read": {
+      "description": "Read an authorized typed handle and return bounded metadata, relations, content and evidence references.",
+      "required": ["schema_version", "handle"],
+      "optional": ["view", "observe", "cursor", "limit", "max_inline_bytes"],
+      "views": ["summary", "result", "evidence", "history", "content"],
+      "result_schema": "acs-mcp-read-result/1"
+    },
+    "inbox": {
+      "description": "List durable Messages and completion notifications for the authenticated AgentSlot.",
+      "required": ["schema_version"],
+      "optional": ["cursor", "limit", "states", "kinds"],
+      "result_schema": "acs-mcp-inbox-result/1"
+    },
+    "cancel": {
+      "description": "Apply an authorized cancellation action to a subscription, WorkItem or Runtime Attempt.",
+      "required": ["schema_version", "client_request_id", "handle", "action", "expected_revision", "reason", "deadline"],
+      "actions": ["stop_notification", "cancel_work_item", "cancel_runtime_attempt"],
+      "result_schema": "acs-mcp-operation-result/1"
+    }
+  },
+  "common_result": {
+    "schema_version": "acs-mcp-operation-result/1",
+    "required": [
+      "schema_version",
+      "ok",
+      "state",
+      "operation",
+      "delivery",
+      "response",
+      "read",
+      "await",
+      "metadata",
+      "error"
+    ]
+  },
+  "read_result": {
+    "schema_version": "acs-mcp-read-result/1",
+    "required": [
+      "schema_version",
+      "ok",
+      "resource",
+      "metadata",
+      "content",
+      "evidence_handles",
+      "unresolved_items",
+      "next_cursor",
+      "error"
+    ]
+  }
+}

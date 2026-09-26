@@ -14,8 +14,9 @@ from pathlib import Path
 from typing import Any
 
 INVENTORY_SCHEMA = "acs-p2-readonly-inventory/2"
-WORKSPACE_SCHEMA = "acs-p2-runner-workspace/1"
+WORKSPACE_SCHEMA = "acs-p2-runner-workspace/2"
 MANIFEST_SCHEMA = "acs-p2-runner-manifest/1"
+MCP_SURFACE_REVISION = "acs-p2-mcp-workflow/1"
 REQUIRED_EVIDENCE = (
     "command_ids", "operation_ids", "message_ids", "event_ids", "receipts",
     "raw_outputs", "fault_injection", "source_readback", "artifact_readback",
@@ -38,6 +39,18 @@ FAULTS = {
     "P2-OPENCODE-LATE-DEDUP": "deliver late duplicate after successful response",
     "P2-HUMAN-BRIDGE-RECOVERY": "exhaust automatic paths, manual return, successful reprobe race",
     "P2-SOURCE-ARTIFACT-EFFECT-READBACK": "mutate and read back source/artifact/effect boundaries",
+    "P2-MCP-COLLABORATION-APPLY": "apply one authorized Scope, AgentSlot, Grant and Policy collaboration plan",
+    "P2-MCP-HARNESS-DISCOVERY": "discover current eligible Harness capacity with scoped capability evidence",
+    "P2-MCP-SEND-ASYNC": "submit the default asynchronous send and return its response handle",
+    "P2-MCP-SEND-SYNC": "submit one send and observe the same response handle through bounded synchronous await",
+    "P2-MCP-BOUNDED-AWAIT-CONTINUITY": "retain durable response tracking across await timeout and MCP reconnect",
+    "P2-MCP-TARGET-IDLE-DELIVERY": "commit a busy target Inbox item and invoke it after a current idle observation",
+    "P2-MCP-COMPLETION-NOTIFICATION": "deliver one completion notification to the initiating AgentSlot",
+    "P2-MCP-SESSION-CONTINUITY": "route completion to the current replacement Session for the initiating AgentSlot",
+    "P2-MCP-GENERIC-READ-INBOX": "read response, evidence and notification handles through the common read contract",
+    "P2-MCP-CANCELLATION": "apply scoped subscription and execution cancellation with independent authorization",
+    "P2-MCP-WAIT-AGGREGATION": "observe any and all response-handle conditions with one completion revision",
+    "P2-MCP-WORKFLOW-COMMANDS": "execute the adopted collaboration, review, results and cancellation workflows",
 }
 SECRET = re.compile(
     r"(?i)\"?(password|passwd|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|authorization)\"?\s*[:=]"
@@ -91,13 +104,15 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def contract_scenarios(contract: dict[str, Any]) -> dict[str, list[str]]:
     gates = contract.get("gates", {})
+    counts = {"P2-CODEX": 8, "P2-OPENCODE": 8, "P2-MCP-WORKFLOW": 12}
     result = {
         gate: gates.get(gate, {}).get("scenarios")
-        for gate in ("P2-CODEX", "P2-OPENCODE")
+        for gate in counts
     }
     if (not all(isinstance(value, list) for value in result.values())
-            or any(len(value) != 8 or len(set(value)) != 8 for value in result.values())
-            or set(result["P2-CODEX"] + result["P2-OPENCODE"]) != set(FAULTS)):
+            or any(len(result[gate]) != count or len(set(result[gate])) != count
+                   for gate, count in counts.items())
+            or {scenario for value in result.values() for scenario in value} != set(FAULTS)):
         raise HarnessError("P2 contract scenario set changed")
     return result
 
@@ -251,7 +266,8 @@ def initialize(inventory_path: Path, contract_path: Path, output: Path, source_r
     workspace = {
         "schema_version": WORKSPACE_SCHEMA,
         "status": "not_run",
-        "execution_order": ["P1", "P2-CODEX", "P2-OPENCODE"],
+        "execution_order": ["P1", "P2-CODEX", "P2-OPENCODE", "P2-MCP-WORKFLOW"],
+        "mcp_surface_revision": MCP_SURFACE_REVISION,
         "blockers": blocked,
         "credentials_copied": False,
         "login_attempted": False,
@@ -263,6 +279,11 @@ def initialize(inventory_path: Path, contract_path: Path, output: Path, source_r
     write_json(output / "P2-CODEX.json", gate_record("P2-CODEX", scenarios["P2-CODEX"], blocked))
     opencode_blockers = blocked + ["P2-CODEX prerequisite has not passed"]
     write_json(output / "P2-OPENCODE.json", gate_record("P2-OPENCODE", scenarios["P2-OPENCODE"], opencode_blockers))
+    workflow_blockers = blocked + ["P2-OPENCODE prerequisite has not passed"]
+    write_json(
+        output / "P2-MCP-WORKFLOW.json",
+        gate_record("P2-MCP-WORKFLOW", scenarios["P2-MCP-WORKFLOW"], workflow_blockers),
+    )
     write_json(output / "RUN-MANIFEST.json", build_manifest(output, inventory))
     return workspace
 
