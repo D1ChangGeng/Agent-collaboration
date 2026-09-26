@@ -6,12 +6,14 @@ verify its installed version, or make an Agent decision.
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 from typing import ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from runtime.errors import AuthorizationDenied, InvalidTransition, NotFound, RevisionConflict
 from runtime.models import CommandEnvelope, CommandResult
+from runtime.recovery_models import HarnessAttemptContext
 
 
 class BindingChange(BaseModel):
@@ -24,6 +26,7 @@ class BindingChange(BaseModel):
     native_session_ref: str = Field(min_length=1, max_length=512)
     installed_version: str = Field(min_length=1, max_length=128)
     receipt_ref: str = Field(min_length=1, max_length=512)
+    attempt_context: HarnessAttemptContext | None = None
 
     @field_validator("binding_id", "scope_id", "agent_slot_id", "native_session_ref", "installed_version", "receipt_ref")
     @classmethod
@@ -57,6 +60,55 @@ class HarnessSessionAuthority:
 
     def __init__(self, authority):
         self.authority = authority
+
+    @staticmethod
+    def _validate_attempt_context(cursor, command, request: BindingChange) -> None:
+        context = request.attempt_context
+        if context is None:
+            return  # Historical Slot-level bindings cannot advance a native response.
+        if (context.work_item_id, context.scope_id, context.agent_slot_id) != (
+            command.target_id, request.scope_id, request.agent_slot_id
+        ):
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+        cursor.execute(
+            "SELECT m.packet_json,a.selection_json,a.invocation_json "
+            "FROM delivery_messages m JOIN delivery_attempts a "
+            "ON a.tenant_id=m.tenant_id AND a.message_id=m.message_id "
+            "WHERE m.tenant_id=%s AND m.message_id=%s AND a.attempt_id=%s",
+            (command.tenant_id, context.message_id, context.attempt_id),
+        )
+        row = cursor.fetchone()
+        if row is None or row[2] is None:
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+        packet, selected, invocation = row
+        if (packet.get("work_item_id"), packet.get("target_scope_id"),
+                packet.get("target_agent_slot_id")) != (
+                context.work_item_id, context.scope_id, context.agent_slot_id
+        ) or any((selected.get(key) != expected) for key, expected in {
+            "scope_id": context.scope_id,
+            "agent_slot_id": context.agent_slot_id,
+            "machine_id": context.machine_id,
+            "node_id": context.node_id,
+            "boot_incarnation": context.node_boot_incarnation,
+            "endpoint_id": context.endpoint_id,
+            "revision": context.endpoint_binding_revision,
+        }.items()) or (invocation.get("attempt_id"), invocation.get("message_id")) != (
+            context.attempt_id, context.message_id
+        ):
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+        cursor.execute(
+            "SELECT node_id,node_binding_revision,node_boot_incarnation,scope_id,agent_slot_id "
+            "FROM enrolled_runtimes WHERE tenant_id=%s AND runtime_id=%s "
+            "AND status='active' AND expires_at>clock_timestamp() "
+            "AND authority_id=%s AND authority_incarnation=%s",
+            (command.tenant_id, context.runtime_id,
+             command.authority_id, command.authority_incarnation),
+        )
+        if cursor.fetchone() != (
+            context.node_id, context.node_binding_revision,
+            context.node_boot_incarnation, context.scope_id, context.agent_slot_id
+        ):
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
     def _head(self, cursor, command, permission):
         cursor.execute(
@@ -131,6 +183,8 @@ class HarnessSessionAuthority:
                 raise RevisionConflict(request.binding_id, command.expected_revision, current_revision)
             if name != "harness_session.retire" and (request.scope_id, request.agent_slot_id) != (scope_id, agent_slot_id):
                 raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            if name != "harness_session.retire":
+                self._validate_attempt_context(cursor, command, request)
             if name == "harness_session.replace" and request.binding_id == active_id:
                 raise InvalidTransition("active", "replace_same_binding")
             if head is None:
@@ -152,19 +206,30 @@ class HarnessSessionAuthority:
             if new_id is not None:
                 cursor.execute(
                     "INSERT INTO harness_session_bindings(tenant_id,binding_id,work_item_id,scope_id,agent_slot_id,"
-                    "revision,driver_kind,native_session_ref,installed_version,receipt_ref,status,attached_by,attached_command_id) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'active',%s,%s)",
+                    "revision,driver_kind,native_session_ref,installed_version,receipt_ref,attempt_context,"
+                    "status,attached_by,attached_command_id) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'active',%s,%s)",
                     (command.tenant_id, new_id, command.target_id, scope_id, agent_slot_id,
                      result.revision, request.driver_kind, request.native_session_ref,
-                     request.installed_version, request.receipt_ref, command.principal_ref, command.command_id),
+                     request.installed_version, request.receipt_ref,
+                     json.dumps(asdict(request.attempt_context)) if request.attempt_context else None,
+                     command.principal_ref, command.command_id),
                 )
             cursor.execute(
                 "UPDATE harness_session_heads SET revision=%s,active_binding_id=%s,updated_at=clock_timestamp() "
                 "WHERE tenant_id=%s AND work_item_id=%s",
                 (result.revision, new_id, command.tenant_id, command.target_id),
             )
-            self._record(cursor, command, result, digest, name, {"binding_id": new_id or active_id,
-                          "scope_id": scope_id, "agent_slot_id": agent_slot_id})
+            event_id = self._record(cursor, command, result, digest, name, {
+                "binding_id": new_id or active_id,
+                "scope_id": scope_id, "agent_slot_id": agent_slot_id,
+            })
+            if new_id is not None:
+                cursor.execute(
+                    "UPDATE harness_session_bindings SET attached_event_id=%s "
+                    "WHERE tenant_id=%s AND binding_id=%s",
+                    (event_id, command.tenant_id, new_id),
+                )
         return result
 
     def admit_result(self, command: CommandEnvelope, request: BindingResult) -> CommandResult:
@@ -222,12 +287,14 @@ class HarnessSessionAuthority:
                 raise RevisionConflict(command.target_id, command.expected_revision, revision)
             cursor.execute(
                 "SELECT binding_id,revision,driver_kind,native_session_ref,installed_version,receipt_ref,"
-                "status,attached_by,attached_command_id,retired_by,retired_command_id "
+                "status,attached_by,attached_command_id,retired_by,retired_command_id,"
+                "attempt_context,attached_event_id "
                 "FROM harness_session_bindings WHERE tenant_id=%s AND work_item_id=%s ORDER BY revision",
                 (command.tenant_id, command.target_id),
             )
             keys = ("binding_id", "revision", "driver_kind", "native_session_ref", "installed_version",
-                    "receipt_ref", "status", "attached_by", "attached_command_id", "retired_by", "retired_command_id")
+                    "receipt_ref", "status", "attached_by", "attached_command_id", "retired_by", "retired_command_id",
+                    "attempt_context", "attached_event_id")
             bindings = [dict(zip(keys, row, strict=True)) for row in cursor.fetchall()]
             return {"tenant_id": command.tenant_id, "work_item_id": command.target_id,
                     "scope_id": scope_id, "agent_slot_id": agent_slot_id, "revision": revision,
@@ -239,9 +306,12 @@ class HarnessSessionAuthority:
             "INSERT INTO domain_events(tenant_id,work_item_id,target_kind,target_id,related_work_item_id,"
             "to_state,initiated_by,lineage_mode,command_id,resulting_revision,evidence_refs,"
             "command_hash_version,canonical_hash) "
-            "VALUES (%s,NULL,'harness_session',%s,%s,%s,%s,'external_command',%s,%s,%s,'v2',%s)",
+            "VALUES (%s,NULL,'harness_session',%s,%s,%s,%s,'external_command',%s,%s,%s,'v2',%s) "
+            "RETURNING event_id",
             (command.tenant_id, command.target_id, command.target_id, result.state,
              command.principal_ref, command.command_id, result.revision,
              json.dumps([payload]), digest),
         )
+        event_id = cursor.fetchone()[0]
         self.authority._outbox(cursor, command, result.operation_id, name, payload)
+        return event_id

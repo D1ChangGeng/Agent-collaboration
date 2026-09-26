@@ -40,9 +40,10 @@ class DomainAuthority:
     """PostgreSQL Domain authority for the local Runtime profile."""
 
     SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.10"
+    SCHEMA_VERSION = "1.11"
 
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.10", "3220ec5379b4effbbfe4fb293684881c0e14cd03d681fda8b98aacd6185c162d"),
         ("1.9", "7eec78fd9d54b81d20724327e13f3a2237f95a9d5a2bc35f7799ebd3d30b5b9b"),
         ("1.8", "b8554614d9923ae43a653371c4445c33fdfe189c219b3376f29e23c476ee7614"),
         ("1.7", "a3eb11f7afdccfedab5e7f7c41c861f3b9d8f4853460cdd948b8fc77e23d8132"),
@@ -78,6 +79,7 @@ class DomainAuthority:
         effect_readback_verifier: Any | None = None,
         effect_registration_gateway: Any | None = None,
         delivery_endpoints: Mapping[str, Any] | None = None,
+        node_response_reader: Any | None = None,
     ) -> None:
         self._dsn = dsn
         self._authority_binding = authority_binding
@@ -92,6 +94,7 @@ class DomainAuthority:
         self._effect_readback_verifier = effect_readback_verifier
         self._effect_registration_gateway = effect_registration_gateway
         self._delivery_endpoints = dict(delivery_endpoints or {})
+        self._node_response_reader = node_response_reader
 
     def send_message(self, command: CommandEnvelope, packet: Any, *, endpoint_id: str,
                      binding_revision: int) -> CommandResult:
