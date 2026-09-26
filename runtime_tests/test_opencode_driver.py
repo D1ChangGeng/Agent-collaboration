@@ -34,6 +34,7 @@ from runtime.opencode_driver import (
     SESSION_RULES,
     OpenCodeLaunchProfile,
     OpenCodeNativeDriver,
+    reviewed_private_external_allow,
 )
 from runtime.opencode_http import HttpFailure, HttpRejected, LoopbackHttp
 
@@ -43,6 +44,21 @@ def test_generated_11827_openapi_supports_exact_native_paths():
     data = schema_path.read_bytes()
     assert hashlib.sha256(data).hexdigest() == (
         "6ea6c82efbff42d0131a0a72ac2d8ddcec36b0ae31547bf1424dbb1b87b729d5"
+    )
+    paths = json.loads(data)["paths"]
+    for path in (
+        "/global/health", "/session", "/session/status", "/session/{sessionID}",
+        "/session/{sessionID}/message", "/session/{sessionID}/prompt_async",
+        "/session/{sessionID}/abort", "/event",
+    ):
+        assert path in paths
+
+
+def test_observed_11830_openapi_supports_exact_native_paths():
+    schema_path = Path(__file__).with_name("schema-1.18.30") / "opencode-openapi.json"
+    data = schema_path.read_bytes()
+    assert hashlib.sha256(data).hexdigest() == (
+        "cf12e9739510a196c7f25eb938555cfb66d901957f66f840a12d4489ae440ac3"
     )
     paths = json.loads(data)["paths"]
     for path in (
@@ -588,6 +604,10 @@ def test_cancel_does_not_claim_interruption_when_naturally_completed(native):
     [
         {"permission": "todowrite", "pattern": "*", "action": "allow"},
         {"permission": "read", "pattern": "*.env", "action": "allow"},
+        {"permission": "external_directory", "pattern": "*", "action": "allow"},
+        {"permission": "external_directory", "pattern": "/unreviewed/*", "action": "allow"},
+        {"permission": "external_directory", "pattern": "*", "action": "ask"},
+        {"permission": "unknown_native", "pattern": "*", "action": "allow"},
     ],
 )
 def test_effective_allow_after_global_deny_is_rejected(native, monkeypatch, rule):
@@ -611,12 +631,63 @@ def test_effective_allow_after_global_deny_is_rejected(native, monkeypatch, rule
 
     monkeypatch.setattr(native.driver.supervisor, "launch", launch)
 
-    with pytest.raises(DriverRejected, match="effective allow"):
+    with pytest.raises(DriverRejected, match="unreviewed permission"):
         native.driver.spawn(operation("unsafe-final-permission"))
     assert not any(
         method == "POST" and path == "/session"
         for method, path, _body in native.peer.requests
     )
+
+
+@pytest.mark.skipif(os.name != "posix", reason="owner-private path admission requires POSIX")
+def test_exact_private_external_allow_after_global_deny_preserves_no_tool_profile(
+    native, monkeypatch
+):
+    Path(native.driver.profile.data_root).chmod(0o700)
+    Path(native.driver.profile.temp_root).chmod(0o700)
+    pattern = str(Path(native.driver.profile.data_root) / "opencode" / "tool-output" / "*")
+    original_launch = native.driver.supervisor.launch
+
+    def launch(*args, **kwargs):
+        owned = original_launch(*args, **kwargs)
+        handler = native.peer.server.RequestHandlerClass
+        original_answer = handler.answer
+
+        def answer(self, status, value=None):
+            if urlsplit(self.path).path == "/agent":
+                value = [
+                    {**agent, "permission": [*agent["permission"], {
+                        "permission": "external_directory",
+                        "pattern": pattern,
+                        "action": "allow",
+                    }]}
+                    for agent in value
+                ]
+            return original_answer(self, status, value)
+
+        monkeypatch.setattr(handler, "answer", answer)
+        return owned
+
+    monkeypatch.setattr(native.driver.supervisor, "launch", launch)
+    assert native.driver.spawn(operation("private-external"))["receipt_layer"] == "runtime_acknowledged"
+
+
+@pytest.mark.skipif(os.name != "posix", reason="owner-private path admission requires POSIX")
+def test_only_exact_owner_private_external_patterns_are_admitted(profile, tmp_path):
+    data = Path(profile.data_root)
+    temp = Path(profile.temp_root)
+    data.chmod(0o700)
+    temp.chmod(0o700)
+    allowed = str(data / "opencode" / "tool-output" / "*")
+    assert reviewed_private_external_allow(profile, allowed)
+    assert reviewed_private_external_allow(profile, str(temp / "opencode" / "*"))
+    assert not reviewed_private_external_allow(profile, str(tmp_path / "outside" / "*"))
+    assert not reviewed_private_external_allow(profile, str(data / "opencode" / "**"))
+    data.chmod(0o755)
+    assert not reviewed_private_external_allow(profile, allowed)
+    data.chmod(0o700)
+    (data / "opencode").symlink_to(tmp_path, target_is_directory=True)
+    assert not reviewed_private_external_allow(profile, allowed)
 
 
 def test_live_exclusive_capacity_cannot_release_its_claim(native):
