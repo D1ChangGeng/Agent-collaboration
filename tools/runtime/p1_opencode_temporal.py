@@ -44,6 +44,11 @@ class OpenCodeTemporalDispatcher:
         async def original_run():
             client = await Client.connect(self.endpoint, namespace=self.namespace)
             async with delivery_worker(client, self.task_queue, self.dispatcher):
+                # The worker must have a poller registered before the first
+                # workflow is submitted. OpenCode starts a fresh task queue for
+                # every scene; a zero-yield race can otherwise leave the
+                # committed Domain operation queued with no Workflow/Run.
+                await asyncio.sleep(0.1)
                 handle = await submit_delivery(
                     client, self.task_queue, self.dispatcher, identity
                 )
