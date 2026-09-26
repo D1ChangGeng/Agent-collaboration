@@ -71,7 +71,7 @@ required scenario in revision `2026-09-25.1`.
 
 ### v1.0.0 release candidate checkpoint — 2026-09-26
 
-The public candidate branch `codex/p2-v1-release` is at commit
+The tested public candidate snapshot on `codex/p2-v1-release` was commit
 `bec582b52c98568f8eeee393d1d769c293f6ee49`, tree
 `e2585dc1caac53504bd939edbccb00818d95735f`. The branch includes the
 committed P1/P2 implementation, the owner-local installer, setup and knowledge
