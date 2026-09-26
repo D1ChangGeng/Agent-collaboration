@@ -1,0 +1,11 @@
+{
+  "schema_version": "acs-p2-review-status/1",
+  "source_baseline": "cc070b41b8c46117534a88fe2446d734cc1ed110",
+  "source_tree": "6c841cde7e9b08c1d451cee351826e60974bd20d",
+  "status": "blocked_pending_product_owner",
+  "control_parity": "blocked_pending_formal_review",
+  "ci": {"run_id": "36271870055", "status": "success"},
+  "release_preflight": "passed",
+  "remaining_decisions": ["Independent reviewer confirms current-candidate evidence and scope.", "Installation owner completes or explicitly declines the private Tunnel profile.", "Product owner records the v1.0.0 release decision."],
+  "publication": {"main_merge": "pending", "tag": "pending", "github_release": "pending", "asset_readback": "pending"}
+}
