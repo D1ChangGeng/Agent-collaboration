@@ -9,8 +9,9 @@ This file is project-owned after first creation. ACHP upgrades preserve it.
 - Skill slug: agent-collaboration-setup
 - Primary branch: `main`
 - Project type: existing source recovered from the v0.1.0 Skill archive
-- Current phase: v0.4.0 released user-journey safety baseline on the minimal
-  Workspace schema 0.3 model
+- Setup release: v0.4.0 on Workspace schema 0.3.
+- Active Runtime phase: user-authorized P1/P2 implementation under
+  `docs/runtime/UPGRADE-CONTRACT.md`; support remains Gate-scoped.
 
 ## Collaboration topology
 
@@ -36,7 +37,7 @@ normal collaboration runtime. Product and design authority is split between
 
 ## Current milestone
 
-Current milestone: maintain the verified setup-only baseline and the nested
+Setup milestone: maintain the verified setup-only baseline and the nested
 Project Collaboration Workspace / Route layout in the product Git repository,
 with standalone compatibility and the setup/runtime boundary preserved.
 The v0.3.0 Workspace/Route persistence model remains
@@ -49,8 +50,9 @@ operation guidance without adding runtime recovery state.
   Skill slug `agent-collaboration-setup`.
 - Keep the Skill setup-only; normal collaboration runs from `AGENTS.md` and
   `.agents/` and must not depend on the Skill being installed.
-- Treat manual user relay as a first-class transport and automatic relay as a
-  capability-verified enhancement only.
+- The setup profile treats manual user relay as a first-class transport.
+  The adopted Runtime profile uses system-managed delivery and incident-based
+  Human Bridge under `docs/runtime/UPGRADE-CONTRACT.md`.
 - Keep message relay state independent from Git repository synchronization.
 - Keep Harness/session capability observations in the current execution context;
   `.agents/knowledge/` is the durable project Knowledge Plane.
@@ -73,6 +75,7 @@ operation guidance without adding runtime recovery state.
 | Need | Location |
 |---|---|
 | Product intent | `SKILL.md`, `README.md`, `README.zh-CN.md` |
+| Runtime adoption and acceptance | `docs/runtime/UPGRADE-CONTRACT.md`, `docs/runtime/gate-contract.json` |
 | Architecture | `references/DESIGN.md`, `references/HARNESS-COMPATIBILITY.md`, `.agents/protocol/`, `assets/scaffold/workspace/` |
 | Roadmap | `.agents/knowledge/observations/`, future accepted Decisions, and release notes |
 | Current implementation status | `scripts/`, `tests/`, `.github/workflows/validate.yml`, `CHANGELOG.md` |
@@ -104,7 +107,8 @@ git diff --check
 
 ## Current primary goal
 
-Maintain the released Workspace schema 0.3 persistence model, keep validation
-and upgrade behavior fail-closed, and preserve the independent task boundary
-for Root, A Route, and B Route work. Product or Route changes require their own
-task and evidence; they are not implied by the Skill release.
+Implement and verify the authorized Collaboration Runtime through P1 Local
+Durable Slice and ordered P2 Codex-to-Codex / Codex-to-OpenCode Gates. Preserve
+the released Workspace schema 0.3 and setup safety while adding independently
+adopted Runtime mechanisms. Current Gate status belongs to the Runtime Route's
+coordination records and actual evidence, not the setup version.
