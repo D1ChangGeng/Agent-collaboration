@@ -284,7 +284,7 @@ def provision(arguments) -> int:
         "factory_binding_sha256": hashlib.sha256(arguments.factory_binding.read_bytes()).hexdigest(),
         "factory_settings_sha256": hashlib.sha256(arguments.factory_settings.read_bytes()).hexdigest(),
         "tls_certificate_sha256": cert_hash,
-        "endpoint_expires_at": registration.expires_at,
+        "endpoint_expires_at": registration.expires_at.isoformat(),
     }
     _write(output / "state.json", public)
     print(json.dumps(public, sort_keys=True))
