@@ -58,13 +58,15 @@ def postgres_dsn():
                 "tenant_id TEXT NOT NULL,message_id TEXT NOT NULL,operation_id TEXT NOT NULL,"
                 "deadline TIMESTAMPTZ NOT NULL,accepted_state_digest TEXT NOT NULL,"
                 "receipt_high_water TEXT NOT NULL DEFAULT 'runtime_dispatched',"
+                "state TEXT NOT NULL DEFAULT 'uncertain',last_error TEXT,"
                 "PRIMARY KEY(tenant_id,message_id))"
             )
             connection.execute(
                 "CREATE TABLE delivery_attempts("
                 "tenant_id TEXT NOT NULL,message_id TEXT NOT NULL,ordinal INTEGER NOT NULL,"
                 "attempt_id TEXT NOT NULL,operation_id TEXT NOT NULL,dispatch_id TEXT,"
-                "runtime_dispatched_receipt_id TEXT,"
+                "runtime_dispatched_receipt_id TEXT,status TEXT NOT NULL DEFAULT 'uncertain',"
+                "error_code TEXT,finished_at TIMESTAMPTZ,"
                 "PRIMARY KEY(tenant_id,message_id,ordinal),UNIQUE(attempt_id))"
             )
             connection.execute(
@@ -282,6 +284,12 @@ def test_postgres_delayed_projection_is_atomic_and_idempotent(postgres_dsn):
     assert fetchall(postgres_dsn, "SELECT receipt_high_water FROM delivery_messages") == [
         ("response_received",),
     ]
+    assert fetchall(postgres_dsn, "SELECT state,last_error FROM delivery_messages") == [
+        ("delivered", None),
+    ]
+    assert fetchall(
+        postgres_dsn, "SELECT status,error_code,finished_at IS NOT NULL FROM delivery_attempts",
+    ) == [("delivered", None, True)]
     assert second.disposition == "applied"
 
 
