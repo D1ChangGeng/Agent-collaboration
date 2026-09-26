@@ -204,3 +204,14 @@ def test_output_cannot_be_formal_source(profile_file, source):
     path, _value = profile_file
     with pytest.raises(probe.ProbeRejected, match="outside source"):
         probe.execute(path, "P1-DOMAIN-TRANSACTION", "command_output", source / "gates")
+
+
+def test_restart_child_inherits_only_reviewed_sandbox_site(monkeypatch):
+    monkeypatch.setenv("ACS_GATE_RUNTIME_ROOT", "/run/acs-p1/runtime")
+    monkeypatch.setenv("PYTHONPATH", "/run/acs-p1/runtime/site")
+    assert probe._probe_child_env()["PYTHONPATH"] == "/run/acs-p1/runtime/site"
+    monkeypatch.setenv("PYTHONPATH", "/tmp/unreviewed")
+    with pytest.raises(probe.ProbeRejected, match="reviewed runtime site"):
+        probe._probe_child_env()
+    monkeypatch.delenv("ACS_GATE_RUNTIME_ROOT")
+    assert "PYTHONPATH" not in probe._probe_child_env()
