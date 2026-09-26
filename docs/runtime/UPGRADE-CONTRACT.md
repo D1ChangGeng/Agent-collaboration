@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-09-22.5.
+is determined by the named Gate records. Contract revision: 2026-09-22.6.
 
 ## Authority and inputs
 
@@ -100,6 +100,13 @@ versioned native APIs, ACP or structured CLI. They return actual structured
 observations and never own Domain policy. Exercise real Codex and OpenCode
 instances for conformance; native multi-agent collaboration must be disabled
 for the relevant independence test.
+
+P1 Harness replacement preserves the no-model HarnessSessionBinding component
+as component evidence and requires a same-run live corollary: an owned OpenCode
+process creates one idle native Session, replaces it with a second directly
+read-back Session, and sends the single budgeted model request only through the
+replacement. The formal scenario is `live_composite`; neither half is promoted
+outside its recorded scope.
 
 MCP, CLI and versioned HTTP invoke one Domain service and schema. Validate actual
 entry points, including unauthorized and duplicate commands. A2A is an optional

@@ -222,6 +222,15 @@ def test_restricted_host_temporal_pg_node_one_fake_turn(setup, tmp_path, current
             setup.authority.context.grant_ref, deadline,
         ))
         assert boot["verified"] is True and boot["remaining_pids"]
+        replacement = driver.replace_session(AuthorizedOperation(
+            run_id + "-session-replace",
+            run_id + "-command-session-replace",
+            run_id + "-message-session-replace",
+            setup.authority.context.grant_ref,
+            deadline,
+        ))
+        assert replacement["replacement_count"] == 1
+        assert replacement["previous_native_session_id"] != replacement["native_session_id"]
         server = OpenCodeHostUnixServer(host, roots["ledger"] / "host.sock")
         thread = threading.Thread(target=server.serve_one)
         thread.start()
@@ -301,6 +310,7 @@ def test_restricted_host_temporal_pg_node_one_fake_turn(setup, tmp_path, current
         assert lineage["machine_id"] == lineage["pg"]["selection_machine_id"]
         assert lineage["node_id"] == lineage["pg"]["selection_node_id"]
         assert lineage["driver"]["prompt_async_count"] == 1
+        assert lineage["driver"]["session_replacement"]["replacement_count"] == 1
         with node._connect() as connection:
             connection.execute(
                 "UPDATE mailbox SET command_id='changed' WHERE message_id=?", (message_id,)

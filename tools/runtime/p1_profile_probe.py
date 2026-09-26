@@ -139,11 +139,6 @@ class ScenarioCatalog:
             "runtime_tests/test_temporal.py::test_temporal_replay_survives_new_adapter_instance",
             "runtime_tests/test_human_bridge_file_provider.py::test_actual_process_restart_recovers_same_effect_without_second_file",
         ),
-        "P1-HARNESS-REPLACEMENT": (
-            "runtime_tests/test_codex_driver.py::test_shared_attach_is_read_only",
-            "runtime_tests/test_opencode_driver.py::test_shared_attach_is_read_only",
-            "runtime_tests/test_delivery.py::test_replacement_node_cannot_repeat_an_unreconciled_native_activation",
-        ),
         "P1-LEASE-FENCING": (
             "runtime_tests/test_lease_gateway_integration.py::test_real_history_reads_after_lease_termination",
             "runtime_tests/test_file_effect_gateway.py::test_fence_rechecked_immediately_before_target_replace",
@@ -171,6 +166,11 @@ class ScenarioCatalog:
         "P1-OPENCODE-LIFECYCLE": (
             "runtime_tests/test_response_collector_integration.py::test_delayed_opencode_response_is_collected_once_and_projection_only_retries",
         ),
+        "P1-HARNESS-REPLACEMENT": (
+            "runtime_tests/test_codex_driver.py::test_shared_attach_is_read_only",
+            "runtime_tests/test_opencode_driver.py::test_shared_attach_is_read_only",
+            "runtime_tests/test_delivery.py::test_replacement_node_cannot_repeat_an_unreconciled_native_activation",
+        ),
         "P1-NATIVE-MULTIAGENT-OFF": (
             "runtime_tests/test_codex_driver.py::test_native_delegation_enablement_is_rejected",
             "runtime_tests/test_opencode_driver.py::test_no_tools_agent_or_file_override_surface",
@@ -184,6 +184,7 @@ class ScenarioCatalog:
         ),
     }
     MODEL_REQUIREMENTS: ClassVar[dict[str, str]] = {
+        "P1-HARNESS-REPLACEMENT": "same_run_opencode_host",
         "P1-NATIVE-MULTIAGENT-OFF": "all_model_scenarios",
         "P1-CODEX-LIFECYCLE": "same_run_codex_host",
         "P1-OPENCODE-LIFECYCLE": "same_run_opencode_host",
@@ -234,7 +235,7 @@ def _secure_profile(path: Path) -> tuple[dict[str, Any], str, tuple[bytes, ...]]
         value = json.loads(data)
     except (UnicodeError, ValueError):
         raise ProbeRejected("P1 profile JSON is invalid") from None
-    required = {
+    base_required = {
         "schema_version",
         "profile",
         "source_root",
@@ -246,17 +247,25 @@ def _secure_profile(path: Path) -> tuple[dict[str, Any], str, tuple[bytes, ...]]
         "versions",
         "node_id",
         "direction",
-        "codex_model_evidence",
-        "opencode_model_evidence",
     }
-    scene_fields = set(value) - required if isinstance(value, dict) else set()
-    if scene_fields not in (
-        set(), {"codex_scene_mode"}, {"opencode_scene_mode"},
-        {"codex_scene_mode", "opencode_scene_mode"},
+    legacy_model_fields = {"codex_model_evidence", "opencode_model_evidence"}
+    both_scene_fields = {"codex_scene_mode", "opencode_scene_mode"}
+    keys = set(value) if isinstance(value, dict) else set()
+    if keys == base_required | both_scene_fields and value.get("schema_version") == (
+        "acs-p1-loopback-probe-profile/4"
     ):
-        raise ProbeRejected("P1 profile fields are invalid")
-    profile_version = 3 if len(scene_fields) == 2 else 2 if scene_fields else 1
-    expected = required | scene_fields
+        scene_fields = both_scene_fields
+        expected = base_required | both_scene_fields
+        profile_version = 4
+    else:
+        required = base_required | legacy_model_fields
+        scene_fields = keys - required
+        if scene_fields not in (
+            set(), {"codex_scene_mode"}, {"opencode_scene_mode"}, both_scene_fields,
+        ):
+            raise ProbeRejected("P1 profile fields are invalid")
+        profile_version = 3 if len(scene_fields) == 2 else 2 if scene_fields else 1
+        expected = required | scene_fields
     if (
         not isinstance(value, dict)
         or set(value) != expected

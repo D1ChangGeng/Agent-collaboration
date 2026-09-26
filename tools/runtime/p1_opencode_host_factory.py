@@ -287,7 +287,10 @@ def prepare_opencode_host_capacity(
     def current(operation: AuthorizedOperation, observed: BindingIdentity) -> None:
         if observed != binding or operation.grant_ref != authority.context.grant_ref:
             raise ValueError("OpenCode Driver left current Node/Grant identity")
-        if operation.operation_id == run_id + "-spawn":
+        if operation.operation_id in {
+            run_id + "-spawn",
+            run_id + "-session-replace",
+        }:
             # The HostNode outer transaction owns the Grant and Scope rows.
             return
         if not operation.operation_id.startswith("delivery-invocation:"):

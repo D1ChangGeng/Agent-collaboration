@@ -1,9 +1,10 @@
-"""No-model, same-Attempt Harness replacement probe for the P1 profile."""
+"""Same-Attempt binding semantics plus same-run live Harness replacement evidence."""
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sqlite3
 from collections.abc import Callable
 from dataclasses import asdict, replace
@@ -36,6 +37,82 @@ SCENARIO = "P1-HARNESS-REPLACEMENT"
 
 class HarnessReplacementProbeError(RuntimeError):
     pass
+
+
+def _live_replacement(
+    commit: str,
+    tree: str,
+    machine_id: str,
+    node_id: str,
+) -> dict[str, Any]:
+    path = Path(
+        os.environ.get(
+            "ACS_GATE_OPENCODE_LIFECYCLE",
+            "/run/acs-p1/opencode-lifecycle.json",
+        )
+    )
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError) as error:
+        raise HarnessReplacementProbeError(
+            "same-run live OpenCode Session replacement is unavailable"
+        ) from error
+    driver = value.get("driver") if isinstance(value, dict) else None
+    replacement = driver.get("session_replacement") if isinstance(driver, dict) else None
+    response = value.get("response") if isinstance(value, dict) else None
+    auth = driver.get("auth") if isinstance(driver, dict) else None
+    system = value.get("os") if isinstance(value, dict) else None
+    if (
+        not isinstance(value, dict)
+        or value.get("source_commit") != commit
+        or value.get("source_tree") != tree
+        or value.get("machine_id") != machine_id
+        or value.get("node_id") != node_id
+        or not isinstance(value.get("run_id"), str)
+        or not value["run_id"].startswith("p1-run-")
+        or not isinstance(driver, dict)
+        or driver.get("prompt_async_count") != 1
+        or driver.get("session_id") != value.get("native_session_id")
+        or not isinstance(replacement, dict)
+        or replacement.get("native_session_id") != value.get("native_session_id")
+        or replacement.get("previous_native_session_id") == value.get("native_session_id")
+        or replacement.get("replacement_count") != 1
+        or replacement.get("evidence_class") != "direct_native_readback"
+        or replacement.get("harness") != "opencode"
+        or not isinstance(auth, dict)
+        or auth.get("provider_connected") is not True
+        or not isinstance(response, dict)
+        or response.get("disposition") != "applied"
+        or response.get("artifact_readback") is not True
+        or not isinstance(system, dict)
+        or system.get("remaining_pids") != []
+        or system.get("root_exited") is not True
+    ):
+        raise HarnessReplacementProbeError(
+            "same-run live OpenCode Session replacement differs"
+        )
+    return {
+        "evidence_class": "same_run_live_harness_replacement",
+        "scenario_id": "P1-OPENCODE-LIFECYCLE",
+        "run_id": value["run_id"],
+        "source_commit": commit,
+        "source_tree": tree,
+        "machine_id": machine_id,
+        "node_id": node_id,
+        "message_id": value["message_id"],
+        "operation_id": value["operation_id"],
+        "attempt_id": value["attempt_id"],
+        "dispatch_id": value["dispatch_id"],
+        "previous_native_session_id": replacement["previous_native_session_id"],
+        "native_session_id": replacement["native_session_id"],
+        "replacement_operation_id": replacement["operation_id"],
+        "harness": replacement["harness"],
+        "harness_version": replacement["harness_version"],
+        "provider_id": replacement["provider_id"],
+        "response_digest": response["response_digest"],
+        "prompt_async_count": driver["prompt_async_count"],
+        "postflight_clean": True,
+    }
 
 
 class AcknowledgedFixtureDriver:
@@ -130,6 +207,7 @@ def run(
     domain_command: Callable[..., Any],
     private_json: Callable[[Path, dict[str, Any]], bytes],
 ) -> dict[str, Any]:
+    live_replacement = _live_replacement(commit, tree, node.machine_id, node.node_id)
     proof_path = ledger.root / f"{SCENARIO}-proof.json"
     if proof_path.exists():
         prior = json.loads(proof_path.read_text(encoding="utf-8"))
@@ -232,7 +310,7 @@ def run(
         old_ref = store.put_bytes(old_payload, kind="output")
         with LocalArtifactStore(cas_root, "local-scope") as independent:
             if independent.read(old_ref) != old_payload:
-                raise HarnessReplacementProbeError("old fixture result failed CAS readback")
+                raise HarnessReplacementProbeError("old component result failed CAS readback")
         old_result = binder.harness_sessions.admit_result(_command(
             domain_command, binder, "harness_session.result", "work_item", work_id,
             suffix + ":old-late-result", issued_at, revision=2,
@@ -400,7 +478,14 @@ def run(
         "head_revision": 2,
         "response_received_count": 1,
         "accepted_revision_count": 0,
-        "no_model_calls": True,
+        "component_scope": {
+            "evidence_class": "no_model_binding_semantics",
+            "model_calls": 0,
+            "old_session_kind": "fixture",
+            "new_session_kind": "fixture",
+        },
+        "live_harness_replacement": live_replacement,
+        "evidence_class": "live_composite",
     }
     private_json(proof_path, value)
     return value
@@ -431,7 +516,22 @@ def read_layer(profile: dict[str, Any], kind: str, ledger: Any,
             or proof.get("head_revision") != 2
             or proof.get("response_received_count") != 1
             or proof.get("accepted_revision_count") != 0
-            or proof.get("no_model_calls") is not True):
+            or proof.get("component_scope") != {
+                "evidence_class": "no_model_binding_semantics",
+                "model_calls": 0,
+                "old_session_kind": "fixture",
+                "new_session_kind": "fixture",
+            }
+            or proof.get("evidence_class") != "live_composite"
+            or not isinstance(proof.get("live_harness_replacement"), dict)
+            or proof["live_harness_replacement"].get("evidence_class")
+            != "same_run_live_harness_replacement"
+            or proof["live_harness_replacement"].get("postflight_clean") is not True
+            or proof["live_harness_replacement"].get("prompt_async_count") != 1
+            or proof["live_harness_replacement"].get("source_commit") != row["source_commit"]
+            or proof["live_harness_replacement"].get("source_tree") != row["source_tree"]
+            or proof["live_harness_replacement"].get("machine_id") != profile["machine_id"]
+            or proof["live_harness_replacement"].get("node_id") != profile["node_id"]):
         raise HarnessReplacementProbeError("Harness replacement proof differs from Runtime lineage")
     if kind == "postgresql":
         scoped = make_conninfo(profile["postgres_dsn"],
@@ -514,11 +614,19 @@ def read_layer(profile: dict[str, Any], kind: str, ledger: Any,
         with LocalArtifactStore(cas_root, "local-scope") as store:
             try:
                 if any(_sha(store.read(ref)) != ref.sha256 for ref in refs):
-                    raise HarnessReplacementProbeError("Session fixture CAS result changed")
+                    raise HarnessReplacementProbeError("Session component CAS result changed")
             except ArtifactError as exc:
-                raise HarnessReplacementProbeError("Session fixture CAS result changed") from exc
+                raise HarnessReplacementProbeError("Session component CAS result changed") from exc
         if proof["driver_calls"] != [proof["delivery_operation_id"]]:
-            raise HarnessReplacementProbeError("no-model Driver collection count changed")
-        return {"fixture_terminal_collected_once": True, "session_result_cas_readback": True,
-                "model_calls": 0}
+            raise HarnessReplacementProbeError("component Driver collection count changed")
+        live = proof["live_harness_replacement"]
+        return {
+            "component_terminal_collected_once": True,
+            "session_result_cas_readback": True,
+            "component_model_calls": 0,
+            "live_model_calls": live["prompt_async_count"],
+            "live_session_replacement_verified": True,
+            "live_harness_version": live["harness_version"],
+            "live_provider_id": live["provider_id"],
+        }
     return {"harness_proof_readback": True}

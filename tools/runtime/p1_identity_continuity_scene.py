@@ -1993,6 +1993,8 @@ def _run_scene(
         "mutation_command_ids": resources.mutation_command_ids,
         "signed_command_ids": resources.signed_command_ids,
         "component_audit": audit,
+        "component_audit_scope": "preserved_component_only_input",
+        "evidence_class": "live_gate_qualification",
         "temporal_submission_readback": temporal,
         "checkpoint_sha256": resources.checkpoint["identity_sha256"],
     }
@@ -2112,16 +2114,28 @@ def read_layer(profile, kind, ledger, row, lineage):
         return {
             "identity_single_native_dispatch": True,
             "identity_signed_receipt_replay": proof["exact_recovery_replay"],
+            "identity_evidence_class": "live_gate_qualification",
             "gate_qualification": "passed",
         }
     else:
-        if proof["component_audit"].get("status") != "component_only":
+        if (
+            proof["component_audit"].get("status") != "component_only"
+            or proof.get("component_audit_scope") != "preserved_component_only_input"
+            or proof.get("evidence_class") != "live_gate_qualification"
+        ):
             raise IdentityContinuityRejected("component audit boundary changed")
         return {
             "identity_fault_chain": qualification["fault_chain"],
             "identity_component_audit_status": "component_only",
+            "identity_component_promoted": False,
+            "identity_evidence_class": "live_gate_qualification",
             "gate_qualification": "passed",
         }
     if observed != qualification["layers"][kind]:
         raise IdentityContinuityRejected(f"{kind} qualification readback changed")
-    return {label: True, "gate_qualification": "passed", **observed}
+    return {
+        label: True,
+        "identity_evidence_class": "live_gate_qualification",
+        "gate_qualification": "passed",
+        **observed,
+    }

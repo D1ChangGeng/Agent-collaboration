@@ -1,7 +1,7 @@
 # P1 Gate runner isolation contract
 
-Status: integrated isolated runner utility. P1 remains NOT_RUN until the real
-Runtime mechanisms supply reviewed probe commands and complete evidence.
+Status: integrated isolated runner utility. A source revision remains NOT_RUN
+until its real Runtime mechanisms, exact run and independent review complete.
 
 The source checkout is an immutable identity input. Probe commands execute only
 inside a private per-scenario copy of an exact read-only HEAD snapshot. This
@@ -96,8 +96,11 @@ provisioning attaches the exact runtime profile without changing the
 18-scenario order. Current adapter availability is recorded in
 `P1-PROBE-PROFILE.md`. Every gap remains `NOT_RUN` until independently
 implemented, executed and reviewed.
-For the `/2` Codex profile, provisioning requires paired
-`--codex-scene-profile` and `--budget-decision` owner-file references.
+For the combined `/4` same-run profile, provisioning requires paired Codex and
+OpenCode scene/budget references. It removes the legacy nullable model-evidence
+fields: the current run's native lifecycle artifacts are the only model
+evidence. Provisioning updates plan status from `pending` to `bound` and records
+the exact dependency-manifest digest and file count.
 
 Potential secret material is rejected before successful stdout is persisted.
 Only a redacted failure artifact and a redaction event may remain. The final

@@ -12,6 +12,7 @@ import pytest
 from psycopg.conninfo import make_conninfo
 
 from tools.runtime import p1_profile_probe as probe
+from tools.runtime.tests.test_p1_opencode_readback import complete
 from tools.runtime.tests.test_p1_profile_probe_integration import _profile
 
 pytestmark = pytest.mark.skipif(
@@ -28,7 +29,8 @@ def test_same_attempt_replacement_fences_old_result_and_projects_one_response(
     scenario = "P1-HARNESS-REPLACEMENT"
     profile_path = _profile(tmp_path)
     output = tmp_path / "candidate-output"
-    monkeypatch.setenv("ACS_GATE_RUN_ID", "harness-fixture-" + uuid.uuid4().hex)
+    gate_run_id = "p1-run-" + uuid.uuid4().hex
+    monkeypatch.setenv("ACS_GATE_RUN_ID", gate_run_id)
     profile, profile_digest, _secrets = probe._secure_profile(profile_path)
     source = Path(profile["source_root"])
     commit, tree = probe._source_identity(source)
@@ -38,6 +40,28 @@ def test_same_attempt_replacement_fences_old_result_and_projects_one_response(
         "profile": profile["profile"], "machine_id": profile["machine_id"],
         "node_id": profile["node_id"], "versions": profile["versions"],
     }))
+    live = complete()
+    live.update({
+        "run_id": gate_run_id,
+        "source_commit": commit,
+        "source_tree": tree,
+        "machine_id": profile["machine_id"],
+        "node_id": profile["node_id"],
+    })
+    live["os"]["unit"] = "acs-" + gate_run_id + ".service"
+    live["driver"]["auth"] = {
+        "storage": "xdg-data-auth-json", "provider_id": "fixture-provider",
+        "owner_mode": "0600", "same_reference": True,
+        "provider_connected": True, "native_route_equal": True,
+        "native_source": "config",
+    }
+    live["driver"]["session_replacement"]["operation_id"] = (
+        gate_run_id + "-session-replace"
+    )
+    lifecycle = tmp_path / "opencode-lifecycle.json"
+    lifecycle.write_text(json.dumps(live), encoding="utf-8")
+    lifecycle.chmod(0o600)
+    monkeypatch.setenv("ACS_GATE_OPENCODE_LIFECYCLE", str(lifecycle))
     ledger = probe.ProbeLedger(output)
     row = None
     try:
@@ -60,7 +84,9 @@ def test_same_attempt_replacement_fences_old_result_and_projects_one_response(
         assert proof["new_result_disposition"] == "current"
         assert results[1]["facts"]["layer"]["response_received_count"] == 1
         assert results[2]["facts"]["layer"]["node_terminal_count"] == 1
-        assert results[4]["facts"]["layer"]["model_calls"] == 0
+        assert results[4]["facts"]["layer"]["component_model_calls"] == 0
+        assert results[4]["facts"]["layer"]["live_model_calls"] == 1
+        assert results[4]["facts"]["layer"]["live_session_replacement_verified"] is True
 
         scoped = make_conninfo(profile["postgres_dsn"],
                                options=f"-c search_path={row['pg_schema']}")

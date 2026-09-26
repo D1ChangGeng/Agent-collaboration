@@ -201,12 +201,41 @@ def attach_plan(plan_path: Path, provisioned: dict[str, object]) -> None:
     )
 
 
+def attach_status(status_path: Path, provisioned: dict[str, object]) -> None:
+    status = strict_json(status_path.read_bytes())
+    if (
+        not isinstance(status, dict)
+        or status.get("schema_version") != "acs-p1-probe-plan-status/1"
+        or status.get("runner_integration")
+        != "pending Gate runner owner-only profile and reviewed runtime Python binds"
+    ):
+        raise RuntimeError("probe plan status is not pending the reviewed Runtime bind")
+    status["runner_integration"] = "bound"
+    status["runtime_environment_manifest_sha256"] = provisioned[
+        "runtime_environment_manifest_sha256"
+    ]
+    status["runtime_environment_file_count"] = provisioned["file_count"]
+    status["same_run_scene_inputs"] = sorted(
+        name
+        for name in (
+            "codex_scene_profile", "budget_decision",
+            "opencode_scene_profile", "opencode_budget_decision",
+        )
+        if name in provisioned
+    )
+    write_atomic(
+        status_path,
+        json.dumps(status, indent=2, ensure_ascii=False).encode("utf-8") + b"\n",
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-site", type=Path, required=True)
     parser.add_argument("--destination", type=Path, required=True)
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--plan", type=Path)
+    parser.add_argument("--status", type=Path)
     parser.add_argument("--codex-scene-profile", type=Path)
     parser.add_argument("--budget-decision", type=Path)
     parser.add_argument("--opencode-scene-profile", type=Path)
@@ -224,6 +253,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         if args.plan is not None:
             attach_plan(args.plan, result)
+        if args.status is not None:
+            attach_status(args.status, result)
         print(json.dumps({"status": "provisioned", **result}, sort_keys=True))
         return 0
     except (OSError, RuntimeError, ValueError) as error:

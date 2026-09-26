@@ -52,6 +52,9 @@ The qualification passes only after reopening and rereading every authority:
   both listener ports must be closed, TLS must be 1.3 with the registered
   certificate fingerprint, and private key files must be removed.
 
+The final proof labels the preserved sub-audit as
+`component_audit_scope=preserved_component_only_input` and the independently
+read-back qualification as `evidence_class=live_gate_qualification`.
 `gate_qualification` rejects `status=component_only`, any
 `gate_status != passed`, a non-empty `missing` list, an absent layer readback or
 an incomplete fault chain. Tests also reject changed Temporal Workflow/Run,
