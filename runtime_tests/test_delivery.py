@@ -435,6 +435,23 @@ def test_pre_call_rejection_is_blocked_without_activation_or_dispatch_receipt(se
         ("accepted_by_authority",), ("target_inbox_committed",)]
 
 
+def test_remote_pre_call_failure_with_empty_readback_keeps_original_error(setup):
+    f = setup
+    identity, _, _, _ = send(f, activation="invoke")
+    f.endpoint.deliver = lambda *args, **kwargs: (_ for _ in ()).throw(
+        __import__("runtime.delivery_node", fromlist=["InvocationPreCallRejected"])
+        .InvocationPreCallRejected("prepare unavailable")
+    )
+    f.endpoint.inspect_delivery = lambda *args, **kwargs: {
+        "status": "blocked", "receipts": [],
+    }
+
+    result = f.dispatcher.dispatch(identity)
+
+    assert result["status"] == "blocked"
+    assert message(f, identity["message_id"])[1] == "native_pre_call_rejected"
+
+
 def test_postgres_dispatch_marker_and_location_commit_before_native_call(setup):
     f = setup
     identity, _, packet, _ = send(f, activation="invoke")

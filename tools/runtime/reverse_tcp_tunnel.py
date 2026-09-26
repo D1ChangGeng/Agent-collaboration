@@ -92,7 +92,7 @@ def _worker(relay_host: str, relay_port: int, local_host: str, local_port: int,
                     raise RuntimeError("reverse tunnel relay command differs")
                 with socket.create_connection((local_host, local_port), timeout=10) as local:
                     pipe(relay, local)
-        except OSError:
+        except (OSError, RuntimeError):
             continue
 
 
