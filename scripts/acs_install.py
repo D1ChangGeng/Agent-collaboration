@@ -66,6 +66,36 @@ def owner_file(path: Path, content: str) -> None:
         path.chmod(0o600)
 
 
+def migrate_private_identity(legacy: Path, destination: Path) -> None:
+    files = ("runtime-dsn", "runtime-credential", "runtime-surface.json")
+    if not all((legacy / name).is_file() for name in files):
+        return
+    if any((destination / name).exists() for name in files):
+        if not all((destination / name).is_file() for name in files):
+            raise ValueError("private runtime identity migration needs explicit repair")
+        return
+    from runtime.surface_config import SurfaceSettings
+
+    previous = SurfaceSettings.model_validate_json((legacy / files[2]).read_bytes(), strict=True)
+    if (previous.context.grant_ref != "grant:root"
+            or previous.dsn_ref.kind != "file" or previous.credential_ref.kind != "file"
+            or previous.dsn_ref.name != str(legacy / files[0])
+            or previous.credential_ref.name != str(legacy / files[1])):
+        raise ValueError("existing Runtime identity requires explicit migration")
+    for name in files:
+        path = legacy / name
+        if path.is_symlink() or (os.name == "posix" and stat.S_IMODE(path.stat().st_mode) & 0o077):
+            raise ValueError("legacy Runtime identity file permissions are unsafe")
+    old_dsn = (legacy / files[0]).read_text(encoding="utf-8")
+    old_credential = (legacy / files[1]).read_text(encoding="utf-8")
+    owner_file(destination / files[0], old_dsn)
+    owner_file(destination / files[1], old_credential)
+    data = previous.model_dump(mode="json")
+    data["dsn_ref"]["name"] = str(destination / files[0])
+    data["credential_ref"]["name"] = str(destination / files[1])
+    owner_file(destination / files[2], json.dumps(data, indent=2) + "\n")
+
+
 def git_observation(source: Path, *arguments: str) -> str:
     result = subprocess.run(["git", "-C", str(source), *arguments], capture_output=True,
                             text=True, check=True, timeout=30)
@@ -305,6 +335,8 @@ def install(
         if root.is_symlink() or (os.name == "posix" and stat.S_IMODE(root.stat().st_mode) & 0o077):
             raise ValueError("provider directory permissions are unsafe")
         owner_file(root / "local-providers.json", json.dumps(previous) + "\n")
+    if legacy.is_file() and (private_root() / "local-providers.json").is_file():
+        migrate_private_identity(legacy.parent, private_root())
     if project is not None:
         from workspace_setup import workspace_install
 
