@@ -1,0 +1,252 @@
+"""A fixed OpenCode request surface over the existing restricted host Node."""
+
+from __future__ import annotations
+
+import json
+import os
+import socket
+import struct
+import time
+from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from runtime.native_delivery import NativeDeliveryAdapter
+from runtime.opencode_driver import OpenCodeNativeDriver
+from runtime.p1_codex_host_node import (
+    CodexHostNodeEndpoint,
+    CodexHostRequest,
+    CodexHostResult,
+    HostNodeRejected,
+    _sha256_owner_file,
+)
+from runtime.receiver_paths import PathSecurityRejected, private_parent
+from runtime.systemd_supervisor import SystemdUserSupervisor
+
+
+class _Strict(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+
+class OpenCodeHostRequest(_Strict):
+    schema_version: Literal["acs-p1-opencode-host-request/1"] = "acs-p1-opencode-host-request/1"
+    action: Literal["dispatch", "readback"]
+    run_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{7,127}$")
+    tenant_id: str = Field(min_length=1, max_length=256)
+    message_id: str = Field(min_length=1, max_length=256)
+    command_id: str = Field(min_length=1, max_length=256)
+    operation_id: str = Field(min_length=1, max_length=256)
+    endpoint_id: str = Field(min_length=1, max_length=256)
+    source_commit: str = Field(pattern=r"^[a-f0-9]{40}$")
+    native_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    config_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+    def internal(self) -> CodexHostRequest:
+        return CodexHostRequest.model_validate(
+            {**self.model_dump(), "schema_version": "acs-p1-codex-host-request/1"},
+            strict=True,
+        )
+
+
+class OpenCodeHostResult(_Strict):
+    schema_version: Literal["acs-p1-opencode-host-result/1"] = "acs-p1-opencode-host-result/1"
+    run_id: str
+    tenant_id: str
+    message_id: str
+    command_id: str
+    operation_id: str
+    status: str
+    attempt_id: str | None = None
+    dispatch_id: str | None = None
+    pg_receipts: tuple[dict, ...] = ()
+    node_receipts: tuple[dict, ...] = ()
+    os_observation: dict | None = None
+    scene_readback: dict | None = None
+    scene_readback_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+
+    @classmethod
+    def from_internal(cls, value: CodexHostResult) -> OpenCodeHostResult:
+        return cls.model_validate(
+            {**value.model_dump(), "schema_version": "acs-p1-opencode-host-result/1"},
+            strict=True,
+        )
+
+
+class OpenCodeHostNodeEndpoint(CodexHostNodeEndpoint):
+    """Reuse Domain/Scope/Grant/boot fencing with an OpenCode Driver pin."""
+
+    def _validate_native_adapter(self, adapter: NativeDeliveryAdapter) -> None:
+        if (
+            not isinstance(adapter, NativeDeliveryAdapter)
+            or not isinstance(adapter.driver, OpenCodeNativeDriver)
+            or not isinstance(adapter.driver.supervisor, SystemdUserSupervisor)
+        ):
+            raise HostNodeRejected("host endpoint requires OpenCode with host Systemd supervision")
+        profile = adapter.driver.profile
+        if (
+            Path(profile.executable) != self.native_path
+            or profile.config_path != self.config_path
+            or profile.executable_sha256 != self.policy.native_sha256
+            or profile.config_sha256 != self.policy.config_sha256
+        ):
+            raise HostNodeRejected("host OpenCode profile differs from pinned native artifacts")
+
+    def _verify_artifacts(self) -> None:
+        """Recheck the live OpenCode policy after its config normalization.
+
+        The initial factory/profile admission already verifies the exact
+        owner-pinned config bytes before spawn. OpenCode may normalize and
+        rewrite that file while creating a session, so later HostNode
+        preflights must bind the effective provider/model/permission contract
+        instead of rejecting a byte-level rewrite that preserves the contract.
+        """
+        if _sha256_owner_file(self.native_path, executable=True) != self.policy.native_sha256:
+            raise HostNodeRejected("pinned native binary digest changed")
+        try:
+            config = json.loads(self.config_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ValueError) as error:
+            raise HostNodeRejected("effective OpenCode config is unreadable") from error
+        endpoint = self.dispatcher.service.endpoints.get(self.policy.endpoint_id)
+        adapter = getattr(endpoint, "driver", None) if endpoint is not None else None
+        driver = getattr(adapter, "driver", adapter)
+        profile = getattr(driver, "profile", None)
+        provider_id = getattr(profile, "provider_id", None)
+        model_id = getattr(profile, "model_id", None)
+        provider_url = getattr(driver, "required_provider_url", None)
+        agent = getattr(profile, "agent", None)
+        selected = config.get("provider", {}).get(provider_id, {}) if isinstance(config, dict) else {}
+        selected_agent = config.get("agent", {}).get(agent, {}) if isinstance(config, dict) else {}
+        if (
+            not isinstance(config, dict)
+            or config.get("model") != f"{provider_id}/{model_id}"
+            or config.get("default_agent") != agent
+            or config.get("permission") != {"*": "deny", "task": "deny"}
+            or selected_agent.get("model") != f"{provider_id}/{model_id}"
+            or selected_agent.get("permission") != {"*": "deny", "task": "deny"}
+            or provider_url is not None
+            and (
+                not isinstance(selected, dict)
+                or selected.get("npm") != "@ai-sdk/openai"
+                or selected.get("options") != {"baseURL": provider_url}
+            )
+        ):
+            raise HostNodeRejected("effective OpenCode config contract changed")
+
+    def handle(self, request):
+        """Accept the public OpenCode request while reusing the shared core.
+
+        ``OpenCodeHostUnixServer`` already converts its validated request before
+        calling the endpoint, but the in-process scene service calls the
+        endpoint directly.  Normalize that path here so the shared Domain /
+        Node implementation never rejects a valid OpenCode schema merely
+        because it expects the internal Codex-compatible representation.
+        """
+        if getattr(request, "schema_version", None) == "acs-p1-opencode-host-request/1":
+            request = request.internal()
+        return super().handle(request)
+
+
+class OpenCodeHostUnixServer:
+    """One authenticated, fixed-schema dispatch or readback per connection."""
+
+    MAX_REQUEST = 8192
+    MAX_RESPONSE = 262144
+
+    def __init__(self, endpoint: OpenCodeHostNodeEndpoint, socket_path: Path) -> None:
+        if os.name != "posix" or not hasattr(socket, "SO_PEERCRED"):
+            raise HostNodeRejected("Unix peer credentials are required")
+        self.endpoint = endpoint
+        self.socket_path = Path(socket_path)
+        try:
+            descriptor, _ = private_parent(self.socket_path.parent)
+            os.close(descriptor)
+        except PathSecurityRejected as error:
+            raise HostNodeRejected("OpenCode host socket parent must be owner 0700") from error
+        if self.socket_path.exists() or self.socket_path.is_symlink():
+            raise HostNodeRejected("OpenCode host socket path already exists")
+        self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            self.socket.bind(str(self.socket_path))
+            os.chmod(self.socket_path, 0o600)
+            self.socket.listen(8)
+        except BaseException:
+            self.socket.close()
+            raise
+
+    def serve_one(self, *, accept_timeout: float = 10.0) -> None:
+        self.socket.settimeout(accept_timeout)
+        peer, _ = self.socket.accept()
+        with peer:
+            request = None
+
+            def record_server_error(kind: str, error: BaseException) -> None:
+                candidate = getattr(self.endpoint, "driver", None)
+                driver = getattr(candidate, "driver", candidate)
+                journal = getattr(driver, "journal", None)
+                operation_id = getattr(request, "operation_id", "host-server")
+                if journal is None:
+                    return
+                try:
+                    journal.event(
+                        operation_id,
+                        kind,
+                        {"error_type": type(error).__name__, "detail": str(error)[:300]},
+                    )
+                except (OSError, RuntimeError, TypeError, ValueError):
+                    return
+            try:
+                _, uid, _ = struct.unpack(
+                    "3i", peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12)
+                )
+                if uid != os.geteuid():
+                    raise HostNodeRejected("OpenCode host peer UID differs")
+                payload = bytearray()
+                deadline = time.monotonic() + 10
+                while len(payload) <= self.MAX_REQUEST:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise HostNodeRejected("OpenCode host request deadline expired")
+                    peer.settimeout(remaining)
+                    block = peer.recv(min(4096, self.MAX_REQUEST + 1 - len(payload)))
+                    if not block:
+                        break
+                    payload.extend(block)
+                    if b"\n" in block:
+                        break
+                if (
+                    len(payload) > self.MAX_REQUEST
+                    or payload.count(b"\n") != 1
+                    or not payload.endswith(b"\n")
+                ):
+                    raise HostNodeRejected("OpenCode host request frame differs")
+                try:
+                    request = OpenCodeHostRequest.model_validate_json(payload[:-1], strict=True)
+                except ValueError as error:
+                    raise HostNodeRejected("OpenCode host request schema differs") from error
+                observed = self.endpoint.handle(request.internal())
+                result = (
+                    observed if isinstance(observed, OpenCodeHostResult)
+                    else OpenCodeHostResult.from_internal(observed)
+                )
+                data = result.model_dump_json().encode() + b"\n"
+                if len(data) > self.MAX_RESPONSE:
+                    data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"uncertain"}\n'
+            except HostNodeRejected as error:
+                record_server_error("host_server_rejection", error)
+                data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"rejected"}\n'
+            except Exception as error:  # noqa: BLE001 -- unknown dispatch outcome stays uncertain
+                record_server_error("host_server_error", error)
+                data = b'{"schema_version":"acs-p1-opencode-host-error/1","state":"uncertain"}\n'
+            try:
+                peer.settimeout(2)
+                peer.sendall(data)
+            except (BrokenPipeError, ConnectionResetError, TimeoutError):
+                return
+
+    def close(self) -> None:
+        self.socket.close()
+        try:
+            self.socket_path.unlink()
+        except FileNotFoundError:
+            pass

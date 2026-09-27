@@ -1,558 +1,145 @@
-# agent-collaboration-setup
+<div align="center">
+  <img src="assets/acs-mark.svg" width="108" alt="Agent Collaboration System mark" />
+  <h1>Agent Collaboration System</h1>
+  <p>Durable project coordination for AI agents across sessions, machines and Harnesses.</p>
+  <p><a href="README.zh-CN.md">简体中文</a> · <a href="docs/GETTING-STARTED.md">Get started</a> · <a href="docs/runtime/UPGRADE-CONTRACT.md">Runtime architecture</a></p>
+</div>
 
-A **setup-only, harness-agnostic Agent Skill** that installs and maintains the
-**Agent Collaboration & Handoff Protocol (ACHP)** in either a source repository
-or a long-lived Project Collaboration Workspace.
+ACS gives a project a stable **Management Root** and **Routes** for long-lived
+development work. A Root Agent can organize teams and WorkItems, send messages,
+recover responses from Inbox, inspect exact source evidence and request Review.
+Codex and OpenCode act as external Agents; ACS persists identity, authorization,
+delivery and recovery state in a shared Runtime.
 
-After setup, the skill gets out of the way.
+## Start with an AI assistant
 
-Normal multi-agent work runs from:
-
-```text
-AGENTS.md
-.agents/
-```
-
-—not from this Skill.
-
-[中文 README](README.zh-CN.md)
-
-## What this repository solves
-
-Different agent harnesses expose different collaboration capabilities. Some can only read other sessions, some can send to sessions on the same machine, and some environments may support cross-machine relay. Those capabilities can also vary by version, permissions, deployment, or runtime.
-
-ACHP therefore does not bind collaboration semantics to a harness brand.
-
-It uses:
-
-- **capability-based branching** for session relay;
-- **manual user forwarding** as the universal safe transport;
-- **automatic relay only when the exact required capability is positively verified**;
-- **Git as the durable repository-state bridge**;
-- **`.agents/knowledge/` as the durable project knowledge plane**;
-- **`AGENTS.md` as the canonical runtime entry point**.
-
-The Skill in this repository only installs/configures that mechanism.
-
-## Design boundary: setup Skill vs runtime protocol
+Send this repository URL to Codex or OpenCode on your machine:
 
 ```text
-agent-collaboration-setup (this Skill)
-        |
-        | bootstrap / adopt / upgrade / repair
-        v
-Project Git Repository / Source Checkout Root
-├── Product code
-├── ...
-└── Nested Management Root
-    ├── AGENTS.md
-    ├── .agents/
-    └── Route directories
+https://github.com/D1ChangGeng/Agent-collaboration
 ```
 
-Once installed, ordinary project sessions do **not** need to load this Skill.
+Then ask:
 
-Use it again only when you intentionally want to change the collaboration setup itself.
+> Inspect this repository and guide me through installing ACS. Check my machine
+> and project, perform the setup steps you can run, and ask me only for the
+> project choices and authorizations I need to make. Verify the installed
+> services and MCP tools, explain what collaboration capabilities are available,
+> and help me open the Management Root as a Root Agent session.
 
-## Portable Skill format
+The [getting started guide](docs/GETTING-STARTED.md) gives the Agent a complete
+first-use path. It covers installation reporting, project adoption, a Route and
+Team, WorkItem delivery, Inbox recovery and independent Review. The Agent can
+use `scripts/acs_doctor.py` for a read-only readiness report and
+`scripts/acs_install.py` to preview and apply local setup. Real project Source
+registration and live Harness connection are verified as separate steps.
 
-This repository follows the open Agent Skills `SKILL.md` format and keeps frontmatter to portable fields.
+## What you can manage
 
-Current official discovery locations include:
+| Need | ACS capability |
+| --- | --- |
+| Organize a project | Stable Project and Management Root identity, Route registry and scoped project context |
+| Build a team | AgentSlots, roles, Grants, Policies and budgets through `configure_team` |
+| Delegate work | WorkItems, durable messages, handoff acknowledgement and response handles |
+| Continue later | Bounded waits, notifications, Inbox reads and Session replacement recovery |
+| Trust the result | Exact Git SourceBinding, Evidence, independent Review and accepted state |
+| Connect clients | Profile-filtered MCP tools for Codex, OpenCode and a single-owner private ChatGPT Tunnel |
 
-| Harness | Recommended personal location |
-|---|---|
-| Codex | `~/.agents/skills/agent-collaboration-setup/` |
-| OpenCode | `~/.agents/skills/agent-collaboration-setup/` |
-| Claude Code | `~/.claude/skills/agent-collaboration-setup/` |
+The Runtime tool catalog is [machine-readable](docs/runtime/p2-mcp-tool-contract.json).
+Knowledge Skills under [docs/runtime/skills](docs/runtime/skills/README.md)
+explain the project, collaboration, continuity, source, policy and Review
+models as an Agent needs them.
 
-Codex and OpenCode can share the same `~/.agents/skills/` installation.
+## Architecture
 
-## Recommended installation: one clone, multiple harnesses
-
-Clone this repository once into a stable source location:
-
-```bash
-git clone https://github.com/D1ChangGeng/Agent-collaboration.git ~/.local/share/agent-collaboration-setup
-cd ~/.local/share/agent-collaboration-setup
+```mermaid
+flowchart LR
+    U[User] --> H[Codex / OpenCode Agent]
+    U --> W[ChatGPT web Agent]
+    W --> T[Private MCP Tunnel]
+    T --> M[Local ACS MCP]
+    H --> M
+    M --> D[Authenticated Domain service]
+    D --> P[(PostgreSQL<br/>Project, WorkItem, Grant, Inbox)]
+    D --> O[Delivery and recovery]
+    O --> N[Machine Node and Harness Driver]
+    O --> Q[Temporal operations]
+    N --> H
+    D --> S[Source and artifact providers]
 ```
 
-Then expose that single checkout to all supported harnesses:
+External Agents choose goals, delegation and Review decisions. The Domain
+checks identity, project scope, Grant and revision before committing state.
+Node and Driver integrations observe actual Harness sessions and execution.
+Git commits and trees remain the source of truth for repository content.
 
-```bash
-python3 scripts/install_skill.py --harness all
+## A collaboration cycle
+
+```mermaid
+sequenceDiagram
+    participant R as Root Agent
+    participant C as ACS Runtime
+    participant E as Engineer Agent
+    participant V as Reviewer Agent
+    R->>C: Create Route, Team and WorkItem
+    R->>C: Send message or hand off work
+    C->>E: Commit to Inbox and dispatch when eligible
+    E->>C: Respond with source and evidence
+    C-->>R: Receipt, response handle and notification
+    R->>C: Wait or recover from Inbox
+    R->>C: Request independent Review
+    C->>V: Present exact candidate and evidence
+    V->>C: Record Review decision
+    C-->>R: Read back result and unresolved items
 ```
 
-The installer uses symlinks where practical so a later `git pull` updates every harness at once. If symlinks are unavailable (commonly on some Windows setups), it safely falls back to copying.
-
-Validate the installation:
-
-```bash
-python3 scripts/install_skill.py --harness all --check
-```
-
-### Install for only one harness
-
-```bash
-python3 scripts/install_skill.py --harness codex
-python3 scripts/install_skill.py --harness opencode
-python3 scripts/install_skill.py --harness claude
-```
-
-Codex and OpenCode intentionally resolve to the shared Agent Skills path.
-
-### Windows
-
-From PowerShell:
-
-```powershell
-git clone https://github.com/D1ChangGeng/Agent-collaboration.git "$HOME\.local\share\agent-collaboration-setup"
-cd "$HOME\.local\share\agent-collaboration-setup"
-py scripts\install_skill.py --harness all
-```
-
-If creating symlinks is not permitted, `--mode auto` falls back to a copy. Rerun the installer after `git pull` to refresh copied installations.
-
-## Using the Skill
-
-Invoke it only when setting up or maintaining ACHP.
-
-### Agent operating model
-
-If the user does not use the internal command names, start with
-[the Agent Collaboration Operating Guide](references/OPERATING-GUIDE.md).
-The guide tells an Agent what to observe first, which facts can be inferred,
-when a question is necessary, and how to map a request to `bootstrap`, `adopt`,
-`repair`, `upgrade`, `validate`, or a Route operation. It keeps semantic
-decisions in the Agent and bounded file changes in the deterministic scripts.
-
-Use the [Capability Matrix](references/CAPABILITY-MATRIX.md) to distinguish a
-narrow tested CLI path from a protocol-level policy, an unverified environment
-capability, and an operation that this Skill does not provide. Use the
-[Scenario Matrix](references/SCENARIO-MATRIX.md) for representative journey
-and regression coverage.
-
-The normal sequence is:
-
-```text
-user intent
-  → inspect the exact target and existing collaboration files
-  → classify Root/Route state
-  → infer only safe facts
-  → ask only behavior-changing unknowns
-  → preview the deterministic operation
-  → apply and read back
-  → validate the resulting invariant
-```
-
-Do not create a new Route because a Session, Engineer window, machine, or
-Execution Endpoint changed. Session attach, Endpoint replacement, SSH source
-access, direct relay, and collaboration migration remain explicitly
-unverified/unsupported by this setup Skill unless a separate implementation and
-evidence package establishes them.
-
-Examples:
-
-### New repository
-
-```text
-Use agent-collaboration-setup to bootstrap ACHP in this repository.
-```
-
-### Existing repository
-
-```text
-Use agent-collaboration-setup to adopt this repository into ACHP.
-Preserve all existing project instructions and documentation.
-```
-
-### Upgrade
-
-```text
-Use agent-collaboration-setup to upgrade the ACHP setup in this repository.
-Do not overwrite project-owned knowledge, tasks, handoffs, or project profile.
-```
-
-### Validate
-
-```text
-Use agent-collaboration-setup to validate this repository's ACHP setup.
-```
-
-Harness invocation syntax differs. For example, Codex can explicitly mention a Skill, Claude Code exposes Skills as slash commands, and OpenCode exposes them through its Skill system. The natural-language prompts above remain portable.
-
-The prompts above express setup intent; they do not imply that the Python CLI
-parses arbitrary language. When a request is ambiguous, the Agent should use
-the operating guide and inspect the target before asking for internal schema or
-topology fields.
-
-## Project Collaboration Workspace and Routes
-
-A Workspace is a durable management/control root. The default v0.4.0 model
-places it inside the same project Git repository as the product code:
-
-```text
-Project Git Repository / Source Checkout Root
-├── Product code
-├── ...
-└── Nested Management Root
-    ├── AGENTS.md
-    ├── .agents/
-    └── Route directories
-```
-
-Management documents, knowledge, and Routes are tracked in the same project Git
-commits as product code. Local and remote checkouts are separate clones with
-the same relative layout; Git synchronization is explicit, not automatic.
-The manifest records the mode `nested-repository`, while Git carries the layout.
-
-The CLI keeps the exact nested root as its target. Its only parent write is a
-scoped runtime exclusion block in the repository-root `.gitignore`, marked by
-`# ACHP-NESTED:<relative path>:BEGIN` / `# ACHP-NESTED:<relative path>:END`.
-Existing parent blocks and rules are preserved; no child `.gitignore` or
-repository scaffold at the parent is required. Standalone Workspaces remain
-supported for compatibility. Legacy manifests without the mode stay unchanged
-during `adopt`/`repair`; explicit `workspace upgrade` inside Git migrates known
-setup-only child ignores. Custom child rules require reviewed manual
-consolidation before writes can proceed.
-
-```bash
-python3 scripts/project_setup.py workspace adopt --root /path/to/workspace --dry-run
-python3 scripts/project_setup.py workspace adopt --root /path/to/workspace
-python3 scripts/project_setup.py workspace validate --root /path/to/workspace
-python3 scripts/project_setup.py route list --workspace /path/to/workspace
-```
-
-If the Workspace contains Route-like directories that are not registered, view
-the candidates first. They are advisory until the intended Route is explicitly
-included; ordinary Workspace adoption does not silently claim every directory.
-
-```bash
-python3 scripts/project_setup.py workspace adopt \
-  --root /path/to/workspace --list-candidates
-python3 scripts/project_setup.py workspace adopt \
-  --root /path/to/workspace --include-route "C Route" --dry-run
-```
-
-Create a new Route without copying an existing Route:
-
-```bash
-python3 scripts/project_setup.py route create \
-  --workspace /path/to/workspace \
-  --path "C Route" \
-  --route-id c-route \
-  --display-name "C Route"
-```
-
-Adopt an existing Route only from that Route's own migration phase. Adoption
-preserves its existing `AGENTS.md`, `.agents/knowledge/`, references, and state:
-
-```bash
-python3 scripts/project_setup.py route adopt \
-  --workspace /path/to/workspace \
-  --path "Existing Route"
-```
-
-The Root registry stores only the canonical Route fields: ID, path, display name,
-and lifecycle status. Current Session progress remains in Harness context.
-Verified Source Repository facts may use an optional Route-owned
-`.agents/state/source-state.yaml` record when they need to survive across
-Sessions; Route creation does not create an empty record. Historical paths or
-Harness names do not establish a current baseline.
-
-### Workspace schema 0.3 operation boundary
-
-The Workspace commands `bootstrap`, `adopt`, `upgrade`, `repair`, and `validate`
-are implemented against the exact supplied path. `workspace uninstall` is
-currently guarded: it refuses to change files until a reviewed ownership plan is
-available. Schema 0.2 registries and Route metadata remain readable. New writes
-use a minimal schema: stable Route identity and lifecycle in the Root registry;
-Route metadata contains only identity and the explicit Root contract pointer.
-`route upgrade` is the explicit metadata migration boundary and preserves
-unrecognized extension fields. `route set-state` and `route rename` update the
-registry only; they do not create a second lifecycle source in `route.yaml`.
-Schema 0.2 data remains readable and can be validated or handled as an
-idempotent no-op. Adding a new Route to a schema 0.2 registry is refused until
-the Workspace has gone through the explicit upgrade boundary, so a legacy
-registry is never left with a mixed old/new entry shape.
-Split/merge, path-moving rename, Endpoint replacement, restore, and rollback
-remain future migration contracts requiring explicit evidence, review, and a
-reversible recovery plan.
-
-Installer hashes and preflight checks record setup integrity. Live execution
-continuity belongs to the Harness/session context; source identity belongs to
-Git or Route Source State; and durable knowledge belongs to self-evolution. The
-setup Skill configures these boundaries and does not own Session execution
-recovery.
-
-## Deterministic repository setup CLI
-
-The Skill includes a standard-library-only Python setup tool:
-
-```bash
-python3 scripts/project_setup.py adopt --root /path/to/repo
-```
-
-Modes:
-
-```text
-bootstrap
-adopt
-upgrade
-repair
-validate
-uninstall
-```
-
-Preview any mutating operation first:
-
-```bash
-python3 scripts/project_setup.py adopt --root /path/to/repo --dry-run
-```
-
-Validate after installation:
-
-```bash
-python3 scripts/project_setup.py validate --root /path/to/repo
-```
-
-Repository uninstall preserves project-owned coordination/knowledge by default.
-The Workspace uninstall command is a separate guarded path and currently makes no
-changes. For a source repository, to remove all ACHP data too:
-
-```bash
-python3 scripts/project_setup.py uninstall --root /path/to/repo --purge-data
-```
-
-For populated repositories, use `adopt` and review its preview. Reserve
-`bootstrap` for a genuinely new/empty repository. `repair` restores only a
-provably managed missing component; an existing content drift or ownership
-conflict must be surfaced for review. `upgrade` is the explicit operation that
-refreshes setup-managed protocol content.
-
-## What gets installed into a project
-
-```text
-AGENTS.md
-CLAUDE.md                     # only a thin @AGENTS.md compatibility route
-.agents/
-├── README.md
-├── config.yaml
-├── manifest.json
-├── protocol/
-│   ├── CAPABILITIES.md
-│   ├── RELAY.md
-│   ├── GIT-SYNC.md
-│   └── KNOWLEDGE.md
-├── coordination/
-│   ├── PROJECT.md
-│   ├── roles/
-│   ├── tasks/
-│   ├── handoffs/
-│   └── templates/
-├── knowledge/
-│   ├── README.md
-│   ├── guides/
-│   ├── decisions/
-│   ├── observations/
-│   └── archive/
-└── (Harness/session context)  # local execution context; not installed state
-```
-
-The installer uses bounded managed blocks in `AGENTS.md`, `CLAUDE.md`, and
-`.gitignore`. Nested management roots use their own scoped block in the parent
-repository-root `.gitignore`; all existing parent blocks and rules are preserved.
-
-## Runtime architecture
-
-ACHP separates durable collaboration identity from changing execution and source
-state:
-
-```text
-Project Collaboration Root
-    stable project identity, Route registry, shared constraints
-
-Development Route Node
-    long-lived goals, decisions, knowledge, and verified source evidence
-
-Execution Endpoint
-    replaceable engineer/agent/session/host capacity
-
-Source Repository / Source State
-    explicit repository, branch, commit, tree, worktree, Push/Pull evidence
-
-Knowledge Plane
-    Root-wide knowledge plus Route-owned scoped knowledge
-```
-
-Harness integrations are optional edges around these planes.
-
-## Relay policy
-
-The runtime decision is topology-first:
-
-```text
-one session
-  -> no relay needed
-
-multiple sessions, same host
-  -> test same-host send capability only
-     -> verified + target addressable: automatic
-     -> otherwise: user manual relay
-
-multiple sessions, multiple hosts
-  -> test cross-host send capability
-     -> verified + target addressable: automatic
-     -> otherwise: user manual relay
-
-unknown topology
-  -> manual relay; do not block work
-```
-
-Never infer capability from the harness product name.
-
-`unknown != verified`.
-
-Read capability does not imply send capability.
-
-Same-host send does not imply cross-host send.
-
-## Knowledge model
-
-`.agents/knowledge/` is deliberately lightweight.
-
-Persist knowledge only when it is likely to change a future action and is meaningfully more expensive to rediscover than to maintain.
-
-Recommended categories:
-
-```text
-guides/
-decisions/
-observations/
-archive/
-```
-
-This model is compatible with a `self-evolution`-style knowledge lifecycle but does not require that Skill or any specific harness.
-
-### AGENTS evolution boundary
-
-`AGENTS.md` is the always-on foundation for stable identity, collaboration
-topology, ownership/evidence boundaries, cross-session continuity, and recurring
-high-cost corrections. A new rule belongs there only after real work shows that
-it is stable across future sessions or Routes, required at startup, and not
-reliably supplied by retrieved knowledge. Current state, implementation detail,
-design rationale, task progress, engineer reports, and temporary evidence stay
-in their authoritative Route, state, knowledge, or source records.
-
-`self-evolution` owns knowledge discovery, capture, retrieval, correction,
-verification, and maintenance. ACHP does not duplicate that lifecycle in
-`AGENTS.md`, and `AGENTS.md` must not become a work log or a second source of
-truth.
-
-## Updating this Skill
-
-With the recommended symlink installation:
-
-```bash
-cd ~/.local/share/agent-collaboration-setup
-git pull
-python3 scripts/install_skill.py --harness all --check
-```
-
-For copy-mode installations:
-
-```bash
-git pull
-python3 scripts/install_skill.py --harness all --mode copy
-```
-
-Projects are **not** silently upgraded when the Skill repository changes. Upgrade a project intentionally:
-
-```bash
-python3 scripts/project_setup.py upgrade --root /path/to/project
-```
-
-This keeps setup changes reviewable.
-
-## Publishing your fork/repository to GitHub
-
-After editing the files, review the complete change and stage only the files
-intended for publication:
-
-```bash
-git init
-git status --short
-git add <intended-files>
-git diff --cached --check
-git commit -m "Add Project Collaboration Workspace and Route support"
-git branch -M main
-git remote add origin git@github.com:D1ChangGeng/Agent-collaboration.git
-git push -u origin main
-```
-
-The public source repository is `D1ChangGeng/Agent-collaboration`; the
-installable Skill slug and local discovery directory remain
-`agent-collaboration-setup`.
-
-## Validation and tests
-
-Run:
-
-```bash
-python3 scripts/validate_skill.py
-python3 -m unittest discover -s tests -v
-```
-
-The included GitHub Actions workflow runs both checks on pushes and pull requests.
-
-## Development principles
-
-1. Keep the Skill **setup-only**.
-2. Keep the runtime protocol **harness-agnostic**.
-3. Prefer open Agent Skills fields over harness-specific frontmatter.
-4. Preserve existing project instructions and documentation.
-5. Make adapters optional and removable.
-6. Treat manual relay as a supported normal mode.
-7. Keep machine/session capability observations out of Git.
-8. Keep repository sync explicit in handoffs.
-9. Avoid duplicating project truth into `.agents/knowledge/`.
-10. Make upgrades intentional and reviewable.
-
-## Repository map
-
-```text
-SKILL.md
-README.md
-README.zh-CN.md
-CHANGELOG.md
-CONTRIBUTING.md
-LICENSE
-scripts/
-  install_skill.py
-  project_setup.py
-  workspace_setup.py
-  validate_skill.py
-assets/
-  scaffold/
-references/
-  DESIGN.md
-  HARNESS-COMPATIBILITY.md
-  UPGRADE-POLICY.md
-tests/
-.github/
-```
-
-## Upstream references
-
-- Agent Skills open specification: https://agentskills.io/
-- Codex Skills: https://developers.openai.com/codex/build-skills
-- Codex `AGENTS.md`: https://developers.openai.com/codex/agent-configuration/agents-md
-- Claude Code Skills: https://code.claude.com/docs/en/skills
-- Claude Code project memory / `AGENTS.md` compatibility: https://code.claude.com/docs/en/memory
-- OpenCode Skills: https://opencode.ai/docs/skills/
-- OpenCode instructions: https://opencode.ai/v2/docs/instructions
-- Knowledge-design inspiration: https://github.com/D1ChangGeng/self-evolution
-
-## License
-
-MIT. Replace the license before publishing if you prefer a different open-source license.
+For example, a Root Agent can ask an Engineer to change one feature, keep the
+WorkItem and message handle across a Session restart, inspect the output commit
+and test evidence, and route that candidate to a Reviewer. The
+[engineering evidence index](docs/runtime/P2-EXECUTION-STATUS.md) records the
+exact scope of measured cross-machine, cross-Harness and MCP behavior.
+
+## Install and connect
+
+The setup Skill and Runtime are separate packages in this repository. The setup
+Skill manages project scaffolding; the Runtime exposes typed collaboration
+tools and persists shared state. The Source/CAS Runtime service runs on Linux;
+Windows Codex and OpenCode connect as clients to an admitted Linux service.
+A local service installation uses Python 3.12+, Git, uv and Docker Compose for
+PostgreSQL and Temporal. The Agent checks these prerequisites and handles supported
+installation actions. You complete machine
+privilege and account consent prompts.
+
+The Linux setup entry prints a plan first. With `--apply`, it installs the
+locked Python environment and nine Skills, starts owner-local services,
+initializes a private owner authority and adopts a specified Management Root.
+For a clean committed project Source, it registers the project and reads back
+its context. On the Runtime host it configures local Codex and OpenCode MCP
+entries with rollback copies; the Agent verifies tool discovery in each client
+before reporting collaboration ready.
+See [getting started](docs/GETTING-STARTED.md) and
+[troubleshooting](docs/TROUBLESHOOTING.md).
+
+For ChatGPT web, the [single-user private Tunnel
+profile](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md) connects an installation
+owner's Linux MCP process through their OpenAI Platform organization and
+ChatGPT workspace. Follow the current [official Tunnel
+guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
+for platform permissions and connection steps.
+
+## Project and source boundaries
+
+The preferred layout keeps the Management Root inside the project's Git source
+checkout. Root and Route instructions, knowledge and project metadata travel
+with the repository; Runtime observations and credentials stay in private local
+storage. Message delivery and Git synchronization are recorded independently.
+The [setup Skill](SKILL.md) provides guarded bootstrap, adopt, repair, upgrade
+and validation operations for the project files.
+
+## Development and support
+
+The repository includes [contribution guidance](CONTRIBUTING.md),
+[security reporting](SECURITY.md), [change history](CHANGELOG.md) and a
+[Sustainable Use License 1.0](LICENSE). The license permits free public
+distribution under its stated use and redistribution terms. Release packages
+carry a source-bound manifest and SHA-256 digest list.

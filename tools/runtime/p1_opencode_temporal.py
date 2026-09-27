@@ -1,0 +1,126 @@
+"""One original Temporal Workflow/Run for a restricted OpenCode HostNode."""
+
+from __future__ import annotations
+
+import asyncio
+from datetime import UTC, datetime
+from typing import Any
+
+from temporalio.client import Client
+
+from runtime.delivery import DeliveryDispatcher
+from runtime.delivery_temporal import delivery_worker, submit_delivery
+
+
+class OpenCodeTemporalDispatcher:
+    def __init__(
+        self,
+        dispatcher: DeliveryDispatcher,
+        *,
+        endpoint: str,
+        namespace: str,
+        task_queue: str,
+        deadline: datetime,
+    ) -> None:
+        if endpoint != "127.0.0.1:7239" or not namespace or not task_queue:
+            raise ValueError("OpenCode Temporal route is outside reviewed loopback")
+        if deadline.tzinfo is None or deadline <= datetime.now(UTC):
+            raise ValueError("OpenCode original Temporal deadline is invalid")
+        self.dispatcher = dispatcher
+        self.service = dispatcher.service
+        self.endpoint = endpoint
+        self.namespace = namespace
+        self.task_queue = task_queue
+        self.deadline = deadline
+        self.last: dict[str, Any] | None = None
+
+    def dispatch(self, identity: dict[str, str]) -> dict[str, Any]:
+        if set(identity) != {"tenant_id", "message_id", "operation_id"}:
+            raise ValueError("OpenCode Temporal dispatch identity is incomplete")
+        remaining = (self.deadline - datetime.now(UTC)).total_seconds()
+        if remaining <= 0:
+            raise RuntimeError("OpenCode original Temporal deadline expired")
+
+        async def original_run():
+            client = await Client.connect(self.endpoint, namespace=self.namespace)
+            worker = delivery_worker(client, self.task_queue, self.dispatcher)
+            worker_task = asyncio.create_task(worker.run())
+            try:
+                # Worker.__aenter__ only schedules Worker.run() and returns;
+                # it does not wait for the bridge validation or pollers. Wait
+                # for the actual running state before submitting the first
+                # workflow, otherwise a fresh per-scene queue can remain
+                # queued without a Workflow/Run or activity attempt.
+                ready_deadline = asyncio.get_running_loop().time() + min(10.0, remaining)
+                while not worker.is_running:
+                    if worker_task.done():
+                        await worker_task
+                    if asyncio.get_running_loop().time() >= ready_deadline:
+                        raise RuntimeError("OpenCode Temporal worker did not become ready")
+                    await asyncio.sleep(0.01)
+                self._journal_event(identity["operation_id"], "temporal_worker_ready", {
+                    "task_queue": self.task_queue,
+                    "worker_running": worker.is_running,
+                })
+                self._journal_event(identity["operation_id"], "temporal_submit_intent", {
+                    "workflow_id": "acs-delivery/" + identity["operation_id"],
+                    "task_queue": self.task_queue,
+                })
+                handle = await submit_delivery(
+                    client, self.task_queue, self.dispatcher, identity
+                )
+                description = await handle.describe()
+                self._journal_event(identity["operation_id"], "temporal_submit_return", {
+                    "workflow_id": handle.id,
+                    "provider_run_id": description.run_id,
+                    "status": str(description.status),
+                })
+                result = await asyncio.wait_for(handle.result(), timeout=remaining)
+                self._journal_event(identity["operation_id"], "temporal_result", {
+                    "status": result.get("status") if isinstance(result, dict) else None,
+                })
+                return result, handle.id, description.run_id
+            finally:
+                await worker.shutdown()
+                await asyncio.gather(worker_task, return_exceptions=True)
+
+        try:
+            result, workflow_id, provider_run_id = asyncio.run(original_run())
+        except BaseException as error:
+            endpoints = tuple(self.service.endpoints.values())
+            endpoint = endpoints[0] if len(endpoints) == 1 else None
+            adapter = getattr(endpoint, "driver", None)
+            driver = getattr(adapter, "driver", adapter)
+            journal = getattr(driver, "journal", None)
+            if journal is not None:
+                try:
+                    journal.event(
+                        identity["operation_id"],
+                        "temporal_dispatch_error",
+                        {"error_type": type(error).__name__, "detail": str(error)[:300]},
+                    )
+                except (OSError, RuntimeError, TypeError, ValueError):
+                    return
+            raise
+        if workflow_id != "acs-delivery/" + identity["operation_id"]:
+            raise RuntimeError("OpenCode original Temporal Workflow differs")
+        if not isinstance(result, dict) or result.get("status") not in {
+            "delivered", "uncertain", "blocked", "expired", "budget_exhausted",
+        }:
+            raise RuntimeError("OpenCode original Temporal result is incomplete")
+        self.last = {
+            "identity": dict(identity),
+            "workflow_id": workflow_id,
+            "provider_run_id": provider_run_id,
+            "result": dict(result),
+        }
+        return result
+
+    def _journal_event(self, operation_id: str, kind: str, body: dict[str, Any]) -> None:
+        endpoints = tuple(self.service.endpoints.values())
+        endpoint = endpoints[0] if len(endpoints) == 1 else None
+        adapter = getattr(endpoint, "driver", None)
+        driver = getattr(adapter, "driver", adapter)
+        journal = getattr(driver, "journal", None)
+        if journal is not None:
+            journal.event(operation_id, kind, body)

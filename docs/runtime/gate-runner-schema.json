@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/acs/p1-gate-runner-plan-1.schema.json",
+  "title": "P1 Gate evidence runner plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "profile", "node_id", "engineer", "direction", "expires_at",
+    "core_version", "temporal_version", "postgresql_version", "protocol_version",
+    "credential_scope", "policy", "harness_versions", "driver_versions", "scenarios"
+  ],
+  "properties": {
+    "schema_version": {"const": "acs-p1-gate-runner-plan/1"},
+    "profile": {"type": "string", "minLength": 1},
+    "node_id": {"type": "string", "minLength": 1},
+    "engineer": {"type": "string", "minLength": 1},
+    "direction": {"type": "string", "minLength": 1},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "core_version": {"type": "string", "minLength": 1},
+    "temporal_version": {"type": "string", "minLength": 1},
+    "postgresql_version": {"type": "string", "minLength": 1},
+    "protocol_version": {"type": "string", "minLength": 1},
+    "credential_scope": {"type": "string", "minLength": 1},
+    "policy": {"type": "string", "minLength": 1},
+    "harness_versions": {"$ref": "#/$defs/harnessVersions"},
+    "driver_versions": {"$ref": "#/$defs/harnessVersions"},
+    "runtime_profile": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/runtimeProfile"}]},
+    "prerequisites": {"type": "object"},
+    "review": {"type": "object"},
+    "scenarios": {
+      "type": "object",
+      "minProperties": 18,
+      "maxProperties": 18,
+      "additionalProperties": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/command"}}
+    }
+  },
+  "$defs": {
+    "harnessVersions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codex", "opencode"],
+      "properties": {"codex": {"type": "string", "minLength": 1}, "opencode": {"type": "string", "minLength": 1}}
+    },
+    "runtimeProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_path", "profile_sha256", "runtime_environment_root", "runtime_environment_manifest_sha256", "network_mode", "postgresql_endpoint", "temporal_endpoint"],
+      "properties": {
+        "profile_path": {"type": "string", "minLength": 1},
+        "profile_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "runtime_environment_root": {"type": "string", "minLength": 1},
+        "runtime_environment_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "network_mode": {"const": "host_loopback_providers"},
+        "postgresql_endpoint": {"const": "127.0.0.1:54329"},
+        "temporal_endpoint": {"const": "127.0.0.1:7239"}
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "kind", "argv", "evidence_fields"],
+      "properties": {
+        "command_id": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{1,128}$"},
+        "kind": {"enum": ["command_output", "postgresql", "sqlite", "temporal", "driver", "os"]},
+        "argv": {"type": "array", "minItems": 1, "maxItems": 64, "items": {"type": "string", "minLength": 1}},
+        "evidence_fields": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"enum": ["receipts", "raw_outputs", "fault_injection", "source_readback", "artifact_readback", "effect_readback", "recovery_trace"]}
+        },
+        "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 3600},
+        "cwd": {"type": "string", "default": "."}
+      }
+    }
+  }
+}

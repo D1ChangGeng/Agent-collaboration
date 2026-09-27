@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented here.
 
+## 1.0.0 - 2026-09-27
+
+The Agent Collaboration System v1.0.0 combines the setup Skill, Project
+Collaboration Workspace model and authenticated Runtime MCP surface in one
+guided distribution path.
+
+### Included capabilities
+
+- AI-guided local readiness inspection, guarded installation planning and
+  owner-local PostgreSQL/Temporal service composition.
+- Codex and OpenCode Skill installation with eight lazy Runtime knowledge
+  modules and digest-based ownership checks.
+- Project Management Root adoption, stable `project_id`, Route and Source
+  registration procedures, and explicit Runtime context readback.
+- Typed MCP tools for Project, Route, Team, WorkItem, messaging, Inbox
+  continuity, Source reads and Review workflows.
+- Single-user private ChatGPT MCP Tunnel profile with official OpenAI setup
+  references and owner-scoped ACS Grant checks.
+- Public README, Chinese README, first-use guide, troubleshooting guide,
+  architecture diagrams, collaboration flow diagram and source-bound package
+  manifests.
+
+The release package records the exact source commit/tree, locked dependency
+inventory, package file digests and archive SHA-256 values. Runtime support
+claims remain bound to the named source, host, Profile, Grant and observed
+readback evidence.
+
 ## 0.4.0 - 2026-09-09
 
 Agent-readable lifecycle guidance and safety hardening.

@@ -1,2 +1,11 @@
 schema_version: "2.0"
-documents: []
+documents:
+  - path: guides/p2-cross-machine-runtime.md
+    kind: guide
+    status: active
+    scope:
+      - "**"
+    use_when:
+      - implementing or reviewing P2 cross-machine Runtime delivery
+      - changing Receiver, tunnel, Driver, or supervised process boundaries
+      - deciding whether cross-machine evidence can be promoted after a source change

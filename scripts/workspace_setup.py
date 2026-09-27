@@ -2537,10 +2537,18 @@ def main(argv: List[str]) -> int:
         return 2
     if argv[0] == "workspace":
         parser = argparse.ArgumentParser()
-        parser.add_argument("action", choices=["bootstrap", "adopt", "upgrade", "repair", "validate", "uninstall"])
+        parser.add_argument("action", choices=["bootstrap", "adopt", "upgrade", "repair", "validate", "uninstall",
+                            "adopt-runtime-project", "validate-runtime-project", "rollback-runtime-project", "register-runtime-project"])
         parser.add_argument("--root", type=Path, required=True)
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--purge-data", action="store_true")
+        parser.add_argument("--project-id")
+        parser.add_argument("--rollback-dir", type=Path)
+        parser.add_argument("--runtime-config", type=Path)
+        parser.add_argument("--registration-spec", type=Path)
+        parser.add_argument("--tool-catalog", type=Path)
+        parser.add_argument("--expected-plan-digest")
+        parser.add_argument("--adopt-project-schema", action="store_true")
         parser.add_argument(
             "--include-route",
             action="append",
@@ -2554,6 +2562,46 @@ def main(argv: List[str]) -> int:
             help="list discovered top-level Route candidates without writing",
         )
         args = parser.parse_args(argv[1:])
+        if args.action == "register-runtime-project":
+            try:
+                from runtime_project_registration import apply, load_settings, preview
+                if not args.runtime_config or not args.registration_spec or not args.tool_catalog:
+                    raise ValueError("Runtime config, specification and tool catalog are required")
+                specification = json.loads(args.registration_spec.read_bytes())
+                catalog = json.loads(args.tool_catalog.read_bytes())
+                if args.dry_run:
+                    if args.adopt_project_schema or args.expected_plan_digest:
+                        raise ValueError("preview cannot apply schema or an approved plan")
+                    result = preview(args.root, specification, load_settings(args.runtime_config), catalog)
+                else:
+                    if not args.expected_plan_digest:
+                        raise ValueError("applying registration requires an approved preview digest")
+                    result = apply(args.root, specification, args.runtime_config, catalog,
+                                   args.expected_plan_digest, adopt_schema=args.adopt_project_schema)
+                print(json.dumps(result, sort_keys=True))
+                return 0
+            except Exception:  # noqa: BLE001 - runtime/backend failures never expose private configuration
+                print(json.dumps({"state": "rejected", "reason": "runtime_registration_unavailable_or_conflicted"}))
+                return 1
+        if args.action in {"adopt-runtime-project", "validate-runtime-project", "rollback-runtime-project"}:
+            from runtime_project_adoption import adopt, rollback, validate
+            try:
+                if args.action == "adopt-runtime-project":
+                    if not args.project_id:
+                        raise ValueError("--project-id is required for Runtime project adoption")
+                    result = adopt(args.root, args.project_id, dry_run=args.dry_run,
+                                   rollback_dir=args.rollback_dir)
+                elif args.action == "rollback-runtime-project":
+                    if not args.rollback_dir or args.dry_run:
+                        raise ValueError("rollback requires --rollback-dir and does not accept --dry-run")
+                    result = rollback(args.root, args.rollback_dir)
+                else:
+                    result = validate(args.root, args.project_id)
+                print(json.dumps(result, sort_keys=True))
+                return 0
+            except (ValueError, OSError) as error:
+                print(json.dumps({"state": "rejected", "reason": str(error)}))
+                return 1
         if args.list_candidates:
             if args.action != "adopt":
                 parser.error("--list-candidates is only valid with workspace adopt")

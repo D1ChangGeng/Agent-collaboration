@@ -7,5 +7,7 @@
   "root_id": "agent-collaboration-root",
   "runtime_dependency_on_setup_skill": false,
   "schema_version": "0.3",
-  "setup_skill": "agent-collaboration-setup"
+  "setup_skill": "agent-collaboration-setup",
+  "project_id": "project-agent-collaboration",
+  "runtime_project_schema": "acs-project-adoption/1"
 }

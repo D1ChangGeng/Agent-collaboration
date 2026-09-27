@@ -1,7 +1,7 @@
 ---
 name: agent-collaboration-setup
 description: Install, bootstrap, adopt, repair, upgrade, validate, or safely manage removal of the ACHP harness-agnostic collaboration scaffold in a source repository or Project Collaboration Workspace. Workspace removal is guarded until ownership is reviewed. Use only when the user explicitly asks to set up or change the collaboration mechanism itself. Do not use for normal project planning, coding, reviews, handoffs, Git synchronization, or knowledge maintenance after setup.
-license: MIT
+license: Sustainable Use License 1.0
 metadata:
   version: "0.4.0"
   scope: "setup-only"
