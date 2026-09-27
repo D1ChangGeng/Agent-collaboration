@@ -1,6 +1,6 @@
-# Agent Collaboration System v1.0.0 candidate
+# Agent Collaboration System v1.0.0
 
-This candidate packages the Agent Collaboration System as a guided distribution
+This release packages the Agent Collaboration System as a guided distribution
 for local AI Harnesses and a private MCP connection path for a single installation
 owner.
 

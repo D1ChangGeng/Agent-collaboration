@@ -2,10 +2,11 @@
 
 All notable changes to this project will be documented here.
 
-## 1.0.0 candidate
+## 1.0.0 - 2026-09-27
 
-The candidate combines the setup Skill, Project Collaboration Workspace model
-and the authenticated Runtime MCP surface in one distribution path.
+The Agent Collaboration System v1.0.0 combines the setup Skill, Project
+Collaboration Workspace model and authenticated Runtime MCP surface in one
+guided distribution path.
 
 ### Included capabilities
 
