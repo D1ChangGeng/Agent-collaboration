@@ -1,0 +1,252 @@
+{
+  "schema_version": "acs-p2-skill-contract/2",
+  "surface_revision": "acs-p2-mcp-workflow/6",
+  "model": "metadata-first knowledge modules with lazy references",
+  "setup_exception": "agent-collaboration-setup uses guarded procedures for installation and migration",
+  "presentation": {
+    "initial": "name and description metadata only",
+    "activation": [
+      "semantic match",
+      "resource or state signal",
+      "knowledge_hint",
+      "explicit invocation"
+    ],
+    "skill_body": "knowledge boundary, invariants, retrieval map and tool vocabulary",
+    "reference_loading": "one named reference at a time",
+    "project_facts": "ProjectContextPack, AGENTS, SourceBindings and project knowledge",
+    "result_hint_fields": [
+      "skill",
+      "topic",
+      "reason",
+      "reference"
+    ]
+  },
+  "runtime_presentation": "skills/RUNTIME-PRESENTATION.md",
+  "skills": {
+    "agent-collaboration-setup": {
+      "kind": "guarded_setup",
+      "domain": "installation, project adoption and connection lifecycle",
+      "signals": [
+        "install",
+        "adopt",
+        "repair",
+        "upgrade",
+        "validate",
+        "web MCP setup"
+      ],
+      "references": [],
+      "related_skills": [
+        "acs-project-context",
+        "acs-web-collaboration"
+      ],
+      "description": "Install, adopt, configure, validate, repair, upgrade, or remove ACS global services and project Management Roots, including local Harness MCP entries and remote web connection setup.",
+      "spec": "skills/agent-collaboration-setup/SKILL.md"
+    },
+    "acs-project-context": {
+      "kind": "knowledge_module",
+      "domain": "Project, Root, Route, Scope and context identity",
+      "signals": [
+        "project_id",
+        "Root Agent",
+        "Route boundary",
+        "ProjectContextPack",
+        "multi-project"
+      ],
+      "references": [
+        "references/model.md",
+        "references/decisions.md",
+        "references/tools.md"
+      ],
+      "related_skills": [
+        "acs-collaboration-model",
+        "acs-policy-governance",
+        "acs-web-collaboration"
+      ],
+      "description": "Project, Collaboration Root, Route, Scope, project_id, ProjectContextPack, multi-project, and Root Agent knowledge for ACS. Use when reasoning about project identity, context loading, Route boundaries, local versus web entry, or portfolio-wide state.",
+      "spec": "skills/acs-project-context/SKILL.md"
+    },
+    "acs-collaboration-model": {
+      "kind": "knowledge_module",
+      "domain": "team, WorkItem, delegation, handoff and Message semantics",
+      "signals": [
+        "AgentSlot",
+        "Role",
+        "configure team",
+        "WorkItem",
+        "delegate",
+        "handoff",
+        "Message"
+      ],
+      "references": [
+        "references/model.md",
+        "references/decisions.md",
+        "references/tools.md"
+      ],
+      "related_skills": [
+        "acs-project-context",
+        "acs-continuity-recovery",
+        "acs-runtime-model"
+      ],
+      "description": "AgentSlot, Role, team, WorkItem, delegation, handoff, Message, response, dependency, and collaboration-state knowledge for ACS. Use when designing or reasoning about who works on what and how responsibilities and results move.",
+      "spec": "skills/acs-collaboration-model/SKILL.md"
+    },
+    "acs-runtime-model": {
+      "kind": "knowledge_module",
+      "domain": "execution capacity, lifecycle, fencing and effects",
+      "signals": [
+        "Machine",
+        "Node",
+        "Harness",
+        "Driver",
+        "Session",
+        "Attempt",
+        "Lease",
+        "Effect"
+      ],
+      "references": [
+        "references/model.md",
+        "references/decisions.md",
+        "references/tools.md"
+      ],
+      "related_skills": [
+        "acs-collaboration-model",
+        "acs-continuity-recovery",
+        "acs-policy-governance"
+      ],
+      "description": "Machine, Node, Runtime, Harness, Driver, Session, Endpoint, Attempt, Lease, Resource, capability, and Effect knowledge for ACS. Use when reasoning about execution placement, lifecycle, capabilities, fencing, or protected external effects.",
+      "spec": "skills/acs-runtime-model/SKILL.md"
+    },
+    "acs-continuity-recovery": {
+      "kind": "knowledge_module",
+      "domain": "delivery, responses, subscriptions, wake and recovery",
+      "signals": [
+        "Inbox",
+        "Outbox",
+        "receipt",
+        "wait",
+        "notification",
+        "retry",
+        "ACK loss",
+        "Session replacement",
+        "Human Bridge"
+      ],
+      "references": [
+        "references/model.md",
+        "references/decisions.md",
+        "references/tools.md"
+      ],
+      "related_skills": [
+        "acs-collaboration-model",
+        "acs-runtime-model",
+        "acs-source-evidence"
+      ],
+      "description": "Inbox, Outbox, delivery receipts, response tracking, subscriptions, waiting, wake, retry, deduplication, Session replacement, Human Bridge, and recovery knowledge for ACS. Use when collaboration is asynchronous, interrupted, duplicated, delayed, or uncertain.",
+      "spec": "skills/acs-continuity-recovery/SKILL.md"
+    },
+    "acs-source-evidence": {
+      "kind": "knowledge_module",
+      "domain": "source identity, synchronization, Artifact and Evidence",
+      "signals": [
+        "SourceBinding",
+        "branch",
+        "commit",
+        "tree",
+        "worktree",
+        "push",
+        "diff",
+        "Artifact",
+        "Evidence"
+      ],
+      "references": [
+        "references/model.md",
+        "references/decisions.md",
+        "references/tools.md"
+      ],
+      "related_skills": [
+        "acs-project-context",
+        "acs-review-acceptance",
+        "acs-runtime-model"
+      ],
+      "description": "SourceBinding, repository, filesystem, Git, branch, commit, tree, worktree, push, synchronization, Artifact, Evidence, digest, and readback knowledge for ACS. Use for source-aware management, review, handoff, acceptance, or web file access.",
+      "spec": "skills/acs-source-evidence/SKILL.md"
+    },
+    "acs-review-acceptance": {
+      "kind": "knowledge_module",
+      "domain": "Review, findings, finalization and accepted state",
+      "signals": [
+        "Review",
+        "reviewer independence",
+        "candidate",
+        "findings",
+        "finalization",
+        "acceptance",
+        "release readiness"
+      ],
+      "references": [
+        "references/model.md",
+        "references/decisions.md",
+        "references/tools.md"
+      ],
+      "related_skills": [
+        "acs-source-evidence",
+        "acs-policy-governance",
+        "acs-collaboration-model"
+      ],
+      "description": "Review, reviewer independence, candidate, findings, evidence sufficiency, integrated baseline, finalization, acceptance, publication, and product-owner boundary knowledge for ACS. Use when evaluating or accepting architecture, engineering, evidence, or release results.",
+      "spec": "skills/acs-review-acceptance/SKILL.md"
+    },
+    "acs-policy-governance": {
+      "kind": "knowledge_module",
+      "domain": "authorization, Policy, Profile, budget and data boundaries",
+      "signals": [
+        "Grant",
+        "Policy",
+        "Role",
+        "Profile",
+        "OAuth scope",
+        "budget",
+        "revocation",
+        "approval",
+        "tenant isolation"
+      ],
+      "references": [
+        "references/model.md",
+        "references/decisions.md",
+        "references/tools.md"
+      ],
+      "related_skills": [
+        "acs-project-context",
+        "acs-runtime-model",
+        "acs-review-acceptance",
+        "acs-web-collaboration"
+      ],
+      "description": "Tenant, Project isolation, authenticated subject, Grant, Policy, Role, Profile, budget, OAuth scope, approval, revocation, data boundary, secret reference, and audit knowledge for ACS. Use when deciding who may read, change, execute, review, or accept.",
+      "spec": "skills/acs-policy-governance/SKILL.md"
+    },
+    "acs-web-collaboration": {
+      "kind": "knowledge_module",
+      "domain": "remote MCP, web context and Source access",
+      "signals": [
+        "ChatGPT web",
+        "SaaS Agent",
+        "remote MCP",
+        "OAuth",
+        "Tunnel",
+        "ProjectContextPack",
+        "GitHub MCP"
+      ],
+      "references": [
+        "references/model.md",
+        "references/decisions.md",
+        "references/tools.md"
+      ],
+      "related_skills": [
+        "acs-project-context",
+        "acs-policy-governance",
+        "acs-source-evidence"
+      ],
+      "description": "Remote MCP, web SaaS Agent, ProjectContextPack, OAuth, HTTPS, secure Tunnel, plugin, filesystem SourceBinding, GitHub MCP coordination, and web Session capability knowledge for ACS. Use when a browser-based Agent manages or reviews ACS projects.",
+      "spec": "skills/acs-web-collaboration/SKILL.md"
+    }
+  }
+}

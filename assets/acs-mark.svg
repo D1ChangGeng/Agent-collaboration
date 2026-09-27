@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-labelledby="title description">
+  <title id="title">ACS collaboration mark</title>
+  <desc id="description">Three agent routes meet at a central collaboration hub.</desc>
+  <rect width="320" height="320" rx="72" fill="#101827"/>
+  <path d="M77 77 L160 160 L243 77 M77 243 L160 160 L243 243" fill="none" stroke="#4AD5B5" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="160" cy="160" r="36" fill="#F3C969" stroke="#101827" stroke-width="12"/>
+  <circle cx="77" cy="77" r="18" fill="#ECF3F7"/>
+  <circle cx="243" cy="77" r="18" fill="#ECF3F7"/>
+  <circle cx="77" cy="243" r="18" fill="#ECF3F7"/>
+  <circle cx="243" cy="243" r="18" fill="#ECF3F7"/>
+</svg>

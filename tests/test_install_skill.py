@@ -28,6 +28,20 @@ def make_source(root: Path, version: str = "0.4.0") -> Path:
 
 
 class InstallSkillSafetyTests(unittest.TestCase):
+    def test_runtime_knowledge_copy_checks_digest_and_owned_removal(self):
+        source = ROOT / "docs/runtime/skills/acs-project-context"
+        with tempfile.TemporaryDirectory() as td:
+            destination = Path(td) / "acs-project-context"
+            self.assertEqual(mod.install_one(source, destination, "copy"), "copied")
+            self.assertEqual(mod.check_one(source, destination), (True, "copy digest=match"))
+            marker = json.loads((destination / mod.INSTALL_MARKER).read_text(encoding="utf-8"))
+            self.assertEqual(marker["skill"], "acs-project-context")
+            self.assertTrue((destination / "references/model.md").is_file())
+            (destination / "references/model.md").write_text("changed", encoding="utf-8")
+            self.assertFalse(mod.check_one(source, destination)[0])
+            with self.assertRaises(ValueError):
+                mod._remove_owned_destination(source, destination)
+
     def test_copy_install_records_ownership_and_detects_drift(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

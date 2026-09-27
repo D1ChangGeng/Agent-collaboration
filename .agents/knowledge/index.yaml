@@ -46,6 +46,15 @@ documents:
       - README.md
       - README.zh-CN.md
       - references/**
+  - path: decisions/adr-005-runtime-domain-adoption.md
+    kind: decision
+    status: accepted
+    id: adr-005-runtime-domain-adoption
+    date: 2026-09-11
+    scope:
+      - docs/runtime/**
+      - tools/runtime/**
+      - agent-collabration/**
   - path: guides/architecture-and-state.md
     kind: guide
     status: active

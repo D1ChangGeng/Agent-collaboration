@@ -1,0 +1,218 @@
+from __future__ import annotations
+
+import importlib.util
+import json
+import socket
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def load(name: str, filename: str):
+    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / filename)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader
+    spec.loader.exec_module(module)
+    return module
+
+
+@unittest.skipIf(sys.version_info < (3, 12), "Runtime release tools require Python 3.12+")
+class ReleaseToolTests(unittest.TestCase):
+    def test_release_payload_scope(self):
+        tool = load("build_release", "build_release.py")
+        self.assertTrue(tool.included("runtime/project_entry.py"))
+        self.assertTrue(tool.included("docs/runtime/skills/acs-runtime-model/SKILL.md"))
+        self.assertTrue(tool.included("assets/acs-mark.svg"))
+        self.assertFalse(tool.included(".agents/manifest.json"))
+        self.assertFalse(tool.included(".tmp/private.json"))
+        self.assertFalse(tool.included("runtime/__pycache__/module.pyc"))
+
+    def test_doctor_redacts_backend_failure(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        with mock.patch.dict("sys.modules", {"runtime.project_service": None}):
+            observed = doctor.runtime_readback(Path("missing"), Path("missing"), "root_manager")
+        self.assertEqual(observed, {"state": "unavailable", "reason": "runtime_readback_failed"})
+
+    def test_doctor_uses_configured_source_provider_for_project_context(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        import sys
+        from types import SimpleNamespace
+
+        configured = SimpleNamespace(
+            artifact_configs=lambda: [
+                SimpleNamespace(scope_id="local-scope", authorized_source_roots=("/source",))
+            ],
+            credential=lambda: "private-credential",
+        )
+        service = SimpleNamespace(
+            authenticate=lambda credential: None,
+            authority=SimpleNamespace(_artifact_store=object()),
+        )
+        source = mock.Mock()
+        project = mock.Mock()
+        project.execute.side_effect = [
+            ("observed", {"connection_state": "authorized", "profile": "root_manager",
+                          "grant": {"ref": "grant:root"}}, []),
+            ("observed", {"items": [{"project_id": "project-alpha"}]}, []),
+            ("current", {"root_handle": "project:project-alpha:root",
+                         "context_completeness": "current"}, []),
+        ]
+        project.available_tools.return_value = ["load_project"]
+        with tempfile.TemporaryDirectory() as td:
+            catalog = Path(td) / "catalog.json"
+            catalog.write_text("{}")
+            context = mock.MagicMock()
+            context.__enter__.return_value = (service, configured)
+            with (
+                mock.patch.dict(sys.modules, {
+                    "runtime.project_source": SimpleNamespace(ProjectSources=mock.Mock(return_value=source)),
+                    "runtime.project_service": SimpleNamespace(ProjectService=mock.Mock(return_value=project)),
+                    "runtime.surface_config": SimpleNamespace(configured_service=mock.Mock(return_value=context)),
+                }),
+            ):
+                result = doctor.runtime_readback(Path(td) / "config.json", catalog, "root_manager")
+        self.assertEqual(result["project_contexts"][0]["context_completeness"], "current")
+        self.assertEqual(result["tools"], ["load_project"])
+        source.close.assert_called_once()
+
+    def test_install_preview_is_read_only_when_docker_missing(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        import sys
+
+        with mock.patch.dict(sys.modules, {"acs_doctor": doctor}):
+            installer = load("acs_install", "acs_install.py")
+        readiness = {
+            "source_backend": {"available": False},
+            "tools": {
+                "git": {"available": True},
+                "uv": {"available": True},
+                "docker": {"available": False},
+            },
+        }
+        with (
+            mock.patch.object(installer, "inspect", return_value=readiness),
+            mock.patch.object(installer, "run", side_effect=AssertionError("mutation")),
+        ):
+            result = installer.install(
+                harnesses=["codex"], project=None, project_id=None, apply=False
+            )
+        self.assertEqual(result["state"], "planned")
+        self.assertFalse(result["prerequisites"]["docker"])
+
+    def test_apply_refuses_host_without_source_backend(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        with mock.patch.dict(sys.modules, {"acs_doctor": doctor}):
+            installer = load("acs_install", "acs_install.py")
+        readiness = {
+            "source_backend": {"available": False},
+            "tools": {name: {"available": True} for name in ("git", "uv", "docker")},
+        }
+        with (
+            mock.patch.object(installer, "inspect", return_value=readiness),
+            mock.patch.object(installer, "run", side_effect=AssertionError("mutation")),
+            self.assertRaisesRegex(ValueError, "Source/CAS"),
+        ):
+            installer.install(harnesses=["codex"], project=None, project_id=None, apply=True)
+
+    def test_provider_password_is_private_and_idempotent(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        import sys
+
+        with mock.patch.dict(sys.modules, {"acs_doctor": doctor}):
+            installer = load("acs_install", "acs_install.py")
+        with (
+            tempfile.TemporaryDirectory() as td,
+            mock.patch.object(installer, "private_root", return_value=Path(td)),
+        ):
+            path, first = installer.local_provider_environment()
+            again, second = installer.local_provider_environment()
+            self.assertEqual(path, again)
+            self.assertEqual(first["ACS_POSTGRES_PASSWORD"], second["ACS_POSTGRES_PASSWORD"])
+            self.assertGreater(len(first["ACS_POSTGRES_PASSWORD"]), 32)
+            saved = json.loads(path.read_text())
+            self.assertEqual(saved["schema_version"], "acs-local-providers/2")
+            self.assertEqual(first["ACS_POSTGRES_PORT"], second["ACS_POSTGRES_PORT"])
+            self.assertEqual(first["ACS_TEMPORAL_PORT"], second["ACS_TEMPORAL_PORT"])
+            self.assertEqual(first["COMPOSE_PROJECT_NAME"], second["COMPOSE_PROJECT_NAME"])
+
+    def test_provider_uses_available_port_and_preserves_existing_profile(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        with mock.patch.dict(sys.modules, {"acs_doctor": doctor}):
+            installer = load("acs_install", "acs_install.py")
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as occupied:
+            occupied.bind(("127.0.0.1", 0))
+            bound_port = occupied.getsockname()[1]
+            with (
+                tempfile.TemporaryDirectory() as td,
+                mock.patch.object(installer, "private_root", return_value=Path(td)),
+                mock.patch.object(installer, "available_loopback_port",
+                                  wraps=installer.available_loopback_port) as selected,
+            ):
+                self.assertNotEqual(installer.available_loopback_port(bound_port), bound_port)
+                path, environment = installer.local_provider_environment()
+                self.assertEqual(selected.call_count, 3)
+                self.assertEqual(json.loads(path.read_text())["password"],
+                                 environment["ACS_POSTGRES_PASSWORD"])
+                path.write_text(json.dumps({"schema_version": "acs-local-providers/1",
+                                            "password": "p" * 48}))
+                _, legacy = installer.local_provider_environment()
+                self.assertEqual(legacy["ACS_POSTGRES_PORT"], "54329")
+                self.assertEqual(legacy["COMPOSE_PROJECT_NAME"], "acs-local")
+
+    def test_provider_readback_requires_both_healthy_services(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        with mock.patch.dict(sys.modules, {"acs_doctor": doctor}):
+            installer = load("acs_install", "acs_install.py")
+        environment = {"COMPOSE_PROJECT_NAME": "acs-test"}
+        rows = [{"Project": "acs-test", "Service": service,
+                 "State": "running", "Health": "healthy"}
+                for service in ("postgres", "temporal")]
+        output = "\n".join(json.dumps(row) for row in rows)
+        with mock.patch.object(installer.subprocess, "run",
+                               return_value=mock.Mock(stdout=output)):
+            self.assertEqual(len(installer.provider_readback(environment)), 2)
+        rows[1]["Health"] = "starting"
+        output = "\n".join(json.dumps(row) for row in rows)
+        with (mock.patch.object(installer.subprocess, "run",
+                                return_value=mock.Mock(stdout=output)),
+              self.assertRaisesRegex(ValueError, "health readback")):
+            installer.provider_readback(environment)
+
+    def test_harness_entries_preserve_existing_config_and_retry(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        with mock.patch.dict(sys.modules, {"acs_doctor": doctor}):
+            installer = load("acs_install", "acs_install.py")
+        with tempfile.TemporaryDirectory() as td:
+            home = Path(td)
+            root = home / "distribution"
+            python = root / (".venv/Scripts/python.exe" if sys.platform == "win32" else ".venv/bin/python")
+            python.parent.mkdir(parents=True)
+            python.touch()
+            codex = home / ".codex/config.toml"
+            codex.parent.mkdir()
+            codex.write_text("model = 'gpt-6'\n")
+            opencode = home / ".config/opencode/opencode.json"
+            opencode.parent.mkdir(parents=True)
+            opencode.write_text(json.dumps({"provider": {"existing": {}}}))
+            with (mock.patch.object(installer, "ROOT", root),
+                  mock.patch.object(installer.Path, "home", return_value=home),
+                  mock.patch.object(installer, "private_root", return_value=home / "private")):
+                result = installer.configure_harnesses(["codex", "opencode"], home / "surface.json")
+                self.assertEqual(set(result), {"codex", "opencode"})
+                first_codex = codex.read_bytes()
+                first_opencode = opencode.read_bytes()
+                installer.configure_harnesses(["codex", "opencode"], home / "surface.json")
+                self.assertEqual(codex.read_bytes(), first_codex)
+                self.assertEqual(opencode.read_bytes(), first_opencode)
+                self.assertIn("model = 'gpt-6'", codex.read_text())
+                self.assertIn("existing", json.loads(opencode.read_text())["provider"])
+                backups = list((home / "private/rollback").glob("*/codex-config.toml"))
+                self.assertEqual(len(backups), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()
