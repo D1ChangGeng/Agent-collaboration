@@ -9,6 +9,16 @@ shown by your machine or service provider.
 
 ## Agent launch request
 
+For a fresh machine, use the standard Release Bootstrap shipped with the selected
+Release before project setup:
+
+```text
+Download scripts/acs_bootstrap.py from the selected GitHub Release. Run its
+read-only plan first, verify SHA256SUMS.txt and the release manifest, then apply
+the versioned installation. Keep the previous active version as the rollback
+target and report the installed commit, tree and archive digest.
+```
+
 > Use this repository as the ACS distribution source. Inspect its current
 > release and installation instructions, verify the downloaded source or
 > package, then install and validate ACS for this machine. Ask me only for
@@ -87,3 +97,12 @@ Ask the Agent to report these observed facts after setup:
 The report distinguishes installed files, configured connections and observed
 runtime behavior. For setup problems, use the diagnostic output and the
 [troubleshooting guide](TROUBLESHOOTING.md).
+
+## Installation state and rollback
+
+The Release Bootstrap stores versioned files in the user data directory and
+maintains `state.json` with the active version, previous version, source commit
+and source tree. A failed archive or installer step leaves the active version
+unchanged. A later approved upgrade can switch the active version atomically;
+the previous version remains the rollback target until the new installation has
+passed service, project and MCP readback.

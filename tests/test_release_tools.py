@@ -6,6 +6,7 @@ import socket
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest import mock
 
@@ -27,6 +28,7 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertTrue(tool.included("runtime/project_entry.py"))
         self.assertTrue(tool.included("docs/runtime/skills/acs-runtime-model/SKILL.md"))
         self.assertTrue(tool.included("assets/acs-mark.svg"))
+        self.assertTrue(tool.included("scripts/acs_bootstrap.py"))
         self.assertFalse(tool.included(".agents/manifest.json"))
         self.assertFalse(tool.included(".tmp/private.json"))
         self.assertFalse(tool.included("runtime/__pycache__/module.pyc"))
@@ -212,6 +214,51 @@ class ReleaseToolTests(unittest.TestCase):
                 self.assertIn("existing", json.loads(opencode.read_text())["provider"])
                 backups = list((home / "private/rollback").glob("*/codex-config.toml"))
                 self.assertEqual(len(backups), 1)
+
+    def test_bootstrap_archive_verification_and_atomic_state(self):
+        bootstrap = load("acs_bootstrap", "acs_bootstrap.py")
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            archive = root / "agent-collaboration-v1.0.0.zip"
+            source = root / "agent-collaboration-v1.0.0"
+            source.mkdir()
+            (source / "RELEASE-MANIFEST.json").write_text(json.dumps({
+                "schema_version": "acs-release-manifest/1", "version": "1.0.0",
+                "commit": "a" * 40, "tree": "b" * 40, "files": {}
+            }))
+            (source / "DEPENDENCIES.json").write_text("{}")
+            (source / "LICENSES.md").write_text("license")
+            with zipfile.ZipFile(archive, "w") as output:
+                for path in source.rglob("*"):
+                    output.write(path, f"agent-collaboration-v1.0.0/{path.name}")
+            verified, manifest = bootstrap.verify_archive(
+                archive, "v1.0.0", bootstrap.digest(archive), root / "stage"
+            )
+            self.assertEqual(manifest["version"], "1.0.0")
+            self.assertTrue(verified.is_dir())
+            self.assertEqual(manifest["commit"], "a" * 40)
+
+    def test_bootstrap_rejects_tampered_archive(self):
+        bootstrap = load("acs_bootstrap", "acs_bootstrap.py")
+        with tempfile.TemporaryDirectory() as td:
+            archive = Path(td) / "agent-collaboration-v1.0.0.zip"
+            archive.write_bytes(b"tampered")
+            with self.assertRaisesRegex(ValueError, "digest"):
+                bootstrap.verify_archive(archive, "v1.0.0", "0" * 64, Path(td) / "stage")
+
+    def test_bootstrap_root_rejects_symlink(self):
+        bootstrap = load("acs_bootstrap", "acs_bootstrap.py")
+        with tempfile.TemporaryDirectory() as td:
+            target = Path(td) / "target"
+            target.mkdir()
+            link = Path(td) / "link"
+            try:
+                link.symlink_to(target, target_is_directory=True)
+            except OSError:
+                self.skipTest("symlink creation unavailable")
+            with (mock.patch.object(bootstrap, "install_root", return_value=link),
+                  self.assertRaisesRegex(ValueError, "symlink")):
+                bootstrap.ensure_install_root()
 
 
 if __name__ == "__main__":
