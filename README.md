@@ -34,6 +34,25 @@ use `scripts/acs_doctor.py` for a read-only readiness report and
 `scripts/acs_install.py` to preview and apply local setup. Real project Source
 registration and live Harness connection are verified as separate steps.
 
+## Standard release installation
+
+The next release provides a versioned Bootstrap entry for fresh machines. It
+downloads the selected GitHub Release, verifies `SHA256SUMS.txt`, verifies the
+embedded file manifest, installs into a versioned private directory and
+switches the active version atomically. The previous version remains available
+for rollback. An AI assistant can run it after downloading the Bootstrap script
+from that release. For an existing project, it supplies the Management Root and
+stable `project_id`.
+
+The bootstrapper performs distribution verification before changing local state.
+The installed Runtime then handles services, private credentials, project
+registration, MCP configuration and readback.
+
+The installation state records the active and previous verified versions,
+source commit and tree. A failed verification or configuration step preserves
+the active version, and an approved upgrade switches versions atomically after
+readback.
+
 ## What you can manage
 
 | Need | ACS capability |

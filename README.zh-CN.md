@@ -94,6 +94,20 @@ WorkItem 与消息句柄，再核对输出 commit、测试证据并送交 Review
 
 ## 安装与接入
 
+### 标准 Release 安装
+
+后续版本为新机器提供版本化 Release Bootstrap。它下载指定 GitHub Release，校验
+`SHA256SUMS.txt` 和发行包内文件清单，将版本安装到本机私有目录，并原子切换
+当前版本，同时保留上一版本用于回滚。
+AI 可从对应版本下载 Bootstrap 脚本并执行。对已有项目，向安装器提供
+Management Root 与稳定项目身份 `project_id`。
+
+Bootstrap 会在修改本机状态前完成发行物校验；随后由已安装 Runtime 完成服务、
+私有凭据、项目注册、MCP 配置和读回验证。
+
+安装状态会记录当前版本、上一版本、源码 commit 和 tree。校验或配置失败时保持
+当前版本不变；升级在完成读回后原子切换，并保留上一版本作为回滚目标。
+
 仓库包含项目 setup Skill 和协作 Runtime。Skill 管理项目文件；Runtime 提供
 类型化工具与持久状态。Source/CAS Runtime 服务运行在 Linux；Windows 的
 Codex 和 OpenCode 作为客户端连接已接入的 Linux 服务。服务安装使用

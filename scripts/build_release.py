@@ -27,6 +27,7 @@ INCLUDE_ROOTS = {
     "runtime_tests",
     "tools/runtime",
     "tools/bootstrap",
+    "scripts/acs_bootstrap.py",
     "README.md",
     "README.zh-CN.md",
     "CHANGELOG.md",
@@ -74,7 +75,7 @@ def tracked_payload() -> dict[str, bytes]:
         if not stat.S_ISREG(mode):
             raise ValueError(f"release entry is not a regular file: {relative}")
         payload[relative] = path.read_bytes()
-    for required in ("LICENSE", "README.md", "SKILL.md", "pyproject.toml", "uv.lock"):
+    for required in ("LICENSE", "README.md", "SKILL.md", "pyproject.toml", "uv.lock", "scripts/acs_bootstrap.py"):
         if required not in payload:
             raise ValueError(f"release entry missing: {required}")
     return dict(sorted(payload.items()))
