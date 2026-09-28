@@ -36,7 +36,7 @@ registration and live Harness connection are verified as separate steps.
 
 ## Standard release installation
 
-The next release provides a versioned Bootstrap entry for fresh machines. It
+The standard Release Bootstrap provides a versioned entry for fresh machines. It
 downloads the selected GitHub Release, verifies `SHA256SUMS.txt`, verifies the
 embedded file manifest, installs into a versioned private directory and
 switches the active version atomically. The previous version remains available

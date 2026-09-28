@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented here.
 
+## 1.1.0 - 2026-09-29
+
+Standard Release Bootstrap installation is now available for fresh machines
+and controlled upgrades. The Bootstrap verifies the published archive and every
+file manifest entry, installs into a versioned private directory, switches the
+active version atomically, and retains a previous version for rollback.
+
+### Included capabilities
+
+- GitHub Release metadata and SHA-256 archive verification before installation.
+- Safe ZIP/TAR extraction with path, link and file inventory checks.
+- Versioned installation state with active/previous commit and tree readback.
+- Project installation handoff from the verified Release directory.
+- Bootstrap security tests and hosted CI coverage.
+
 ## 1.0.0 - 2026-09-27
 
 The Agent Collaboration System v1.0.0 combines the setup Skill, Project

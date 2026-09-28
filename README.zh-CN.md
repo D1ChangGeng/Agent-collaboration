@@ -96,7 +96,7 @@ WorkItem 与消息句柄，再核对输出 commit、测试证据并送交 Review
 
 ### 标准 Release 安装
 
-后续版本为新机器提供版本化 Release Bootstrap。它下载指定 GitHub Release，校验
+标准 Release Bootstrap 为新机器提供版本化入口。它下载指定 GitHub Release，校验
 `SHA256SUMS.txt` 和发行包内文件清单，将版本安装到本机私有目录，并原子切换
 当前版本，同时保留上一版本用于回滚。
 AI 可从对应版本下载 Bootstrap 脚本并执行。对已有项目，向安装器提供
