@@ -13,7 +13,8 @@ clients. Project Management Root setup is a separate lifecycle that users can
 request when they begin a project.
 
 Canonical mechanisms: `acs_bootstrap.py` release digest verification and host
-selection, `acs_install.py` bounded Linux host setup, project setup CLI,
+selection, installed automatic upgrade controls and stable Runtime launcher,
+`acs_install.py` bounded Linux host setup, project setup CLI,
 `acs_web_setup.py` machine-specific web planning, `read_profile`, `list_projects`,
 `list_connections` and `load_project`.
 
@@ -37,6 +38,10 @@ selection, `acs_install.py` bounded Linux host setup, project setup CLI,
    verified Release. SSH/WSL use `--runtime-only` to install services and scoped
    owner credentials. Local Linux defaults to selected client setup on the same
    host and also supports service-only `--runtime-only`.
+   New v1.3.0 installations enable automatic upgrades by default; use
+   `--no-auto-update` when the user opts out or `--auto-update` to enable
+   explicitly. Regular upgrades preserve an existing disabled setting when
+   neither flag is supplied. Inspect scheduling readback.
 6. Install setup and knowledge Skills and configure MCP on selected clients'
    own hosts. For SSH/WSL, use the returned caller-side stdio descriptor. The
    Runtime host can be explicitly selected as a client. Preserve configuration
@@ -50,9 +55,14 @@ selection, `acs_install.py` bounded Linux host setup, project setup CLI,
    permission, private-key entry and ChatGPT connection confirmations. Verify
    actual web `read_profile` and `list_projects`; project setup can follow later.
    For `later`, record the same route's resume entry.
+   For a managed installation, use the helper's `--installation-root` with its
+   active Release directory and matching private config to produce a stable
+   launcher command for the selected Tunnel profile. A standalone verified
+   Release uses its version directory command.
 8. Report Runtime machine identity and account, version/commit/tree, services,
    credential references, client connections, verified tools and rollback data,
-   plus the web choice, observed connection state and exact pending owner actions.
+   plus automatic upgrade policy and actual scheduling backend/state, the web
+   choice, observed connection state and exact pending owner actions.
 9. When the user requests project setup, first discover the actual local,
    authorized SSH or selected WSL Source checkout and compare existing bindings
    using [Source discovery](../../SOURCE-DISCOVERY.md). Preserve or create `project_id`,
@@ -72,6 +82,27 @@ selection, `acs_install.py` bounded Linux host setup, project setup CLI,
 Machine binding records Runtime installation placement and client transport.
 Runtime Node enrollment and cross-host execution require independent live
 Node/Driver observations.
+
+For automatic upgrade maintenance, follow
+[Automatic upgrades](../../../AUTOMATIC-UPDATES.md). Run the installed Bootstrap
+on the recorded Runtime host as its owner, using its existing machine/account/home
+binding, Harness selection and web settings. `--set-auto-update on|off|status`
+controls policy; `--update --force-check` checks immediately, with `--apply`
+to activate an eligible update. Verify the actual owner scheduler state and
+connection catch-up separately. Host sleep and an inactive user manager affect
+scheduled checks.
+
+Automatic activation requires a stable Release in the same major version and
+identical license, schema, migration, provider and MCP catalog contracts. Changed
+contracts require explicit review. The updater verifies archive and installed
+files, a new locked environment, provider health and existing Grant authorization
+before activation. Project setup, SourceBinding or Grant creation and Compose
+changes follow their setup lifecycles. Owned local Skills refresh transactionally;
+remote client Skills use client setup maintenance. New local, SSH, WSL and
+Tunnel MCP processes use the stable launcher's active version; running sessions
+retain their version. Manual rollback retains the rejected version in
+`held_version` for explicit review. Existing v1.2.0 installations need one
+AI-guided upgrade with the verified v1.3.0 Release Bootstrap.
 
 Normal project work proceeds through the installed AGENTS context, runtime
 Skills and MCP tools. Setup is invoked again for installation maintenance,

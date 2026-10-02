@@ -25,6 +25,8 @@ The Skill can currently provide a bounded, deterministic lifecycle for:
 
 - confirmed local Linux, named SSH target or named WSL Runtime installation;
 - release verification and selected client MCP connection setup;
+- default automatic upgrades, owner scheduling controls and retained-version
+  rollback for installations with the updater;
 - repository setup and validation;
 - read-only discovery of an exact Source checkout on the caller, a selected SSH
   target or a selected WSL distribution;
@@ -45,7 +47,9 @@ selected clients' MCP connections are verified. A project list with zero
 entries is a valid starting state. Project paths, collaboration goals and
 Management Roots are supplied when the user begins project setup.
 
-Use this order for a global install, repair or upgrade:
+For an existing installation's automatic upgrade maintenance, use the recorded
+binding and controls below. Use this order for a new global install or a guided
+setup operation that requires a placement plan:
 
 1. Inspect the caller host's OS, active Harness and existing ACS installation.
 2. Resolve the user's Runtime placement choice: this Linux host, a named remote
@@ -73,6 +77,10 @@ Use this order for a global install, repair or upgrade:
    decision guide, Bootstrap entry and project scaffold tools. SSH/WSL use
    `--runtime-only` for services and owner Authority. Local Linux defaults to
    selected client setup on the same host and also supports `--runtime-only`.
+   New v1.3.0 installations enable automatic upgrades by default. Pass
+   `--no-auto-update` when the user has opted out or `--auto-update` to enable
+   explicitly. Regular upgrades preserve an existing disabled setting when
+   neither flag is supplied. Inspect scheduler readback.
 6. Install setup and knowledge Skills and configure MCP on each selected client
    host. SSH/WSL return a caller-side stdio descriptor for the remote MCP process;
    use each client's configuration mechanism and preserve rollback copies.
@@ -91,6 +99,11 @@ Use this order for a global install, repair or upgrade:
    key provisioning and ChatGPT web connection confirmations. Keep the key in
    private configuration and refer to it by name, rather than embedding its
    bytes in reports or command arguments.
+   For a managed installation, add `--installation-root <installation-root>`
+   with the active Release directory and matching private config from its state.
+   The verified binding produces the stable launcher command for the selected
+   Tunnel profile. A standalone verified Release uses its version directory
+   command. Update the selected existing profile when maintaining its connection.
 9. Complete actual ChatGPT tool calls against an authorized real project:
    profile/project reads, scoped collaboration writes, refused operations,
    reconnect and revocation read-back. Generated instructions establish
@@ -102,9 +115,41 @@ Use this order for a global install, repair or upgrade:
 The machine installation report records the selected transport and target,
 observed machine identity and account, owner credentials by reference, Release
 version and source binding, services, client host/Harness connections and
-rollback data. Include ChatGPT web choice, verified web state and any owner
+rollback data. Include automatic upgrade policy, observed scheduling
+backend/state, connection catch-up, last result and next eligible check.
+Include ChatGPT web choice, verified web state and any owner
 actions with concrete instructions. Machine installation binding and Runtime Node identity are
 separate records; dispatch claims require a live Node/Driver verification.
+
+### Automatic upgrade maintenance
+
+Read [Automatic upgrades](../docs/AUTOMATIC-UPDATES.md) and inspect the existing
+installation on its recorded Runtime host. Run the installed Bootstrap as the
+same owner, reusing its machine/account/home binding, Harness selection and web
+settings. Use `--set-auto-update on|off|status` for policy controls and
+`--update --force-check` for an immediate check; add `--apply` to activate an
+eligible candidate.
+
+The updater checks stable Releases daily and makes failed checks eligible for
+retry after an hour. Prefer an owner systemd user timer, use cron when available,
+and retain background catch-up on new stable-launcher MCP connections. Report
+an observed active timer, a registered cron entry or connection checks; host
+sleep, cron daemon state and user manager availability determine execution.
+
+Automatic candidates keep the same major version and license, schema, migration,
+provider and MCP catalog contracts. A changed contract requires explicit review
+and a guided upgrade. Archive digests, installed-file ownership, a new locked
+environment, provider health and existing Grant authorization are checked
+before activation. The update uses existing projects, SourceBindings, Grants
+and Compose services; creating or changing them follows their setup lifecycle.
+
+Owned local Skills refresh transactionally. Refresh Skills on separate client
+hosts through client setup maintenance. Stable local, SSH, WSL and Tunnel launch
+commands select the active version for a future MCP process; running sessions
+retain their version. `--rollback --apply` verifies and reactivates the previous
+Release and holds the rejected version in `held_version` for explicit review.
+Existing v1.2.0 installations need one AI-guided upgrade with the verified
+v1.3.0 Release Bootstrap before these controls are available.
 
 ### Workspace placement
 

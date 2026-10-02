@@ -30,13 +30,26 @@ For `enable`, perform preparation on the confirmed Linux Runtime host. An SSH
 or WSL client executes the following helper on that host:
 
 ```text
-python scripts/acs_web_setup.py --choice enable --runtime-root <verified-release-directory> --config <private-surface-config> --json
+python scripts/acs_web_setup.py --choice enable --runtime-root <active-release-directory> --installation-root <installation-root> --config <private-surface-config> --json
 ```
 
 The helper generates a read-only plan containing the exact ACS stdio command,
 AI steps, owner actions and setup prerequisites. Once selected, add
 `--tunnel-id <id>` to produce the Tunnel command arguments. The AI uses its
 native execution tools to perform these steps and verify their results.
+
+For a managed installation, use the absolute installation root, active Release
+directory and private surface config recorded in its state. The optional
+`--installation-root` verifies this binding and selects the stable
+`acs_launcher.py` command for the Tunnel. New MCP processes then follow the
+active version after upgrade or rollback; a running process retains its version.
+A standalone verified Release uses `--runtime-root` with its version directory
+command.
+
+When upgrading an existing Tunnel connection, regenerate this plan and apply
+its MCP command to the selected profile through the installed client's supported
+configuration flow. Retain private credential references and verify the profile
+after reconnecting.
 
 First validate the configured principal, Profile, Grant expiry/revocation and
 actual `read_profile` and `list_projects` through that stdio process. Project

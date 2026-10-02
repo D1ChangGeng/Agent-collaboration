@@ -11,12 +11,12 @@ when you are ready to start a project.
 
 ## Agent launch request
 
-Use the [v1.2.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.2.0)
+Use the [v1.3.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.0)
 and its `acs_bootstrap.py` asset for the machine selection flow described here.
-The default Bootstrap version is `v1.2.0`. The
-v1.1.0 Runtime installer uses the earlier interface; SSH/WSL installation with
-the updated Bootstrap detects that compatibility boundary before Runtime
-commands run.
+The default Bootstrap version is `v1.3.0`. Existing v1.2.0 installations use the
+verified v1.3.0 Bootstrap for their first guided upgrade; afterward the installed
+updater provides the automatic upgrade controls. See the
+[release notes](RELEASE-NOTES-v1.3.0.md).
 
 For a fresh machine, use the standard Release Bootstrap shipped with that
 Release before project setup:
@@ -124,6 +124,36 @@ receive their own setup and knowledge Skills and MCP configuration. The Agent
 reports client readiness after actual MCP calls pass and explains available
 tools and the optional project setup step.
 
+## Automatic upgrades
+
+ACS v1.3.0 enables automatic upgrades by default for new installations.
+The Agent records the actual scheduling backend and state: an active same-owner
+systemd user timer, a registered cron entry or background catch-up checks on new
+MCP connections. Host sleep and user manager availability affect scheduled
+checks. The updater checks stable Releases daily and retries errors after an
+hour, using the existing machine/account/home binding, Harness selection and
+web settings.
+
+Use `--no-auto-update` during installation to opt out or `--auto-update` to
+enable it explicitly. A regular upgrade preserves an existing disabled setting
+when neither flag is supplied. After installation, the
+installed Bootstrap accepts `--set-auto-update on|off|status`.
+`--update --force-check` checks immediately; add `--apply` to activate an
+eligible update. Automatic updates require the same major version and unchanged
+license, schema, migration, provider and MCP catalog contracts. A changed contract
+requires explicit review.
+
+Stable launcher commands follow the active version for future local, SSH, WSL
+and Tunnel MCP processes. Existing sessions continue on their running version.
+ACS verifies the new environment, provider health and existing authorization
+before activation and retains the previous version for rollback. Owned local
+Skills refresh with the upgrade; Skills on separate client hosts are refreshed
+through client setup maintenance.
+
+Existing v1.2.0 installations first need one AI-guided upgrade using the verified
+v1.3.0 Release Bootstrap. Read [automatic upgrades](AUTOMATIC-UPDATES.md) for
+the installed controls, status meanings and rollback procedure.
+
 ## Start a project
 
 For an existing project, the Agent first inspects the active session's checkout,
@@ -171,6 +201,10 @@ on the confirmed Runtime host:
 1. Verify the exact ACS stdio command and owner Grant; generate the plan with
    `scripts/acs_web_setup.py --choice enable --runtime-root <release-directory>
    --config <private-surface-config> --json`.
+   For a managed installation, add `--installation-root <installation-root>`
+   with its active Release directory and matching private config. The helper
+   verifies that binding and emits the stable launcher command for the Tunnel.
+   A standalone verified Release uses its version directory command.
 2. Fetch the current official instructions linked in the runbook. Explain the
    required owner permissions, private-key provisioning and connection page
    actions, including how to recognize completion.
@@ -197,6 +231,7 @@ Ask the Agent to report these observed facts after setup:
 | Access | Principal, Profile, Grant expiry and visible tools |
 | Harnesses | Client hosts, selected Codex/OpenCode connections and actual tool discovery |
 | ChatGPT web | Explicit `enable`/`skip`/`later` choice, Tunnel identity and health, ChatGPT discovery/readback, exact pending owner actions and resume entry |
+| Automatic upgrades | Enabled policy, actual scheduler backend/state, connection catch-up, last result and next eligible check |
 | Recovery | Installation state, previous version and configuration rollback references |
 | Projects | Current project list; after setup, `project_id`, Management Root, Routes and SourceBinding |
 | Next action | Optional project setup through the installed Skill; for a ready project, Root Agent directory and prompt |
@@ -210,7 +245,9 @@ runtime behavior. For setup problems, use the diagnostic output and the
 The Release Bootstrap stores versioned files in the user data directory and
 maintains `state.json` with the active version, previous version, source commit
 and source tree. A failed archive or installer step leaves the active version
-unchanged. A later approved upgrade can switch the active version atomically;
-the previous version remains the rollback target until the new installation has
-passed service and selected-client MCP readback. Project Source registration
+unchanged. A verified automatic or guided upgrade can switch the active version;
+the previous version remains available for rollback. The Agent verifies service
+and selected-client MCP readback after activation. Project Source registration
 has its own identity and context validation.
+Manual rollback records the rejected version in `held_version` for explicit
+review before the updater applies that same version again.

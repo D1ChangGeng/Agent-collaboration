@@ -18,6 +18,13 @@ projects and discovered tools.
 | Web setup awaiting a choice | Bootstrap `chatgpt_web` selection | Choose `enable`, `skip` or `later`; the Agent resumes setup with the explicit choice. |
 | Web setup prepared but awaiting owner action | Generated web plan and its pending actions | Follow the [private Tunnel runbook](runtime/P2-PRIVATE-TUNNEL-PROFILE.md); complete the named account action, then let the Agent continue configuration and readback. |
 | Tunnel healthy but ChatGPT tools unavailable | Running service, connection discovery and actual web MCP results | Refresh the selected connection, rerun the exact web readback and keep readiness scoped to observed results. |
+| Automatic upgrade controls unavailable | Installed Release version and Bootstrap entry | Existing v1.2.0 installations need one AI-guided upgrade with the verified v1.3.0 Release Bootstrap. |
+| Automatic checks delayed | Enabled policy, last result, next check, actual scheduling backend and host/user manager state | Wake the Runtime host, restore its owner scheduler if needed, or start a new stable-launcher MCP connection; use `--update --apply --force-check` for an immediate retry. |
+| Cron registered but checks absent | Owner crontab entry and host cron daemon state | Verify the daemon on the Runtime host; connection catch-up remains available when enabled. |
+| Update reports `review_required` | Major version, compatibility contract and rollback hold | Ask the setup Skill to review the candidate and preview a guided upgrade. |
+| Update reports `failed` | Release integrity, managed-file ownership, locked environment, provider health and existing Grant authorization | Resolve the failed prerequisite, then repeat the installed Bootstrap's `--update --apply --force-check`; the active version remains available. |
+| New version installed but session still uses the previous version | Active state and the running MCP process | Start a new connection through the stable launcher; restart the selected Tunnel's MCP process when appropriate. |
+| Remote client Skills still show the previous version | Selected client host and Skill ownership | Refresh those Skills through setup maintenance on that client host. |
 
 Keep credentials in the operator's private environment. Share redacted
 diagnostic state, source identity and receipt handles when requesting support.
@@ -26,7 +33,20 @@ For deferred or interrupted ChatGPT setup, ask the setup Skill to connect the
 existing ACS installation to ChatGPT web. The Agent regenerates the plan with
 `scripts/acs_web_setup.py --choice enable --runtime-root <release-directory>
 --config <private-surface-config> --json` on the confirmed Runtime host, adds the
-selected `--tunnel-id`, and resumes from observed state. It performs client
+selected `--tunnel-id`, and resumes from observed state. For a managed
+installation, add `--installation-root <installation-root>` with the active
+Release directory and matching private config to generate the stable launcher
+command for that Tunnel profile. It performs client
 configuration, service checks and diagnostics, and explains remaining owner
 page actions. Verify actual ChatGPT `read_profile` and `list_projects` before
 reporting web readiness; verify `load_project` after registering a project.
+
+Inspect automatic upgrade status with the installed Bootstrap's
+`--set-auto-update status` on the recorded Runtime host as its owner. It reports
+the policy separately from the observed backend state. Network or update errors
+become eligible for retry after an hour; sleeping hosts and inactive user
+managers affect execution. To recover through a retained previous Release, run
+`--rollback --apply` and verify new MCP connections. The rejected version is
+held for explicit review before the same version can be applied automatically.
+See [automatic upgrades](AUTOMATIC-UPDATES.md) for the controls and eligibility
+checks.

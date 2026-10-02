@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
+import functools
 import hashlib
 import json
 import os
@@ -18,13 +20,14 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path, PurePosixPath
 
 REPOSITORY = "D1ChangGeng/Agent-collaboration"
-DEFAULT_VERSION = "v1.2.0"
+DEFAULT_VERSION = "v1.3.0"
 SCHEMA = "acs-bootstrap-state/1"
 WEB_CHOICES = ("enable", "skip", "later")
 WEB_DOCS = {
@@ -33,6 +36,68 @@ WEB_DOCS = {
     "auth": "https://developers.openai.com/plugins/build/auth",
     "index": "https://developers.openai.com/llms.txt",
 }
+
+
+class InstallationBusy(ValueError):
+    pass
+
+
+class UpdateReviewRequired(ValueError):
+    pass
+
+
+@contextlib.contextmanager
+def installation_lock(root: Path):
+    if any(part.is_symlink() or (part.exists() and getattr(part.lstat(), "st_file_attributes", 0) & 0x400)
+           for part in (root, *root.parents)):
+        raise ValueError("installation_lock_path_is_unsafe")
+    path = root / ".installation.lock"
+    if path.is_symlink():
+        raise ValueError("installation_lock_path_is_unsafe")
+    with path.open("a+b") as handle:
+        if os.name == "posix":
+            os.fchmod(handle.fileno(), 0o600)
+            import fcntl
+            try:
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError as error:
+                raise InstallationBusy("installation_busy") from error
+        else:
+            import msvcrt
+            handle.write(b"0")
+            handle.flush()
+            handle.seek(0)
+            try:
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+            except OSError as error:
+                raise InstallationBusy("installation_busy") from error
+        try:
+            yield
+        finally:
+            if os.name == "posix":
+                fcntl.flock(handle, fcntl.LOCK_UN)
+            else:
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+
+
+def serialized(function):
+    @functools.wraps(function)
+    def guarded(*args, **kwargs):
+        if function.__name__ == "rollback":
+            root = ensure_install_root()
+        elif kwargs.get("apply") and kwargs.get("runtime_host") == "local":
+            machine = observe_machine()
+            check_machine(machine, kwargs.get("expected_machine_id"), kwargs.get("expected_account"),
+                          kwargs.get("expected_user_home"))
+            if kwargs.get("chatgpt_web") is None:
+                raise ValueError("confirm --chatgpt-web enable, skip or later before installation")
+            root = ensure_install_root()
+        else:
+            return function(*args, **kwargs)
+        with installation_lock(root):
+            return function(*args, **kwargs)
+    return guarded
 
 
 def chatgpt_setup(choice: str | None, runtime_root: str | None = None,
@@ -136,7 +201,7 @@ with tempfile.TemporaryDirectory(prefix='acs-bootstrap-') as directory:
         expected_account=request['machine_binding']['account'],
         expected_user_home=request['machine_binding']['user_home'],
         chatgpt_web=request['chatgpt_web'], tunnel_id=request['tunnel_id'],
-        runtime_only=True)
+        runtime_only=True, automatic_updates=request['automatic_updates'])
     print('ACS_INSTALL_RECEIPT=' + json.dumps(result))
 """
 
@@ -200,7 +265,12 @@ def client_connection(kind: str, locator: str, receipt: dict) -> dict:
     arguments = [python, "-m", "runtime.project_entry", "--config",
                  receipt["runtime"]["runtime_config_ref"], "--catalog",
                  target + "/docs/runtime/p2-mcp-tool-contract.json", "--profile", "root_manager"]
-    remote = "cd " + shlex.quote(target) + " && exec " + shlex.join(arguments)
+    if receipt.get("install_root") and receipt.get("launcher_python"):
+        arguments = [receipt["launcher_python"], receipt["install_root"] + "/acs_launcher.py",
+                     "--installation-root", receipt["install_root"]]
+        remote = "exec " + shlex.join(arguments)
+    else:
+        remote = "cd " + shlex.quote(target) + " && exec " + shlex.join(arguments)
     command = (transport_command(kind, locator, "")[:-1] + [remote] if kind == "ssh" else
                ["wsl.exe", "--distribution", locator, "--exec", "sh", "-c", remote])
     return {"transport": "stdio", "command": command[0], "args": command[1:],
@@ -208,6 +278,8 @@ def client_connection(kind: str, locator: str, receipt: dict) -> dict:
 
 
 def install_root() -> Path:
+    if os.environ.get("ACS_UPDATE_ROOT"):
+        return Path(os.environ["ACS_UPDATE_ROOT"]).expanduser().absolute()
     if os.name == "nt":
         return Path(os.environ.get("LOCALAPPDATA", Path.home())) / "AgentCollaboration"
     return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "agent-collaboration"
@@ -215,8 +287,9 @@ def install_root() -> Path:
 
 def ensure_install_root() -> Path:
     root = install_root()
-    if root.exists() and root.is_symlink():
-        raise ValueError("installation root must not be a symlink")
+    for part in (root, *root.parents):
+        if part.is_symlink() or (part.exists() and getattr(part.lstat(), "st_file_attributes", 0) & 0x400):
+            raise ValueError("installation root must not traverse a symlink or reparse point")
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     if os.name == "posix" and stat.S_IMODE(root.stat().st_mode) & 0o077:
         raise ValueError("installation root permissions are too broad")
@@ -300,18 +373,81 @@ def verify_archive(archive: Path, version: str, expected: str, staging: Path) ->
 def write_state(root: Path, value: dict) -> None:
     target = root / "state.json"
     temporary = target.with_suffix(".tmp")
+    if target.is_symlink() or temporary.is_symlink():
+        raise ValueError("installation_state_path_is_unsafe")
     temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if os.name == "posix":
         temporary.chmod(0o600)
     os.replace(temporary, target)
 
 
-def install(version: str, *, apply: bool, project: Path | None, project_id: str | None,
+def installed_manifest(target: Path) -> dict:
+    manifest = json.loads((target / "RELEASE-MANIFEST.json").read_text(encoding="utf-8"))
+    for name, record in manifest["files"].items():
+        path = target / name
+        if (path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(target.resolve())
+                or path.stat().st_size != record["bytes"] or digest(path) != record["sha256"]):
+            raise ValueError("installed_release_bytes_changed")
+    return manifest
+
+
+def helper_files(root: Path, target: Path, previous_state: dict) -> dict:
+    digests = {}
+    for name in ("acs_bootstrap.py", "acs_update.py", "acs_launcher.py", "install_skill.py"):
+        source, dest = target / "scripts" / name, root / name
+        expected = digest(source)
+        if dest.is_symlink() or (dest.exists() and digest(dest) not in
+                {expected, previous_state.get("helper_digests", {}).get(name)}):
+            raise ValueError("installation_helper_requires_ownership_review")
+        digests[name] = expected
+    for name in digests:
+        temporary = root / (name + ".tmp")
+        if temporary.is_symlink():
+            raise ValueError("installation_helper_path_is_unsafe")
+        temporary.write_bytes((target / "scripts" / name).read_bytes())
+        os.replace(temporary, root / name)
+    return digests
+
+
+def activation(root: Path, state: dict) -> None:
+    # One atomic JSON record controls activation; the text file is a legacy mirror.
+    write_state(root, state)
+    try:
+        temporary = root / "current.tmp"
+        if temporary.is_symlink() or (root / "current").is_symlink():
+            return
+        temporary.write_text(state["current"], encoding="utf-8")
+        os.replace(temporary, root / "current")
+    except OSError:
+        pass
+
+
+def update_module(root: Path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("acs_update", root / "acs_update.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def refresh_skills(helper_root: Path, source: Path, prior: Path | None, harnesses: list[str]) -> None:
+    helper = install_root() / "install_skill.py"
+    if not helper.is_file():
+        helper = helper_root / "scripts/install_skill.py"
+    command = [sys.executable, str(helper),
+               "--source", str(source), "--harness", *harnesses, "--knowledge"]
+    if prior:
+        command.extend(["--previous-source", str(prior)])
+    subprocess.run(command, cwd=helper_root, capture_output=True, text=True, check=True, timeout=1200)
+
+
+def _install(version: str, *, apply: bool, project: Path | None, project_id: str | None,
             runtime_host: str | None = None, ssh_target: str | None = None,
             wsl_distribution: str | None = None, expected_machine_id: str | None = None,
             harnesses: list[str] | None = None, runtime_only: bool = False,
             expected_account: str | None = None, expected_user_home: str | None = None,
-            chatgpt_web: str | None = None, tunnel_id: str | None = None) -> dict:
+            chatgpt_web: str | None = None, tunnel_id: str | None = None,
+            automatic_updates: bool | None = None, automatic: bool = False) -> dict:
     if runtime_host is None:
         if apply:
             raise ValueError("confirm --runtime-host local, ssh or wsl before installation")
@@ -349,7 +485,7 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
                    "sha256": hashlib.sha256(source).hexdigest(), "version": version,
                    "machine_id": machine["machine_id"], "project": str(project) if project else None,
                    "project_id": project_id, "harnesses": harnesses,
-                   "chatgpt_web": chatgpt_web, "tunnel_id": tunnel_id,
+                   "chatgpt_web": chatgpt_web, "tunnel_id": tunnel_id, "automatic_updates": automatic_updates,
                    "machine_binding": machine_binding(machine)}
         transferred = subprocess.run(transport_command(runtime_host, locator, REMOTE_INSTALL),
                                      input=json.dumps(request), capture_output=True, text=True,
@@ -377,6 +513,13 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
     if not asset or not sums:
         raise ValueError("release does not contain the required archive and digest manifest")
     root = install_root()
+    stored = {}
+    if (root / "state.json").is_file():
+        stored = json.loads((root / "state.json").read_text(encoding="utf-8"))
+        if stored.get("machine") and machine_binding(stored["machine"]) != machine_binding(machine):
+            raise ValueError("existing installation is bound to a different machine or account")
+    if automatic_updates is None:
+        automatic_updates = stored.get("auto_update", {}).get("enabled", True)
     result = {"schema_version": "acs-install-plan/3", "version": version,
               "release_url": metadata.get("html_url"), "install_root": str(root),
               "archive": asset["name"], "state": "planned", "machine": machine,
@@ -385,12 +528,12 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
               "project_setup": "optional_after_machine_setup"}
     if not apply:
         return result
-    if (root / "state.json").is_file():
-        stored = json.loads((root / "state.json").read_text(encoding="utf-8"))
-        if stored.get("machine") and machine_binding(stored["machine"]) != machine_binding(machine):
-            raise ValueError("existing installation is bound to a different machine or account")
     root = ensure_install_root()
     staging = Path(tempfile.mkdtemp(prefix=".acs-install-", dir=root))
+    snapshots = {name: (root / name).read_bytes() if (root / name).is_file() else None
+                 for name in ("acs_bootstrap.py", "acs_update.py", "acs_launcher.py", "install_skill.py")}
+    activated = False
+    skills_refreshed = False
     try:
         archive = staging / asset["name"]
         checksums = staging / "SHA256SUMS.txt"
@@ -401,7 +544,17 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
         if not expected:
             raise ValueError("published digest manifest does not cover the archive")
         verified, manifest = verify_archive(archive, version, expected, staging)
+        previous = stored.get("current")
+        if previous:
+            old_target = Path(previous)
+            if old_target.parent != root / "versions" or old_target.is_symlink():
+                raise ValueError("active_release_path_is_unsafe")
+            old_manifest = installed_manifest(old_target)
+            if automatic and not update_module(root).compatible(old_manifest, manifest):
+                raise UpdateReviewRequired("automatic_update_compatibility_requires_review")
         versions = root / "versions"
+        if versions.is_symlink() or (versions.exists() and getattr(versions.lstat(), "st_file_attributes", 0) & 0x400):
+            raise ValueError("installation_versions_path_is_unsafe")
         versions.mkdir(exist_ok=True)
         target = versions / version.lstrip("v")
         if target.exists():
@@ -410,9 +563,11 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
             current_manifest = json.loads((target / "RELEASE-MANIFEST.json").read_text(encoding="utf-8"))
             if current_manifest != manifest:
                 raise ValueError("existing version contains different release bytes")
+            installed_manifest(target)
         else:
             shutil.copytree(verified, target)
-        previous = (root / "current").read_text(encoding="utf-8").strip() if (root / "current").is_file() else None
+        if previous == str(target):
+            previous = stored.get("previous")
         installer = target / "scripts" / "acs_install.py"
         if not installer.is_file():
             raise ValueError("verified release is missing its installer")
@@ -421,14 +576,22 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
         rechecked = observe_machine()
         if machine_binding(rechecked) != machine_binding(machine):
             raise ValueError("Runtime machine or account changed before installation")
+        helpers = helper_files(root, target, stored)
         environment = dict(os.environ, ACS_INSTALL_MACHINE_ID=machine["machine_id"],
                            ACS_INSTALL_ACCOUNT=machine["account"], ACS_INSTALL_USER_HOME=machine["user_home"],
-                           ACS_INSTALL_CHATGPT_WEB=chatgpt_web)
+                           ACS_INSTALL_CHATGPT_WEB=chatgpt_web, ACS_INSTALL_ROOT=str(root),
+                           ACS_LAUNCHER_PYTHON=sys.executable)
+        environment.pop("ACS_AUTOMATIC_UPDATE", None)
+        environment.pop("ACS_PREVIOUS_RELEASE", None)
+        if stored.get("current"):
+            environment["ACS_PREVIOUS_RELEASE"] = stored["current"]
+        if automatic:
+            environment["ACS_AUTOMATIC_UPDATE"] = "1"
         environment.pop("ACS_INSTALL_TUNNEL_ID", None)
         if tunnel_id:
             environment["ACS_INSTALL_TUNNEL_ID"] = tunnel_id
         executed = subprocess.run(runtime_command(target, project, project_id, harnesses, runtime_only),
-                                  cwd=target, env=environment, capture_output=True, text=True, check=True)
+                                  cwd=target, env=environment, capture_output=True, text=True, check=True, timeout=1200)
         receipts = []
         decoder = json.JSONDecoder()
         for offset in re.finditer(r"(?m)^\{", executed.stdout):
@@ -443,24 +606,65 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
         runtime = receipts[0]
         if runtime.get("readback", {}).get("runtime", {}).get("state") != "authorized":
             raise ValueError("Runtime authorization readback failed; active version retained")
+        if automatic and not runtime_only:
+            refresh_skills(target, target, Path(stored["current"]), harnesses)
+            skills_refreshed = True
         web = chatgpt_setup(chatgpt_web, str(target), runtime.get("runtime_config_ref"), tunnel_id)
-        (root / "current.tmp").write_text(str(target), encoding="utf-8")
-        os.replace(root / "current.tmp", root / "current")
-        write_state(root, {"schema_version": SCHEMA, "version": version,
+        if chatgpt_web == "enable":
+            stable = {"host": "selected_runtime_machine", "cwd": str(root), "command": sys.executable,
+                      "args": [str(root / "acs_launcher.py"), "--installation-root", str(root)],
+                      "config_ref": runtime.get("runtime_config_ref")}
+            web["runtime_process"] = stable
+            if web["commands"]["init"]:
+                web["commands"]["init"][-1] = shlex.join([stable["command"], *stable["args"]])
+        activation(root, {"schema_version": SCHEMA, "version": version,
                            "current": str(target), "previous": previous, "machine": machine,
+                           "harnesses": harnesses, "runtime_only": runtime_only, "launcher_python": sys.executable,
+                           "helper_digests": helpers,
+                           "auto_update": {**stored.get("auto_update", {}), "enabled": automatic_updates,
+                                           "next_check": stored.get("auto_update", {}).get("next_check", time.time() + 86400)},
                            "chatgpt_web": chatgpt_web, "web_setup": web,
                            "runtime_config_ref": runtime.get("runtime_config_ref"),
                            "commit": manifest["commit"], "tree": manifest["tree"]})
+        activated = True
+        if not automatic:
+            policy_state = json.loads((root / "state.json").read_text())
+            try:
+                schedule = update_module(root).configure_schedule(root, automatic_updates, sys.executable)
+            except (OSError, ValueError, subprocess.SubprocessError):
+                schedule = {"enabled": automatic_updates, "backend": "connection", "state": "active" if automatic_updates else "disabled",
+                            "schedule_issue": "background_scheduler_requires_setup"}
+            policy_state["auto_update"]["schedule"] = schedule
+            write_state(root, policy_state)
         result.update({"state": "machine_ready", "commit": manifest["commit"], "tree": manifest["tree"],
+                       "launcher_python": sys.executable, "auto_update": json.loads((root / "state.json").read_text())["auto_update"],
                        "current": str(target), "rollback": previous, "runtime": runtime,
                        "web_setup": web,
                        "next_action": (web["next_action"] if chatgpt_web == "enable" else
                            "Use the setup Skill in a chosen project to create or adopt its Management Root.")})
         return result
     finally:
+        if not activated:
+            if skills_refreshed:
+                refresh_skills(target, Path(stored["current"]), target, harnesses)
+            for name, content in snapshots.items():
+                helper = root / name
+                if helper.is_symlink():
+                    continue
+                if content is None:
+                    helper.unlink(missing_ok=True)
+                else:
+                    temporary = root / (name + ".restore.tmp")
+                    if not temporary.is_symlink():
+                        temporary.write_bytes(content)
+                        os.replace(temporary, helper)
         shutil.rmtree(staging, ignore_errors=True)
 
 
+install = serialized(_install)
+
+
+@serialized
 def rollback() -> dict:
     root = ensure_install_root()
     state_path = root / "state.json"
@@ -474,18 +678,32 @@ def rollback() -> dict:
     if not isinstance(previous, str) or not Path(previous).is_dir():
         raise ValueError("no verified previous version is available")
     current = state.get("current")
-    manifest = json.loads((Path(previous) / "RELEASE-MANIFEST.json").read_text(encoding="utf-8"))
-    temporary = root / "current.tmp"
-    temporary.write_text(previous, encoding="utf-8")
-    os.replace(temporary, root / "current")
+    if Path(previous).parent != root / "versions" or Path(previous).is_symlink():
+        raise ValueError("rollback_release_path_is_unsafe")
+    manifest = installed_manifest(Path(previous))
+    if not state.get("runtime_only", True):
+        refresh_skills(Path(current), Path(previous), Path(current), state["harnesses"])
     original_web = state.get("web_setup") or {}
     config_ref = state.get("runtime_config_ref") or (original_web.get("runtime_process") or {}).get("config_ref")
     web = chatgpt_setup(state.get("chatgpt_web"), previous, config_ref, original_web.get("tunnel_id"))
-    write_state(root, {"schema_version": SCHEMA, "version": "v" + manifest["version"],
+    if web.get("runtime_process") and (root / "acs_launcher.py").is_file():
+        stable = {"host": "selected_runtime_machine", "cwd": str(root), "command": state["launcher_python"],
+                  "args": [str(root / "acs_launcher.py"), "--installation-root", str(root)], "config_ref": config_ref}
+        web["runtime_process"] = stable
+        if web["commands"]["init"]:
+            web["commands"]["init"][-1] = shlex.join([stable["command"], *stable["args"]])
+    try:
+        activation(root, {**state, "schema_version": SCHEMA, "version": "v" + manifest["version"],
                        "current": previous, "previous": current, "machine": machine,
                        "chatgpt_web": state.get("chatgpt_web"), "web_setup": web,
                        "runtime_config_ref": config_ref,
-                       "commit": manifest["commit"], "tree": manifest["tree"]})
+                       "auto_update": {**state.get("auto_update", {}), "enabled": state.get("auto_update", {}).get("enabled", True),
+                                       "held_version": state["version"]},
+                           "commit": manifest["commit"], "tree": manifest["tree"]})
+    except (OSError, ValueError):
+        if not state.get("runtime_only", True):
+            refresh_skills(Path(current), Path(current), Path(previous), state["harnesses"])
+        raise
     return {"schema_version": "acs-install-plan/2", "state": "rolled_back",
             "current": previous, "commit": manifest["commit"], "tree": manifest["tree"],
             "web_setup": web}
@@ -494,6 +712,12 @@ def rollback() -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", default=DEFAULT_VERSION)
+    parser.add_argument("--update", action="store_true", help="check or apply the latest compatible stable Release")
+    parser.add_argument("--force-check", action="store_true")
+    parser.add_argument("--set-auto-update", choices=["on", "off", "status"])
+    updates = parser.add_mutually_exclusive_group()
+    updates.add_argument("--auto-update", dest="automatic_updates", action="store_true", default=None)
+    updates.add_argument("--no-auto-update", dest="automatic_updates", action="store_false", help="disable automatic upgrades for this installation")
     parser.add_argument("--project", type=Path)
     parser.add_argument("--project-id")
     parser.add_argument("--apply", action="store_true")
@@ -511,6 +735,26 @@ def main() -> int:
     parser.add_argument("--tunnel-id")
     args = parser.parse_args()
     try:
+        if args.update or args.set_auto_update:
+            root = install_root()
+            module = update_module(root) if (root / "acs_update.py").is_file() else update_module(Path(__file__).parent)
+            if args.set_auto_update:
+                with installation_lock(root):
+                    state = json.loads((root / "state.json").read_text())
+                    if machine_binding(observe_machine()) != machine_binding(state["machine"]):
+                        raise ValueError("installation_machine_binding_changed")
+                    if args.set_auto_update != "status":
+                        enabled = args.set_auto_update == "on"
+                        state.setdefault("auto_update", {})["enabled"] = enabled
+                        write_state(root, state)
+                        state["auto_update"]["schedule"] = module.configure_schedule(root, enabled, state["launcher_python"])
+                        write_state(root, state)
+                    policy = state.get("auto_update", {"enabled": True})
+                    print(json.dumps({**policy, "schedule": module.schedule_status(root, policy)}, indent=2))
+                    return 0
+            result = module.run_update(root, apply=args.apply, force=args.force_check)
+            print(json.dumps(result, indent=2))
+            return 2 if result["state"] == "failed" else 0
         if args.rollback:
             if not args.apply:
                 raise ValueError("rollback requires --apply")
@@ -523,9 +767,10 @@ def main() -> int:
                                      expected_account=args.expected_account,
                                      expected_user_home=args.expected_user_home,
                                      chatgpt_web=args.chatgpt_web, tunnel_id=args.tunnel_id,
-                                     harnesses=args.harness, runtime_only=args.runtime_only), indent=2))
+                                     harnesses=args.harness, runtime_only=args.runtime_only,
+                                     automatic_updates=args.automatic_updates), indent=2))
         return 0
-    except (OSError, ValueError, TypeError, urllib.error.URLError, subprocess.CalledProcessError) as error:
+    except (OSError, ValueError, TypeError, KeyError, urllib.error.URLError, subprocess.SubprocessError) as error:
         print(json.dumps({"schema_version": "acs-install-plan/2", "state": "blocked",
                           "reason": str(error)[:300]}))
         return 2

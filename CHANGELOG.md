@@ -4,6 +4,28 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## 1.3.0 - 2026-10-03
+
+- Release installations enable automatic upgrades by default, with an install
+  opt-out and owner controls to enable, disable, inspect or immediately check
+  the existing installation. Regular upgrades preserve an existing opt-out
+  unless the owner explicitly enables automatic updates.
+- Daily stable Release checks use an owner systemd user timer or cron, with
+  background catch-up on new MCP connections and an hourly retry after errors.
+- Automatic activation requires the same major version and unchanged license,
+  schema, migration, provider and MCP catalog contracts. Archive and installed-file
+  verification, locked environments, provider health and existing authorization
+  checks protect activation.
+- Stable local, SSH, WSL and Tunnel launch commands follow the active version
+  for new MCP processes. Owned local Skills refresh transactionally and the
+  previous version remains available for rollback; rollback holds the rejected
+  version for review.
+- The web setup helper can bind its Tunnel plan to a verified installation's
+  stable launcher through `--installation-root`.
+- Installation and recovery guides document update controls, observed scheduler
+  state, remote client Skill maintenance and the first guided upgrade required
+  for existing v1.2.0 installations.
+
 ## 1.2.0 - 2026-10-02
 
 - The Release includes a standalone `acs_bootstrap.py` with the v1.2.0 default,

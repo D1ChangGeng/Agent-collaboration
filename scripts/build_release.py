@@ -93,6 +93,7 @@ def build(output: Path, version: str) -> dict:
     manifest = {
         "schema_version": "acs-release-manifest/1",
         "version": version,
+        "auto_update": {"compatibility": "acs-local-v1"},
         "commit": git("rev-parse", "HEAD"),
         "tree": git("rev-parse", "HEAD^{tree}"),
         "files": {
