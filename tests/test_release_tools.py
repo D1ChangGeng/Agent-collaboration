@@ -14,6 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def load(name: str, filename: str):
+    scripts = str(ROOT / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
     spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / filename)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader
@@ -115,9 +118,20 @@ class ReleaseToolTests(unittest.TestCase):
         }
         with (
             mock.patch.object(installer, "inspect", return_value=readiness),
+            mock.patch.object(installer, "observe_machine", return_value={
+                "machine_id": "a" * 64, "platform": "linux",
+                "account": "owner", "user_home": "/home/owner"}),
             mock.patch.object(installer, "run", side_effect=AssertionError("mutation")),
             self.assertRaisesRegex(ValueError, "Source/CAS"),
         ):
+            installer.install(harnesses=["codex"], project=None, project_id=None,
+                              apply=True, host_confirmed=True)
+
+    def test_runtime_install_requires_host_confirmation_before_any_step(self):
+        installer = load("acs_install", "acs_install.py")
+        with (mock.patch.object(installer, "observe_machine", side_effect=AssertionError("probe")),
+              mock.patch.object(installer, "run", side_effect=AssertionError("mutation")),
+              self.assertRaisesRegex(ValueError, "host-confirmed")):
             installer.install(harnesses=["codex"], project=None, project_id=None, apply=True)
 
     def test_provider_password_is_private_and_idempotent(self):

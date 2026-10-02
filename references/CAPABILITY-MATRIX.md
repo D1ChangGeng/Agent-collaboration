@@ -33,6 +33,7 @@ journey, not a general natural-language or distributed-runtime guarantee.
 | Capability | Instruction | Decision | Mechanism | Invariant validation | Representative evidence | Current status | Truthful user wording |
 |---|---:|---:|---:|---:|---:|---|---|
 | Skill discovery and explicit invocation | ✓ | ✓ | ✓ | ✓ | local validator | `supported (narrow)` | “The Skill can be explicitly loaded for setup maintenance.” |
+| Runtime machine installation and client placement | ✓ | ✓ | ✓ | identity and installer regression tests | `tests/test_machine_install.py`; fresh-host/client journey pending | `partial` | “The Agent confirms local Linux, SSH or WSL placement, binds apply to the observed machine, account and home directory, then configures and verifies the selected clients.” |
 | Repository bootstrap on a genuinely new target | ✓ | ✓ | ✓ | ✓ | setup tests / temporary repository | `supported (narrow)` | “Repository bootstrap is bounded to a missing or empty target; review the preview.” |
 | Repository adopt with project preservation | ✓ | ✓ | ✓ | ✓ | setup tests / temporary repository | `supported (narrow)` | “Adopt preserves project content and refuses ambiguous ownership.” |
 | Repository upgrade | ✓ | ✓ | ✓ | ✓ | schema/upgrade tests | `supported (narrow)` | “Explicit managed-template upgrade is supported for the tested repository shape.” |
@@ -62,7 +63,7 @@ journey, not a general natural-language or distributed-runtime guarantee.
 | Collaboration configuration migration | ✓ conceptually | ✓ conceptually | — | — | no current mechanism | `unsupported` by this Skill | “Metadata upgrade does not migrate collaboration behavior.” |
 | Local source access | ✓ policy | external | external | — | environment-dependent | `documented / unverified` | “Local access must be checked in the actual environment.” |
 | Git source synchronization | ✓ policy | external | external | external | no Skill-owned sync E2E | `documented / unverified` | “Git remains an independent source-state bridge; the Skill does not perform day-to-day sync.” |
-| SSH source access | ✓ design | partial | — | — | no SSH adapter/E2E | `architecture-allowed` | “SSH is an allowed topology in the design, not a current Skill capability.” |
+| SSH source access | ✓ design | partial | — | — | no SSH source adapter/E2E | `architecture-allowed` | “SSH project Source access requires its own capability observation and SourceBinding scope.” |
 | Git + SSH combined workflow | ✓ design | partial | — | — | no E2E | `documented / unverified` | “The combination requires separately verified source and transport mechanisms.” |
 | Natural-language intent routing | partial | — | — | — | no automated journey E2E | `unsupported` as an automatic Skill mechanism | “An Agent can use the operating guide, but the scripts do not parse intent.” |
 | Minimum interview support | ✓ guide | Agent-owned | — | — | no harness E2E | `documented / unverified` | “The guide defines when to ask; no interview state is persisted.” |

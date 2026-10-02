@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented here.
 
+## Unreleased
+
+- Machine setup confirms a local Linux host, named SSH target or named WSL
+  distribution before applying an installation, and binds the plan to its
+  observed machine identity, owner account and home directory.
+- Global Runtime setup runs independently of project selection. Users create
+  or adopt project Management Roots through the setup Skill when needed.
+- SSH/WSL installs Runtime services with a Runtime-only profile and returns a
+  stdio connection descriptor for the selected client hosts.
+- Bootstrap, discoverable setup Skill and onboarding share the machine-first
+  installation workflow and report client handshake checks explicitly.
+
 ## 1.1.0 - 2026-09-29
 
 Standard Release Bootstrap installation is now available for fresh machines

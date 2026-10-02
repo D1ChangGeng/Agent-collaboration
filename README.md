@@ -21,37 +21,46 @@ https://github.com/D1ChangGeng/Agent-collaboration
 
 Then ask:
 
-> Inspect this repository and guide me through installing ACS. Check my machine
-> and project, perform the setup steps you can run, and ask me only for the
-> project choices and authorizations I need to make. Verify the installed
-> services and MCP tools, explain what collaboration capabilities are available,
-> and help me open the Management Root as a Root Agent session.
+> Inspect this repository and guide me through installing ACS. First confirm
+> where the Runtime should run: this Linux machine, a remote machine through
+> SSH, or a WSL distribution. Confirm which Codex/OpenCode client hosts should
+> connect. Probe the selected host, install the verified Release and configure
+> the connections. Ask me for the host choice and required authorizations.
+> Verify services and actual MCP calls, report the machine and account binding,
+> and explain the installed capabilities. I can initialize projects later with
+> the setup Skill.
 
-The [getting started guide](docs/GETTING-STARTED.md) gives the Agent a complete
-first-use path. It covers installation reporting, project adoption, a Route and
-Team, WorkItem delivery, Inbox recovery and independent Review. The Agent can
-use `scripts/acs_doctor.py` for a read-only readiness report and
-`scripts/acs_install.py` to preview and apply local setup. Real project Source
-registration and live Harness connection are verified as separate steps.
+The [getting started guide](docs/GETTING-STARTED.md) starts with Runtime host
+selection and client connection verification. Once the machine installation is
+ready, the [setup Skill](SKILL.md) can create or adopt a project's Management
+Root and lead into Route/Team setup, WorkItem delivery, Inbox recovery and
+independent Review.
 
 ## Standard release installation
 
-The standard Release Bootstrap provides a versioned entry for fresh machines. It
-downloads the selected GitHub Release, verifies `SHA256SUMS.txt`, verifies the
-embedded file manifest, installs into a versioned private directory and
-switches the active version atomically. The previous version remains available
-for rollback. An AI assistant can run it after downloading the Bootstrap script
-from that release. For an existing project, it supplies the Management Root and
-stable `project_id`.
+The Release Bootstrap uses an explicit Runtime destination: local Linux,
+a named remote SSH target, or a named WSL distribution. It probes the selected
+machine and account, downloads the selected GitHub Release, verifies
+`SHA256SUMS.txt` and the embedded file manifest, then installs services and
+private credentials on that host. Versioned private directories and the active
+version pointer provide an upgrade and rollback record.
 
-The bootstrapper performs distribution verification before changing local state.
-The installed Runtime then handles services, private credentials, project
-registration, MCP configuration and readback.
+The Agent previews the install, binds apply to the observed machine identity,
+account and home directory, and configures the selected Codex/OpenCode clients
+on their own hosts. SSH and WSL install services through `--runtime-only` and
+return a caller-side stdio MCP connection descriptor. The Agent installs Skills
+and configures that descriptor on each selected client. Service
+health and actual `tools/list`, `read_profile` and `list_projects` calls establish
+machine readiness. A new installation can start with an empty project list.
 
-The installation state records the active and previous verified versions,
-source commit and tree. A failed verification or configuration step preserves
-the active version, and an approved upgrade switches versions atomically after
-readback.
+When you start a project, ask the setup Skill to initialize or adopt its
+Management Root. Project identity, Source registration and Root Agent startup
+follow the [project setup path](docs/GETTING-STARTED.md#start-a-project).
+
+The installation report records Runtime machine identity and account, selected
+transport, client hosts, version/commit/tree, services, enabled Harnesses,
+credential references and rollback state. Runtime Node enrollment and execution
+capabilities have their own live verification.
 
 ## What you can manage
 
@@ -120,22 +129,25 @@ exact scope of measured cross-machine, cross-Harness and MCP behavior.
 
 ## Install and connect
 
-The setup Skill and Runtime are separate packages in this repository. The setup
-Skill manages project scaffolding; the Runtime exposes typed collaboration
-tools and persists shared state. The Source/CAS Runtime service runs on Linux;
-Windows Codex and OpenCode connect as clients to an admitted Linux service.
-A local service installation uses Python 3.12+, Git, uv and Docker Compose for
-PostgreSQL and Temporal. The Agent checks these prerequisites and handles supported
-installation actions. You complete machine
-privilege and account consent prompts.
+The Source/CAS Runtime service runs on Linux. Choose local Linux, a remote
+Linux host through SSH, or a named WSL distribution; Windows Codex/OpenCode
+connect through the selected service host's MCP process. Installation uses
+Python 3.12+, Git, uv and Docker Compose for PostgreSQL and Temporal. The Agent
+checks the selected host and performs setup; you choose the destination and
+complete machine privilege or account consent prompts.
 
-The Linux setup entry prints a plan first. With `--apply`, it installs the
-locked Python environment and nine Skills, starts owner-local services,
-initializes a private owner authority and adopts a specified Management Root.
-For a clean committed project Source, it registers the project and reads back
-its context. On the Runtime host it configures local Codex and OpenCode MCP
-entries with rollback copies; the Agent verifies tool discovery in each client
-before reporting collaboration ready.
+Use `scripts/acs_bootstrap.py` from the selected Release for the machine
+installation. Its destination flags are `--runtime-host local|ssh|wsl`,
+`--ssh-target` and `--wsl-distribution`. Supply the preview's
+`--expected-machine-id`, `--expected-account` and `--expected-user-home` before
+apply; select clients with `--harness codex opencode`. The bounded Linux
+`acs_install.py` entry
+requires `--host-confirmed`. It installs the locked Python environment, starts
+owner-local services and initializes a private owner Authority. Local Linux
+setup installs nine Skills and configures selected clients on that host by
+default; `--runtime-only` selects service setup. For SSH/WSL, the Agent installs
+Skills and configures MCP on the selected client hosts, verifies their actual
+connections, and can then offer project setup.
 See [getting started](docs/GETTING-STARTED.md) and
 [troubleshooting](docs/TROUBLESHOOTING.md).
 

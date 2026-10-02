@@ -20,15 +20,15 @@ https://github.com/D1ChangGeng/Agent-collaboration
 
 然后告诉它：
 
-> 请检查这个仓库并带我安装 ACS。先识别本机和目标项目，执行你能完成的
-> 安装与配置；只就项目选择和必须由我确认的授权事项提问。安装后请实际
-> 验证服务和 MCP 工具，说明我拥有的协作能力，并带我进入 Management Root
-> 启动 Root Agent 会话。
+> 请检查这个仓库并带我安装 ACS。先确认 Runtime 的安装位置：本机 Linux、
+> 通过 SSH 访问的远程机器，或指定的 WSL 发行版；再确认哪些机器上的
+> Codex/OpenCode 需要连接。对选定主机做只读检查，安装经过校验的 Release
+> 并配置连接。只就主机选择和必要授权提问。安装后实际验证服务与 MCP 调用，
+> 报告机器、账号和连接绑定，说明已安装能力。项目可以之后通过 setup Skill 初始化。
 
-[首次使用指南](docs/GETTING-STARTED.md)列出了安装报告、项目接入、创建
-Route/Team、WorkItem 投递、Inbox 恢复和独立 Review 的完整路径。AI 可以用
-`scripts/acs_doctor.py` 生成只读环境报告，并用 `scripts/acs_install.py`
-预览与执行本地设置。项目 Source 注册和 Harness 实际连接各自需要读回验证。
+[首次使用指南](docs/GETTING-STARTED.md)从 Runtime 主机选择和客户端连接验证
+开始。机器安装就绪后，可以调用 [setup Skill](SKILL.md)创建或接入项目
+Management Root，随后使用 Route/Team、WorkItem 投递、Inbox 恢复和独立 Review。
 
 ## 协作能力
 
@@ -96,30 +96,37 @@ WorkItem 与消息句柄，再核对输出 commit、测试证据并送交 Review
 
 ### 标准 Release 安装
 
-标准 Release Bootstrap 为新机器提供版本化入口。它下载指定 GitHub Release，校验
-`SHA256SUMS.txt` 和发行包内文件清单，将版本安装到本机私有目录，并原子切换
-当前版本，同时保留上一版本用于回滚。
-AI 可从对应版本下载 Bootstrap 脚本并执行。对已有项目，向安装器提供
-Management Root 与稳定项目身份 `project_id`。
+Release Bootstrap 使用明确的 Runtime 安装目标：本机 Linux、指定的远程 SSH
+目标，或指定的 WSL 发行版。它检查选定机器与账号，下载指定 GitHub Release，
+校验 `SHA256SUMS.txt` 和发行包内文件清单，再在该主机安装服务与私有凭据。
+版本目录和当前版本指针记录升级状态，并保留回滚目标。
 
-Bootstrap 会在修改本机状态前完成发行物校验；随后由已安装 Runtime 完成服务、
-私有凭据、项目注册、MCP 配置和读回验证。
+AI 先预览安装计划，将执行绑定到已观测的完整机器身份、账号与主目录，再在各客户端
+所在主机配置选定的 Codex/OpenCode。SSH 和 WSL 通过 `--runtime-only` 安装服务，
+返回调用方可用的 stdio MCP 连接描述。AI 在选定客户端安装 Skills 并配置连接。
+服务健康状态及实际 `tools/list`、`read_profile`、`list_projects` 调用共同验证机器就绪；
+新安装可以从空项目列表开始。
 
-安装状态会记录当前版本、上一版本、源码 commit 和 tree。校验或配置失败时保持
-当前版本不变；升级在完成读回后原子切换，并保留上一版本作为回滚目标。
+开始项目时，调用 setup Skill 初始化或接入 Management Root。项目身份、Source
+注册和 Root Agent 启动按[项目设置路径](docs/GETTING-STARTED.md#start-a-project)完成。
+安装报告记录 Runtime 机器身份与账号、连接方式、客户端主机、版本与 commit/tree、
+服务、启用的 Harness、凭据引用及回滚状态。Runtime Node 注册与执行能力各自
+需要实际验证。
 
-仓库包含项目 setup Skill 和协作 Runtime。Skill 管理项目文件；Runtime 提供
-类型化工具与持久状态。Source/CAS Runtime 服务运行在 Linux；Windows 的
-Codex 和 OpenCode 作为客户端连接已接入的 Linux 服务。服务安装使用
-Python 3.12+、Git、uv、Docker Compose、PostgreSQL 和 Temporal。
-AI 检查先决条件并完成可自动执行的步骤；你负责系统
-权限和账号确认。
+Source/CAS Runtime 服务运行在 Linux。可以选择本机 Linux、通过 SSH 访问的
+远程 Linux 主机，或指定的 WSL 发行版；Windows Codex/OpenCode 通过选定服务
+主机上的 MCP 进程连接。服务安装使用 Python 3.12+、Git、uv、Docker Compose、
+PostgreSQL 和 Temporal。AI 检查选定主机并执行安装；你选择目标，完成系统权限
+或账号确认。
 
-Linux 安装入口先输出计划；指定 `--apply` 后安装锁定的 Python 环境与九个 Skills、
-启动本地服务、建立安装者私有 Authority，并接入指定 Management Root。
-项目 Source 已提交且干净时，安装器会完成注册并读回项目上下文。
-安装器在 Runtime 主机写入本机 Codex、OpenCode MCP 配置并保留回滚副本；
-AI 在各客户端验证工具发现后报告协作就绪。详见[首次使用指南](docs/GETTING-STARTED.md)
+机器安装使用选定 Release 的 `scripts/acs_bootstrap.py`。目标参数为
+`--runtime-host local|ssh|wsl`、`--ssh-target` 和 `--wsl-distribution`。
+执行时传入预览返回的 `--expected-machine-id`、`--expected-account` 和
+`--expected-user-home` 三项身份绑定参数；`--harness codex opencode` 选择客户端。
+受控 Linux 入口 `acs_install.py` 要求 `--host-confirmed`；它安装锁定的 Python
+环境、启动本地服务并建立安装者私有 Authority。本机 Linux 默认安装九个 Skills 并
+配置该主机上选定的客户端，`--runtime-only` 选择服务安装。SSH/WSL 的客户端 Skills
+与 MCP 由 AI 在选定客户端主机配置，实际验证连接后再引导项目设置。详见[首次使用指南](docs/GETTING-STARTED.md)
 和[排错指南](docs/TROUBLESHOOTING.md)。
 
 ChatGPT 网页端可通过[单用户私有 Tunnel Profile](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md)

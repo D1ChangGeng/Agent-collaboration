@@ -1,21 +1,25 @@
 ---
 name: agent-collaboration-setup
-description: Install, bootstrap, adopt, repair, upgrade, validate, or safely manage removal of the ACHP harness-agnostic collaboration scaffold in a source repository or Project Collaboration Workspace. Workspace removal is guarded until ownership is reviewed. Use only when the user explicitly asks to set up or change the collaboration mechanism itself. Do not use for normal project planning, coding, reviews, handoffs, Git synchronization, or knowledge maintenance after setup.
+description: Manage ACS machine and project setup. Install, configure, validate, repair, upgrade, or safely remove ACS on a confirmed local Linux, SSH, or WSL Runtime host; connect Codex and OpenCode client hosts; separately bootstrap or adopt ACHP project Management Roots and Routes. Use when the user explicitly asks to set up or change the collaboration mechanism itself. Workspace removal is guarded until ownership is reviewed.
 license: Sustainable Use License 1.0
 metadata:
   version: "0.4.0"
-  scope: "setup-only"
+  scope: "machine-and-project-setup"
   protocol: "ACHP"
 ---
 
 # Agent Collaboration Setup
 
-This skill is an **installer/configurator**, not the collaboration runtime. It
-maintains repository setup and Project Collaboration Workspaces. The preferred
-Workspace is a management root nested in the same project Git repository as
-the product code; standalone Workspaces remain supported for compatibility.
+This Skill guides two setup lifecycles: an owner account's ACS machine
+installation and a project's Management Root. Global installation establishes
+the selected Runtime host and client connections. Project setup can follow
+later when the user invokes this Skill for a project. The preferred Management
+Root is nested in the project's Git repository; standalone Workspaces remain
+supported for compatibility.
 
-Its job is to install or maintain the ACHP project scaffold so future sessions can collaborate from repository-native instructions and state. After setup, ordinary collaboration MUST run from the project's `AGENTS.md` and `.agents/` files without loading this skill again.
+After setup, ordinary collaboration proceeds through project `AGENTS.md`,
+`.agents/`, knowledge Skills and MCP tools. Invoke this Skill for installation,
+connection or project setup maintenance.
 
 ## Agent operating guide (read before choosing a lifecycle)
 
@@ -42,6 +46,8 @@ Git, or Harness facts. Read only the reference needed for the current request.
 
 ## Use this skill only for
 
+- Global ACS installation, validation, repair, upgrade or removal on a confirmed
+  Runtime host, and configuration of the selected client Harness connections.
 - `bootstrap`: initialize ACHP in a new/blank repository.
 - `adopt`: add ACHP to an existing repository without replacing existing project guidance.
 - `upgrade`: update ACHP-managed protocol/template files while preserving project-owned state.
@@ -51,12 +57,59 @@ Git, or Harness facts. Read only the reference needed for the current request.
   knowledge by default. The Workspace form is currently guarded; see the
   Workspace schema boundary below.
 
+## Global machine installation
+
+1. Inspect the caller's OS, current Harness and existing local ACS state. Treat
+   existing SSH configuration and installation records as discoverable options.
+2. Confirm where the Runtime should run before any installation write. If the
+   user has not already selected it, ask one question: "Should ACS run on this
+   Linux machine, a remote machine reached through SSH, or a WSL distribution?
+   For SSH or WSL, which target should I use?" Confirm which client hosts and
+   Codex/OpenCode installations should connect to it. An existing SSH alias,
+   current project directory or previous installation is not a host choice.
+3. On the selected host, perform a read-only probe of machine identity, account,
+   Linux support and prerequisites. Verify SSH or WSL reachability for the exact
+   selected target. Keep the full observed machine identity, login account and
+   home directory for apply-time checking before directory or service writes.
+4. Use the selected Release's `scripts/acs_bootstrap.py` to preview and apply
+   distribution and Runtime installation. Supply `--runtime-host local|ssh|wsl`,
+   the corresponding `--ssh-target` or `--wsl-distribution`,
+   the preview's `--expected-machine-id`, `--expected-account` and
+   `--expected-user-home`, and the selected `--harness` values. Pass all three
+   expected binding values before apply. The local
+   Runtime installer requires `--host-confirmed`; execute it only from the full
+   verified Release on that host. A copied setup Skill contains project setup
+   tools and the Bootstrap entry; full Runtime dependencies come from the Release.
+   SSH and WSL use `--runtime-only` to establish services and owner Authority.
+   Local Linux setup configures the selected clients on that host by default;
+   `--runtime-only` selects a service-only installation there.
+5. Configure each selected client on its own host. Install setup and knowledge
+   Skills on the selected client hosts. For SSH and WSL, use the returned
+   caller-side stdio descriptor with the client's MCP configuration mechanism.
+   A Runtime host selected as a client receives the same explicit client setup.
+   Keep credentials on the Runtime host and record configuration rollback data.
+6. Verify services and actual MCP `tools/list`, `read_profile` and
+   `list_projects` from each selected client. An empty project list is a valid
+   initial machine installation. `load_project` is required after a project has
+   been registered.
+7. Report Runtime machine identity and account, client hosts, Release version,
+   commit/tree, services, configured Harnesses, observed tools, credential
+   references and rollback state. Offer project initialization as the next
+   optional lifecycle.
+
+Machine installation selects a service host and a connection path. Runtime
+Node enrollment, execution placement and cross-host dispatch require their own
+Runtime capability observations.
+
+## Project setup lifecycle
+
 For a management workspace, use the explicit command families:
 
 - `workspace bootstrap|adopt|upgrade|repair|validate|uninstall`;
 - `route create|adopt|upgrade|list|validate|set-state|rename`.
 
-These command names are deterministic mechanisms, not a natural-language
+The Workspace and Route command names are deterministic mechanisms, not a
+natural-language
 intent parser. Decide the lifecycle from the observed target and user intent
 before invoking one. A new Session, Engineer window, machine, or Endpoint does
 not by itself justify creating a new Route.

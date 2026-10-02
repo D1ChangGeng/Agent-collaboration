@@ -1,26 +1,30 @@
 # Agent Collaboration Operating Guide
 
 This guide is the decision layer for the `agent-collaboration-setup` Skill.
-Read it when a user asks to create, adopt, repair, upgrade, validate, or
-understand an ACHP setup and the user's wording does not already identify a
+Read it when a user asks to install ACS on a machine or create, adopt, repair,
+upgrade, validate, or understand a project setup and the wording does not identify a
 safe deterministic command. It is intentionally separate from the scripts:
 the Agent interprets intent and reality; the scripts perform bounded file
 operations and report observable facts.
 
-This guide describes the current v0.4 baseline. A statement marked
+The project Workspace lifecycle retains its v0.4 setup profile. Global
+installation uses the selected Release's Bootstrap and Runtime installer.
+A statement marked
 `documented`, `unverified`, `architecture-allowed`, or `unsupported` is not a
 promise that the Skill can perform that operation.
 
 ## 1. What this Skill is
 
-`agent-collaboration-setup` installs or maintains a repository-native ACHP
-scaffold. It is a setup/configuration surface, not a resident collaboration
-runtime. Once a target has been set up, normal work proceeds from that
-target's `AGENTS.md` and `.agents/` files; do not reload this Skill merely to
-plan, code, review, hand off, synchronize Git, or maintain knowledge.
+`agent-collaboration-setup` guides machine installation and project setup.
+A machine installation binds ACS services to the chosen Runtime host and owner
+account and connects the chosen client Harnesses. A project setup establishes
+the repository-native Management Root, identity and Routes. Normal project
+work proceeds from `AGENTS.md`, `.agents/`, knowledge Skills and MCP tools.
 
 The Skill can currently provide a bounded, deterministic lifecycle for:
 
+- confirmed local Linux, named SSH target or named WSL Runtime installation;
+- release verification and selected client MCP connection setup;
 - repository setup and validation;
 - nested management Workspace setup in the same project Git repository;
 - standalone Workspace setup for compatibility;
@@ -28,9 +32,53 @@ The Skill can currently provide a bounded, deterministic lifecycle for:
 - explicit schema/metadata upgrades;
 - selected ownership, marker, path, dry-run, and idempotency checks.
 
-It does not, by itself, provide a Session broker, Endpoint manager, SSH
-driver, direct message relay, source synchronizer, or durable execution
-recovery service.
+Bootstrap SSH/WSL installation selects a service host and connection transport.
+Session brokering, execution Endpoint management, source synchronization and
+message delivery belong to their Runtime mechanisms and capability checks.
+
+### Machine installation lifecycle
+
+Global installation is complete when the selected host's services and the
+selected clients' MCP connections are verified. A project list with zero
+entries is a valid starting state. Project paths, collaboration goals and
+Management Roots are supplied when the user begins project setup.
+
+Use this order for a global install, repair or upgrade:
+
+1. Inspect the caller host's OS, active Harness and existing ACS installation.
+2. Resolve the user's Runtime placement choice: this Linux host, a named remote
+   SSH target, or a named WSL distribution. If it was not supplied, ask one
+   placement question. Resolve the client host(s) and Codex/OpenCode selection
+   from the user's intended use and current Harness; ask only when ambiguous.
+3. Probe the selected host read-only. Observe its machine identity, login
+   account, home directory, Linux support and required tools. Verify that exact
+   SSH target or WSL distribution before planning writes. Pin the full machine
+   identity, account and home directory before directory or service mutations.
+   Existing aliases and project paths are options to inspect, not evidence of
+   a chosen installation destination.
+4. Preview the selected Release's Bootstrap with `--runtime-host`, its matching
+   `--ssh-target` or `--wsl-distribution`, and `--harness`. Bind apply to the
+   preview's full identity using `--expected-machine-id`, `--expected-account`
+   and `--expected-user-home`; supply all three before apply.
+5. Apply the verified Release on that Runtime host. The bounded local installer
+   receives `--host-confirmed` from the machine installation flow. Run Runtime
+   setup from the full verified Release; installed Skill copies provide the
+   decision guide, Bootstrap entry and project scaffold tools. SSH/WSL use
+   `--runtime-only` for services and owner Authority. Local Linux defaults to
+   selected client setup on the same host and also supports `--runtime-only`.
+6. Install setup and knowledge Skills and configure MCP on each selected client
+   host. SSH/WSL return a caller-side stdio descriptor for the remote MCP process;
+   use each client's configuration mechanism and preserve rollback copies.
+   Select the Runtime host explicitly as a client if it should receive client
+   configuration and Skills.
+7. Read back services, `tools/list`, `read_profile` and `list_projects` from
+   each selected client. Report observed readiness and any remaining checks.
+
+The machine installation report records the selected transport and target,
+observed machine identity and account, owner credentials by reference, Release
+version and source binding, services, client host/Harness connections and
+rollback data. Machine installation binding and Runtime Node identity are
+separate records; dispatch claims require a live Node/Driver verification.
 
 ### Workspace placement
 
@@ -108,13 +156,14 @@ The detailed status and evidence ledger is in
 [CAPABILITY-MATRIX.md](CAPABILITY-MATRIX.md). The regression inventory is in
 [SCENARIO-MATRIX.md](SCENARIO-MATRIX.md).
 
-## 4. First invocation: observe before asking
+## 4. Project setup invocation: observe before asking
 
 When a user gives a natural-language request, do not ask for internal schema
 fields or immediately choose a command. Use this order:
 
-1. **Resolve the scope.** Determine whether the request concerns this setup
-   Skill, a project runtime, a Route, or ordinary project work. If it is
+1. **Resolve the scope.** Global installation follows the machine lifecycle
+   above. For project requests, determine whether the target is a Workspace,
+   a Route, or ordinary project work. If it is
    ordinary work after setup, stop using this Skill and follow `AGENTS.md`.
 2. **Inspect the supplied context.** Read the current working directory,
    explicit target path, Git status when repository mode is relevant, and the
