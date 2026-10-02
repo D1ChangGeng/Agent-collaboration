@@ -27,7 +27,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 REPOSITORY = "D1ChangGeng/Agent-collaboration"
-DEFAULT_VERSION = "v1.3.0"
+DEFAULT_VERSION = "v1.3.1"
 SCHEMA = "acs-bootstrap-state/1"
 WEB_CHOICES = ("enable", "skip", "later")
 WEB_DOCS = {
@@ -133,20 +133,32 @@ def chatgpt_setup(choice: str | None, runtime_root: str | None = None,
                   if runtime and tunnel_id else None)
     return {**result, "state": "awaiting_owner_actions", "profile": profile,
             "tunnel_id": tunnel_id, "runtime_process": runtime,
+            "account_browser": {
+                "context": "owner_external_browser", "host": "owner_client_host",
+                "allowed_routes": ["external_browser_control", "user_guided_steps"],
+                "capability_rule": "Verify external browser control on the owner client before choosing it; Harness name or embedded browser availability is insufficient.",
+                "fallback": "user_guided_steps",
+                "forbidden_account_contexts": ["harness_embedded_browser", "runtime_browser_outside_owner_client"],
+                "owner_actions": ["login", "secret_entry", "permission_approval", "connection_consent"],
+                "guidance_fields": ["official_url", "page_location", "action", "expected_result", "next_step"],
+                "completion_rule": "Wait for owner completion and verify the chosen account/workspace and actual MCP connection.",
+                "documentation_access": "Public official documentation may be fetched or searched read-only.",
+            },
             "ai_actions": [
                 "Check current official guidance and validate the owner ACS Profile and Grant.",
+                "Use the owner's external browser for account setup when external control is verified; otherwise provide the owner page steps and await completion.",
                 "Install the official tunnel-client on the selected Runtime host and verify its binary.",
                 "Initialize the returned stdio profile after owner permissions and private key input.",
                 "Run doctor, keep the client running, and verify tools from the selected ChatGPT workspace.",
             ],
             "owner_actions": [
-                {"action": "Select or create a Tunnel; associate the owner organization and ChatGPT workspace.",
+                {"action": "In the owner's external browser, select or create a Tunnel; associate the owner organization and ChatGPT workspace.",
                  "url": "https://platform.openai.com/settings/organization/tunnels",
                  "permissions": {"create": "Tunnels Read + Manage", "run_and_select": "Tunnels Read + Use"}},
                 {"action": "Supply the runtime key privately on the Runtime host.",
                  "secret_environment": "CONTROL_PLANE_API_KEY"},
-                {"action": "Enable Developer mode in Settings > Security and login if the workspace permits it."},
-                {"action": "At ChatGPT Plugins, use + and Connection > Tunnel; select the id and review tools.",
+                {"action": "In the owner's external browser, enable Developer mode in Settings > Security and login if the workspace permits it."},
+                {"action": "In the owner's external browser at ChatGPT Plugins, use + and Connection > Tunnel; select the id and review tools.",
                  "url": "https://chatgpt.com/plugins"},
             ],
             "commands": {"init": initialize,

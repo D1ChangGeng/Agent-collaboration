@@ -95,8 +95,17 @@ setup operation that requires a placement plan:
    official indexes in [ChatGPT Web Setup](../docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md).
    The AI prepares the native Tunnel client and configuration, invokes its
    discovery/initialization, doctor and run tools when available, and verifies
-   owner Grant and local MCP. The owner completes the platform owner/admin role,
-   key provisioning and ChatGPT web connection confirmations. Keep the key in
+   owner Grant and local MCP on the confirmed Runtime host. Use the owner's
+   external browser on their client host for Platform and ChatGPT account steps.
+   Browser navigation requires working OS or external browser control verified
+   in the current Harness. Use the owner's given setup authorization for
+   navigation within its scope; seek further authority only when required.
+   The owner
+   confirms required login, permissions, secret entry and connection consent.
+   Fetch official documentation read-only independently of account actions.
+   For guided steps, provide official links, exact pages, current labels, actions
+   and expected results; await completion before dependent setup and actual web
+   MCP verification. Keep the key in
    private configuration and refer to it by name, rather than embedding its
    bytes in reports or command arguments.
    For a managed installation, add `--installation-root <installation-root>`
@@ -104,6 +113,7 @@ setup operation that requires a placement plan:
    The verified binding produces the stable launcher command for the selected
    Tunnel profile. A standalone verified Release uses its version directory
    command. Update the selected existing profile when maintaining its connection.
+   Limit embedded browser use to read-only public documentation retrieval.
 9. Complete actual ChatGPT tool calls against an authorized real project:
    profile/project reads, scoped collaboration writes, refused operations,
    reconnect and revocation read-back. Generated instructions establish
@@ -149,7 +159,7 @@ commands select the active version for a future MCP process; running sessions
 retain their version. `--rollback --apply` verifies and reactivates the previous
 Release and holds the rejected version in `held_version` for explicit review.
 Existing v1.2.0 installations need one AI-guided upgrade with the verified
-v1.3.0 Release Bootstrap before these controls are available.
+v1.3.1 Release Bootstrap before these controls are available.
 
 ### Workspace placement
 

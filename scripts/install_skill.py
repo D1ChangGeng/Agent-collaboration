@@ -42,6 +42,7 @@ INSTALL_CONTENT = (
     "docs/GETTING-STARTED.md",
     "docs/AUTOMATIC-UPDATES.md",
     "docs/RELEASE-NOTES-v1.3.0.md",
+    "docs/RELEASE-NOTES-v1.3.1.md",
     "docs/TROUBLESHOOTING.md",
     "docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md",
     "docs/runtime/PROJECT-ADOPTION.md",

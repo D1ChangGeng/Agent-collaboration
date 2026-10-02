@@ -30,7 +30,9 @@ Then ask:
 > authorizations.
 > Verify services and actual MCP calls, report the machine and account binding,
 > and explain the installed capabilities. For selected web access, complete AI
-> configuration and guide the required owner page confirmations. I can initialize
+> configuration and guide account actions in my external browser on my client
+> machine using my setup authorization, or give me exact steps to complete and
+> confirm. I can initialize
 > projects later with the setup Skill.
 
 The [getting started guide](docs/GETTING-STARTED.md) starts with Runtime host
@@ -41,9 +43,9 @@ independent Review.
 
 ## Standard release installation
 
-Use the [v1.3.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.0)
+Use the [v1.3.1 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.1)
 and its `acs_bootstrap.py` asset to start verified installation.
-See the [release notes](docs/RELEASE-NOTES-v1.3.0.md) for the upgrade path.
+See the [release notes](docs/RELEASE-NOTES-v1.3.1.md) for the upgrade path.
 
 The Release Bootstrap uses an explicit Runtime destination: local Linux,
 a named remote SSH target, or a named WSL distribution. It probes the selected
@@ -63,7 +65,13 @@ machine readiness. A new installation can start with an empty project list.
 ChatGPT web setup is an explicit installation choice: `enable`, `skip` or
 `later`. For enabled web access, the Agent prepares the Runtime-host Tunnel
 client, runs diagnostics and service setup, and guides required owner permissions,
-private-key entry and ChatGPT connection confirmation. The
+private-key entry and ChatGPT connection confirmation. Account pages use your
+external browser on your client machine. The Agent can help navigate when its
+Harness has verified browser control, within your given setup authorization.
+You confirm
+required login, permissions, secret entry and connection consent. Guided steps
+provide official links, exact page labels, actions and expected results; the
+Agent waits for completion and then verifies actual MCP calls. The
 [web setup runbook](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md) provides the full
 sequence and official documentation index. The installation report records
 the choice, observed Tunnel/web state and any remaining owner action.
@@ -96,7 +104,7 @@ Compatibility changes require an AI-guided upgrade. A previous version remains
 available for rollback.
 
 Existing v1.2.0 installations need one AI-guided upgrade using the verified
-v1.3.0 Release Bootstrap before these checks are available. See
+v1.3.1 Release Bootstrap before these checks are available. See
 [automatic upgrades](docs/AUTOMATIC-UPDATES.md) for controls, verification and
 recovery.
 

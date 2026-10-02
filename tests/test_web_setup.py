@@ -57,6 +57,20 @@ class WebSetupTests(unittest.TestCase):
         self.assertEqual(plan["verification"]["initial"], ["tools/list", "read_profile", "list_projects"])
         self.assertIn("load_project", plan["verification"]["after_project_adoption"])
 
+    def test_account_flow_requires_owner_external_context_or_guided_steps(self):
+        plan = bootstrap.chatgpt_setup("enable")
+        browser = plan["account_browser"]
+        self.assertEqual(browser["context"], "owner_external_browser")
+        self.assertEqual(browser["host"], "owner_client_host")
+        self.assertEqual(browser["allowed_routes"], ["external_browser_control", "user_guided_steps"])
+        self.assertEqual(browser["fallback"], "user_guided_steps")
+        self.assertIn("harness_embedded_browser", browser["forbidden_account_contexts"])
+        self.assertIn("runtime_browser_outside_owner_client", browser["forbidden_account_contexts"])
+        self.assertIn("permission_approval", browser["owner_actions"])
+        self.assertEqual(browser["guidance_fields"],
+                         ["official_url", "page_location", "action", "expected_result", "next_step"])
+        self.assertIn("Wait for owner completion", browser["completion_rule"])
+
     def test_enable_without_tunnel_id_gives_guidance_but_no_executable_init(self):
         plan = bootstrap.chatgpt_setup("enable", "/home/owner/release", "/home/owner/runtime.json")
         self.assertIsNone(plan["commands"]["init"])
@@ -79,6 +93,7 @@ class WebSetupTests(unittest.TestCase):
         plan = json.loads(result.stdout)
         self.assertEqual(plan["state"], "awaiting_owner_actions")
         self.assertIn("official_documentation", plan)
+        self.assertEqual(plan["account_browser"]["fallback"], "user_guided_steps")
         help_result = subprocess.run([sys.executable, str(ROOT / "scripts/acs_web_setup.py"), "--help"],
                                      capture_output=True, text=True, check=False)
         self.assertNotIn("--api-key", help_result.stdout)
@@ -101,6 +116,7 @@ class WebSetupTests(unittest.TestCase):
                 self.assertEqual(request["chatgpt_web"], "enable")
                 self.assertEqual(request["tunnel_id"], "tunnel_example")
                 self.assertEqual(result["web_setup"]["state"], "awaiting_owner_actions")
+                self.assertEqual(result["web_setup"]["account_browser"]["host"], "owner_client_host")
                 self.assertNotIn("CONTROL_PLANE_API_KEY", request)
 
     @unittest.skipIf(sys.platform == "win32", "managed Runtime paths are Linux paths")

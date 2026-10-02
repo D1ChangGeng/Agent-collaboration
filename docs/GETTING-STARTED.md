@@ -8,15 +8,17 @@ and whether to enable ChatGPT web now, use local clients only, or configure web
 later. The Agent probes those targets and performs the supported setup actions.
 You complete required system or account approvals. Project setup is available
 when you are ready to start a project.
+For web setup, account pages use your external browser on your client machine.
+You confirm required login, permissions, secret entry and connection consent.
 
 ## Agent launch request
 
-Use the [v1.3.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.0)
+Use the [v1.3.1 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.1)
 and its `acs_bootstrap.py` asset for the machine selection flow described here.
-The default Bootstrap version is `v1.3.0`. Existing v1.2.0 installations use the
-verified v1.3.0 Bootstrap for their first guided upgrade; afterward the installed
+The default Bootstrap version is `v1.3.1`. Existing v1.2.0 installations use the
+verified v1.3.1 Bootstrap for their first guided upgrade; afterward the installed
 updater provides the automatic upgrade controls. See the
-[release notes](RELEASE-NOTES-v1.3.0.md).
+[release notes](RELEASE-NOTES-v1.3.1.md).
 
 For a fresh machine, use the standard Release Bootstrap shipped with that
 Release before project setup:
@@ -39,7 +41,9 @@ the machine and account binding, version, services and actual MCP readback.
 > the verified package on the chosen host, configure the selected clients and
 > validate actual MCP calls. Ask me for the machine choice and required
 > authorizations. Complete the selected web setup and explain the required
-> owner page actions. Report verified connections and available capabilities. I will
+> owner page actions in my external browser on my client machine using my setup
+> authorization, or provide exact steps for me to
+> complete and confirm. Report verified connections and available capabilities. I will
 > use the setup Skill to initialize projects when ready.
 
 ## Select the Runtime machine
@@ -151,7 +155,7 @@ Skills refresh with the upgrade; Skills on separate client hosts are refreshed
 through client setup maintenance.
 
 Existing v1.2.0 installations first need one AI-guided upgrade using the verified
-v1.3.0 Release Bootstrap. Read [automatic upgrades](AUTOMATIC-UPDATES.md) for
+v1.3.1 Release Bootstrap. Read [automatic upgrades](AUTOMATIC-UPDATES.md) for
 the installed controls, status meanings and rollback procedure.
 
 ## Start a project
@@ -195,8 +199,9 @@ action before accepting work.
 
 ## ChatGPT web connection
 
-For `enable`, the Agent follows the [private Tunnel runbook](runtime/P2-PRIVATE-TUNNEL-PROFILE.md)
-on the confirmed Runtime host:
+For `enable`, follow the [private Tunnel runbook](runtime/P2-PRIVATE-TUNNEL-PROFILE.md).
+The Agent prepares the Tunnel on the confirmed Runtime host. Account pages use
+your external browser on your client machine:
 
 1. Verify the exact ACS stdio command and owner Grant; generate the plan with
    `scripts/acs_web_setup.py --choice enable --runtime-root <release-directory>
@@ -208,6 +213,15 @@ on the confirmed Runtime host:
 2. Fetch the current official instructions linked in the runbook. Explain the
    required owner permissions, private-key provisioning and connection page
    actions, including how to recognize completion.
+   Documentation searches and fetches are read-only and can proceed independently.
+   The Agent verifies actual OS or external browser control in its current
+   Harness and navigates account pages within your given setup authorization,
+   seeking further authority only when the intended operation requires it.
+   You confirm
+   required login, permissions, secret entry and connection consent. If control
+   is unavailable or you prefer to act yourself, it provides official links,
+   exact pages and current labels, actions and expected results, then waits for
+   your completion before dependent setup and verification.
 3. Install and configure the Tunnel client, execute its diagnostics, and keep
    its runtime service healthy. The Agent executes commands; the owner completes
    required authorization and confirmation steps.
