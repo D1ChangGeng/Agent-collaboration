@@ -15,6 +15,7 @@ import tomllib
 from pathlib import Path
 from urllib.parse import quote
 
+from acs_bootstrap import check_machine, machine_binding, observe_machine
 from acs_doctor import ROOT, inspect
 
 
@@ -331,9 +332,20 @@ def local_provider_environment() -> tuple[Path, dict[str, str]]:
 
 
 def install(
-    *, harnesses: list[str], project: Path | None, project_id: str | None, apply: bool
+    *, harnesses: list[str], project: Path | None, project_id: str | None, apply: bool,
+    host_confirmed: bool = False, expected_machine_id: str | None = None,
+    runtime_only: bool = False,
+    expected_account: str | None = None, expected_user_home: str | None = None,
 ) -> dict:
+    if apply and not host_confirmed:
+        raise ValueError("confirm this Runtime host with --host-confirmed before installation")
+    machine = observe_machine()
+    if apply:
+        check_machine(machine, expected_machine_id, expected_account, expected_user_home)
     report = inspect(project)
+    if runtime_only:
+        report["next_actions"] = [action for action in report.get("next_actions", [])
+                                  if action != "Install the setup Skill from this checkout."]
     if project_id and project is None:
         raise ValueError("project_id requires a Management Root path")
     if project is not None and not project_id:
@@ -348,9 +360,10 @@ def install(
             plan(project, project_id)
     actions = [
         "Create or verify the locked Runtime Python environment",
-        "Install the setup Skill for " + ", ".join(harnesses),
         "Start and check owner-local PostgreSQL and Temporal",
     ]
+    if not runtime_only:
+        actions.insert(1, "Install the setup Skill for " + ", ".join(harnesses))
     if project is not None:
         actions.extend(
             [
@@ -365,6 +378,9 @@ def install(
         "source_root": str(ROOT),
         "project": str(project) if project else None,
         "project_id": project_id,
+        "machine": machine,
+        "runtime_only": runtime_only,
+        "host_confirmation": "confirmed" if host_confirmed else "required_before_apply",
         "actions": actions,
         "readiness": report,
     }
@@ -379,6 +395,13 @@ def install(
         raise ValueError("this host cannot run the Source/CAS Runtime service")
     if not all(result["prerequisites"].values()):
         raise ValueError("required local tools are unavailable")
+    machine_path = private_root() / "install-machine.json"
+    if machine_path.exists():
+        if machine_path.is_symlink():
+            raise ValueError("installation machine binding path is unsafe")
+        existing_machine = json.loads(machine_path.read_text(encoding="utf-8"))
+        if machine_binding(existing_machine) != machine_binding(machine):
+            raise ValueError("existing Runtime installation belongs to a different machine or account")
     legacy = Path.home() / ".local/share/agent-collaboration/local-providers.json"
     if not (private_root() / "local-providers.json").exists() and legacy.is_file():
         previous = json.loads(legacy.read_text(encoding="utf-8"))
@@ -398,17 +421,14 @@ def install(
         if any(item.startswith(("error ", "preserve-conflict ", "refused ")) for item in preview):
             raise ValueError("Management Root adoption preview has conflicts")
     run("uv", "sync", "--frozen")
-    run(
-        "uv",
-        "run",
-        "--frozen",
-        "python",
-        "scripts/install_skill.py",
-        "--harness",
-        *harnesses,
-        "--knowledge",
-    )
+    if not runtime_only:
+        run(
+            "uv", "run", "--frozen", "python", "scripts/install_skill.py",
+            "--harness", *harnesses, "--knowledge",
+        )
     secret_path, environment = local_provider_environment()
+    if not machine_path.exists():
+        owner_file(machine_path, json.dumps(machine, indent=2) + "\n")
     run(
         "docker",
         "compose",
@@ -463,11 +483,18 @@ def install(
             result["registration"] = register_local_project(project, project_id, config_path,
                                                             source.name)
             result["state"] = "project_registered"
-    result["harness_configs"] = configure_harnesses(harnesses, config_path)
-    result["remaining"].append(
-        "Open the Management Root as a Root Agent and verify tools/list."
+    result["harness_configs"] = {} if runtime_only else configure_harnesses(harnesses, config_path)
+    result["remaining"].append("Verify read_profile and tool discovery in each configured Harness.")
+    result["next_action"] = (
+        "Open the Management Root as a Root Agent." if project is not None else
+        "Use the setup Skill in a chosen project to create or adopt its Management Root."
     )
     result["readback"] = inspect(project, config=config_path)
+    if runtime_only:
+        result["readback"]["next_actions"] = [
+            action for action in result["readback"].get("next_actions", [])
+            if action != "Install the setup Skill from this checkout."
+        ]
     return result
 
 
@@ -479,13 +506,28 @@ def main() -> int:
     parser.add_argument("--project", type=Path)
     parser.add_argument("--project-id")
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--host-confirmed", action="store_true")
+    parser.add_argument("--expected-machine-id")
+    parser.add_argument("--expected-account")
+    parser.add_argument("--expected-user-home")
+    parser.add_argument("--runtime-only", action="store_true")
     args = parser.parse_args()
+    host_confirmed = args.host_confirmed or bool(os.environ.get("ACS_INSTALL_MACHINE_ID"))
+    if args.apply and not host_confirmed:
+        print(json.dumps({"schema_version": "acs-install-plan/1", "state": "needs_machine_confirmation",
+                          "reason": "confirm_the_selected_Runtime_host_before_apply"}))
+        return 2
     try:
         result = install(
             harnesses=args.harness,
             project=args.project,
             project_id=args.project_id,
             apply=args.apply,
+            host_confirmed=host_confirmed,
+            expected_machine_id=args.expected_machine_id or os.environ.get("ACS_INSTALL_MACHINE_ID"),
+            expected_account=args.expected_account or os.environ.get("ACS_INSTALL_ACCOUNT"),
+            expected_user_home=args.expected_user_home or os.environ.get("ACS_INSTALL_USER_HOME"),
+            runtime_only=args.runtime_only,
         )
     except (ValueError, OSError, subprocess.CalledProcessError):
         print(
