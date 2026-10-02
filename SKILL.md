@@ -77,7 +77,9 @@ Git, or Harness facts. Read only the reference needed for the current request.
    selected target. Keep the full observed machine identity, login account and
    home directory for apply-time checking before directory or service writes.
 5. Use the selected Release's `scripts/acs_bootstrap.py` to preview and apply
-   distribution and Runtime installation. Supply `--runtime-host local|ssh|wsl`,
+   distribution and Runtime installation. Download the standalone Bootstrap
+   asset and verify its SHA-256 against that Release's `SHA256SUMS.txt` before
+   execution. Supply `--runtime-host local|ssh|wsl`,
    the corresponding `--ssh-target` or `--wsl-distribution`,
    the preview's `--expected-machine-id`, `--expected-account` and
    `--expected-user-home`, and the selected `--harness` values. Pass all three

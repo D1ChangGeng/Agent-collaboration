@@ -41,6 +41,9 @@ independent Review.
 
 ## Standard release installation
 
+Use the [v1.2.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.2.0)
+and its `acs_bootstrap.py` asset to start verified installation.
+
 The Release Bootstrap uses an explicit Runtime destination: local Linux,
 a named remote SSH target, or a named WSL distribution. It probes the selected
 machine and account, downloads the selected GitHub Release, verifies

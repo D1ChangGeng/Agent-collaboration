@@ -98,6 +98,9 @@ WorkItem 与消息句柄，再核对输出 commit、测试证据并送交 Review
 
 ### 标准 Release 安装
 
+使用 [v1.2.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.2.0)
+提供的 `acs_bootstrap.py` 入口，开始经过校验的安装流程。
+
 Release Bootstrap 使用明确的 Runtime 安装目标：本机 Linux、指定的远程 SSH
 目标，或指定的 WSL 发行版。它检查选定机器与账号，下载指定 GitHub Release，
 校验 `SHA256SUMS.txt` 和发行包内文件清单，再在该主机安装服务与私有凭据。

@@ -4,6 +4,10 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## 1.2.0 - 2026-10-02
+
+- The Release includes a standalone `acs_bootstrap.py` with the v1.2.0 default,
+  covered by the same SHA-256 inventory as the ZIP and TAR archives.
 - Machine installation explicitly records whether ChatGPT web access is enabled,
   skipped or deferred, and emits a private Tunnel setup guide with AI commands,
   owner authorization actions and actual connection verification requirements.

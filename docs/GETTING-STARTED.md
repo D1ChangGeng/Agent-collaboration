@@ -11,8 +11,9 @@ when you are ready to start a project.
 
 ## Agent launch request
 
-The machine selection flow described here requires a matching updated Bootstrap
-and Runtime Release. Use its verified `<release-tag>` when shipped. The
+Use the [v1.2.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.2.0)
+and its `acs_bootstrap.py` asset for the machine selection flow described here.
+The default Bootstrap version is `v1.2.0`. The
 v1.1.0 Runtime installer uses the earlier interface; SSH/WSL installation with
 the updated Bootstrap detects that compatibility boundary before Runtime
 commands run.
@@ -21,7 +22,8 @@ For a fresh machine, use the standard Release Bootstrap shipped with that
 Release before project setup:
 
 ```text
-Download scripts/acs_bootstrap.py from the selected GitHub Release. Confirm the
+Download the acs_bootstrap.py asset and SHA256SUMS.txt from the selected GitHub
+Release. Verify the Bootstrap digest before running it. Confirm the
 Runtime host and client hosts, ask whether ChatGPT web should be enabled now,
 skipped or configured later, probe the chosen Runtime host read-only, and
 preview installation. Verify SHA256SUMS.txt and the release manifest, bind apply
