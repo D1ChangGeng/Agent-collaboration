@@ -12,7 +12,7 @@ a private owner Authority on a confirmed service host and connects selected
 clients. Project Management Root setup is a separate lifecycle that users can
 request when they begin a project.
 
-Canonical mechanisms: `acs_bootstrap.py` release verification and host
+Canonical mechanisms: `acs_bootstrap.py` release digest verification and host
 selection, `acs_install.py` bounded Linux host setup, project setup CLI,
 `read_profile`, `list_projects`, `list_connections` and `load_project`.
 
@@ -26,8 +26,10 @@ selection, `acs_install.py` bounded Linux host setup, project setup CLI,
    mutations. Bind apply to the preview's `--expected-machine-id`,
    `--expected-account` and `--expected-user-home`; supply all three values.
 4. Preview and apply the selected Release's Bootstrap with `--runtime-host`,
-   matching `--ssh-target` or `--wsl-distribution` and `--harness`. The bounded
-   local Runtime installer receives `--host-confirmed` and runs from the full
+   matching `--ssh-target` or `--wsl-distribution` and `--harness`. Verify the
+   published archive SHA-256 and packaged file manifest before executing the
+   Runtime installer. The bounded local Runtime installer receives
+   `--host-confirmed` and runs from the full
    verified Release. SSH/WSL use `--runtime-only` to install services and scoped
    owner credentials. Local Linux defaults to selected client setup on the same
    host and also supports service-only `--runtime-only`.
