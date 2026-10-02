@@ -25,6 +25,12 @@ METADATA = {"html_url": "https://github.com/D1ChangGeng/Agent-collaboration/rele
                        {"name": "SHA256SUMS.txt", "browser_download_url": "sums"}]}
 
 
+def install(*args, **kwargs):
+    """Machine tests use an explicitly declined web connection."""
+    kwargs.setdefault("chatgpt_web", "skip")
+    return bootstrap.install(*args, **kwargs)
+
+
 def fake_fetch(url, path):
     if url == "sums":
         archive = path.parent / "agent-collaboration-v1.1.0.zip"
@@ -55,20 +61,20 @@ class MachineInstallTests(unittest.TestCase):
     def test_unspecified_machine_needs_selection_and_apply_performs_no_io(self):
         with (mock.patch.object(bootstrap, "release_metadata", side_effect=AssertionError("network")),
               mock.patch.object(bootstrap, "ensure_install_root", side_effect=AssertionError("write"))):
-            plan = bootstrap.install("v1.1.0", apply=False, project=None, project_id=None)
+            plan = install("v1.1.0", apply=False, project=None, project_id=None)
             self.assertEqual(plan["state"], "needs_machine_selection")
             with self.assertRaisesRegex(ValueError, "runtime-host"):
-                bootstrap.install("v1.1.0", apply=True, project=None, project_id=None)
+                install("v1.1.0", apply=True, project=None, project_id=None)
 
     def test_local_preview_and_identity_mismatch_do_not_create_state(self):
         with (mock.patch.object(bootstrap, "observe_machine", return_value=MACHINE),
               mock.patch.object(bootstrap, "release_metadata", return_value=METADATA),
               mock.patch.object(bootstrap, "ensure_install_root", side_effect=AssertionError("write"))):
-            plan = bootstrap.install("v1.1.0", apply=False, project=None, project_id=None,
+            plan = install("v1.1.0", apply=False, project=None, project_id=None,
                                      runtime_host="local")
             self.assertEqual(plan["machine"]["machine_id"], MACHINE["machine_id"])
             with self.assertRaisesRegex(ValueError, "identity changed"):
-                bootstrap.install("v1.1.0", apply=True, project=None, project_id=None,
+                install("v1.1.0", apply=True, project=None, project_id=None,
                                   runtime_host="local", expected_machine_id="d" * 64)
 
     def test_account_and_home_drift_from_plan_block_before_any_installation_write(self):
@@ -78,7 +84,7 @@ class MachineInstallTests(unittest.TestCase):
             for expected in ({"expected_account": "another-owner"},
                              {"expected_user_home": "/home/another-owner"}):
                 with self.assertRaisesRegex(ValueError, "since the installation plan"):
-                    bootstrap.install("v1.1.0", apply=True, project=None, project_id=None,
+                    install("v1.1.0", apply=True, project=None, project_id=None,
                                       runtime_host="ssh", ssh_target="chosen-host",
                                       expected_machine_id=MACHINE["machine_id"], **expected)
 
@@ -90,7 +96,7 @@ class MachineInstallTests(unittest.TestCase):
                   mock.patch.object(bootstrap, "release_metadata", return_value=METADATA),
                   mock.patch.object(bootstrap, "fetch", side_effect=fake_fetch),
                   mock.patch.object(bootstrap.subprocess, "run", return_value=runtime_result()) as execute):
-                receipt = bootstrap.install("v1.1.0", apply=True, project=None, project_id=None,
+                receipt = install("v1.1.0", apply=True, project=None, project_id=None,
                                             runtime_host="local", harnesses=["codex"])
                 self.assertEqual(receipt["state"], "machine_ready")
                 args = execute.call_args.args[0]
@@ -113,7 +119,7 @@ class MachineInstallTests(unittest.TestCase):
                   mock.patch.object(bootstrap, "fetch", side_effect=fake_fetch),
                   mock.patch.object(bootstrap.subprocess, "run", return_value=runtime_result("unavailable")),
                   self.assertRaisesRegex(ValueError, "authorization readback")):
-                bootstrap.install("v1.1.0", apply=True, project=None, project_id=None,
+                install("v1.1.0", apply=True, project=None, project_id=None,
                                   runtime_host="local")
             self.assertEqual((target / "current").read_text(), "previous")
 
@@ -121,7 +127,7 @@ class MachineInstallTests(unittest.TestCase):
         with mock.patch.object(bootstrap, "observe_machine", return_value=MACHINE) as probe:
             for kind, key, value in [("ssh", "ssh_target", "chosen-host"),
                                      ("wsl", "wsl_distribution", "Ubuntu")]:
-                plan = bootstrap.install("v1.1.0", apply=False, project=None, project_id=None,
+                plan = install("v1.1.0", apply=False, project=None, project_id=None,
                                          runtime_host=kind, **{key: value})
                 self.assertEqual(plan["state"], "planned")
                 self.assertIn(mock.call(kind, value), probe.call_args_list)
@@ -133,7 +139,7 @@ class MachineInstallTests(unittest.TestCase):
         with (mock.patch.object(bootstrap, "observe_machine", return_value=MACHINE),
               mock.patch.object(bootstrap.subprocess, "run", return_value=subprocess.CompletedProcess(
                   [], 0, "ACS_INSTALL_RECEIPT=" + json.dumps(receipt) + "\n", "")) as execute):
-            result = bootstrap.install("v1.1.0", apply=True, project=None, project_id=None,
+            result = install("v1.1.0", apply=True, project=None, project_id=None,
                                        runtime_host="ssh", ssh_target="chosen-host")
             sent = json.loads(execute.call_args.kwargs["input"])
             self.assertEqual(sent["machine_id"], MACHINE["machine_id"])
@@ -148,7 +154,7 @@ class MachineInstallTests(unittest.TestCase):
     def test_windows_local_runtime_and_unsafe_ssh_target_are_rejected(self):
         with (mock.patch.object(bootstrap, "observe_machine", return_value={**MACHINE, "platform": "win32"}),
               self.assertRaisesRegex(ValueError, "Linux Runtime")):
-            bootstrap.install("v1.1.0", apply=True, project=None, project_id=None,
+            install("v1.1.0", apply=True, project=None, project_id=None,
                               runtime_host="local")
         for alias in ("-oProxyCommand=command", "host;command", "host\ncommand", None):
             with self.assertRaises(ValueError):
@@ -163,7 +169,7 @@ class MachineInstallTests(unittest.TestCase):
                   mock.patch.object(bootstrap, "release_metadata", return_value=METADATA),
                   mock.patch.object(bootstrap, "fetch", side_effect=AssertionError("download")),
                   self.assertRaisesRegex(ValueError, "different machine")):
-                bootstrap.install("v1.1.0", apply=True, project=None, project_id=None,
+                install("v1.1.0", apply=True, project=None, project_id=None,
                                   runtime_host="local")
 
     @unittest.skipIf(sys.version_info < (3, 12), "Runtime installer requires Python 3.12+")
@@ -189,7 +195,7 @@ class MachineInstallTests(unittest.TestCase):
                   mock.patch.object(installer, "initialize_local_authority", return_value=path / "runtime.json"),
                   mock.patch.object(installer, "configure_harnesses", side_effect=AssertionError("client config"))):
                 receipt = installer.install(harnesses=["codex"], project=None, project_id=None,
-                                            apply=True, host_confirmed=True, runtime_only=True)
+                                            apply=True, host_confirmed=True, runtime_only=True, chatgpt_web="skip")
                 self.assertEqual(receipt["harness_configs"], {})
                 self.assertEqual(receipt["state"], "local_authority_ready")
                 self.assertFalse(any("scripts/install_skill.py" in c.args for c in execute.call_args_list))
@@ -218,7 +224,7 @@ class MachineInstallTests(unittest.TestCase):
                   mock.patch.object(bootstrap, "fetch", side_effect=fake_fetch),
                   mock.patch.object(bootstrap.subprocess, "run", side_effect=AssertionError("runtime")),
                   self.assertRaisesRegex(ValueError, "updated Runtime installer")):
-                bootstrap.install("v1.1.0", apply=True, project=None, project_id=None,
+                install("v1.1.0", apply=True, project=None, project_id=None,
                                   runtime_host="local", runtime_only=True)
             self.assertFalse((target / "current").exists())
 

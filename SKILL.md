@@ -67,12 +67,19 @@ Git, or Harness facts. Read only the reference needed for the current request.
    For SSH or WSL, which target should I use?" Confirm which client hosts and
    Codex/OpenCode installations should connect to it. An existing SSH alias,
    current project directory or previous installation is not a host choice.
-3. On the selected host, perform a read-only probe of machine identity, account,
+3. Confirm ChatGPT web access after machine and client selection. If the user has
+   not already chosen, ask: "Would you like to connect ACS to ChatGPT web now,
+   use local Harnesses only, or set up web access later?" Record the explicit
+   choice as `enable`, `skip` or `later`. Pass it to Bootstrap with
+   `--chatgpt-web`; an existing Tunnel or project is discovery data, not a choice.
+4. On the selected host, perform a read-only probe of machine identity, account,
    Linux support and prerequisites. Verify SSH or WSL reachability for the exact
    selected target. Keep the full observed machine identity, login account and
    home directory for apply-time checking before directory or service writes.
-4. Use the selected Release's `scripts/acs_bootstrap.py` to preview and apply
-   distribution and Runtime installation. Supply `--runtime-host local|ssh|wsl`,
+5. Use the selected Release's `scripts/acs_bootstrap.py` to preview and apply
+   distribution and Runtime installation. Download the standalone Bootstrap
+   asset and verify its SHA-256 against that Release's `SHA256SUMS.txt` before
+   execution. Supply `--runtime-host local|ssh|wsl`,
    the corresponding `--ssh-target` or `--wsl-distribution`,
    the preview's `--expected-machine-id`, `--expected-account` and
    `--expected-user-home`, and the selected `--harness` values. Pass all three
@@ -83,25 +90,69 @@ Git, or Harness facts. Read only the reference needed for the current request.
    SSH and WSL use `--runtime-only` to establish services and owner Authority.
    Local Linux setup configures the selected clients on that host by default;
    `--runtime-only` selects a service-only installation there.
-5. Configure each selected client on its own host. Install setup and knowledge
+6. Configure each selected client on its own host. Install setup and knowledge
    Skills on the selected client hosts. For SSH and WSL, use the returned
    caller-side stdio descriptor with the client's MCP configuration mechanism.
    A Runtime host selected as a client receives the same explicit client setup.
    Keep credentials on the Runtime host and record configuration rollback data.
-6. Verify services and actual MCP `tools/list`, `read_profile` and
+7. Verify services and actual MCP `tools/list`, `read_profile` and
    `list_projects` from each selected client. An empty project list is a valid
    initial machine installation. `load_project` is required after a project has
    been registered.
-7. Report Runtime machine identity and account, client hosts, Release version,
+8. For `enable`, follow the ChatGPT web setup route below. For `later`, record
+   the resume entry and remaining owner actions. For `skip`, record the local
+   client scope. Machine setup and web verification have separate readbacks.
+9. Report Runtime machine identity and account, client hosts, Release version,
    commit/tree, services, configured Harnesses, observed tools, credential
-   references and rollback state. Offer project initialization as the next
+   references and rollback state, plus the web choice, connection state and exact
+   pending owner actions. Offer project initialization as the next
    optional lifecycle.
 
 Machine installation selects a service host and a connection path. Runtime
 Node enrollment, execution placement and cross-host dispatch require their own
 Runtime capability observations.
 
+## ChatGPT web setup route
+
+For a selected web connection, read
+[the private Tunnel runbook](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md). Fetch its
+official documentation links during setup and verify current account/workspace
+eligibility before presenting page instructions. The supported personal profile
+connects the owner's existing ACS stdio process and Grant.
+
+Generate the machine-specific plan with `scripts/acs_web_setup.py --choice enable
+--runtime-root <verified-release-directory> --config <private-surface-config>
+--json`; include `--tunnel-id <id>` once the owner has selected it. Run this on
+the confirmed Runtime host, using SSH or WSL when selected. The plan supplies
+the exact Runtime command and the install, init, doctor and run sequence. The AI
+executes these supported steps and configures service persistence with rollback
+data. Treat generated commands as a plan until execution and readback establish
+the connection state.
+
+Ask the owner to perform only required account login, organization/workspace
+permissions, runtime-key provisioning through private storage, and ChatGPT
+connection confirmation. Explain each action's location, purpose and expected
+result using the runbook. Keep secret values out of chat, command arguments,
+tracked files and reports. After connection, verify discovered tools and actual
+`read_profile` and `list_projects` from ChatGPT. An empty project list is valid;
+`load_project` and authorized project writes are verified after project setup.
+
+For deferred setup, invoke this Skill again and run the same helper with
+`--choice enable`. Report local MCP readiness, Tunnel health and ChatGPT tool
+readback individually; unfinished platform or web actions remain explicit
+pending steps.
+
 ## Project setup lifecycle
+
+For an existing project, discover its working Source before choosing a setup
+or SourceBinding target. Inspect the session checkout, Management Root identity
+and authorized existing SourceBinding metadata, then probe related local or
+authorized SSH/WSL paths with `scripts/acs_source_discovery.py --include-untracked`.
+Compare actual machine/account, repository root and commit/tree. Ask for the
+smallest missing location or access fact when observations are incomplete or
+ambiguous. Use the discovered host's own path namespace; see
+[Source discovery](docs/runtime/SOURCE-DISCOVERY.md) and
+[project adoption](docs/runtime/PROJECT-ADOPTION.md).
 
 For a management workspace, use the explicit command families:
 

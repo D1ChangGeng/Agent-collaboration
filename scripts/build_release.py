@@ -151,10 +151,12 @@ def build(output: Path, version: str) -> dict:
             info.mtime = 0
             archive.addfile(info, io.BytesIO(data))
     sums = output / "SHA256SUMS.txt"
+    bootstrap_path = output / "acs_bootstrap.py"
+    bootstrap_path.write_bytes(payload["scripts/acs_bootstrap.py"])
     sums.write_text(
         "".join(
             f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n"
-            for path in (zip_path, tar_path)
+            for path in (zip_path, tar_path, bootstrap_path)
         ),
         encoding="ascii",
     )

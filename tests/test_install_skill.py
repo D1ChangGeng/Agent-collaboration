@@ -91,6 +91,33 @@ class InstallSkillSafetyTests(unittest.TestCase):
             mod._remove_owned_destination(source, dest)
             self.assertFalse(dest.exists())
 
+    def test_nested_document_payload_copy_remains_owned_on_repeat_and_uninstall(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = make_source(root)
+            documents = {
+                "docs/GETTING-STARTED.md": "Setup instructions\n",
+                "docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md": "Private Tunnel instructions\n",
+                "docs/runtime/PROJECT-ADOPTION.md": "Project adoption instructions\n",
+            }
+            for name, content in documents.items():
+                path = source / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+            (source / "docs/private.md").write_text("Project-owned document\n", encoding="utf-8")
+            dest = root / "installed"
+
+            self.assertEqual(mod.install_one(source, dest, "copy"), "copied")
+            for name, content in documents.items():
+                self.assertEqual((dest / name).read_text(encoding="utf-8"), content)
+            self.assertFalse((dest / "docs/private.md").exists())
+            self.assertEqual(mod._unknown_entries(source, dest), set())
+            self.assertEqual(mod.install_one(source, dest, "copy"), "copied")
+            self.assertEqual(mod.check_one(source, dest), (True, "copy digest=match"))
+
+            mod._remove_owned_destination(source, dest)
+            self.assertFalse(dest.exists())
+
     def test_install_payload_excludes_repository_development_state(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -240,6 +267,27 @@ class InstallSkillSafetyTests(unittest.TestCase):
 
             self.assertFalse(dest.exists())
             self.assertEqual(external.read_text(encoding="utf-8"), "secret\n")
+
+    def test_linked_parent_of_nested_document_payload_is_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = make_source(root)
+            external = root / "external-documents"
+            external.mkdir()
+            protected = external / "P2-PRIVATE-TUNNEL-PROFILE.md"
+            protected.write_text("Private external content\n", encoding="utf-8")
+            (source / "docs").mkdir()
+            try:
+                (source / "docs/runtime").symlink_to(external, target_is_directory=True)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"symlink creation unavailable: {exc}")
+            dest = root / "installed"
+
+            with self.assertRaises(ValueError):
+                mod.install_one(source, dest, "copy")
+
+            self.assertFalse(dest.exists())
+            self.assertEqual(protected.read_text(encoding="utf-8"), "Private external content\n")
 
     def test_symlink_in_excluded_development_state_does_not_expand_payload(self):
         """Excluded development state is outside the install payload boundary."""

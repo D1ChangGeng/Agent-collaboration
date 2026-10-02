@@ -125,7 +125,7 @@ class ReleaseToolTests(unittest.TestCase):
             self.assertRaisesRegex(ValueError, "Source/CAS"),
         ):
             installer.install(harnesses=["codex"], project=None, project_id=None,
-                              apply=True, host_confirmed=True)
+                              apply=True, host_confirmed=True, chatgpt_web="skip")
 
     def test_runtime_install_requires_host_confirmation_before_any_step(self):
         installer = load("acs_install", "acs_install.py")

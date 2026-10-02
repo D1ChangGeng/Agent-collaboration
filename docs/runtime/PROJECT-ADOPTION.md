@@ -5,6 +5,21 @@ existing Root ID, Route registry, project guidance and knowledge. It writes a
 stable `project_id` to `.agents/manifest.json` and an `ACS-PROJECT` managed block
 in the Management Root's `AGENTS.md`.
 
+## Discover the existing Source first
+
+Before selecting a setup target, the Agent inspects the actual project session,
+containing Git checkout, Management Root identity and authorized existing
+SourceBinding metadata. It probes relevant local or already authorized SSH/WSL
+paths with `scripts/acs_source_discovery.py --include-untracked` and compares
+machine/account, repository root, Project/Root identity, commit/tree and working
+tree. The user supplies only unresolved location or access information. See
+[Source discovery](SOURCE-DISCOVERY.md) for the read-only sequence.
+
+Use the discovered path on its actual machine for the commands below. When the
+Source provider needs a separate Linux view, verify the authorized access or Git
+synchronization and exact commit/tree before registering it. Runtime deployment
+location is not evidence of project Source location.
+
 Preview against the existing Management Root:
 
 ```text

@@ -3,15 +3,17 @@
 Give the [repository link](https://github.com/D1ChangGeng/Agent-collaboration)
 to a local Codex or OpenCode session and ask it to guide the installation.
 The Agent inspects your operating system, active Harness and existing ACS
-setup. You choose the Runtime machine and the client hosts that should connect,
-then the Agent probes those targets and performs the supported setup actions.
+setup. You choose the Runtime machine, the client hosts that should connect,
+and whether to enable ChatGPT web now, use local clients only, or configure web
+later. The Agent probes those targets and performs the supported setup actions.
 You complete required system or account approvals. Project setup is available
 when you are ready to start a project.
 
 ## Agent launch request
 
-The machine selection flow described here requires a matching updated Bootstrap
-and Runtime Release. Use its verified `<release-tag>` when shipped. The
+Use the [v1.2.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.2.0)
+and its `acs_bootstrap.py` asset for the machine selection flow described here.
+The default Bootstrap version is `v1.2.0`. The
 v1.1.0 Runtime installer uses the earlier interface; SSH/WSL installation with
 the updated Bootstrap detects that compatibility boundary before Runtime
 commands run.
@@ -20,8 +22,10 @@ For a fresh machine, use the standard Release Bootstrap shipped with that
 Release before project setup:
 
 ```text
-Download scripts/acs_bootstrap.py from the selected GitHub Release. Confirm the
-Runtime host and client hosts, probe the chosen Runtime host read-only, and
+Download the acs_bootstrap.py asset and SHA256SUMS.txt from the selected GitHub
+Release. Verify the Bootstrap digest before running it. Confirm the
+Runtime host and client hosts, ask whether ChatGPT web should be enabled now,
+skipped or configured later, probe the chosen Runtime host read-only, and
 preview installation. Verify SHA256SUMS.txt and the release manifest, bind apply
 to the observed machine identity, and configure the selected clients. Report
 the machine and account binding, version, services and actual MCP readback.
@@ -30,10 +34,12 @@ the machine and account binding, version, services and actual MCP readback.
 > Use this repository as the ACS distribution source. Inspect its current
 > release and installation instructions. First confirm whether the Runtime
 > should run on this Linux machine, a named remote SSH host, or a named WSL
-> distribution, and which Codex/OpenCode client hosts should connect. Install
+> distribution, and which Codex/OpenCode client hosts should connect. Ask whether
+> to enable ChatGPT web now, use local Harnesses only, or configure web later. Install
 > the verified package on the chosen host, configure the selected clients and
 > validate actual MCP calls. Ask me for the machine choice and required
-> authorizations. Report the installation and available capabilities. I will
+> authorizations. Complete the selected web setup and explain the required
+> owner page actions. Report verified connections and available capabilities. I will
 > use the setup Skill to initialize projects when ready.
 
 ## Select the Runtime machine
@@ -78,6 +84,23 @@ there. Local Linux defaults to client setup on the same host; `--runtime-only`
 selects a service-only installation. Global Runtime setup executes with an empty
 project list and can be followed by project setup at any time.
 
+## Choose ChatGPT web access
+
+After machine selection, the Agent asks for an explicit web choice when your
+request has not supplied one:
+
+| Choice | Setup behavior |
+| --- | --- |
+| Enable now (`enable`) | Prepare a private Tunnel connection and guide the required owner account actions, then verify ChatGPT tools. |
+| Local clients only (`skip`) | Install the selected Codex/OpenCode clients and record their verified connection scope. |
+| Configure later (`later`) | Finish machine setup and include the web setup resume entry in the report. |
+
+Bootstrap receives the choice with `--chatgpt-web enable|skip|later` and accepts
+`--tunnel-id` once selected. A generated web plan identifies the Runtime command,
+AI execution steps and owner actions. Its presence records preparation; the
+Agent reports web readiness after Tunnel health and ChatGPT calls are observed.
+Projects can be registered after either machine or web setup.
+
 ## Verify the machine installation
 
 The Agent uses `scripts/acs_doctor.py` and actual service readback on the Runtime
@@ -102,6 +125,16 @@ reports client readiness after actual MCP calls pass and explains available
 tools and the optional project setup step.
 
 ## Start a project
+
+For an existing project, the Agent first inspects the active session's checkout,
+Management Root manifest and authorized existing SourceBinding metadata. It
+probes relevant local, SSH or WSL paths with
+`scripts/acs_source_discovery.py --include-untracked` and identifies the actual
+Source machine, account, repository root, Project/Root identity, commit/tree and
+working tree. Several clones may exist; the Agent compares their observed
+revisions before choosing a registration view. It asks for a source host/path
+only when that information or access remains unresolved. Follow
+[Source discovery](runtime/SOURCE-DISCOVERY.md) for the complete procedure.
 
 Invoke the installed `agent-collaboration-setup` Skill when you want to use ACS
 for a project. It asks for the project location and collaboration goal at this
@@ -132,14 +165,25 @@ action before accepting work.
 
 ## ChatGPT web connection
 
-For an individual installation, the [single-user private Tunnel profile](runtime/P2-PRIVATE-TUNNEL-PROFILE.md)
-connects ChatGPT to the owner's local ACS MCP process. The owner completes
-OpenAI Platform Tunnel permissions and ChatGPT developer-mode connection.
-The Agent checks current official [Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
-and [ChatGPT connection](https://developers.openai.com/plugins/deploy/connect-chatgpt)
-guidance, configures the local process, and verifies its ACS Grant and project
-readback. Access to the Tunnel follows the owner's Platform organization and
-ChatGPT workspace association.
+For `enable`, the Agent follows the [private Tunnel runbook](runtime/P2-PRIVATE-TUNNEL-PROFILE.md)
+on the confirmed Runtime host:
+
+1. Verify the exact ACS stdio command and owner Grant; generate the plan with
+   `scripts/acs_web_setup.py --choice enable --runtime-root <release-directory>
+   --config <private-surface-config> --json`.
+2. Fetch the current official instructions linked in the runbook. Explain the
+   required owner permissions, private-key provisioning and connection page
+   actions, including how to recognize completion.
+3. Install and configure the Tunnel client, execute its diagnostics, and keep
+   its runtime service healthy. The Agent executes commands; the owner completes
+   required authorization and confirmation steps.
+4. Verify tool discovery and `read_profile`/`list_projects` from ChatGPT. Start
+   with an empty list when appropriate; after project setup, verify
+   `load_project` and a bounded authorized write.
+
+To resume a deferred choice, tell the setup Skill: "Connect this ACS installation
+to ChatGPT web." It inspects the current connection before applying the same
+route and records each remaining owner action in the installation report.
 
 ## Installation report
 
@@ -152,6 +196,7 @@ Ask the Agent to report these observed facts after setup:
 | Services | PostgreSQL, Temporal, ACS Runtime and MCP health on the selected host |
 | Access | Principal, Profile, Grant expiry and visible tools |
 | Harnesses | Client hosts, selected Codex/OpenCode connections and actual tool discovery |
+| ChatGPT web | Explicit `enable`/`skip`/`later` choice, Tunnel identity and health, ChatGPT discovery/readback, exact pending owner actions and resume entry |
 | Recovery | Installation state, previous version and configuration rollback references |
 | Projects | Current project list; after setup, `project_id`, Management Root, Routes and SourceBinding |
 | Next action | Optional project setup through the installed Skill; for a ready project, Root Agent directory and prompt |

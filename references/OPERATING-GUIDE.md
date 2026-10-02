@@ -26,6 +26,8 @@ The Skill can currently provide a bounded, deterministic lifecycle for:
 - confirmed local Linux, named SSH target or named WSL Runtime installation;
 - release verification and selected client MCP connection setup;
 - repository setup and validation;
+- read-only discovery of an exact Source checkout on the caller, a selected SSH
+  target or a selected WSL distribution;
 - nested management Workspace setup in the same project Git repository;
 - standalone Workspace setup for compatibility;
 - Route identity and registry operations;
@@ -50,6 +52,10 @@ Use this order for a global install, repair or upgrade:
    SSH target, or a named WSL distribution. If it was not supplied, ask one
    placement question. Resolve the client host(s) and Codex/OpenCode selection
    from the user's intended use and current Harness; ask only when ambiguous.
+   Resolve whether the installer owner wants a ChatGPT web connection now:
+   `enable`, `skip` or `later`. Ask once when this preference is unknown and
+   record `skip` or `later` explicitly. This web choice and the machine/client
+   selection are required before apply; a project list remains optional.
 3. Probe the selected host read-only. Observe its machine identity, login
    account, home directory, Linux support and required tools. Verify that exact
    SSH target or WSL distribution before planning writes. Pin the full machine
@@ -57,7 +63,8 @@ Use this order for a global install, repair or upgrade:
    Existing aliases and project paths are options to inspect, not evidence of
    a chosen installation destination.
 4. Preview the selected Release's Bootstrap with `--runtime-host`, its matching
-   `--ssh-target` or `--wsl-distribution`, and `--harness`. Bind apply to the
+   `--ssh-target` or `--wsl-distribution`, `--harness` and `--chatgpt-web`.
+   Bind apply to the
    preview's full identity using `--expected-machine-id`, `--expected-account`
    and `--expected-user-home`; supply all three before apply.
 5. Apply the verified Release on that Runtime host. The bounded local installer
@@ -73,11 +80,30 @@ Use this order for a global install, repair or upgrade:
    configuration and Skills.
 7. Read back services, `tools/list`, `read_profile` and `list_projects` from
    each selected client. Report observed readiness and any remaining checks.
+8. When `enable` is chosen, inspect the install receipt's `web_setup` and run
+   `scripts/acs_web_setup.py --choice enable --runtime-root <verified-release>
+   --config <owner-private-config> [--tunnel-id <owner-tunnel>]` from the full
+   Release or installed setup Skill. Follow the generated steps and current
+   official indexes in [ChatGPT Web Setup](../docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md).
+   The AI prepares the native Tunnel client and configuration, invokes its
+   discovery/initialization, doctor and run tools when available, and verifies
+   owner Grant and local MCP. The owner completes the platform owner/admin role,
+   key provisioning and ChatGPT web connection confirmations. Keep the key in
+   private configuration and refer to it by name, rather than embedding its
+   bytes in reports or command arguments.
+9. Complete actual ChatGPT tool calls against an authorized real project:
+   profile/project reads, scoped collaboration writes, refused operations,
+   reconnect and revocation read-back. Generated instructions establish
+   `awaiting_owner_actions`, not an operational web connection. The final
+   installation report explains those pending actions and their exact screens
+   and official guidance; `skip` and `later` retain a clearly stated web choice
+   and a direct later setup entry.
 
 The machine installation report records the selected transport and target,
 observed machine identity and account, owner credentials by reference, Release
 version and source binding, services, client host/Harness connections and
-rollback data. Machine installation binding and Runtime Node identity are
+rollback data. Include ChatGPT web choice, verified web state and any owner
+actions with concrete instructions. Machine installation binding and Runtime Node identity are
 separate records; dispatch claims require a live Node/Driver verification.
 
 ### Workspace placement
@@ -110,6 +136,55 @@ preserve the manifest; explicit `workspace upgrade` inside Git migrates only a
 known setup-only child ignore. Custom child rules require reviewed manual
 consolidation and cause writes to be refused.
 
+### Existing-project Source discovery
+
+Before creating or adopting a Management Root or registering a SourceBinding,
+identify the checkout that the project actually uses. Runtime service placement,
+client placement, Source checkout location and Git hosting are separate facts.
+The service host may hold no project checkout; a GitHub URL identifies a hosting
+repository and supplies no filesystem access to an existing local or SSH clone.
+
+1. Inspect the current project Session's working directory and explicit project
+   paths. Read its existing Root/Route identity and repository context. Reuse
+   confirmed host bindings and exact source paths from the caller's project
+   context as read-only discovery candidates. A past report is a hint to probe.
+2. Probe the actual current-session checkout first. If its path is absent or the
+   Source location is unclear, inspect only the specific local path and selected
+   SSH/WSL host and path already authorized by this Session or the user. Do not
+   enumerate SSH hosts, recursively search home directories or assume a project
+   is on the Runtime service host.
+3. Run `python scripts/acs_source_discovery.py --path <checkout-or-management-root> --include-untracked`.
+   For remote Source add `--ssh-target <authorized-alias>` or
+   `--wsl-distribution <selected-distribution>` and supply an absolute path in
+   that machine's filesystem namespace. For a known nested Root supply
+   `--management-path <root-on-that-same-host>`. Remote paths are JSON stdin
+   data; the caller never resolves them as caller-side filesystem paths.
+4. Compare `source_machine_binding` (machine, account and home),
+   `repository_root`, Root/Project identity, credential-free repository remotes,
+   commit, tree, branch and working-tree state against the requested project.
+   Use `--expected-project-id`, `--expected-root-id`, `--expected-commit` and
+   `--expected-repository` when those facts are authoritative; an identity or
+   baseline mismatch produces `conflict`. Use the `--expected-machine-id`,
+   `--expected-account` and `--expected-user-home` checks for a previously
+   confirmed Source machine. Dirty state is reported; discovery preserves edits.
+5. Prefer an observed exact match to the live project Session's repository and
+   machine binding. Multiple matching clones, unknown location or conflicting
+   identity require the smallest Source host/path choice. Do not select a
+   different clone, create a clone or relocate Source as a discovery fallback.
+6. Explain the observed topology before planning setup or registration: Runtime
+   host, Source checkout host/account/path, Management Root, Git hosting and
+   how authorized Runtime Source access will work. `observed_candidate` is
+   discovery evidence. Registration requires its own exact Source scope,
+   credentials, preview and read-back. A configured SSH client connection does
+   not by itself establish Runtime Source provider access.
+
+The observation reads an exact path and its ancestor metadata, and optionally
+one explicitly named nested Management Root. It creates no project files,
+Grants or SourceBindings and does not synchronize Git. `need_location` means
+the requested checkout has not been found; `unavailable` reports a failed or
+unsafe probe. In either case retain existing project identity and collect only
+the location or access information required to continue.
+
 ## 2. Core mental model
 
 Keep these objects distinct. Do not create a new durable object merely because
@@ -122,8 +197,8 @@ a Session, process, machine, or chat window changed.
 | **Session** | A temporary Harness conversation/execution context | A Route identity or durable project state | Harness-owned; no Skill-level attach API |
 | **Engineer** | A role/person participating in a Route | A specific Session or machine | Protocol concept; no identity service |
 | **Execution Endpoint** | Where Route work is executed | The Route itself or a Git remote | Replacement/rebinding is a future contract, not a current command |
-| **Source relationship** | Whether and how a Route relates to source assets | Message transport | Representable in documentation; no complete binding workflow |
-| **Source access** | How source can be read or changed (local, shared, SSH, evidence-only, unavailable) | Source history or ownership | SSH/access probes are not implemented by this Skill |
+| **Source relationship** | Whether and how a Route relates to source assets | Message transport | Checkout discovery yields candidates; Runtime SourceBinding admission is a separate workflow |
+| **Source access** | How source can be read or changed (local, shared, SSH, evidence-only, unavailable) | Source history or ownership | Exact local/selected SSH/WSL checkout observation is read-only; provider read/write scope must be verified separately |
 | **Source synchronization** | How source changes move between locations (Git, shared checkout, transfer, manual) | Session messaging | Git policy is documented; synchronization is external to this Skill |
 | **Source State Evidence** | Verified source facts worth preserving across Sessions | Live liveness, freshness, or Session progress | Optional Route-owned file; created only when justified |
 | **Message Transport** | How collaboration messages travel (manual relay or verified automatic path) | Git synchronization | Manual relay is the portable protocol baseline; direct relay is unverified |
@@ -168,7 +243,9 @@ fields or immediately choose a command. Use this order:
 2. **Inspect the supplied context.** Read the current working directory,
    explicit target path, Git status when repository mode is relevant, and the
    smallest relevant existing `AGENTS.md`, `CLAUDE.md`, `.agents/manifest.json`,
-   registry, Route metadata, and ownership markers.
+   registry, Route metadata, and ownership markers. Existing-project requests
+   follow the Source discovery flow above before selecting a setup path or
+   SourceBinding; inspect the actual local or selected SSH/WSL checkout.
 3. **Classify the observed state.** Use the Root and Route tables below. A
    missing optional Source State file is not an error.
 4. **Infer only safe facts.** Reuse explicit user statements and authoritative
@@ -196,6 +273,8 @@ fields or immediately choose a command. Use this order:
   Route metadata, knowledge, references, and Source State;
 - whether the target is a Git repository, its root, branch, HEAD, and dirty
   state when repository synchronization is actually in scope;
+- Source checkout host/account/path, tree and credential-free hosting locators
+  from exact read-only probes when existing-project setup or binding is in scope;
 - existing Route IDs/paths and duplicate or collision conditions;
 - ownership evidence and managed-file drift that the validator can observe.
 
@@ -210,7 +289,7 @@ fields or immediately choose a command. Use this order:
 | “原来的工程师窗口没了，重新开一个” | Session replacement; do not create a new Route. Current Skill cannot broker the replacement. |
 | “工程师换到另一台电脑” | Endpoint/machine change; revalidation is required in principle, but no current Endpoint replacement operation exists. |
 | “消息由我来转发” | User-mediated relay is the selected message transport. |
-| “没有 GitHub，但可以 SSH” | SSH may be a source-access option; do not infer GitHub, source sync, authorization, or current baseline. The Skill has no formal SSH adapter. |
+| “没有 GitHub，但可以 SSH” | Observe the exact authorized SSH Source path; independently verify Source provider scope, synchronization and baseline. |
 | “代码以后才开始” | Root/Route structure may be ready while source relationship remains pending or unbound. |
 
 ### Questions that are usually justified
@@ -222,8 +301,9 @@ fields or immediately choose a command. Use this order:
   Routes match and the user's wording is ambiguous.
 - “当前要维护的是源码仓库，还是管理 Workspace？” when the path could
   safely be interpreted as either mode.
-- “你能直接读取工程师实际修改的代码目录吗？如果可以，是本地、共享
-  目录还是远程访问？” only when a source decision changes the next action.
+- “项目实际使用的是哪台机器上的哪个源码目录？” only after scoped
+  current-session and authorized local/SSH/WSL path probes leave Source location
+  unknown or multiple clones ambiguous.
 
 ### Questions to avoid
 
@@ -309,7 +389,8 @@ the user's semantic intent for you.
 | List/health-check Routes | `route list` / `route validate` | Registry/file facts only |
 | Continue an existing Route in a new Session | No current command | Read existing context, preserve identity, and state that attach is not provided by this Skill |
 | Replace an Endpoint or machine | No current command | Do not synthesize durable Endpoint state; require an independently verified procedure |
-| Use SSH or direct relay | No current Skill command | Mark architecture-allowed or unverified; do not claim supported |
+| Discover an existing Source checkout | `acs_source_discovery.py --path <exact-path> [--ssh-target <selected-host> / --wsl-distribution <selected-distro>]` | Read-only candidate evidence; verify the actual host and Project/Root/repository identity before SourceBinding |
+| Use direct relay | No current Skill command | Verify the exact transport independently |
 
 ## 8. Source and message topology
 
@@ -337,8 +418,10 @@ stays unknown until observed in the current Harness context.
 - Manual user relay: supported at the protocol/policy level.
 - Git synchronization: documented contract; execution depends on the user's
   repository and Harness environment.
-- SSH source access: architecture-allowed/documented, not a current Skill
-  mechanism or E2E-verified capability.
+- Source discovery: exact local/selected SSH/WSL path observations report
+  candidate checkout identity. Local temporary-repository invariants are tested;
+  live transport requires environment-specific verification. Source
+  provider authorization and read/write capability are checked separately.
 - Direct relay, Session enumeration/targeting, and cross-Harness runtime
   collaboration: unverified or unsupported by this setup Skill.
 - Optional Route Source State: use only for verified source facts with durable
@@ -433,12 +516,14 @@ setup and does not silently take ownership of Route-owned gaps.
 
 ### User mentions SSH or a remote Engineer
 
-1. Ask only whether the next action requires source inspection, artifact
-   retrieval, or message relay.
+1. Resolve whether the next action requires source inspection, artifact
+   retrieval or message relay from the request and project context.
 2. Distinguish SSH source access from Git synchronization and message transport.
-3. Verify the exact current capability outside this setup Skill if authorized.
-4. Until a real probe and read-back exist, label the capability unverified or
-   unsupported and do not create durable runtime metadata.
+3. For Source inspection, probe the exact authorized host and path with
+   `acs_source_discovery.py`. Ask for host/path only if context and scoped probes
+   cannot establish a unique intended checkout.
+4. Read back machine and checkout identity, keep discovery candidates separate
+   from registered Source access, and verify provider authorization before binding.
 
 ## 11. When no current operation exists
 

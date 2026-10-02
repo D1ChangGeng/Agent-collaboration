@@ -39,6 +39,11 @@ INSTALL_CONTENT = (
     "references",
     "scripts",
     "tests",
+    "docs/GETTING-STARTED.md",
+    "docs/TROUBLESHOOTING.md",
+    "docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md",
+    "docs/runtime/PROJECT-ADOPTION.md",
+    "docs/runtime/SOURCE-DISCOVERY.md",
 )
 REQUIRED_CONTENT = {"SKILL.md", "VERSION", "scripts"}
 KNOWLEDGE_SOURCE = Path("docs/runtime/skills")
@@ -193,6 +198,14 @@ def _payload_entries(root: Path, require_core: bool = False) -> Tuple[Set[str], 
             if require_core and rel in REQUIRED_CONTENT:
                 raise ValueError(f"install payload is incomplete: {rel}")
             continue
+        for parent in Path(rel).parents:
+            if parent == Path("."):
+                continue
+            if _is_reparse(root / parent):
+                raise ValueError(
+                    f"Skill payload contains a symlink or reparse point: {root / parent}"
+                )
+            dirs.add(parent.as_posix())
         if _is_reparse(path):
             raise ValueError(f"Skill payload contains a symlink or reparse point: {path}")
         rel_posix = Path(rel).as_posix()

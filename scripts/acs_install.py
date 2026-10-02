@@ -15,7 +15,13 @@ import tomllib
 from pathlib import Path
 from urllib.parse import quote
 
-from acs_bootstrap import check_machine, machine_binding, observe_machine
+from acs_bootstrap import (
+    WEB_CHOICES,
+    chatgpt_setup,
+    check_machine,
+    machine_binding,
+    observe_machine,
+)
 from acs_doctor import ROOT, inspect
 
 
@@ -336,12 +342,16 @@ def install(
     host_confirmed: bool = False, expected_machine_id: str | None = None,
     runtime_only: bool = False,
     expected_account: str | None = None, expected_user_home: str | None = None,
+    chatgpt_web: str | None = None, tunnel_id: str | None = None,
 ) -> dict:
     if apply and not host_confirmed:
         raise ValueError("confirm this Runtime host with --host-confirmed before installation")
     machine = observe_machine()
     if apply:
         check_machine(machine, expected_machine_id, expected_account, expected_user_home)
+    web = chatgpt_setup(chatgpt_web, tunnel_id=tunnel_id)
+    if apply and chatgpt_web is None:
+        raise ValueError("confirm --chatgpt-web enable, skip or later before installation")
     report = inspect(project)
     if runtime_only:
         report["next_actions"] = [action for action in report.get("next_actions", [])
@@ -381,6 +391,7 @@ def install(
         "machine": machine,
         "runtime_only": runtime_only,
         "host_confirmation": "confirmed" if host_confirmed else "required_before_apply",
+        "web_setup": web,
         "actions": actions,
         "readiness": report,
     }
@@ -490,6 +501,9 @@ def install(
         "Use the setup Skill in a chosen project to create or adopt its Management Root."
     )
     result["readback"] = inspect(project, config=config_path)
+    result["web_setup"] = chatgpt_setup(chatgpt_web, str(ROOT), str(config_path), tunnel_id)
+    if chatgpt_web == "enable":
+        result["next_action"] = result["web_setup"]["next_action"]
     if runtime_only:
         result["readback"]["next_actions"] = [
             action for action in result["readback"].get("next_actions", [])
@@ -511,11 +525,18 @@ def main() -> int:
     parser.add_argument("--expected-account")
     parser.add_argument("--expected-user-home")
     parser.add_argument("--runtime-only", action="store_true")
+    parser.add_argument("--chatgpt-web", choices=WEB_CHOICES)
+    parser.add_argument("--tunnel-id")
     args = parser.parse_args()
     host_confirmed = args.host_confirmed or bool(os.environ.get("ACS_INSTALL_MACHINE_ID"))
     if args.apply and not host_confirmed:
         print(json.dumps({"schema_version": "acs-install-plan/1", "state": "needs_machine_confirmation",
                           "reason": "confirm_the_selected_Runtime_host_before_apply"}))
+        return 2
+    chatgpt_web = args.chatgpt_web or os.environ.get("ACS_INSTALL_CHATGPT_WEB")
+    if args.apply and chatgpt_web is None:
+        print(json.dumps({"schema_version": "acs-install-plan/1", "state": "needs_web_choice",
+                          "web_setup": chatgpt_setup(None)}))
         return 2
     try:
         result = install(
@@ -528,6 +549,7 @@ def main() -> int:
             expected_account=args.expected_account or os.environ.get("ACS_INSTALL_ACCOUNT"),
             expected_user_home=args.expected_user_home or os.environ.get("ACS_INSTALL_USER_HOME"),
             runtime_only=args.runtime_only,
+            chatgpt_web=chatgpt_web, tunnel_id=args.tunnel_id or os.environ.get("ACS_INSTALL_TUNNEL_ID"),
         )
     except (ValueError, OSError, subprocess.CalledProcessError):
         print(
