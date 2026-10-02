@@ -32,7 +32,7 @@ jobs:
       - name: Install locked Runtime
         run: uv sync --frozen --group dev
       - name: Check release tooling
-        run: uv run --frozen ruff check scripts/acs_bootstrap.py scripts/acs_doctor.py scripts/acs_install.py scripts/acs_web_setup.py scripts/acs_source_discovery.py scripts/build_release.py scripts/release_preflight.py tests/test_release_tools.py tests/test_machine_install.py tests/test_web_setup.py tests/test_source_discovery.py
+        run: uv run --frozen ruff check scripts/acs_bootstrap.py scripts/acs_update.py scripts/acs_launcher.py scripts/acs_doctor.py scripts/acs_install.py scripts/acs_web_setup.py scripts/acs_source_discovery.py scripts/build_release.py scripts/release_preflight.py tests/test_release_tools.py tests/test_machine_install.py tests/test_web_setup.py tests/test_source_discovery.py tests/test_automatic_updates.py tests/test_update_launcher.py
       - name: Runtime component tests
         run: uv run --frozen pytest runtime_tests -q
       - name: Gate tooling tests
@@ -49,4 +49,4 @@ jobs:
       - name: Build Runtime wheel
         run: uv build --wheel
       - name: Assemble candidate distribution
-        run: python scripts/build_release.py --output dist/release --version 1.2.0
+        run: python scripts/build_release.py --output dist/release --version 1.3.0

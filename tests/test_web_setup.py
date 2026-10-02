@@ -103,6 +103,23 @@ class WebSetupTests(unittest.TestCase):
                 self.assertEqual(result["web_setup"]["state"], "awaiting_owner_actions")
                 self.assertNotIn("CONTROL_PLANE_API_KEY", request)
 
+    @unittest.skipIf(sys.platform == "win32", "managed Runtime paths are Linux paths")
+    def test_web_helper_selects_stable_managed_launcher(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "acs_launcher.py").write_text("# launcher")
+            release, config = str(root / "versions/1.3.0"), str(root / "private/config.json")
+            (root / "state.json").write_text(json.dumps({"current": release, "runtime_config_ref": config,
+                                                        "launcher_python": sys.executable}))
+            result = subprocess.run([sys.executable, str(ROOT / "scripts/acs_web_setup.py"), "--choice", "enable",
+                                     "--installation-root", str(root), "--runtime-root", release, "--config", config,
+                                     "--tunnel-id", "tunnel_example", "--json"],
+                                    capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            plan = json.loads(result.stdout)
+            self.assertIn(str(root / "acs_launcher.py"), plan["runtime_process"]["args"])
+            self.assertNotIn("versions/1.3.0", plan["commands"]["init"][-1])
+
     @unittest.skipIf(sys.platform == "win32", "applied Runtime host paths are Linux paths")
     def test_web_plan_and_choice_are_persisted_by_project_free_install(self):
         from tests.test_machine_install import METADATA, fake_fetch, runtime_result
@@ -111,6 +128,8 @@ class WebSetupTests(unittest.TestCase):
             with self.subTest(tunnel_id=tunnel_id), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 with (mock.patch.dict(os.environ, {"ACS_INSTALL_TUNNEL_ID": "tunnel_stale"}),
+                      mock.patch.object(bootstrap, "update_module", return_value=mock.Mock(
+                          configure_schedule=mock.Mock(return_value={"backend": "connection", "state": "active"}))),
                       mock.patch.object(bootstrap, "install_root", return_value=root),
                       mock.patch.object(bootstrap, "observe_machine", return_value=MACHINE),
                       mock.patch.object(bootstrap, "release_metadata", return_value=METADATA),
@@ -122,7 +141,8 @@ class WebSetupTests(unittest.TestCase):
                     state = json.loads((root / "state.json").read_text())
                     self.assertEqual(state["chatgpt_web"], "enable")
                     self.assertEqual(state["web_setup"]["state"], "awaiting_owner_actions")
-                    self.assertEqual(state["web_setup"]["runtime_process"]["cwd"], receipt["current"])
+                    self.assertEqual(state["web_setup"]["runtime_process"]["cwd"], str(root))
+                    self.assertIn(str(root / "acs_launcher.py"), state["web_setup"]["runtime_process"]["args"])
                     environment = execute.call_args.kwargs["env"]
                     if tunnel_id is None:
                         self.assertNotIn("ACS_INSTALL_TUNNEL_ID", environment)
@@ -138,9 +158,9 @@ class WebSetupTests(unittest.TestCase):
             previous = root / "versions/previous"
             previous.mkdir(parents=True)
             (previous / "RELEASE-MANIFEST.json").write_text(json.dumps({
-                "version": "1.0.0", "commit": "b" * 40, "tree": "c" * 40}))
+                "version": "1.0.0", "commit": "b" * 40, "tree": "c" * 40, "files": {}}))
             current = str(root / "versions/current")
-            state = {"schema_version": bootstrap.SCHEMA, "machine": MACHINE, "current": current,
+            state = {"schema_version": bootstrap.SCHEMA, "version": "v1.1.0", "machine": MACHINE, "current": current,
                      "previous": str(previous), "chatgpt_web": "enable", "runtime_config_ref": "/home/owner/config.json",
                      "web_setup": bootstrap.chatgpt_setup("enable", current, "/home/owner/config.json", "tunnel_example")}
             (root / "state.json").write_text(json.dumps(state))

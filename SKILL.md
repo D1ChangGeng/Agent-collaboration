@@ -90,6 +90,11 @@ Git, or Harness facts. Read only the reference needed for the current request.
    SSH and WSL use `--runtime-only` to establish services and owner Authority.
    Local Linux setup configures the selected clients on that host by default;
    `--runtime-only` selects a service-only installation there.
+   New v1.3.0 installations enable automatic upgrades by default;
+   pass `--no-auto-update` when the user has chosen to opt out or `--auto-update`
+   when explicitly enabling them. Regular upgrades preserve an existing
+   disabled setting when neither flag is supplied. Inspect the
+   actual scheduler readback and connection catch-up status.
 6. Configure each selected client on its own host. Install setup and knowledge
    Skills on the selected client hosts. For SSH and WSL, use the returned
    caller-side stdio descriptor with the client's MCP configuration mechanism.
@@ -104,13 +109,44 @@ Git, or Harness facts. Read only the reference needed for the current request.
    client scope. Machine setup and web verification have separate readbacks.
 9. Report Runtime machine identity and account, client hosts, Release version,
    commit/tree, services, configured Harnesses, observed tools, credential
-   references and rollback state, plus the web choice, connection state and exact
+   references and rollback state, automatic upgrade setting and observed
+   scheduling backend/state, plus the web choice, connection state and exact
    pending owner actions. Offer project initialization as the next
    optional lifecycle.
 
 Machine installation selects a service host and a connection path. Runtime
 Node enrollment, execution placement and cross-host dispatch require their own
 Runtime capability observations.
+
+## Automatic upgrade maintenance
+
+Read [the automatic upgrade guide](docs/AUTOMATIC-UPDATES.md) when managing an
+existing installation. Run its installed Bootstrap on the recorded Runtime host
+as the same owner. Reuse the stored machine/account/home binding, Harness
+selection and web settings. `--set-auto-update on|off|status` controls the policy;
+`--update --force-check` checks immediately, and adding `--apply` applies an
+eligible update. Report policy, last result, active/previous versions and the
+actual backend state: active systemd user timer, registered cron entry or
+connection catch-up checks. Host sleep and an inactive user manager affect
+scheduled checks.
+
+Automatic activation requires a stable Release in the same major version and
+an unchanged license, schema, migration, provider and MCP catalog contract.
+A changed contract requires explicit review and a guided upgrade. Verify archive and file
+digests, the previous installation, the new locked environment, provider health
+and existing Grant authorization before activation. Updates preserve project
+registrations and owner authorization. Project setup, SourceBinding or Grant
+creation, and Compose changes belong to their explicit setup lifecycles.
+
+Owned local Skills refresh transactionally; selected remote client Skills are
+refreshed through client setup maintenance. Stable launcher commands select the
+active version for future MCP and Tunnel connections. Existing sessions keep
+their running version. A manual rollback records the rejected version in
+`held_version` for explicit review before automatic checks apply that version
+again.
+
+Existing v1.2.0 installations require one AI-guided upgrade with the verified
+v1.3.0 Release Bootstrap before invoking the installed update controls.
 
 ## ChatGPT web setup route
 
@@ -128,6 +164,13 @@ the exact Runtime command and the install, init, doctor and run sequence. The AI
 executes these supported steps and configures service persistence with rollback
 data. Treat generated commands as a plan until execution and readback establish
 the connection state.
+
+For a managed installation, add `--installation-root <installation-root>` with
+the active Release directory and matching private surface config from its state.
+The helper verifies those inputs and emits the stable launcher command, so
+future Tunnel MCP processes follow activation and rollback. A standalone
+verified Release uses its version directory command. Apply the generated MCP
+command to the selected existing Tunnel profile when maintaining that connection.
 
 Ask the owner to perform only required account login, organization/workspace
 permissions, runtime-key provisioning through private storage, and ChatGPT

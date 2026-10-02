@@ -41,8 +41,9 @@ independent Review.
 
 ## Standard release installation
 
-Use the [v1.2.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.2.0)
+Use the [v1.3.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.0)
 and its `acs_bootstrap.py` asset to start verified installation.
+See the [release notes](docs/RELEASE-NOTES-v1.3.0.md) for the upgrade path.
 
 The Release Bootstrap uses an explicit Runtime destination: local Linux,
 a named remote SSH target, or a named WSL distribution. It probes the selected
@@ -75,6 +76,29 @@ The installation report records Runtime machine identity and account, selected
 transport, client hosts, version/commit/tree, services, enabled Harnesses,
 credential references and rollback state. Runtime Node enrollment and execution
 capabilities have their own live verification.
+
+## Automatic upgrades
+
+ACS v1.3.0 enables automatic upgrades by default for new installations. ACS
+checks the latest stable Release daily on the installed Runtime host and
+activates compatible updates after archive, installed-file, service and existing
+authorization checks. The owner account's systemd timer is preferred, with cron
+as a fallback and a background catch-up check on new MCP connections. The
+installation report identifies the actual scheduling backend and its state.
+
+Use `--no-auto-update` during installation to opt out or `--auto-update` to
+enable it explicitly. A regular upgrade preserves an existing opt-out when
+neither flag is supplied. The installed Bootstrap's
+`--set-auto-update on|off|status` manages the setting. Stable
+launcher commands follow the active version for future local, SSH, WSL and
+Tunnel connections; existing sessions continue on their current version.
+Compatibility changes require an AI-guided upgrade. A previous version remains
+available for rollback.
+
+Existing v1.2.0 installations need one AI-guided upgrade using the verified
+v1.3.0 Release Bootstrap before these checks are available. See
+[automatic upgrades](docs/AUTOMATIC-UPDATES.md) for controls, verification and
+recovery.
 
 ## What you can manage
 

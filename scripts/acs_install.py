@@ -10,6 +10,7 @@ import secrets
 import socket
 import stat
 import subprocess
+import sys
 import time
 import tomllib
 from pathlib import Path
@@ -26,7 +27,7 @@ from acs_doctor import ROOT, inspect
 
 
 def run(*arguments: str, environment: dict[str, str] | None = None) -> None:
-    subprocess.run(arguments, check=True, cwd=ROOT, env=environment)
+    subprocess.run(arguments, check=True, cwd=ROOT, env=environment, timeout=1200)
 
 
 def private_root() -> Path:
@@ -48,7 +49,7 @@ def available_loopback_port(start: int) -> int:
 def provider_readback(environment: dict[str, str]) -> list[dict[str, str]]:
     observed = subprocess.run(
         ["docker", "compose", "-f", "docker-compose.acs-local.yml", "ps", "--format", "json"],
-        check=True, capture_output=True, text=True, cwd=ROOT, env=environment,
+        check=True, capture_output=True, text=True, cwd=ROOT, env=environment, timeout=30,
     )
     services = {}
     payload = observed.stdout.strip()
@@ -111,13 +112,59 @@ def git_observation(source: Path, *arguments: str) -> str:
     return result.stdout.strip()
 
 
+def release_command(root: Path, config_path: Path) -> list[str]:
+    python = root / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    return [str(python), "-m", "runtime.project_entry", "--config", str(config_path),
+            "--catalog", str(root / "docs/runtime/p2-mcp-tool-contract.json"),
+            "--profile", "root_manager"]
+
+
+def replace_codex_command(text: str, command: list[str]) -> str:
+    """Update the two installer-owned values while preserving other TOML fields."""
+    import re
+
+    marker = re.search(r"(?m)^\s*\[mcp_servers\.agent_collaboration\]\s*(?:#.*)?$", text)
+    if marker is None:
+        raise ValueError("existing Codex ACS table requires explicit review")
+    tail = text[marker.end():]
+    boundary = re.search(r"(?m)^\s*\[\[?[A-Za-z_\"']", tail)
+    end = marker.end() + boundary.start() if boundary else len(text)
+    block = text[marker.end():end]
+    for key, value in (("command", json.dumps(command[0])), ("args", json.dumps(command[1:]))):
+        expression = r"(?m)^([ \t]*" + key + r"[ \t]*=[ \t]*)(.*)$"
+        match = re.search(expression, block)
+        # Earlier installer versions write command and args on one line. A
+        # custom multiline value is kept for an explicit operator migration.
+        if match is None:
+            raise ValueError("existing Codex ACS command requires explicit review")
+        if key == "args":
+            try:
+                json.loads(match.group(2))
+            except ValueError as exc:
+                raise ValueError("existing Codex ACS arguments require explicit review") from exc
+        block = block[:match.start()] + match.group(1) + value + block[match.end():]
+    return text[:marker.end()] + block + text[end:]
+
+
 def configure_harnesses(harnesses: list[str], config_path: Path) -> dict[str, str]:
-    python = ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    pinned = release_command(ROOT, config_path)
+    python = Path(pinned[0])
     if not python.is_file():
         raise ValueError("locked Runtime interpreter is unavailable")
-    catalog = ROOT / "docs/runtime/p2-mcp-tool-contract.json"
-    command = [str(python), "-m", "runtime.project_entry", "--config", str(config_path),
-               "--catalog", str(catalog), "--profile", "root_manager"]
+    command = pinned
+    installation_root = os.environ.get("ACS_INSTALL_ROOT")
+    if installation_root:
+        root = Path(installation_root)
+        launcher = root / "acs_launcher.py"
+        if not root.is_absolute() or launcher.is_symlink() or not launcher.is_file():
+            raise ValueError("stable Runtime launcher is unavailable")
+        launcher_python = os.environ.get("ACS_LAUNCHER_PYTHON", sys.executable)
+        if not Path(launcher_python).is_absolute() or not Path(launcher_python).is_file():
+            raise ValueError("stable launcher interpreter is unavailable")
+        command = [launcher_python, str(launcher),
+                   "--installation-root", str(root)]
+    previous = os.environ.get("ACS_PREVIOUS_RELEASE")
+    allowed_previous = release_command(Path(previous), config_path) if previous else None
     configured: dict[str, str] = {}
     rollback = private_root() / "rollback" / ("harness-" + str(int(time.time())))
     changes = []
@@ -131,10 +178,14 @@ def configure_harnesses(harnesses: list[str], config_path: Path) -> dict[str, st
             if path.exists():
                 text = path.read_text(encoding="utf-8")
                 entry = tomllib.loads(text).get("mcp_servers", {}).get("agent_collaboration")
-                if entry is not None and (entry.get("command"), entry.get("args")) != (
-                    command[0], command[1:]
-                ):
-                    raise ValueError("existing Codex ACS MCP entry differs; review it explicitly")
+                if entry is not None:
+                    if not isinstance(entry, dict) or not isinstance(entry.get("args"), list):
+                        raise ValueError("existing Codex ACS MCP entry requires explicit review")
+                    observed = [entry.get("command"), *entry["args"]]
+                    if observed != command:
+                        if not installation_root or observed not in [pinned, allowed_previous]:
+                            raise ValueError("existing Codex ACS MCP entry differs; review it explicitly")
+                        changes.append((path, replace_codex_command(text, command), "codex-config.toml"))
                 if entry is None:
                     changes.append((path, text.rstrip() + "\n\n" + block, "codex-config.toml"))
             else:
@@ -148,7 +199,14 @@ def configure_harnesses(harnesses: list[str], config_path: Path) -> dict[str, st
                 raise ValueError("OpenCode configuration shape requires explicit review")
             servers = data.setdefault("mcp", {})
             if "agent_collaboration" in servers and servers["agent_collaboration"] != entry:
-                raise ValueError("existing OpenCode ACS MCP entry differs; review it explicitly")
+                old = servers["agent_collaboration"]
+                if (not installation_root or not isinstance(old, dict)
+                        or old != {"type": "local", "command": old.get("command"), "enabled": True}
+                        or old.get("command") not in [pinned, allowed_previous]):
+                    raise ValueError("existing OpenCode ACS MCP entry differs; review it explicitly")
+                servers["agent_collaboration"] = entry
+                changes.append((path, json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                                "opencode.json"))
             if "agent_collaboration" not in servers:
                 servers["agent_collaboration"] = entry
                 changes.append((path, json.dumps(data, ensure_ascii=False, indent=2) + "\n",
@@ -222,7 +280,7 @@ def register_local_project(project: Path, project_id: str, config_path: Path,
     return apply(project, specification, config_path, catalog, planned["plan_digest"])
 
 
-def initialize_local_authority(environment: dict[str, str]) -> Path:
+def initialize_local_authority(environment: dict[str, str], *, require_existing: bool = False) -> Path:
     """Create one owner credential; retries only read existing authority state."""
     from runtime.auth import LocalCredentialAuthenticator
     from runtime.domain import DomainAuthority
@@ -233,13 +291,18 @@ def initialize_local_authority(environment: dict[str, str]) -> Path:
     root = private_root()
     if root.is_symlink():
         raise ValueError("private runtime directory path is unsafe")
-    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if require_existing and not root.is_dir():
+        raise ValueError("automatic update requires an existing Runtime identity")
+    if not require_existing:
+        root.mkdir(parents=True, exist_ok=True, mode=0o700)
     if os.name == "posix" and stat.S_IMODE(root.stat().st_mode) & 0o077:
         raise ValueError("private runtime directory permissions are unsafe")
     config_path = root / "runtime-surface.json"
     credential_path = root / "runtime-credential"
     dsn_path = root / "runtime-dsn"
     paths = (config_path, credential_path, dsn_path)
+    if require_existing and not all(path.is_file() and not path.is_symlink() for path in paths):
+        raise ValueError("automatic update requires a complete existing Runtime identity")
     if any(path.exists() or path.is_symlink() for path in paths):
         if not all(path.is_file() and not path.is_symlink() and
                    (os.name != "posix" or not stat.S_IMODE(path.stat().st_mode) & 0o077)
@@ -286,6 +349,33 @@ def initialize_local_authority(environment: dict[str, str]) -> Path:
         "credential_ref": {"kind": "file", "name": str(credential_path)}}
     owner_file(config_path, json.dumps(surface, indent=2) + "\n")
     return config_path
+
+
+def existing_provider_environment() -> tuple[Path, dict[str, str]]:
+    """Read the admitted provider profile without provisioning or migration."""
+    root = private_root()
+    path = root / "local-providers.json"
+    for current in (path, *path.parents):
+        if current.is_symlink():
+            raise ValueError("existing provider path is unsafe")
+    if (not root.is_dir() or not path.is_file() or
+            (os.name == "posix" and (stat.S_IMODE(root.stat().st_mode) & 0o077
+                                    or stat.S_IMODE(path.stat().st_mode) & 0o077))):
+        raise ValueError("automatic update requires a private existing provider profile")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if (data.get("schema_version") != "acs-local-providers/2"
+            or not isinstance(data.get("password"), str) or len(data["password"]) < 48
+            or any(type(data.get(key)) is not int or not 1024 <= data[key] <= 65535
+                   for key in ("postgres_port", "temporal_port"))
+            or data["postgres_port"] == data["temporal_port"]
+            or not isinstance(data.get("compose_project"), str)
+            or not data["compose_project"].startswith("acs-")
+            or not data["compose_project"].replace("-", "").isalnum()):
+        raise ValueError("existing provider profile requires explicit migration")
+    return path, dict(os.environ, ACS_POSTGRES_PASSWORD=data["password"],
+                      ACS_POSTGRES_PORT=str(data["postgres_port"]),
+                      ACS_TEMPORAL_PORT=str(data["temporal_port"]),
+                      COMPOSE_PROJECT_NAME=data["compose_project"])
 
 
 def local_provider_environment() -> tuple[Path, dict[str, str]]:
@@ -346,6 +436,11 @@ def install(
 ) -> dict:
     if apply and not host_confirmed:
         raise ValueError("confirm this Runtime host with --host-confirmed before installation")
+    automatic = os.environ.get("ACS_AUTOMATIC_UPDATE") == "1"
+    if automatic:
+        if project is not None or project_id is not None:
+            raise ValueError("automatic updates require a Runtime-only installation")
+        runtime_only = True
     machine = observe_machine()
     if apply:
         check_machine(machine, expected_machine_id, expected_account, expected_user_home)
@@ -370,7 +465,8 @@ def install(
             plan(project, project_id)
     actions = [
         "Create or verify the locked Runtime Python environment",
-        "Start and check owner-local PostgreSQL and Temporal",
+        ("Check existing owner-local PostgreSQL and Temporal" if automatic else
+         "Start and check owner-local PostgreSQL and Temporal"),
     ]
     if not runtime_only:
         actions.insert(1, "Install the setup Skill for " + ", ".join(harnesses))
@@ -407,6 +503,8 @@ def install(
     if not all(result["prerequisites"].values()):
         raise ValueError("required local tools are unavailable")
     machine_path = private_root() / "install-machine.json"
+    if automatic and not machine_path.is_file():
+        raise ValueError("automatic update requires an existing machine binding")
     if machine_path.exists():
         if machine_path.is_symlink():
             raise ValueError("installation machine binding path is unsafe")
@@ -414,7 +512,7 @@ def install(
         if machine_binding(existing_machine) != machine_binding(machine):
             raise ValueError("existing Runtime installation belongs to a different machine or account")
     legacy = Path.home() / ".local/share/agent-collaboration/local-providers.json"
-    if not (private_root() / "local-providers.json").exists() and legacy.is_file():
+    if not automatic and not (private_root() / "local-providers.json").exists() and legacy.is_file():
         previous = json.loads(legacy.read_text(encoding="utf-8"))
         if previous.get("schema_version") != "acs-local-providers/2":
             raise ValueError("existing provider profile requires explicit migration")
@@ -423,7 +521,7 @@ def install(
         if root.is_symlink() or (os.name == "posix" and stat.S_IMODE(root.stat().st_mode) & 0o077):
             raise ValueError("provider directory permissions are unsafe")
         owner_file(root / "local-providers.json", json.dumps(previous) + "\n")
-    if legacy.is_file() and (private_root() / "local-providers.json").is_file():
+    if not automatic and legacy.is_file() and (private_root() / "local-providers.json").is_file():
         migrate_private_identity(legacy.parent, private_root())
     if project is not None:
         from workspace_setup import workspace_install
@@ -433,23 +531,26 @@ def install(
             raise ValueError("Management Root adoption preview has conflicts")
     run("uv", "sync", "--frozen")
     if not runtime_only:
-        run(
-            "uv", "run", "--frozen", "python", "scripts/install_skill.py",
-            "--harness", *harnesses, "--knowledge",
-        )
-    secret_path, environment = local_provider_environment()
+        skill_arguments = ["uv", "run", "--frozen", "python", "scripts/install_skill.py",
+                           "--harness", *harnesses, "--knowledge"]
+        if os.environ.get("ACS_PREVIOUS_RELEASE"):
+            skill_arguments.extend(["--previous-source", os.environ["ACS_PREVIOUS_RELEASE"]])
+        run(*skill_arguments)
+    secret_path, environment = (existing_provider_environment() if automatic else
+                                local_provider_environment())
     if not machine_path.exists():
         owner_file(machine_path, json.dumps(machine, indent=2) + "\n")
-    run(
-        "docker",
-        "compose",
-        "-f",
-        "docker-compose.acs-local.yml",
-        "up",
-        "-d",
-        "--wait",
-        environment=environment,
-    )
+    if not automatic:
+        run(
+            "docker",
+            "compose",
+            "-f",
+            "docker-compose.acs-local.yml",
+            "up",
+            "-d",
+            "--wait",
+            environment=environment,
+        )
     result["provider_config_ref"] = str(secret_path)
     result["providers"] = {
         "compose_project": environment["COMPOSE_PROJECT_NAME"],
@@ -457,7 +558,8 @@ def install(
         "temporal_endpoint": "127.0.0.1:" + environment["ACS_TEMPORAL_PORT"],
         "services": provider_readback(environment),
     }
-    config_path = initialize_local_authority(environment)
+    config_path = (initialize_local_authority(environment, require_existing=True) if automatic else
+                   initialize_local_authority(environment))
     result["runtime_config_ref"] = str(config_path)
     if project is not None:
         from runtime_project_adoption import adopt, validate
@@ -551,7 +653,7 @@ def main() -> int:
             runtime_only=args.runtime_only,
             chatgpt_web=chatgpt_web, tunnel_id=args.tunnel_id or os.environ.get("ACS_INSTALL_TUNNEL_ID"),
         )
-    except (ValueError, OSError, subprocess.CalledProcessError):
+    except (ValueError, OSError, subprocess.SubprocessError):
         print(
             json.dumps(
                 {

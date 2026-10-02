@@ -40,6 +40,8 @@ INSTALL_CONTENT = (
     "scripts",
     "tests",
     "docs/GETTING-STARTED.md",
+    "docs/AUTOMATIC-UPDATES.md",
+    "docs/RELEASE-NOTES-v1.3.0.md",
     "docs/TROUBLESHOOTING.md",
     "docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md",
     "docs/runtime/PROJECT-ADOPTION.md",
@@ -119,7 +121,7 @@ def _reject_reparse_ancestors(
                 current == final
                 and allow_final_symlink_to is not None
                 and current.is_symlink()
-                and same_path(current, allow_final_symlink_to)
+                and _link_matches_source(current, allow_final_symlink_to)
             ):
                 pass
             else:
@@ -175,6 +177,22 @@ def same_location(a: Path, b: Path) -> bool:
     return os.path.normcase(os.path.abspath(os.fspath(a))) == os.path.normcase(
         os.path.abspath(os.fspath(b))
     )
+
+
+def _link_matches_source(dest: Path, source: Path) -> bool:
+    """Match the link's target entry without adopting links through aliases."""
+    if not dest.is_symlink():
+        return False
+    target_text = os.readlink(dest)
+    if os.name == "nt":
+        if target_text.startswith("\\\\?\\UNC\\"):
+            target_text = "\\\\" + target_text[8:]
+        elif target_text.startswith("\\\\?\\"):
+            target_text = target_text[4:]
+    target = Path(target_text)
+    if not target.is_absolute():
+        target = dest.parent / target
+    return same_location(target, source)
 
 
 def _ignored(path: Path) -> bool:
@@ -252,7 +270,10 @@ def content_digest(root: Path) -> str:
 
 def _marker_data(source: Path) -> Dict[str, str]:
     skill_payload_entries(source, require_core=True)
-    version_path = source / "VERSION" if source.name not in KNOWLEDGE_NAMES else repo_root() / "VERSION"
+    version_path = (
+        source / "VERSION" if source.name not in KNOWLEDGE_NAMES else source.parents[3] / "VERSION"
+    )
+    _reject_reparse_ancestors(version_path, "Skill VERSION")
     version = version_path.read_text(encoding="utf-8").strip()
     if not version:
         raise ValueError("install payload VERSION is empty")
@@ -316,6 +337,8 @@ def _unknown_entries(source: Path, dest: Path) -> Set[str]:
     expected = source_files | source_dirs | {INSTALL_MARKER}
     unknown: Set[str] = set()
     for child in dest.rglob("*"):
+        if _is_reparse(child):
+            raise _refuse_unowned(dest)
         if _ignored(child):
             continue
         rel = child.relative_to(dest).as_posix()
@@ -355,35 +378,81 @@ def _copy_skill(source: Path, dest: Path) -> None:
     )
 
 
-def _replace_with_staged(source: Path, dest: Path, staged: Path) -> None:
+def _destination_owner(
+    source: Path, dest: Path, previous_source: Optional[Path] = None,
+) -> Optional[Path]:
+    """Validate an installed entry against one explicitly supplied source."""
+    link_source = source
+    if previous_source is not None and _link_matches_source(dest, previous_source):
+        link_source = previous_source
+    _reject_reparse_ancestors(
+        dest, "Skill destination", allow_final_symlink_to=link_source,
+    )
+    if same_location(source, dest) and not dest.is_symlink():
+        return source
+    if not dest.exists() and not dest.is_symlink():
+        return None
+    if dest.is_symlink():
+        return link_source
+
+    for owner in (source, previous_source):
+        if owner is None or not _owned_copy(dest, owner):
+            continue
+        if not _payload_matches_marker(owner, dest) or _unknown_entries(owner, dest):
+            raise _refuse_unowned(dest)
+        if owner == previous_source and not same_location(source, previous_source):
+            marker = _read_marker(dest, owner.name if owner.name in KNOWLEDGE_NAMES else SKILL_NAME)
+            if marker is None or content_digest(owner) != marker["content_sha256"]:
+                raise _refuse_unowned(dest)
+        return owner
+    raise _refuse_unowned(dest)
+
+
+def _validate_install(
+    source: Path, dest: Path, previous_source: Optional[Path] = None,
+) -> Tuple[Path, Optional[Path]]:
+    _reject_reparse_ancestors(source, "Skill source")
+    source = source.resolve()
+    skill_payload_entries(source, require_core=True)
+    if previous_source is not None:
+        _reject_reparse_ancestors(previous_source, "previous Skill source")
+        previous_source = previous_source.resolve()
+        skill_payload_entries(previous_source, require_core=True)
+    _destination_owner(source, dest, previous_source)
+    return source, previous_source
+
+
+def _replace_with_staged(
+    source: Path, dest: Path, staged: Path, previous_source: Optional[Path] = None,
+    keep_backup: bool = False,
+) -> Optional[Path]:
     had_destination = dest.exists() or dest.is_symlink()
     backup = dest.with_name(f".{dest.name}.backup-{uuid.uuid4().hex}")
+    _destination_owner(source, dest, previous_source)
     if had_destination:
-        if dest.is_symlink() and same_path(dest, source):
-            dest.rename(backup)
-        else:
-            if not _owned_copy(dest, source) or not _payload_matches_marker(source, dest):
-                raise _refuse_unowned(dest)
-            if _unknown_entries(source, dest):
-                raise _refuse_unowned(dest)
-            dest.rename(backup)
+        dest.rename(backup)
     try:
         staged.rename(dest)
     except Exception:
-        if had_destination and backup.exists():
+        if had_destination and (backup.exists() or backup.is_symlink()):
             backup.rename(dest)
         raise
+    if had_destination and keep_backup:
+        return backup
     if had_destination:
         if _is_reparse(backup):
             backup.unlink()
         else:
             shutil.rmtree(backup)
+    return None
 
 
 def _remove_owned_destination(source: Path, dest: Path) -> None:
     """Remove an owned copy only when it exactly matches its recorded payload."""
+    _reject_reparse_ancestors(source, "Skill source")
+    _reject_reparse_ancestors(dest, "Skill destination", allow_final_symlink_to=source)
     if dest.is_symlink():
-        if same_path(dest, source):
+        if _link_matches_source(dest, source):
             dest.unlink()
             return
         raise _refuse_unowned(dest)
@@ -394,26 +463,7 @@ def _remove_owned_destination(source: Path, dest: Path) -> None:
     shutil.rmtree(dest)
 
 
-def install_one(source: Path, dest: Path, mode: str) -> str:
-    source = source.resolve()
-    skill_payload_entries(source, require_core=True)
-    _reject_reparse_ancestors(
-        dest,
-        "Skill destination",
-        allow_final_symlink_to=source,
-    )
-    if same_location(source, dest) and not dest.is_symlink():
-        return "already-source"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-
-    if dest.exists() or dest.is_symlink():
-        if dest.is_symlink() and same_path(dest, source):
-            return "linked"
-        if not _owned_copy(dest, source) or not _payload_matches_marker(source, dest):
-            raise _refuse_unowned(dest)
-        if _unknown_entries(source, dest):
-            raise _refuse_unowned(dest)
-
+def _stage_install(source: Path, dest: Path, mode: str) -> Tuple[Path, str]:
     staged = dest.with_name(f".{dest.name}.staging-{uuid.uuid4().hex}")
     if mode in {"auto", "symlink"}:
         try:
@@ -422,31 +472,107 @@ def install_one(source: Path, dest: Path, mode: str) -> str:
             if mode == "symlink":
                 raise
         else:
-            try:
-                _replace_with_staged(source, dest, staged)
-            except Exception:
-                if staged.is_symlink() or staged.exists():
-                    staged.unlink()
-                raise
-            return "linked"
+            return staged, "linked"
 
     try:
         _copy_skill(source, staged)
-        _replace_with_staged(source, dest, staged)
     except Exception:
         if staged.is_symlink():
             staged.unlink()
         elif staged.exists():
             shutil.rmtree(staged)
         raise
-    return "copied"
+    return staged, "copied"
+
+
+def _discard_staged(path: Path) -> None:
+    _reject_reparse_ancestors(path.parent, "staged Skill parent")
+    if path.is_symlink():
+        path.unlink()
+    elif _is_reparse(path):
+        raise ValueError(f"staged Skill must not use a junction or reparse point: {path}")
+    elif path.exists():
+        shutil.rmtree(path)
+
+
+def install_one(
+    source: Path, dest: Path, mode: str, previous_source: Optional[Path] = None,
+) -> str:
+    source, previous_source = _validate_install(source, dest, previous_source)
+    if same_location(source, dest) and not dest.is_symlink():
+        return "already-source"
+    if _link_matches_source(dest, source):
+        return "linked"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    staged, result = _stage_install(source, dest, mode)
+    try:
+        _replace_with_staged(source, dest, staged, previous_source)
+    finally:
+        _discard_staged(staged)
+    return result
+
+
+def _install_many(
+    installs: List[Tuple[Path, Path, Optional[Path]]], mode: str,
+) -> List[str]:
+    """Preflight and stage the entire set, restoring entries on apply failure."""
+    validated = []
+    for source, dest, previous_source in installs:
+        source, previous_source = _validate_install(source, dest, previous_source)
+        validated.append((source, dest, previous_source))
+
+    staged_installs = []
+    applied = []
+    results = []
+    try:
+        for source, dest, previous_source in validated:
+            if same_location(source, dest) and not dest.is_symlink():
+                results.append("already-source")
+                continue
+            if _link_matches_source(dest, source):
+                results.append("linked")
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            staged, result = _stage_install(source, dest, mode)
+            staged_installs.append((source, dest, previous_source, staged))
+            results.append(result)
+        for source, dest, previous_source, staged in staged_installs:
+            backup = _replace_with_staged(
+                source, dest, staged, previous_source, keep_backup=True,
+            )
+            applied.append((source, dest, backup))
+    except Exception as failure:
+        restore_errors = []
+        for source, dest, backup in reversed(applied):
+            try:
+                _remove_owned_destination(source, dest)
+                if backup is not None:
+                    backup.rename(dest)
+            except (OSError, UnicodeError, ValueError) as exc:
+                restore_errors.append(f"{dest}: {exc}; original entry: {backup}")
+        if restore_errors:
+            raise ValueError(
+                "Skill installation failed and some original entries require recovery: "
+                + "; ".join(restore_errors)
+            ) from failure
+        raise
+    finally:
+        for _source, _dest, _previous_source, staged in staged_installs:
+            _discard_staged(staged)
+    for _source, _dest, backup in applied:
+        if backup is not None:
+            try:
+                _discard_staged(backup)
+            except OSError as exc:
+                print(f"[WARNING] installation complete; retained backup {backup}: {exc}")
+    return results
 
 
 def check_one(source: Path, dest: Path) -> Tuple[bool, str]:
     if not dest.exists() and not dest.is_symlink():
         return False, "missing"
     if dest.is_symlink():
-        return same_path(dest, source), f"symlink -> {dest.resolve()}"
+        return _link_matches_source(dest, source), f"symlink -> {dest.resolve()}"
     if not (dest / "SKILL.md").exists():
         return False, "SKILL.md missing"
     marker = _read_marker(dest, source.name if source.name in KNOWLEDGE_NAMES else SKILL_NAME)
@@ -472,11 +598,25 @@ def main() -> int:
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--uninstall", action="store_true")
     parser.add_argument("--knowledge", action="store_true", help="include ACS runtime knowledge Skills")
+    parser.add_argument(
+        "--previous-source", type=Path,
+        help="exact verified prior release source whose owned Skills may be migrated",
+    )
+    parser.add_argument("--source", type=Path, help="explicit verified Skill payload root")
     args = parser.parse_args()
     if args.check and args.uninstall:
         parser.error("--check and --uninstall cannot be combined")
+    if args.previous_source is not None and (args.check or args.uninstall):
+        parser.error("--previous-source is only valid for installation")
 
-    source = repo_root()
+    source = args.source if args.source is not None else repo_root()
+    try:
+        _reject_reparse_ancestors(source, "Skill source")
+        source = source.resolve()
+        skill_payload_entries(source, require_core=True)
+    except (OSError, UnicodeError, ValueError) as exc:
+        print(f"[REFUSED] {exc}")
+        return 1
     dests = [(source, dest) for dest in destinations(args.harness, args.scope, args.project)]
     if args.knowledge:
         hs = set(args.harness)
@@ -524,16 +664,19 @@ def main() -> int:
                 print(f"[ABSENT] {dest}")
         return 1 if failed else 0
 
-    failed = False
+    installs = []
     for skill_source, dest in dests:
-        try:
-            result = install_one(skill_source, dest, args.mode)
-            print(f"[{result.upper()}] {dest}")
-        except (OSError, UnicodeError, ValueError) as exc:
-            print(f"[REFUSED] {exc}")
-            failed = True
-    if failed:
+        previous_source = args.previous_source
+        if previous_source is not None and skill_source != source:
+            previous_source = previous_source / KNOWLEDGE_SOURCE / skill_source.name
+        installs.append((skill_source, dest, previous_source))
+    try:
+        results = _install_many(installs, args.mode)
+    except (OSError, UnicodeError, ValueError) as exc:
+        print(f"[REFUSED] {exc}")
         return 1
+    for (_skill_source, dest, _previous_source), result in zip(installs, results):
+        print(f"[{result.upper()}] {dest}")
     print("Installation complete. Restart/reload the harness only if it does not detect the Skill immediately.")
     return 0
 

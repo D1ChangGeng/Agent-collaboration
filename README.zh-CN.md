@@ -98,8 +98,9 @@ WorkItem 与消息句柄，再核对输出 commit、测试证据并送交 Review
 
 ### 标准 Release 安装
 
-使用 [v1.2.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.2.0)
+使用 [v1.3.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.0)
 提供的 `acs_bootstrap.py` 入口，开始经过校验的安装流程。
+升级路径见[发布说明](docs/RELEASE-NOTES-v1.3.0.md)。
 
 Release Bootstrap 使用明确的 Runtime 安装目标：本机 Linux、指定的远程 SSH
 目标，或指定的 WSL 发行版。它检查选定机器与账号，下载指定 GitHub Release，
@@ -145,6 +146,23 @@ ChatGPT 网页端可通过[单用户私有 Tunnel Profile](docs/runtime/P2-PRIVA
 平台权限与网页连接操作请由 AI 依据
 [官方 Tunnel 文档](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
 提供实时指引。
+
+## 自动升级
+
+ACS v1.3.0 新安装默认启用自动升级。ACS 在已安装的 Runtime 主机上每天检查
+最新稳定 Release，完成发行包、现有安装文件、服务健康和已有授权校验后，激活兼容
+更新。优先使用安装者账号的 systemd 用户计时器，cron 作为后备；新 MCP 连接也会
+在后台补查。安装报告记录实际调度方式及其状态。
+
+安装时可用 `--no-auto-update` 关闭自动升级，或用 `--auto-update` 明确启用。
+普通升级未指定这两个参数时，保留已有的关闭设置。安装后通过 Bootstrap 的
+`--set-auto-update on|off|status` 管理设置。稳定启动命令让后续本机、SSH、WSL 和
+Tunnel 连接使用已激活版本，现有会话继续使用当前版本。兼容性发生变化时，由 AI
+引导审查和升级；上一版本保留为回滚目标。
+
+已有 v1.2.0 安装需要先由 AI 使用经过校验的 v1.3.0 Release Bootstrap 引导升级，
+才能使用自动检查。
+控制命令、验证与恢复步骤见[自动升级指南](docs/AUTOMATIC-UPDATES.md)。
 
 ## 项目与源码边界
 

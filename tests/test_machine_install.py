@@ -28,7 +28,9 @@ METADATA = {"html_url": "https://github.com/D1ChangGeng/Agent-collaboration/rele
 def install(*args, **kwargs):
     """Machine tests use an explicitly declined web connection."""
     kwargs.setdefault("chatgpt_web", "skip")
-    return bootstrap.install(*args, **kwargs)
+    scheduler = mock.Mock(configure_schedule=mock.Mock(return_value={"backend": "connection", "state": "active"}))
+    with mock.patch.object(bootstrap, "update_module", return_value=scheduler):
+        return bootstrap.install(*args, **kwargs)
 
 
 def fake_fetch(url, path):
@@ -37,6 +39,8 @@ def fake_fetch(url, path):
         path.write_text(bootstrap.digest(archive) + "  " + archive.name + "\n")
         return
     payload = {"scripts/acs_install.py": b"# verified Runtime installer\n"}
+    for name in ("acs_bootstrap.py", "acs_update.py", "acs_launcher.py", "install_skill.py"):
+        payload["scripts/" + name] = (ROOT / "scripts" / name).read_bytes()
     manifest = {"schema_version": "acs-release-manifest/1", "version": "1.1.0",
                 "commit": "b" * 40, "tree": "c" * 40,
                 "files": {name: {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
