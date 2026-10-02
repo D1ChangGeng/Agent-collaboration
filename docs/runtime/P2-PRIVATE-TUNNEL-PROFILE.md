@@ -136,6 +136,7 @@ authentication boundary is described in the authentication guide; this ACS
 profile uses the installation owner's scoped Domain authority.
 
 This profile supplements the authenticated remote HTTP resource-server profile
-in [PROJECT-HTTP.md](PROJECT-HTTP.md). Both use the same Domain authorization
+in the repository's [PROJECT-HTTP.md](https://github.com/D1ChangGeng/Agent-collaboration/blob/main/docs/runtime/PROJECT-HTTP.md).
+Both use the same Domain authorization
 and project tool contracts. A product acceptance record names the exact profile
 and observed client path.
