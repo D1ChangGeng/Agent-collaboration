@@ -146,7 +146,7 @@ their running version. A manual rollback records the rejected version in
 again.
 
 Existing v1.2.0 installations require one AI-guided upgrade with the verified
-v1.3.0 Release Bootstrap before invoking the installed update controls.
+v1.3.1 Release Bootstrap before invoking the installed update controls.
 
 ## ChatGPT web setup route
 
@@ -155,6 +155,21 @@ For a selected web connection, read
 official documentation links during setup and verify current account/workspace
 eligibility before presenting page instructions. The supported personal profile
 connects the owner's existing ACS stdio process and Grant.
+
+Use the owner's external browser on their client machine for Platform and
+ChatGPT account pages. Browser control depends on the current Harness. Verify
+actual OS or external browser control on that client, then use the owner's given
+setup authorization for opening and navigation within its scope. Seek further
+authority only when the intended operation requires it. The owner confirms
+required login, permissions, secret entry and connection consent.
+Limit embedded browser use to read-only public documentation
+retrieval.
+
+When external browser control is unavailable or the owner prefers guided steps,
+provide the official link, exact page and current labels, action and expected
+result for each step. Await the owner's completion before proceeding with
+dependent setup and actual MCP verification. Read-only documentation searches
+and fetches can proceed independently of account actions.
 
 Generate the machine-specific plan with `scripts/acs_web_setup.py --choice enable
 --runtime-root <verified-release-directory> --config <private-surface-config>
@@ -172,9 +187,10 @@ future Tunnel MCP processes follow activation and rollback. A standalone
 verified Release uses its version directory command. Apply the generated MCP
 command to the selected existing Tunnel profile when maintaining that connection.
 
-Ask the owner to perform only required account login, organization/workspace
-permissions, runtime-key provisioning through private storage, and ChatGPT
-connection confirmation. Explain each action's location, purpose and expected
+Guide required account login, organization/workspace permissions, runtime-key
+provisioning through private storage, and ChatGPT connection consent in the
+owner's external browser or the named private storage location. The owner
+confirms each required action. Explain its location, purpose and expected
 result using the runbook. Keep secret values out of chat, command arguments,
 tracked files and reports. After connection, verify discovered tools and actual
 `read_profile` and `list_projects` from ChatGPT. An empty project list is valid;

@@ -7,7 +7,7 @@ machine, owner account, home directory, Harness selection and web settings
 determine the update target.
 
 Existing v1.2.0 installations need one AI-guided upgrade using the verified
-[v1.3.0 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.0).
+[v1.3.1 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.1).
 Ask the setup Skill to inspect the installation, verify the new Bootstrap and
 Release digests, preview the upgrade and validate the connections afterward.
 The v1.2.0 installation has no automatic update service to perform that first

@@ -58,13 +58,25 @@ registration may follow later; an empty list is a valid initial result.
 
 ## Owner account actions
 
-The Agent fetches the linked official instructions at setup time, checks account
-and workspace availability, then explains these owner actions with the current
+Use the installation owner's existing external browser on their client machine
+for Platform and ChatGPT account pages. The Agent verifies working OS or external
+browser control in the current Harness and uses the owner's given setup
+authorization for opening and navigation within its scope. Seek further
+authority only when the intended operation requires it. The owner confirms
+required login, permissions, secret entry and connection consent. Tunnel CLI installation,
+configuration, diagnostics and service supervision run on the confirmed Runtime
+host.
+
+The Agent fetches current official documentation read-only, independently of
+account actions. If client browser control is unavailable or the owner chooses
+guided steps, provide each official link, exact page, current labels, required
+action and expected result. Await the owner's completion before dependent setup
+and actual MCP verification. Explain the following actions using the current
 page labels:
 
 | Action | Where and expected result |
 | --- | --- |
-| Select the account context | In Platform Tunnel settings, select the intended organization and associate the target ChatGPT workspace. |
+| Select the account context | In the client's external browser, open [Platform Tunnel settings](https://platform.openai.com/settings/organization/tunnels), confirm login to the intended account, select the organization and associate the target ChatGPT workspace. |
 | Confirm permissions | Organization owner/RBAC admin grants Tunnels Read + Manage for creation and Read + Use for operation/selection; workspace policy allows developer mode. |
 | Select a Tunnel | Create or choose the owner's Tunnel and give the Agent its non-secret `tunnel_id`. |
 | Provision the runtime key | Put the key in private Runtime-host storage used by `CONTROL_PLANE_API_KEY`; the Agent records the reference and checks availability. |
@@ -102,11 +114,12 @@ diagnostics; executable plans become evidence only after execution.
 
 ## Owner ChatGPT confirmation
 
-After Tunnel health is observed:
+In the owner's external browser on their client machine, after Tunnel health is
+observed:
 
 1. Open ChatGPT **Settings → Security and login**, then enable **Developer mode**
    when the account/workspace allows it.
-2. Open **ChatGPT Plugins**, choose **+**, name the connection, select
+2. Open [ChatGPT Plugins](https://chatgpt.com/plugins), choose **+**, name the connection, select
    **Connection → Tunnel**, and select or enter the same `tunnel_id`.
 3. Create the connection and review its discovered tools. In a new conversation,
    add that connection from the tools menu.

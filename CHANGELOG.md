@@ -4,6 +4,18 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## 1.3.1 - 2026-10-03
+
+- ChatGPT account setup uses the owner's external browser on their client
+  machine. Agent navigation uses verified Harness control within the owner's
+  given setup authorization. Required login, permissions, secret entry and
+  connection consent remain owner confirmations.
+- Guided account setup provides official links, exact pages and labels, actions
+  and expected results, waits for owner completion and then verifies actual MCP
+  calls. Public documentation retrieval proceeds independently and read-only.
+- Installation guides and setup Skills carry the browser context and consent
+  procedure alongside the existing automatic upgrade controls and stable launcher.
+
 ## 1.3.0 - 2026-10-03
 
 - Release installations enable automatic upgrades by default, with an install

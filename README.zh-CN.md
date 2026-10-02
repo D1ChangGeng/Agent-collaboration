@@ -26,7 +26,8 @@ https://github.com/D1ChangGeng/Agent-collaboration
 > Harness，或稍后配置网页。对选定主机做只读检查，安装经过校验的 Release
 > 并配置所选连接。只就这些选择和必要授权提问。安装后实际验证服务与 MCP 调用，
 > 报告机器、账号和连接绑定，说明已安装能力。选择网页接入时，由 AI 完成配置，
-> 引导我完成必要的账号授权和网页确认。项目可以之后通过 setup Skill 初始化。
+> 在我的客户端机器上的外部浏览器中，按我已有的设置授权协助导航，或提供准确步骤，
+> 由我完成并确认。项目可以之后通过 setup Skill 初始化。
 
 [首次使用指南](docs/GETTING-STARTED.md)从 Runtime 主机选择和客户端连接验证
 开始。机器安装就绪后，可以调用 [setup Skill](SKILL.md)创建或接入项目
@@ -98,9 +99,9 @@ WorkItem 与消息句柄，再核对输出 commit、测试证据并送交 Review
 
 ### 标准 Release 安装
 
-使用 [v1.3.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.0)
+使用 [v1.3.1 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.1)
 提供的 `acs_bootstrap.py` 入口，开始经过校验的安装流程。
-升级路径见[发布说明](docs/RELEASE-NOTES-v1.3.0.md)。
+升级路径见[发布说明](docs/RELEASE-NOTES-v1.3.1.md)。
 
 Release Bootstrap 使用明确的 Runtime 安装目标：本机 Linux、指定的远程 SSH
 目标，或指定的 WSL 发行版。它检查选定机器与账号，下载指定 GitHub Release，
@@ -116,7 +117,11 @@ AI 先预览安装计划，将执行绑定到已观测的完整机器身份、�
 ChatGPT 网页接入是明确的安装选项：现在启用（`enable`）、仅用本地客户端
 （`skip`）或稍后配置（`later`）。启用时，AI 在 Runtime 主机安装和配置 Tunnel
 客户端、运行诊断并配置服务，向用户说明必须亲自完成的权限确认、私有密钥录入
-和 ChatGPT 连接确认。[网页接入手册](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md)
+和 ChatGPT 连接确认。账号页面使用你在客户端机器上的外部浏览器。只有当前 Harness
+确实具备该机器的浏览器控制能力时，AI 可在你已给出的设置授权范围内协助导航；
+必要的登录、
+权限、密钥录入和连接同意由你确认。你也可以按官方链接、准确页面标签、操作和预期
+结果自行完成；AI 等待确认后再实际验证 MCP 调用。[网页接入手册](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md)
 提供完整步骤与官方文档索引；安装报告记录选择、实际 Tunnel/网页状态和待完成操作。
 
 开始项目时，调用 setup Skill 初始化或接入 Management Root。项目身份、Source
@@ -160,7 +165,7 @@ ACS v1.3.0 新安装默认启用自动升级。ACS 在已安装的 Runtime 主�
 Tunnel 连接使用已激活版本，现有会话继续使用当前版本。兼容性发生变化时，由 AI
 引导审查和升级；上一版本保留为回滚目标。
 
-已有 v1.2.0 安装需要先由 AI 使用经过校验的 v1.3.0 Release Bootstrap 引导升级，
+已有 v1.2.0 安装需要先由 AI 使用经过校验的 v1.3.1 Release Bootstrap 引导升级，
 才能使用自动检查。
 控制命令、验证与恢复步骤见[自动升级指南](docs/AUTOMATIC-UPDATES.md)。
 

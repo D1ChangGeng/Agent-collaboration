@@ -52,13 +52,24 @@ selection, installed automatic upgrade controls and stable Runtime launcher,
    Fetch current official account and connection guidance, generate the exact
    Runtime-host plan with `acs_web_setup.py`, execute install/init/doctor/run,
    and configure recoverable service persistence. Explain required owner login,
-   permission, private-key entry and ChatGPT connection confirmations. Verify
-   actual web `read_profile` and `list_projects`; project setup can follow later.
-   For `later`, record the same route's resume entry.
+   permission, private-key entry and ChatGPT connection confirmations.
    For a managed installation, use the helper's `--installation-root` with its
    active Release directory and matching private config to produce a stable
    launcher command for the selected Tunnel profile. A standalone verified
    Release uses its version directory command.
+   Open account pages in the owner's external browser on their client machine.
+   Verify actual OS or external browser control in the current Harness and
+   use the owner's given setup authorization for navigation within its scope.
+   Seek further authority only when the intended operation requires it.
+   The owner confirms
+   required login, permissions, secret entry and connection consent. When
+   control is unavailable or the owner prefers guided steps, provide official
+   links, exact pages/current labels, actions and expected results, await
+   completion, then verify actual MCP calls. Public documentation retrieval is
+   read-only and independent; embedded browser use is limited to that purpose.
+   Verify actual web `read_profile` and `list_projects` after confirmed account
+   actions; project setup can follow later. For `later`, record the same route's
+   resume entry.
 8. Report Runtime machine identity and account, version/commit/tree, services,
    credential references, client connections, verified tools and rollback data,
    plus automatic upgrade policy and actual scheduling backend/state, the web
@@ -102,7 +113,7 @@ remote client Skills use client setup maintenance. New local, SSH, WSL and
 Tunnel MCP processes use the stable launcher's active version; running sessions
 retain their version. Manual rollback retains the rejected version in
 `held_version` for explicit review. Existing v1.2.0 installations need one
-AI-guided upgrade with the verified v1.3.0 Release Bootstrap.
+AI-guided upgrade with the verified v1.3.1 Release Bootstrap.
 
 Normal project work proceeds through the installed AGENTS context, runtime
 Skills and MCP tools. Setup is invoked again for installation maintenance,

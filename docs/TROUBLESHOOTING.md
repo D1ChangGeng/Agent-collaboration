@@ -17,8 +17,9 @@ projects and discovered tools.
 | ChatGPT Tunnel unavailable | Tunnel client health, Platform organization and workspace association, app connection | Follow the current [official Tunnel guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels) and test the exact local stdio MCP process. |
 | Web setup awaiting a choice | Bootstrap `chatgpt_web` selection | Choose `enable`, `skip` or `later`; the Agent resumes setup with the explicit choice. |
 | Web setup prepared but awaiting owner action | Generated web plan and its pending actions | Follow the [private Tunnel runbook](runtime/P2-PRIVATE-TUNNEL-PROFILE.md); complete the named account action, then let the Agent continue configuration and readback. |
+| Account-page navigation awaiting browser control | Owner client machine, external browser, actual Harness control capability and given setup authorization | Use the owner's external browser within the authorized scope, or follow the official link and exact page/action/result instructions. The owner confirms login, permissions, secret entry and connection consent; the Agent waits for completion, then verifies actual MCP calls. |
 | Tunnel healthy but ChatGPT tools unavailable | Running service, connection discovery and actual web MCP results | Refresh the selected connection, rerun the exact web readback and keep readiness scoped to observed results. |
-| Automatic upgrade controls unavailable | Installed Release version and Bootstrap entry | Existing v1.2.0 installations need one AI-guided upgrade with the verified v1.3.0 Release Bootstrap. |
+| Automatic upgrade controls unavailable | Installed Release version and Bootstrap entry | Existing v1.2.0 installations need one AI-guided upgrade with the verified v1.3.1 Release Bootstrap. |
 | Automatic checks delayed | Enabled policy, last result, next check, actual scheduling backend and host/user manager state | Wake the Runtime host, restore its owner scheduler if needed, or start a new stable-launcher MCP connection; use `--update --apply --force-check` for an immediate retry. |
 | Cron registered but checks absent | Owner crontab entry and host cron daemon state | Verify the daemon on the Runtime host; connection catch-up remains available when enabled. |
 | Update reports `review_required` | Major version, compatibility contract and rollback hold | Ask the setup Skill to review the candidate and preview a guided upgrade. |
@@ -38,7 +39,15 @@ installation, add `--installation-root <installation-root>` with the active
 Release directory and matching private config to generate the stable launcher
 command for that Tunnel profile. It performs client
 configuration, service checks and diagnostics, and explains remaining owner
-page actions. Verify actual ChatGPT `read_profile` and `list_projects` before
+page actions in the owner's external browser on their client machine. Browser
+control requires verified OS or external browser capability in the current
+Harness and uses the owner's given setup authorization for navigation within
+its scope. Seek further authority only when the intended operation requires it.
+When control is unavailable or the owner
+prefers guided steps, provide official links, exact pages and current labels,
+actions and expected results, then wait for confirmed completion. Public
+documentation can be retrieved read-only independently of those account actions.
+Verify actual ChatGPT `read_profile` and `list_projects` before
 reporting web readiness; verify `load_project` after registering a project.
 
 Inspect automatic upgrade status with the installed Bootstrap's
