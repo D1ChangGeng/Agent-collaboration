@@ -24,11 +24,14 @@ Then ask:
 > Inspect this repository and guide me through installing ACS. First confirm
 > where the Runtime should run: this Linux machine, a remote machine through
 > SSH, or a WSL distribution. Confirm which Codex/OpenCode client hosts should
-> connect. Probe the selected host, install the verified Release and configure
-> the connections. Ask me for the host choice and required authorizations.
+> connect. Ask whether to enable ChatGPT web now, use local Harnesses only, or
+> configure web later. Probe the selected host, install the verified Release and
+> configure the selected connections. Ask me for these choices and required
+> authorizations.
 > Verify services and actual MCP calls, report the machine and account binding,
-> and explain the installed capabilities. I can initialize projects later with
-> the setup Skill.
+> and explain the installed capabilities. For selected web access, complete AI
+> configuration and guide the required owner page confirmations. I can initialize
+> projects later with the setup Skill.
 
 The [getting started guide](docs/GETTING-STARTED.md) starts with Runtime host
 selection and client connection verification. Once the machine installation is
@@ -52,6 +55,14 @@ return a caller-side stdio MCP connection descriptor. The Agent installs Skills
 and configures that descriptor on each selected client. Service
 health and actual `tools/list`, `read_profile` and `list_projects` calls establish
 machine readiness. A new installation can start with an empty project list.
+
+ChatGPT web setup is an explicit installation choice: `enable`, `skip` or
+`later`. For enabled web access, the Agent prepares the Runtime-host Tunnel
+client, runs diagnostics and service setup, and guides required owner permissions,
+private-key entry and ChatGPT connection confirmation. The
+[web setup runbook](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md) provides the full
+sequence and official documentation index. The installation report records
+the choice, observed Tunnel/web state and any remaining owner action.
 
 When you start a project, ask the setup Skill to initialize or adopt its
 Management Root. Project identity, Source registration and Root Agent startup

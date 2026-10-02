@@ -4,6 +4,14 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Machine installation explicitly records whether ChatGPT web access is enabled,
+  skipped or deferred, and emits a private Tunnel setup guide with AI commands,
+  owner authorization actions and actual connection verification requirements.
+- Existing-project setup discovers the actual local, SSH or WSL Source checkout
+  and its identity/revision before selecting a SourceBinding registration view.
+- Copied setup Skills include installation and Source discovery guides with
+  ownership checks for their nested documentation directories.
+
 - Machine setup confirms a local Linux host, named SSH target or named WSL
   distribution before applying an installation, and binds the plan to its
   observed machine identity, owner account and home directory.

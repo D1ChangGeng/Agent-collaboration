@@ -22,9 +22,11 @@ https://github.com/D1ChangGeng/Agent-collaboration
 
 > 请检查这个仓库并带我安装 ACS。先确认 Runtime 的安装位置：本机 Linux、
 > 通过 SSH 访问的远程机器，或指定的 WSL 发行版；再确认哪些机器上的
-> Codex/OpenCode 需要连接。对选定主机做只读检查，安装经过校验的 Release
-> 并配置连接。只就主机选择和必要授权提问。安装后实际验证服务与 MCP 调用，
-> 报告机器、账号和连接绑定，说明已安装能力。项目可以之后通过 setup Skill 初始化。
+> Codex/OpenCode 需要连接。接着询问是否现在接入 ChatGPT 网页、仅使用本地
+> Harness，或稍后配置网页。对选定主机做只读检查，安装经过校验的 Release
+> 并配置所选连接。只就这些选择和必要授权提问。安装后实际验证服务与 MCP 调用，
+> 报告机器、账号和连接绑定，说明已安装能力。选择网页接入时，由 AI 完成配置，
+> 引导我完成必要的账号授权和网页确认。项目可以之后通过 setup Skill 初始化。
 
 [首次使用指南](docs/GETTING-STARTED.md)从 Runtime 主机选择和客户端连接验证
 开始。机器安装就绪后，可以调用 [setup Skill](SKILL.md)创建或接入项目
@@ -106,6 +108,12 @@ AI 先预览安装计划，将执行绑定到已观测的完整机器身份、�
 返回调用方可用的 stdio MCP 连接描述。AI 在选定客户端安装 Skills 并配置连接。
 服务健康状态及实际 `tools/list`、`read_profile`、`list_projects` 调用共同验证机器就绪；
 新安装可以从空项目列表开始。
+
+ChatGPT 网页接入是明确的安装选项：现在启用（`enable`）、仅用本地客户端
+（`skip`）或稍后配置（`later`）。启用时，AI 在 Runtime 主机安装和配置 Tunnel
+客户端、运行诊断并配置服务，向用户说明必须亲自完成的权限确认、私有密钥录入
+和 ChatGPT 连接确认。[网页接入手册](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md)
+提供完整步骤与官方文档索引；安装报告记录选择、实际 Tunnel/网页状态和待完成操作。
 
 开始项目时，调用 setup Skill 初始化或接入 Management Root。项目身份、Source
 注册和 Root Agent 启动按[项目设置路径](docs/GETTING-STARTED.md#start-a-project)完成。

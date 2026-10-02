@@ -26,6 +26,72 @@ from pathlib import Path, PurePosixPath
 REPOSITORY = "D1ChangGeng/Agent-collaboration"
 DEFAULT_VERSION = "v1.1.0"
 SCHEMA = "acs-bootstrap-state/1"
+WEB_CHOICES = ("enable", "skip", "later")
+WEB_DOCS = {
+    "tunnel": "https://developers.openai.com/api/docs/guides/secure-mcp-tunnels",
+    "connect": "https://developers.openai.com/plugins/deploy/connect-chatgpt",
+    "auth": "https://developers.openai.com/plugins/build/auth",
+    "index": "https://developers.openai.com/llms.txt",
+}
+
+
+def chatgpt_setup(choice: str | None, runtime_root: str | None = None,
+                  config: str | None = None, tunnel_id: str | None = None) -> dict:
+    """Describe optional web setup; a plan never grants Platform or ACS access."""
+    if choice is not None and choice not in WEB_CHOICES:
+        raise ValueError("choose ChatGPT web setup: enable, skip or later")
+    if tunnel_id and not re.fullmatch(r"tunnel_[A-Za-z0-9_-]{1,128}", tunnel_id):
+        raise ValueError("supply the public Tunnel identifier, not a runtime key")
+    result = {"schema_version": "acs-chatgpt-setup/1", "choice": choice,
+              "official_documentation": WEB_DOCS,
+              "question": "Would you like ACS in ChatGPT on the web: configure now, skip, or later?"}
+    if choice is None:
+        return {**result, "state": "needs_web_choice", "choices": list(WEB_CHOICES)}
+    if choice in {"skip", "later"}:
+        return {**result, "state": "skipped" if choice == "skip" else "deferred",
+                "next_action": "Invoke the setup Skill to configure ChatGPT web access when needed."}
+    runtime = None
+    if runtime_root and config:
+        if (not PurePosixPath(runtime_root).is_absolute() or not PurePosixPath(config).is_absolute()
+                or any(ord(c) < 32 for c in runtime_root + config)):
+            raise ValueError("web setup requires absolute paths on the selected Linux Runtime host")
+        root = runtime_root.rstrip("/")
+        argv = [root + "/.venv/bin/python", "-m", "runtime.project_entry", "--config", config,
+                "--catalog", root + "/docs/runtime/p2-mcp-tool-contract.json", "--profile", "root_manager"]
+        shell = "cd " + shlex.quote(root) + " && exec " + shlex.join(argv)
+        runtime = {"host": "selected_runtime_machine", "cwd": root,
+                   "command": "sh", "args": ["-c", shell], "config_ref": config}
+    profile = "acs-private"
+    initialize = (["tunnel-client", "init", "--sample", "sample_mcp_stdio_local",
+                   "--profile", profile, "--tunnel-id", tunnel_id,
+                   "--mcp-command", shlex.join([runtime["command"], *runtime["args"]])]
+                  if runtime and tunnel_id else None)
+    return {**result, "state": "awaiting_owner_actions", "profile": profile,
+            "tunnel_id": tunnel_id, "runtime_process": runtime,
+            "ai_actions": [
+                "Check current official guidance and validate the owner ACS Profile and Grant.",
+                "Install the official tunnel-client on the selected Runtime host and verify its binary.",
+                "Initialize the returned stdio profile after owner permissions and private key input.",
+                "Run doctor, keep the client running, and verify tools from the selected ChatGPT workspace.",
+            ],
+            "owner_actions": [
+                {"action": "Select or create a Tunnel; associate the owner organization and ChatGPT workspace.",
+                 "url": "https://platform.openai.com/settings/organization/tunnels",
+                 "permissions": {"create": "Tunnels Read + Manage", "run_and_select": "Tunnels Read + Use"}},
+                {"action": "Supply the runtime key privately on the Runtime host.",
+                 "secret_environment": "CONTROL_PLANE_API_KEY"},
+                {"action": "Enable Developer mode in Settings > Security and login if the workspace permits it."},
+                {"action": "At ChatGPT Plugins, use + and Connection > Tunnel; select the id and review tools.",
+                 "url": "https://chatgpt.com/plugins"},
+            ],
+            "commands": {"init": initialize,
+                         "doctor": ["tunnel-client", "doctor", "--profile", profile, "--explain"],
+                         "run": ["tunnel-client", "run", "--profile", profile]},
+            "verification": {"initial": ["tools/list", "read_profile", "list_projects"],
+                             "after_project_adoption": ["load_project", "authorized_write_readback",
+                                                        "denied_access", "reconnect", "grant_revocation"]},
+            "next_action": "Complete the owner actions, execute the AI commands and verify the web connection.",
+            "readiness_rule": "Report connected only after actual ChatGPT MCP readback; zero projects is valid."}
 
 # The same read-only probe runs in the caller or through the selected transport.
 # Raw OS identity bytes remain on the observed host.
@@ -69,6 +135,7 @@ with tempfile.TemporaryDirectory(prefix='acs-bootstrap-') as directory:
         expected_machine_id=request['machine_id'], harnesses=request['harnesses'],
         expected_account=request['machine_binding']['account'],
         expected_user_home=request['machine_binding']['user_home'],
+        chatgpt_web=request['chatgpt_web'], tunnel_id=request['tunnel_id'],
         runtime_only=True)
     print('ACS_INSTALL_RECEIPT=' + json.dumps(result))
 """
@@ -243,7 +310,8 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
             runtime_host: str | None = None, ssh_target: str | None = None,
             wsl_distribution: str | None = None, expected_machine_id: str | None = None,
             harnesses: list[str] | None = None, runtime_only: bool = False,
-            expected_account: str | None = None, expected_user_home: str | None = None) -> dict:
+            expected_account: str | None = None, expected_user_home: str | None = None,
+            chatgpt_web: str | None = None, tunnel_id: str | None = None) -> dict:
     if runtime_host is None:
         if apply:
             raise ValueError("confirm --runtime-host local, ssh or wsl before installation")
@@ -263,10 +331,17 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
     locator = ssh_target if runtime_host == "ssh" else wsl_distribution
     machine = observe_machine(runtime_host, locator)
     check_machine(machine, expected_machine_id, expected_account, expected_user_home)
+    web = chatgpt_setup(chatgpt_web, tunnel_id=tunnel_id)
+    if chatgpt_web is None:
+        if apply:
+            raise ValueError("confirm --chatgpt-web enable, skip or later before installation")
+        return {"schema_version": "acs-install-plan/3", "state": "needs_web_choice",
+                "machine": machine, "web_setup": web, "project_setup": "optional_after_machine_setup"}
     if runtime_host != "local":
         result = {"schema_version": "acs-install-plan/3", "state": "planned",
                   "version": version, "machine": machine, "client_machine": observe_machine(),
-                  "harnesses": harnesses, "project_setup": "optional_after_machine_setup"}
+                  "harnesses": harnesses, "web_setup": web,
+                  "project_setup": "optional_after_machine_setup"}
         if not apply:
             return result
         source = Path(__file__).read_bytes()
@@ -274,6 +349,7 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
                    "sha256": hashlib.sha256(source).hexdigest(), "version": version,
                    "machine_id": machine["machine_id"], "project": str(project) if project else None,
                    "project_id": project_id, "harnesses": harnesses,
+                   "chatgpt_web": chatgpt_web, "tunnel_id": tunnel_id,
                    "machine_binding": machine_binding(machine)}
         transferred = subprocess.run(transport_command(runtime_host, locator, REMOTE_INSTALL),
                                      input=json.dumps(request), capture_output=True, text=True,
@@ -305,6 +381,7 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
               "release_url": metadata.get("html_url"), "install_root": str(root),
               "archive": asset["name"], "state": "planned", "machine": machine,
               "harnesses": harnesses, "runtime_only": runtime_only,
+              "web_setup": web,
               "project_setup": "optional_after_machine_setup"}
     if not apply:
         return result
@@ -345,7 +422,11 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
         if machine_binding(rechecked) != machine_binding(machine):
             raise ValueError("Runtime machine or account changed before installation")
         environment = dict(os.environ, ACS_INSTALL_MACHINE_ID=machine["machine_id"],
-                           ACS_INSTALL_ACCOUNT=machine["account"], ACS_INSTALL_USER_HOME=machine["user_home"])
+                           ACS_INSTALL_ACCOUNT=machine["account"], ACS_INSTALL_USER_HOME=machine["user_home"],
+                           ACS_INSTALL_CHATGPT_WEB=chatgpt_web)
+        environment.pop("ACS_INSTALL_TUNNEL_ID", None)
+        if tunnel_id:
+            environment["ACS_INSTALL_TUNNEL_ID"] = tunnel_id
         executed = subprocess.run(runtime_command(target, project, project_id, harnesses, runtime_only),
                                   cwd=target, env=environment, capture_output=True, text=True, check=True)
         receipts = []
@@ -362,14 +443,19 @@ def install(version: str, *, apply: bool, project: Path | None, project_id: str 
         runtime = receipts[0]
         if runtime.get("readback", {}).get("runtime", {}).get("state") != "authorized":
             raise ValueError("Runtime authorization readback failed; active version retained")
+        web = chatgpt_setup(chatgpt_web, str(target), runtime.get("runtime_config_ref"), tunnel_id)
         (root / "current.tmp").write_text(str(target), encoding="utf-8")
         os.replace(root / "current.tmp", root / "current")
         write_state(root, {"schema_version": SCHEMA, "version": version,
                            "current": str(target), "previous": previous, "machine": machine,
+                           "chatgpt_web": chatgpt_web, "web_setup": web,
+                           "runtime_config_ref": runtime.get("runtime_config_ref"),
                            "commit": manifest["commit"], "tree": manifest["tree"]})
         result.update({"state": "machine_ready", "commit": manifest["commit"], "tree": manifest["tree"],
                        "current": str(target), "rollback": previous, "runtime": runtime,
-                       "next_action": "Use the setup Skill in a chosen project to create or adopt its Management Root."})
+                       "web_setup": web,
+                       "next_action": (web["next_action"] if chatgpt_web == "enable" else
+                           "Use the setup Skill in a chosen project to create or adopt its Management Root.")})
         return result
     finally:
         shutil.rmtree(staging, ignore_errors=True)
@@ -392,11 +478,17 @@ def rollback() -> dict:
     temporary = root / "current.tmp"
     temporary.write_text(previous, encoding="utf-8")
     os.replace(temporary, root / "current")
+    original_web = state.get("web_setup") or {}
+    config_ref = state.get("runtime_config_ref") or (original_web.get("runtime_process") or {}).get("config_ref")
+    web = chatgpt_setup(state.get("chatgpt_web"), previous, config_ref, original_web.get("tunnel_id"))
     write_state(root, {"schema_version": SCHEMA, "version": "v" + manifest["version"],
                        "current": previous, "previous": current, "machine": machine,
+                       "chatgpt_web": state.get("chatgpt_web"), "web_setup": web,
+                       "runtime_config_ref": config_ref,
                        "commit": manifest["commit"], "tree": manifest["tree"]})
     return {"schema_version": "acs-install-plan/2", "state": "rolled_back",
-            "current": previous, "commit": manifest["commit"], "tree": manifest["tree"]}
+            "current": previous, "commit": manifest["commit"], "tree": manifest["tree"],
+            "web_setup": web}
 
 
 def main() -> int:
@@ -415,6 +507,8 @@ def main() -> int:
     parser.add_argument("--harness", nargs="+", choices=["codex", "opencode"],
                         default=["codex", "opencode"])
     parser.add_argument("--runtime-only", action="store_true")
+    parser.add_argument("--chatgpt-web", choices=WEB_CHOICES)
+    parser.add_argument("--tunnel-id")
     args = parser.parse_args()
     try:
         if args.rollback:
@@ -428,6 +522,7 @@ def main() -> int:
                                      expected_machine_id=args.expected_machine_id,
                                      expected_account=args.expected_account,
                                      expected_user_home=args.expected_user_home,
+                                     chatgpt_web=args.chatgpt_web, tunnel_id=args.tunnel_id,
                                      harnesses=args.harness, runtime_only=args.runtime_only), indent=2))
         return 0
     except (OSError, ValueError, TypeError, urllib.error.URLError, subprocess.CalledProcessError) as error:
