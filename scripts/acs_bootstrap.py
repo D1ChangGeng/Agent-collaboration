@@ -27,7 +27,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 REPOSITORY = "D1ChangGeng/Agent-collaboration"
-DEFAULT_VERSION = "v1.3.1"
+DEFAULT_VERSION = "v1.4.0"
 SCHEMA = "acs-bootstrap-state/1"
 WEB_CHOICES = ("enable", "skip", "later")
 WEB_DOCS = {

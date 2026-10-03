@@ -13,12 +13,12 @@ You confirm required login, permissions, secret entry and connection consent.
 
 ## Agent launch request
 
-Use the [v1.3.1 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.1)
+Use the [v1.4.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.4.0)
 and its `acs_bootstrap.py` asset for the machine selection flow described here.
-The default Bootstrap version is `v1.3.1`. Existing v1.2.0 installations use the
-verified v1.3.1 Bootstrap for their first guided upgrade; afterward the installed
+The default Bootstrap version is `v1.4.0`. Existing v1.2.0 installations use the
+verified v1.4.0 Bootstrap for their first guided upgrade; afterward the installed
 updater provides the automatic upgrade controls. See the
-[release notes](RELEASE-NOTES-v1.3.1.md).
+[release notes](RELEASE-NOTES-v1.4.0.md).
 
 For a fresh machine, use the standard Release Bootstrap shipped with that
 Release before project setup:
@@ -155,7 +155,7 @@ Skills refresh with the upgrade; Skills on separate client hosts are refreshed
 through client setup maintenance.
 
 Existing v1.2.0 installations first need one AI-guided upgrade using the verified
-v1.3.1 Release Bootstrap. Read [automatic upgrades](AUTOMATIC-UPDATES.md) for
+v1.4.0 Release Bootstrap. Read [automatic upgrades](AUTOMATIC-UPDATES.md) for
 the installed controls, status meanings and rollback procedure.
 
 ## Start a project

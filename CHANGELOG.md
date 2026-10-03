@@ -4,6 +4,8 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## 1.4.0 - 2026-10-03
+
 - Add an organization vocabulary proposal distinguishing Root/Route responsibility
   extent and the proposed Task Agent collective term from Engineer, Reviewer,
   Specialist and Finalizer duties.

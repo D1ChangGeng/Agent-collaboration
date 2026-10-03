@@ -119,9 +119,9 @@ WorkItem 与消息句柄，再核对输出 commit、测试证据并送交 Review
 
 ### 标准 Release 安装
 
-使用 [v1.3.1 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.1)
+使用 [v1.4.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.4.0)
 提供的 `acs_bootstrap.py` 入口，开始经过校验的安装流程。
-升级路径见[发布说明](docs/RELEASE-NOTES-v1.3.1.md)。
+升级路径见[发布说明](docs/RELEASE-NOTES-v1.4.0.md)。
 
 Release Bootstrap 使用明确的 Runtime 安装目标：本机 Linux、指定的远程 SSH
 目标，或指定的 WSL 发行版。它检查选定机器与账号，下载指定 GitHub Release，
@@ -185,7 +185,7 @@ ACS v1.3.0 新安装默认启用自动升级。ACS 在已安装的 Runtime 主�
 Tunnel 连接使用已激活版本，现有会话继续使用当前版本。兼容性发生变化时，由 AI
 引导审查和升级；上一版本保留为回滚目标。
 
-已有 v1.2.0 安装需要先由 AI 使用经过校验的 v1.3.1 Release Bootstrap 引导升级，
+已有 v1.2.0 安装需要先由 AI 使用经过校验的 v1.4.0 Release Bootstrap 引导升级，
 才能使用自动检查。
 控制命令、验证与恢复步骤见[自动升级指南](docs/AUTOMATIC-UPDATES.md)。
 
