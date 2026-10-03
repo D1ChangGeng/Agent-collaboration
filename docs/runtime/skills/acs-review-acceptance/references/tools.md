@@ -7,5 +7,5 @@
 - read_source and read_diff establish the candidate inspected.
 - accept_work commits accepted state at the authorized boundary.
 
-Reviewer and Finalizer Profiles expose only the reads and mutations admitted by
+Reviewer and Finalizer responsibilities use the reads and mutations admitted by
 their Grants.

@@ -49,6 +49,7 @@ INSTALL_CONTENT = (
     "docs/runtime/PROJECT-ADOPTION.md",
     "docs/runtime/SEND-WAIT-LIFECYCLE.md",
     "docs/runtime/TIME-MODEL.md",
+    "docs/runtime/AGENT-ORGANIZATION-MODEL.md",
     "docs/runtime/SOURCE-DISCOVERY.md",
 )
 REQUIRED_CONTENT = {"SKILL.md", "VERSION", "scripts"}

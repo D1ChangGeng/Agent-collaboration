@@ -21,8 +21,10 @@ product decisions and evidence scopes.
 
 ## External Agent boundary
 
-Management, Route, Engineer, Reviewer, Specialist and Finalizer are external
-Harness Agents or explicitly authorized AgentSlots. Their reasoning, planning,
+Root and Route describe external Agent responsibility extent. Engineer,
+Reviewer, Specialist and Finalizer describe duties performed through explicitly
+authorized AgentSlot bindings. Task Agent is their proposed task-level collective
+term. Their reasoning, planning,
 task decomposition, delegation, review selection and next-turn decisions remain
 in the Harness. The Core executes submitted deterministic commands and records
 authentication, authorization and command lineage. Provider recovery may resume
@@ -146,7 +148,7 @@ Its trust and test boundary is
 [P2-PRIVATE-TUNNEL-PROFILE.md](P2-PRIVATE-TUNNEL-PROFILE.md). The remote HTTPS
 resource-server profile retains its OAuth binding contract.
 
-Root Agent is an external Session role projection, while Project, Root, Route,
+Root Agent is an external Session project-responsibility projection, while Project, Root, Route,
 Scope, AgentSlot and WorkItem retain durable identity. Local Sessions obtain
 project context from the Management Root. Web Sessions use list_projects and
 load_project through remote HTTPS MCP or an admitted Tunnel.
@@ -280,3 +282,10 @@ Driver implementation must bind observations to the installed version; the
 documentation alone cannot establish deployment conformance.
 [Official App Server documentation](https://learn.chatgpt.com/docs/app-server)
 (retrieved 2026-09-11).
+
+## Organization and responsibility vocabulary
+
+Root and Route describe project and development-line responsibility. Task Agent
+is the proposed task-level collective term; Engineer, Reviewer, Specialist and
+Finalizer describe duties. The separate entity, binding, authority and candidate
+independence rules are in [the organization model](AGENT-ORGANIZATION-MODEL.md).

@@ -278,3 +278,12 @@ For messaging, async returns after submission; sync waits for the final
 response by default. Optional caller timeouts return pending handles and retain
 background tracking. Business expiry is derived by ACS. See
 [Send/Wait lifecycle](runtime/SEND-WAIT-LIFECYCLE.md).
+
+## Agent responsibility and duties
+
+Use Root/Route to describe project/development-line responsibility. Task Agent
+is the proposed task-level collective term; select Engineer, Reviewer,
+Specialist or Finalizer duties through authorized team configuration. Read the
+[organization model proposal](runtime/AGENT-ORGANIZATION-MODEL.md) and the
+actual `load_project.actor_binding` / `list_collaborators` facts. Verify the
+current Slot, Scope, Profile, Grant and Work association before delegation.

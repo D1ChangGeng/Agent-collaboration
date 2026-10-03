@@ -23,3 +23,14 @@ accepted work. A delivered Message does not imply source synchronization.
 Every team, WorkItem, handoff and Message mutation carries authenticated
 subject, project_id, Scope, stable request identity, expected revision and
 deadline. System retries preserve the initiating command lineage.
+
+## Organization and duties
+
+Root/Route describe project/development-line responsibility. Task Agent is the
+proposed collective term for explicit task responsibility. Engineer, Reviewer,
+Specialist and Finalizer are duties. AgentSlot, Scope, WorkItem and replaceable
+Session retain their own identities and cardinalities. Organization metadata
+and combined duties remain descriptive; actual Grant/Policy/Profile checks and
+candidate-specific reviewer independence apply. Finalizer decisions require
+exact candidate/source/evidence/Review and effect/readback prerequisites.
+The repository contract is `docs/runtime/AGENT-ORGANIZATION-MODEL.md`.

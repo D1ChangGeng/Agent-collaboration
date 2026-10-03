@@ -11,7 +11,7 @@ delivery and continuation behavior is defined in
 
 ## Root Agent model
 
-Root Agent is a runtime role projection:
+Root Agent is a project responsibility projection:
 
 ~~~text
 authenticated external Agent Session
@@ -351,3 +351,10 @@ P2-MANAGEMENT-WORKFLOW executes after P2-MCP-WORKFLOW. Direct evidence covers:
 - web Reviewer and Root Manager flows;
 - subscriptions and Project Inbox recovery;
 - metadata-first Skill discovery, selective reference loading and project-context integration.
+
+## Organization and responsibility vocabulary
+
+Root and Route describe project and development-line responsibility. Task Agent
+is the proposed task-level collective term; Engineer, Reviewer, Specialist and
+Finalizer describe duties. The separate entity, binding, authority and candidate
+independence rules are in [the organization model](AGENT-ORGANIZATION-MODEL.md).

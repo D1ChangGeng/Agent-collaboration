@@ -7,7 +7,7 @@
 | Which long-lived goal or architecture line? | Route |
 | Which authorization and knowledge boundary? | Scope |
 | Which acceptable unit of work? | WorkItem |
-| Which current reasoning instance? | external Session role projection |
+| Which current reasoning instance? | authorized external Session responsibility projection |
 
 Create a Route for a durable line with its own goal, decisions, knowledge or
 source relationship. Create a WorkItem for a concrete deliverable within a

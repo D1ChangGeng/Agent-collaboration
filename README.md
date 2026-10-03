@@ -115,7 +115,7 @@ recovery.
 | Organize a project | Stable Project and Management Root identity, Route registry and scoped project context |
 | Build a team | AgentSlots, roles, Grants, Policies and budgets through `configure_team` |
 | Delegate work | WorkItems, durable messages, handoff acknowledgement and response handles |
-| Continue later | Bounded waits, notifications, Inbox reads and Session replacement recovery |
+| Continue later | Condition waits, optional caller timeouts, notifications, Inbox reads and Session replacement recovery |
 | Trust the result | Exact Git SourceBinding, Evidence, independent Review and accepted state |
 | Connect clients | Profile-filtered MCP tools for Codex, OpenCode and a single-owner private ChatGPT Tunnel |
 
@@ -123,6 +123,28 @@ The Runtime tool catalog is [machine-readable](docs/runtime/p2-mcp-tool-contract
 Knowledge Skills under [docs/runtime/skills](docs/runtime/skills/README.md)
 explain the project, collaboration, continuity, source, policy and Review
 models as an Agent needs them.
+
+## Agent organization
+
+Root Agent carries project responsibility; Route Agent carries development-line
+responsibility. **Task Agent** is the proposed collective term for an external
+Agent carrying explicit task responsibility. Engineer, Reviewer, Specialist and
+Finalizer describe duties that can be combined under actual authorization.
+
+```mermaid
+flowchart TB
+    R[Root Agent] --> D[Route Agent]
+    D --> E[Task Agent: Engineer]
+    D --> V[Task Agent: Reviewer]
+    D --> S[Task Agent: Specialist]
+    D --> F[Task Agent: Finalizer]
+```
+
+Organization extent, Role, Profile and Grant have separate meanings. Existing
+Slots, WorkItems and replaceable Sessions provide the bindings. Independent
+Review checks candidate participants; acceptance checks its Grant and exact
+Source, Evidence, Review and readbacks. The [organization model proposal](docs/runtime/AGENT-ORGANIZATION-MODEL.md)
+defines terminology, compatibility and observable context fields.
 
 ## Architecture
 
@@ -153,8 +175,8 @@ Git commits and trees remain the source of truth for repository content.
 sequenceDiagram
     participant R as Root Agent
     participant C as ACS Runtime
-    participant E as Engineer Agent
-    participant V as Reviewer Agent
+    participant E as Task Agent [Engineer]
+    participant V as Task Agent [Reviewer]
     R->>C: Create Route, Team and WorkItem
     R->>C: Send message or hand off work
     C->>E: Commit to Inbox and dispatch when eligible
