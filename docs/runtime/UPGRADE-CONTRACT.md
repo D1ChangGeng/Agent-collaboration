@@ -67,12 +67,22 @@ publish and accept. Revocation, expiry, budget and policy changes must be checke
 at the actual protected boundary, including dispatch and retry. Internal recovery
 keeps the original command lineage and cannot expand its scope.
 
-Cross-Machine receiver admission, its current-authority recheck and the native
-Driver's final Domain authorization use the same explicit bounded clock-skew
-allowance, between zero and thirty seconds. The reference receiver uses five
-seconds. This allowance applies only to a slightly future `issued_at`;
-command/admission deadlines, Grant expiry, revocation, authority incarnation,
-endpoint revision and protected permissions remain strict.
+Cross-Machine sender, receiver and native admission use an authenticated
+Authority connection clock bound to the current Authority incarnation,
+Connection, Endpoint/Runtime/Node revisions, boot and journal generation.
+Monotonic round-trip calibration supplies a UTC estimate with explicit
+uncertainty; admission requires its upper bound strictly before expiry and
+refreshes an overlapping interval. Unavailable or uncertain time stops
+admission. Private/Tunnel deployment requires the bound Authority provider.
+The Domain reads fresh PostgreSQL UTC before and after locks; final native
+Domain checks use that reference with strict expiry. Authored observation facts
+use a fresh authenticated Authority sample, while deadline and freshness decisions
+use the calibrated UTC interval. Cached terminal facts retain their recorded time. Grant, revocation,
+revision and protected permission checks retain their original boundaries.
+Local duration uses monotonic time, while durable deadlines and evidence
+remain canonical UTC. Presentation uses an IANA timezone sidecar. Existing
+aware wire signatures and hashes remain compatible. See
+[TIME-MODEL.md](TIME-MODEL.md) for calibration, recovery and evidence scope.
 
 Scope, Root, Route, AgentSlot and WorkItem identity survive Machine, Node,
 Runtime, Session, directory and transport changes. Keep versioned ScopeBinding

@@ -7,13 +7,14 @@ import sqlite3
 import threading
 from collections.abc import Callable
 from contextlib import closing, contextmanager, suppress
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, ClassVar
 
 from nacl.signing import SigningKey
 
-from runtime.receiver_config import ReceiverRuntimeConfig
+from runtime.connection_clock import ClockUnavailable, ConnectionClock
+from runtime.receiver_config import ReceiverRuntimeConfig, resolve_connection_clock
 from runtime.receiver_crypto import canonical, sha256, sign, verify
 from runtime.receiver_models import (
     DeliveryAdmission,
@@ -39,7 +40,7 @@ class ReceiverRejected(RuntimeError):
     pass
 
 
-_ACTIVE_EXECUTION_LEASES: set[str] = set()
+_ACTIVE_EXECUTION_LEASES: dict[str, tuple[float, Callable[[], float], str, int]] = {}
 _ACTIVE_EXECUTION_LEASES_LOCK = threading.Lock()
 
 
@@ -65,14 +66,15 @@ def _process_start(process_id: int) -> str:
 
 
 @contextmanager
-def _active_execution_lease(lease_id: str):
+def _active_execution_lease(lease_id: str, expires_monotonic: float,
+                            monotonic: Callable[[], float], boot: str, generation: int):
     with _ACTIVE_EXECUTION_LEASES_LOCK:
-        _ACTIVE_EXECUTION_LEASES.add(lease_id)
+        _ACTIVE_EXECUTION_LEASES[lease_id] = (expires_monotonic, monotonic, boot, generation)
     try:
         yield
     finally:
         with _ACTIVE_EXECUTION_LEASES_LOCK:
-            _ACTIVE_EXECUTION_LEASES.discard(lease_id)
+            _ACTIVE_EXECUTION_LEASES.pop(lease_id, None)
 
 
 class ReceiverLedger:
@@ -244,7 +246,8 @@ class ReceiverService:
     }
 
     def __init__(self, config: ReceiverRuntimeConfig, node_signing_key: SigningKey,
-                 *, authorize_current: Callable[[DeliveryAdmission], bool]):
+                 *, authorize_current: Callable[[DeliveryAdmission], bool],
+                 clock: ConnectionClock | None = None):
         config.validate()
         from runtime.receiver_crypto import public_key
         if public_key(node_signing_key) != config.binding.node_public_key:
@@ -252,6 +255,7 @@ class ReceiverService:
         if not callable(authorize_current):
             raise ReceiverRejected("current authority callback is required")
         self.config = config
+        self.clock = resolve_connection_clock(config, clock)
         self.binding = config.binding
         self.node_signing_key = node_signing_key
         self.authorize_current = authorize_current
@@ -278,7 +282,6 @@ class ReceiverService:
         admission = request.admission
         body = self._typed_body(request)
         registration = self.binding.registration
-        now = datetime.now(UTC)
         expected = (
             registration.tenant_id, registration.authority_id, registration.authority_incarnation,
             registration.endpoint_id, registration.node_id, registration.machine_id,
@@ -295,12 +298,11 @@ class ReceiverService:
                 or admission.path != self.PATHS[admission.purpose]
                 or admission.authority_key_id != self.config.authority_key_id
                 or admission.authority_key_revision != self.config.authority_key_revision
-                or admission.body_sha256 != sha256(body)
-                or admission.deadline <= now
-                or registration.expires_at <= now
-                or admission.issued_at > now + timedelta(seconds=self.config.clock_skew_seconds)):
+                or admission.body_sha256 != sha256(body)):
             raise ReceiverRejected("delivery admission context rejected")
         verify(self.config.authority_public_key, request.signature, admission)
+        if not self._time_valid(admission):
+            raise ReceiverRejected("delivery admission deadline or Authority clock rejected")
         if isinstance(body, PrepareBody) and (
             admission.envelope_digest != sha256(body.envelope)
             or admission.invocation_digest != sha256(body.invocation)
@@ -308,6 +310,21 @@ class ReceiverService:
         ):
             raise ReceiverRejected("prepare canonical envelope/invocation/selection digest rejected")
         return body, sha256({"admission": admission.model_dump(mode="json"), "body": body.model_dump(mode="json")})
+
+    def _time_valid(self, admission: DeliveryAdmission) -> bool:
+        try:
+            self.clock.require_before(min(admission.deadline, self.binding.registration.expires_at))
+        except ClockUnavailable:
+            return False
+        return True
+
+    def _lease(self, request: SignedRequest, lease_id: str):
+        deadline = min(request.admission.deadline, self.binding.registration.expires_at)
+        reading = self.clock.require_before(deadline)
+        remaining = (deadline - reading.latest_utc).total_seconds()
+        return _active_execution_lease(
+            lease_id, self.clock.monotonic_now() + remaining, self.clock.monotonic_now,
+            request.admission.boot_incarnation, request.admission.journal_generation)
 
     @staticmethod
     def _identity(admission: DeliveryAdmission) -> dict[str, Any]:
@@ -359,6 +376,7 @@ class ReceiverService:
         admission = request.admission
         identity = identity_admission or admission
         registration = self.binding.registration
+        observed_at = self.clock.observation_time()
         receipt = ReceiverReceipt(
             receipt_id=f"receiver:{admission.request_id}:{state}", request_id=admission.request_id,
             challenge_nonce=admission.nonce, purpose=admission.purpose, state=state,
@@ -380,7 +398,8 @@ class ReceiverService:
             selection_digest=identity.selection_digest,
             invocation_digest=identity.invocation_digest,
             journal_generation=identity.journal_generation, request_sha256=request_hash,
-            evidence=evidence or {}, observed_at=datetime.now(UTC),
+            evidence={**(evidence or {}), "connection_clock": self.clock.snapshot()},
+            observed_at=observed_at,
         )
         return SignedReceipt(receipt=receipt, node_key_id=self.binding.node_key_id,
                              signature=sign(self.node_signing_key, receipt))
@@ -426,7 +445,7 @@ class ReceiverService:
             request, request_hash, state, evidence, identity_admission=identity_admission,
             target_request_id=target_request_id,
         )
-        now = datetime.now(UTC).isoformat()
+        now = self.clock.observation_time().isoformat()
         process_start = _process_start(os.getpid()) if execution_lease_id else ""
         if execution_lease_id and not process_start:
             raise ReceiverRejected("receiver execution process identity is unavailable")
@@ -451,7 +470,8 @@ class ReceiverService:
                  request.admission.dispatch_id, request.admission.boot_incarnation,
                  request.admission.journal_generation, state, int(marker), receipt.model_dump_json(),
                  receipt.signature, sha256(receipt.receipt), sha256(receipt), execution_lease_id,
-                 request.admission.deadline.isoformat() if execution_lease_id else "",
+                 min(request.admission.deadline, self.binding.registration.expires_at).isoformat()
+                 if execution_lease_id else "",
                  os.getpid() if execution_lease_id else 0,
                  process_start, now, now),
             )
@@ -509,7 +529,7 @@ class ReceiverService:
             "execution_process_start='',updated_at=? "
             "WHERE request_id=? AND local_dispatch_marker=1",
             (state, receipt.model_dump_json(), receipt.signature, sha256(receipt.receipt),
-             sha256(receipt), datetime.now(UTC).isoformat(),
+             sha256(receipt), self.clock.observation_time().isoformat(),
              request.admission.request_id),
         )
         if cursor.rowcount != 1:
@@ -522,12 +542,14 @@ class ReceiverService:
         expires = row["execution_lease_expires_at"]
         process_id = row["execution_process_id"]
         process_start = row["execution_process_start"]
-        if (not lease_id or not expires or not process_id or not process_start
-                or datetime.fromisoformat(expires) <= datetime.now(UTC)):
+        if not lease_id or not expires or not process_id or not process_start:
             return False
         if process_id == os.getpid():
             with _ACTIVE_EXECUTION_LEASES_LOCK:
-                return lease_id in _ACTIVE_EXECUTION_LEASES and process_start == _process_start(process_id)
+                live = _ACTIVE_EXECUTION_LEASES.get(lease_id)
+                return bool(live and live[1]() < live[0]
+                            and live[2:] == (row["admitted_boot"], row["journal_generation"])
+                            and process_start == _process_start(process_id))
         return process_start == _process_start(process_id)
 
     def _abandon_execution(self, request: SignedRequest, request_hash: str,
@@ -560,9 +582,7 @@ class ReceiverService:
                         or int(meta["journal_generation"]) != request.admission.journal_generation):
                     return self._update(connection, request, request_hash, "blocked",
                                         {"reason": "boot_or_journal_generation_changed"})
-                now = datetime.now(UTC)
-                registration = self.binding.registration
-                if request.admission.deadline <= now or registration.expires_at <= now:
+                if not self._time_valid(request.admission):
                     return self._update(connection, request, request_hash, "blocked",
                                         {"reason": "deadline_or_registration_expired"})
                 try:
@@ -571,14 +591,13 @@ class ReceiverService:
                     return self._update(connection, request, request_hash, "blocked",
                                         {"reason": "current_authority_unavailable",
                                          "error_type": type(error).__name__})
-                now = datetime.now(UTC)
-                if current is not True or request.admission.deadline <= now or registration.expires_at <= now:
+                if current is not True or not self._time_valid(request.admission):
                     return self._update(connection, request, request_hash, "blocked",
                                         {"reason": "current_authority_or_time_rejected"})
 
             try:
                 evidence = invoke(request.admission)
-            except Exception as error:  # noqa: BLE001 -- any post-marker native failure is uncertain
+            except Exception as error:
                 with self.ledger.transaction() as connection:
                     row = self._existing(connection, request, request_hash)
                     if row is None or row["state"] != "runtime_dispatched":
@@ -602,7 +621,7 @@ class ReceiverService:
                     connection.execute(
                         "INSERT INTO native_calls(dispatch_id,request_id,called_at) VALUES (?,?,?)",
                         (request.admission.dispatch_id, request.admission.request_id,
-                         datetime.now(UTC).isoformat()),
+                         self.clock.observation_time().isoformat()),
                     )
                 except sqlite3.IntegrityError:
                     return self._update(connection, request, request_hash, "uncertain",
@@ -615,7 +634,7 @@ class ReceiverService:
         if not isinstance(body, DispatchBody):
             raise ReceiverRejected("dispatch body rejected")
         execution_lease_id = secrets.token_hex(32)
-        with _active_execution_lease(execution_lease_id):
+        with self._lease(request, execution_lease_id):
             with self.ledger.transaction() as connection:
                 self._check_current_boot(connection, request.admission)
                 self._identity_fence(connection, request.admission)
@@ -654,7 +673,7 @@ class ReceiverService:
         if not isinstance(body, RecoveryBody):
             raise ReceiverRejected("recovery body rejected")
         execution_lease_id = secrets.token_hex(32)
-        with _active_execution_lease(execution_lease_id):
+        with self._lease(request, execution_lease_id):
             with self.ledger.transaction() as connection:
                 meta = self._check_current_boot(connection, request.admission)
                 self._identity_fence(connection, request.admission)
@@ -748,10 +767,12 @@ class ReceiverService:
             existing = self._existing(connection, request, request_hash)
             if existing:
                 return self._stored(existing)
-        now = datetime.now(UTC)
+        observed_at = self.clock.observation_time()
+        reading = self.clock.reading()
         observed = (probe(request.admission) if callable(probe) else {
-            "activity": "unknown", "observed_at": now.isoformat(),
-            "expires_at": min(request.admission.deadline, now + timedelta(seconds=2)).isoformat(),
+            "activity": "unknown", "observed_at": observed_at.isoformat(),
+            "expires_at": min(request.admission.deadline,
+                              reading.earliest_utc + timedelta(seconds=2)).isoformat(),
             "source": "readiness_provider_unavailable"})
         if not isinstance(observed, dict) or observed.get("activity") not in {"idle", "busy", "offline", "unknown"}:
             raise ReceiverRejected("readiness observation rejected")

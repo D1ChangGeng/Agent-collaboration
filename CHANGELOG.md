@@ -4,6 +4,16 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Add connection clocks calibrated to authenticated PostgreSQL Authority time,
+  complete connection and Runtime identity, bounded uncertainty and conservative
+  expiry checks.
+- Use monotonic execution budgets with Linux suspend handling, preserve compatible
+  signed timestamp encoding, and bind admission and recovery to durable command
+  identities and replay fences.
+- Add IANA timezone presentation alongside canonical UTC data and PostgreSQL 16
+  CI coverage for Authority, ledger, lease, receiver-domain, management and
+  evidence behavior.
+
 ## 1.3.1 - 2026-10-03
 
 - ChatGPT account setup uses the owner's external browser on their client

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any, Literal
 
 from fastapi import FastAPI, Request
@@ -427,7 +427,8 @@ class SharedService:
         elif name in RecoveryService.PERMISSIONS:
             result = self.recovery.execute(envelope, name, payload.model_dump(mode="python"))
         else:
-            if envelope.deadline <= datetime.now(UTC) or envelope.issued_at > datetime.now(UTC):
+            now = authority.canonical_now()
+            if envelope.deadline <= now or envelope.issued_at > now:
                 raise AuthorizationDenied(envelope.principal_ref, envelope.grant_ref)
             result = authority.get_work_item(request.target_id)
             if result is None:

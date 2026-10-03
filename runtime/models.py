@@ -68,6 +68,15 @@ class CommandEnvelope(BaseModel):
     deadline: datetime
     payload: dict[str, PayloadValue] = Field(default_factory=dict)
 
+    @field_validator("issued_at", "deadline")
+    @classmethod
+    def aware_command_time(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("command timestamps require an explicit timezone")
+        # Historical v1/v2 signed/hash inputs preserve their original offset.
+        # Authority storage and new command creation use canonical UTC.
+        return value
+
     @field_validator("payload", mode="before")
     @classmethod
     def bounded_json_payload(cls, value):

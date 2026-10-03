@@ -5,6 +5,7 @@ import os
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -96,6 +97,17 @@ class SurfaceSettings(ConfigModel):
     artifacts: ArtifactSettings | None = None
     additional_artifacts: tuple[ArtifactSettings, ...] = Field(default=(), max_length=63)
     effects: EffectSettings | None = None
+    presentation_timezone: str = "UTC"
+
+    @field_validator("presentation_timezone")
+    @classmethod
+    def supported_presentation_timezone(cls, value):
+        try:
+            ZoneInfo(value)
+        except (KeyError, ValueError) as error:
+            raise ValueError("presentation timezone must be an available IANA timezone") from error
+        return value
+
     host: str = "127.0.0.1"
     port: int = Field(default=8765, ge=1, le=65535)
 

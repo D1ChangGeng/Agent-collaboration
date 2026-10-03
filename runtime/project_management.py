@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from copy import copy
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -112,7 +112,7 @@ class ManagementActions:
         cursor.execute("SELECT permissions,expires_at FROM grants WHERE grant_ref=%s FOR UPDATE",
                        (authority.context.grant_ref,))
         permissions, expiry = cursor.fetchone()
-        now = datetime.now(UTC)
+        now = authority.canonical_now(cursor)
         by_budget = {budget.budget_ref: budget for budget in budgets}
         for member in members:
             is_manager = (member.principal_ref == authority.context.principal_ref
@@ -207,6 +207,12 @@ class ManagementActions:
                 cursor.execute("INSERT INTO collaboration_memberships VALUES (%s,%s,%s,%s,%s,%s)",
                                (self.context.tenant_id, args["project_id"], member.principal_ref,
                                 member.grant_ref, member.profile, member.agent_slot_id))
+        authority._authorize(command, cursor, "grants.manage", scope)
+        now = authority.canonical_now(cursor)
+        if any(member.expires_at <= now for member in members):
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+        if any(budget.expires_at <= now for budget in budgets):
+            raise ValueError("team budget expired during configuration")
         result = self._management_record(authority, cursor, command, args, target_kind="team",
             target_id=scope, state="team.configured", revision=revision+1)
         return "configured", {"project_id": args["project_id"], "operation_id": result.operation_id,
@@ -239,7 +245,7 @@ class ManagementActions:
                        (self.context.tenant_id, args["project_id"], scope, scope, scopes, scopes))
         items = []
         for slot, principal, role, profile, scope_id, state, harnesses, expires, revoked, grant in cursor.fetchall():
-            state = state if revoked is None and expires > datetime.now(UTC) else "inactive"
+            state = state if revoked is None and expires > authority.canonical_now(cursor) else "inactive"
             if state == "active":
                 child = copy(authority)
                 child.context = replace(authority.context, principal_ref=principal, grant_ref=grant)
@@ -262,12 +268,13 @@ class ManagementActions:
         return "observed", {"project_id": args["project_id"], "items": items[:limit],
             "next_cursor": items[limit-1]["agent_slot_id"] if len(items)>limit else None}, []
 
-    def _list_harnesses(self, _authority, cursor, _project, _command, args, _credential):
+    def _list_harnesses(self, authority, cursor, _project, _command, args, _credential):
         scope = self._scope(cursor, self.context.tenant_id, args["project_id"], args["scope_handle"])
-        until = datetime.fromisoformat(args["require_current_until"]) if args.get("require_current_until") else datetime.now(UTC)
+        now = authority.canonical_now(cursor)
+        until = datetime.fromisoformat(args["require_current_until"]) if args.get("require_current_until") else now
         if until.tzinfo is None:
             raise ValueError("capability horizon requires a timezone")
-        until = max(until, datetime.now(UTC))
+        until = max(until, now)
         cursor.execute("SELECT e.endpoint_id,e.agent_slot_id,e.machine_id,e.node_id,e.revision,e.supports_invoke,"
                        "e.evidence_class,e.expires_at,h.driver_kind,h.installed_version,h.native_session_ref,"
                        "h.attempt_context,e.boot_incarnation,m.role "

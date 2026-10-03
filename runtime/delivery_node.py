@@ -98,11 +98,12 @@ class LocalNodeEndpoint:
     """
 
     def __init__(self, journal: NodeJournal, scope_id: str, agent_slot_id: str,
-                 driver: InvocationDriver | None = None, response_collector=None) -> None:
+                 driver: InvocationDriver | None = None, response_collector=None, *, clock=None) -> None:
         if journal.SCHEMA_VERSION != "acs-node-journal/2":
             raise ValueError("unsupported NodeJournal schema")
         self.journal, self.scope_id, self.agent_slot_id, self.driver = journal, scope_id, agent_slot_id, driver
         self.response_collector = response_collector
+        self.clock = clock if clock is not None else getattr(driver, "clock", None)
         if response_collector is not None and driver is None:
             raise ValueError("response collector requires the bound invocation Driver")
         if driver is not None and driver.evidence_class not in ("fixture_callback", "native_driver_observation"):
@@ -131,8 +132,20 @@ class LocalNodeEndpoint:
                 or envelope.packet.target_scope_id != self.scope_id
                 or envelope.packet.target_agent_slot_id != self.agent_slot_id):
             raise DeliveryBoundaryRejected("node_target_changed")
-        if datetime.now(UTC) >= envelope.packet.deadline:
-            raise DeliveryBoundaryRejected("deadline_expired")
+        if self.clock is None:
+            if datetime.now(UTC) >= envelope.packet.deadline:
+                raise DeliveryBoundaryRejected("deadline_expired")
+        else:
+            if any(self.clock.identity.get(name) != getattr(envelope, name)
+                   for name in ("authority_id", "authority_incarnation")):
+                raise DeliveryBoundaryRejected("clock_authority_reference_mismatch")
+            for name in ("machine_id", "node_id", "boot_incarnation", "endpoint_id"):
+                if name in self.clock.identity and self.clock.identity[name] != getattr(envelope, name):
+                    raise DeliveryBoundaryRejected("clock_connection_identity_changed")
+            try:
+                self.clock.require_before(envelope.packet.deadline)
+            except ValueError as error:
+                raise DeliveryBoundaryRejected("authority_clock_or_deadline_unavailable") from error
         authorized = authorize()
         if not isinstance(authorized, DeliveryEnvelope) or logical_payload(authorized) != logical_payload(envelope):
             raise DeliveryBoundaryRejected("committed_authorization_reference_mismatch")
@@ -141,8 +154,10 @@ class LocalNodeEndpoint:
         )):
             raise DeliveryBoundaryRejected("authorized_selection_changed")
 
-    @staticmethod
-    def _receipt(connection, envelope, layer, evidence, *, receipt_id=None, preserve_inbox=False):
+    def _now(self):
+        return self.clock.observation_time() if self.clock is not None else datetime.now(UTC)
+
+    def _receipt(self, connection, envelope, layer, evidence, *, receipt_id=None, preserve_inbox=False):
         encoded = canonical(evidence)
         previous = connection.execute(
             "SELECT evidence_json FROM lifecycle_receipts WHERE operation_id=? AND layer=?",
@@ -161,7 +176,7 @@ class LocalNodeEndpoint:
                 "INSERT INTO lifecycle_receipts(receipt_id,operation_id,layer,status,observed_at,evidence_json) "
                 "VALUES (?,?,?,'observed',?,?)",
                 (receipt_id or f"delivery:{envelope.message_id}:{layer}", envelope.operation_id, layer,
-                 datetime.now(UTC).isoformat(), encoded),
+                 self._now().isoformat(), encoded),
             )
         layers = [row[0] for row in connection.execute("SELECT layer FROM lifecycle_receipts WHERE operation_id=?",
                                                       (envelope.operation_id,)).fetchall()]
@@ -190,7 +205,7 @@ class LocalNodeEndpoint:
                 connection.execute(
                     "INSERT INTO journal(operation_id,command_id,message_id,operation_kind,payload_sha256,state,"
                     "created_at,machine_id,node_id,boot_incarnation) VALUES (?,?,?,?,?,'recorded',?,?,?,?)",
-                    (*expected, datetime.now(UTC).isoformat(), self.identity.machine_id,
+                    (*expected, self._now().isoformat(), self.identity.machine_id,
                      self.identity.node_id, self.identity.boot_incarnation),
                 )
             previous = connection.execute("SELECT command_id,operation_id,payload_sha256,payload_json FROM mailbox WHERE message_id=?",
@@ -201,7 +216,7 @@ class LocalNodeEndpoint:
                 connection.execute("INSERT INTO mailbox(message_id,command_id,operation_id,payload_sha256,payload_json,state,created_at) "
                                    "VALUES (?,?,?,?,?,'committed',?)",
                                    (envelope.message_id, envelope.command_id, envelope.operation_id, digest,
-                                    payload_json, datetime.now(UTC).isoformat()))
+                                    payload_json, self._now().isoformat()))
             self._receipt(connection, envelope, "accepted_by_authority",
                           {"operation_id": envelope.operation_id, "source": "committed_domain_outbox"})
             self._receipt(connection, envelope, "target_inbox_committed",

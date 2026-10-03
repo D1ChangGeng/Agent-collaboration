@@ -103,9 +103,12 @@ class NativeResponseCollector:
         if not isinstance(terminal_at, str):
             raise BoundaryRejected("Driver terminal timestamp is unavailable")
         try:
-            observed_at = datetime.fromisoformat(terminal_at).astimezone(UTC)
+            native_time = datetime.fromisoformat(terminal_at)
         except (TypeError, ValueError):
             raise BoundaryRejected("Driver terminal timestamp is malformed") from None
+        if native_time.tzinfo is None or native_time.utcoffset() is None:
+            raise BoundaryRejected("Driver terminal timestamp lacks an explicit timezone")
+        observed_at = native_time.astimezone(UTC)
         if isinstance(driver, OpenCodeNativeDriver):
             native = {
                 "session_id": result.get("native_session_id"),

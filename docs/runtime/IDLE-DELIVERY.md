@@ -20,9 +20,27 @@ ambiguous native effects retain their existing rejection/reconciliation rules.
 Remote queued delivery prepares the durable receiver Inbox and obtains a
 separate signed `delivery.readiness` observation before admitting the Domain
 dispatch marker. Each retry uses a fresh challenge and persists its signed
-receipt. Idle observations have a two-second bound; expired or unavailable
-observations cannot authorize invocation. The configured clock-skew allowance
-applies to future observation time, not an expiry grace period.
+receipt. Idle observations have a two-second bound, checked against the
+trusted Authority connection clock. Native readiness also has a transient
+monotonic expiry and generation bound to its clock calibration. Sender and
+receiver use calibrated UTC fields and strict upper-bound expiry checks.
+Producer expiry is its earliest UTC bound before inspection plus the two-second
+lifetime, capped by the operation deadline. A fresh Authority sample after
+inspection supplies `observed_at`; inspection, calibration and producer
+uncertainty consume the same window;
+stale, uncertain or unavailable observations defer invocation before dispatch.
+Clock uncertainty reduces the usable interval while the Grant and canonical
+deadline retain their original expiry.
+
+Calibration follows the authenticated Authority database reference and current
+Connection, Endpoint, Runtime, Node boot and binding revisions. A replacement
+requires fresh calibration and readiness. A gap between wall and monotonic
+progression adds separate uncertainty, including on suspend/resume. Excessive
+uncertainty or expiry overlap requests an Authority resample before trusting
+cached freshness. Clock snapshots persist UTC bounds
+and provenance; raw monotonic lease values stay in the current process.
+Local loopback fixtures retain their isolated test clock path. See
+[TIME-MODEL.md](TIME-MODEL.md) for the time and recovery contract.
 
 Readiness is observation, not a native ACK or a model response. A post-marker
 loss or an external native-state race remains uncertain and requires readback;

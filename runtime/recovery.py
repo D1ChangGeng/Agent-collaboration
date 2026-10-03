@@ -146,8 +146,8 @@ class NodeResponseOutbox:
             rows = connection.execute(
                 "SELECT o.payload_json FROM native_response_projection_outbox x "
                 "JOIN native_response_observations o USING(projection_id) "
-                "WHERE x.next_attempt_at<=? ORDER BY x.created_at,x.projection_id LIMIT ?",
-                (datetime.now(UTC).isoformat(), limit),
+                "ORDER BY x.rowid LIMIT ?",
+                (limit,),
             ).fetchall()
         values = []
         for row in rows:
@@ -210,7 +210,7 @@ class NodeResponseOutbox:
                 "SELECT o.projection_id,o.canonical_digest,x.attempts,x.last_error "
                 "FROM native_response_projection_outbox x "
                 "JOIN native_response_observations o USING(projection_id) "
-                "ORDER BY x.created_at,x.projection_id"
+                "ORDER BY x.rowid"
             ).fetchall()
         return tuple(dict(row) for row in rows)
 
@@ -639,12 +639,22 @@ class PostgresHumanBridgeAuthority:
              authority.grant_ref, authority.policy_version, json.dumps(evidence)),
         )
 
+    @staticmethod
+    def _database_now(cursor) -> datetime:
+        cursor.execute("SELECT clock_timestamp()")
+        now = cursor.fetchone()[0]
+        _aware(now, "bridge_database_now")
+        return now.astimezone(UTC)
+
     def open_incident(self, command: IncidentOpenCommand) -> str:
         import psycopg
 
         digest = canonical_digest(command.canonical())
         with psycopg.connect(self.dsn) as connection, connection.cursor() as cursor:
             authority = self.snapshot(cursor, "incident.open", command.incident_id)
+            now = self._database_now(cursor)
+            if now >= authority.deadline:
+                raise BoundaryRejected("incident open authority deadline expired")
             # Reuse the executable validator before any database mutation.
             HumanBridgeCoordinator().open_incident(
                 incident_id=command.incident_id, generation=command.generation,
@@ -655,7 +665,7 @@ class PostgresHumanBridgeAuthority:
                 accepted_state_digest=command.accepted_state_digest,
                 expires_at=command.expires_at,
                 eligible_path_ids=command.eligible_path_ids, paths=command.paths,
-                now=datetime.now(UTC), task_valid=authority.task_valid,
+                now=now, task_valid=authority.task_valid,
                 current_authority_valid=(authority.authenticated
                                          and authority.current_authority_valid),
             )
@@ -669,6 +679,14 @@ class PostgresHumanBridgeAuthority:
                 (command.tenant_id, command.incident_id),
             )
             prior = cursor.fetchone()
+            authority = self.snapshot(cursor, "incident.open.final", command.incident_id)
+            now = self._database_now(cursor)
+            if not (authority.authenticated and authority.current_authority_valid
+                    and authority.task_valid
+                    and authority.current_accepted_revision == command.accepted_revision
+                    and authority.current_accepted_state_digest == command.accepted_state_digest
+                    and now < min(command.expires_at, authority.deadline)):
+                raise BoundaryRejected("incident open final authority changed")
             if prior is not None:
                 if prior[0] != digest:
                     raise StateConflict("incident identity conflict")

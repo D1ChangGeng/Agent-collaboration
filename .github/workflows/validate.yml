@@ -24,6 +24,20 @@ jobs:
 
   runtime:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: acs_clock
+          POSTGRES_PASSWORD: acs_clock_ci
+          POSTGRES_DB: acs_clock
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U acs_clock -d acs_clock"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -35,6 +49,18 @@ jobs:
         run: uv run --frozen ruff check scripts/acs_bootstrap.py scripts/acs_update.py scripts/acs_launcher.py scripts/acs_doctor.py scripts/acs_install.py scripts/acs_web_setup.py scripts/acs_source_discovery.py scripts/build_release.py scripts/release_preflight.py tests/test_release_tools.py tests/test_machine_install.py tests/test_web_setup.py tests/test_source_discovery.py tests/test_automatic_updates.py tests/test_update_launcher.py
       - name: Runtime component tests
         run: uv run --frozen pytest runtime_tests -q
+      - name: Authority clock PostgreSQL integration
+        env:
+          ACS_P1_DSN: postgresql://acs_clock:acs_clock_ci@127.0.0.1:5432/acs_clock
+        run: >-
+          uv run --frozen pytest -q -rs -o addopts=''
+          runtime_tests/test_authority_clock.py
+          runtime_tests/test_domain_ledger.py
+          runtime_tests/test_lease_authority.py
+          runtime_tests/test_receiver_domain_delivery.py
+          runtime_tests/test_project_management.py
+          runtime_tests/test_domain_evidence.py
+          runtime_tests/test_recovery_postgres.py
       - name: Gate tooling tests
         run: uv run --frozen python -m unittest discover -s tools/runtime/tests -q
 

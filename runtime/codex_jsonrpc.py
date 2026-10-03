@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import queue
 import threading
+import time
 import uuid
 from concurrent.futures import Future, TimeoutError
 
@@ -21,6 +23,10 @@ class RpcDisconnected(ConnectionError):
 
 class RpcTimeout(TimeoutError):
     pass
+
+
+class RpcPreCallTimeout(ValueError):
+    """The local request budget elapsed before dispatch was admitted."""
 
 
 class RpcError(RuntimeError):
@@ -99,33 +105,68 @@ class JsonRpcClient:
                 for future in pending.values():
                     future.set_exception(RpcDisconnected(reason))
 
-    def _send(self, message, *, before_send=None, on_dispatch=None):
+    @staticmethod
+    def _remaining(deadline, *, dispatched=False):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            if dispatched:
+                raise RpcTimeout("RPC local deadline elapsed after dispatch")
+            raise RpcPreCallTimeout("RPC local deadline elapsed before dispatch")
+        return remaining
+
+    def _send(self, message, *, before_send=None, on_dispatch=None, deadline=None):
         encoded = (
             json.dumps(message, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode()
             + b"\n"
         )
         if len(encoded) > self.max_line_bytes:
             raise ValueError("outgoing JSONL frame exceeds configured bound")
-        with self._write_lock:
+        if deadline is None:
+            acquired = self._write_lock.acquire()
+        else:
+            acquired = self._write_lock.acquire(timeout=self._remaining(deadline))
+        if not acquired:
+            raise RpcPreCallTimeout("RPC local deadline elapsed waiting for the writer")
+        try:
             if not self.connected:
                 raise RpcDisconnected("transport is disconnected")
+            if deadline is not None:
+                self._remaining(deadline)
             if before_send is not None:
                 before_send()
+            if deadline is not None:
+                self._remaining(deadline)
             if on_dispatch is not None:
                 on_dispatch()
+            if deadline is not None:
+                self._remaining(deadline, dispatched=True)
             try:
                 view = memoryview(encoded)
                 while view:
+                    if deadline is not None:
+                        self._remaining(deadline, dispatched=True)
                     count = self.writer.write(view)
                     if not isinstance(count, int) or count <= 0:
                         raise OSError("stream write made no progress")
                     view = view[count:]
+                if deadline is not None:
+                    self._remaining(deadline, dispatched=True)
                 self.writer.flush()
+            except RpcTimeout:
+                self._fail("transport write deadline elapsed")
+                raise
             except (OSError, ValueError) as exc:
                 self._fail("transport write failed")
                 raise RpcDisconnected("transport write failed") from exc
+        finally:
+            self._write_lock.release()
 
     def request(self, method, params, *, timeout=30, request_id=None, before_send=None, on_dispatch=None):
+        started = time.monotonic()
+        if (isinstance(timeout, bool) or not isinstance(timeout, (int, float))
+                or not math.isfinite(timeout) or timeout < 0):
+            raise ValueError("RPC timeout must be a finite nonnegative duration")
+        deadline = started + timeout
         request_id = request_id or uuid.uuid4().hex
         if not isinstance(request_id, str) or not request_id:
             raise ValueError("request_id must be a nonempty string")
@@ -141,9 +182,11 @@ class JsonRpcClient:
             self._pending[request_id] = future
         try:
             self._send({"id": request_id, "method": method, "params": params},
-                       before_send=before_send, on_dispatch=on_dispatch)
+                       before_send=before_send, on_dispatch=on_dispatch, deadline=deadline)
             try:
-                return future.result(timeout)
+                result = future.result(self._remaining(deadline, dispatched=True))
+                self._remaining(deadline, dispatched=True)
+                return result
             except TimeoutError as exc:
                 raise RpcTimeout(f"RPC acknowledgement deadline elapsed: {method}") from exc
         finally:

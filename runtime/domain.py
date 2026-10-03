@@ -234,10 +234,29 @@ class DomainAuthority:
     def authority_id(self) -> str:
         return self.context.authority_id
 
-    def _connect(self):
+    def _connect(self, *, clock_probe: bool = False):
         if self._transaction_connection is not None:
             return nullcontext(self._transaction_connection)
-        return psycopg.connect(self._dsn)
+        # Startup options avoid SET TIME ZONE opening an implicit transaction,
+        # and preserve caller search_path, lock and statement timeout settings.
+        options = psycopg.conninfo.conninfo_to_dict(self._dsn).get("options", "")
+        options = (options + " -ctimezone=UTC").strip()
+        if clock_probe:
+            return psycopg.connect(
+                self._dsn, options=options + " -cstatement_timeout=5000", connect_timeout=5,
+            )
+        return psycopg.connect(self._dsn, options=options)
+
+    def canonical_now(self, cursor: psycopg.Cursor | None = None) -> datetime:
+        """Read fresh authority time, including after transaction lock waits."""
+        if cursor is None:
+            with self._connect(clock_probe=True) as connection, connection.cursor() as clock_cursor:
+                return self.canonical_now(clock_cursor)
+        cursor.execute("SELECT clock_timestamp()")
+        current = cursor.fetchone()[0]
+        if current.tzinfo is None or current.utcoffset() is None:
+            raise ValueError("database clock must return a timezone-aware instant")
+        return current.astimezone(UTC)
 
     @contextmanager
     def transaction(self):
@@ -247,11 +266,10 @@ class DomainAuthority:
         neither commit nor close the connection; the outer owner commits only
         after every command and projection has completed.
         """
-        with self._connect() as connection:
-            with connection.transaction():
-                authority = copy(self)
-                authority._transaction_connection = connection
-                yield authority, connection
+        with self._connect() as connection, connection.transaction():
+            authority = copy(self)
+            authority._transaction_connection = connection
+            yield authority, connection
 
     def _require_confirmed_project_handoff(self, cursor, work_item_id: str) -> None:
         """Protect Domain execution/acceptance even when called outside project MCP."""
@@ -390,7 +408,7 @@ class DomainAuthority:
         if type(clock_skew_seconds) is not int or not 0 <= clock_skew_seconds <= 30:
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
-        now = datetime.now(UTC)
+        now = self.canonical_now(cursor)
         clock_skew = timedelta(seconds=clock_skew_seconds)
         current = self.context
 
@@ -438,7 +456,7 @@ class DomainAuthority:
             "AND s.tenant_id=%s "
             "AND s.status='active' "
             "AND g.revoked_at IS NULL "
-            "AND g.expires_at>%s FOR UPDATE",
+            "AND g.expires_at>clock_timestamp() FOR UPDATE",
             (
                 current.grant_ref,
                 current.tenant_id,
@@ -446,15 +464,16 @@ class DomainAuthority:
                 current.authority_id,
                 current.authority_incarnation,
                 current.tenant_id,
-                now,
             ),
         )
         row = cursor.fetchone()
 
+        now = self.canonical_now(cursor)
         if (
             row is None
-            or command.deadline <= datetime.now(UTC)
-            or row[2] <= datetime.now(UTC)
+            or command.deadline <= now
+            or command.issued_at > now + clock_skew
+            or row[2] <= now
             or permission not in tuple(row[1] or ())
             or (scope_id is not None and str(row[0]) != str(scope_id))
         ):
@@ -478,7 +497,7 @@ class DomainAuthority:
         chain = cursor.fetchall()
         if not chain or chain[0][1] > 8 or any(row[2] for row in chain):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
-        now = datetime.now(UTC)
+        now = self.canonical_now(cursor)
         parent = None
         for row in chain:
             if (row[3] != command.tenant_id or permission not in tuple(row[4] or ())
@@ -1093,12 +1112,14 @@ class DomainAuthority:
         evidence = self._typed_evidence(EvidenceRecord, evidence, "invalid typed evidence record")
         bundle = self._typed_evidence(EvidenceBundle, bundle, "invalid typed evidence bundle")
         receipt = bundle.execution_receipt
+        now = self.canonical_now(cursor)
         if (not bundle.is_complete or not receipt.is_complete
                 or evidence.evidence_state != "complete" or evidence.source_class != "directly_verified"
-                or bundle.observed_at.tzinfo is None or bundle.observed_at > datetime.now(UTC)
+                or bundle.observed_at.tzinfo is None or bundle.observed_at > now
+                or receipt.observed_at.tzinfo is None
                 or bundle.observed_at < receipt.observed_at
                 or (bundle.expires_at is not None and (
-                    bundle.expires_at.tzinfo is None or bundle.expires_at <= datetime.now(UTC)))):
+                    bundle.expires_at.tzinfo is None or bundle.expires_at <= now))):
             raise AcceptanceGuardFailed("complete typed evidence bundle required")
         identity = (
             bundle.evidence_id == evidence.evidence_id == evidence.bundle_ref,
@@ -1155,7 +1176,7 @@ class DomainAuthority:
             ref.sha256 for ref in receipt.artifact_refs if ref.kind == "output"
         }:
             raise AcceptanceGuardFailed("evidence digest does not bind candidate bytes")
-        self._validate_execution_receipt(receipt, scope_id)
+        self._validate_execution_receipt(receipt, scope_id, cursor=cursor)
         self.enrollment.verify_receipt_provenance(cursor, receipt)
         return bundle, receipt, bound
 
@@ -1329,7 +1350,7 @@ class DomainAuthority:
                 "AND a.reviewer_ref=%s AND a.reviewer_grant_ref=%s "
                 "AND a.status='active' "
                 "AND a.authority_incarnation=g.authority_incarnation "
-                "AND g.revoked_at IS NULL AND g.expires_at>now()",
+                "AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp()",
                 (
                     self.context.tenant_id,
                     work_item_id,
@@ -1458,7 +1479,7 @@ class DomainAuthority:
                 "AND g.authority_incarnation=%s "
                 "AND a.status='active' "
                 "AND g.revoked_at IS NULL "
-                "AND g.expires_at>now()",
+                "AND g.expires_at>clock_timestamp()",
                 (
                     reviewer_grant_ref,
                     self.context.tenant_id,
@@ -1545,7 +1566,7 @@ class DomainAuthority:
             if row is None:
                 return None
 
-            now = datetime.now(UTC)
+            now = self.canonical_now(cursor)
             read = CommandEnvelope(
                 command_id=f"read-{uuid.uuid4()}",
                 command_type="work_item.read",
@@ -1745,11 +1766,11 @@ class DomainAuthority:
         return bound
 
     def _validate_execution_receipt(
-        self, receipt: ExecutionReceipt, scope_id: str,
+        self, receipt: ExecutionReceipt, scope_id: str, *, cursor: psycopg.Cursor | None = None,
     ) -> None:
         if (not receipt.is_complete or not receipt.readback_refs
                 or receipt.observed_at.tzinfo is None
-                or receipt.observed_at > datetime.now(UTC)):
+                or receipt.observed_at > self.canonical_now(cursor)):
             raise AcceptanceGuardFailed("complete successful execution receipt required")
         if not receipt.test_commands or len(receipt.test_commands) != len(receipt.test_exit_codes):
             raise AcceptanceGuardFailed("every test command must have exactly one exit code")
@@ -1799,7 +1820,7 @@ class DomainAuthority:
             if (command.principal_ref != bound["observer_ref"]
                     or command.grant_ref != bound["observer_grant_ref"]):
                 raise AuthorizationDenied(command.principal_ref, command.grant_ref)
-            self._validate_execution_receipt(receipt, str(row[0]))
+            self._validate_execution_receipt(receipt, str(row[0]), cursor=cursor)
             cursor.execute(
                 "INSERT INTO execution_receipts(receipt_id,execution_id,tenant_id,work_item_id,"
                 "attempt_id,producer_ref,agent_slot_id,source_baseline,source_class,started_at,"

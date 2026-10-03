@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import os
 
+from runtime.connection_clock import ConnectionClock
 from runtime.domain import DomainAuthority
+from runtime.receiver_config import receiver_clock_identity
 from runtime.receiver_entry import DeploymentCallbacks
 
 
@@ -39,4 +41,5 @@ def callbacks(config, deployment_policy_sha256, settings):
         runtime_id=runtime_id,
         authorize_current=authorize_current,
         native_invoke=native_invoke,
+        clock=ConnectionClock.from_authority(authority, identity=receiver_clock_identity(config)),
     )

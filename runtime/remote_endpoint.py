@@ -6,14 +6,18 @@ import signal
 import socket
 import ssl
 import threading
-from datetime import timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
 from nacl.signing import SigningKey
 
+from runtime.connection_clock import ClockUnavailable, ConnectionClock
 from runtime.receiver import ReceiverRejected, ReceiverService
-from runtime.receiver_config import ReceiverClientConfig, ReceiverRuntimeConfig
+from runtime.receiver_config import (
+    ReceiverClientConfig,
+    ReceiverRuntimeConfig,
+    resolve_connection_clock,
+)
 from runtime.receiver_crypto import load_owner_signing_key, sha256, tls_fingerprint, verify
 from runtime.receiver_models import DeliveryAdmission, SignedReceipt, SignedRequest
 from runtime.receiver_paths import PathSecurityRejected, validated_file_identity
@@ -24,9 +28,11 @@ class RemoteTransportRejected(RuntimeError):
 
 
 class RemoteNodeTransport:
-    def __init__(self, config: ReceiverClientConfig, *, timeout: float = 5.0):
+    def __init__(self, config: ReceiverClientConfig, *, timeout: float = 5.0,
+                 clock: ConnectionClock | None = None):
         config.validate()
         self.config = config
+        self.clock = resolve_connection_clock(config, clock)
         self.timeout = timeout
 
     @staticmethod
@@ -40,6 +46,10 @@ class RemoteNodeTransport:
 
     def send(self, request: SignedRequest) -> SignedReceipt:
         registration = self.config.binding.registration
+        try:
+            self.clock.require_before(min(request.admission.deadline, registration.expires_at))
+        except ClockUnavailable as error:
+            raise RemoteTransportRejected("receiver transport Authority time is unavailable or expired") from error
         connection = http.client.HTTPSConnection(
             self.config.binding.locator_host, self.config.binding.locator_port,
             context=self._context(), timeout=self.timeout,
@@ -112,7 +122,6 @@ class RemoteNodeTransport:
             "delivery.readback": {"readback"},
             "delivery.readiness": {"readiness"},
         }
-        skew = self.config.clock_skew_seconds
         links_ok = (
             observed.readback_request_id == admission.request_id
             and observed.target_request_id == observed.evidence.get("target_request_id")
@@ -122,8 +131,7 @@ class RemoteNodeTransport:
         )
         if (actual != expected or observed.state not in states[admission.purpose]
                 or not links_ok
-                or observed.observed_at < admission.issued_at - timedelta(seconds=skew)
-                or observed.observed_at > admission.deadline + timedelta(seconds=skew)):
+                or not self.clock.fresh(observed.observed_at, admission.deadline)):
             raise RemoteTransportRejected("receiver receipt identity rejected")
 
 
@@ -131,7 +139,8 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, config: ReceiverRuntimeConfig, node_signing_key: SigningKey,
-                 authorize_current, native_invoke, shutdown_callback=None, native_readiness=None):
+                 authorize_current, native_invoke, shutdown_callback=None, native_readiness=None,
+                 clock: ConnectionClock | None = None):
         if not callable(native_invoke):
             raise RemoteTransportRejected("receiver native adapter callback is required")
         config.validate()
@@ -147,7 +156,7 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
         self._fault_lock = threading.Lock()
         self._response_fault_used = False
         self.service = ReceiverService(
-            config, node_signing_key, authorize_current=authorize_current,
+            config, node_signing_key, authorize_current=authorize_current, clock=clock,
         )
         self.service.claim_boot(
             config.expected_boot_incarnation, config.journal_generation,
@@ -244,12 +253,12 @@ def fixture_authority_current(_admission):
 
 
 def serve(config: ReceiverRuntimeConfig, ready=None, authorize_current=None, native_invoke=None,
-          ready_check=None, shutdown_callback=None, native_readiness=None):
+          ready_check=None, shutdown_callback=None, native_readiness=None, clock: ConnectionClock | None = None):
     if not callable(authorize_current):
         raise RemoteTransportRejected("receiver current-authority callback is required")
     server = ReceiverHTTPServer(
         config, load_owner_signing_key(config.node_signing_key_path), authorize_current,
-        native_invoke, shutdown_callback, native_readiness,
+        native_invoke, shutdown_callback, native_readiness, clock=clock,
     )
     worker = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
     worker.start()

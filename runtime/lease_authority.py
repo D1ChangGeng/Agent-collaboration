@@ -6,7 +6,7 @@ import secrets
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any, Protocol
 
 import psycopg
@@ -31,6 +31,8 @@ class LeaseStore(Protocol):
     context: AuthenticatedContext
 
     def _connect(self) -> psycopg.Connection: ...
+
+    def canonical_now(self, cursor: psycopg.Cursor | None = None) -> datetime: ...
 
     def _authorize(self, command: CommandEnvelope, cursor: psycopg.Cursor | None = None,
                    permission: str = "lease.acquire", scope_id: str | None = None) -> None: ...
@@ -71,10 +73,8 @@ class LeaseAuthority:
         lock_id = int.from_bytes(hashlib.sha256(identity.encode()).digest()[:8], "big", signed=True)
         cursor.execute("SELECT pg_advisory_xact_lock(%s)", (lock_id,))
 
-    @staticmethod
-    def _now(cursor: psycopg.Cursor) -> datetime:
-        cursor.execute("SELECT clock_timestamp()")
-        return cursor.fetchone()[0]
+    def _now(self, cursor: psycopg.Cursor | None = None) -> datetime:
+        return self._store.canonical_now(cursor)
 
     @staticmethod
     def _bind_command(command: CommandEnvelope, operation: str, resource_id: str) -> None:
@@ -82,8 +82,10 @@ class LeaseAuthority:
                 or command.target_id != resource_id):
             raise LeaseRejected(resource_id, "command type or target does not match lease operation")
 
-    def _read_command(self, resource_id: str, permission: str) -> CommandEnvelope:
-        now = datetime.now(UTC)
+    def _read_command(
+        self, resource_id: str, permission: str, cursor: psycopg.Cursor | None = None,
+    ) -> CommandEnvelope:
+        now = self._now(cursor)
         return CommandEnvelope(
             command_id=f"lease-read-{uuid.uuid4()}", idempotency_key=f"lease-read-{uuid.uuid4()}",
             correlation_id="lease-authority-read", command_type=permission,
@@ -272,7 +274,7 @@ class LeaseAuthority:
         # Authorization is performed before the lease/owner rows, in the same
         # order used by command methods. It holds Grant/Scope/Authority rows.
         try:
-            self._store._authorize(self._read_command(resource_id, permission), cursor, permission, scope_id)
+            self._store._authorize(self._read_command(resource_id, permission, cursor), cursor, permission, scope_id)
         except AuthorizationDenied:
             raise FencingRejected(resource_id) from None
         row = self._lease_row(cursor, lease_id, resource_id)
@@ -369,7 +371,7 @@ class LeaseAuthority:
                 or authority_incarnation != caller.authority_incarnation or permission != "effect.read"):
             raise FencingRejected(resource_id)
         try:
-            self._store._authorize(self._read_command(resource_id, "effect.read"), cursor, "effect.read", scope_id)
+            self._store._authorize(self._read_command(resource_id, "effect.read", cursor), cursor, "effect.read", scope_id)
         except AuthorizationDenied:
             raise FencingRejected(resource_id) from None
         row = self._lease_row(cursor, lease_id, resource_id)
@@ -511,7 +513,7 @@ class LeaseAuthority:
                 return None
             resource_id = str(identity[0])
             self._resource_lock(cursor, resource_id)
-            self._store._authorize(self._read_command(resource_id, "lease.inspect"), cursor, "lease.inspect", str(identity[1]))
+            self._store._authorize(self._read_command(resource_id, "lease.inspect", cursor), cursor, "lease.inspect", str(identity[1]))
             row = self._lease_row(cursor, lease_id, resource_id)
             if row is None:
                 return None
