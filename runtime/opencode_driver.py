@@ -31,9 +31,21 @@ from runtime.codex_driver import (
 from runtime.receiver_paths import PathSecurityRejected, private_parent
 
 if __package__:
-    from .opencode_http import HttpFailure, HttpRejected, LoopbackHttp, listener_owner_pids
+    from .opencode_http import (
+        HttpFailure,
+        HttpPreCallTimeout,
+        HttpRejected,
+        LoopbackHttp,
+        listener_owner_pids,
+    )
 else:
-    from opencode_http import HttpFailure, HttpRejected, LoopbackHttp, listener_owner_pids
+    from opencode_http import (
+        HttpFailure,
+        HttpPreCallTimeout,
+        HttpRejected,
+        LoopbackHttp,
+        listener_owner_pids,
+    )
 
 SESSION_RULES = [
     {"permission": "*", "pattern": "*", "action": "deny"},
@@ -192,7 +204,7 @@ class OpenCodeNativeDriver:
 
     def __init__(self, binding_id, profile, journal: DriverJournal, *, identity: BindingIdentity, check_current, supervisor=None,
                  http_timeout=10, readback_attempts=10, auth_stager=None,
-                 required_provider_url=None):
+                 required_provider_url=None, clock=None):
         if not isinstance(binding_id, str) or not binding_id or not callable(check_current):
             raise DriverRejected("immutable binding and current Node authorization are required")
         identity.validate()
@@ -206,6 +218,9 @@ class OpenCodeNativeDriver:
         ):
             raise DriverRejected("private auth stage is not a bounded host capability")
         self.binding_id, self.profile, self.journal = binding_id, profile, journal
+        self.clock = clock if clock is not None else getattr(journal, "clock", None)
+        if self.clock is not None:
+            self.journal.clock = self.clock
         self.identity, self._identity = identity, asdict(identity)
         self.check_current, self.supervisor = check_current, supervisor
         self.http_timeout, self.readback_attempts = http_timeout, readback_attempts
@@ -230,24 +245,24 @@ class OpenCodeNativeDriver:
         self._claim_fd, self._claim_token = journal.claim_ownership(binding_id)
 
     def _auth(self, operation: AuthorizedOperation):
-        operation.validate()
+        operation.validate(self.clock)
         if asdict(self.identity) != self._identity or self._claim_fd is None:
             raise DriverRejected("Driver binding is retired or detached")
         self.check_current(operation, self.identity)
-        operation.validate()
+        operation.validate(self.clock)
         if asdict(self.identity) != self._identity:
             raise DriverRejected("binding changed during authorization")
 
     def _receipt(self, layer, **values):
         return {"binding_id": self.binding_id, "binding": dict(self._identity),
                 "native_session_id": self.session_id, "ownership": self.ownership,
-                "receipt_layer": layer, "observed_at": datetime.now(UTC).isoformat(), **values}
+                "receipt_layer": layer, "observed_at": (self.clock.observation_time() if self.clock is not None else datetime.now(UTC)).isoformat(), **values}
 
     def _run(self, operation, action, payload, function):
         with self._lock:
             self._auth(operation)
             record = self.journal.begin(operation, self.binding_id, action,
-                                        {**payload, "binding": self._identity})
+                                        {**payload, "binding": self._identity}, clock=self.clock)
             self._auth(operation)
             if record["state"] == "acknowledged":
                 return record["result"]
@@ -287,7 +302,7 @@ class OpenCodeNativeDriver:
                            {"method": method, "path": path, "body_digest": digest(payload),
                             "binding": self._identity, "endpoint": self.client.endpoint})
         self._auth(operation)
-        remaining = (operation.deadline - datetime.now(UTC)).total_seconds()
+        remaining = operation.remaining(self.clock)
         dispatch_evidence = {
             "method": method,
             "path": path,
@@ -300,15 +315,18 @@ class OpenCodeNativeDriver:
                 on_dispatch()
             self.journal.event(operation.operation_id, "http_dispatch", dispatch_evidence)
 
-        status, value = self.client.request(
-            method,
-            path,
-            payload,
-            timeout=min(self.http_timeout, remaining),
-            max_bytes=max_bytes,
-            before_send=lambda: self._auth(operation),
-            on_dispatch=dispatch,
-        )
+        try:
+            status, value = self.client.request(
+                method,
+                path,
+                payload,
+                timeout=min(self.http_timeout, remaining),
+                max_bytes=max_bytes,
+                before_send=lambda: self._auth(operation),
+                on_dispatch=dispatch,
+            )
+        except HttpPreCallTimeout as error:
+            raise DriverRejected("native HTTP duration elapsed before dispatch") from error
         self.journal.event(operation.operation_id, "http_response",
                            {"method": method, "path": path, "status": status, "body_digest": digest(value)})
         return status, value
@@ -576,7 +594,7 @@ class OpenCodeNativeDriver:
                         and not proof.get("root_exited") and bool(owners)
                         and owners <= set(proof.get("remaining_pids", [])))
             self.client = LoopbackHttp(port, password, self.profile.cwd, owner, timeout=self.http_timeout)
-            until = time.monotonic() + min(15, (operation.deadline - datetime.now(UTC)).total_seconds())
+            until = time.monotonic() + min(15, operation.remaining(self.clock))
             while not owner():
                 self._auth(operation)
                 if self.owned.process.poll() is not None or time.monotonic() >= until:
@@ -725,7 +743,7 @@ class OpenCodeNativeDriver:
         return self._run(operation, "resume", {"native_session_id": self.session_id}, perform)
 
     def _new_message_id(self):
-        now = int(time.time() * 1000)
+        now = int((self.clock.observation_time().timestamp() if self.clock is not None else time.time()) * 1000)
         self._native_counter = self._native_counter + 1 if now == self._last_ms else 1
         self._last_ms = now
         encoded = (now * 0x1000 + self._native_counter) & ((1 << 48) - 1)
@@ -904,7 +922,7 @@ class OpenCodeNativeDriver:
             errors = [value["info"]["error"] for value in terminal if value["info"].get("error")]
             terminal_observed_at = self.journal.first_event_observed_at(
                 invocation_operation_id, "terminal_readback",
-            ) or datetime.now(UTC).isoformat()
+            ) or (self.clock.observation_time() if self.clock is not None else datetime.now(UTC)).isoformat()
             result = self._receipt("response_received", native_message_id=payload["native_message_id"],
                                    native_assistant_ids=[value["info"]["id"] for value in terminal],
                                    assistant_text=[part["text"] for value in answers for part in value.get("parts", [])

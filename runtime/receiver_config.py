@@ -6,15 +6,15 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from runtime import receiver_paths
+from runtime.connection_clock import ClockUnavailable, ConnectionClock
 from runtime.receiver_crypto import key_fingerprint, verify
 from runtime.receiver_models import EndpointBinding, EndpointRegistration
 from runtime.receiver_paths import (
     PathSecurityRejected,
     optional_private_file_identity,
-    require_posix,
     validated_file_identity,
 )
-from runtime import receiver_paths
 
 
 class BootstrapRejected(ValueError):
@@ -47,9 +47,11 @@ class NodeIdentity:
 
 
 class EndpointBootstrap:
-    def __init__(self, allowed: dict[str, ConnectionTarget], current_node: NodeIdentity):
+    def __init__(self, allowed: dict[str, ConnectionTarget], current_node: NodeIdentity,
+                 *, clock: ConnectionClock | None = None):
         self.allowed = dict(allowed)
         self.current_node = current_node
+        self.clock = clock
         self._registrations: dict[str, tuple[str, EndpointBinding]] = {}
 
     def register(self, registration: EndpointRegistration, signature: str) -> EndpointBinding:
@@ -68,14 +70,20 @@ class EndpointBootstrap:
         )
         if target is None or actual != expected:
             raise BootstrapRejected("endpoint registration target is not current or allowlisted")
-        if registration.expires_at <= datetime.now(UTC):
-            raise BootstrapRejected("endpoint registration is expired")
         address = ipaddress.ip_address(target.host)
         if target.route_class == "loopback" and not address.is_loopback:
             raise BootstrapRejected("loopback connection reference is not loopback")
         if target.route_class in ("private", "tunnel") and not address.is_private:
             raise BootstrapRejected("private connection reference is not private")
         verify(node.node_public_key, signature, registration)
+        clock = self.clock
+        if clock is None and target.route_class == "loopback":
+            clock = ConnectionClock.local(reference=lambda: datetime.now(UTC))
+        if clock is not None:
+            try:
+                clock.require_before(registration.expires_at)
+            except ClockUnavailable as error:
+                raise BootstrapRejected("endpoint registration time is unavailable or expired") from error
         binding = EndpointBinding(
             registration=registration, locator_host=target.host, locator_port=target.port,
             route_class=target.route_class, node_key_id=node.node_key_id,
@@ -108,8 +116,7 @@ class ReceiverClientConfig:
             raise BootstrapRejected("authority transport-key fingerprint differs")
         verify(self.binding.node_public_key, self.binding.registration_signature,
                self.binding.registration)
-        if self.binding.registration.expires_at <= datetime.now(UTC):
-            raise BootstrapRejected("endpoint registration is expired")
+        # Expiry belongs to the Runtime clock after cryptographic binding validation.
         if not 1_024 <= self.maximum_body_bytes <= 1_048_576 or not 0 <= self.clock_skew_seconds <= 30:
             raise BootstrapRejected("receiver bounds are invalid")
         if (self.expected_boot_incarnation != self.binding.registration.boot_incarnation
@@ -160,3 +167,37 @@ class ReceiverRuntimeConfig(ReceiverClientConfig):
             None, "delivery.prepare", "delivery.dispatch", "delivery.readback", "delivery.recover",
         }:
             raise BootstrapRejected("receiver response fault purpose is invalid")
+
+
+def receiver_clock_identity(config: ReceiverClientConfig) -> dict:
+    registration = config.binding.registration
+    return {name: getattr(registration, name) for name in (
+        "tenant_id", "authority_id", "authority_incarnation", "connection_ref", "endpoint_id",
+        "endpoint_revision", "runtime_id", "runtime_revision", "node_id",
+        "node_binding_revision", "machine_id", "boot_incarnation", "scope_id", "agent_slot_id",
+    )} | {"journal_generation": config.journal_generation}
+
+
+def resolve_connection_clock(config: ReceiverClientConfig,
+                             clock: ConnectionClock | None = None) -> ConnectionClock:
+    """Acquire time only from the trusted Runtime provider for this binding."""
+    identity = receiver_clock_identity(config)
+    if clock is None:
+        if config.binding.route_class != "loopback":
+            raise BootstrapRejected("a bound Authority clock is required for the receiver connection")
+        clock = ConnectionClock.local(reference=lambda: datetime.now(UTC), identity=identity)
+    if not isinstance(clock, ConnectionClock):
+        raise BootstrapRejected("receiver ConnectionClock provider is invalid")
+    try:
+        reading = clock.require_before(config.binding.registration.expires_at)
+    except ClockUnavailable as error:
+        raise BootstrapRejected("endpoint registration time is unavailable or expired") from error
+    observed = reading.identity
+    if any(name in observed and observed[name] != value for name, value in identity.items()):
+        raise BootstrapRejected("receiver clock connection identity differs")
+    if config.binding.route_class != "loopback" and (
+        reading.reference_id != f"domain:{identity['authority_id']}:{identity['authority_incarnation']}"
+        or any(observed.get(name) != value for name, value in identity.items())
+    ):
+        raise BootstrapRejected("receiver clock Authority identity is unavailable")
+    return clock

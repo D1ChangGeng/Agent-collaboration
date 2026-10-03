@@ -50,7 +50,8 @@ def main(argv=None, *, delivery_endpoints=None):
                 if args.http_config or not args.profile:
                     raise ValueError("stdio requires a Profile and no HTTP configuration")
                 projects = ProjectService(service, catalog, profile=args.profile, sources=sources)
-                runtime = McpRuntime(projects, settings.credential)
+                runtime = McpRuntime(projects, settings.credential,
+                                     presentation_timezone=settings.presentation_timezone)
                 anyio.run(serve_stdio, runtime.create_server())
             else:
                 import uvicorn

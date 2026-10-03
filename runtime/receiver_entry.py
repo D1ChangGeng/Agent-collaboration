@@ -8,6 +8,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from runtime.connection_clock import ConnectionClock
 from runtime.receiver_deployment import (
     ReceiverProcessConfig,
     callable_sha256,
@@ -30,6 +31,7 @@ class DeploymentCallbacks:
     native_invoke: object
     close: object | None = None
     readiness: object | None = None
+    clock: ConnectionClock | None = None
 
 
 def load_process_config(path: str | Path) -> ReceiverProcessConfig:
@@ -147,6 +149,7 @@ def main(argv=None):
             authorize_current=callbacks.authorize_current,
             native_invoke=callbacks.native_invoke,
             native_readiness=callbacks.readiness,
+            clock=callbacks.clock,
             ready_check=ready_check,
             shutdown_callback=close_once,
         )

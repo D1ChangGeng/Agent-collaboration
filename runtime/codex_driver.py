@@ -33,9 +33,9 @@ from typing import Protocol
 from runtime.driver_claim import ClaimRejected, KernelClaim
 
 if __package__:
-    from .codex_jsonrpc import JsonRpcClient, RpcError
+    from .codex_jsonrpc import JsonRpcClient, RpcError, RpcPreCallTimeout
 else:
-    from codex_jsonrpc import JsonRpcClient, RpcError
+    from codex_jsonrpc import JsonRpcClient, RpcError, RpcPreCallTimeout
 
 
 def canonical(value):
@@ -80,7 +80,7 @@ class AuthorizedOperation:
     grant_ref: str
     deadline: datetime
 
-    def validate(self):
+    def validate(self, clock=None):
         if any(
             not isinstance(value, str) or not 1 <= len(value) <= 256
             for value in (self.operation_id, self.command_id, self.message_id, self.grant_ref)
@@ -88,8 +88,29 @@ class AuthorizedOperation:
             raise DriverRejected(
                 "complete bounded operation/command/message/Grant identity required"
             )
-        if self.deadline.tzinfo is None or self.deadline <= datetime.now(UTC):
+        if self.deadline.tzinfo is None or self.deadline.utcoffset() is None:
             raise DriverRejected("operation authorization deadline expired or lacks timezone")
+        if clock is None:
+            if self.deadline <= datetime.now(UTC):
+                raise DriverRejected("operation authorization deadline expired or lacks timezone")
+        else:
+            try:
+                clock.require_before(self.deadline)
+            except ValueError as error:
+                raise DriverRejected("operation authority clock is unavailable or deadline expired") from error
+
+    def remaining(self, clock=None):
+        self.validate(clock)
+        if clock is None:
+            remaining = (self.deadline - datetime.now(UTC)).total_seconds()
+        else:
+            try:
+                remaining = clock.remaining(self.deadline)
+            except ValueError as error:
+                raise DriverRejected("operation authority clock has no remaining budget") from error
+        if remaining <= 0:
+            raise DriverRejected("operation authorization deadline expired")
+        return remaining
 
 
 @dataclass(frozen=True)
@@ -186,7 +207,8 @@ class DriverJournal:
     timeout-based takeover is performed. Node still owns cross-host fencing.
     """
 
-    def __init__(self, path):
+    def __init__(self, path, *, clock=None):
+        self.clock = clock
         self.path = str(path)
         self._claims = set()
         self._claim_mutex = threading.RLock()
@@ -275,7 +297,9 @@ class DriverJournal:
             "result": json.loads(row[5]) if row[5] else None,
         }
 
-    def begin(self, operation, binding, action, payload):
+    def begin(self, operation, binding, action, payload, *, clock=None):
+        clock = self.clock if clock is None else clock
+        operation.validate(clock)
         body = {
             "command_id": operation.command_id,
             "message_id": operation.message_id,
@@ -287,6 +311,7 @@ class DriverJournal:
         }
         with self._connect() as conn:
             conn.execute("BEGIN IMMEDIATE")
+            operation.validate(clock)
             row = conn.execute(
                 "SELECT input_hash FROM driver_operations WHERE operation_id=?",
                 (operation.operation_id,),
@@ -321,7 +346,7 @@ class DriverJournal:
             conn.execute(
                 "INSERT INTO driver_events(operation_id,kind,body,observed_at) VALUES(?,?,?,?)",
                 (operation_id, kind, canonical(body),
-                 observed_at or datetime.now(UTC).isoformat()),
+                 observed_at or (self.clock.observation_time() if self.clock is not None else datetime.now(UTC)).isoformat()),
             )
 
     def first_event_observed_at(self, operation_id, kind):
@@ -369,10 +394,14 @@ class CodexAppServerDriver:
         check_current,
         supervisor=None,
         rpc_timeout=30,
+        clock=None,
     ):
         if not isinstance(binding_id, str) or not binding_id:
             raise DriverRejected("immutable Node binding id/revision identity required")
         self.binding_id, self.profile, self.journal = binding_id, profile, journal
+        self.clock = clock if clock is not None else getattr(journal, "clock", None)
+        if self.clock is not None:
+            self.journal.clock = self.clock
         identity.validate()
         if not callable(check_current):
             raise DriverRejected("Node current-authorization callback is required")
@@ -396,7 +425,7 @@ class CodexAppServerDriver:
         self._claim_fd, self._claim_token = journal.claim_ownership(binding_id)
 
     def _rpc(self, operation, method, params, *, on_dispatch=None):
-        operation.validate()
+        operation.validate(self.clock)
         self.check_current(operation, self.identity)
         request_id = uuid.uuid4().hex
         self.journal.event(
@@ -413,12 +442,12 @@ class CodexAppServerDriver:
             },
         )
         self.check_current(operation, self.identity)
-        operation.validate()
-        remaining = (operation.deadline - datetime.now(UTC)).total_seconds()
+        operation.validate(self.clock)
+        remaining = operation.remaining(self.clock)
         def before_send():
-            operation.validate()
+            operation.validate(self.clock)
             self.check_current(operation, self.identity)
-            operation.validate()
+            operation.validate(self.clock)
 
         def dispatch():
             previous_attempted = self._turn_start_attempted
@@ -452,10 +481,13 @@ class CodexAppServerDriver:
             self.journal.event(operation.operation_id, "rpc_dispatch",
                                {"request_id": request_id, "method": method, "binding": asdict(self.identity)})
 
-        result = self.client.request(
-            method, params, timeout=min(self.rpc_timeout, remaining), request_id=request_id,
-            before_send=before_send, on_dispatch=dispatch,
-        )
+        try:
+            result = self.client.request(
+                method, params, timeout=min(self.rpc_timeout, remaining), request_id=request_id,
+                before_send=before_send, on_dispatch=dispatch,
+            )
+        except RpcPreCallTimeout as error:
+            raise DriverRejected("native RPC duration elapsed before dispatch") from error
         self.journal.event(
             operation.operation_id, "rpc_response", {"request_id": request_id, "result": result}
         )
@@ -468,11 +500,12 @@ class CodexAppServerDriver:
 
     def _run(self, operation, action, payload, function):
         with self._lock:
-            operation.validate()
+            operation.validate(self.clock)
             self.check_current(operation, self.identity)
-            operation.validate()
+            operation.validate(self.clock)
             record = self.journal.begin(
-                operation, self.binding_id, action, {**payload, "binding": asdict(self.identity)}
+                operation, self.binding_id, action, {**payload, "binding": asdict(self.identity)},
+                clock=self.clock,
             )
             if record["state"] == "acknowledged":
                 return record["result"]
@@ -599,7 +632,7 @@ class CodexAppServerDriver:
                 {"argv": argv, "profile": self.profile.binding()},
             )
             self.check_current(operation, self.identity)
-            operation.validate()
+            operation.validate(self.clock)
             self.journal.event(operation.operation_id, "process_dispatch",
                                {"argv": argv, "profile": self.profile.binding(), "binding": asdict(self.identity)})
             if self.supervisor is not None:
@@ -673,7 +706,7 @@ class CodexAppServerDriver:
             "binding": asdict(self.identity),
             "ownership": self.ownership,
             "receipt_layer": layer,
-            "observed_at": datetime.now(UTC).isoformat(),
+            "observed_at": (self.clock.observation_time() if self.clock is not None else datetime.now(UTC)).isoformat(),
             **values,
         }
 
@@ -807,7 +840,7 @@ class CodexAppServerDriver:
     def inspect(self, operation):
         # Read-only observation is permitted while a mutation is uncertain.
         with self._lock:
-            operation.validate()
+            operation.validate(self.clock)
             if self.client is None or self.thread_id is None:
                 raise OutcomeUncertain(
                     "no positively bound native thread; Node must inspect owned process"
@@ -916,7 +949,7 @@ class CodexAppServerDriver:
 
     def reconcile(self, operation, uncertain_operation_id):
         with self._lock:
-            operation.validate()
+            operation.validate(self.clock)
             self.check_current(operation, self.identity)
             record = self.journal.read(uncertain_operation_id)
             if (
@@ -963,7 +996,7 @@ class CodexAppServerDriver:
                     "process-tree containment is unavailable; termination unverified"
                 )
             self.check_current(operation, self.identity)
-            operation.validate()
+            operation.validate(self.clock)
             proof = self.supervisor.terminate_tree(self.owned)
             if (
                 proof.get("verified") is not True
@@ -983,7 +1016,7 @@ class CodexAppServerDriver:
     def collect_result(self, operation, invocation_operation_id):
         """Read correlated terminal output; never starts/resumes reasoning."""
         with self._lock:
-            operation.validate()
+            operation.validate(self.clock)
             self.check_current(operation, self.identity)
             record = self.journal.read(invocation_operation_id)
             if (
@@ -1040,7 +1073,7 @@ class CodexAppServerDriver:
             ]
             terminal_observed_at = self.journal.first_event_observed_at(
                 invocation_operation_id, "terminal_observation",
-            ) or datetime.now(UTC).isoformat()
+            ) or (self.clock.observation_time() if self.clock is not None else datetime.now(UTC)).isoformat()
             result = self._binding_receipt(
                 "response_received" if terminal else "runtime_acknowledged",
                 operation_id=invocation_operation_id,

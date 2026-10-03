@@ -4,11 +4,15 @@ from __future__ import annotations
 import base64
 import ctypes
 import http.client
+import io
 import json
+import math
 import os
 import re
 import socket
 import struct
+import time
+from functools import partial
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -17,10 +21,74 @@ class HttpRejected(ValueError):
     pass
 
 
+class HttpPreCallTimeout(HttpRejected):
+    """The local request budget elapsed before dispatch was admitted."""
+
+
 class HttpFailure(RuntimeError):
     def __init__(self, status, path):
         self.status, self.path = status, path
         super().__init__(f"OpenCode HTTP {status} at {path}")
+
+
+def _remaining(deadline, *, dispatched=False):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        if dispatched:
+            raise TimeoutError("HTTP local deadline elapsed after dispatch")
+        raise HttpPreCallTimeout("HTTP local deadline elapsed before dispatch")
+    return remaining
+
+
+def _duration(timeout):
+    if (isinstance(timeout, bool) or not isinstance(timeout, (int, float))
+            or not math.isfinite(timeout) or timeout < 0):
+        raise HttpRejected("HTTP timeout must be a finite nonnegative duration")
+    return timeout
+
+
+class _DeadlineReader(io.RawIOBase):
+    """Refresh a socket's remaining budget before every underlying receive."""
+
+    def __init__(self, raw, sock, deadline):
+        self.raw, self.sock, self.deadline = raw, sock, deadline
+
+    def readable(self):
+        return True
+
+    def readinto(self, buffer):
+        if self.deadline is not None:
+            self.sock.settimeout(_remaining(self.deadline, dispatched=True))
+        count = self.raw.readinto(buffer)
+        if self.deadline is not None:
+            _remaining(self.deadline, dispatched=True)
+        return count
+
+    def close(self):
+        if not self.closed:
+            try:
+                self.raw.close()
+            finally:
+                super().close()
+
+
+class _DeadlineResponse(http.client.HTTPResponse):
+    def __init__(self, sock, *args, deadline, **kwargs):
+        super().__init__(sock, *args, **kwargs)
+        self.fp = io.BufferedReader(_DeadlineReader(self.fp.detach(), sock, deadline))
+
+    def opened_stream(self):
+        if self.fp is not None:
+            self.fp.raw.deadline = None
+
+
+def _socket_budget(connection, deadline, *, dispatched=False, sock=None):
+    remaining = _remaining(deadline, dispatched=dispatched)
+    connection.timeout = remaining
+    active_socket = connection.sock if sock is None else sock
+    if active_socket is not None:
+        active_socket.settimeout(remaining)
+    return remaining
 
 
 def listener_owner_pids(port):
@@ -106,6 +174,8 @@ class LoopbackHttp:
         before_send=None,
         on_dispatch=None,
     ):
+        started = time.monotonic()
+        deadline = started + _duration(self.timeout if timeout is None else timeout)
         if method not in ("GET", "POST") or not self.PATHS.fullmatch(path):
             raise HttpRejected("HTTP method/path is outside the native Driver allowlist")
         if path == "/provider" and method != "GET":
@@ -114,9 +184,12 @@ class LoopbackHttp:
             raise HttpRejected("GET request cannot carry a mutation body")
         if not self.verify_owner():
             raise HttpRejected("current endpoint/process ownership is unverified")
-        connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=timeout or self.timeout)
+        connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=_remaining(deadline))
+        connection.response_class = partial(_DeadlineResponse, deadline=deadline)
         try:
             connection.connect()
+            active_socket = connection.sock
+            _socket_budget(connection, deadline)
             # Check again before disclosing the per-capacity credential.
             if not self.verify_owner():
                 raise HttpRejected("endpoint ownership changed before request")
@@ -130,31 +203,40 @@ class LoopbackHttp:
             if encoded is not None:
                 headers["Content-Type"] = "application/json"
             target = path + "?" + urlencode({"directory": self.directory})
+            _socket_budget(connection, deadline)
             if on_dispatch is not None:
                 on_dispatch()
+            _socket_budget(connection, deadline, dispatched=True)
             connection.request(method, target, body=encoded, headers=headers)
+            _socket_budget(connection, deadline, dispatched=True, sock=active_socket)
             response = connection.getresponse()
+            _socket_budget(connection, deadline, dispatched=True, sock=active_socket)
             body = response.read(max_bytes + 1)
+            _remaining(deadline, dispatched=True)
             if len(body) > max_bytes:
                 raise HttpRejected("native response exceeds Driver bound")
             if not 200 <= response.status < 300:
                 raise HttpFailure(response.status, path)
             value = None if response.status == 204 or not body else json.loads(body)
+            _remaining(deadline, dispatched=True)
             return response.status, value
         finally:
             connection.close()
 
     def events(self, stop, callback, *, before_send=None, opened=None):
         """Bounded SSE observation; events never establish an invocation ACK."""
+        deadline = time.monotonic() + _duration(self.timeout)
         if stop.is_set():
             return
         if not self.verify_owner():
             raise HttpRejected("event endpoint ownership is unverified")
-        connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=self.timeout)
+        connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=_remaining(deadline))
+        connection.response_class = partial(_DeadlineResponse, deadline=deadline)
         self._event_connection = connection
         try:
             connection.connect()
             self._event_socket = connection.sock
+            _socket_budget(connection, deadline)
             if stop.is_set():
                 return
             if not self.verify_owner():
@@ -163,13 +245,18 @@ class LoopbackHttp:
                 before_send()
             if stop.is_set():
                 return
+            _socket_budget(connection, deadline)
             connection.request("GET", "/event?" + urlencode({"directory": self.directory}),
                                headers={"Authorization": self._authorization, "Accept": "text/event-stream"})
+            _socket_budget(connection, deadline, dispatched=True, sock=self._event_socket)
             response = connection.getresponse()
+            _remaining(deadline, dispatched=True)
             if stop.is_set():
                 return
             if response.status != 200 or "text/event-stream" not in response.getheader("Content-Type", ""):
                 raise HttpFailure(response.status, "/event")
+            if isinstance(response, _DeadlineResponse):
+                response.opened_stream()
             if opened is not None:
                 opened()
             if self._event_socket is not None:

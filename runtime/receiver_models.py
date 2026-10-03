@@ -174,6 +174,14 @@ class ReceiverReceipt(FrozenModel):
     evidence: dict[str, Any] = Field(default_factory=dict)
     observed_at: datetime
 
+    @field_validator("observed_at")
+    @classmethod
+    def observation_timezone_required(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("receipt observation requires timezone")
+        # Preserve historical signed offsets; newly generated receipts use UTC.
+        return value
+
 
 class SignedReceipt(FrozenModel):
     receipt: ReceiverReceipt

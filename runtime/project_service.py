@@ -280,7 +280,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         request_id = args.get("client_request_id") or uuid.uuid4().hex
         identity = "mcp-" + digest([context.tenant_id, context.principal_ref,
                                      args.get("project_id"), request_id])
-        now = datetime.now(UTC)
+        canonical_now = getattr(authority, "canonical_now", None)
+        now = canonical_now() if callable(canonical_now) else datetime.now(UTC)
         for field in ("expected_revision", "expected_work_revision", "expected_route_revision", "expected_root_revision"):
             if field in args:
                 expected_revision = args[field]
@@ -770,11 +771,13 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                                "AND (%s::text[] IS NULL OR e.scope_id=ANY(%s))",
                                (self.context.tenant_id, self.context.tenant_id, project_id, self.context.tenant_id,
                                 project_id, self.context.authority_id, self.context.authority_incarnation, scopes, scopes))
-                for ref, revision, kind, state, expiry, endpoint, endpoint_revision, machine, node, endpoint_expiry in cursor.fetchall():
+                connection_rows = cursor.fetchall()
+                now = authority.canonical_now(cursor)
+                for ref, revision, kind, state, expiry, endpoint, endpoint_revision, machine, node, endpoint_expiry in connection_rows:
                     expires = min(expiry, endpoint_expiry)
                     rows.append({"connection_key": project_id + ":" + ref + ":" + endpoint,
                         "project_id": project_id, "connection_ref": ref, "revision": revision,
-                        "kind": kind, "state": state if expires > datetime.now(UTC) else "expired",
+                        "kind": kind, "state": state if expires > now else "expired",
                         "endpoint_id": endpoint, "endpoint_revision": endpoint_revision,
                         "machine_id": machine, "node_id": node, "expires_at": expires.isoformat(),
                         "evidence_class": "authority_observation"})

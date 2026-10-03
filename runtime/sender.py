@@ -3,13 +3,14 @@ from __future__ import annotations
 import secrets
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from nacl.signing import SigningKey
 from pydantic import BaseModel
 
-from runtime.receiver_config import ReceiverRuntimeConfig
+from runtime.connection_clock import ConnectionClock
+from runtime.receiver_config import ReceiverClientConfig, resolve_connection_clock
 from runtime.receiver_crypto import sha256, sign
 from runtime.receiver_models import DeliveryAdmission, SignedRequest
 
@@ -30,15 +31,16 @@ class DeliveryIdentity:
 
 
 class AdmissionFactory:
-    def __init__(self, config: ReceiverRuntimeConfig, signing_key: SigningKey,
-                 identity: DeliveryIdentity):
+    def __init__(self, config: ReceiverClientConfig, signing_key: SigningKey,
+                 identity: DeliveryIdentity, *, clock: ConnectionClock | None = None):
         self.config, self.signing_key, self.identity = config, signing_key, identity
+        self.clock = resolve_connection_clock(config, clock)
 
     @classmethod
-    def from_key_reference(cls, config: ReceiverRuntimeConfig, key_path: str,
-                           identity: DeliveryIdentity):
+    def from_key_reference(cls, config: ReceiverClientConfig, key_path: str,
+                           identity: DeliveryIdentity, *, clock: ConnectionClock | None = None):
         from runtime.receiver_crypto import load_owner_signing_key
-        return cls(config, load_owner_signing_key(key_path), identity)
+        return cls(config, load_owner_signing_key(key_path), identity, clock=clock)
 
     def request(self, purpose: str, body: BaseModel | dict[str, Any], *,
                 boot_incarnation: str | None = None, journal_generation: int = 1,
@@ -46,7 +48,8 @@ class AdmissionFactory:
         body_value = body.model_dump(mode="json") if isinstance(body, BaseModel) else dict(body)
         registration = self.config.binding.registration
         identity = self.identity
-        now = datetime.now(UTC)
+        self.clock.require_before(identity.deadline)
+        now = self.clock.admission_time()
         admission = DeliveryAdmission(
             purpose=purpose, authority_key_id=self.config.authority_key_id,
             authority_key_revision=self.config.authority_key_revision,

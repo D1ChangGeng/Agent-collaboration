@@ -58,6 +58,18 @@ class ProjectHttpSettings(ConfigModel):
     bindings: tuple[OAuthBinding, ...] = Field(min_length=1, max_length=256)
     allowed_origins: tuple[str, ...] = Field(default=(), max_length=16)
     authorization_refresh_seconds: int = Field(default=5, ge=1, le=5)
+    presentation_timezone: str = "UTC"
+
+    @field_validator("presentation_timezone")
+    @classmethod
+    def presentation_zone(cls, value):
+        from zoneinfo import ZoneInfo
+        try:
+            ZoneInfo(value)
+        except (KeyError, ValueError) as error:
+            raise ValueError("presentation timezone must be an available IANA timezone") from error
+        return value
+
 
     @field_validator("issuer_url", "resource_url", "introspection_url")
     @classmethod
@@ -231,7 +243,8 @@ def create_http_app(service, catalog, settings, *, sources=None, host="127.0.0.1
         shared = SharedService(authority, authorization)
         projects = OAuthProjectService(shared, catalog, profile=binding.profile, sources=sources,
                                        token_authorization=authorization)
-        runtime = McpRuntime(projects, authorization.credential)
+        runtime = McpRuntime(projects, authorization.credential,
+                             presentation_timezone=settings.presentation_timezone)
         runtime.refresh_authorization = authorization.refresh
         return runtime
 

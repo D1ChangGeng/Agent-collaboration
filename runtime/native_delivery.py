@@ -9,6 +9,8 @@ import hashlib
 import json
 import os
 import stat
+import time
+import uuid
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 
@@ -28,10 +30,14 @@ class NativeDeliveryAdapter:
     evidence_class = "native_driver_observation"
     dispatch_at_native_boundary = True
 
-    def __init__(self, driver, *, authorize_invocation):
+    def __init__(self, driver, *, authorize_invocation, clock=None):
         if not isinstance(driver, (CodexAppServerDriver, OpenCodeNativeDriver)) or not callable(authorize_invocation):
             raise TypeError("a bound native Driver and trusted Node authorizer are required")
         self.driver = driver
+        self.clock = clock if clock is not None else getattr(driver, "clock", None)
+        if self.clock is not getattr(driver, "clock", None):
+            raise TypeError("native Adapter and Driver clock providers differ")
+        self._readiness_lease = None
         self._binding_id = driver.binding_id
         self._journal = driver.journal
         self._journal_path = driver.journal.path
@@ -57,7 +63,9 @@ class NativeDeliveryAdapter:
         if (self.driver.binding_id != self._binding_id or self.driver.journal is not self._journal
                 or self.driver.journal.path != self._journal_path or self.driver._claim_fd != self._claim_fd
                 or self._claim_signature(self.driver._claim_fd) != self._claim_identity
-                or asdict(self.driver.identity) != self._binding):
+                or asdict(self.driver.identity) != self._binding
+                or getattr(self.driver, "clock", None) is not self.clock
+                or getattr(self._journal, "clock", None) is not self.clock):
             raise InvocationPreCallRejected("native_binding_or_claim_changed")
         try:
             self._journal.validate_claim(self._claim_token, self._binding_id, self.driver._claim_fd)
@@ -79,6 +87,13 @@ class NativeDeliveryAdapter:
         if invocation != invocation_for(invocation.envelope, invocation.attempt_id):
             raise InvocationPreCallRejected("invocation_identity_changed")
         envelope = invocation.envelope
+        if self.clock is not None:
+            if any(self.clock.identity.get(name) != getattr(envelope, name)
+                   for name in ("authority_id", "authority_incarnation")):
+                raise InvocationPreCallRejected("native_clock_authority_changed")
+            if any(name in self.clock.identity and self.clock.identity[name] != getattr(envelope, name)
+                   for name in ("machine_id", "node_id", "boot_incarnation", "endpoint_id")):
+                raise InvocationPreCallRejected("native_clock_connection_changed")
         if (asdict(self.driver.identity) != self._binding
                 or (envelope.node_id, envelope.boot_incarnation, envelope.packet.target_agent_slot_id)
                 != (self._binding["node_id"], self._binding["node_boot_id"], self._binding["agent_slot_id"])):
@@ -89,15 +104,20 @@ class NativeDeliveryAdapter:
                 != (invocation.invocation_id, invocation.command_id, invocation.message_id)
                 or operation.deadline > envelope.packet.deadline):
             raise InvocationPreCallRejected("native_operation_lineage_changed")
-        operation.validate()
+        operation.validate(self.clock)
         self.driver.check_current(operation, self.driver.identity)
-        operation.validate()
+        operation.validate(self.clock)
         self._check_binding()
         return operation
 
     def readiness(self, invocation):
         operation = self._operation(invocation)
-        observed_at = datetime.now(UTC)
+        reading = self.clock.reading() if self.clock is not None else None
+        observed_at = reading.canonical_utc if reading is not None else datetime.now(UTC)
+        expiry_anchor = reading.earliest_utc if reading is not None else observed_at
+        monotonic_now = self.clock.monotonic_now if self.clock is not None else time.monotonic
+        generation = uuid.uuid4().hex
+        until = monotonic_now() + min(2, operation.remaining(self.clock))
         try:
             view = self.driver.inspect(operation)
             if isinstance(self.driver, CodexAppServerDriver):
@@ -114,12 +134,33 @@ class NativeDeliveryAdapter:
             raise
         except (OSError, RuntimeError):
             activity, native_session = "unknown", None
+        if self.clock is not None:
+            observed_at = self.clock.observation_time()
         result = {"activity": activity, "observed_at": observed_at.isoformat(),
-                  "expires_at": min(operation.deadline, observed_at + timedelta(seconds=2)).isoformat(),
+                  "expires_at": min(operation.deadline, expiry_anchor + timedelta(seconds=2)).isoformat(),
                   "native_session_ref": native_session, "binding_id": self._binding_id,
-                  "source": "native_driver_readback"}
+                  "source": "native_driver_readback", "generation": generation}
+        if self.clock is not None:
+            result["clock"] = self.clock.snapshot()
+        self._readiness_lease = (generation, until, result["observed_at"], result["expires_at"])
         self._journal.event(operation.operation_id, "readiness_observation", result)
         return result
+
+    def _readiness_fresh(self, readiness):
+        lease = self._readiness_lease
+        if lease is None or (readiness.get("generation"), readiness.get("observed_at"),
+                             readiness.get("expires_at")) != (lease[0], lease[2], lease[3]):
+            return False
+        monotonic_now = self.clock.monotonic_now if self.clock is not None else time.monotonic
+        if monotonic_now() >= lease[1]:
+            return False
+        observed = datetime.fromisoformat(readiness["observed_at"])
+        expires = datetime.fromisoformat(readiness["expires_at"])
+        if self.clock is not None:
+            if readiness.get("clock", {}).get("clock_id") != self.clock.clock_id:
+                return False
+            return self.clock.fresh(observed, expires, max_lifetime=2)
+        return observed.tzinfo is not None and expires.tzinfo is not None and datetime.now(UTC) < expires
 
     def prepare(self, invocation):
         try:
@@ -127,7 +168,7 @@ class NativeDeliveryAdapter:
             self.driver._owned_mutation()
             if invocation.envelope.packet.delivery_policy == "queue_until_idle":
                 readiness = self.readiness(invocation)
-                if datetime.fromisoformat(readiness["expires_at"]) <= datetime.now(UTC):
+                if not self._readiness_fresh(readiness):
                     raise InvocationDeferred("unknown")
                 if readiness["activity"] != "idle":
                     raise InvocationDeferred(readiness["activity"])

@@ -13,6 +13,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from runtime.connection_clock import presentation_metadata
 from runtime.errors import (
     AcceptanceGuardFailed,
     AuthorizationDenied,
@@ -41,8 +42,10 @@ INTEGERS = frozenset({"limit", "max_inline_bytes", "accepted_revision", "at_revi
 
 
 class McpRuntime:
-    def __init__(self, service: ProjectService, credential_provider):
+    def __init__(self, service: ProjectService, credential_provider, *, presentation_timezone="UTC"):
         self.service, self.credential_provider = service, credential_provider
+        presentation_metadata({}, presentation_timezone)
+        self.presentation_timezone = presentation_timezone
 
     def input_schema(self, name: str) -> dict[str, Any]:
         definition = self.service.catalog["tools"][name]["input_schema"]
@@ -131,7 +134,13 @@ class McpRuntime:
                       "result_type": self.service.catalog["tools"][name]["result_type"],
                       "ok": True, "state": state, "data": data, "follow_ups": follow_ups,
                       "metadata": {"evidence_class": "authority_observation",
-                                   "observed_at": datetime.now(UTC).isoformat()}}
+                                   "observed_at": datetime.now(UTC).isoformat(),
+                                   "timestamp_source": "node_local_utc",
+                                   "timestamp_authority": "unverified"}}
+            result["metadata"]["presentation"] = presentation_metadata(
+                {"data": data, "metadata": {"observed_at": result["metadata"]["observed_at"]}},
+                self.presentation_timezone,
+            )
             if credential and credential in json.dumps(result, default=str):
                 raise ValueError("credentials cannot be tool results")
         except (PermissionError, AuthorizationDenied):

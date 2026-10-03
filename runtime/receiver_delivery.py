@@ -5,10 +5,11 @@ import json
 import secrets
 import sqlite3
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 
 from nacl.signing import SigningKey
 
+from runtime.connection_clock import ConnectionClock
 from runtime.delivery_models import InvocationRequest
 from runtime.delivery_node import (
     DeliveryTransportError,
@@ -17,7 +18,11 @@ from runtime.delivery_node import (
     logical_payload,
 )
 from runtime.node import NodeJournal
-from runtime.receiver_config import ReceiverClientConfig, ReceiverRuntimeConfig
+from runtime.receiver_config import (
+    ReceiverClientConfig,
+    ReceiverRuntimeConfig,
+    receiver_clock_identity,
+)
 from runtime.receiver_crypto import load_owner_signing_key, sha256
 from runtime.receiver_models import (
     DispatchBody,
@@ -209,6 +214,7 @@ class RemoteNodeEndpointAdapter:
         else:
             self.config = ReceiverClientConfig(**config)
         self.config.validate()
+        self.clock = ConnectionClock.from_authority(authority, identity=receiver_clock_identity(self.config))
         if (registration.endpoint_id != endpoint_id
                 or registration.boot_incarnation != deployment.expected_boot_incarnation):
             raise ValueError("receiver deployment differs from committed endpoint")
@@ -217,7 +223,7 @@ class RemoteNodeEndpointAdapter:
             self._signing_key = deployment.authority_signing_key
         else:
             self._signing_key = load_owner_signing_key(deployment.authority_signing_key_path)
-        self.transport = RemoteNodeTransport(self.config, timeout=timeout)
+        self.transport = RemoteNodeTransport(self.config, timeout=timeout, clock=self.clock)
 
     @property
     def identity(self):
@@ -262,7 +268,7 @@ class RemoteNodeEndpointAdapter:
             invocation_digest=sha256(invocation.model_dump(mode="json")),
             deadline=invocation.envelope.packet.deadline,
         )
-        return AdmissionFactory(self.config, self._signing_key, identity)
+        return AdmissionFactory(self.config, self._signing_key, identity, clock=self.clock)
 
     def _issue(self, invocation, purpose, body):
         request_id = f"receiver:{invocation.attempt_id}:{invocation.dispatch_id}:{purpose}"
@@ -336,11 +342,7 @@ class RemoteNodeEndpointAdapter:
                 observation = ready.receipt.evidence
                 observed_at = datetime.fromisoformat(observation["observed_at"])
                 expires_at = datetime.fromisoformat(observation["expires_at"])
-                current = datetime.now(UTC)
-                fresh = (observed_at.tzinfo is not None and expires_at.tzinfo is not None
-                         and observed_at <= current + timedelta(seconds=self.config.clock_skew_seconds)
-                         and current < expires_at
-                         and (expires_at - observed_at).total_seconds() <= 2)
+                fresh = self.clock.fresh(observed_at, expires_at, max_lifetime=2)
             except (RemoteTransportRejected, ValueError, RuntimeError, KeyError, TypeError):
                 raise InvocationDeferred("unknown") from None
             if not fresh or observation.get("activity") != "idle":
@@ -393,7 +395,7 @@ class RemoteNodeEndpointAdapter:
         request_id = f"receiver:{admission.attempt_id}:{admission.dispatch_id}:delivery.readback"
         request = self.store.admission(request_id)
         if request is None:
-            request = AdmissionFactory(self.config, self._signing_key, identity).request(
+            request = AdmissionFactory(self.config, self._signing_key, identity, clock=self.clock).request(
                 "delivery.readback", body, request_id=request_id, nonce=secrets.token_hex(32),
                 boot_incarnation=admission.boot_incarnation,
                 journal_generation=admission.journal_generation,

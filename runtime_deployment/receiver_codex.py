@@ -7,7 +7,7 @@ import os
 import re
 import threading
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -19,11 +19,13 @@ from runtime.codex_driver import (
     DriverJournal,
     LaunchProfile,
 )
+from runtime.connection_clock import ConnectionClock
 from runtime.delivery_models import InvocationRequest
 from runtime.domain import DomainAuthority
 from runtime.models import CommandEnvelope
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.node import NodeJournal
+from runtime.receiver_config import receiver_clock_identity
 from runtime.receiver_delivery import ReceiverNativeDeliveryBridge
 from runtime.receiver_entry import DeploymentCallbacks
 from runtime.recovery import AuthoritySnapshot, PostgresDelayedResponseAuthority
@@ -188,13 +190,17 @@ class CodexReceiverCapacity:
                 environment_directory=Path(self.settings["systemd_environment_dir"]),
             )
         )
+        self.clock = ConnectionClock.from_authority(
+            self.authority, identity=receiver_clock_identity(config),
+        )
+        self.journal.clock = self.clock
         self.driver = CodexAppServerDriver(
             self.settings["binding_id"], profile, self.journal,
             identity=self.binding, check_current=self._current, supervisor=self.supervisor,
-            rpc_timeout=120 if os.name == "nt" else 30,
+            rpc_timeout=120 if os.name == "nt" else 30, clock=self.clock,
         )
         self.adapter = NativeDeliveryAdapter(
-            self.driver, authorize_invocation=self._authorize_invocation,
+            self.driver, authorize_invocation=self._authorize_invocation, clock=self.clock,
         )
         self.bridge = ReceiverNativeDeliveryBridge(
             config.ledger_path, self.adapter,
@@ -238,7 +244,7 @@ class CodexReceiverCapacity:
             self.settings[prefix + "_message_id"],
             self.authority.context.grant_ref,
             min(self.config.binding.registration.expires_at,
-                datetime.now(UTC) + timedelta(minutes=5)),
+                self.clock.now() + timedelta(minutes=5)),
         )
 
     def _domain_invocation(self, operation: AuthorizedOperation) -> InvocationRequest:
@@ -276,7 +282,7 @@ class CodexReceiverCapacity:
             cursor,
             permission,
             scope_id,
-            clock_skew_seconds=self.config.clock_skew_seconds,
+            clock_skew_seconds=0 if getattr(self, "clock", None) is not None else self.config.clock_skew_seconds,
         )
 
     def _current(self, operation: AuthorizedOperation, observed: BindingIdentity) -> None:
@@ -389,7 +395,7 @@ class CodexReceiverCapacity:
             (message[0]["work_item_id"], native.tenant_id),
         ).fetchone()
         authorized = bool(
-            grant and grant[0] is None and grant[1] > datetime.now(UTC)
+            grant and grant[0] is None and grant[1] > self.authority.canonical_now(cursor)
             and grant[2] == envelope["principal_ref"]
             and (grant[3], grant[4]) == (
                 self.authority.context.authority_id,
@@ -449,7 +455,7 @@ class CodexReceiverCapacity:
     def authorize_current(self, admission) -> bool:
         return self.authority.receiver_transport.current_authority(
             admission,
-            clock_skew_seconds=self.config.clock_skew_seconds,
+            clock_skew_seconds=0 if getattr(self, "clock", None) is not None else self.config.clock_skew_seconds,
         )
 
     def native_invoke(self, admission):
@@ -487,4 +493,5 @@ def callbacks(config, deployment_policy_sha256, settings):
         native_invoke=capacity.native_invoke,
         readiness=capacity.readiness,
         close=capacity.close,
+        clock=capacity.clock,
     )

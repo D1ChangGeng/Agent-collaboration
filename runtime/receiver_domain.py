@@ -111,7 +111,7 @@ class ReceiverTransportAuthority:
             actual_revision = int(prior[0]) if prior else 0
             if actual_revision != command.expected_revision:
                 raise RevisionConflict(command.target_id, command.expected_revision, actual_revision)
-            if _time(request.expires_at) <= datetime.now(UTC):
+            if _time(request.expires_at) <= self.authority.canonical_now(cursor):
                 raise AcceptanceGuardFailed("receiver authority key is expired")
             cursor.execute(
                 "UPDATE authority_transport_keys SET status='retired',retired_at=clock_timestamp() "
@@ -119,6 +119,8 @@ class ReceiverTransportAuthority:
                 (command.tenant_id, command.authority_id, command.authority_incarnation),
             )
             self.authority._authorize(command, cursor, "receiver.manage")
+            if _time(request.expires_at) <= self.authority.canonical_now(cursor):
+                raise AcceptanceGuardFailed("receiver authority key is expired")
             cursor.execute(
                 "INSERT INTO authority_transport_keys(tenant_id,authority_id,authority_incarnation,key_id,"
                 "revision,public_key,fingerprint,status,expires_at,command_id,operation_id) "
@@ -157,9 +159,11 @@ class ReceiverTransportAuthority:
             actual_revision = int(prior[0]) if prior else 0
             if actual_revision != command.expected_revision or request.revision != actual_revision + 1:
                 raise RevisionConflict(command.target_id, command.expected_revision, actual_revision)
-            if _time(request.expires_at) <= datetime.now(UTC):
+            if _time(request.expires_at) <= self.authority.canonical_now(cursor):
                 raise AcceptanceGuardFailed("receiver connection reference is expired")
             self.authority._authorize(command, cursor, "receiver.manage")
+            if _time(request.expires_at) <= self.authority.canonical_now(cursor):
+                raise AcceptanceGuardFailed("receiver connection reference is expired")
             cursor.execute(
                 "INSERT INTO deployment_connection_refs(tenant_id,connection_ref,revision,locator_host,"
                 "locator_port,route_class,policy_digest,status,expires_at) "
@@ -235,7 +239,7 @@ class ReceiverTransportAuthority:
                     or runtime_value["node_boot_incarnation"] != registration.boot_incarnation):
                 raise AcceptanceGuardFailed("receiver endpoint Runtime binding differs")
             verify(key_row[1], request.registration_signature, registration)
-            if not datetime.now(UTC) < _time(registration.expires_at) <= _time(valid_until):
+            if not self.authority.canonical_now(cursor) < _time(registration.expires_at) <= _time(valid_until):
                 raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node proof")
             cursor.execute(
                 "SELECT endpoint_revision FROM delivery_endpoint_registrations WHERE tenant_id=%s "
@@ -252,6 +256,8 @@ class ReceiverTransportAuthority:
                 (command.tenant_id, registration.endpoint_id),
             )
             self.authority._authorize(command, cursor, "endpoint.register", registration.scope_id)
+            if not self.authority.canonical_now(cursor) < _time(registration.expires_at) <= _time(valid_until):
+                raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node proof")
             cursor.execute(
                 "INSERT INTO delivery_endpoint_registrations(tenant_id,authority_id,authority_incarnation,"
                 "endpoint_id,endpoint_revision,registration_id,connection_ref,node_id,node_binding_revision,"
@@ -374,7 +380,7 @@ class ReceiverTransportAuthority:
             with self.authority._connect() as connection, connection.cursor() as cursor:
                 cursor.execute(
                     "SELECT m.command_json,e.endpoint_revision,e.runtime_id,e.runtime_revision,e.node_id,"
-                    "e.machine_id,e.boot_incarnation,e.scope_id,e.agent_slot_id "
+                    "e.machine_id,e.boot_incarnation,e.scope_id,e.agent_slot_id,e.expires_at,k.expires_at "
                     "FROM delivery_messages m JOIN delivery_endpoint_registrations e "
                     "ON e.tenant_id=m.tenant_id AND e.endpoint_id=m.endpoint_id "
                     "JOIN authority_transport_keys k ON k.tenant_id=m.tenant_id "
@@ -389,7 +395,7 @@ class ReceiverTransportAuthority:
                      admission.authority_key_revision),
                 )
                 row = cursor.fetchone()
-                if row is None or tuple(row[1:]) != (
+                if row is None or tuple(row[1:9]) != (
                     admission.endpoint_revision, admission.runtime_id, admission.runtime_revision,
                     admission.node_id, admission.machine_id, admission.boot_incarnation,
                     admission.scope_id, admission.agent_slot_id,
@@ -411,7 +417,8 @@ class ReceiverTransportAuthority:
                         admission.scope_id,
                         clock_skew_seconds=clock_skew_seconds,
                     )
-                return command.deadline > datetime.now(UTC) and admission.deadline > datetime.now(UTC)
+                now = self.authority.canonical_now(cursor)
+                return now < min(command.deadline, admission.deadline, row[9], row[10])
         except (AuthorizationDenied, AcceptanceGuardFailed, ValueError):
             return False
 
@@ -430,15 +437,15 @@ class ReceiverTransportAuthority:
         body = request.body
         with self.authority._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
-                "SELECT public_key FROM authority_transport_keys WHERE tenant_id=%s AND key_id=%s "
+                "SELECT public_key,expires_at FROM authority_transport_keys WHERE tenant_id=%s AND key_id=%s "
                 "AND revision=%s AND status='active' AND expires_at>clock_timestamp() FOR UPDATE",
                 (admission.tenant_id, admission.authority_key_id, admission.authority_key_revision),
             )
             key = cursor.fetchone()
-            if key is None:
+            if key is None or key[1] <= self.authority.canonical_now(cursor):
                 raise AuthorizationDenied("receiver", admission.authority_key_id)
             verify(key[0], request.signature, admission)
-            if admission.body_sha256 != sha256(body) or admission.deadline <= datetime.now(UTC):
+            if admission.body_sha256 != sha256(body) or admission.deadline <= self.authority.canonical_now(cursor):
                 raise AcceptanceGuardFailed("receiver admission body or deadline rejected")
             cursor.execute(
                 "SELECT m.command_json,m.envelope_hash,m.accepted_state_digest,"
@@ -513,6 +520,13 @@ class ReceiverTransportAuthority:
             )
             prior = cursor.fetchone()
             signed_digest = sha256(request)
+            self.authority._authorize(command, cursor, "message.send", admission.scope_id)
+            if admission.purpose in {"delivery.dispatch", "delivery.recover", "delivery.readiness"}:
+                self.authority._authorize(command, cursor, "runtime.invoke", admission.scope_id)
+            now = self.authority.canonical_now(cursor)
+            endpoint_expiry = _time(datetime.fromisoformat(endpoint["expires_at"]))
+            if now >= min(admission.deadline, key[1], endpoint_expiry):
+                raise AcceptanceGuardFailed("receiver admission binding or deadline expired during verification")
             if prior:
                 if prior[0] != signed_digest:
                     raise AcceptanceGuardFailed("receiver admission replay changed")

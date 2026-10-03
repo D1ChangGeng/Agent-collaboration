@@ -11,6 +11,7 @@ from pathlib import Path
 
 from nacl.signing import SigningKey
 
+from runtime.connection_clock import ConnectionClock
 from runtime.operator_files import read_operator_file
 from runtime.receiver_crypto import public_key, sign, verify
 
@@ -38,10 +39,10 @@ def _write(path: Path, value: dict) -> None:
 
 
 def issue(path: Path, *, run_id: str, expected_host: str, expected_session: str,
-          ttl_seconds: int = 30) -> dict:
-    if path.exists():
+          ttl_seconds: int = 30, clock: ConnectionClock | None = None) -> dict:
+    if path.exists() or path.with_name(path.name + ".consumed").exists():
         raise ValueError("control challenge path is not fresh")
-    now = datetime.now(UTC)
+    now = clock.admission_time() if clock is not None else datetime.now(UTC)
     value = {
         "schema_version": "acs-p2-control-challenge/1",
         "run_id": run_id, "nonce": secrets.token_hex(32),
@@ -54,7 +55,7 @@ def issue(path: Path, *, run_id: str, expected_host: str, expected_session: str,
 
 
 def answer(challenge_path: Path, key_path: Path, output: Path, *, host: str,
-           session: str) -> dict:
+           session: str, clock: ConnectionClock | None = None) -> dict:
     challenge = _read(challenge_path)
     key = SigningKey(bytes.fromhex(read_operator_file(key_path, maximum=64).decode("ascii")))
     body = {
@@ -63,7 +64,7 @@ def answer(challenge_path: Path, key_path: Path, output: Path, *, host: str,
         "host": host, "session": session,
         "challenge_issued_at": challenge["issued_at"],
         "challenge_expires_at": challenge["expires_at"],
-        "signed_at": datetime.now(UTC).isoformat(),
+        "signed_at": (clock.observation_time() if clock is not None else datetime.now(UTC)).isoformat(),
         "public_key": public_key(key),
     }
     value = {"body": body, "signature": sign(key, body)}
@@ -73,7 +74,7 @@ def answer(challenge_path: Path, key_path: Path, output: Path, *, host: str,
 
 def validate(challenge_path: Path, proof_path: Path, *, expected_public_key: str,
              expected_host: str, expected_session: str,
-             clock_skew_seconds: int = 5) -> dict:
+             clock_skew_seconds: int = 5, clock: ConnectionClock | None = None) -> dict:
     challenge, proof = _read(challenge_path), _read(proof_path)
     if set(proof) != {"body", "signature"} or not isinstance(proof["body"], dict):
         raise ValueError("control proof shape differs")
@@ -93,11 +94,26 @@ def validate(challenge_path: Path, proof_path: Path, *, expected_public_key: str
         body.get("host"), body.get("session"), body.get("challenge_issued_at"),
         body.get("challenge_expires_at"), body.get("public_key"),
     )
-    skew = timedelta(seconds=clock_skew_seconds)
-    if (not 0 <= clock_skew_seconds <= 30 or actual != expected
-            or not issued - skew <= signed <= expires + skew
-            or not issued - skew <= now <= expires + skew):
+    if clock is not None:
+        valid_time = clock.fresh(signed, expires) and issued <= signed
+    else:
+        # Compatibility for historical local fixture runs; current Runtime
+        # evidence supplies its calibrated ConnectionClock explicitly.
+        skew = timedelta(seconds=clock_skew_seconds)
+        valid_time = (0 <= clock_skew_seconds <= 30
+                      and issued - skew <= signed <= expires + skew
+                      and issued - skew <= now <= expires + skew)
+    if actual != expected or not valid_time:
         raise ValueError("control proof identity or time differs")
+    consumed = challenge_path.with_name(challenge_path.name + ".consumed")
+    try:
+        descriptor = os.open(consumed, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        raise ValueError("control challenge has already been consumed") from None
+    with os.fdopen(descriptor, "w", encoding="utf-8") as marker:
+        json.dump({"run_id": challenge["run_id"], "nonce": challenge["nonce"]}, marker)
+        marker.flush()
+        os.fsync(marker.fileno())
     proof_path.unlink()
     return {
         "verified": True, "run_id": body["run_id"], "host": body["host"],
