@@ -11,7 +11,7 @@ Project identity, management context and Root-to-Route topology. Work execution 
 
 ## Core invariants
 
-- Root Agent is a role projection of an authenticated external Session, explicit project_id, current Project context and management Grant.
+- Root Agent is a project responsibility projection of an authenticated external Session, explicit project_id, current Project context and management Grant.
 - Project, Root, Route and Scope are durable identities; Harness Session and filesystem path are replaceable bindings.
 - Every project-scoped tool carries project_id, and typed handles must resolve to the same Project.
 - Management context is revisioned and reports completeness, source revision, evidence class and missing context.

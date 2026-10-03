@@ -11,3 +11,14 @@ token issuer, audience, expiry, subject and scopes on every invocation.
 
 Control metadata, Source, Payload, Artifact and Secret Reference have separate
 authorization, residency, retention and audit boundaries.
+
+## Organization and duties
+
+Root/Route describe project/development-line responsibility. Task Agent is the
+proposed collective term for explicit task responsibility. Engineer, Reviewer,
+Specialist and Finalizer are duties. AgentSlot, Scope, WorkItem and replaceable
+Session retain their own identities and cardinalities. Organization metadata
+and combined duties remain descriptive; actual Grant/Policy/Profile checks and
+candidate-specific reviewer independence apply. Finalizer decisions require
+exact candidate/source/evidence/Review and effect/readback prerequisites.
+The repository contract is `docs/runtime/AGENT-ORGANIZATION-MODEL.md`.

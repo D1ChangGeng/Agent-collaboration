@@ -11,6 +11,7 @@ Logical collaborators, work intent and communication. Harness lifecycle belongs 
 
 ## Core invariants
 
+- Root/Route responsibility extent and the proposed Task Agent vocabulary are separate from Engineer/Reviewer/Specialist/Finalizer duties.
 - AgentSlot is a durable addressable responsibility inside a Scope; Role is descriptive and Grant is authoritative.
 - configure_team changes bindings inside an existing Scope and preserves prior revisions.
 - WorkItem intent, execution, review, acceptance and effect state are independent dimensions.

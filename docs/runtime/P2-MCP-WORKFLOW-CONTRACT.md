@@ -17,7 +17,7 @@ applies authorization and revision checks, persists collaboration state,
 performs deterministic delivery and recovery, and returns evidence-bound
 observations.
 
-Root Agent is a runtime role created by an authenticated external Agent Session
+Root Agent is a project responsibility projection carried by an authenticated external Agent Session
 acting on an explicit project_id with a management Grant. Durable identity
 belongs to Project, Root, Route, Scope, AgentSlot, WorkItem and accepted state.
 
@@ -289,3 +289,10 @@ expiry and direct result bytes.
 
 The complete lifecycle boundary and compatibility rules are in
 [SEND-WAIT-LIFECYCLE.md](SEND-WAIT-LIFECYCLE.md).
+
+## Organization and responsibility vocabulary
+
+Root and Route describe project and development-line responsibility. Task Agent
+is the proposed task-level collective term; Engineer, Reviewer, Specialist and
+Finalizer describe duties. The separate entity, binding, authority and candidate
+independence rules are in [the organization model](AGENT-ORGANIZATION-MODEL.md).

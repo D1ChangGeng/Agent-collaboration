@@ -123,7 +123,7 @@
     },
     "load_project": {
       "title": "Load project context",
-      "description": "Load a ProjectContextPack containing Root identity, instruction manifests, Routes, knowledge indexes, SourceBindings, policy and active work.",
+      "description": "Load a ProjectContextPack containing Root identity, instruction manifests, Routes, knowledge indexes, SourceBindings, policy and active work. Includes organization vocabulary and the authenticated actor binding; Task Agent is proposed terminology.",
       "selection_guidance": "Use before project-scoped management, analysis, review or finalization when context is absent or stale.",
       "annotations": {
         "readOnlyHint": true,
@@ -227,7 +227,7 @@
     },
     "list_collaborators": {
       "title": "List project collaborators",
-      "description": "List AgentSlots, roles, assignments, Session activity and Harness bindings.",
+      "description": "List AgentSlots, roles, assignments, Session activity and Harness bindings. Reports separate organization, responsibility, Scope and declared authorization facts with work/Session readback queries.",
       "selection_guidance": "Use before team configuration, delegation or handoff.",
       "annotations": {
         "readOnlyHint": true,
@@ -747,7 +747,7 @@
     },
     "configure_team": {
       "title": "Configure collaboration team",
-      "description": "Create or revise AgentSlot, role, Grant, Policy and budget bindings inside an existing project Scope. Returns the accepted team revision and collaborator handles.",
+      "description": "Create or revise AgentSlot, role, Grant, Policy and budget bindings inside an existing project Scope. Returns the accepted team revision and collaborator handles. Organization level and combinable responsibility declarations are independent of Profile and Grant permissions.",
       "selection_guidance": "Use after the Scope exists and an Agent has decided the team topology.",
       "annotations": {
         "readOnlyHint": false,
@@ -981,7 +981,7 @@
     },
     "request_review": {
       "title": "Request independent review",
-      "description": "Create one Review request bound to a candidate, exact baseline, criteria, evidence requirements and an explicitly selected reviewer. Optional evidence_handles selects the reviewed set; other candidate records remain disclosed for reviewer disposition.",
+      "description": "Create one Review request bound to a candidate, exact baseline, criteria, evidence requirements and an explicitly selected reviewer. Optional evidence_handles selects the reviewed set; other candidate records remain disclosed for reviewer disposition. An explicitly declared reviewer duty remains subject to live authorization and candidate independence.",
       "selection_guidance": "Use for architecture, engineering, evidence or finalization review.",
       "annotations": {
         "readOnlyHint": false,
@@ -1048,7 +1048,7 @@
     },
     "accept_work": {
       "title": "Accept collaboration work",
-      "description": "Commit one acceptance decision for an exact candidate after required reviews, evidence and effect readback.",
+      "description": "Commit one acceptance decision for an exact candidate after required reviews, evidence and effect readback. Finalizer is a responsibility; acceptance requires its actual Grant, current independent Review, evidence and source/effect readbacks.",
       "selection_guidance": "Use from an authorized Finalizer or product-owner boundary.",
       "annotations": {
         "readOnlyHint": false,
@@ -1816,5 +1816,24 @@
       "list_connections",
       "submit_command"
     ]
+  },
+  "agent_organization_model": {
+    "schema_version": "acs-agent-organization/1",
+    "task_agent_status": "proposed_terminology",
+    "organization_levels": [
+      "root",
+      "route",
+      "task"
+    ],
+    "responsibility_roles": [
+      "project_coordination",
+      "route_coordination",
+      "engineer",
+      "reviewer",
+      "specialist",
+      "finalizer"
+    ],
+    "authorization": "organization and responsibility declarations are descriptive; live Grant/Policy/Profile checks authorize operations",
+    "reference": "AGENT-ORGANIZATION-MODEL.md"
   }
 }

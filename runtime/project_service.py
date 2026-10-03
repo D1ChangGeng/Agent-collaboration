@@ -14,6 +14,7 @@ from typing import Any, ClassVar
 
 import anyio
 
+from runtime.agent_organization import organization_model, organization_projection
 from runtime.codex_driver import AuthorizedOperation, DriverRejected, OutcomeUncertain
 from runtime.connection_clock import canonical_utc
 from runtime.delivery_models import DeliveryPacket
@@ -836,6 +837,43 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 and (not args.get("states") or row["state"] in args["states"])]
         return self._page_result(args.get("project_id"), rows, args, "connection_key")
 
+    def _agent_context_binding(self, authority, cursor, project, project_id):
+        cursor.execute("SELECT scope_id,permissions,expires_at FROM grants WHERE tenant_id=%s AND grant_ref=%s",
+                       (self.context.tenant_id, authority.context.grant_ref))
+        scope, permissions, expires = cursor.fetchone()
+        cursor.execute("SELECT m.role,t.definition FROM collaboration_team_members m "
+                       "JOIN collaboration_teams t USING(tenant_id,project_id,scope_id) "
+                       "WHERE m.tenant_id=%s AND m.project_id=%s "
+                       "AND m.agent_slot_id=%s AND m.principal_ref=%s AND m.grant_ref=%s AND m.status='active'",
+                       (self.context.tenant_id, project_id, project[5], self.context.principal_ref,
+                        authority.context.grant_ref))
+        member = cursor.fetchone()
+        role = member[0] if member else None
+        declared = next((item for item in member[1]["members"] if item["agent_slot_id"] == project[5]), {}) if member else {}
+        if role is None:
+            cursor.execute("SELECT 1 FROM collaboration_route_grants WHERE tenant_id=%s AND project_id=%s "
+                           "AND grant_ref=%s AND agent_slot_id=%s",
+                           (self.context.tenant_id, project_id, authority.context.grant_ref, project[5]))
+            if cursor.fetchone():
+                role = "route"
+            elif (scope == project[0] and self.profile == "root_manager"
+                  and {"routes.manage", "collaborators.manage"}.intersection(permissions)):
+                role = "root"
+        return {"principal_ref": self.context.principal_ref, "agent_slot_id": project[5],
+                "scope_handle": handle("scope", project_id, scope),
+                "organization": organization_projection(role, level=declared.get("organization_level"),
+                    responsibilities=declared.get("responsibilities")), "profile": self.profile,
+                "authorization": {"grant_ref": authority.context.grant_ref,
+                                  "declared_permissions": permissions, "expires_at": expires.isoformat(),
+                                  "operation_checks": "live Grant, Policy and candidate checks"},
+                "work_query": {"tool": "list_work", "arguments": {"project_id": project_id,
+                              "assigned_to": handle("collaborator", project_id, project[5])}},
+                "session_query": {"tool": "list_harnesses", "arguments": {
+                                  "project_id": project_id, "scope_handle": handle("scope", project_id, scope),
+                                  "required_capabilities": []}},
+                "review_query": {"tool": "list_reviews", "arguments": {"project_id": project_id},
+                                 "match_observations": {"reviewer_ref": self.context.principal_ref}}}
+
     def _load_project(self, authority, cursor, project, command, args, credential):
         if args.get("at_revision") not in (None, project[2]):
             raise RevisionConflict(args["project_id"], args["at_revision"], project[2])
@@ -846,6 +884,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             "routes": self._list_routes(authority, cursor, project, command, args, credential)[1]["items"],
             "active_work": self._list_work(authority, cursor, project, command, args, credential)[1]["items"],
             "context_completeness": "partial", "missing_context": [],
+            "agent_organization_model": organization_model(),
+            "actor_binding": self._agent_context_binding(authority, cursor, project, args["project_id"]),
         }
         data["missing_context"].extend("route_metadata_sync:" + item["route_handle"] for item in data["routes"]
             if item["definition"].get("management_source_state") == "source_sync_required")

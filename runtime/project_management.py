@@ -6,8 +6,9 @@ from dataclasses import replace
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from runtime.agent_organization import organization_projection
 from runtime.errors import AuthorizationDenied, NotFound, RevisionConflict
 from runtime.models import CommandResult
 from runtime.project_common import IDENTIFIER, canonical, digest, handle, parse_handle
@@ -27,6 +28,18 @@ class TeamMember(ClosedInput):
     expires_at: datetime
     budget_ref: str = Field(min_length=1, max_length=256)
     harness_requirements: list[Literal["codex", "opencode"]] = Field(max_length=2)
+    organization_level: Literal["root", "route", "task"] | None = None
+    responsibilities: list[Literal["project_coordination", "route_coordination", "engineer",
+                                    "reviewer", "specialist", "finalizer"]] = Field(default_factory=list, max_length=6)
+
+    @model_validator(mode="after")
+    def role_declaration(self):
+        if len(set(self.responsibilities)) != len(self.responsibilities):
+            raise ValueError("responsibilities must be unique")
+        primary = {"root": "project_coordination", "route": "route_coordination"}.get(self.role, self.role)
+        if self.responsibilities and primary not in self.responsibilities:
+            raise ValueError("responsibilities must include the primary role")
+        return self
 
     @field_validator("expires_at")
     @classmethod
@@ -238,13 +251,14 @@ class ManagementActions:
         scope = self._scope(cursor, self.context.tenant_id, args["project_id"], args["scope_handle"]) if args.get("scope_handle") else None
         scopes = self._visible_scopes(authority, cursor, project)
         cursor.execute("SELECT m.agent_slot_id,m.principal_ref,m.role,m.profile,m.scope_id,m.status,"
-                       "m.harness_requirements,g.expires_at,g.revoked_at,m.grant_ref FROM collaboration_team_members m "
-                       "JOIN grants g USING(grant_ref) WHERE m.tenant_id=%s AND m.project_id=%s "
+                       "m.harness_requirements,g.expires_at,g.revoked_at,m.grant_ref,g.permissions,t.definition FROM collaboration_team_members m "
+                       "JOIN grants g USING(grant_ref) JOIN collaboration_teams t ON t.tenant_id=m.tenant_id AND t.project_id=m.project_id AND t.scope_id=m.scope_id WHERE m.tenant_id=%s AND m.project_id=%s "
                        "AND (%s::text IS NULL OR m.scope_id=%s) "
                        "AND (%s::text[] IS NULL OR m.scope_id=ANY(%s)) ORDER BY m.agent_slot_id",
                        (self.context.tenant_id, args["project_id"], scope, scope, scopes, scopes))
         items = []
-        for slot, principal, role, profile, scope_id, state, harnesses, expires, revoked, grant in cursor.fetchall():
+        for slot, principal, role, profile, scope_id, state, harnesses, expires, revoked, grant, permissions, definition in cursor.fetchall():
+            declared = next((item for item in definition["members"] if item["agent_slot_id"] == slot), {})
             state = state if revoked is None and expires > authority.canonical_now(cursor) else "inactive"
             if state == "active":
                 child = copy(authority)
@@ -254,12 +268,26 @@ class ManagementActions:
                     child._authorize(child_command, cursor, "profile." + profile, scope_id)
                 except AuthorizationDenied:
                     state = "inactive"
-            if args.get("roles") and role not in args["roles"] or args.get("states") and state not in args["states"]:
+            organization = organization_projection(role, level=declared.get("organization_level"),
+                                                   responsibilities=declared.get("responsibilities"))
+            if (args.get("roles") and not set(args["roles"]).intersection({role, *organization["responsibilities"]})
+                    or args.get("states") and state not in args["states"]):
                 continue
             items.append({"collaborator_handle": handle("collaborator", args["project_id"], slot),
                 "agent_slot_id": slot, "principal_ref": principal, "role": role, "profile": profile,
                 "scope_handle": handle("scope", args["project_id"], scope_id), "state": state,
                 "harness_requirements": harnesses, "expires_at": expires.isoformat(),
+                "organization": organization,
+                "authorization": {"grant_ref": grant, "declared_permissions": permissions,
+                                  "binding_state": state, "operation_checks": "live Grant and Policy checks"},
+                "work_query": {"tool": "list_work", "arguments": {"project_id": args["project_id"],
+                               "assigned_to": handle("collaborator", args["project_id"], slot)}},
+                "session_query": {"tool": "list_harnesses", "arguments": {
+                                  "project_id": args["project_id"],
+                                  "scope_handle": handle("scope", args["project_id"], scope_id),
+                                  "required_capabilities": []}},
+                "review_query": {"tool": "list_reviews", "arguments": {"project_id": args["project_id"]},
+                                 "match_observations": {"reviewer_ref": principal}},
                 "evidence_class": "authority_observation"})
         limit = args.get("limit", 50)
         if type(limit) is not int or not 1 <= limit <= 100:

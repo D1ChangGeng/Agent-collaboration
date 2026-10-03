@@ -248,5 +248,7 @@
       "description": "Remote MCP, web SaaS Agent, ProjectContextPack, OAuth, HTTPS, secure Tunnel, plugin, filesystem SourceBinding, GitHub MCP coordination, and web Session capability knowledge for ACS. Use when a browser-based Agent manages or reviews ACS projects.",
       "spec": "skills/acs-web-collaboration/SKILL.md"
     }
-  }
+  },
+  "agent_organization_reference": "AGENT-ORGANIZATION-MODEL.md",
+  "agent_organization_task_status": "proposed_terminology"
 }

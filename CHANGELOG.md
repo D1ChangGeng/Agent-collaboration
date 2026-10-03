@@ -4,6 +4,14 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Add an organization vocabulary proposal distinguishing Root/Route responsibility
+  extent and the proposed Task Agent collective term from Engineer, Reviewer,
+  Specialist and Finalizer duties.
+- Team definitions can declare independent organization level and combined
+  responsibilities. Collaborator and project context readbacks present Scope,
+  declared Grant permissions and work/Session lookup bindings; live authority
+  and candidate independence checks govern actions.
+
 - Machine setup runs prerequisite and selected Harness probes concurrently,
   reuses static readback within an installation and validates the selected
   project context. Tool discovery batches one membership scan and transaction

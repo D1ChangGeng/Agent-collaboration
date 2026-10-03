@@ -40,13 +40,33 @@ Management Root，随后使用 Route/Team、WorkItem 投递、Inbox 恢复和独
 | 管理项目 | 稳定的 Project、Management Root、Route 与项目上下文 |
 | 配置团队 | AgentSlot、角色、Grant、Policy 和预算 |
 | 交付工作 | WorkItem、持久消息、Handoff 确认与响应句柄 |
-| 异步继续 | 有界等待、通知、Inbox 和 Session 替换恢复 |
+| 异步继续 | 条件等待、可选调用方超时、通知、Inbox 和 Session 替换恢复 |
 | 审查结果 | Git SourceBinding、Evidence、独立 Review 和接受状态 |
 | 连接客户端 | 面向 Codex、OpenCode 与个人 ChatGPT Tunnel 的 MCP 工具 |
 
 [MCP 工具目录](docs/runtime/p2-mcp-tool-contract.json)给出机器可读接口；
 [Runtime Skills](docs/runtime/skills/README.md)提供项目、协作、连续性、源码、
 授权和 Review 的按需知识。
+
+## Agent 组织模型
+
+Root Agent 负责项目级范围，Route Agent 负责开发线级范围。**Task Agent**
+是承担明确任务的外部 Agent 的候选统称；Engineer、Reviewer、Specialist、Finalizer
+表示职责，可在实际授权允许的情况下组合。
+
+```mermaid
+flowchart TB
+    R[Root Agent：项目级] --> D[Route Agent：开发线级]
+    D --> E[Task Agent：Engineer]
+    D --> V[Task Agent：Reviewer]
+    D --> S[Task Agent：Specialist]
+    D --> F[Task Agent：Finalizer]
+```
+
+组织责任范围、Role、Profile 与 Grant 各有独立含义。现有 AgentSlot、WorkItem
+和可替换 Session 承载具体绑定。独立 Review 核对候选参与者身份；接受操作核对
+授权与精确 Source、Evidence、Review、回读证据。
+[组织模型提案](docs/runtime/AGENT-ORGANIZATION-MODEL.md)说明术语、兼容关系和上下文表达。
 
 ## 架构
 
@@ -76,8 +96,8 @@ Grant 和修订号。Node 与 Driver 观察真实 Harness 会话与执行，Git 
 sequenceDiagram
     participant R as Root Agent
     participant C as ACS Runtime
-    participant E as Engineer Agent
-    participant V as Reviewer Agent
+    participant E as Task Agent [Engineer]
+    participant V as Task Agent [Reviewer]
     R->>C: 建立 Route、Team、WorkItem
     R->>C: 投递消息或 Handoff
     C->>E: 写入 Inbox 并在合适时投递

@@ -7,7 +7,8 @@ supplies tenant, principal and the active managing Grant. The command requires
 The live MCP `inputSchema` publishes these closed nested records:
 
 - Member: `agent_slot_id`, `principal_ref`, `role`, `profile`, `grant_ref`,
-  `permissions`, `expires_at`, `budget_ref`, `harness_requirements`.
+  `permissions`, `expires_at`, `budget_ref`, `harness_requirements`; optional
+  `organization_level` and `responsibilities` are descriptive declarations.
 - Policy: `policy_ref`, `rules`; rules contain `allowed_activations`,
   `allowed_delivery_policies`, `max_deadline_seconds`.
 - Budget: `budget_ref`, `max_messages`, `max_pending_messages`, `expires_at`.
@@ -42,3 +43,10 @@ requirements in a team definition do not establish installed capacity.
 Current verification is PostgreSQL, migration and component integration evidence.
 Real Harness workflow Gates and independent Review remain required for a named
 product support claim.
+
+## Organization and responsibility vocabulary
+
+Root and Route describe project and development-line responsibility. Task Agent
+is the proposed task-level collective term; Engineer, Reviewer, Specialist and
+Finalizer describe duties. The separate entity, binding, authority and candidate
+independence rules are in [the organization model](AGENT-ORGANIZATION-MODEL.md).

@@ -768,9 +768,12 @@ class WorkActions:
         if len(args["reviewer_requirements"]) != 1:
             raise ValueError("select one explicit Reviewer collaborator per Review request")
         slot = parse_handle(args["reviewer_requirements"][0], "collaborator", args["project_id"])
-        cursor.execute("SELECT principal_ref,grant_ref FROM collaboration_team_members WHERE tenant_id=%s "
-                       "AND project_id=%s AND scope_id=%s AND agent_slot_id=%s AND role='reviewer' "
-                       "AND status='active'", (self.context.tenant_id, args["project_id"], work[0], slot))
+        cursor.execute("SELECT m.principal_ref,m.grant_ref FROM collaboration_team_members m "
+                       "JOIN collaboration_teams t USING(tenant_id,project_id,scope_id) WHERE m.tenant_id=%s "
+                       "AND m.project_id=%s AND m.scope_id=%s AND m.agent_slot_id=%s AND m.status='active' "
+                       "AND (m.role='reviewer' OR EXISTS (SELECT 1 FROM jsonb_array_elements(t.definition->'members') d "
+                       "WHERE d->>'agent_slot_id'=m.agent_slot_id AND COALESCE(d->'responsibilities','[]') ? 'reviewer'))",
+                       (self.context.tenant_id, args["project_id"], work[0], slot))
         reviewer = cursor.fetchone()
         if reviewer is None:
             raise NotFound("reviewer", slot)
