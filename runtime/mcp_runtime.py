@@ -69,7 +69,7 @@ class McpRuntime:
                     properties[field]["items"] = item_schema
                 else:
                     properties[field]["items"] = {"type": "string"}
-            if field in {"at_revision", "cursor"}:
+            if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"}:
                 properties[field]["type"] = [kind, "null"]
             if field == "decision" and name in {"submit_review", "accept_work"}:
                 properties[field]["enum"] = (["pass", "fail"] if name == "submit_review"

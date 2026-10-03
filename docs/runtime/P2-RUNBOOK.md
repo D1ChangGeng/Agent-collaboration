@@ -87,7 +87,7 @@ unresolved items. Reused P1 evidence proves only the prerequisite.
   evidence.
 - SEND-ASYNC: use default asynchronous send_message and return stable response
   and notification handles.
-- SEND-SYNC: observe the same response through bounded wait_for_response.
+- SEND-SYNC: observe the same response until completion; specify a timeout for bounded observation scenarios.
 - BOUNDED-WAIT-CONTINUITY: retain tracking across timeout and MCP reconnect.
 - TARGET-IDLE-DELIVERY: commit a busy target Inbox item and invoke after idle.
 - COMPLETION-NOTIFICATION: deliver one deduplicated completion notification.

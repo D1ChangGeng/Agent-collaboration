@@ -118,6 +118,17 @@ Machine installation selects a service host and a connection path. Runtime
 Node enrollment, execution placement and cross-host dispatch require their own
 Runtime capability observations.
 
+## Installation verification scope
+
+Use [the installation timing guide](docs/INSTALLATION-PERFORMANCE.md) to keep
+machine setup focused. Reuse the current install receipt and completed
+readbacks. From each selected client, perform one actual MCP discovery plus
+`read_profile` and `list_projects` in the same connection when possible.
+Project context checks follow registration and target that project. Read tool
+capabilities from the catalog and knowledge Skills; exercise project actions
+when the user starts that workflow. `acs_doctor.py` uses machine scope by
+default; `--project-id` selects one context and `--deep` is diagnostic scope.
+
 ## Automatic upgrade maintenance
 
 Read [the automatic upgrade guide](docs/AUTOMATIC-UPDATES.md) when managing an

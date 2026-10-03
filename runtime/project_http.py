@@ -197,15 +197,10 @@ class OAuthProjectService(ProjectService):
         return super()._authorize(authority, cursor, project_id, name, args)
 
     def available_tools(self, credential):
-        self.service.authenticate(credential)
-        # Query Domain grants only for tools admitted by the OAuth scope set.
         allowed = set(self.token_authorization.access.scopes)
-        return [name for name in self.catalog["profiles"][self.profile]
-                if name in self.IMPLEMENTED
-                and set(self.catalog["tools"][name]["security_scopes"]) <= allowed
-                and (name == "read_profile" or self._accessible(credential, name))
-                and (self.sources is not None or name not in {
-                    "list_files", "search_files", "read_file", "read_source", "read_diff"})]
+        candidates = [name for name in self.catalog["profiles"][self.profile]
+                      if set(self.catalog["tools"][name]["security_scopes"]) <= allowed]
+        return self._discover_tools(credential, candidates)
 
     def execute(self, name, args, credential):
         self.token_authorization.authorize_tool(self.catalog, name)

@@ -7,6 +7,8 @@ import json
 import shutil
 import subprocess
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from pathlib import Path
 
@@ -30,7 +32,7 @@ def command_version(name: str, *args: str) -> dict[str, str | bool]:
     }
 
 
-def runtime_readback(config: Path, catalog: Path, profile: str) -> dict:
+def runtime_readback(config: Path, catalog: Path, profile: str, *, deep: bool = True, project_id: str | None = None) -> dict:
     try:
         from runtime.project_service import ProjectService
         from runtime.project_source import ProjectSources
@@ -58,7 +60,9 @@ def runtime_readback(config: Path, catalog: Path, profile: str) -> dict:
             _, snapshot, _ = projects.execute("read_profile", {}, credential)
             _, found, _ = projects.execute("list_projects", {}, credential)
             contexts = []
-            for project in found["items"]:
+            for project in found["items"] if deep else []:
+                if project_id is not None and project["project_id"] != project_id:
+                    continue
                 state, pack, _ = projects.execute(
                     "load_project", {"project_id": project["project_id"]}, credential
                 )
@@ -88,7 +92,22 @@ def inspect(
     config: Path | None = None,
     catalog: Path | None = None,
     profile: str = "root_manager",
+    harnesses: list[str] | None = None,
+    deep: bool = True,
+    tools_snapshot: dict | None = None,
+    project_id: str | None = None,
 ) -> dict:
+    started = time.monotonic()
+    selected = ["codex", "opencode"] if harnesses is None else harnesses
+    probes = {"git": ("--version",), "uv": ("--version",),
+              "docker": ("compose", "version"),
+              **{name: ("--version",) for name in selected}}
+    if tools_snapshot is None:
+        with ThreadPoolExecutor(max_workers=len(probes)) as pool:
+            futures = {name: pool.submit(command_version, name, *args) for name, args in probes.items()}
+            tools = {name: future.result() for name, future in futures.items()}
+    else:
+        tools = dict(tools_snapshot)
     report: dict = {
         "schema_version": "acs-install-readiness/1",
         "platform": sys.platform,
@@ -98,13 +117,7 @@ def inspect(
         },
         "python": sys.version.split()[0],
         "source_root": str(ROOT),
-        "tools": {
-            "git": command_version("git", "--version"),
-            "uv": command_version("uv", "--version"),
-            "docker": command_version("docker", "compose", "version"),
-            "codex": command_version("codex", "--version"),
-            "opencode": command_version("opencode", "--version"),
-        },
+        "tools": tools,
     }
     interpreter = (
         ROOT / ".venv" / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
@@ -139,7 +152,7 @@ def inspect(
                 report["project"]["manifest_state"] = "invalid"
     if config is not None:
         report["runtime"] = runtime_readback(
-            config, catalog or ROOT / "docs/runtime/p2-mcp-tool-contract.json", profile
+            config, catalog or ROOT / "docs/runtime/p2-mcp-tool-contract.json", profile, deep=deep or project_id is not None, project_id=project_id
         )
     report["next_actions"] = []
     if not report["tools"]["docker"]["available"]:
@@ -156,6 +169,9 @@ def inspect(
         report["next_actions"].append(
             "Run the Source/CAS Runtime service in a verified Linux or WSL environment."
         )
+    report["tool_probes_reused"] = tools_snapshot is not None
+    report["validation_scope"] = "selected_project" if project_id else "project_contexts" if deep else "machine"
+    report["elapsed_seconds"] = round(time.monotonic() - started, 3)
     return report
 
 
@@ -165,10 +181,14 @@ def main() -> int:
     parser.add_argument("--config", type=Path)
     parser.add_argument("--catalog", type=Path)
     parser.add_argument("--profile", default="root_manager")
+    parser.add_argument("--deep", action="store_true", help="Also load every visible project context")
+    parser.add_argument("--project-id", help="Load just this registered project context")
+    parser.add_argument("--harness", nargs="*", choices=("codex", "opencode"))
     args = parser.parse_args()
     print(
         json.dumps(
-            inspect(args.project, config=args.config, catalog=args.catalog, profile=args.profile),
+            inspect(args.project, config=args.config, catalog=args.catalog, profile=args.profile,
+                    deep=args.deep, project_id=args.project_id, harnesses=args.harness),
             ensure_ascii=False,
             indent=2,
         )

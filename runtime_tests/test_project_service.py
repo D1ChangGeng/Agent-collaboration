@@ -238,7 +238,7 @@ def test_grant_permission_changes_filter_available_tools(project):
 def test_invalid_sync_bound_cannot_commit_a_message(project):
     ok(project, "create_work", work_args())
     rejected = project.mcp.call("send_message", dict(send_args(),
-        response_mode="sync", wait_timeout_seconds=31))
+        response_mode="sync", wait_timeout_seconds=-1))
     assert rejected["structuredContent"]["data"]["code"] == "invalid_arguments"
     assert scalar(project, "SELECT count(*) FROM delivery_messages") == 0
 

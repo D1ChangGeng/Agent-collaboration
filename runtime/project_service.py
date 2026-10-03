@@ -12,7 +12,10 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, ClassVar
 
+import anyio
+
 from runtime.codex_driver import AuthorizedOperation, DriverRejected, OutcomeUncertain
+from runtime.connection_clock import canonical_utc
 from runtime.delivery_models import DeliveryPacket
 from runtime.delivery_node import InvocationPreCallRejected, LocalNodeEndpoint
 from runtime.errors import (
@@ -293,7 +296,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             principal_ref=context.principal_ref, grant_ref=context.grant_ref,
             target_kind=target_kind, target_id=target_id or args["project_id"],
             expected_revision=expected_revision, issued_at=now,
-            deadline=datetime.fromisoformat(args["deadline"]) if "deadline" in args
+            deadline=datetime.fromisoformat(args["deadline"]) if "deadline" in args and name != "project.send_message"
             else now + timedelta(seconds=30), payload=payload or {},
         )
 
@@ -361,15 +364,46 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         return result
 
     def available_tools(self, credential: str) -> list[str]:
+        return self._discover_tools(credential, self.catalog["profiles"][self.profile])
+
+    def _discover_tools(self, credential, candidates):
         self.service.authenticate(credential)
         available = []
-        for name in self.catalog["profiles"][self.profile]:
-            if name not in self.IMPLEMENTED:
-                continue
-            if self.sources is None and name in {"list_files", "search_files", "read_file", "read_source", "read_diff"}:
-                continue
-            if name == "read_profile" or self._accessible(credential, name):
-                available.append(name)
+        # One discovery transaction and membership scan; every tool retains
+        # its live permission/delegation checks. Calls authorize again.
+        with self.service.authority.transaction() as (authority, connection):
+            rows = connection.execute(
+                "SELECT project_id FROM collaboration_memberships WHERE tenant_id=%s "
+                "AND principal_ref=%s AND profile=%s ORDER BY project_id",
+                (self.context.tenant_id, self.context.principal_ref, self.profile),
+            ).fetchall()
+            for name in candidates:
+                if name not in self.IMPLEMENTED or (self.sources is None and name in {
+                        "list_files", "search_files", "read_file", "read_source", "read_diff"}):
+                    continue
+                if name == "read_profile":
+                    available.append(name)
+                    continue
+                if name == "list_projects":
+                    with connection.cursor() as cursor:
+                        command = self._command(authority, "project.list_projects", {"project_id": "discovery"})
+                        try:
+                            for permission in ("profile." + self.profile,
+                                               *self.catalog["tools"][name]["security_scopes"]):
+                                authority._authorize(command, cursor, permission)
+                        except AuthorizationDenied:
+                            continue
+                    available.append(name)
+                    continue
+                for (project_id,) in rows:
+                    with connection.cursor() as cursor:
+                        try:
+                            self._authorize(authority, cursor, project_id, name,
+                                            {"project_id": project_id})
+                        except AuthorizationDenied:
+                            continue
+                    available.append(name)
+                    break
         return available
 
     def execute(self, name: str, args: dict[str, Any], credential: str):
@@ -394,6 +428,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             return self._wait(args, credential)
         if name == "stop_attempt":
             return self._stop_attempt_external(args, credential)
+        if name == "send_message":
+            self._validate_send_observation(args)
         project_id = args["project_id"]
         if not IDENTIFIER.fullmatch(project_id):
             raise ValueError("invalid project_id")
@@ -401,7 +437,10 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
               connection.cursor() as cursor):
             bound, project, command = self._authorize(authority, cursor, project_id, name, args)
             request_id = args.get("client_request_id")
-            input_digest = digest([name, args])
+            submitted = ({key: value for key, value in args.items()
+                          if key not in {"response_mode", "wait_until", "wait_timeout_seconds"}}
+                         if name == "send_message" else args)
+            input_digest = digest([name, submitted])
             prior = None
             if request_id:
                 self._verify_command_management_identity(bound, cursor, project, command, args)
@@ -413,7 +452,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                     (self.context.tenant_id, project_id, self.context.principal_ref, request_id),
                 )
                 prior = cursor.fetchone()
-                if prior and prior[0] != input_digest:
+                if prior and prior[0] not in {input_digest, digest([name, args])}:
                     raise IdempotencyConflict(request_id)
             result = (tuple(prior[1]) if prior else
                       getattr(self, "_" + name)(bound, cursor, project, command, args, credential))
@@ -431,7 +470,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             observation = self._wait({"project_id": project_id,
                 "handles": [result[1]["response_handle"]], "mode": "all",
                 "until": args.get("wait_until", "response_received"),
-                "timeout_seconds": args.get("wait_timeout_seconds", 30)}, credential)
+                "timeout_seconds": args.get("wait_timeout_seconds")}, credential)
             result = (observation[0], dict(result[1], observation=observation[1]), result[2])
         return result
 
@@ -1077,16 +1116,66 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         return "created", dict(result.model_dump(mode="json"), project_id=args["project_id"],
                                work_handle=work_handle), []
 
+    @staticmethod
+    def _validate_send_observation(args):
+        wait_timeout = args.get("wait_timeout_seconds")
+        if ((wait_timeout is not None and (type(wait_timeout) is not int
+                or not 0 <= wait_timeout <= 2**53 - 1))
+                or args.get("wait_until", "response_received") not in (*RECEIPTS, "terminal")
+                or args.get("response_mode", "async") not in {"async", "sync"}):
+            raise ValueError("invalid synchronous observation options")
+        if (args.get("response_mode") == "sync" and not args.get("expect_response", True)
+                and args.get("wait_until", "response_received") == "response_received"):
+            raise ValueError("waiting for a response requires response tracking")
+
+    def _message_expiry(self, authority, cursor, work, target, policy, args, issued_at):
+        """Derive business validity independently of command and wait budgets."""
+        now = authority.canonical_now(cursor)
+        team = policy.get("collaboration_team")
+        ttl = policy.get("message_ttl_seconds", 86400)
+        budget = work[4].get("budget", {})
+        for value in (ttl, budget.get("message_ttl_seconds", ttl)):
+            if type(value) is not int or not 1 <= value <= 86400 * 365:
+                raise ValueError("Message validity duration is outside Policy bounds")
+        ttl = min(ttl, budget.get("message_ttl_seconds", ttl))
+        if team:
+            ttl = min(ttl, *(item["rules"]["max_deadline_seconds"] for item in team["policies"]))
+        caps = [issued_at + timedelta(seconds=ttl)]
+        cursor.execute("WITH RECURSIVE chain AS (SELECT grant_ref,expires_at,0 AS depth FROM grants "
+                       "WHERE grant_ref=%s UNION ALL SELECT g.grant_ref,g.expires_at,c.depth+1 "
+                       "FROM chain c JOIN grant_delegations d ON d.grant_ref=c.grant_ref "
+                       "JOIN grants g ON g.grant_ref=d.parent_grant_ref WHERE c.depth<8) "
+                       "SELECT expires_at FROM chain", (authority.context.grant_ref,))
+        caps.extend(row[0] for row in cursor.fetchall())
+        # create_work.deadline is command admission, not a Work lifetime.
+        # Explicit budget expiry is a business horizon when supplied.
+        if budget.get("expires_at"):
+            caps.append(canonical_utc(datetime.fromisoformat(budget["expires_at"])))
+        if team:
+            cursor.execute("SELECT b.expires_at,g.expires_at FROM collaboration_team_members m "
+                           "JOIN collaboration_team_budgets b USING(tenant_id,project_id,scope_id,budget_ref) "
+                           "JOIN grants g ON g.grant_ref=m.grant_ref WHERE m.tenant_id=%s AND m.project_id=%s "
+                           "AND m.scope_id=%s AND m.agent_slot_id=%s",
+                           (authority.tenant_id, args["project_id"], work[0], target["agent_slot_id"]))
+            row = cursor.fetchone()
+            if row:
+                caps.extend(row)
+        limit = min(caps)
+        if args.get("deadline") is not None:
+            chosen = canonical_utc(datetime.fromisoformat(args["deadline"]))
+            if chosen > limit:
+                raise ValueError("Message expiry exceeds its Policy, Grant or budget horizon")
+        else:
+            chosen = limit
+        if chosen <= now:
+            raise ValueError("Message business validity has expired")
+        return chosen
+
     def _send_message(self, authority, cursor, project, command, args, _credential):
-        # Validate bounded observation options before the durable command. A
-        # malformed sync request must never commit and then report rejection.
-        wait_timeout = args.get("wait_timeout_seconds", 30)
-        if (type(wait_timeout) is not int or not 0 <= wait_timeout <= 30
-                or args.get("wait_until", "response_received") not in (*RECEIPTS, "terminal")):
-            raise ValueError("invalid synchronous observation bound")
+        self._validate_send_observation(args)
         work_id = parse_handle(args["work_handle"], "work", args["project_id"])
         cursor.execute(
-            "SELECT w.scope_id,w.source_baseline,w.state,w.execution_status "
+            "SELECT w.scope_id,w.source_baseline,w.state,w.execution_status,l.definition "
             "FROM collaboration_work_links l "
             "JOIN work_items w USING(tenant_id,work_item_id) WHERE l.tenant_id=%s "
             "AND l.project_id=%s AND l.work_item_id=%s FOR UPDATE OF w",
@@ -1113,12 +1202,14 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             raise ValueError("active-turn steering is unavailable in this delivery adapter")
         cursor.execute("SELECT policy FROM scopes WHERE tenant_id=%s AND scope_id=%s",
                        (self.context.tenant_id, work[0]))
-        configured_team = cursor.fetchone()[0].get("collaboration_team")
+        scope_policy = cursor.fetchone()[0]
+        configured_team = scope_policy.get("collaboration_team")
         if configured_team and any(args.get("delivery_policy", "queue_until_idle") not in
                 item["rules"]["allowed_delivery_policies"] for item in configured_team["policies"]):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         if args.get("response_mode", "async") not in {"async", "sync"}:
             raise ValueError("invalid response mode")
+        expiry = self._message_expiry(authority, cursor, work, target, scope_policy, args, command.issued_at)
         message_id = "message-" + uuid.uuid4().hex
         response_handle = handle("response", args["project_id"], message_id)
         packet = {"work_item_id": work_id, "target_scope_id": work[0],
@@ -1129,12 +1220,12 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                   "source_baseline": work[1], "expected_response": "Structured response with required evidence",
                   "required_evidence": args["required_evidence"],
                   "activation": args.get("activation", "invoke"), "delivery_policy": "queue_until_idle",
-                  "deadline": args["deadline"]}
+                  "deadline": expiry.isoformat()}
         request = SurfaceCommand(
             command_type="message.send", target_kind="message", target_id=message_id,
             expected_revision=args["expected_work_revision"], command_id=command.command_id,
             idempotency_key=command.idempotency_key, correlation_id=command.correlation_id,
-            issued_at=command.issued_at, deadline=command.deadline,
+            issued_at=command.issued_at, deadline=expiry,
             payload={"packet": packet, "endpoint_id": endpoints[0][0],
                      "binding_revision": endpoints[0][1]},
         )
@@ -1154,13 +1245,13 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                        "VALUES (%s,%s,%s)", (self.context.tenant_id, args["project_id"], message_id))
         return "accepted", dict(result.model_dump(mode="json"), project_id=args["project_id"],
             message_id=message_id, message_handle=handle("message", args["project_id"], message_id),
-            response_handle=response_handle,
+            response_handle=response_handle, deadline=expiry.isoformat(),
             notification_handle=handle("subscription", args["project_id"], message_id)), [
                 {"rel": "read_response", "tool": "read_message", "arguments": {
                     "project_id": args["project_id"], "handle": response_handle, "consume": True}},
                 {"rel": "wait", "tool": "wait_for_response", "arguments": {
                     "project_id": args["project_id"], "handles": [response_handle],
-                    "mode": "all", "until": "response_received", "timeout_seconds": 30}},
+                    "mode": "all", "until": "response_received"}},
             ]
 
     def _read_message(self, authority, cursor, _project, command, args, _credential):
@@ -1286,28 +1377,32 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                             "notifications": notifications}, []
 
     def _wait(self, args, credential):
-        timeout = args["timeout_seconds"]
-        if (type(timeout) is not int or not 0 <= timeout <= 30 or args["mode"] not in {"any", "all"}
+        timeout = args.get("timeout_seconds")
+        if ((timeout is not None and (type(timeout) is not int or not 0 <= timeout <= 2**53 - 1)) or args["mode"] not in {"any", "all"}
                 or args["until"] not in (*RECEIPTS, "terminal") or not 1 <= len(args["handles"]) <= 32
                 or len(set(args["handles"])) != len(args["handles"])):
-            raise ValueError("invalid bounded wait")
+            raise ValueError("invalid wait options")
         for value in args["handles"]:
             parse_handle(value, "response", args["project_id"])
-        end = time.monotonic() + timeout
+        end = None if timeout is None else time.monotonic() + timeout
         while True:
+            try:
+                anyio.from_thread.check_cancelled()
+            except RuntimeError:
+                pass  # Direct synchronous callers have no AnyIO cancellation scope.
             observations = [self.execute("read_message", {"project_id": args["project_id"],
                 "handle": item, "consume": False}, credential)[1] for item in args["handles"]]
             terminal = [item["response_handle"] for item in observations
-                        if item["state"] in {"blocked", "expired", "budget_exhausted", "uncertain"}
+                        if item["state"] in {"blocked", "expired", "budget_exhausted"}
                         or "response_received" in {receipt[0] for receipt in item["receipts"]}]
             satisfied = [item["response_handle"] for item in observations
                          if (item["response_handle"] in terminal if args["until"] == "terminal"
                              else args["until"] in {receipt[0] for receipt in item["receipts"]})]
             ready = len(satisfied) == len(observations) if args["mode"] == "all" else bool(satisfied)
             pending = [item for item in args["handles"] if item not in satisfied and item not in terminal]
-            if ready or not pending or time.monotonic() >= end:
+            if ready or not pending or (end is not None and time.monotonic() >= end):
                 return "satisfied" if ready else "terminal" if not pending else "timeout", {"project_id": args["project_id"],
                     "satisfied": satisfied,
                     "pending": pending, "terminal": terminal,
                     "observations": observations}, []
-            time.sleep(min(0.1, max(0, end - time.monotonic())))
+            time.sleep(0.5 if end is None else min(0.5, max(0, end - time.monotonic())))

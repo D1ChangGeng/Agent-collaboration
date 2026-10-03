@@ -447,7 +447,7 @@ def install(
     web = chatgpt_setup(chatgpt_web, tunnel_id=tunnel_id)
     if apply and chatgpt_web is None:
         raise ValueError("confirm --chatgpt-web enable, skip or later before installation")
-    report = inspect(project)
+    report = inspect(project, harnesses=[] if runtime_only else harnesses, deep=False)
     if runtime_only:
         report["next_actions"] = [action for action in report.get("next_actions", [])
                                   if action != "Install the setup Skill from this checkout."]
@@ -602,7 +602,10 @@ def install(
         "Open the Management Root as a Root Agent." if project is not None else
         "Use the setup Skill in a chosen project to create or adopt its Management Root."
     )
-    result["readback"] = inspect(project, config=config_path)
+    result["readback"] = inspect(project, config=config_path,
+                                harnesses=[] if runtime_only else harnesses, deep=False,
+                                tools_snapshot=report["tools"],
+                                project_id=project_id if result["state"] == "project_registered" else None)
     result["web_setup"] = chatgpt_setup(chatgpt_web, str(ROOT), str(config_path), tunnel_id)
     if chatgpt_web == "enable":
         result["next_action"] = result["web_setup"]["next_action"]

@@ -152,8 +152,10 @@ Required arguments include:
 - work_handle and expected_work_revision;
 - target Scope and AgentSlot;
 - goal, request and constraints;
-- accepted revision and required evidence;
-- deadline.
+- accepted revision and required evidence.
+
+Optional deadline narrows the business validity derived by ACS from current
+Policy, Grant and Work budget horizons.
 
 Defaults:
 
@@ -166,8 +168,9 @@ wait_until=response_received
 ~~~
 
 Async returns after Authority commit and leaves the initiating Agent free to
-continue. Sync performs the same commit followed by bounded
-wait_for_response. Timeout returns pending state while delivery, response
+continue. Sync performs the same commit followed by observation until the target
+receipt or terminal condition. A supplied wait_timeout_seconds bounds
+caller waiting. Timeout returns pending state while delivery, response
 collection and notification continue.
 
 message_submission contains operation, Message identity, delivery state,
@@ -180,7 +183,8 @@ watch_changes creates a durable event subscription. send_message automatically
 creates response tracking when a response is expected.
 
 wait_for_response accepts one or more response handles, mode any or all, a
-receipt or terminal condition, and timeout_seconds. It holds no database
+receipt or terminal condition, and optional timeout_seconds. Omission waits
+until the condition, a terminal outcome, cancellation or authorization loss. It holds no database
 transaction while waiting.
 
 Completion notification uses response identity and completion revision for
@@ -282,3 +286,6 @@ P2-MANAGEMENT-WORKFLOW then proves local and web context hydration, cross-projec
 management, Source reads, Review workflows and project Inbox recovery. Each
 scenario binds exact source, Profile, versions, credentials, direction, policy,
 expiry and direct result bytes.
+
+The complete lifecycle boundary and compatibility rules are in
+[SEND-WAIT-LIFECYCLE.md](SEND-WAIT-LIFECYCLE.md).

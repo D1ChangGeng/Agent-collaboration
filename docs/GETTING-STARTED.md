@@ -265,3 +265,16 @@ and selected-client MCP readback after activation. Project Source registration
 has its own identity and context validation.
 Manual rollback records the rejected version in `held_version` for explicit
 review before the updater applies that same version again.
+
+## Installation verification scope
+
+Use the install receipt and one real MCP connection per selected client for
+`tools/list`, `read_profile` and `list_projects`. Project initialization then
+verifies its own `load_project` context. Capability knowledge comes from the
+catalog and Skills; project operations are exercised when that workflow begins.
+See [installation verification and timing](INSTALLATION-PERFORMANCE.md).
+
+For messaging, async returns after submission; sync waits for the final
+response by default. Optional caller timeouts return pending handles and retain
+background tracking. Business expiry is derived by ACS. See
+[Send/Wait lifecycle](runtime/SEND-WAIT-LIFECYCLE.md).

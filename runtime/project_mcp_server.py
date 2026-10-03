@@ -211,7 +211,8 @@ def create_project_server(runtime=None, *, runtime_provider=None):
 
     async def call_tool(ctx, params):
         state = await connection_state(ctx)
-        result = await anyio.to_thread.run_sync(state["runtime"].call, params.name, params.arguments or {})
+        result = await anyio.to_thread.run_sync(state["runtime"].call, params.name, params.arguments or {},
+                                               abandon_on_cancel=True)
         return CallToolResult.model_validate(result)
 
     async def list_resources(ctx, _params):

@@ -930,7 +930,7 @@
     },
     "send_message": {
       "title": "Send collaboration message",
-      "description": "Commit one collaboration Message, its delivery intent, response expectation and completion notification. Returns delivery state, the stable response handle and executable follow-up calls. Async is the default; sync adds one bounded observation of the same response handle.",
+      "description": "Commit an addressed Message with durable response tracking and notification. Async returns after commit; sync waits for the requested receipt or final response. An optional wait_timeout_seconds bounds caller waiting. ACS derives business expiry from Policy, Grant and Work budget; optional deadline narrows it.",
       "selection_guidance": "Use for delegation, review requests, handoffs and other addressed collaboration work.",
       "annotations": {
         "readOnlyHint": false,
@@ -939,7 +939,7 @@
         "openWorldHint": true
       },
       "input_schema": {
-        "schema_version": "acs-mcp-send-message/4",
+        "schema_version": "acs-mcp-send-message/5",
         "required": [
           "client_request_id",
           "project_id",
@@ -950,8 +950,7 @@
           "request",
           "constraints",
           "accepted_revision",
-          "required_evidence",
-          "deadline"
+          "required_evidence"
         ],
         "optional": [
           "activation",
@@ -959,7 +958,8 @@
           "expect_response",
           "response_mode",
           "wait_until",
-          "wait_timeout_seconds"
+          "wait_timeout_seconds",
+          "deadline"
         ],
         "response_modes": [
           "async",
@@ -1004,7 +1004,9 @@
           "reviewer_requirements",
           "deadline"
         ],
-        "optional": ["evidence_handles"]
+        "optional": [
+          "evidence_handles"
+        ]
       },
       "result_type": "review_request_receipt",
       "security_scopes": [
@@ -1035,7 +1037,9 @@
           "unresolved_items",
           "deadline"
         ],
-        "optional": ["evidence_dispositions"]
+        "optional": [
+          "evidence_dispositions"
+        ]
       },
       "result_type": "review_submission_receipt",
       "security_scopes": [
@@ -1104,7 +1108,7 @@
     },
     "wait_for_response": {
       "title": "Wait for response",
-      "description": "Wait for one or more existing response handles until any or all reach a named receipt or terminal condition, bounded by the supplied timeout. Returns satisfied, pending and terminal handles while durable tracking and completion notification continue.",
+      "description": "Wait until any or all existing response handles reach a named receipt or terminal condition. Optional timeout_seconds returns pending handles early; durable execution, tracking and notification continue. Omitted timeout waits until satisfaction, terminal outcome, cancellation or authorization loss.",
       "selection_guidance": "Use when the calling Agent chooses to pause for responses that send_message is already tracking.",
       "annotations": {
         "readOnlyHint": false,
@@ -1113,15 +1117,16 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-wait-for-response/4",
+        "schema_version": "acs-mcp-wait-for-response/5",
         "required": [
           "project_id",
           "handles",
           "mode",
-          "until",
+          "until"
+        ],
+        "optional": [
           "timeout_seconds"
         ],
-        "optional": [],
         "modes": [
           "any",
           "all"
