@@ -43,9 +43,9 @@ independent Review.
 
 ## Standard release installation
 
-Use the [v1.3.1 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.3.1)
+Use the [v1.4.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.4.0)
 and its `acs_bootstrap.py` asset to start verified installation.
-See the [release notes](docs/RELEASE-NOTES-v1.3.1.md) for the upgrade path.
+See the [release notes](docs/RELEASE-NOTES-v1.4.0.md) for the upgrade path.
 
 The Release Bootstrap uses an explicit Runtime destination: local Linux,
 a named remote SSH target, or a named WSL distribution. It probes the selected
@@ -104,7 +104,7 @@ Compatibility changes require an AI-guided upgrade. A previous version remains
 available for rollback.
 
 Existing v1.2.0 installations need one AI-guided upgrade using the verified
-v1.3.1 Release Bootstrap before these checks are available. See
+v1.4.0 Release Bootstrap before these checks are available. See
 [automatic upgrades](docs/AUTOMATIC-UPDATES.md) for controls, verification and
 recovery.
 
