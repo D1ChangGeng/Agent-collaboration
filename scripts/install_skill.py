@@ -40,12 +40,15 @@ INSTALL_CONTENT = (
     "scripts",
     "tests",
     "docs/GETTING-STARTED.md",
+    "docs/INSTALLATION-PERFORMANCE.md",
     "docs/AUTOMATIC-UPDATES.md",
     "docs/RELEASE-NOTES-v1.3.0.md",
     "docs/RELEASE-NOTES-v1.3.1.md",
     "docs/TROUBLESHOOTING.md",
     "docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md",
     "docs/runtime/PROJECT-ADOPTION.md",
+    "docs/runtime/SEND-WAIT-LIFECYCLE.md",
+    "docs/runtime/TIME-MODEL.md",
     "docs/runtime/SOURCE-DISCOVERY.md",
 )
 REQUIRED_CONTENT = {"SKILL.md", "VERSION", "scripts"}

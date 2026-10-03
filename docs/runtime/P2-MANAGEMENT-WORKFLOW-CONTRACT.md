@@ -154,7 +154,7 @@ WorkItem management, messaging, review requests and continuation tools.
 ### Reviewer
 
 Reviewer receives project context, lists, Source reads, evidence and Review
-reads, submit_review and bounded subscription tools. Review independence is
+reads, submit_review and subscription tools. Review independence is
 verified from identity, assignment and candidate lineage.
 
 ### Engineer
@@ -268,15 +268,15 @@ authorization boundary.
 
 send_message requires project_id and an existing WorkItem handle. It atomically
 commits the Message, Outbox entry, response expectation and completion
-notification. Async is the default. Sync adds one bounded wait on the same
-response handle.
+notification. Async is the default. Sync waits for the selected final response or receipt on the same
+response handle; an optional caller timeout returns pending handles early.
 
 watch_changes creates durable subscriptions for Project, Route, WorkItem,
 Review, Source and recovery events. The initiating Session receives an immediate
 wake when its Harness supports it. The Project management Inbox retains the
 notification for later authorized sessions.
 
-wait_for_response performs bounded any or all observation. set_notification
+wait_for_response observes any or all targets; its timeout is an optional caller early-return budget. set_notification
 changes subscription delivery. cancel_work ends the WorkItem objective.
 stop_attempt controls one concrete Runtime Attempt.
 

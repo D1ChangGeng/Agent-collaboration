@@ -61,6 +61,9 @@ jobs:
           runtime_tests/test_project_management.py
           runtime_tests/test_domain_evidence.py
           runtime_tests/test_recovery_postgres.py
+          runtime_tests/test_project_service.py
+          runtime_tests/test_send_wait_semantics.py
+          runtime_tests/test_project_http.py
       - name: Gate tooling tests
         run: uv run --frozen python -m unittest discover -s tools/runtime/tests -q
 

@@ -4,6 +4,18 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Machine setup runs prerequisite and selected Harness probes concurrently,
+  reuses static readback within an installation and validates the selected
+  project context. Tool discovery batches one membership scan and transaction
+  while retaining live permission checks.
+- Sync sends and response waits observe their target condition by default.
+  Optional caller timeouts return pending handles while durable dispatch,
+  response tracking and notification continue; cancelled MCP waits release
+  their observation workers.
+- Message business expiry is derived from Work budgets, Scope/Team Policy and
+  Grant horizons. Receipts report its effective value, and observation options
+  can change when replaying a new Message command identity.
+
 - Add connection clocks calibrated to authenticated PostgreSQL Authority time,
   complete connection and Runtime identity, bounded uncertainty and conservative
   expiry checks.
