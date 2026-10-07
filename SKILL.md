@@ -129,6 +129,16 @@ capabilities from the catalog and knowledge Skills; exercise project actions
 when the user starts that workflow. `acs_doctor.py` uses machine scope by
 default; `--project-id` selects one context and `--deep` is diagnostic scope.
 
+## Startup and transport recovery
+
+Read [startup recovery](docs/runtime/STARTUP-RECOVERY.md) for reboot or disconnect
+repair. Reuse the recorded Runtime host/account and client entry. Verify owner
+service identity before restoring dependencies; keep private SSH/Web Tunnel
+supervision separate from local MCP readiness. Preserve existing credentials,
+Grants and signed Runtime facts. Test fault recovery with isolated ports, then
+read actual tools/profile through the configured entry. Machine boot settings
+require the selected host's administration and a rollback backup.
+
 ## Automatic upgrade maintenance
 
 Read [the automatic upgrade guide](docs/AUTOMATIC-UPDATES.md) when managing an

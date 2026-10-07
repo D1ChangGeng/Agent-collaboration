@@ -174,7 +174,7 @@ def configure_harnesses(harnesses: list[str], config_path: Path) -> dict[str, st
         if harness == "codex":
             path = Path.home() / ".codex" / "config.toml"
             marker = "[mcp_servers.agent_collaboration]"
-            block = marker + "\ncommand = " + json.dumps(command[0]) + "\nargs = " + json.dumps(command[1:]) + "\n"
+            block = marker + "\ncommand = " + json.dumps(command[0]) + "\nargs = " + json.dumps(command[1:]) + "\nstartup_timeout_sec = 120\n"
             if path.exists():
                 text = path.read_text(encoding="utf-8")
                 entry = tomllib.loads(text).get("mcp_servers", {}).get("agent_collaboration")
@@ -193,17 +193,26 @@ def configure_harnesses(harnesses: list[str], config_path: Path) -> dict[str, st
             configured[harness] = str(path)
         elif harness == "opencode":
             path = Path.home() / ".config" / "opencode" / "opencode.json"
-            entry = {"type": "local", "command": command, "enabled": True}
+            entry = {"type": "local", "command": command, "enabled": True, "timeout": 120000}
             data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
             if not isinstance(data, dict) or not isinstance(data.get("mcp", {}), dict):
                 raise ValueError("OpenCode configuration shape requires explicit review")
             servers = data.setdefault("mcp", {})
             if "agent_collaboration" in servers and servers["agent_collaboration"] != entry:
                 old = servers["agent_collaboration"]
-                if (not installation_root or not isinstance(old, dict)
-                        or old != {"type": "local", "command": old.get("command"), "enabled": True}
-                        or old.get("command") not in [pinned, allowed_previous]):
+                old_timeout = old.get("timeout") if isinstance(old, dict) else None
+                basic_old = {key: value for key, value in old.items() if key != "timeout"} if isinstance(old, dict) else {}
+                owned_command = basic_old.get("command") in [command, pinned, allowed_previous]
+                if (not isinstance(old, dict)
+                        or basic_old != {"type": "local", "command": basic_old.get("command"), "enabled": True}
+                        or not owned_command or (old_timeout is not None and type(old_timeout) is not int)
+                        or (basic_old.get("command") != command and not installation_root)):
                     raise ValueError("existing OpenCode ACS MCP entry differs; review it explicitly")
+                if old_timeout is not None:
+                    entry["timeout"] = old_timeout
+                if old == entry:
+                    configured[harness] = str(path)
+                    continue
                 servers["agent_collaboration"] = entry
                 changes.append((path, json.dumps(data, ensure_ascii=False, indent=2) + "\n",
                                 "opencode.json"))

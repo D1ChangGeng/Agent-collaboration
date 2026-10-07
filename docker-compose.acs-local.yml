@@ -3,6 +3,7 @@ name: acs-local
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: acs
       POSTGRES_PASSWORD: ${ACS_POSTGRES_PASSWORD:?Set ACS_POSTGRES_PASSWORD in the private environment file}
@@ -19,6 +20,7 @@ services:
 
   temporal:
     image: temporalio/auto-setup:1.29.1
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy

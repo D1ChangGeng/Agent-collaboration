@@ -4,6 +4,11 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Stable MCP startup restores the existing owner Core provider project before
+  executing the selected Runtime. Private SSH and Secure MCP Tunnel profiles
+  support single-instance supervision and reconnect/process recovery while
+  preserving credentials, Grant authorization and independent local/web health.
+
 ## 1.4.0 - 2026-10-03
 
 - Add an organization vocabulary proposal distinguishing Root/Route responsibility
