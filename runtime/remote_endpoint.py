@@ -187,6 +187,8 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
             config.listen_port or config.binding.locator_port,
         )
         super().__init__(listen, ReceiverHandler)
+        # A disconnected peer can disappear after selector readiness.
+        self.socket.settimeout(0.5)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version = ssl.TLSVersion.TLSv1_3
         context.maximum_version = ssl.TLSVersion.TLSv1_3
@@ -311,9 +313,11 @@ def serve(config: ReceiverRuntimeConfig, ready=None, authorize_current=None, nat
     worker = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
     worker.start()
     previous_handlers = {}
+    stop_requested = False
     if threading.current_thread() is threading.main_thread():
         def stop(_signum, _frame):
-            server.shutdown()
+            nonlocal stop_requested
+            stop_requested = True
 
         for name in ("SIGTERM", "SIGINT"):
             number = getattr(signal, name, None)
@@ -325,11 +329,14 @@ def serve(config: ReceiverRuntimeConfig, ready=None, authorize_current=None, nat
             raise RemoteTransportRejected("receiver deployment policy readiness check rejected")
         if ready is not None:
             ready.set()
-        worker.join()
+        while worker.is_alive() and not stop_requested:
+            worker.join(timeout=0.1)
     finally:
-        for number, previous in previous_handlers.items():
-            signal.signal(number, previous)
-        server.shutdown()
-        server.server_close()
-        worker.join(timeout=5)
-        server.close_runtime()
+        try:
+            server.shutdown()
+            server.server_close()
+            worker.join(timeout=5)
+            server.close_runtime()
+        finally:
+            for number, previous in previous_handlers.items():
+                signal.signal(number, previous)

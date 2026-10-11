@@ -35,9 +35,10 @@ Implementation and the authorized reversible installation migration are complete
 for the owner candidate. Current engineering evidence is
 [CLEANUP-VERIFICATION.zh-CN.md](CLEANUP-VERIFICATION.zh-CN.md).
 
-Both hosts now run the final wheel 7d2ea3ef6f290022bdc1bb746fada81cd5c69e976fd866831e86fc07a9c0a804;
-signed Endpoint and message binding revision is 776. Real Core-triggered Receiver
-recovery returned idle/active while retaining that revision. Final remote tests
+Both hosts now run wheel c11d9151bf24683a4fe8276978fe5a6e32afe9d20fa6f8d582e31e4fb0f76211;
+signed Endpoint and message binding revision is 777. Receiver stop took 0.219
+seconds; real Core-triggered recovery returned idle/active at that revision.
+The latest Receiver/IPC modules pass 156 tests. Previous final remote tests
 are 50 passed/2 skipped; installation and Skill checks are 58 passed/18 platform
 skips; last changed delivery/history/provider paths are 72 passed. All nine
 client Skills are copied and verified on Windows, WSL and 1302-1.
@@ -50,7 +51,17 @@ to 0.1.1; all 35 files match the reviewed package on account readback.
 GitHub CI exposed shared project fixture registration after module collection.
 Registering that fixture in the common test entry fixes the reproduced combined
 selection: 12 owner integration scenarios pass with the existing assertions.
-Remaining candidate gates: CI readback for that test startup correction; ChatGPT
+PR CI for 153e2b4 passed, including 347 PostgreSQL tests and 123 Gate tooling
+tests. The duplicate push run exposed a 100ms test initialization window and
+a Receiver subprocess exit failure; it was cancelled to collect its log.
+Signal callbacks now record stop intent, and the main loop closes the listener.
+Tests retain the five-second exit assertion and reap owned processes on failure.
+The 100ms IPC window applies after normal helper startup.
+The package upgrade preserves native settings and journals; both hosts verify
+107 installed files. Two new MCP Sessions recover the original result; the web
+connection reads owner/continuous/idle with binding revision 777.
+
+Remaining candidate gates: CI readback for the shutdown correction; ChatGPT
 host metadata Refresh and a new conversation to verify omitted optional fields.
 The live cached-schema web run has already completed actual remote native work.
 Source and installation artifacts are reviewable; a formal Release is separate.

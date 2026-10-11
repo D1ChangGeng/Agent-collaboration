@@ -1045,9 +1045,8 @@ def test_server_generation_two_restart_recovers_unmarked_prepare_once(env):
         with sqlite3.connect(config.ledger_path) as connection:
             assert connection.execute("SELECT count(*) FROM native_calls").fetchone() == (1,)
     finally:
-        process.terminate()
-        process.join(5)
-    assert not process.is_alive()
+        exited = stop_receiver_process(process)
+    assert exited
 
 
 def test_server_rejects_nonmonotonic_generation_restart(env):
@@ -1064,6 +1063,16 @@ def test_server_rejects_nonmonotonic_generation_restart(env):
     process.start()
     process.join(5)
     assert not ready.is_set() and not process.is_alive() and process.exitcode != 0
+
+
+def stop_receiver_process(process):
+    process.terminate()
+    process.join(5)
+    exited = not process.is_alive()
+    if not exited:
+        process.kill()
+        process.join(5)
+    return exited
 
 
 def test_actual_tls13_two_process_signed_delivery_and_readback(env):
@@ -1131,10 +1140,29 @@ def test_actual_tls13_two_process_signed_delivery_and_readback(env):
         evidence["wrong_tls_fingerprint_rejected"] = True
         evidence["result"] = "pass"
     finally:
-        process.terminate()
-        process.join(5)
-        evidence["receiver_process_exited"] = not process.is_alive()
-    assert not process.is_alive()
+        evidence["receiver_process_exited"] = stop_receiver_process(process)
+    assert evidence["receiver_process_exited"]
     evidence_path = os.getenv("ACS_RECEIVER_EVIDENCE")
     if evidence_path:
         Path(evidence_path).write_text(json.dumps(evidence, sort_keys=True, default=list), encoding="utf-8")
+
+
+def test_receiver_stops_during_unfinished_tls_handshake(env):
+    if not sys.platform.startswith("linux"):
+        pytest.skip("actual receiver signals are measured on Linux")
+    ready = multiprocessing.Event()
+    process = multiprocessing.Process(
+        target=serve, args=(env.config, ready, fixture_authority_current, fixture_native_invoke),
+    )
+    process.start()
+    try:
+        assert ready.wait(5) and process.is_alive()
+        with socket.create_connection((env.config.binding.locator_host, env.config.binding.locator_port)) as raw:
+            raw.sendall(b"\x16")
+            time.sleep(0.05)
+            assert stop_receiver_process(process)
+            assert process.exitcode == 0
+    finally:
+        if process.is_alive():
+            process.kill()
+            process.join(5)

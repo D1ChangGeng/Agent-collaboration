@@ -427,8 +427,9 @@ def test_unrelated_original_inode_fds_cannot_mask_replaced_sqlite_path(tmp_path)
 
 def test_stopped_helper_request_times_out_and_is_killed(tmp_path):
     root = make_root(tmp_path)
-    transport = LocalHumanBridgeTransport(root, helper_timeout_seconds=0.1)
+    transport = LocalHumanBridgeTransport(root)
     connection = transport._connect()
+    connection.timeout_seconds = 0.1
     process = connection.process
     os.kill(process.pid, signal.SIGSTOP)
     with pytest.raises(ProviderRejected, match="deadline|timed out"):
@@ -440,8 +441,9 @@ def test_stopped_helper_request_times_out_and_is_killed(tmp_path):
 
 def test_killed_helper_close_is_idempotent_and_reaps_all_streams(tmp_path):
     root = make_root(tmp_path)
-    transport = LocalHumanBridgeTransport(root, helper_timeout_seconds=0.1)
+    transport = LocalHumanBridgeTransport(root)
     connection = transport._connect()
+    connection.timeout_seconds = 0.1
     process = connection.process
     os.kill(process.pid, signal.SIGKILL)
     connection.close()
@@ -454,8 +456,9 @@ def test_killed_helper_close_is_idempotent_and_reaps_all_streams(tmp_path):
 
 def test_broken_pipe_while_closing_does_not_skip_other_cleanup(tmp_path):
     root = make_root(tmp_path)
-    transport = LocalHumanBridgeTransport(root, helper_timeout_seconds=0.1)
+    transport = LocalHumanBridgeTransport(root)
     connection = transport._connect()
+    connection.timeout_seconds = 0.1
     process = connection.process
     original_stdin = process.stdin
     assert original_stdin is not None
