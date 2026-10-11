@@ -454,3 +454,7 @@ When setup is complete:
 3. State whether the repository has uncommitted changes.
 4. Recommend committing the setup if appropriate.
 5. Explicitly state that normal collaboration now proceeds through `AGENTS.md` and `.agents/`, and that this skill should not be loaded again unless the collaboration setup itself needs maintenance.
+
+For WSL startup maintenance, verify the installed Docker init mechanism with an
+actual successful invocation, and configure an owner login recovery task using
+the verified helper `--maintain` entry. Read back services and Tunnel health.

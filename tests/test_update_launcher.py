@@ -79,7 +79,7 @@ class StartupSelectionTests(unittest.TestCase):
             active = release_fixture(root, "1.4.1")
             helper = active / "scripts/acs_startup.py"
             helper.parent.mkdir()
-            helper.write_text("class StartupUnavailable(RuntimeError): pass\ndef ensure_core(root, active): return {'core': 'ready'}\ndef ensure_web(path): raise StartupUnavailable('private detail')\n")
+            helper.write_text("def restore_configured(root, active): return {'core': 'ready', 'web_tunnel': 'owner_repair_required'}\n")
             manifest_path = active / "RELEASE-MANIFEST.json"
             manifest = json.loads(manifest_path.read_bytes())
             manifest["files"]["scripts/acs_startup.py"] = {"bytes": helper.stat().st_size, "sha256": hashlib.sha256(helper.read_bytes()).hexdigest()}

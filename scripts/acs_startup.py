@@ -307,17 +307,60 @@ def supervise_web(path: Path) -> None:
             raise
 
 
+def restore_configured(installation: Path, active: Path) -> dict:
+    """Recover each configured component independently, including during outages."""
+    state = json.loads(owner_path(installation / "state.json").read_bytes())
+    if state.get("startup", {}).get("enabled", True) is False:
+        return {"core": "owner_disabled"}
+    result = {}
+    components = [("core", lambda: ensure_core(installation, active))]
+    for name, field, restore in (("web_tunnel", "web_profile_ref", ensure_web),
+                                 ("ssh_tunnel", "ssh_profile_ref", ensure_ssh)):
+        reference = state.get("startup", {}).get(field)
+        if reference:
+            components.append((name, lambda reference=reference, restore=restore: restore(Path(reference))))
+    for name, restore in components:
+        try:
+            result.update(restore())
+        except (StartupUnavailable, OSError, ValueError, KeyError):
+            result[name] = "owner_repair_required"
+    return result
+
+
+def maintain(installation: Path) -> None:
+    """Keep owner startup recovery active under an OS login/service manager."""
+    state = json.loads(owner_path(installation / "state.json").read_bytes())
+    private = owner_path(Path(state["runtime_config_ref"]).parent, directory=True)
+    try:
+        with locked(private / "login-recovery.lock", timeout=0):
+            while True:
+                try:
+                    state = json.loads(owner_path(installation / "state.json").read_bytes())
+                    if state.get("startup", {}).get("enabled", True) is False:
+                        return
+                    restore_configured(installation, Path(state["current"]))
+                except (StartupUnavailable, OSError, ValueError, KeyError):
+                    pass
+                time.sleep(30)
+    except StartupUnavailable as error:
+        if str(error) != "startup_lock_busy":
+            raise
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--supervise-ssh", type=Path)
     mode.add_argument("--supervise-web", type=Path)
+    mode.add_argument("--maintain", type=Path)
     args = parser.parse_args(argv)
     try:
         if args.supervise_ssh:
             supervise_ssh(args.supervise_ssh)
-        else:
+        elif args.supervise_web:
             supervise_web(args.supervise_web)
+        else:
+            maintain(args.maintain)
     except (OSError, ValueError, KeyError, StartupUnavailable):
         return 2
     return 0

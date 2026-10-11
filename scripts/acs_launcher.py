@@ -138,17 +138,9 @@ def restore_startup(root: Path, active: Path) -> dict:
     spec = importlib.util.spec_from_file_location("acs_owned_startup", path)
     startup = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(startup)
-    result = startup.ensure_core(root, active)
-    state = json.loads((root / "state.json").read_bytes())
-    reference = state.get("startup", {}).get("ssh_profile_ref")
-    if reference and state.get("startup", {}).get("enabled", True):
-        result.update(startup.ensure_ssh(Path(reference)))
-    web = state.get("startup", {}).get("web_profile_ref")
-    if web and state.get("startup", {}).get("enabled", True):
-        try:
-            result.update(startup.ensure_web(Path(web)))
-        except (startup.StartupUnavailable, OSError, ValueError, KeyError):
-            result["web_tunnel"] = "owner_repair_required"
+    result = startup.restore_configured(root, active)
+    if result.get("core") == "owner_repair_required":
+        raise ValueError("startup_core_unavailable")
     return result
 
 

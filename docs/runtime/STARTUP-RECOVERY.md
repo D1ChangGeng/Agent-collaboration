@@ -15,12 +15,28 @@ Startup does not adopt schema, bootstrap a new Grant or revive revoked access.
 New service containers use `restart: unless-stopped`. Existing containers can
 receive that policy only after their project/service ownership is read back.
 
-Docker daemon availability is a machine prerequisite. For WSL without systemd,
-Microsoft supports a per-distribution `[boot] command` such as
-`/usr/sbin/service docker start`; preserve existing settings and backup before
-changing this administrative option. It applies at the next distribution start.
-A user-manager systemd unit cannot serve as the only recovery path when that
-manager is offline. Do not stop a live distribution solely to verify startup.
+Docker daemon availability is a machine prerequisite. Inspect the actual init
+manager and installed Docker service before choosing its startup command.
+On WSL with Docker's systemd units, configure `[boot] systemd=true` and enable
+`docker.service` and `containerd.service`. Preserve and back up existing distro
+settings. A boot command using `service docker start` requires an installed SysV
+init script and a successful real invocation; a systemd-only package cannot use
+that command. Configuration applies at the next distribution cold start.
+
+A Windows owner login task should enter the selected WSL distribution and run
+its verified recovery helper with `--maintain <installation-root>`, under the
+selected Linux owner account. Use an interactive owner principal, one task
+instance, unlimited running duration and restart on process failure. This
+keeps recovery active even before a Harness opens an MCP connection. The helper
+holds an owner lock, re-reads selected state and retries recovery every 30 seconds.
+Core, web and SSH recovery are independent attempts: a Core dependency failure
+still requests Tunnel supervision. Disable automatic startup through the owner
+startup setting. Keep secret values in their original protected profiles.
+
+Read back Docker readiness, task state, Tunnel health and actual MCP authorization.
+A running task is an ongoing service, rather than a failed completion code.
+Do not stop a live distribution solely to verify startup; distinguish tested
+service recovery from an unmeasured future cold-start configuration.
 
 ## Transport supervision
 

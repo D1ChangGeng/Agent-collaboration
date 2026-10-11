@@ -56,6 +56,27 @@ class StartupRecoveryTests(unittest.TestCase):
         self.assertEqual(run.call_args.kwargs["env"]["ACS_POSTGRES_PASSWORD"], "p" * 50)
         self.assertEqual(run.call_args.kwargs["timeout"], 90)
 
+    def test_core_failure_does_not_skip_independent_tunnel_recovery(self):
+        self.write(self.root / "state.json", {"startup": {
+            "web_profile_ref": str(self.root / "web.json"),
+            "ssh_profile_ref": str(self.profile)}})
+        with (mock.patch.object(startup, "ensure_core", side_effect=startup.StartupUnavailable("failure")),
+              mock.patch.object(startup, "ensure_web", return_value={"web_tunnel": "supervision_requested"}) as web,
+              mock.patch.object(startup, "ensure_ssh", side_effect=startup.StartupUnavailable("network")) as ssh):
+            result = startup.restore_configured(self.root, self.active)
+        web.assert_called_once()
+        ssh.assert_called_once()
+        self.assertEqual(result, {"core": "owner_repair_required", "web_tunnel": "supervision_requested", "ssh_tunnel": "owner_repair_required"})
+
+    def test_login_maintenance_retries_after_recovery_failure(self):
+        self.write(self.root / "state.json", {"runtime_config_ref": str(self.private / "surface.json"), "current": str(self.active)})
+        with (mock.patch.object(startup, "restore_configured", side_effect=[startup.StartupUnavailable("offline"), {}]) as restore,
+              mock.patch.object(startup.time, "sleep", side_effect=[None, KeyboardInterrupt]) as sleep,
+              self.assertRaises(KeyboardInterrupt)):
+            startup.maintain(self.root)
+        self.assertEqual(restore.call_count, 2)
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [30, 30])
+
     def test_tampered_compose_never_starts_services(self):
         (self.active / "docker-compose.acs-local.yml").write_text("changed")
         with mock.patch.object(startup, "command") as run, self.assertRaises(startup.StartupUnavailable):
