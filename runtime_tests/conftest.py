@@ -1,3 +1,6 @@
-"""Register shared Runtime delivery fixtures before test module collection."""
+"""Register shared Runtime fixtures before test module collection."""
 
-pytest_plugins = ("runtime_tests.test_delivery",)
+pytest_plugins = (
+    "runtime_tests.test_delivery",
+    "runtime_tests.test_project_service",
+)

@@ -42,8 +42,16 @@ are 50 passed/2 skipped; installation and Skill checks are 58 passed/18 platform
 skips; last changed delivery/history/provider paths are 72 passed. All nine
 client Skills are copied and verified on Windows, WSL and 1302-1.
 
-Remaining candidate gates: commit/push/PR and GitHub CI readback; ChatGPT host
-metadata Refresh and a new conversation to verify omitted optional fields.
+Implementation commit 28a829ad7d29b2ea5d8dae17651bd0c2930fd977 is pushed;
+[Draft PR #12](https://github.com/D1ChangGeng/Agent-collaboration/pull/12)
+contains the candidate. The private eight-module knowledge plugin is updated
+to 0.1.1; all 35 files match the reviewed package on account readback.
+
+GitHub CI exposed shared project fixture registration after module collection.
+Registering that fixture in the common test entry fixes the reproduced combined
+selection: 12 owner integration scenarios pass with the existing assertions.
+Remaining candidate gates: CI readback for that test startup correction; ChatGPT
+host metadata Refresh and a new conversation to verify omitted optional fields.
 The live cached-schema web run has already completed actual remote native work.
 Source and installation artifacts are reviewable; a formal Release is separate.
 

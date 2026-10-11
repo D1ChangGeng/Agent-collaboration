@@ -51,6 +51,19 @@ Root、Route、Node、密钥、既有 journal 与结果归属保留。
 
 Windows、WSL、1302-1 的 setup 与八个知识 Skills 已更新并核对摘要。
 
+## 候选提交与集成验证
+
+实现提交 `28a829ad7d29b2ea5d8dae17651bd0c2930fd977` 已推送到
+`codex/core-cleanup`，并建立
+[Draft PR #12](https://github.com/D1ChangGeng/Agent-collaboration/pull/12)。
+私有八模块知识插件已保存为 v0.1.1，账户中 35 个文件与审查包逐项一致。
+
+首次 GitHub CI 的三个 Python 版本校验与 Runtime 组件测试通过；
+PostgreSQL 集成组合运行中，12 个 owner 场景在 setup 阶段缺少共享
+`project` fixture。相同收集顺序在本机复现。共享测试入口提前注册原有
+fixture 后，这 12 个场景通过，原有断言保持。最终 CI 读回继续跟随
+包含此测试入口修正的候选提交；生产 Runtime 与已安装 wheel 保持相同。
+
 ## 客户端元数据迁移
 
 当前 ChatGPT 连接缓存旧 schema，仍要求 budget/deadline/wait timeout。
