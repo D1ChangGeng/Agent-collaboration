@@ -11,11 +11,12 @@ Source and evidence truth. Review decisions belong to acs-review-acceptance; exe
 
 ## Core invariants
 
-- Source content remains authoritative in its filesystem or repository provider.
-- Source claims bind repository identity, revision, commit, tree and observed worktree state.
-- Message delivery and Git synchronization are independent.
-- Artifact bytes, Evidence claims and ExecutionReceipt facts are separate.
-- Imported or endpoint-reported observations retain provenance and do not become verified by storage alone.
+- Source content remains authoritative in its filesystem or repository provider and within the configured Source roots.
+- Owner current workspace reads capture admitted tracked edits and untracked files under a workspace revision distinct from the Git baseline.
+- Fixed revision and commit snapshots retain exact bytes, modes, digests and provenance for reproducible work.
+- Message delivery and Git synchronization are separately observed facts.
+- Artifact bytes, Evidence claims and ExecutionReceipt facts retain separate identities; historical facts preserve their recorded context after a former Grant's natural expiry.
+- Imported and endpoint-reported observations retain provenance; current source and readiness claims require current readback.
 
 ## Retrieval map
 
@@ -37,9 +38,12 @@ tools.
 
 ## Application
 
-Apply this knowledge to the user's actual goal and current evidence. Compose
-tools from present state, permissions and required readback. Examples in the references illustrate the model. The Agent derives the
-sequence from current state, authority, evidence and the user's goal.
+Apply this knowledge to the user's goal and current evidence. Read the
+installed access mode and active tool schema, then compose actions from trusted
+identity, object state, revisions and required readback. References explain
+durable semantics; ProjectContextPack and current sources provide project facts.
+The owner product contract is `docs/runtime/OWNER-RUNTIME.md` in the verified
+ACS release or source checkout.
 
 ## Related knowledge
 

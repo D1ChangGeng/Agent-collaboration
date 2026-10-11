@@ -1,34 +1,18 @@
-from runtime.domain import DomainAuthority
-from runtime.human_bridge_dispatch import (
-    HumanBridgeManualInbox,
-    HumanBridgeProviderDispatcher,
-    provision_local_provider,
-)
-from runtime.models import (
-    AuthenticatedContext,
-    CommandEnvelope,
-    CommandResult,
-    ExecutionStatus,
-    WorkItemState,
-)
-from runtime.recovery import NodeResponseOutbox, PostgresDelayedResponseAuthority
-from runtime.recovery_service import RecoveryService
-from runtime.response_collector import NativeResponseCollector
-from runtime.systemd_supervisor import SystemdUserSupervisor
+"""Runtime public API; load concrete services when their exported names are used."""
+from importlib import import_module
 
-__all__ = [
-    "AuthenticatedContext",
-    "CommandEnvelope",
-    "CommandResult",
-    "DomainAuthority",
-    "ExecutionStatus",
-    "HumanBridgeManualInbox",
-    "HumanBridgeProviderDispatcher",
-    "NativeResponseCollector",
-    "NodeResponseOutbox",
-    "PostgresDelayedResponseAuthority",
-    "RecoveryService",
-    "SystemdUserSupervisor",
-    "WorkItemState",
-    "provision_local_provider",
-]
+_EXPORTS = {'DomainAuthority': 'domain', 'HumanBridgeManualInbox': 'human_bridge_dispatch', 'HumanBridgeProviderDispatcher': 'human_bridge_dispatch', 'provision_local_provider': 'human_bridge_dispatch', 'AuthenticatedContext': 'models', 'CommandEnvelope': 'models', 'CommandResult': 'models', 'ExecutionStatus': 'models', 'WorkItemState': 'models', 'NodeResponseOutbox': 'recovery', 'PostgresDelayedResponseAuthority': 'recovery', 'RecoveryService': 'recovery_service', 'NativeResponseCollector': 'response_collector', 'SystemdUserSupervisor': 'systemd_supervisor'}
+__all__ = sorted(_EXPORTS)
+
+
+def __getattr__(name):
+    module = _EXPORTS.get(name)
+    if module is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    value = getattr(import_module(f"{__name__}.{module}"), name)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))

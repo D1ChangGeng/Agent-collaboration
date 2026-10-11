@@ -28,6 +28,7 @@ from runtime.errors import (
     IdempotencyConflict,
     RevisionConflict,
 )
+from runtime.lifetimes import earliest
 from runtime.models import CommandEnvelope, CommandResult
 
 
@@ -90,6 +91,17 @@ class EnrollmentAuthority:
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
     def _grant(self, cursor, grant_ref, scope_id, permissions):
+        if self.authority.access_mode == "owner":
+            ctx = self.authority.context
+            cursor.execute("SELECT g.principal_ref FROM grants g JOIN scopes s ON s.scope_id=%s "
+                "AND s.tenant_id=g.tenant_id WHERE g.tenant_id=%s AND g.grant_ref=%s "
+                "AND g.authority_id=%s AND g.authority_incarnation=%s "
+                "AND g.revoked_at IS NULL AND s.status='active'",
+                (scope_id, ctx.tenant_id, grant_ref, ctx.authority_id, ctx.authority_incarnation))
+            row = cursor.fetchone()
+            if row is None:
+                raise AuthorizationDenied(ctx.principal_ref, grant_ref)
+            return row[0], None
         ctx = self.authority.context
         cursor.execute(
             "SELECT g.principal_ref,g.expires_at,g.permissions FROM grants g "
@@ -132,8 +144,8 @@ class EnrollmentAuthority:
         cursor.execute(
             "SELECT to_jsonb(b),to_jsonb(k) FROM enrolled_node_bindings b JOIN enrolled_node_keys k ON k.key_id=b.key_id "
             "WHERE b.tenant_id=%s AND b.node_id=%s AND b.binding_revision=%s "
-            "AND b.status='active' AND k.status='active' AND b.expires_at>clock_timestamp() FOR UPDATE OF b,k",
-            (node["tenant_id"], node_id, node["current_binding_revision"]),
+            "AND b.status='active' AND k.status='active' AND (%s OR b.expires_at>clock_timestamp()) FOR UPDATE OF b,k",
+            (node["tenant_id"], node_id, node["current_binding_revision"], self.authority.access_mode == "owner"),
         )
         row = cursor.fetchone()
         if row is None:
@@ -145,11 +157,13 @@ class EnrollmentAuthority:
         observer, grant_expiry = self._grant(cursor, node["observer_grant_ref"], node["scope_id"], ())
         if observer != node["observer_ref"]:
             raise AcceptanceGuardFailed("Node observer Grant identity changed")
-        return node, row[0], row[1], min(grant_expiry, self._time(row[0]["expires_at"]))
+        return node, row[0], row[1], (None if self.authority.access_mode == "owner"
+                                       else min(grant_expiry, self._time(row[0]["expires_at"])))
 
     def _active_runtime(self, cursor, runtime_id):
-        cursor.execute("SELECT to_jsonb(r) FROM enrolled_runtimes r WHERE tenant_id=%s AND runtime_id=%s AND status='active' AND expires_at>clock_timestamp() FOR UPDATE",
-                       (self.authority.tenant_id, runtime_id))
+        cursor.execute("SELECT to_jsonb(r) FROM enrolled_runtimes r WHERE tenant_id=%s AND runtime_id=%s AND status='active' "
+                       "AND (%s OR expires_at>clock_timestamp()) FOR UPDATE",
+                       (self.authority.tenant_id, runtime_id, self.authority.access_mode == "owner"))
         row = cursor.fetchone()
         if row is None:
             raise AcceptanceGuardFailed("Runtime enrollment is missing, expired or retired")
@@ -162,7 +176,8 @@ class EnrollmentAuthority:
         producer, producer_expiry = self._grant(cursor, runtime["producer_grant_ref"], runtime["scope_id"], ())
         if producer != runtime["producer_ref"]:
             raise AcceptanceGuardFailed("Runtime producer Grant identity changed")
-        return runtime, node, binding, key, min(valid_until, producer_expiry, self._time(runtime["expires_at"]))
+        return runtime, node, binding, key, (None if self.authority.access_mode == "owner"
+            else min(valid_until, producer_expiry, self._time(runtime["expires_at"])))
 
     def _runtime_identity(self, cursor, runtime_id):
         cursor.execute("SELECT to_jsonb(r) FROM enrolled_runtimes r WHERE tenant_id=%s AND runtime_id=%s FOR UPDATE",
@@ -238,8 +253,8 @@ class EnrollmentAuthority:
             observer, observer_expiry = self._grant(cursor, request.observer_grant_ref, request.scope_id,
                                                   ("runtime.register", "attempt.register", "execution.record"))
             _, operator_expiry = self._grant(cursor, command.grant_ref, request.scope_id, ("enrollment.manage",))
-            expires = self._time(request.expires_at)
-            if not self._now(cursor) < expires <= observer_expiry:
+            expires = None if self.authority.access_mode == "owner" else self._time(request.expires_at)
+            if self.authority.access_mode != "owner" and not self._now(cursor) < expires <= observer_expiry:
                 raise AcceptanceGuardFailed("Node enrollment expiry exceeds its observer Grant")
             cursor.execute("SELECT 1 FROM enrolled_nodes WHERE tenant_id=%s AND node_id=%s FOR UPDATE", (command.tenant_id, command.target_id))
             if cursor.fetchone() is not None:
@@ -247,10 +262,10 @@ class EnrollmentAuthority:
             cursor.execute(
                 "INSERT INTO enrolled_nodes(tenant_id,node_id,scope_id,agent_slot_id,observer_ref,observer_grant_ref,authority_id,"
                 "authority_incarnation,revision,current_binding_revision,status,enrolled_by) "
-                "SELECT %s,%s,%s,%s,%s,%s,%s,%s,1,1,'active',%s WHERE clock_timestamp()<%s",
+                "SELECT %s,%s,%s,%s,%s,%s,%s,%s,1,1,'active',%s WHERE (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
                 (command.tenant_id, command.target_id, request.scope_id, request.agent_slot_id, observer,
                  request.observer_grant_ref, command.authority_id, command.authority_incarnation, command.principal_ref,
-                 min(command.deadline, operator_expiry)),
+                 earliest(command.deadline, operator_expiry), earliest(command.deadline, operator_expiry)),
             )
             if cursor.rowcount != 1:
                 raise AcceptanceGuardFailed("enrollment authorization expired during registration")
@@ -281,8 +296,8 @@ class EnrollmentAuthority:
                 raise RevisionConflict(command.target_id, command.expected_revision, node["revision"])
             _, observer_expiry = self._grant(cursor, node["observer_grant_ref"], node["scope_id"], ())
             _, operator_expiry = self._grant(cursor, command.grant_ref, node["scope_id"], ("enrollment.manage",))
-            expires = self._time(request.expires_at)
-            if not self._now(cursor) < expires <= observer_expiry:
+            expires = None if self.authority.access_mode == "owner" else self._time(request.expires_at)
+            if self.authority.access_mode != "owner" and not self._now(cursor) < expires <= observer_expiry:
                 raise AcceptanceGuardFailed("Node enrollment expiry exceeds its observer Grant")
             cursor.execute("SELECT 1 FROM enrolled_node_bindings WHERE tenant_id=%s AND node_id=%s AND boot_incarnation=%s",
                            (command.tenant_id, command.target_id, request.boot_incarnation))
@@ -296,8 +311,8 @@ class EnrollmentAuthority:
             cursor.execute("UPDATE enrolled_runtimes SET status='retired',retired_at=clock_timestamp() WHERE tenant_id=%s AND node_id=%s AND status='active'",
                            (command.tenant_id, command.target_id))
             cursor.execute(
-                "UPDATE enrolled_nodes SET revision=%s,current_binding_revision=%s WHERE tenant_id=%s AND node_id=%s AND clock_timestamp()<%s",
-                (result.revision, result.revision, command.tenant_id, command.target_id, min(command.deadline, operator_expiry)),
+                "UPDATE enrolled_nodes SET revision=%s,current_binding_revision=%s WHERE tenant_id=%s AND node_id=%s AND (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
+                (result.revision, result.revision, command.tenant_id, command.target_id, earliest(command.deadline, operator_expiry), earliest(command.deadline, operator_expiry)),
             )
             if cursor.rowcount != 1:
                 raise AcceptanceGuardFailed("enrollment authorization expired during rotation")
@@ -327,8 +342,8 @@ class EnrollmentAuthority:
                 raise RevisionConflict(command.target_id, command.expected_revision, node["revision"])
             _, expiry = self._grant(cursor, command.grant_ref, node["scope_id"], ("enrollment.manage",))
             cursor.execute("UPDATE enrolled_nodes SET status='revoked',revision=%s,revoked_at=clock_timestamp(),revocation_policy='block_future_only' "
-                           "WHERE tenant_id=%s AND node_id=%s AND status='active' AND clock_timestamp()<%s",
-                           (result.revision, command.tenant_id, command.target_id, min(command.deadline, expiry)))
+                           "WHERE tenant_id=%s AND node_id=%s AND status='active' AND (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
+                           (result.revision, command.tenant_id, command.target_id, earliest(command.deadline, expiry), earliest(command.deadline, expiry)))
             if cursor.rowcount != 1:
                 raise AcceptanceGuardFailed("Node is already revoked or revocation authorization expired")
             cursor.execute("UPDATE enrolled_node_bindings SET status='revoked',retired_at=clock_timestamp() WHERE tenant_id=%s AND node_id=%s AND status='active'",
@@ -363,7 +378,7 @@ class EnrollmentAuthority:
                 return self._challenge_reply(cursor, duplicate)
             if command.expected_revision != node["revision"]:
                 raise RevisionConflict(command.target_id, command.expected_revision, node["revision"])
-            expires = min(valid_until, command.deadline, self._now(cursor) + timedelta(seconds=request.ttl_seconds))
+            expires = earliest(valid_until, command.deadline, self._now(cursor) + timedelta(seconds=request.ttl_seconds))
             message = {
                 "schema": "acs-node-challenge/1", "tenant_id": command.tenant_id,
                 "authority_id": command.authority_id, "authority_incarnation": command.authority_incarnation,
@@ -377,15 +392,45 @@ class EnrollmentAuthority:
             cursor.execute(
                 "INSERT INTO enrolled_node_challenges(challenge_id,tenant_id,node_id,node_binding_revision,purpose,purpose_command_id,"
                 "purpose_hash,message_hex,expires_at,issuance_command_id,issuance_operation_id) "
-                "SELECT %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s WHERE clock_timestamp()<%s",
+                "SELECT %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s WHERE (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
                 (f"challenge-{result.operation_id}", command.tenant_id, node["node_id"], binding["binding_revision"],
                  request.purpose, request.purpose_command_id, request.purpose_hash, encoded, expires,
-                 command.command_id, result.operation_id, expires),
+                 command.command_id, result.operation_id, expires, expires),
             )
             if cursor.rowcount != 1:
                 raise AcceptanceGuardFailed("Node challenge authorization expired")
             self._event(cursor, command, result, digest, "node.challenge_issued")
             return self._challenge_reply(cursor, result)
+
+    def _record_owner_command(self, cursor, command, node_input, node, binding, purpose):
+        """Persist the authenticated installation command, independently of a challenge."""
+        digest = self.signing_hash(command, node_input)
+        cursor.execute(
+            "INSERT INTO owner_node_commands(tenant_id,command_id,node_id,node_binding_revision,purpose,"
+            "command_json,input_json,canonical_hash) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) "
+            "ON CONFLICT(tenant_id,command_id) DO NOTHING",
+            (command.tenant_id, command.command_id, node["node_id"], binding["binding_revision"], purpose,
+             command.model_dump_json(), json.dumps(node_input), digest),
+        )
+        self._owner_command(cursor, command.command_id, node["node_id"], binding["binding_revision"], purpose,
+                            expected_hash=digest)
+
+    def _owner_command(self, cursor, command_id, node_id, binding_revision, purpose, *, expected_hash=None):
+        cursor.execute(
+            "SELECT command_json,input_json,canonical_hash,recorded_at FROM owner_node_commands "
+            "WHERE tenant_id=%s AND command_id=%s AND node_id=%s AND node_binding_revision=%s AND purpose=%s",
+            (self.authority.tenant_id, command_id, node_id, binding_revision, purpose),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            raise AcceptanceGuardFailed("authenticated owner command record is missing")
+        command = CommandEnvelope.model_validate(row[0])
+        if (self.signing_hash(command, row[1]) != row[2]
+                or expected_hash is not None and row[2] != expected_hash
+                or command.tenant_id != self.authority.tenant_id
+                or command.command_id != command_id or command.command_type != purpose):
+            raise AcceptanceGuardFailed("authenticated owner command record differs")
+        return command, row[1], row[3]
 
     def verify_node_command(self, cursor, command, node_input, proof, purpose, *, node_id):
         """Verify/consume one real signature in the caller's command transaction.
@@ -394,9 +439,14 @@ class EnrollmentAuthority:
         with a fresh challenge later; business dedup is independent of proofs.
         Old Node/key/boot proofs still fail current authentication.
         """
+        if proof is None and self.authority.access_mode == "owner":
+            node, binding, _key, _valid_until = self._active_node(cursor, node_id)
+            self.authority._authorize(command, cursor, scope_id=node["scope_id"])
+            self._record_owner_command(cursor, command, node_input, node, binding, purpose)
+            return node, binding, None
         if proof is None:
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
-        proof = self._typed(NodeCommandProof, proof)
+        proof = self._typed(NodeCommandProof, proof) if proof is not None else None
         node, binding, key, valid_until = self._active_node(cursor, node_id)
         binding_revision = binding["binding_revision"]
         self.authority._authorize(command, cursor, purpose, node["scope_id"])
@@ -412,7 +462,7 @@ class EnrollmentAuthority:
         if (challenge["node_id"] != node_id or challenge["node_binding_revision"] != binding_revision
                 or challenge["purpose"] != purpose or challenge["purpose_command_id"] != command.command_id
                 or challenge["purpose_hash"] != expected_hash
-                or self._time(challenge["expires_at"]) <= self._now(cursor)
+                or (self.authority.access_mode != "owner" and self._time(challenge["expires_at"]) <= self._now(cursor))
                 or challenge["consumed_by"] not in (None, command.command_id)):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         try:
@@ -450,12 +500,12 @@ class EnrollmentAuthority:
             )
             cursor.execute("UPDATE enrolled_node_challenges SET consumed_by=%s WHERE challenge_id=%s",
                            (command.command_id, proof.challenge_id))
-        return node, binding, min(valid_until, command.deadline, self._time(challenge["expires_at"]))
+        return node, binding, None if self.authority.access_mode == "owner" else earliest(valid_until, command.deadline, self._time(challenge["expires_at"]))
 
-    def register_runtime(self, command, request: RuntimeRegistration, proof: NodeCommandProof):
+    def register_runtime(self, command, request: RuntimeRegistration, proof: NodeCommandProof | None = None):
         self._expect(command, "runtime.register", "runtime")
         request = self._typed(RuntimeRegistration, request)
-        proof = self._typed(NodeCommandProof, proof)
+        proof = self._typed(NodeCommandProof, proof) if proof is not None else None
         node_input = {"request": request.model_dump(mode="json")}
         with self.authority._connect() as connection, connection.cursor() as cursor:
             self.authority._authorize(command, cursor, "runtime.register")
@@ -470,8 +520,8 @@ class EnrollmentAuthority:
             if request.node_binding_revision != binding["binding_revision"]:
                 raise AcceptanceGuardFailed("Node boot/key binding is not current")
             producer, producer_expiry = self._grant(cursor, request.producer_grant_ref, node["scope_id"], ())
-            expires = self._time(request.expires_at)
-            if not self._now(cursor) < expires <= min(producer_expiry, self._time(binding["expires_at"])):
+            expires = None if self.authority.access_mode == "owner" else self._time(request.expires_at)
+            if self.authority.access_mode != "owner" and not self._now(cursor) < expires <= min(producer_expiry, self._time(binding["expires_at"])):
                 raise AcceptanceGuardFailed("Runtime expiry exceeds its Node/producer binding")
             cursor.execute("SELECT 1 FROM enrolled_runtimes WHERE tenant_id=%s AND runtime_id=%s FOR UPDATE",
                            (command.tenant_id, command.target_id))
@@ -480,11 +530,11 @@ class EnrollmentAuthority:
             cursor.execute(
                 "INSERT INTO enrolled_runtimes(tenant_id,runtime_id,node_id,node_binding_revision,node_boot_incarnation,scope_id,agent_slot_id,"
                 "producer_ref,producer_grant_ref,observer_ref,observer_grant_ref,authority_id,authority_incarnation,provider,status,expires_at,command_id,operation_id) "
-                "SELECT %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'active',%s,%s,%s WHERE clock_timestamp()<%s",
+                "SELECT %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'active',%s,%s,%s WHERE (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
                 (command.tenant_id, command.target_id, node["node_id"], binding["binding_revision"], binding["boot_incarnation"],
                  node["scope_id"], node["agent_slot_id"], producer, request.producer_grant_ref, node["observer_ref"],
                  node["observer_grant_ref"], command.authority_id, command.authority_incarnation, request.provider,
-                 expires, command.command_id, result.operation_id, min(valid_until, producer_expiry)),
+                 expires, command.command_id, result.operation_id, earliest(valid_until, producer_expiry), earliest(valid_until, producer_expiry)),
             )
             if cursor.rowcount != 1:
                 raise AcceptanceGuardFailed("Runtime registration authorization expired")
@@ -493,7 +543,7 @@ class EnrollmentAuthority:
                            (event, command.tenant_id, command.target_id))
             return self._reply(cursor, result, "enrolled_runtimes", "runtime_id")
 
-    def register_attempt(self, command, request: AttemptRegistration, proof: NodeCommandProof):
+    def register_attempt(self, command, request: AttemptRegistration, proof: NodeCommandProof | None = None):
         """Register a signed Node execution-start observation; never start it.
 
         Execution command/operation/event IDs are this real observation command's
@@ -501,7 +551,7 @@ class EnrollmentAuthority:
         """
         self._expect(command, "attempt.register", "attempt")
         request = self._typed(AttemptRegistration, request)
-        proof = self._typed(NodeCommandProof, proof)
+        proof = self._typed(NodeCommandProof, proof) if proof is not None else None
         node_input = {"request": request.model_dump(mode="json")}
         with self.authority._connect() as connection, connection.cursor() as cursor:
             self.authority._authorize(command, cursor, "attempt.register")
@@ -534,13 +584,13 @@ class EnrollmentAuthority:
                 "provider,source_baseline,source_commit,source_tree,candidate_ref,execution_started_at,enrollment_runtime_id,enrollment_node_id,"
                 "enrollment_node_binding_revision,enrollment_boot_incarnation,enrollment_registered_at,enrollment_proof_ref,enrollment_revision) "
                 "SELECT %s,%s,%s,%s,'running',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,clock_timestamp(),%s,1 "
-                "WHERE clock_timestamp()<%s",
+                "WHERE (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
                 (command.target_id, command.tenant_id, request.work_item_id, runtime["agent_slot_id"], runtime["producer_ref"],
                  runtime["runtime_id"], runtime["scope_id"], runtime["producer_grant_ref"], command.authority_id, command.authority_incarnation,
                  node["observer_ref"], node["observer_grant_ref"], command.command_id, result.operation_id, event, runtime["provider"],
                  request.source_baseline, request.source_commit, request.source_tree, request.candidate_ref, observed_start,
-                 runtime["runtime_id"], node["node_id"], binding["binding_revision"], binding["boot_incarnation"], proof.challenge_id,
-                 min(runtime_expiry, proof_expiry)),
+                 runtime["runtime_id"], node["node_id"], binding["binding_revision"], binding["boot_incarnation"], proof.challenge_id if proof else None,
+                 earliest(runtime_expiry, proof_expiry), earliest(runtime_expiry, proof_expiry)),
             )
             if cursor.rowcount != 1:
                 raise AcceptanceGuardFailed("Attempt registration authorization expired")
@@ -555,7 +605,9 @@ class EnrollmentAuthority:
             raise AcceptanceGuardFailed("Attempt enrollment is missing")
         attempt = row[0]
         required = ("enrollment_runtime_id", "enrollment_node_id", "enrollment_node_binding_revision",
-                    "enrollment_boot_incarnation", "enrollment_registered_at", "enrollment_proof_ref")
+                    "enrollment_boot_incarnation", "enrollment_registered_at")
+        if self.authority.access_mode != "owner":
+            required += ("enrollment_proof_ref",)
         if any(attempt.get(field) is None for field in required):
             raise AcceptanceGuardFailed("Attempt has no authenticated enrollment")
         runtime, node, binding, key, expires = self._active_runtime(cursor, attempt["enrollment_runtime_id"])
@@ -573,6 +625,20 @@ class EnrollmentAuthority:
         if work != (attempt["scope_id"], attempt["agent_slot_id"], attempt["source_baseline"]):
             raise AcceptanceGuardFailed("Attempt current WorkItem/source binding differs")
         self.authority._require_confirmed_project_handoff(cursor, attempt["work_item_id"])
+        if self.authority.access_mode == "owner" and attempt["enrollment_proof_ref"] is None:
+            command, payload, recorded = self._owner_command(
+                cursor, attempt["execution_command_id"], node["node_id"], binding["binding_revision"], "attempt.register")
+            observation = self._typed(AttemptRegistration, payload["request"])
+            if (command.target_id != attempt_id or observation.runtime_id != runtime["runtime_id"]
+                    or observation.work_item_id != attempt["work_item_id"]
+                    or observation.source_baseline != attempt["source_baseline"]
+                    or observation.source_commit != attempt["source_commit"]
+                    or observation.source_tree != attempt["source_tree"]
+                    or observation.candidate_ref != attempt["candidate_ref"]
+                    or observation.observed_started_at != self._time(attempt["execution_started_at"])
+                    or recorded > self._time(attempt["enrollment_registered_at"])):
+                raise AcceptanceGuardFailed("Attempt authenticated owner observation differs")
+            return {"attempt": attempt, "runtime": runtime, "node": node, "binding": binding, "valid_until": None}
         cursor.execute(
             "SELECT p.command_json,p.input_json,p.signature,p.verified_at,c.message_hex,c.expires_at,c.consumed_by "
             "FROM enrolled_node_command_proofs p JOIN enrolled_node_challenges c ON c.challenge_id=p.challenge_id "
@@ -606,7 +672,8 @@ class EnrollmentAuthority:
                     or message["scope_id"] != runtime["scope_id"] or message["grant_ref"] != signed_command.grant_ref
                     or message["node_id"] != node["node_id"] or message["binding_revision"] != binding["binding_revision"]
                     or message["boot_incarnation"] != binding["boot_incarnation"] or message["key_id"] != key["key_id"]
-                    or not attestation[3] <= self._time(attempt["enrollment_registered_at"]) < min(attestation[5], signed_command.deadline)):
+                    or attestation[3] > self._time(attempt["enrollment_registered_at"])
+                    or (self.authority.access_mode != "owner" and not self._time(attempt["enrollment_registered_at"]) < min(attestation[5], signed_command.deadline))):
                 raise ValueError("Attempt attestation differs")
             self.verify_signature(key["public_key"], attestation[2], attestation[4])
         except (BadSignatureError, ValueError, KeyError, TypeError):
@@ -625,7 +692,7 @@ class EnrollmentAuthority:
             cursor, command, {"receipt": receipt.model_dump(mode="json")}, proof, "execution.record",
             node_id=attempt[0])
         return {"node": node, "binding": binding, "valid_until": expires,
-                "proof_ref": self._typed(NodeCommandProof, proof).challenge_id}
+                "proof_ref": self._typed(NodeCommandProof, proof).challenge_id if proof else None}
 
     def validate_new_execution_receipt(self, cursor, command, receipt, authentication):
         enrolled = self.current_attempt_binding(cursor, receipt.attempt_id)
@@ -634,7 +701,7 @@ class EnrollmentAuthority:
                 or authentication["node"]["node_id"] != enrolled["node"]["node_id"]
                 or authentication["binding"]["binding_revision"] != enrolled["binding"]["binding_revision"]):
             raise AcceptanceGuardFailed("execution receipt enrollment target differs")
-        enrolled["valid_until"] = min(enrolled["valid_until"], authentication["valid_until"])
+        enrolled["valid_until"] = earliest(enrolled["valid_until"], authentication["valid_until"])
         enrolled["proof_ref"] = authentication["proof_ref"]
         return enrolled
 
@@ -644,12 +711,46 @@ class EnrollmentAuthority:
             "UPDATE execution_receipts SET enrollment_node_id=%s,enrollment_node_binding_revision=%s,enrollment_runtime_id=%s,"
             "enrollment_proof_ref=%s,enrollment_recorded_at=clock_timestamp(),registration_command_id=%s "
             "WHERE tenant_id=%s AND work_item_id=%s AND receipt_id=%s AND enrollment_recorded_at IS NULL "
-            "AND clock_timestamp()<%s",
+            "AND (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
             (enrolled["node"]["node_id"], enrolled["binding"]["binding_revision"], enrolled["runtime"]["runtime_id"],
-             enrolled["proof_ref"], command.command_id, command.tenant_id, command.target_id, receipt.receipt_id, enrolled["valid_until"]),
+             enrolled["proof_ref"], command.command_id, command.tenant_id, command.target_id, receipt.receipt_id, enrolled["valid_until"], enrolled["valid_until"]),
         )
         if cursor.rowcount != 1:
             raise AcceptanceGuardFailed("execution enrollment authorization expired before receipt recording")
+
+    def _owner_receipt_provenance(self, cursor, receipt):
+        cursor.execute(
+            "SELECT to_jsonb(x),to_jsonb(a),to_jsonb(r),to_jsonb(b),to_jsonb(k) "
+            "FROM execution_receipts x JOIN attempts a ON a.tenant_id=x.tenant_id AND a.attempt_id=x.attempt_id "
+            "JOIN enrolled_runtimes r ON r.tenant_id=x.tenant_id AND r.runtime_id=x.enrollment_runtime_id "
+            "JOIN enrolled_node_bindings b ON b.tenant_id=x.tenant_id AND b.node_id=x.enrollment_node_id "
+            "AND b.binding_revision=x.enrollment_node_binding_revision "
+            "JOIN enrolled_node_keys k ON k.key_id=b.key_id "
+            "WHERE x.tenant_id=%s AND x.work_item_id=%s AND x.receipt_id=%s",
+            (self.authority.tenant_id, receipt.work_item_id, receipt.receipt_id),
+        )
+        row = cursor.fetchone()
+        if row is None or row[0]["enrollment_proof_ref"] is not None:
+            return False
+        record, attempt, runtime, binding, key = row
+        command, payload, recorded = self._owner_command(
+            cursor, record["registration_command_id"], binding["node_id"], binding["binding_revision"], "execution.record")
+        if (record["receipt_json"] != receipt.model_dump(mode="json")
+                or payload != {"receipt": receipt.model_dump(mode="json")}
+                or command.target_kind != "work_item" or command.target_id != receipt.work_item_id
+                or command.authority_id != runtime["authority_id"]
+                or command.authority_incarnation != runtime["authority_incarnation"]
+                or runtime["runtime_id"] != receipt.runtime_id or runtime["provider"] != receipt.provider
+                or runtime["node_id"] != binding["node_id"]
+                or runtime["node_binding_revision"] != binding["binding_revision"]
+                or runtime["node_boot_incarnation"] != binding["boot_incarnation"]
+                or attempt["enrollment_runtime_id"] != runtime["runtime_id"]
+                or attempt["enrollment_node_id"] != binding["node_id"]
+                or attempt["enrollment_node_binding_revision"] != binding["binding_revision"]
+                or recorded > self._time(record["enrollment_recorded_at"])):
+            raise AcceptanceGuardFailed("recorded execution owner provenance differs")
+        self.validate_public_key(key["public_key"])
+        return True
 
     def verify_receipt_provenance(self, cursor, receipt):
         """Existing signed receipts survive planned retirement and future-only revoke.
@@ -658,6 +759,8 @@ class EnrollmentAuthority:
         observed_at for the timestamp recorded by PostgreSQL at insertion.
         Current Source/Scope/Grant/Review/CAS/Policy checks remain in Domain.
         """
+        if self.authority.access_mode == "owner" and self._owner_receipt_provenance(cursor, receipt):
+            return
         cursor.execute(
             "SELECT to_jsonb(x),to_jsonb(a),to_jsonb(r),to_jsonb(b),to_jsonb(k),to_jsonb(p),to_jsonb(c) "
             "FROM execution_receipts x JOIN attempts a ON a.tenant_id=x.tenant_id AND a.attempt_id=x.attempt_id "
@@ -691,10 +794,11 @@ class EnrollmentAuthority:
             raise AcceptanceGuardFailed("recorded execution enrollment provenance differs")
         recorded_at = self._time(record["enrollment_recorded_at"])
         starts = [runtime["registered_at"], binding["valid_from"], key["created_at"], proof["verified_at"]]
-        ends = [runtime["expires_at"], binding["expires_at"], challenge["expires_at"]]
+        ends = [] if self.authority.access_mode == "owner" else [runtime["expires_at"], binding["expires_at"], challenge["expires_at"]]
         ends.extend(value for value in (runtime["retired_at"], binding["retired_at"], key["retired_at"]) if value is not None)
         signed_command = CommandEnvelope.model_validate(proof["command_json"])
-        ends.append(signed_command.deadline)
+        if self.authority.access_mode != "owner":
+            ends.append(signed_command.deadline)
         if (any(self._time(value) > recorded_at for value in starts)
                 or any(recorded_at >= self._time(value) for value in ends)
                 or signed_command.target_kind != "work_item" or signed_command.target_id != receipt.work_item_id

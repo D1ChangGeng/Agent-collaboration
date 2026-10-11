@@ -26,13 +26,15 @@ class DeliveryPacket(DeliveryModel):
     required_evidence: tuple[str, ...] = Field(default=(), max_length=32)
     activation: Literal["message_only", "invoke"] = "message_only"
     delivery_policy: Literal["immediate", "queue_until_idle"] = "immediate"
-    deadline: datetime
+    deadline: datetime | None = None
     maximum_attempts: int = Field(default=3, ge=1, le=8, strict=True)
     retry_delay_seconds: int = Field(default=1, ge=1, le=30, strict=True)
 
     @field_validator("deadline")
     @classmethod
     def timezone_required(cls, value):
+        if value is None:
+            return value
         if value.tzinfo is None:
             raise ValueError("delivery deadline requires timezone")
         return value
@@ -55,11 +57,13 @@ class DeliveryPacket(DeliveryModel):
 class EndpointBindingRequest(DeliveryModel):
     scope_id: str = Field(min_length=1, max_length=256)
     agent_slot_id: str = Field(min_length=1, max_length=256)
-    expires_at: datetime
+    expires_at: datetime | None = None
 
     @field_validator("expires_at")
     @classmethod
     def timezone_required(cls, value):
+        if value is None:
+            return value
         if value.tzinfo is None:
             raise ValueError("binding expiry requires timezone")
         return value

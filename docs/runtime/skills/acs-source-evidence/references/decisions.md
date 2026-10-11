@@ -1,13 +1,24 @@
 # Source and evidence decision map
 
-Use the local filesystem provider for dirty or untracked state, local Management
-Root files and machine-bound evidence. Use GitHub or another repository provider
-for remote refs, commits and pull-request context. When both exist, compare
-commit and tree and report push and receiver-sync state.
+Use the local filesystem provider for current workspace edits, admitted
+untracked files, Management Root content and machine-bound evidence. Use a
+repository provider for remote refs, committed snapshots and pull-request
+context. Compare exact commit and tree when both providers describe the same
+repository.
 
-Capture a baseline before source-dependent delegation. Handoff reports branch,
-base/head, tree, worktree, commit, push and receiver action. Review binds the
-candidate actually inspected. Acceptance uses integrated source readback.
+Use a current owner workspace view to inspect active changes. Freeze its view
+revision for delegation, Review and acceptance so the inspected bytes can be
+read again. Use an explicit commit snapshot for a committed baseline. Record
+workspace view identity and Git commit/tree as separate facts.
 
-A digest proves byte identity, while Evidence and review establish what those
-bytes support.
+Capture source state before source-dependent delegation. Handoff reports branch,
+base/head, tree, workspace state, commits, Push and receiver action. Acceptance
+uses the integrated source actually read back.
+
+A digest proves byte identity. Execution receipts and independent Review
+establish what those bytes support. Preserve completed historical records when
+an earlier Grant naturally expires; check current credentials, explicit
+revocation and target ownership before a new read or action.
+
+Report imported or endpoint-reported facts with their actual provenance.
+Refresh source and process observations when the claim concerns current state.

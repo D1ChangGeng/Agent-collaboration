@@ -18,6 +18,46 @@ schema 0.3 shape.
 
 Pulling a new version of this Skill must never silently rewrite projects that already use ACHP.
 
+## Runtime access mode and identity
+
+The Runtime service configuration and schema are versioned independently of
+the project Workspace protocol. New single-owner installation selects
+access_mode=owner. Existing unspecified configuration retains shared behavior
+until explicit migration; an explicit shared configuration retains its choice.
+
+Private owner adoption verifies the stored credential, preserves project and
+service identity, saves the original configuration as .before-owner-upgrade,
+and clears natural expiry on active, nonrevoked identity and registration
+records. Revoked or retired objects keep their lifecycle state. The installer
+can apply that adoption to its verified private owner Root profile.
+
+Preserve request deduplication, Inbox, response tracking, Artifact bytes,
+Review decisions and their original digests. Read back the active access_mode,
+service identity after Surface/database activation. Existing Receiver process
+configuration retains its separate signed mode and defaults to shared when
+unspecified.
+
+Receiver owner/native migration preserves the original profile, credential,
+cryptographic keys, Node identity and revocation state. Construct the matching
+owner Runtime/native factory configuration and deployment digest; use the
+original Node key to sign the next Endpoint registration and commit its revision
+with the expected previous revision. Restart with that matching process config
+and read back the Endpoint digest/revision, native mode, Session and readiness.
+
+Inspect temporal_endpoint when updating the owner stdio MCP entry. A configured
+endpoint enables maintenance of committed Messages through Temporal. New
+installation writes the actual selected local provider port; a custom service
+with the field omitted retains its pending Outbox for a separate dispatcher.
+
+Shared/reference Profiles retain their configured Grant, Policy, budget,
+version and time-window rules. Historical Gate records retain their exact
+baseline. Runtime mode adoption leaves Root/Route knowledge and Workspace
+schema under their existing ownership and upgrade contracts.
+
+See [Owner Runtime](../docs/runtime/OWNER-RUNTIME.md) for current service
+semantics and [the Runtime adoption contract](../docs/runtime/UPGRADE-CONTRACT.md)
+for architecture and Gate boundaries.
+
 ## Managed vs project-owned files
 
 ### Setup-managed

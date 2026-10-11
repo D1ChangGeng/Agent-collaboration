@@ -1,42 +1,62 @@
 # Runtime model
 
-Machine identifies a physical host. Node is the machine-side ACS service and
-has boot/incarnation identity. Runtime is an admitted execution environment.
-Harness is the external Agent product. Driver maps ACS lifecycle operations to
-the native API. Session is a replaceable Harness context. Endpoint is a logical
-delivery target. Attempt is one WorkItem execution try.
+## Identity and persistent registration
 
-The Node owns local observations and journal. The Domain Authority owns
-authorization and accepted state. Drivers report native facts and do not own
-Policy.
+Machine identifies a host. Node is the machine-side ACS service with boot and
+incarnation identity. Runtime is an execution environment. Harness is the
+external Agent product. Driver maps lifecycle operations to its installed native
+API. Session is a replaceable native context. Endpoint is a logical delivery
+target; Connection records an authenticated path to it. Attempt is one
+WorkItem execution try.
 
-Capabilities include operation, direction, scope, component versions,
-credential scope, observed_at, expires_at and evidence. Unknown or expired
-capability is unavailable for admission.
+The Node owns local observations, mailbox and journal. The Domain Authority
+owns project state, authenticated command transitions and accepted state.
+Drivers report native facts; external Agents decide work and acceptance.
 
+In owner mode Connection, Node, Runtime, Endpoint and Session bindings persist
+through disconnection until an explicit lifecycle change or revocation. Process
+and Session readiness are read at execution time. A stopped or changed process
+requires reconnection or preparation under the current binding. Shared
+deployments retain configured registration and capability windows.
 
-## Time and capability freshness
+## Native environment and control
 
-Capability and readiness timestamps are aware canonical UTC facts. Runtime
-admission uses the authenticated Authority connection clock bound to the
-current Connection, Endpoint, Runtime, Node boot and revisions. Its UTC
-interval includes round-trip uncertainty and aging drift; freshness requires
-the upper bound strictly before expiry. Unavailable or overlapping time
-requires refresh or leaves the capability unavailable. New observation facts
-use a fresh authenticated Authority sample; the interval's midpoint and bounds
-govern freshness. Native readiness stamps the observation after inspection,
-while expiry remains anchored to the pre-inspection earliest bound. Historical
-cached terminal timestamps and hashes retain their original values.
+Native Codex and OpenCode modes select the actual user's environment and project
+directory. Tools, MCP servers, plugins, provider, models, project configuration
+and approval configuration follow that selection. Codex reads the chosen
+approval_policy. The Driver accepts server_request_handler for native approval
+or information requests; the standard headless Receiver factory leaves this
+hook unconfigured and the transport replies -32601. Interactive capability
+depends on the actual client handler and native decision/response readback.
 
-Local durations, active execution leases and native idle TTL use monotonic
-time within the current process. Replacements rebuild calibration and live
-leases from durable Authority deadlines and fencing state. Audit snapshots
-retain UTC bounds and reference/sample identity; monotonic values stay local.
-Private/Tunnel deployment requires the Authority provider; isolated loopback
-fixtures have a separate local test clock path.
+Receiver process mode belongs to its signed deployment. Surface/database
+activate_owner_mode preserves identity and continuous records. Existing
+unspecified Receiver process mode remains shared. Owner/native Receiver
+activation constructs matching factory/configuration digests, signs the next
+Endpoint revision with the original Node key, commits it, then restarts and
+reads back mode, digest and Session while preserving revocation state.
 
-Presentation uses an IANA timezone sidecar over canonical timestamps. Clock
-sample sequence describes calibration provenance; command order and replay
-protection use Domain revisions and durable signed receiver identity. The full
-contract and evidence scope are in `docs/runtime/TIME-MODEL.md` in the verified
-ACS Release or repository.
+An attached binding names the exact native Session and transport. Session read,
+send and cancel use that API and correlated operation identity. Owned process
+or containment identity is required for process termination. Registration,
+native acknowledgement, response, cancellation and process termination have
+separate observations.
+
+The ordinary POSIX owner supervisor records `owned_process_group` and
+`subtree_containment=false`. Its termination proof covers that process group.
+A containment claim requires the actual supervisor and receipt for that scope.
+
+## Time and protected resources
+
+Explicit business deadlines and shared admission windows use canonical UTC and
+the applicable authenticated Authority clock. Local durations and transport
+timeouts use monotonic time. Replay protection uses durable request identity,
+signed receiver state, revisions, nonces and generations.
+
+A Lease binds the owner Attempt, concrete resource, generation and fencing
+token checked by its resource gateway. An uncertain effect requires readback
+before another protected action. Historical terminal timestamps and hashes
+retain their original values.
+
+See `docs/runtime/OWNER-RUNTIME.md` for owner semantics and
+`docs/runtime/TIME-MODEL.md` for bounded-operation clock behavior and evidence.

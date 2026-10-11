@@ -1,36 +1,46 @@
 # Governance decision map
 
-Grant the smallest Scope, operation, direction, duration and resource set needed
-for the role. Use Profile filtering to reduce visible tools while retaining
-server-side authorization.
+Read access_mode from the installed service. New single-owner installation
+selects owner. Shared is an explicit deployment choice and remains the
+compatibility interpretation for existing unspecified configuration.
+Migration changes trusted configuration and the compatible schema while
+preserving identities, deduplication, revocation and historical evidence.
+Explicit owner adoption preserves the private credential and original
+configuration backup, then clears natural expiry only on active, nonrevoked
+records. The installer can apply this adoption to its verified private owner
+Root profile; explicit shared configuration retains its choice. This helper
+updates Surface/database identity state. Receiver owner/native migration
+preserves original profile, credential, keys and Node identity while binding a
+new matching process/factory digest to the next Endpoint revision signed with
+the existing Node key. Commit that revision before restart and mode/Session
+readback. Explicitly revoked records retain their lifecycle state.
 
-Read operations still enforce Project and data boundaries. Mutations add stable
-request identity, expected revision and deadline. Dispatch and protected effects
-recheck current Grant, Policy, revocation, expiry and budget.
+For owner admission, verify trusted credential and tenant/principal/Authority,
+active service and target objects, explicit revocation, canonical request
+identity and expected revisions. Select roles according to work responsibilities
+and Harness requirements. Apply the exact candidate and independence checks
+when accepting a result.
 
-Acceptance and publication permissions remain separate. Cross-project action
-requires authorization in every affected Project. Hosted, local and hybrid
-deployment preserve one logical authority for each state domain.
+For shared governance, grant the required Scope, operation, direction, duration
+and resources, then apply Policy, Profile and budget rules. Recheck these at
+dispatch, retry and protected effects.
 
+Choose an explicit business deadline when the request has a latest useful time.
+Owner omission keeps continuous validity. Evaluate a supplied deadline or a
+shared expiry against the applicable Authority clock after lock waits and at
+the protected boundary. Internal RPC and caller wait timeouts govern their own
+durations.
 
-## Expiry and clock authority
+Verify TLS, keys, Node identity, signed receiver state, nonces, generations and
+durable command identity independently of business lifetime. OAuth expiry is a
+transport credential check. Canonical UTC, wire signatures and historical
+hashes retain their recorded values.
 
-Check Grant, command and Lease expiry against fresh PostgreSQL Authority UTC,
-including after lock waits and at dispatch or protected effects. Sender,
-receiver and native boundaries use a calibrated connection clock bound to the
-same Authority incarnation and current Endpoint/Runtime/Node/boot revisions.
-The upper UTC bound must be strictly before expiry. Refresh an overlapping
-interval; unresolved uncertainty or an unavailable reference stops admission.
-Uncertainty consumes the authorization window while the Grant expiry remains
-fixed. Author new observation facts from fresh authenticated Authority UTC
-samples and validate them against current Authority time. Calibrated interval
-bounds govern validity windows. Re-reading a cached terminal fact preserves its
-original timestamp and payload/hash.
+A resource Lease is meaningful at the gateway that checks it. Native Harness
+execution follows the selected user environment and approval configuration.
+Codex interactive requests require an actual native client handler; standard
+headless Receiver factory uses its transport's explicit -32601 response.
+Keep protection and evidence claims within the boundary actually observed.
 
-Preserve canonical durable deadlines, aware wire signatures and hashes.
-Monotonic durations govern live local budgets and leases; replacement requires
-fresh calibration and Authority readback. Clock calibration sequence is audit
-provenance. Durable command identity, nonce, generation, signatures and fencing
-control replay and ordering. Presentation timezone is display metadata over the
-canonical facts. The full contract is `docs/runtime/TIME-MODEL.md` in the
-verified ACS Release or repository.
+See `docs/runtime/TIME-MODEL.md` for explicit time windows and
+`docs/runtime/OWNER-RUNTIME.md` for migration and owner semantics.

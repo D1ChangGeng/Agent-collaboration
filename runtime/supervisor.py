@@ -187,9 +187,9 @@ class _WinAPI:
 
 
 class WindowsJobSupervisor(_Ownership):
-    def __init__(self, *, max_processes: int = 128, termination_timeout: float = 5.0) -> None:
+    def __init__(self, *, max_processes: int | None = 128, termination_timeout: float = 5.0) -> None:
         super().__init__()
-        if not 1 <= max_processes <= 1024 or not 0 < termination_timeout <= 60:
+        if (max_processes is not None and not 1 <= max_processes <= 1024) or not 0 < termination_timeout <= 60:
             raise ValueError("invalid process or termination bound")
         self.api = _WinAPI()
         self.max_processes, self.termination_timeout = max_processes, termination_timeout
@@ -230,8 +230,10 @@ class WindowsJobSupervisor(_Ownership):
         assigned = False
         try:
             limits = self.api.Extended()
-            limits.basic.flags = 0x2000 | 0x8  # KILL_ON_JOB_CLOSE | ACTIVE_PROCESS
-            limits.basic.active_limit = self.max_processes
+            limits.basic.flags = 0x2000  # KILL_ON_JOB_CLOSE
+            if self.max_processes is not None:
+                limits.basic.flags |= 0x8  # ACTIVE_PROCESS
+                limits.basic.active_limit = self.max_processes
             self.api.check(self.api.dll.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits)),
                            "SetInformationJobObject")
             process = subprocess.Popen(args, cwd=cwd, env=dict(env), stdin=subprocess.PIPE,

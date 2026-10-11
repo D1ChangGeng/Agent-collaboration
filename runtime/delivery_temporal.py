@@ -40,6 +40,21 @@ class CommittedDeliveryWorkflow:
         return dict(self._state)
 
 
+@workflow.defn(name="AcsOwnerCommittedDelivery")
+class OwnerCommittedDeliveryWorkflow:
+    """Maintain the committed operation until delivery has a conclusive state."""
+    @workflow.run
+    async def run(self, identity: dict) -> dict:
+        while True:
+            state = await workflow.execute_activity("acs-delivery-attempt", identity,
+                start_to_close_timeout=timedelta(seconds=30),
+                retry_policy=RetryPolicy(initial_interval=timedelta(seconds=1),
+                                         maximum_interval=timedelta(seconds=2), maximum_attempts=0))
+            if state["status"] not in {"retry_wait", "busy"}:
+                return state
+            await workflow.sleep(timedelta(seconds=state["retry_after_seconds"]))
+
+
 class DeliveryActivities:
     def __init__(self, dispatcher):
         self.dispatcher = dispatcher
@@ -62,7 +77,7 @@ class DeliveryActivities:
 
 def delivery_worker(client, task_queue, dispatcher):
     activities = DeliveryActivities(dispatcher)
-    return Worker(client, task_queue=task_queue, workflows=[CommittedDeliveryWorkflow],
+    return Worker(client, task_queue=task_queue, workflows=[CommittedDeliveryWorkflow, OwnerCommittedDeliveryWorkflow],
                   activities=[activities.attempt])
 
 
@@ -76,8 +91,9 @@ async def submit_delivery(client, task_queue, dispatcher, identity):
     workflow_id = f"acs-delivery/{identity['operation_id']}"
     try:
         handle = await client.start_workflow(
-            CommittedDeliveryWorkflow.run, identity, id=workflow_id, task_queue=task_queue,
-            execution_timeout=timedelta(minutes=10),
+            OwnerCommittedDeliveryWorkflow.run if dispatcher.service.authority.access_mode == "owner" else CommittedDeliveryWorkflow.run,
+            identity, id=workflow_id, task_queue=task_queue,
+            execution_timeout=None if dispatcher.service.authority.access_mode == "owner" else timedelta(minutes=10),
             id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
             id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
             memo={"acs_delivery_identity_hash": payload_hash},

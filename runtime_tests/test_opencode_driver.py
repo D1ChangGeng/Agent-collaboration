@@ -813,3 +813,23 @@ def test_busy_deferral_reuses_native_message_identity(native):
     assert observed["native_message_id"] == native_id
     driver.invoke(pending, "deferred synthetic input")
     assert sum(path.endswith("/prompt_async") for _, path, _ in native.peer.requests) == 1
+
+
+def test_native_environment_uses_tools_plugins_and_project_configuration(native):
+    f = native
+    profile = replace(f.driver.profile, execution_mode="native", version="compatible-installed-version", environment={"HTTPS_PROXY":"http://fixture-proxy"})
+    config = json.loads(profile.config_path.read_text())
+    config.update(permission={"*":"allow","task":"allow"}, plugin=["fixture-plugin"], mcp={"fixture":{}})
+    config["agent"][profile.agent]["permission"] = {"*":"allow","task":"allow"}
+    profile.config_path.write_text(json.dumps(config))
+    project_config = Path(profile.cwd) / ".opencode"
+    project_config.mkdir()
+    (project_config / "tool.txt").write_text("fixture project tool")
+    f.driver.profile = profile
+    f.driver.spawn(replace(operation("native-spawn"), deadline=None))
+    argv, values = f.launch_args
+    assert "--pure" not in argv
+    assert "OPENCODE_DISABLE_PROJECT_CONFIG" not in values["env"]
+    assert values["env"]["HTTPS_PROXY"] == "http://fixture-proxy"
+    f.driver.invoke(replace(operation("native-invoke"), deadline=None), "fixture request")
+    assert len(prompts(f.peer)) == 1

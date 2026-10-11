@@ -322,6 +322,14 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
             service.authenticate(settings.credential())
             if settings.context.grant_ref != "grant:root":
                 raise ValueError("existing Runtime authority requires explicit enrollment")
+        prior = json.loads(config_path.read_text(encoding="utf-8"))
+        if settings.access_mode == "owner" or ("access_mode" not in prior and
+                settings.context.principal_ref == "agent:root" and
+                settings.context.tenant_id == "local-tenant" and
+                settings.dsn_ref.kind == "file" and settings.dsn_ref.name == str(dsn_path) and
+                settings.credential_ref.kind == "file" and settings.credential_ref.name == str(credential_path)):
+            from runtime.owner_upgrade import activate_owner_mode
+            activate_owner_mode(config_path)
         return config_path
 
     catalog = json.loads((ROOT / "docs/runtime/p2-mcp-tool-contract.json").read_text(encoding="utf-8"))
@@ -338,7 +346,7 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
                                    hashlib.sha256(secret.encode()).hexdigest())
     dsn = ("postgresql://acs:" + quote(environment["ACS_POSTGRES_PASSWORD"], safe="")
            + "@127.0.0.1:" + environment["ACS_POSTGRES_PORT"] + "/acs")
-    authority = DomainAuthority(dsn, context=context)
+    authority = DomainAuthority(dsn, context=context, access_mode="owner")
     authority.initialize()
     with authority._connect() as connection:
         existing = connection.execute("SELECT count(*) FROM grants").fetchone()[0]
@@ -349,7 +357,8 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
     ProjectService(service, catalog, profile="root_manager").initialize()
     owner_file(dsn_path, dsn + "\n")
     owner_file(credential_path, secret + "\n")
-    surface = {"schema_version": "acs-surfaces/1", "context": {
+    surface = {"schema_version": "acs-surfaces/1", "access_mode": "owner",
+        "temporal_endpoint": "127.0.0.1:"+environment["ACS_TEMPORAL_PORT"], "context": {
         "tenant_id": context.tenant_id, "authority_id": context.authority_id,
         "authority_incarnation": context.authority_incarnation,
         "principal_ref": context.principal_ref, "grant_ref": context.grant_ref,

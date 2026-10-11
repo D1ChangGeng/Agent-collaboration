@@ -1,24 +1,38 @@
 # Policy and governance model
 
-Organization or Tenant is the isolation boundary. Project scopes product data
-and collaboration. Subject is a user, external AgentSlot or service principal.
-Role describes responsibility. Grant authorizes permissions in a Scope. Policy
-adds conditions. Profile filters tool discovery. Budget controls admitted use.
-ApprovalRequest records an external decision requirement.
+## Identity and access modes
 
-OAuth scopes communicate requested remote capability. The server still verifies
-token issuer, audience, expiry, subject and scopes on every invocation.
+Tenant is the isolation boundary. Project scopes product data and
+collaboration. Subject is a user, external AgentSlot or service principal.
+Trusted transport or enrollment supplies credential, tenant, principal,
+Authority and incarnation. Typed handles resolve active objects in that
+context.
 
-Control metadata, Source, Payload, Artifact and Secret Reference have separate
-authorization, residency, retention and audit boundaries.
+A new single-owner installation records access_mode=owner. Owner operations
+check active service and objects, explicit revocation, request deduplication,
+expected revisions and operation-specific prerequisites. Role describes a duty
+and team configuration records business members and Harness requirements.
 
-## Organization and duties
+Shared deployments apply per-subject Grants, Policy conditions, Profile views
+and budgets. Existing configurations with unspecified access_mode retain
+shared behavior until explicit migration. A legacy Grant reference can remain
+as identity and audit lineage in owner mode.
 
-Root/Route describe project/development-line responsibility. Task Agent is the
-proposed collective term for explicit task responsibility. Engineer, Reviewer,
-Specialist and Finalizer are duties. AgentSlot, Scope, WorkItem and replaceable
-Session retain their own identities and cardinalities. Organization metadata
-and combined duties remain descriptive; actual Grant/Policy/Profile checks and
-candidate-specific reviewer independence apply. Finalizer decisions require
-exact candidate/source/evidence/Review and effect/readback prerequisites.
-The repository contract is `docs/runtime/AGENT-ORGANIZATION-MODEL.md`.
+## Actual protected boundaries
+
+Explicit business deadlines apply when supplied. A Lease covers a concrete
+resource gateway and its fenced operations. Candidate identity, Review
+independence, hashes and deterministic storage govern result acceptance.
+
+Remote transport validates TLS, registered keys, signed identity, Node
+bindings and replay state. OAuth resource servers validate issuer, audience,
+subject, scopes and token expiry. Token lifetime, business deadline and native
+process readiness are distinct facts.
+
+Control metadata, Source, Payload, Artifact and Secret Reference retain their
+tenant, residency, retention and audit boundaries. Secret values stay in their
+secret authority.
+
+Historical recorded facts keep their original identity and digests after a
+prior Grant's natural expiry. Explicit revocation controls new actions. The
+owner product contract is `docs/runtime/OWNER-RUNTIME.md`.

@@ -45,7 +45,7 @@
   "tools": {
     "read_profile": {
       "title": "Read connection profile",
-      "description": "Read the authenticated subject, tenant, granted profiles, connection state and OAuth scope summary.",
+      "description": "Read trusted subject, tenant, access_mode, client Profile view, connection state and applicable OAuth scope summary. Owner identity remains active until explicit revocation; shared deployments report their configured governance.",
       "selection_guidance": "Use at the start of a global or web session.",
       "annotations": {
         "readOnlyHint": true,
@@ -65,7 +65,7 @@
     },
     "list_projects": {
       "title": "List accessible projects",
-      "description": "List visible projects with stable Project IDs, Root handles and lifecycle summaries.",
+      "description": "List active Projects visible to the authenticated tenant and service context with stable Project IDs, Root handles and lifecycle summaries.",
       "selection_guidance": "Use when project_id is unknown or more than one project is involved.",
       "annotations": {
         "readOnlyHint": true,
@@ -93,7 +93,7 @@
     },
     "list_connections": {
       "title": "List ACS connections",
-      "description": "List authorized Node, Tunnel, Source Provider and remote MCP connections with current capabilities.",
+      "description": "List registered Node, Tunnel, Source Provider and remote MCP paths. Owner registration persists through disconnect; remote execution verifies the actual TLS-bound target, process and Session readiness.",
       "selection_guidance": "Use to inspect local, web and source access paths.",
       "annotations": {
         "readOnlyHint": true,
@@ -123,7 +123,7 @@
     },
     "load_project": {
       "title": "Load project context",
-      "description": "Load a ProjectContextPack containing Root identity, instruction manifests, Routes, knowledge indexes, SourceBindings, policy and active work. Includes organization vocabulary and the authenticated actor binding; Task Agent is proposed terminology.",
+      "description": "Load Root identity, instructions, Routes, knowledge, SourceBindings and active work with exact context and workspace revisions. Roles describe responsibilities; the authenticated actor and installed access mode establish the current context.",
       "selection_guidance": "Use before project-scoped management, analysis, review or finalization when context is absent or stale.",
       "annotations": {
         "readOnlyHint": true,
@@ -227,7 +227,7 @@
     },
     "list_collaborators": {
       "title": "List project collaborators",
-      "description": "List AgentSlots, roles, assignments, Session activity and Harness bindings. Reports separate organization, responsibility, Scope and declared authorization facts with work/Session readback queries.",
+      "description": "List durable AgentSlots, principals, responsibilities, assignments and Harness/Session bindings. Owner team members are business bindings; shared mode also reports configured Grant, Policy and budget facts. Native activity is an observed fact.",
       "selection_guidance": "Use before team configuration, delegation or handoff.",
       "annotations": {
         "readOnlyHint": true,
@@ -259,7 +259,7 @@
     },
     "list_harnesses": {
       "title": "List eligible Harnesses",
-      "description": "List current Harness capacity eligible for a project Scope, role and capability set. Returns bounded readiness and evidence metadata.",
+      "description": "List registered Harness capacity for the Project Scope and requested capabilities with readiness provenance. Owner registrations are continuous; execution reads actual process and native Session state. Shared/reference Profiles retain their configured capability windows.",
       "selection_guidance": "Use before assignment when execution capacity is undecided.",
       "annotations": {
         "readOnlyHint": true,
@@ -293,7 +293,7 @@
     },
     "list_sources": {
       "title": "List project sources",
-      "description": "List local Node, Git and remote SourceBindings with repository identity, revision and capabilities.",
+      "description": "List admitted SourceBindings with repository identity, view revision and provider capabilities. Owner current workspace views and fixed snapshots preserve distinct source identity.",
       "selection_guidance": "Use before source reads or provider selection.",
       "annotations": {
         "readOnlyHint": true,
@@ -356,7 +356,7 @@
     },
     "list_evidence": {
       "title": "List collaboration evidence",
-      "description": "List Evidence and Artifact references attached to a project, Route, WorkItem, candidate or Review.",
+      "description": "List recorded Evidence and Artifact references for a Project, Route, WorkItem, candidate or Review. Historical provenance and digests remain attached to the recorded result.",
       "selection_guidance": "Use before review, acceptance or status reporting.",
       "annotations": {
         "readOnlyHint": true,
@@ -388,7 +388,7 @@
     },
     "list_reviews": {
       "title": "List project reviews",
-      "description": "List requested, active and completed Reviews with candidate, baseline, decision and unresolved summaries.",
+      "description": "List requested, active and completed Reviews with exact candidate, baseline, reviewer assignment, decision and unresolved summaries.",
       "selection_guidance": "Use to discover review work and verify coverage.",
       "annotations": {
         "readOnlyHint": true,
@@ -420,7 +420,7 @@
     },
     "read_resource": {
       "title": "Read collaboration resource",
-      "description": "Read one known Project, Route, WorkItem, Handoff, Evidence, Artifact or AcceptedState handle at an exact revision without consuming Inbox state.",
+      "description": "Read a known Project, Route, WorkItem, Handoff, Evidence, Artifact or AcceptedState at its requested revision. Inbox consumption is performed through read_message.",
       "selection_guidance": "Use after a list or result supplies a stable handle.",
       "annotations": {
         "readOnlyHint": true,
@@ -469,7 +469,7 @@
     },
     "read_message": {
       "title": "Read collaboration message",
-      "description": "Read one delivered Message, tracked response, or assigned Review request and atomically record owner consumption when requested. A completed response returns digest-verified native response content when its admitted Scope Artifact provider is available, or an explicitly verified/unavailable Artifact state. Consuming a Review request does not submit a Review decision.",
+      "description": "Read a durable Message, tracked response or assigned Review request and record consumption when requested. Reads use current identity and object checks independently of the Work schedule. Completed native responses use digest-verified Scope Artifacts; consuming a Review request records receipt of the request.",
       "selection_guidance": "Use for Inbox Messages and completed responses.",
       "annotations": {
         "readOnlyHint": false,
@@ -499,7 +499,7 @@
     },
     "check_inbox": {
       "title": "Check project Inbox",
-      "description": "List durable Messages, response completions, Review requests and recovery notifications available to the authenticated project-management or AgentSlot context. Returns exact read_message follow-ups.",
+      "description": "List durable Messages, terminal responses, Review requests and recovery notifications for the current Project or AgentSlot. Returns exact read_message follow-ups; active Connection and Session capability select immediate notification delivery.",
       "selection_guidance": "Use at session start, reconnect or recovery.",
       "annotations": {
         "readOnlyHint": true,
@@ -531,7 +531,7 @@
     },
     "list_files": {
       "title": "List source files",
-      "description": "List files below one SourceBinding path at an exact revision.",
+      "description": "List files below an admitted SourceBinding path. Owner may omit revision to capture the current workspace, including admitted local edits; an explicit revision reads its fixed snapshot. Shared inputs require an exact revision.",
       "selection_guidance": "Use for directory discovery from web or local management sessions.",
       "annotations": {
         "readOnlyHint": true,
@@ -565,7 +565,7 @@
     },
     "search_files": {
       "title": "Search source files",
-      "description": "Search authorized paths or content in one SourceBinding at an exact revision.",
+      "description": "Search admitted Source paths or content. Owner may omit revision for the current workspace view; an explicit revision searches its fixed snapshot. Shared inputs require an exact revision.",
       "selection_guidance": "Use when a target path or content location is unknown.",
       "annotations": {
         "readOnlyHint": true,
@@ -599,7 +599,7 @@
     },
     "read_file": {
       "title": "Read source file",
-      "description": "Read a bounded line range from one SourceBinding path at an exact revision.",
+      "description": "Read a bounded line range from an admitted Source path. Owner may omit revision to read the current workspace view; an explicit revision reads captured bytes. Shared inputs require an exact revision.",
       "selection_guidance": "Use after context loading, file listing or search.",
       "annotations": {
         "readOnlyHint": true,
@@ -632,7 +632,7 @@
     },
     "read_source": {
       "title": "Read source state",
-      "description": "Read repository identity, branch, commit, tree, worktree, push and receiver-sync observations.",
+      "description": "Read repository identity, actual branch/commit/tree, workspace state and view revision, plus observed Push and receiver synchronization. Owner omission selects the current admitted workspace; a named revision retains its exact snapshot.",
       "selection_guidance": "Use before source-dependent delegation, review, handoff or acceptance.",
       "annotations": {
         "readOnlyHint": true,
@@ -658,7 +658,7 @@
     },
     "read_diff": {
       "title": "Read source diff",
-      "description": "Read a bounded diff between two exact revisions in one SourceBinding.",
+      "description": "Read a bounded diff between two exact commit or workspace view revisions in one SourceBinding.",
       "selection_guidance": "Use for engineering review, architecture impact analysis and acceptance.",
       "annotations": {
         "readOnlyHint": true,
@@ -747,7 +747,7 @@
     },
     "configure_team": {
       "title": "Configure collaboration team",
-      "description": "Create or revise AgentSlot, role, Grant, Policy and budget bindings inside an existing project Scope. Returns the accepted team revision and collaborator handles. Organization level and combinable responsibility declarations are independent of Profile and Grant permissions.",
+      "description": "Create or revise collaborators in an existing Project Scope. Owner members supply AgentSlot, principal, role and Harness requirements; Policies, budgets and business deadline are optional. Shared inputs retain Grant, Policy and budget governance. Returns the accepted team revision and handles.",
       "selection_guidance": "Use after the Scope exists and an Agent has decided the team topology.",
       "annotations": {
         "readOnlyHint": false,
@@ -777,7 +777,7 @@
     },
     "create_work": {
       "title": "Create collaboration work",
-      "description": "Create one WorkItem with goal, accepted state, constraints, baseline, evidence requirements, budget and deadline.",
+      "description": "Create a WorkItem with goal, accepted state, constraints, exact source baseline and required evidence. Owner budget and chosen business deadline are optional; shared inputs retain their configured budget and admission window.",
       "selection_guidance": "Use before delegation when no suitable WorkItem exists.",
       "annotations": {
         "readOnlyHint": false,
@@ -810,7 +810,7 @@
     },
     "revise_work": {
       "title": "Revise collaboration work",
-      "description": "Apply one versioned change to WorkItem intent, dependencies, baseline, evidence contract, budget or schedule.",
+      "description": "Apply a versioned change to WorkItem intent, dependencies, baseline, evidence contract, budget or explicit schedule. Owner command deadline is optional; expected revision and request deduplication apply.",
       "selection_guidance": "Use when authorized work intent changes.",
       "annotations": {
         "readOnlyHint": false,
@@ -838,7 +838,7 @@
     },
     "handoff_work": {
       "title": "Hand off collaboration work",
-      "description": "Assign an existing WorkItem and persist exact source state, context, evidence and unresolved items. With require_ack=true, atomically address B and return a pending handoff handle; assignment and acceptance remain separate.",
+      "description": "Transfer an existing WorkItem with exact source state, context, evidence and unresolved items. require_ack=true creates a pending recipient acknowledgement. Owner deadline is optional; assignment, acknowledgement and acceptance have separate revisions.",
       "selection_guidance": "Use for Session, AgentSlot or role ownership transfer.",
       "annotations": {
         "readOnlyHint": false,
@@ -872,7 +872,7 @@
     },
     "acknowledge_handoff": {
       "title": "Acknowledge assigned handoff",
-      "description": "The receiving collaborator accepts or rejects the exact handoff and Work revision under its own current Grant.",
+      "description": "The exact receiving collaborator accepts or rejects a handoff and Work revision using current trusted identity. Shared admission additionally checks its configured Grant; source digest and expected revisions remain required.",
       "selection_guidance": "Use after reading an addressed handoff; Inbox consumption or transport ACK is not responsibility acceptance.",
       "annotations": {
         "readOnlyHint": false,
@@ -930,7 +930,7 @@
     },
     "send_message": {
       "title": "Send collaboration message",
-      "description": "Commit an addressed Message with durable response tracking and notification. Async returns after commit; sync waits for the requested receipt or final response. An optional wait_timeout_seconds bounds caller waiting. ACS derives business expiry from Policy, Grant and Work budget; optional deadline narrows it.",
+      "description": "Commit an addressed Message with durable response tracking and notification. Async returns committed handles; sync waits for the target receipt or final response with an optional caller timeout. Owner business deadline is optional and chosen explicitly; shared mode derives its Policy, Grant and Work budget horizon. Tracking survives caller timeout and disconnect.",
       "selection_guidance": "Use for delegation, review requests, handoffs and other addressed collaboration work.",
       "annotations": {
         "readOnlyHint": false,
@@ -981,7 +981,7 @@
     },
     "request_review": {
       "title": "Request independent review",
-      "description": "Create one Review request bound to a candidate, exact baseline, criteria, evidence requirements and an explicitly selected reviewer. Optional evidence_handles selects the reviewed set; other candidate records remain disclosed for reviewer disposition. An explicitly declared reviewer duty remains subject to live authorization and candidate independence.",
+      "description": "Create a Review for an exact candidate, source baseline, criteria, evidence and selected independent reviewer. Owner deadline is optional. Reviewer duty describes responsibility; actual candidate-specific identity and independence checks govern the assignment, with shared authorization where applicable.",
       "selection_guidance": "Use for architecture, engineering, evidence or finalization review.",
       "annotations": {
         "readOnlyHint": false,
@@ -1015,7 +1015,7 @@
     },
     "submit_review": {
       "title": "Submit structured review",
-      "description": "Submit one reviewer decision with findings, exact source readback, evidence handles and unresolved items.",
+      "description": "Record a reviewer decision with findings, exact source readback, evidence handles and unresolved items. Expected revision, assignment and candidate checks preserve independent Review; owner command deadline is optional.",
       "selection_guidance": "Use after authorized independent inspection.",
       "annotations": {
         "readOnlyHint": false,
@@ -1048,7 +1048,7 @@
     },
     "accept_work": {
       "title": "Accept collaboration work",
-      "description": "Commit one acceptance decision for an exact candidate after required reviews, evidence and effect readback. Finalizer is a responsibility; acceptance requires its actual Grant, current independent Review, evidence and source/effect readbacks.",
+      "description": "Commit acceptance for an exact candidate after independent Review, evidence, integrated source and effect readback. Finalizer describes responsibility. Owner admission uses trusted identity, active objects and explicit revocation; shared mode also checks its Grant and Policy.",
       "selection_guidance": "Use from an authorized Finalizer or product-owner boundary.",
       "annotations": {
         "readOnlyHint": false,
@@ -1080,7 +1080,7 @@
     },
     "watch_changes": {
       "title": "Watch project changes",
-      "description": "Create or revise a durable subscription for project, Route, WorkItem, Review, Source or recovery events.",
+      "description": "Create or revise a durable subscription for Project, Route, WorkItem, Review, Source or recovery events. Notifications follow the actual Connection and Session; owner chosen business deadline is optional.",
       "selection_guidance": "Use when a management or reviewer Session should receive future notifications.",
       "annotations": {
         "readOnlyHint": false,
@@ -1108,7 +1108,7 @@
     },
     "wait_for_response": {
       "title": "Wait for response",
-      "description": "Wait until any or all existing response handles reach a named receipt or terminal condition. Optional timeout_seconds returns pending handles early; durable execution, tracking and notification continue. Omitted timeout waits until satisfaction, terminal outcome, cancellation or authorization loss.",
+      "description": "Wait until any or all existing response handles reach a target receipt or terminal condition. Optional timeout_seconds returns pending handles early; durable execution, result tracking and notification continue. Omission waits for the condition, terminal result, caller interruption or current identity loss.",
       "selection_guidance": "Use when the calling Agent chooses to pause for responses that send_message is already tracking.",
       "annotations": {
         "readOnlyHint": false,
@@ -1139,7 +1139,7 @@
     },
     "set_notification": {
       "title": "Set response notification",
-      "description": "Enable or disable automatic completion notification for an existing response handle using an expected subscription revision. Returns the updated subscription state while preserving response tracking.",
+      "description": "Enable or disable completion notification at an expected subscription revision while preserving result tracking. Immediate delivery uses the actual active Connection and Session; durable Inbox remains available after reconnect.",
       "selection_guidance": "Use only to change the automatic notification created by send_message.",
       "annotations": {
         "readOnlyHint": false,
@@ -1167,7 +1167,7 @@
     },
     "cancel_work": {
       "title": "Cancel collaboration work",
-      "description": "Cancel one WorkItem at its expected revision and record the authorized reason. Returns WorkItem state and any Runtime Attempts that still require observation or separate control.",
+      "description": "Cancel a WorkItem at its expected revision and record the reason. Returns durable Work state and concrete Attempts requiring observation or separate native control; owner command deadline is optional.",
       "selection_guidance": "Use to end the durable collaboration work objective represented by a WorkItem.",
       "annotations": {
         "readOnlyHint": false,
@@ -1194,7 +1194,7 @@
     },
     "stop_attempt": {
       "title": "Stop Runtime Attempt",
-      "description": "Stop one concrete Runtime Attempt at its expected revision and report the Driver acknowledgement boundary. Returns Attempt state and effect uncertainty requiring readback.",
+      "description": "Control a concrete Runtime Attempt at its expected revision through the installed native API. Session cancellation and owned-process termination report their actual acknowledgement and ownership scope, with any effect uncertainty requiring readback.",
       "selection_guidance": "Use for a specific execution attempt after its owning WorkItem policy authorizes attempt-level control.",
       "annotations": {
         "readOnlyHint": false,
@@ -1333,7 +1333,7 @@
     },
     "submit_command": {
       "title": "Submit Domain command",
-      "description": "Submit one fully formed authenticated Domain SurfaceCommand. Returns the canonical Domain disposition and references used by operator, migration, conformance and advanced automation flows.",
+      "description": "Submit an authenticated Domain SurfaceCommand with stable input identity and expected revisions. Owner commands use an optional chosen business deadline; shared commands retain configured governance. Returns canonical disposition and recorded references for advanced flows.",
       "selection_guidance": "Use when the caller owns the complete versioned Domain command contract; ordinary Agent collaboration uses the typed tools.",
       "annotations": {
         "readOnlyHint": false,
@@ -1835,5 +1835,24 @@
     ],
     "authorization": "organization and responsibility declarations are descriptive; live Grant/Policy/Profile checks authorize operations",
     "reference": "AGENT-ORGANIZATION-MODEL.md"
+  },
+  "access_modes": {
+    "owner": {
+      "installation_default": "new single-owner installation",
+      "admission": "trusted credential and tenant/principal/Authority; active service and objects; explicit revocation; canonical request deduplication; expected revisions and operation prerequisites",
+      "registration": "Connection, Node, Runtime and Endpoint persist until an explicit lifecycle change; execution inspects actual readiness and prepares the selected native environment",
+      "business_deadline": "optional and chosen explicitly; omission keeps continuous validity",
+      "response_tracking": "durable until the observed terminal result; caller timeout and disconnect preserve tracking and Inbox",
+      "input_schema": "McpRuntime moves deadline to optional; configure_team policies and budgets, create_work budget, and read_file/list_files/search_files revision are optional",
+      "team_member": "agent_slot_id, principal_ref, role and harness_requirements",
+      "native_environment": "Selected native user environment, tools, MCP, plugins, project configuration, providers, models and approval settings. Native client requests require an installed Driver request handler; the standard headless Receiver reports unsupported client requests.",
+      "review": "exact candidate, reviewer assignment and independence, integrity hashes and deterministic storage remain required"
+    },
+    "shared": {
+      "selection": "explicit shared deployment or existing unspecified configuration until explicit migration",
+      "admission": "configured per-subject Grant, Policy, Profile, budget and expiry checks",
+      "input_schema": "the catalog required/optional lists and Profile support table remain the shared base contract",
+      "reference_evidence": "historical Gate records retain their original source, Profile, version pins and time windows"
+    }
   }
 }

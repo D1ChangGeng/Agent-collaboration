@@ -1,0 +1,3 @@
+
+runtime_tests/fixtures/*.sql text eol=lf
+runtime_tests/p1_codex_stdio_fixture.py text eol=lf

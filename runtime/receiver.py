@@ -14,6 +14,7 @@ from typing import Any, ClassVar
 from nacl.signing import SigningKey
 
 from runtime.connection_clock import ClockUnavailable, ConnectionClock
+from runtime.lifetimes import earliest
 from runtime.receiver_config import ReceiverRuntimeConfig, resolve_connection_clock
 from runtime.receiver_crypto import canonical, sha256, sign, verify
 from runtime.receiver_models import (
@@ -21,6 +22,7 @@ from runtime.receiver_models import (
     DispatchBody,
     PrepareBody,
     ReadbackBody,
+    ResponseReadbackBody,
     ReadinessBody,
     ReceiverReceipt,
     RecoveryBody,
@@ -208,27 +210,27 @@ class ReceiverLedger:
     def claim_boot(self, boot: str, generation: int, *, old_boot_isolation_ref: str | None = None):
         if not boot or generation < 1:
             raise ReceiverRejected("invalid boot claim")
-        with self.execution_fence():
-            with self.transaction() as connection:
-                rows = dict(connection.execute("SELECT key,value FROM receiver_meta"))
-                if not rows:
-                    if generation != 1 or old_boot_isolation_ref is not None:
-                        raise ReceiverRejected("initial journal generation must be one")
-                    values = {"current_boot": boot, "journal_generation": "1",
-                              "previous_boot": "", "old_boot_isolation_ref": ""}
-                    connection.executemany("INSERT INTO receiver_meta(key,value) VALUES (?,?)", values.items())
-                    return
-                if rows["current_boot"] == boot and int(rows["journal_generation"]) == generation:
-                    return
-                if generation != int(rows["journal_generation"]) + 1 or not old_boot_isolation_ref:
-                    raise ReceiverRejected("boot replacement lacks monotonic generation or isolation proof")
-                connection.execute("UPDATE receiver_meta SET value=? WHERE key='previous_boot'", (rows["current_boot"],))
-                connection.execute("UPDATE receiver_meta SET value=? WHERE key='current_boot'", (boot,))
-                connection.execute("UPDATE receiver_meta SET value=? WHERE key='journal_generation'", (str(generation),))
-                connection.execute("UPDATE receiver_meta SET value=? WHERE key='old_boot_isolation_ref'",
-                                   (old_boot_isolation_ref,))
+        with self.execution_fence(), self.transaction() as connection:
+            rows = dict(connection.execute("SELECT key,value FROM receiver_meta"))
+            if not rows:
+                if generation != 1 or old_boot_isolation_ref is not None:
+                    raise ReceiverRejected("initial journal generation must be one")
+                values = {"current_boot": boot, "journal_generation": "1",
+                          "previous_boot": "", "old_boot_isolation_ref": ""}
+                connection.executemany("INSERT INTO receiver_meta(key,value) VALUES (?,?)", values.items())
+                return
+            if rows["current_boot"] == boot and int(rows["journal_generation"]) == generation:
+                return
+            if generation != int(rows["journal_generation"]) + 1 or not old_boot_isolation_ref:
+                raise ReceiverRejected("boot replacement lacks monotonic generation or isolation proof")
+            connection.execute("UPDATE receiver_meta SET value=? WHERE key='previous_boot'", (rows["current_boot"],))
+            connection.execute("UPDATE receiver_meta SET value=? WHERE key='current_boot'", (boot,))
+            connection.execute("UPDATE receiver_meta SET value=? WHERE key='journal_generation'", (str(generation),))
+            connection.execute("UPDATE receiver_meta SET value=? WHERE key='old_boot_isolation_ref'",
+                               (old_boot_isolation_ref,))
 
     @staticmethod
+
     def meta(connection) -> dict[str, str]:
         values = dict(connection.execute("SELECT key,value FROM receiver_meta"))
         if not values:
@@ -276,7 +278,9 @@ class ReceiverService:
             "delivery.readiness": ReadinessBody,
             "delivery.recover": RecoveryBody,
         }
-        return models[request.admission.purpose].model_validate(request.body, strict=True)
+        model = (ResponseReadbackBody if request.admission.purpose == "delivery.readback"
+                 and "response_digest" in request.body else models[request.admission.purpose])
+        return model.model_validate(request.body, strict=True)
 
     def _verify(self, request: SignedRequest):
         admission = request.admission
@@ -311,17 +315,21 @@ class ReceiverService:
             raise ReceiverRejected("prepare canonical envelope/invocation/selection digest rejected")
         return body, sha256({"admission": admission.model_dump(mode="json"), "body": body.model_dump(mode="json")})
 
+    def _deadline(self, admission: DeliveryAdmission):
+        return earliest(admission.deadline,
+                        None if self.config.access_mode == "owner" else self.binding.registration.expires_at)
+
     def _time_valid(self, admission: DeliveryAdmission) -> bool:
         try:
-            self.clock.require_before(min(admission.deadline, self.binding.registration.expires_at))
+            self.clock.require_before(self._deadline(admission))
         except ClockUnavailable:
             return False
         return True
 
     def _lease(self, request: SignedRequest, lease_id: str):
-        deadline = min(request.admission.deadline, self.binding.registration.expires_at)
+        deadline = self._deadline(request.admission)
         reading = self.clock.require_before(deadline)
-        remaining = (deadline - reading.latest_utc).total_seconds()
+        remaining = (deadline - reading.latest_utc).total_seconds() if deadline else float("inf")
         return _active_execution_lease(
             lease_id, self.clock.monotonic_now() + remaining, self.clock.monotonic_now,
             request.admission.boot_incarnation, request.admission.journal_generation)
@@ -470,8 +478,8 @@ class ReceiverService:
                  request.admission.dispatch_id, request.admission.boot_incarnation,
                  request.admission.journal_generation, state, int(marker), receipt.model_dump_json(),
                  receipt.signature, sha256(receipt.receipt), sha256(receipt), execution_lease_id,
-                 min(request.admission.deadline, self.binding.registration.expires_at).isoformat()
-                 if execution_lease_id else "",
+                 self._deadline(request.admission).isoformat()
+                 if execution_lease_id and self._deadline(request.admission) else "",
                  os.getpid() if execution_lease_id else 0,
                  process_start, now, now),
             )
@@ -539,10 +547,9 @@ class ReceiverService:
     @staticmethod
     def _execution_lease_active(row: sqlite3.Row) -> bool:
         lease_id = row["execution_lease_id"]
-        expires = row["execution_lease_expires_at"]
         process_id = row["execution_process_id"]
         process_start = row["execution_process_start"]
-        if not lease_id or not expires or not process_id or not process_start:
+        if not lease_id or not process_id or not process_start:
             return False
         if process_id == os.getpid():
             with _ACTIVE_EXECUTION_LEASES_LOCK:
@@ -721,7 +728,7 @@ class ReceiverService:
                 self._abandon_execution(request, request_hash, execution_lease_id, error)
                 raise
 
-    def readback(self, request: SignedRequest) -> SignedReceipt:
+    def readback(self, request: SignedRequest, response_reader=None) -> SignedReceipt:
         body, request_hash = self._verify(request)
         if not isinstance(body, ReadbackBody):
             raise ReceiverRejected("readback body rejected")
@@ -743,15 +750,28 @@ class ReceiverService:
             if target is None:
                 raise ReceiverRejected("dispatch readback is unavailable")
             target_admission = DeliveryAdmission.model_validate_json(target["admission_json"], strict=True)
-            if self._identity(target_admission) != self._identity(request.admission):
+            expected, actual = self._identity(target_admission), self._identity(request.admission)
+            if self.config.access_mode == "owner":
+                # Result retrieval has its own signed request identity. The task's
+                # chosen expiry does not remove its already recorded outcome.
+                expected.pop("deadline")
+                actual.pop("deadline")
+                if isinstance(body, ResponseReadbackBody) and actual["endpoint_revision"] >= expected["endpoint_revision"]:
+                    expected.pop("endpoint_revision")
+                    actual.pop("endpoint_revision")
+            if expected != actual:
                 raise ReceiverRejected("readback admission differs from stored dispatch identity")
             evidence = {"stored_state": target["state"],
                         "stored_receipt_sha256": sha256(target["receipt_json"].encode()),
                         "target_request_id": target["request_id"]}
+            if isinstance(body, ResponseReadbackBody):
+                if not callable(response_reader):
+                    raise ReceiverRejected("response artifact provider unavailable")
+                evidence["response_artifact"] = response_reader(request.admission, body)
             return self._insert(
                 connection, request, request_hash, "readback", False, evidence,
                 prepare_identity=json.loads(target["prepare_identity_json"]),
-                identity_admission=target_admission, target_request_id=target["request_id"],
+                identity_admission=request.admission if isinstance(body, ResponseReadbackBody) else target_admission, target_request_id=target["request_id"],
             )
 
     def readiness(self, request: SignedRequest, probe) -> SignedReceipt:
@@ -771,8 +791,8 @@ class ReceiverService:
         reading = self.clock.reading()
         observed = (probe(request.admission) if callable(probe) else {
             "activity": "unknown", "observed_at": observed_at.isoformat(),
-            "expires_at": min(request.admission.deadline,
-                              reading.earliest_utc + timedelta(seconds=2)).isoformat(),
+            "expires_at": earliest(request.admission.deadline,
+                                   reading.earliest_utc + timedelta(seconds=2)).isoformat(),
             "source": "readiness_provider_unavailable"})
         if not isinstance(observed, dict) or observed.get("activity") not in {"idle", "busy", "offline", "unknown"}:
             raise ReceiverRejected("readiness observation rejected")
@@ -787,11 +807,11 @@ class ReceiverService:
                                 prepare_identity=self._identity(request.admission))
 
     def handle(self, request: SignedRequest, invoke: Callable[[DeliveryAdmission], dict[str, Any]],
-               *, after_marker=None, native_readiness=None) -> SignedReceipt:
+               *, after_marker=None, native_readiness=None, response_reader=None) -> SignedReceipt:
         actions = {
             "delivery.prepare": lambda: self.prepare(request),
             "delivery.dispatch": lambda: self.dispatch(request, invoke, after_marker=after_marker),
-            "delivery.readback": lambda: self.readback(request),
+            "delivery.readback": lambda: self.readback(request, response_reader),
             "delivery.readiness": lambda: self.readiness(request, native_readiness or getattr(invoke, "readiness", None)),
             "delivery.recover": lambda: self.recover(request, invoke, after_marker=after_marker),
         }

@@ -15,6 +15,16 @@ class AuthorizationDenied(RuntimeErrorBase):
 
 
 @dataclass
+class IdentityRejected(AuthorizationDenied):
+    code: str = "identity_unavailable"
+
+
+@dataclass
+class BusinessDeadlineExpired(RuntimeErrorBase):
+    target_id: str
+
+
+@dataclass
 class RevisionConflict(RuntimeErrorBase):
     target_id: str
     expected: int

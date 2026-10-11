@@ -11,11 +11,12 @@ Execution capacity and protected resources. Logical work ownership belongs to ac
 
 ## Core invariants
 
-- Machine, Node, Runtime, Harness, Driver, Session and Endpoint are distinct identities.
-- Capability is a scoped, directional, versioned observation with expiry and evidence.
-- Attempt is one execution try; replacement creates a new Attempt and fences stale ownership.
-- Lease binds owner, resource, generation, fencing token, Grant and expiry.
-- Uncertain external effect requires authority readback before retry or compensation.
+- Machine, Node, Runtime, Harness, Driver, Session, Connection and Endpoint are distinct identities.
+- Owner registrations persist through disconnection; execution reads actual process and Session state, reconnects and prepares the selected environment.
+- Native modes use the selected user's tools, MCP servers, plugins, project/provider/model and approval configuration; interactive approval requires the actual native client handler.
+- Attached Session read, send and cancellation follow the actual native API; process termination requires verified ownership of the stopped object.
+- Attempt replacement preserves lineage; a Lease fences the concrete resource gateway that enforces it.
+- Uncertain external effects require authority readback; explicit deadlines and shared capability windows retain their applicable clock checks.
 
 ## Retrieval map
 
@@ -37,9 +38,12 @@ tools.
 
 ## Application
 
-Apply this knowledge to the user's actual goal and current evidence. Compose
-tools from present state, permissions and required readback. Examples in the references illustrate the model. The Agent derives the
-sequence from current state, authority, evidence and the user's goal.
+Apply this knowledge to the user's goal and current evidence. Read the
+installed access mode and active tool schema, then compose actions from trusted
+identity, object state, revisions and required readback. References explain
+durable semantics; ProjectContextPack and current sources provide project facts.
+The owner product contract is `docs/runtime/OWNER-RUNTIME.md` in the verified
+ACS release or source checkout.
 
 ## Related knowledge
 

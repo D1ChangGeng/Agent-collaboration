@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from runtime.lifetimes import earliest, expired
 from runtime.recovery_models import (
     BoundaryRejected,
     DispatchIdentity,
@@ -379,13 +380,14 @@ class AuthoritySnapshot:
     current_attempt_id: str
     current_accepted_revision: int
     current_accepted_state_digest: str
-    deadline: datetime
+    deadline: datetime | None
     principal_ref: str
     grant_ref: str
     policy_version: str
 
     def __post_init__(self) -> None:
-        _aware(self.deadline, "authority_deadline")
+        if self.deadline is not None:
+            _aware(self.deadline, "authority_deadline")
         for name in ("current_attempt_id", "principal_ref", "grant_ref", "policy_version"):
             _text(getattr(self, name), name)
         if self.current_accepted_revision < 0:
@@ -489,7 +491,7 @@ class PostgresDelayedResponseAuthority:
             current = (
                 dispatch_receipt_current
                 and authority.current_authority_valid and authority.task_valid
-                and database_now < min(authority.deadline, message[1])
+                and not expired(earliest(authority.deadline, message[1]), database_now)
                 and authority.current_attempt_id == identity.attempt_id
                 and authority.current_accepted_revision == identity.accepted_revision
                 and authority.current_accepted_state_digest == identity.accepted_state_digest
@@ -604,13 +606,14 @@ class BridgeAuthoritySnapshot:
     send_authorized: bool
     current_accepted_revision: int
     current_accepted_state_digest: str
-    deadline: datetime
+    deadline: datetime | None
     principal_ref: str
     grant_ref: str
     policy_version: str
 
     def __post_init__(self) -> None:
-        _aware(self.deadline, "bridge_authority_deadline")
+        if self.deadline is not None:
+            _aware(self.deadline, "bridge_authority_deadline")
         for name in ("principal_ref", "grant_ref", "policy_version"):
             _text(getattr(self, name), name)
         _digest(self.current_accepted_state_digest, "current_accepted_state_digest")
@@ -653,7 +656,7 @@ class PostgresHumanBridgeAuthority:
         with psycopg.connect(self.dsn) as connection, connection.cursor() as cursor:
             authority = self.snapshot(cursor, "incident.open", command.incident_id)
             now = self._database_now(cursor)
-            if now >= authority.deadline:
+            if expired(authority.deadline, now):
                 raise BoundaryRejected("incident open authority deadline expired")
             # Reuse the executable validator before any database mutation.
             HumanBridgeCoordinator().open_incident(
@@ -685,7 +688,7 @@ class PostgresHumanBridgeAuthority:
                     and authority.task_valid
                     and authority.current_accepted_revision == command.accepted_revision
                     and authority.current_accepted_state_digest == command.accepted_state_digest
-                    and now < min(command.expires_at, authority.deadline)):
+                    and not expired(earliest(command.expires_at, authority.deadline), now)):
                 raise BoundaryRejected("incident open final authority changed")
             if prior is not None:
                 if prior[0] != digest:
@@ -749,7 +752,7 @@ class PostgresHumanBridgeAuthority:
                     and authority.task_valid and authority.send_authorized
                     and authority.current_accepted_revision == incident[5]
                     and authority.current_accepted_state_digest == incident[6]
-                    and current_time < min(incident[3], authority.deadline)):
+                    and not expired(earliest(incident[3], authority.deadline), current_time)):
                 raise BoundaryRejected("human request final authority changed")
             cursor.execute(
                 "SELECT canonical_digest FROM human_bridge_requests WHERE tenant_id=%s "
@@ -824,7 +827,7 @@ class PostgresHumanBridgeAuthority:
                 authority.authenticated and authority.current_authority_valid
                 and authority.task_valid and authority.current_accepted_revision == row[1]
                 and authority.current_accepted_state_digest == row[2]
-                and current_time < min(row[3], authority.deadline)
+                and not expired(earliest(row[3], authority.deadline), current_time)
                 and row[0] in {"open", "human_requested"}
             )
             cursor.execute(
@@ -925,9 +928,9 @@ class PostgresHumanBridgeAuthority:
                 and authority.task_valid
                 and authority.current_accepted_revision == incident[5]
                 and authority.current_accepted_state_digest == incident[6]
-                and database_now < min(
+                and not expired(earliest(
                     packet.expires_at, incident[7], message[1], authority.deadline,
-                )
+                ), database_now)
                 and incident[8] == "human_requested"
             )
             disposition = "committed" if current else "fenced_late"
@@ -1134,7 +1137,7 @@ class PostgresHumanBridgeAuthority:
             authority = self.snapshot(cursor, "incident.expire.final", incident_id)
             cursor.execute("SELECT clock_timestamp()")
             database_now = cursor.fetchone()[0]
-            if database_now < min(row[1], authority.deadline):
+            if not expired(earliest(row[1], authority.deadline), database_now):
                 raise BoundaryRejected("incident expiry deadline has not elapsed")
             cursor.execute(
                 "UPDATE recovery_incidents SET state='expired',updated_at=clock_timestamp() "

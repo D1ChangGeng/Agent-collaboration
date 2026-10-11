@@ -40,6 +40,51 @@ Bootstrap SSH/WSL installation selects a service host and connection transport.
 Session brokering, execution Endpoint management, source synchronization and
 message delivery belong to their Runtime mechanisms and capability checks.
 
+### Owner Runtime behavior
+
+New single-owner installation records access_mode=owner. Admission checks the
+trusted credential, tenant/principal/Authority, active service and objects,
+explicit revocation, request deduplication and expected revisions. Ordinary
+Team members supply slot, principal, role and Harness requirements. Shared
+configuration applies its per-subject Grants, Policy and budgets.
+
+Connection, Node, Runtime and Endpoint registrations persist through disconnect.
+At execution, inspect the actual process and native Session, reconnect and
+prepare the selected user's environment. Native Codex and OpenCode resolve
+that user's tools, MCP servers, plugins, project configuration, provider,
+models and approval configuration. Attached controls target the exact Session through
+the installed API; process stop requires confirmed ownership.
+
+Codex reads the selected approval_policy. The Driver can route native approval
+and information requests through server_request_handler. Standard headless
+Receiver factory uses the transport's explicit -32601 response to such
+requests. Report the actual handler and native response capability for an
+interactive integration.
+
+Owner business deadlines are optional. Async returns committed handles and
+sync waits for the target condition with an optional caller timeout. Durable
+Inbox and result tracking survive that early return or Session replacement.
+Current workspace views include admitted active changes; freeze the view
+revision or a committed snapshot for Review. The owner stdio MCP entry maintains
+committed delivery through Temporal when temporal_endpoint is configured.
+New installation writes the selected local port; an unconfigured custom
+service retains pending delivery for its separately operated dispatcher.
+
+During connection maintenance inspect the trusted remote_endpoints settings
+and actual TLS-pinned /healthz result. The stored prepare_argv is a deterministic
+installation command used for readiness recovery. Preserve its endpoint, key
+reference, journal generation and old-boot isolation binding.
+
+For owner semantics and migration read
+[Owner Runtime](../docs/runtime/OWNER-RUNTIME.md). Existing unspecified config
+retains shared until explicit adoption. activate_owner_mode applies the
+Surface/database identity transition. Receiver owner/native migration also
+builds a new matching Runtime/factory configuration and digest, signs the next
+Endpoint registration with the existing Node key, commits that revision and
+restarts with readback of the actual mode, digest and Session. Preserve the
+original profile, credential, keys, Node identity and revocation state.
+Historical Gate evidence keeps the Profile and baseline actually measured.
+
 ### Machine installation lifecycle
 
 Global installation is complete when the selected host's services and the
@@ -95,7 +140,8 @@ setup operation that requires a placement plan:
    official indexes in [ChatGPT Web Setup](../docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md).
    The AI prepares the native Tunnel client and configuration, invokes its
    discovery/initialization, doctor and run tools when available, and verifies
-   owner Grant and local MCP on the confirmed Runtime host. Use the owner's
+   trusted owner identity, configured access mode and local MCP on the confirmed
+   Runtime host. Use the owner's
    external browser on their client host for Platform and ChatGPT account steps.
    Browser navigation requires working OS or external browser control verified
    in the current Harness. Use the owner's given setup authorization for
@@ -149,9 +195,11 @@ sleep, cron daemon state and user manager availability determine execution.
 Automatic candidates keep the same major version and license, schema, migration,
 provider and MCP catalog contracts. A changed contract requires explicit review
 and a guided upgrade. Archive digests, installed-file ownership, a new locked
-environment, provider health and existing Grant authorization are checked
-before activation. The update uses existing projects, SourceBindings, Grants
-and Compose services; creating or changing them follows their setup lifecycle.
+environment, provider health and active identity are checked before activation.
+Shared mode also verifies its configured Grants. The update preserves existing
+projects, SourceBindings, access mode and revocation state. Explicit owner
+adoption stores the original configuration backup and preserves identities;
+service and project changes use their corresponding setup lifecycles.
 
 Owned local Skills refresh transactionally. Refresh Skills on separate client
 hosts through client setup maintenance. Stable local, SSH, WSL and Tunnel launch

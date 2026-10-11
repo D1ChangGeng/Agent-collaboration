@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -13,6 +12,7 @@ from runtime.errors import (
     RevisionConflict,
     RuntimeErrorBase,
 )
+from runtime.lifetimes import earliest
 from runtime.models import CommandEnvelope, CommandResult, EvidenceRecord, WorkItemState
 
 
@@ -117,7 +117,7 @@ class EffectDomain:
         if authority._evidence_digest(source_seal) != snapshot[6]:
             raise AcceptanceGuardFailed("ready source or review seal changed")
         outputs = {(ref.sha256, ref.size_bytes) for ref in receipt.artifact_refs if ref.kind == "output"}
-        deadlines = [bound["producer_expires_at"], bound["observer_expires_at"]]
+        deadlines = [] if authority.access_mode == "owner" else [bound["producer_expires_at"], bound["observer_expires_at"]]
         if bundle.expires_at is not None:
             deadlines.append(bundle.expires_at)
         return str(snapshot[2]), outputs, deadlines
@@ -138,9 +138,9 @@ class EffectDomain:
             "WHERE l.tenant_id=%s AND l.lease_id=%s AND l.resource_id=%s "
             "AND a.work_item_id=%s AND l.scope_id=%s AND g.grant_ref=%s AND g.principal_ref=%s "
             "AND l.authority_id=%s AND l.authority_incarnation=%s "
-            "AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp() FOR UPDATE OF l,a,w,s,g",
+            "AND g.revoked_at IS NULL AND (%s OR g.expires_at>clock_timestamp()) FOR UPDATE OF l,a,w,s,g",
             (command.tenant_id, request.lease_id, request.resource_id, command.target_id, str(work_item[0]),
-             command.grant_ref, command.principal_ref, command.authority_id, command.authority_incarnation),
+             command.grant_ref, command.principal_ref, command.authority_id, command.authority_incarnation, self._authority.access_mode == "owner"),
         )
         binding = cursor.fetchone()
         if binding is None:
@@ -243,7 +243,7 @@ class EffectDomain:
                 raise AcceptanceGuardFailed("publication effect identity is already registered")
             candidate, outputs, deadlines = self._ready_output_bindings(cursor, command, work_item)
             generation, fencing_token, owner_expires = self._lease_binding(cursor, command, work_item, request)
-            deadlines.extend((command.deadline, owner_expires))
+            deadlines.extend((command.deadline, None if authority.access_mode == "owner" else owner_expires))
             # WorkItem -> authorization/Lease rows -> filesystem is the shared
             # acceptance order. This path never opens a separate readback DB
             # transaction and never acquires the writer resource advisory lock.
@@ -251,19 +251,19 @@ class EffectDomain:
             if (observed.sha256, observed.size_bytes) not in outputs:
                 raise AcceptanceGuardFailed("publication bytes do not match the ready candidate")
             status = "verified" if observed.completion_state == "completed" else "uncertain"
-            valid_until: datetime = min(deadlines)
+            valid_until = earliest(*deadlines)
             cursor.execute(
                 "INSERT INTO effects(effect_id,tenant_id,work_item_id,resource_id,baseline_ref,lease_id,"
                 "fencing_token,generation,status,readback_ref,grant_ref,candidate_ref,operation_id,"
                 "expected_sha256,expected_size_bytes,intent_sha256,completion_sha256,completion_state,"
                 "registered_readback,registered_by,registration_command_id,registration_operation_id) "
                 "SELECT %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s "
-                "WHERE clock_timestamp()<%s",
+                "WHERE (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
                 (request.effect_id, command.tenant_id, command.target_id, request.resource_id, str(work_item[3]),
                  request.lease_id, fencing_token, generation, status, observed.readback_ref, command.grant_ref,
                  candidate, observed.operation_id, observed.sha256, observed.size_bytes, observed.intent_sha256,
                  observed.completion_sha256, observed.completion_state, observed.model_dump_json(),
-                 command.principal_ref, command.command_id, result.operation_id, valid_until),
+                 command.principal_ref, command.command_id, result.operation_id, valid_until, valid_until),
             )
             if cursor.rowcount != 1:
                 raise AcceptanceGuardFailed("publication registration authorization expired during verification")
@@ -328,14 +328,14 @@ class EffectDomain:
                     or (observed.sha256, observed.size_bytes) not in outputs):
                 raise AcceptanceGuardFailed("reconciliation differs from original intent or payload")
             status = "verified" if observed.completion_state == "completed" else "uncertain"
-            valid_until = min([command.deadline, reconciler_expires, *deadlines])
+            valid_until = earliest(command.deadline, None if authority.access_mode == "owner" else reconciler_expires, *deadlines)
             cursor.execute(
                 "UPDATE effects SET status=%s,completion_sha256=%s,completion_state=%s,reconciled_readback=%s,"
                 "reconciliation_command_id=%s,reconciliation_operation_id=%s "
                 "WHERE tenant_id=%s AND work_item_id=%s AND effect_id=%s AND status='uncertain' "
-                "AND clock_timestamp()<%s",
+                "AND (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
                 (status, observed.completion_sha256, observed.completion_state, observed.model_dump_json(),
-                 command.command_id, result.operation_id, command.tenant_id, command.target_id, effect_id, valid_until),
+                 command.command_id, result.operation_id, command.tenant_id, command.target_id, effect_id, valid_until, valid_until),
             )
             if cursor.rowcount != 1:
                 raise AcceptanceGuardFailed("publication reconciliation authorization expired during verification")

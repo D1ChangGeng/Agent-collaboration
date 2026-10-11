@@ -94,6 +94,25 @@ def held_windows_members(supervisor, handle, pids):
 
 @unittest.skipUnless(os.name == "nt", "Windows JobObject integration requires Windows")
 class WindowsContainmentTests(unittest.TestCase):
+    def test_native_owner_job_has_continuous_process_capacity(self):
+        native = WindowsJobSupervisor(max_processes=None)
+        handle = None
+        try:
+            handle = native.launch([sys.executable, "-I", "-S", "-c", "import time; time.sleep(30)"],
+                cwd=str(Path.cwd()), env={"SystemRoot":os.environ["SystemRoot"]}, label="native-owner-capacity-test")
+            limits = native.api.Extended()
+            native.api.check(native.api.dll.QueryInformationJobObject(native._record(handle).backend_ref,
+                9,ctypes.byref(limits),ctypes.sizeof(limits),None), "QueryInformationJobObject")
+            self.assertEqual(limits.basic.flags & 0x8,0)
+            self.assertEqual(limits.basic.flags & 0x2000,0x2000)
+            proof = native.terminate_tree(handle)
+            self.assertTrue(proof["root_exited"])
+            self.assertEqual(proof["remaining_pids"],[])
+        finally:
+            if handle is not None:
+                close_streams(handle)
+            native.close()
+
     def setUp(self):
         self.supervisor = WindowsJobSupervisor()
         self.handles = []

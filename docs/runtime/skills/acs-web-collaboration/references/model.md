@@ -1,15 +1,26 @@
 # Web collaboration model
 
-A web SaaS Agent connects to one ACS remote MCP endpoint through HTTPS or an
-admitted secure Tunnel and authenticates with OAuth. The Session has no trusted
-local cwd. It discovers Project IDs, loads ProjectContextPack and uses logical
-SourceBinding paths.
+A web Agent connects to one ACS remote MCP endpoint through HTTPS or an admitted
+secure Tunnel. The private owner Tunnel binds the local ACS process to the
+installation owner's trusted credential and service context. An OAuth resource
+server validates its token, subject and deployment rules.
 
-ProjectContextPack contains Root identity, instruction manifests, Route
-summaries, knowledge indexes, SourceBindings, active work, Policy and
-completeness. Content is inline within bounds or referenced by Artifact and
-read_file follow-up.
+The web Session selects project_id explicitly and loads ProjectContextPack.
+The pack carries Root identity, instruction manifests, Route summaries,
+knowledge indexes, SourceBindings, active work and completeness. Source
+context includes exact commit or workspace view revisions. Content is inline
+within bounds or referenced by verified Artifact and read_file follow-up.
 
-Web Sessions can act as Root Manager, Architect, Reviewer, Specialist or
-Finalizer under the corresponding Profile. Local execution and protected source
-writes require admitted Runtime or Source-write capacity.
+Web Sessions perform management, architecture, Review, Specialist or Finalizer
+duties through the actual advertised tools. Owner admission follows trusted
+identity, active objects, explicit revocation, deduplication and revisions;
+shared deployments also apply their configured Grants, Policy and Profiles.
+Execution depends on actual native capacity and readiness.
+
+Notifications use the active MCP Connection and Session binding. Push or wake
+requires the actual client capability. Durable Inbox, response and subscription
+state remains available to a later authenticated Session.
+
+Source reads use admitted filesystem roots, an external repository provider or
+both. Owner workspace views can include current local edits and admitted
+untracked files; named snapshots preserve exact source for Review.

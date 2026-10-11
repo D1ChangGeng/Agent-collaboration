@@ -23,6 +23,7 @@ from runtime.errors import (
     SchemaAdoptionError,
 )
 from runtime.lease_authority import LeaseAuthority
+from runtime.lifetimes import earliest
 from runtime.migrations import LegacyCommandRecord, classify_replay
 from runtime.models import (
     ArtifactRef,
@@ -42,9 +43,10 @@ class DomainAuthority:
     """PostgreSQL Domain authority for the local Runtime profile."""
 
     SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.12"
+    SCHEMA_VERSION = "1.13"
 
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.12", "b5d1e8063c52e5d1ab5c7d286ec3fbd02661bf0ff535f6cf36f45c8e6156a6a2"),
         ("1.11", "e840b74d16389bd9b07df1aee061e696955e78a0397dd8649571b04193c49b9d"),
         ("1.10", "3220ec5379b4effbbfe4fb293684881c0e14cd03d681fda8b98aacd6185c162d"),
         ("1.9", "7eec78fd9d54b81d20724327e13f3a2237f95a9d5a2bc35f7799ebd3d30b5b9b"),
@@ -83,7 +85,11 @@ class DomainAuthority:
         effect_registration_gateway: Any | None = None,
         delivery_endpoints: Mapping[str, Any] | None = None,
         node_response_reader: Any | None = None,
+        access_mode: str = "shared",
     ) -> None:
+        if access_mode not in {"owner", "shared"}:
+            raise ValueError("unsupported service access mode")
+        self.access_mode = access_mode
         self._dsn = dsn
         self._authority_binding = authority_binding
         self.context = context or AuthenticatedContext(
@@ -93,6 +99,7 @@ class DomainAuthority:
             "agent:engineer",
             "grant:p1",
         )
+        self.owner_identity_ref = self.context.grant_ref
         self._artifact_store = artifact_store
         self._effect_readback_verifier = effect_readback_verifier
         self._effect_registration_gateway = effect_registration_gateway
@@ -211,10 +218,10 @@ class DomainAuthority:
     def challenge_node(self, command, request):
         return self.enrollment.challenge_node(command, request)
 
-    def register_runtime(self, command, request, proof):
+    def register_runtime(self, command, request, proof=None):
         return self.enrollment.register_runtime(command, request, proof)
 
-    def register_attempt(self, command, request, proof):
+    def register_attempt(self, command, request, proof=None):
         return self.enrollment.register_attempt(command, request, proof)
 
     @property
@@ -285,6 +292,7 @@ class DomainAuthority:
 
     def initialize(self) -> None:
         schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
+        schema += "\n" + Path(__file__).with_name("schema_1_13.sql").read_text(encoding="utf-8")
         checksum = hashlib.sha256(schema.encode("utf-8")).hexdigest()
 
         with self._connect() as connection, connection.cursor() as cursor:
@@ -366,6 +374,13 @@ class DomainAuthority:
         *,
         preserve_existing: bool = False,
     ) -> None:
+        if self.access_mode == "owner":
+            with self._connect() as connection, connection.cursor() as cursor:
+                cursor.execute("INSERT INTO grants(grant_ref,tenant_id,principal_ref,authority_id,authority_incarnation,"
+                    "scope_id,permissions,expires_at,identity_only) VALUES (%s,%s,%s,%s,%s,'local-scope','[]',NULL,TRUE) "
+                    "ON CONFLICT(grant_ref) DO NOTHING", (self.context.grant_ref,self.context.tenant_id,
+                    self.context.principal_ref,self.context.authority_id,self.context.authority_incarnation))
+            return
         with self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 "INSERT INTO grants("
@@ -405,6 +420,10 @@ class DomainAuthority:
         if cursor is None:
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
+        if self.access_mode == "owner":
+            self._authorize_owner(command, cursor, scope_id)
+            return
+
         if type(clock_skew_seconds) is not int or not 0 <= clock_skew_seconds <= 30:
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
@@ -414,6 +433,7 @@ class DomainAuthority:
 
         if (
             command.issued_at.tzinfo is None
+            or command.deadline is None
             or command.deadline.tzinfo is None
             or command.deadline <= now
             or command.issued_at > now + clock_skew
@@ -479,8 +499,49 @@ class DomainAuthority:
         ):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
+    def _authorize_owner(self, command, cursor, scope_id):
+        """Validate trusted service context and target; roles are collaboration metadata."""
+        from runtime.errors import BusinessDeadlineExpired, IdentityRejected
+        if command.deadline is not None and command.deadline <= self.canonical_now(cursor):
+            raise BusinessDeadlineExpired(command.target_id)
+        current = self.context
+        expected = (current.tenant_id, current.authority_id, current.authority_incarnation,
+                    current.principal_ref, current.grant_ref)
+        actual = (command.tenant_id, command.authority_id, command.authority_incarnation,
+                  command.principal_ref, command.grant_ref)
+        if actual != expected:
+            raise IdentityRejected(command.principal_ref, command.grant_ref, "identity_mismatch")
+        cursor.execute(
+            "SELECT 1 FROM authority_instances a WHERE a.authority_id=%s "
+            "AND a.authority_incarnation=%s AND a.status='active' "
+            "AND (SELECT count(*) FROM authority_instances x "
+            "WHERE x.authority_id=a.authority_id AND x.status='active')=1",
+            (current.authority_id, current.authority_incarnation),
+        )
+        if cursor.fetchone() is None:
+            raise IdentityRejected(command.principal_ref, command.grant_ref, "service_identity_inactive")
+        if scope_id is not None:
+            cursor.execute("SELECT 1 FROM scopes WHERE tenant_id=%s AND scope_id=%s AND status='active'",
+                           (current.tenant_id, scope_id))
+            if cursor.fetchone() is None:
+                raise IdentityRejected(command.principal_ref, command.grant_ref, "scope_unavailable")
+        cursor.execute("SELECT grant_ref,revoked_at FROM grants WHERE tenant_id=%s AND grant_ref=ANY(%s)",
+                       (current.tenant_id, list({self.owner_identity_ref, current.grant_ref})))
+        identities = {reference: revoked for reference, revoked in cursor.fetchall()}
+        if (set(identities) != {self.owner_identity_ref, current.grant_ref}
+                or any(revoked is not None for revoked in identities.values())):
+            raise IdentityRejected(command.principal_ref, command.grant_ref, "identity_revoked")
+        self._lock_command_identity(cursor, command)
+
     def _authorize_delegation(self, cursor, command, permission):
         """Lock the finite Grant chain root-first and enforce current ancestry."""
+        if self.access_mode == "owner":
+            cursor.execute("SELECT revoked_at FROM grants WHERE tenant_id=%s AND grant_ref=%s AND principal_ref=%s",
+                           (command.tenant_id, command.grant_ref, command.principal_ref))
+            identity = cursor.fetchone()
+            if identity is None or identity[0] is not None:
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            return
         cursor.execute(
             "WITH RECURSIVE ancestry AS ("
             "SELECT %s::text AS ref,0 AS depth,ARRAY[%s::text] AS path,FALSE AS cycle "
@@ -798,12 +859,13 @@ class DomainAuthority:
             cursor.execute(
                 "UPDATE work_items "
                 "SET state=%s,revision=%s,updated_at=clock_timestamp() "
-                "WHERE tenant_id=%s AND work_item_id=%s AND clock_timestamp()<%s",
+                "WHERE tenant_id=%s AND work_item_id=%s AND (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
                 (
                     transition.to_state,
                     next_revision,
                     self.context.tenant_id,
                     command.target_id,
+                    acceptance_metadata["valid_until"],
                     acceptance_metadata["valid_until"],
                 ),
             )
@@ -979,7 +1041,8 @@ class DomainAuthority:
                 "stored evidence is invalid")
             bundle, receipt, bound = self._validate_bundle(
                 cursor, evidence, stored_bundle["bundle_json"], command.target_id, baseline, scope_id)
-            valid_until.extend((bound["producer_expires_at"], bound["observer_expires_at"]))
+            if self.access_mode != "owner":
+                valid_until.extend((bound["producer_expires_at"], bound["observer_expires_at"]))
             if bundle.expires_at is not None:
                 valid_until.append(bundle.expires_at)
             if (stored_evidence["scope_id"] != scope_id
@@ -1009,7 +1072,7 @@ class DomainAuthority:
             "AND a.work_item_id=r.work_item_id AND a.reviewer_ref=r.reviewer_ref "
             "AND a.reviewer_grant_ref=r.reviewer_grant_ref AND a.status='active' "
             "JOIN grants g ON g.grant_ref=r.reviewer_grant_ref AND g.tenant_id=r.tenant_id "
-            "AND g.principal_ref=r.reviewer_ref AND g.scope_id=a.scope_id "
+            "AND g.principal_ref=r.reviewer_ref AND (%s OR g.scope_id=a.scope_id) "
             "JOIN authority_instances ai ON ai.authority_id=g.authority_id "
             "AND ai.authority_incarnation=g.authority_incarnation "
             "JOIN scopes s ON s.scope_id=a.scope_id AND s.tenant_id=a.tenant_id "
@@ -1018,24 +1081,26 @@ class DomainAuthority:
             "AND g.authority_id=%s AND g.authority_incarnation=%s "
             "AND r.authority_incarnation=g.authority_incarnation "
             "AND ai.status='active' AND s.status='active' "
-            "AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp() "
+            "AND (%s OR (g.revoked_at IS NULL AND g.expires_at>clock_timestamp())) "
             "FOR UPDATE OF r,a,g,ai,s",
-            (self.tenant_id, command.target_id, transition.review_ref, baseline,
-             list(transition.evidence_refs), scope_id, self.authority_id, self.context.authority_incarnation),
+            (self.access_mode == "owner", self.tenant_id, command.target_id, transition.review_ref, baseline,
+             list(transition.evidence_refs), scope_id, self.authority_id, self.context.authority_incarnation, self.access_mode == "owner"),
         )
         review = cursor.fetchone()
         if review is None:
             raise AcceptanceGuardFailed("independent assigned authorized review is missing")
         if (review[0] in participants or review[1] != review[4] or review[2] != review[3]
-                or "review.record" not in tuple(review[5] or ()) or review[6] not in candidates
+                or (self.access_mode != "owner" and "review.record" not in tuple(review[5] or ())) or review[6] not in candidates
                 or review[7] != self._evidence_set_hash(transition.evidence_refs)):
             raise AcceptanceGuardFailed("reviewer independence or evidence binding failed")
-        valid_until.append(review[8])
-        try:
-            self._authorize_delegation(cursor, AuthenticatedContext(self.tenant_id, self.authority_id,
-                self.context.authority_incarnation, review[0], review[9]), "review.record")
-        except AuthorizationDenied:
-            raise AcceptanceGuardFailed("reviewer delegated authority is no longer valid") from None
+        if self.access_mode != "owner":
+            valid_until.append(review[8])
+        if self.access_mode != "owner":
+            try:
+                self._authorize_delegation(cursor, AuthenticatedContext(self.tenant_id, self.authority_id,
+                    self.context.authority_incarnation, review[0], review[9]), "review.record")
+            except AuthorizationDenied:
+                raise AcceptanceGuardFailed("reviewer delegated authority is no longer valid") from None
         candidate_ref = next(iter(candidates))
         # WorkItem is already locked by transition_work_item. Effect admission
         # must take the same lock before inserting/updating any Effect, and must
@@ -1045,17 +1110,18 @@ class DomainAuthority:
             cursor, command, transition, baseline, scope_id, candidate_ref)
         cursor.execute(
             "SELECT s.policy,g.expires_at FROM scopes s JOIN grants g "
-            "ON g.scope_id=s.scope_id AND g.tenant_id=s.tenant_id "
+            "ON (%s OR g.scope_id=s.scope_id) AND g.tenant_id=s.tenant_id "
             "WHERE s.tenant_id=%s AND s.scope_id=%s AND g.grant_ref=%s "
             "AND g.principal_ref=%s AND g.authority_id=%s AND g.authority_incarnation=%s "
             "FOR UPDATE OF s,g",
-            (self.tenant_id, scope_id, self.context.grant_ref, self.context.principal_ref,
+            (self.access_mode == "owner", self.tenant_id, scope_id, self.context.grant_ref, self.context.principal_ref,
              self.authority_id, self.context.authority_incarnation),
         )
         policy = cursor.fetchone()
         if policy is None:
             raise AcceptanceGuardFailed("acceptance authorizer binding is missing")
-        valid_until.append(policy[1])
+        if self.access_mode != "owner":
+            valid_until.append(policy[1])
         source_readbacks = {
             "baseline_ref": baseline,
             "candidate_ref": candidate_ref,
@@ -1079,7 +1145,7 @@ class DomainAuthority:
             # clock_timestamp() < valid_until and require exactly one updated
             # row. This catches time elapsed during CAS/live readback without
             # another verification pass or a SELECT-to-UPDATE time race.
-            "valid_until": min(valid_until),
+            "valid_until": earliest(*valid_until),
             # Readiness authorizes subsequent publication. Its source readback
             # seal must not freeze the later publication Effect universe.
             "readback_digest": source_readback_digest if ready else self._evidence_digest({
@@ -1341,7 +1407,7 @@ class DomainAuthority:
                 "JOIN grants g ON g.grant_ref=a.reviewer_grant_ref "
                 "AND g.tenant_id=a.tenant_id "
                 "AND g.principal_ref=a.reviewer_ref "
-                "AND g.scope_id=a.scope_id "
+                "AND (%s OR g.scope_id=a.scope_id) "
                 "JOIN authority_instances ai "
                 "ON ai.authority_id=g.authority_id "
                 "AND ai.authority_incarnation=g.authority_incarnation "
@@ -1350,18 +1416,18 @@ class DomainAuthority:
                 "AND a.reviewer_ref=%s AND a.reviewer_grant_ref=%s "
                 "AND a.status='active' "
                 "AND a.authority_incarnation=g.authority_incarnation "
-                "AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp()",
+                "AND g.revoked_at IS NULL AND (%s OR g.expires_at>clock_timestamp())",
                 (
-                    self.context.tenant_id,
+                    self.access_mode == "owner", self.context.tenant_id,
                     work_item_id,
                     self.context.principal_ref,
-                    self.context.grant_ref,
+                    self.context.grant_ref, self.access_mode == "owner",
                 ),
             )
             assignment = cursor.fetchone()
-            if assignment is None or "review.record" not in tuple(
+            if assignment is None or (self.access_mode != "owner" and "review.record" not in tuple(
                 assignment[2] or ()
-            ):
+            )):
                 raise AuthorizationDenied(
                     self.context.principal_ref,
                     self.context.grant_ref,
@@ -1474,19 +1540,19 @@ class DomainAuthority:
                 "WHERE g.grant_ref=%s "
                 "AND g.tenant_id=%s "
                 "AND g.principal_ref=%s "
-                "AND g.scope_id=%s "
+                "AND (%s OR g.scope_id=%s) "
                 "AND g.authority_id=%s "
                 "AND g.authority_incarnation=%s "
                 "AND a.status='active' "
                 "AND g.revoked_at IS NULL "
-                "AND g.expires_at>clock_timestamp()",
+                "AND (%s OR g.expires_at>clock_timestamp())",
                 (
                     reviewer_grant_ref,
                     self.context.tenant_id,
                     reviewer_ref,
-                    row[0],
+                    self.access_mode == "owner", row[0],
                     self.context.authority_id,
-                    self.context.authority_incarnation,
+                    self.context.authority_incarnation, self.access_mode == "owner",
                 ),
             )
             if cursor.fetchone() is None:
@@ -1717,10 +1783,10 @@ class DomainAuthority:
             "JOIN agent_slots slot ON slot.agent_slot_id=a.agent_slot_id "
             "AND slot.tenant_id=a.tenant_id AND slot.scope_id=a.scope_id AND slot.status='active' "
             "JOIN grants g ON g.grant_ref=a.grant_ref AND g.tenant_id=a.tenant_id "
-            "AND g.principal_ref=a.producer_ref AND g.scope_id=a.scope_id "
+            "AND g.principal_ref=a.producer_ref AND (%s OR g.scope_id=a.scope_id) "
             "AND g.authority_id=a.authority_id AND g.authority_incarnation=a.authority_incarnation "
             "JOIN grants og ON og.grant_ref=a.observer_grant_ref AND og.tenant_id=a.tenant_id "
-            "AND og.principal_ref=a.observer_ref AND og.scope_id=a.scope_id "
+            "AND og.principal_ref=a.observer_ref AND (%s OR og.scope_id=a.scope_id) "
             "AND og.authority_id=a.authority_id AND og.authority_incarnation=a.authority_incarnation "
             "JOIN authority_instances ai ON ai.authority_id=a.authority_id "
             "AND ai.authority_incarnation=a.authority_incarnation "
@@ -1728,11 +1794,11 @@ class DomainAuthority:
             "WHERE a.attempt_id=%s AND a.tenant_id=%s AND a.work_item_id=%s "
             "AND a.scope_id=%s AND a.authority_id=%s AND a.authority_incarnation=%s "
             "AND ai.status='active' AND s.status='active' "
-            "AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp() "
-            "AND og.revoked_at IS NULL AND og.expires_at>clock_timestamp() "
+            "AND (%s OR (g.revoked_at IS NULL AND g.expires_at>clock_timestamp())) "
+            "AND (%s OR (og.revoked_at IS NULL AND og.expires_at>clock_timestamp())) "
             "FOR UPDATE OF a,w,g,og,ai,s,slot",
-            (receipt.attempt_id, self.tenant_id, receipt.work_item_id, scope_id,
-             self.authority_id, self.context.authority_incarnation),
+            (self.access_mode == "owner", self.access_mode == "owner", receipt.attempt_id, self.tenant_id, receipt.work_item_id, scope_id,
+             self.authority_id, self.context.authority_incarnation, self.access_mode == "owner", self.access_mode == "owner"),
         )
         row = cursor.fetchone()
         if row is None:
@@ -1744,14 +1810,16 @@ class DomainAuthority:
                 "execution_started_at", "producer_expires_at", "observer_expires_at",
                 "producer_permissions", "observer_permissions")
         bound = dict(zip(keys, row, strict=True))
-        if (any(not bound[key] for key in keys[:-2])
-                or "execution.record" not in tuple(bound["observer_permissions"] or ())
-                or "evidence.record" not in tuple(bound["producer_permissions"] or ())):
+        required = keys[:-4] if self.access_mode == "owner" else keys[:-2]
+        if (any(not bound[key] for key in required)
+                or (self.access_mode != "owner" and (
+                    "execution.record" not in tuple(bound["observer_permissions"] or ())
+                    or "evidence.record" not in tuple(bound["producer_permissions"] or ())))):
             raise AcceptanceGuardFailed("trusted execution attempt binding is missing or unauthorized")
-        for principal, grant, permission in (
+        for principal, grant, permission in (() if self.access_mode == "owner" else (
             (bound["producer_ref"], bound["producer_grant_ref"], "evidence.record"),
             (bound["observer_ref"], bound["observer_grant_ref"], "execution.record"),
-        ):
+        )):
             try:
                 self._authorize_delegation(cursor, AuthenticatedContext(self.tenant_id, self.authority_id,
                     self.context.authority_incarnation, principal, grant), permission)

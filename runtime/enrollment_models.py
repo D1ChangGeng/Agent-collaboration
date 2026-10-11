@@ -19,14 +19,14 @@ class NodeEnrollment(EnrollmentInput):
     machine_id: str = Field(min_length=1, max_length=256)
     boot_incarnation: str = Field(min_length=1, max_length=256)
     public_key: str = Field(pattern=r"^[a-f0-9]{64}$")
-    expires_at: datetime
+    expires_at: datetime | None = None
 
 
 class NodeRotation(EnrollmentInput):
     machine_id: str = Field(min_length=1, max_length=256)
     boot_incarnation: str = Field(min_length=1, max_length=256)
     public_key: str = Field(pattern=r"^[a-f0-9]{64}$")
-    expires_at: datetime
+    expires_at: datetime | None = None
 
 
 class NodeRevocation(EnrollmentInput):
@@ -59,7 +59,7 @@ class RuntimeRegistration(EnrollmentInput):
     node_binding_revision: int = Field(ge=1, strict=True)
     provider: str = Field(min_length=1, max_length=256)
     producer_grant_ref: str = Field(min_length=1, max_length=256)
-    expires_at: datetime
+    expires_at: datetime | None = None
 
 
 class AttemptRegistration(EnrollmentInput):
@@ -82,4 +82,4 @@ class NodeChallengeReply(EnrollmentInput):
     result: CommandResult
     challenge_id: str
     message_hex: str
-    expires_at: datetime
+    expires_at: datetime | None = None

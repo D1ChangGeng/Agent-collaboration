@@ -43,7 +43,8 @@ def _windows_private(path: Path) -> None:
 
 
 def _windows_open(path: Path) -> int:
-    from runtime.operator_files import OperatorFileError, _windows_open as open_handle
+    from runtime.operator_files import OperatorFileError
+    from runtime.operator_files import _windows_open as open_handle
 
     try:
         return open_handle(path)

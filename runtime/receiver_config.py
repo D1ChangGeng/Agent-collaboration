@@ -48,9 +48,12 @@ class NodeIdentity:
 
 class EndpointBootstrap:
     def __init__(self, allowed: dict[str, ConnectionTarget], current_node: NodeIdentity,
-                 *, clock: ConnectionClock | None = None):
+                 *, clock: ConnectionClock | None = None, access_mode: str = "shared" ):
         self.allowed = dict(allowed)
         self.current_node = current_node
+        if access_mode not in {"owner", "shared"}:
+            raise BootstrapRejected("receiver access mode is invalid")
+        self.access_mode = access_mode
         self.clock = clock
         self._registrations: dict[str, tuple[str, EndpointBinding]] = {}
 
@@ -81,7 +84,7 @@ class EndpointBootstrap:
             clock = ConnectionClock.local(reference=lambda: datetime.now(UTC))
         if clock is not None:
             try:
-                clock.require_before(registration.expires_at)
+                clock.require_before(None if self.access_mode == "owner" else registration.expires_at)
             except ClockUnavailable as error:
                 raise BootstrapRejected("endpoint registration time is unavailable or expired") from error
         binding = EndpointBinding(
@@ -110,8 +113,11 @@ class ReceiverClientConfig:
     old_boot_isolation_ref: str | None = None
     maximum_body_bytes: int = 65_536
     clock_skew_seconds: int = 5
+    access_mode: str = "shared"
 
     def validate(self) -> None:
+        if self.access_mode not in {"owner", "shared"}:
+            raise BootstrapRejected("receiver access mode is invalid")
         if key_fingerprint(self.authority_public_key) != self.authority_public_key_fingerprint:
             raise BootstrapRejected("authority transport-key fingerprint differs")
         verify(self.binding.node_public_key, self.binding.registration_signature,
@@ -189,7 +195,7 @@ def resolve_connection_clock(config: ReceiverClientConfig,
     if not isinstance(clock, ConnectionClock):
         raise BootstrapRejected("receiver ConnectionClock provider is invalid")
     try:
-        reading = clock.require_before(config.binding.registration.expires_at)
+        reading = clock.require_before(None if config.access_mode == "owner" else config.binding.registration.expires_at)
     except ClockUnavailable as error:
         raise BootstrapRejected("endpoint registration time is unavailable or expired") from error
     observed = reading.identity

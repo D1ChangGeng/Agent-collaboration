@@ -79,6 +79,10 @@ class SourceSnapshot:
     source_class: str
     snapshot_sha256: str
 
+    @property
+    def view_revision(self) -> str:
+        return f"workspace:{self.snapshot_sha256}" if self.dirty else self.source_commit
+
     def manifest_dict(self, *, include_digest: bool = True) -> dict[str, Any]:
         value: dict[str, Any] = {
             "schema_version": self.schema_version,

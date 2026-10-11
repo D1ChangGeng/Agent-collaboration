@@ -4,7 +4,9 @@ from __future__ import annotations
 from runtime.errors import AuthorizationDenied
 
 
-def enforce_team_delivery(cursor, command, packet, policy, *, recovery):
+def enforce_team_delivery(cursor, command, packet, policy, *, recovery, access_mode="shared"):
+    if access_mode == "owner":
+        return
     team = policy.get("collaboration_team")
     if team is None:
         return

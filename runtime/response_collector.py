@@ -71,7 +71,7 @@ class NativeResponseCollector:
                 raise BoundaryRejected("cached terminal Harness proof differs")
             return cached
         adapter = self.native_adapter
-        operation = adapter._operation(invocation)
+        operation = getattr(adapter, "observation_operation", adapter._operation)(invocation)
         driver = adapter.driver
         record = driver.journal.read(invocation.invocation_id)
         if (

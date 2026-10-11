@@ -1,12 +1,23 @@
 # Governance tool map
 
-- read_profile exposes authenticated identity, Profiles and OAuth scope summary.
-- list_projects returns only authorized Projects.
-- list_connections returns metadata without credentials.
-- configure_team changes AgentSlot, Role, Grant, Policy and budget bindings under
-  its management permissions.
-- accept_work requires acceptance permission and applicable decision input.
-- submit_command is an Operator Profile surface for complete Domain commands.
+- read_profile exposes trusted identity, tenant, access_mode, client Profiles
+  and connection state.
+- list_projects returns active Projects visible to that context.
+- list_connections returns registration and connection metadata with secret
+  references kept in their credential authority.
+- configure_team stores owner slot, principal, role and Harness requirements;
+  shared deployments also manage Grant, Policy and budget bindings.
+- accept_work checks candidate, Review and acceptance prerequisites.
+- submit_command exposes complete Domain commands for the admitted advanced
+  client surface.
 
-Every project tool validates project_id and handle ownership. Result metadata
-retains subject lineage, evidence class and observation time.
+Every Project tool validates project_id, typed handle ownership and current
+object state. Mutations add stable client_request_id, canonical input
+deduplication and expected revisions. Owner business deadline is optional.
+The active tool catalog defines exact required and optional fields.
+
+Result metadata retains subject lineage, evidence class, source revision and
+observation time. Profiles describe the visible client view; shared
+authorization applies its server-side Grants and Policy. Explicit revocation
+and actual transport, resource and acceptance checks remain effective in both
+modes.

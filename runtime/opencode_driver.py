@@ -126,6 +126,7 @@ class OpenCodeLaunchProfile:
     provider_id: str
     model_id: str
     environment: dict[str, str]
+    execution_mode: str = "restricted"
 
     @property
     def config_path(self):
@@ -135,27 +136,34 @@ class OpenCodeLaunchProfile:
         return {key: value for key, value in asdict(self).items() if key != "environment"}
 
     def validate(self, *, executable=True, fresh=False, config_digest=True):
-        if self.version not in {"1.18.27", "1.18.30", "1.18.31"}:
+        if self.execution_mode not in {"native", "restricted"}:
+            raise DriverRejected("unsupported execution environment")
+        if self.execution_mode == "restricted" and self.version not in {"1.18.27", "1.18.30", "1.18.31"}:
             raise DriverRejected("OpenCode version requires a separate reference profile")
         roots = [self.home, self.config_root, self.data_root, self.state_root,
                  self.cache_root, self.temp_root, self.cwd]
         if any(not Path(path).is_absolute() or not Path(path).is_dir() for path in roots):
             raise DriverRejected("private runtime roots and authorized cwd must be absolute directories")
-        if len({str(Path(path).resolve()) for path in roots}) != len(roots):
+        if self.execution_mode == "restricted" and len({str(Path(path).resolve()) for path in roots}) != len(roots):
             raise DriverRejected("runtime roots must be independently scoped")
-        if fresh and any(any(Path(path).iterdir()) for path in
+        if self.execution_mode == "restricted" and fresh and any(any(Path(path).iterdir()) for path in
                          (self.home, self.data_root, self.state_root, self.cache_root, self.temp_root)):
             raise DriverRejected("spawn requires fresh private runtime roots")
         if not Path(self.executable).is_absolute() or not Path(self.schema_path).is_absolute():
             raise DriverRejected("executable/schema paths must be absolute")
-        if executable and file_digest(self.executable) != self.executable_sha256:
+        if self.execution_mode == "restricted" and executable and file_digest(self.executable) != self.executable_sha256:
             raise DriverRejected("OpenCode executable differs from the pinned profile")
-        if file_digest(self.schema_path) != self.schema_sha256:
+        if self.execution_mode == "restricted" and file_digest(self.schema_path) != self.schema_sha256:
             raise DriverRejected("OpenCode schema/configuration changed")
-        if config_digest and file_digest(self.config_path) != self.config_sha256:
+        if self.execution_mode == "restricted" and config_digest and file_digest(self.config_path) != self.config_sha256:
             raise DriverRejected("OpenCode configuration changed before native startup")
         if not all(isinstance(value, str) and value for value in (self.agent, self.provider_id, self.model_id)):
             raise DriverRejected("trusted agent/provider/model selection is required")
+        if self.execution_mode == "native":
+            if any(not isinstance(key, str) or not isinstance(value, str) or "\0" in key+value
+                   for key, value in self.environment.items()):
+                raise DriverRejected("invalid process environment")
+            return self
         for path in Path(self.config_root).rglob("*"):
             if path.is_symlink():
                 raise DriverRejected("configuration roots cannot contain symlinks")
@@ -186,6 +194,12 @@ class OpenCodeLaunchProfile:
 
     def process_environment(self, password):
         values = dict(self.environment)
+        if self.execution_mode == "native":
+            values.update({"HOME": self.home, "USERPROFILE": self.home,
+                "XDG_CONFIG_HOME": self.config_root, "XDG_DATA_HOME": self.data_root,
+                "XDG_STATE_HOME": self.state_root, "XDG_CACHE_HOME": self.cache_root,
+                "OPENCODE_SERVER_USERNAME": "opencode", "OPENCODE_SERVER_PASSWORD": password})
+            return values
         values.update({
             "HOME": self.home, "USERPROFILE": self.home, "APPDATA": self.config_root,
             "LOCALAPPDATA": self.data_root, "XDG_CONFIG_HOME": self.config_root,
@@ -344,10 +358,11 @@ class OpenCodeNativeDriver:
                     ) from error
                 self._auth(operation)
                 time.sleep(0.05)
-        if health != {"healthy": True, "version": self.profile.version}:
+        if (health.get("healthy") is not True or (self.profile.execution_mode == "restricted"
+                and health.get("version") != self.profile.version)):
             raise DriverRejected("health/version does not match the pinned native profile")
         _, schema = self._http(operation, "GET", "/doc", max_bytes=16 * 1024 * 1024)
-        if digest(schema) != digest(json.loads(Path(self.profile.schema_path).read_text())):
+        if self.profile.execution_mode == "restricted" and digest(schema) != digest(json.loads(Path(self.profile.schema_path).read_text())):
             raise DriverRejected("served OpenAPI differs from the reviewed schema")
         _, config = self._http(operation, "GET", "/config")
         if self.auth_stager is not None:
@@ -388,6 +403,10 @@ class OpenCodeNativeDriver:
             self.journal.event(
                 operation.operation_id, "provider_auth_readback", self.auth_observation,
             )
+        if self.profile.execution_mode == "native":
+            self.journal.event(operation.operation_id, "native_environment_observed",
+                {"version": health.get("version"), "agent": self.profile.agent})
+            return
         agent = config.get("agent", {}).get(self.profile.agent, {})
         if (config.get("permission") != {"*": "deny", "task": "deny"}
                 or agent.get("permission") != {"*": "deny", "task": "deny"}
@@ -453,7 +472,7 @@ class OpenCodeNativeDriver:
             "agent": self.profile.agent,
             "model": {"providerID": self.profile.provider_id, "id": self.profile.model_id},
             "metadata": self._metadata(operation_id),
-            "permission": SESSION_RULES,
+            **({"permission": SESSION_RULES} if self.profile.execution_mode == "restricted" else {}),
         }
 
     def _session(self, value, *, expected_operation=None):
@@ -468,7 +487,7 @@ class OpenCodeNativeDriver:
                 or not isinstance(metadata.get("acs_operation_id"), str)
                 or expected_operation is not None and metadata.get("acs_operation_id") != expected_operation
                 or Path(value.get("directory", "")).resolve() != Path(self.profile.cwd).resolve()
-                or value.get("permission") != SESSION_RULES
+                or self.profile.execution_mode == "restricted" and value.get("permission") != SESSION_RULES
                 or value.get("agent") != self.profile.agent
                 or value.get("model", {}).get("id") != self.profile.model_id
                 or value.get("model", {}).get("providerID") != self.profile.provider_id):
@@ -567,7 +586,10 @@ class OpenCodeNativeDriver:
             with socket.socket() as reservation:
                 reservation.bind(("127.0.0.1", 0))
                 port = reservation.getsockname()[1]
-            argv = [self.profile.executable, "--pure", "serve", "--hostname", "127.0.0.1", "--port", str(port)]
+            argv = [self.profile.executable]
+            if self.profile.execution_mode == "restricted":
+                argv.append("--pure")
+            argv.extend(["serve", "--hostname", "127.0.0.1", "--port", str(port)])
             self.journal.event(operation.operation_id, "process_intent",
                                {"argv": argv, "profile": self.profile.binding(), "binding": self._identity})
             self._auth(operation)
@@ -696,7 +718,9 @@ class OpenCodeNativeDriver:
         return self._run(operation, "attach", {"native_session_id": session_id}, perform)
 
     def _owned_mutation(self):
-        if self.ownership != "exclusive_owned" or self.owned is None or self.session_id is None:
+        controlled = (self.ownership == "exclusive_owned" and self.owned is not None
+                      or self.profile.execution_mode == "native" and self.ownership == "shared_attached" and self.client is not None)
+        if not controlled or self.session_id is None:
             raise DriverRejected("mutation requires exclusive owned native capacity")
         self.profile.validate(executable=False, config_digest=False)
 
@@ -987,6 +1011,16 @@ class OpenCodeNativeDriver:
                 raise DriverRejected("termination requires this Driver's owned containment")
             self._auth(operation)
             proof = self.supervisor.terminate_tree(self.owned)
+            if self.profile.execution_mode == "native" and proof.get("scope") == "owned_process_group":
+                if (proof.get("verified") is not True or proof.get("birth_ref") != self.owned.birth_ref
+                        or proof.get("containment_id") != self.owned.containment_id
+                        or proof.get("root_exit_code") is None or proof.get("remaining_group_members") != []
+                        or self.owned.process.poll() is None):
+                    raise OutcomeUncertain("owned process group stop readback is incomplete")
+                if self.client is not None:
+                    self.client.close()
+                return self._receipt("process_group_terminated", supervisor_proof=proof)
+
             if (proof.get("verified") is not True or proof.get("birth_ref") != self.owned.birth_ref
                     or proof.get("containment_id") != self.owned.containment_id
                     or proof.get("root_exited") is not True or proof.get("remaining_pids") != []
@@ -1013,8 +1047,9 @@ class OpenCodeNativeDriver:
                     proof.get("verified") is not True
                     or proof.get("birth_ref") != self.owned.birth_ref
                     or proof.get("containment_id") != self.owned.containment_id
-                    or proof.get("root_exited") is not True
-                    or proof.get("remaining_pids") != []
+                    or ((proof.get("root_exit_code") is None or proof.get("remaining_group_members") != [])
+                        if self.profile.execution_mode == "native" and proof.get("scope") == "owned_process_group" else
+                        (proof.get("root_exited") is not True or proof.get("remaining_pids") != []))
                     or self.owned.process.poll() is None
                 ):
                     raise DriverRejected(

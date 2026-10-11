@@ -11,11 +11,12 @@ Remote client context and access pathways. Project semantics belong to acs-proje
 
 ## Core invariants
 
-- One global remote MCP connection can access multiple authorized Projects.
-- Web Sessions use explicit project_id and load_project because local cwd and AGENTS discovery are absent.
-- Remote source access uses an admitted filesystem SourceBinding, external repository MCP, or both.
-- Web management and review are supported by read and governed mutation capabilities; execution depends on admitted Runtime capacity.
-- Wake behavior follows observed Harness capability and Project Inbox remains the portable recovery path.
+- One global remote MCP connection can expose multiple Projects within the authenticated tenant and active service context.
+- Web Sessions select project_id and load_project to obtain current Project context and source or workspace revisions.
+- Owner private Tunnel access binds to the installation owner's trusted credential; OAuth HTTPS services validate their token and deployment rules.
+- Remote Source access uses an admitted filesystem SourceBinding, external repository provider or both; current workspace and fixed revision views are distinct.
+- Management, Review and execution tools use actual advertised capabilities; execution prepares the selected native environment.
+- Notifications follow the active MCP Connection and Session; durable Project Inbox remains available after reconnect or Session replacement.
 
 ## Retrieval map
 
@@ -37,9 +38,12 @@ tools.
 
 ## Application
 
-Apply this knowledge to the user's actual goal and current evidence. Compose
-tools from present state, permissions and required readback. Examples in the references illustrate the model. The Agent derives the
-sequence from current state, authority, evidence and the user's goal.
+Apply this knowledge to the user's goal and current evidence. Read the
+installed access mode and active tool schema, then compose actions from trusted
+identity, object state, revisions and required readback. References explain
+durable semantics; ProjectContextPack and current sources provide project facts.
+The owner product contract is `docs/runtime/OWNER-RUNTIME.md` in the verified
+ACS release or source checkout.
 
 ## Related knowledge
 

@@ -54,6 +54,9 @@ class RouteActions:
         cursor.execute("SELECT g.permissions,g.expires_at,s.policy FROM grants g JOIN scopes s USING(scope_id) "
                        "WHERE g.grant_ref=%s FOR UPDATE OF g,s", (authority.context.grant_ref,))
         permissions, expiry, parent_policy = cursor.fetchone()
+        owner = authority.access_mode == "owner"
+        if owner:
+            grant, permissions, expiry = "actor:route:" + identity, [], None
         # Copy the non-team policy boundary. The Route's team and execution
         # capacity are configured separately; no parent Slot or budget is reused.
         scope_policy = {key: value for key, value in parent_policy.items() if key != "collaboration_team"}
@@ -61,12 +64,13 @@ class RouteActions:
                        (scope, self.context.tenant_id, canonical(scope_policy)))
         cursor.execute("INSERT INTO agent_slots VALUES (%s,%s,%s,'active')", (slot, self.context.tenant_id, scope))
         cursor.execute("INSERT INTO grants(grant_ref,tenant_id,principal_ref,authority_id,authority_incarnation,"
-                       "scope_id,permissions,expires_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+                       "scope_id,permissions,expires_at,identity_only) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                        (grant, self.context.tenant_id, command.principal_ref, command.authority_id,
-                        command.authority_incarnation, scope, canonical(permissions), expiry))
-        cursor.execute("INSERT INTO grant_delegations(grant_ref,parent_grant_ref,tenant_id,command_id,parent_policy_digest) "
-                       "VALUES (%s,%s,%s,%s,%s)",
-                       (grant, authority.context.grant_ref, self.context.tenant_id, command.command_id, digest(parent_policy)))
+                        command.authority_incarnation, scope, canonical(permissions), expiry, owner))
+        if not owner:
+            cursor.execute("INSERT INTO grant_delegations(grant_ref,parent_grant_ref,tenant_id,command_id,parent_policy_digest) "
+                           "VALUES (%s,%s,%s,%s,%s)",
+                           (grant, authority.context.grant_ref, self.context.tenant_id, command.command_id, digest(parent_policy)))
         definition = {"display_name": args["display_name"], "goal": args["goal"],
                       "source_binding_ids": args["source_binding_ids"], "root_id": root,
                       "management_source_state": "not_materialized"}
@@ -251,6 +255,26 @@ class RouteActions:
         return None
 
     def _route_authority(self, authority, cursor, project_id, project, scope, permissions, args):
+        if authority.access_mode == "owner":
+            scope = scope or project[0]
+            self._scope(cursor, self.context.tenant_id, project_id, handle("scope", project_id, scope))
+            grant, slot = project[4], project[5]
+            if scope != project[0]:
+                cursor.execute("SELECT g.grant_ref,g.agent_slot_id FROM collaboration_route_grants g "
+                    "JOIN collaboration_routes r USING(tenant_id,project_id,route_id) "
+                    "WHERE g.tenant_id=%s AND g.project_id=%s AND r.scope_id=%s "
+                    "ORDER BY (g.principal_ref=%s AND g.profile=%s) DESC,g.principal_ref,g.profile LIMIT 1",
+                    (self.context.tenant_id, project_id, scope, self.context.principal_ref, self.profile))
+                mapped = cursor.fetchone()
+                if mapped is None:
+                    raise NotFound("route_actor", scope)
+                grant, slot = mapped
+            bound = copy(authority)
+            bound.context = replace(authority.context, grant_ref=grant)
+            command = self._command(bound, "project." + args["_tool_name"],
+                {key: value for key, value in args.items() if key != "_tool_name"})
+            bound._authorize(command, cursor, scope_id=scope)
+            return bound, (*project[:4], grant, slot), command
         cursor.execute("SELECT scope_id FROM grants WHERE grant_ref=%s", (project[4],))
         member_scope = cursor.fetchone()[0]
         self._scope(cursor, self.context.tenant_id, project_id, handle("scope", project_id, member_scope))
@@ -280,6 +304,8 @@ class RouteActions:
 
     @staticmethod
     def _visible_scopes(authority, cursor, project):
+        if authority.access_mode == "owner":
+            return None
         cursor.execute("SELECT scope_id FROM grants WHERE grant_ref=%s", (authority.context.grant_ref,))
         scope = cursor.fetchone()[0]
         # A project Root Grant admits project-level metadata. A Route Grant

@@ -30,7 +30,7 @@ class NativeDeliveryAdapter:
     evidence_class = "native_driver_observation"
     dispatch_at_native_boundary = True
 
-    def __init__(self, driver, *, authorize_invocation, clock=None):
+    def __init__(self, driver, *, authorize_invocation, authorize_observation=None, clock=None):
         if not isinstance(driver, (CodexAppServerDriver, OpenCodeNativeDriver)) or not callable(authorize_invocation):
             raise TypeError("a bound native Driver and trusted Node authorizer are required")
         self.driver = driver
@@ -46,6 +46,7 @@ class NativeDeliveryAdapter:
         self._claim_token = self._journal.claim_token(self._binding_id, self._claim_fd)
         self._binding = asdict(driver.identity)
         self._authorize_invocation = authorize_invocation
+        self._authorize_observation = authorize_observation
 
     @staticmethod
     def _claim_signature(descriptor):
@@ -102,11 +103,28 @@ class NativeDeliveryAdapter:
         if (not isinstance(operation, AuthorizedOperation)
                 or (operation.operation_id, operation.command_id, operation.message_id)
                 != (invocation.invocation_id, invocation.command_id, invocation.message_id)
-                or operation.deadline > envelope.packet.deadline):
+                or (envelope.packet.deadline is not None and (operation.deadline is None
+                    or operation.deadline > envelope.packet.deadline))):
             raise InvocationPreCallRejected("native_operation_lineage_changed")
         operation.validate(self.clock)
         self.driver.check_current(operation, self.driver.identity)
         operation.validate(self.clock)
+        self._check_binding()
+        return operation
+
+    def observation_operation(self, invocation):
+        if self._authorize_observation is None:
+            return self._operation(invocation)
+        self._check_binding()
+        invocation = InvocationRequest.model_validate_json(invocation.model_dump_json(), strict=True)
+        if invocation != invocation_for(invocation.envelope, invocation.attempt_id):
+            raise InvocationPreCallRejected("invocation_identity_changed")
+        operation = self._authorize_observation(invocation, self.driver.identity)
+        if (not isinstance(operation, AuthorizedOperation)
+                or operation.command_id != invocation.command_id or operation.message_id != invocation.message_id):
+            raise InvocationPreCallRejected("native_observation_lineage_changed")
+        operation.validate(self.clock)
+        self.driver.check_current(operation, self.driver.identity)
         self._check_binding()
         return operation
 
@@ -117,7 +135,8 @@ class NativeDeliveryAdapter:
         expiry_anchor = reading.earliest_utc if reading is not None else observed_at
         monotonic_now = self.clock.monotonic_now if self.clock is not None else time.monotonic
         generation = uuid.uuid4().hex
-        until = monotonic_now() + min(2, operation.remaining(self.clock))
+        native = self.driver.profile.execution_mode == "native"
+        until = float("inf") if native else monotonic_now() + min(2, operation.remaining(self.clock))
         try:
             view = self.driver.inspect(operation)
             if isinstance(self.driver, CodexAppServerDriver):
@@ -137,7 +156,7 @@ class NativeDeliveryAdapter:
         if self.clock is not None:
             observed_at = self.clock.observation_time()
         result = {"activity": activity, "observed_at": observed_at.isoformat(),
-                  "expires_at": min(operation.deadline, expiry_anchor + timedelta(seconds=2)).isoformat(),
+                  "expires_at": None if native else min(operation.deadline, expiry_anchor + timedelta(seconds=2)).isoformat(),
                   "native_session_ref": native_session, "binding_id": self._binding_id,
                   "source": "native_driver_readback", "generation": generation}
         if self.clock is not None:
@@ -154,6 +173,8 @@ class NativeDeliveryAdapter:
         monotonic_now = self.clock.monotonic_now if self.clock is not None else time.monotonic
         if monotonic_now() >= lease[1]:
             return False
+        if self.driver.profile.execution_mode == "native":
+            return True
         observed = datetime.fromisoformat(readiness["observed_at"])
         expires = datetime.fromisoformat(readiness["expires_at"])
         if self.clock is not None:

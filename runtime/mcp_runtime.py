@@ -14,10 +14,13 @@ from typing import Any
 from pydantic import ValidationError
 
 from runtime.connection_clock import presentation_metadata
+from runtime.delivery import DeliveryRejected
 from runtime.errors import (
     AcceptanceGuardFailed,
     AuthorizationDenied,
+    BusinessDeadlineExpired,
     IdempotencyConflict,
+    IdentityRejected,
     InvalidTransition,
     NotFound,
     RevisionConflict,
@@ -49,9 +52,24 @@ class McpRuntime:
 
     def input_schema(self, name: str) -> dict[str, Any]:
         definition = self.service.catalog["tools"][name]["input_schema"]
+        owner = getattr(getattr(getattr(self.service, "service", None), "authority", None), "access_mode", "shared") == "owner"
+        required = list(definition["required"])
+        optional = list(definition["optional"])
+        if owner:
+            relaxed = {"deadline"}
+            if name in {"read_file", "list_files", "search_files"}:
+                relaxed.add("revision")
+            if name == "configure_team":
+                relaxed.update({"policies", "budgets"})
+            if name == "create_work":
+                relaxed.add("budget")
+            for field in list(required):
+                if field in relaxed:
+                    required.remove(field)
+                    optional.append(field)
         properties = {}
         definitions = {}
-        for field in [*definition["required"], *definition["optional"]]:
+        for field in [*required, *optional]:
             kind = ("array" if field in ARRAYS else "object" if field in OBJECTS
                     else "boolean" if field in BOOLEANS
                     else "integer" if field in INTEGERS or (
@@ -65,11 +83,15 @@ class McpRuntime:
                     from runtime.project_work import EvidenceDisposition
                     item_schema = {"members": TeamMember, "policies": TeamPolicy,
                                    "budgets": TeamBudget, "evidence_dispositions": EvidenceDisposition}[field].model_json_schema()
+                    if field == "members" and not owner:
+                        item_schema["required"] = list(dict.fromkeys([*item_schema.get("required", []),
+                            "profile", "grant_ref", "permissions", "expires_at", "budget_ref"]))
+                        item_schema["properties"]["permissions"]["minItems"] = 1
                     definitions.update(item_schema.pop("$defs", {}))
                     properties[field]["items"] = item_schema
                 else:
                     properties[field]["items"] = {"type": "string"}
-            if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"}:
+            if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"} or (owner and field == "deadline"):
                 properties[field]["type"] = [kind, "null"]
             if field == "decision" and name in {"submit_review", "accept_work"}:
                 properties[field]["enum"] = (["pass", "fail"] if name == "submit_review"
@@ -79,7 +101,7 @@ class McpRuntime:
             if field == "delivery_policy" and name == "watch_changes":
                 properties[field]["enum"] = ["notify_current_session", "inbox_only"]
         return {"type": "object", "additionalProperties": False,
-                "required": definition["required"], "properties": properties,
+                "required": required, "properties": properties,
                 **({"$defs": definitions} if definitions else {})}
 
     def tools_list(self):
@@ -97,7 +119,8 @@ class McpRuntime:
                         "state": {"type": "string"}, "data": {"type": "object"},
                         "follow_ups": {"type": "array"}, "metadata": {"type": "object"}}},
                 "annotations": definition["annotations"],
-                "securityScopes": definition["security_scopes"],
+                "securityScopes": ([] if getattr(getattr(getattr(self.service, "service", None), "authority", None), "access_mode", "shared") == "owner"
+                                   else definition["security_scopes"]),
                 "_meta": {"acs/resultType": definition["result_type"],
                           "acs/profile": self.service.profile}})
         return {"tools": result}
@@ -143,6 +166,10 @@ class McpRuntime:
             )
             if credential and credential in json.dumps(result, default=str):
                 raise ValueError("credentials cannot be tool results")
+        except BusinessDeadlineExpired:
+            result = self._problem("business_deadline_elapsed")
+        except IdentityRejected as error:
+            result = self._problem(error.code)
         except (PermissionError, AuthorizationDenied):
             result = self._problem("authorization_denied")
         except IdempotencyConflict:
@@ -151,6 +178,9 @@ class McpRuntime:
             result = self._problem("revision_conflict")
         except NotFound:
             result = self._problem("not_found")
+        except DeliveryRejected as error:
+            code = "message_expired" if error.state == "expired" else error.code
+            result = self._problem(code, retryable=code in {"endpoint_unavailable", "invoke_endpoint_unavailable"})
         except (AcceptanceGuardFailed, InvalidTransition):
             result = self._problem("guard_rejected")
         except SourceError:

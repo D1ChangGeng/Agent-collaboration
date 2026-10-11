@@ -11,11 +11,12 @@ Authorization, governance and data policy. Domain entity semantics remain in the
 
 ## Core invariants
 
-- Authenticated subject and tenant come from trusted transport or enrollment context.
-- project_id selects an authorized Project and never grants access by itself.
-- Grant, Policy, expected revision, deadline and protected-boundary checks authorize mutations.
-- Revocation, expiry and budget are rechecked at dispatch, retry and protected effects.
-- Secret values remain outside collaboration payloads and logs.
+- Authenticated subject, tenant and Authority context come from trusted transport or enrollment; project_id selects an active Project.
+- A new single-owner installation records access_mode=owner; an existing configuration with unspecified access_mode retains shared behavior until explicit migration.
+- Owner admission checks trusted credential, active service and objects, explicit revocation, request deduplication and expected revisions.
+- Roles describe responsibilities; shared deployments separately apply per-subject Grants, Policy, Profile and budgets.
+- Explicit business deadlines, real resource gateway claims, TLS, keys, Node identity, OAuth and replay checks apply at their actual boundaries.
+- Secret values remain outside collaboration payloads and logs; historical recorded facts preserve their original provenance and integrity.
 
 ## Retrieval map
 
@@ -37,9 +38,12 @@ tools.
 
 ## Application
 
-Apply this knowledge to the user's actual goal and current evidence. Compose
-tools from present state, permissions and required readback. Examples in the references illustrate the model. The Agent derives the
-sequence from current state, authority, evidence and the user's goal.
+Apply this knowledge to the user's goal and current evidence. Read the
+installed access mode and active tool schema, then compose actions from trusted
+identity, object state, revisions and required readback. References explain
+durable semantics; ProjectContextPack and current sources provide project facts.
+The owner product contract is `docs/runtime/OWNER-RUNTIME.md` in the verified
+ACS release or source checkout.
 
 ## Related knowledge
 

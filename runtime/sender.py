@@ -27,7 +27,7 @@ class DeliveryIdentity:
     envelope_digest: str
     selection_digest: str
     invocation_digest: str
-    deadline: datetime
+    deadline: datetime | None
 
 
 class AdmissionFactory:
@@ -48,7 +48,8 @@ class AdmissionFactory:
         body_value = body.model_dump(mode="json") if isinstance(body, BaseModel) else dict(body)
         registration = self.config.binding.registration
         identity = self.identity
-        self.clock.require_before(identity.deadline)
+        deadline = None if self.config.access_mode == "owner" and purpose == "delivery.readback" else identity.deadline
+        self.clock.require_before(deadline)
         now = self.clock.admission_time()
         admission = DeliveryAdmission(
             purpose=purpose, authority_key_id=self.config.authority_key_id,
@@ -74,7 +75,7 @@ class AdmissionFactory:
             accepted_state_digest=identity.accepted_state_digest,
             envelope_digest=identity.envelope_digest, selection_digest=identity.selection_digest,
             invocation_digest=identity.invocation_digest, journal_generation=journal_generation,
-            issued_at=now, deadline=self.identity.deadline,
+            issued_at=now, deadline=deadline,
         )
         return SignedRequest(admission=admission, body=body_value,
                              signature=sign(self.signing_key, admission))
