@@ -31,11 +31,13 @@ Repository Git cwd: D:/Chatgpt/Agent-collaboration.
 
 ### Authoritative checkpoint — Machine filesystem candidate
 
-Owner 通用文件工具、显式 Source 读取与知识包已完成实现、回归和实际安装读回。
-当前冻结候选沿 `codex/core-cleanup` 基线
-`689d47b6a6824198e1906ec5b587e08ef68ca9b5`，基线 tree
-`9e033cf1cc9de0c3e1febb83ac821b01c1bf581a`。
-精确验证范围和资料身份见
+机器文件系统候选已提交为
+`fde54aed7a5be145a1ba5e34d9fcf453dad6d288`，tree
+`59fc0ee25bf9451d3cfab038e2900a7859147c8e`，分支 `codex/core-cleanup`。
+该候选 CI 的离线 catalog schema 用例触发 AttributeError。
+当前兼容性修订在 input_schema 复用已有 owner 探测，保持离线目录 introspection
+独立于 Service/DSN 初始化；修订与记录已冻结，待提交与新 SHA 的 CI 读回。
+精确范围见
 [MACHINE-FILESYSTEM-VERIFICATION.zh-CN.md](MACHINE-FILESYSTEM-VERIFICATION.zh-CN.md)。
 
 `read_file` 仅要求 `path`，按选定 OS 账户权限读取当前文件。
@@ -43,38 +45,35 @@ Owner 通用文件工具、显式 Source 读取与知识包已完成实现、回
 上下文；游标保持原机器、目录、路径与查询。Local、固定 SSH 服务和登记
 Node 直接调用文件后端。普通文件采用临时文件替换，链接沿用 OS 打开语义，
 服务进程用 OS 锁协调同一解析路径的修改；补丁文件末尾匹配、grep 诊断分页和
-远程 `write_uncertain` 读回纳入最终实现。显式 Source 工具保留快照版本身份。
+远程 `write_uncertain` 读回保持其产品语义。显式 Source 工具保留快照版本身份。
 
-Linux 七模块组合 100 passed；包含 OS 锁的最终 filesystem/PG/TLS 三模块
-19 passed。Windows 最终 14 项为 13 passed、1 项权限场景平台跳过。
-Setup unittest exit 0，Skill validation 通过；独立代码复核的 9 项修复检查
-全部 PASS。各组按自己的版本和模块范围引用。
+最新 Linux filesystem/PG/TLS/SendWait 四模块 30 passed，22.78 秒；
+Windows 离线 catalog 与文件系统选择 18 passed、7 项平台/PG 跳过。
+此前 100/19 项 Linux 与 13+1 项 Windows 运行保留自己的版本和模块范围。
+独立 SCHEMA_FIX_REVIEW PASS，覆盖离线 SendWait、owner path-only 和
+shared/离线 Source schema 一致性；既有测试沿原断言验证。
 
-最终 stdio MCP 48 个工具、两个会话上下文、WSL `d26fo` / Node `changgeng`
-实际合成文件操作、二进制游标、glob/grep/patch 均通过。
-固定 SSH 服务经 JSON stdin 读取真实远程 README 通过。
-二进制拼接摘要为 `1333fecd12640fb14a1602358f3e1ac54f39104ceed8f73e44b2e51d36dd337b`。
+最新 stdio MCP 重复验证通过 48 个工具、两个会话上下文、WSL `d26fo` /
+Node `changgeng` 的实际文件动作、二进制游标、glob/grep/patch。
+二进制拼接摘要保持
+`1333fecd12640fb14a1602358f3e1ac54f39104ceed8f73e44b2e51d36dd337b`。
+固定 SSH 服务此前经 JSON stdin 读取真实远程 README 通过。
 
-两运行端已部署最终 wheel
-`8dad97729d3527ad1c28c7ec0e5a6ed8e6faf2b265f4977f581fa3605c553da7`，
+两运行端已部署最新不可变 wheel
+`b0f91e277cc6a77ea9a43694255ba8a5aafc2b45cf9c91f7f619e3fdb163f2ef`，
 各 113 个安装文件核验通过；101 个 Runtime Python/SQL 文件与冻结源码
-逐字节一致。实际绑定修订 783，配置摘要
-`94fd57ecad846ce79a19af66bfee41487cd0069cd4c7a8cacbf2af11601f86ad`。
-Core/Receiver 清单摘要载于验证记录。自有 Tunnel 沿原 Profile 重启并运行；
+逐字节一致。实际绑定修订 784，配置摘要
+`8cd6912d35876fb2ed0345ecd3d4e2773986d19cff5520408e70bd604d731b43`。
+Core/Receiver 清单摘要载于验证记录。Tunnel 进程 PID 21334，health HTTP 200，
+自有监督与原 Profile 保持，integration entry 使用本修订前缀。
 正式远程 checkout 保持 `e900773fc39d61559a128e7438337ca39d12c02c`。
+此前 wheel `8dad9772` / 绑定 783 属于上一轮安装和实际读回。
 
-Source/Runtime 两套 Skill 的四文件摘要分别为
-`f4b9acd69bc9d48762e116ce027acd39dd7c1ba002dd9bcf84727b3a24d0cd68` 和
-`a716e6b252bf16cdb7ca54abb35c65266bfb04dd3eb967495d54a1978eca0106`。
-Web Skill 四文件摘要为
-`39f0aff1a30127151ce2cd0be6f03b45eb3fdd4c9c9941a9bb326c45ec37b5b6`，
-三套均在 Windows/WSL/1302-1 核对。私有知识插件当前为 0.1.4，release
-`pluginrel_6acce0418fbc8191a5b62c6a705de78c`；本次 5 文件 overlay 的
-独立 Gate 与精确远端读回通过，此前 8 个 Source/Runtime 文件重新核验一致，
-共 13 个不同文件确认。ZIP 摘要和版本历史载于验证记录。
-
-冻结时本轮修改尚待提交；提交、Push 和 CI 将绑定评审后的实际新 SHA，沿现有
-[Draft PR #12](https://github.com/D1ChangGeng/Agent-collaboration/pull/12) 跟踪。
+Source、Runtime、Web 三套 Skill 已在 Windows/WSL/1302-1 核对，摘要载于
+验证记录。私有知识插件保持 0.1.4，release
+`pluginrel_6acce0418fbc8191a5b62c6a705de78c`；13 个不同文件核验结果保持。
+本修订提交、Push 与 CI 的后续读回沿现有
+[Draft PR #12](https://github.com/D1ChangGeng/Agent-collaboration/pull/12) 绑定实际新 SHA。
 客户端最后执行现有自定义连接 **Refresh** 并开启新对话。
 正式 Runtime Release 沿独立发布流程进行。
 

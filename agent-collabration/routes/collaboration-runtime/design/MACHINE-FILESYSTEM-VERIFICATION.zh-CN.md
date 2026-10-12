@@ -1,7 +1,7 @@
 # 机器文件系统实现与验证记录
 
-日期：2026-10-12。状态：实现、受影响路径回归、实际跨机器读回和安装核验已完成；
-冻结候选的提交与 CI 读回由现有 Draft PR #12 跟踪。
+日期：2026-10-12。状态：机器文件系统与离线 schema 兼容性修订完成受影响路径
+回归、实际跨机器读回和安装核验；本修订提交与 CI 读回沿现有 Draft PR #12 跟踪。
 
 ## 产品与实现范围
 
@@ -27,6 +27,10 @@ Source 工具保留项目仓库观察与显式快照版本语义。
 - 远程修改派发后出现未确认的连接结果时返回 `write_uncertain`，
   下一步依据原机器文件与请求回执读回。
 
+MCP input_schema 复用已有 owner 访问模式探测，再选择机器文件参数。
+离线 catalog schema 探测独立于 Service/DSN 初始化，owner 文件参数与
+shared/离线 Source 参数分别保持其适用的输入定义。
+
 产品契约见 [机器文件系统契约](MACHINE-FILESYSTEM.zh-CN.md) 和
 [工具使用指南](../../../../docs/runtime/MACHINE-FILESYSTEM.md)。
 
@@ -34,55 +38,58 @@ Source 工具保留项目仓库观察与显式快照版本语义。
 
 | 验证范围 | 结果 | 适用版本 |
 |---|---|---|
-| Linux 七模块 PG/TLS/Source/Project/HTTP 组合 | 100 passed，119.48 秒 | 文件语义审计修复后的组合；服务进程 OS 锁由下一组覆盖 |
-| Linux 最终 filesystem/PG/TLS 三模块 | 19 passed，6.21 秒 | 包含服务进程 OS 锁的冻结实现 |
-| Windows 最终文件系统用例 | 13 passed，1 项权限场景按平台跳过，共 14 项 | 最终文件系统实现 |
-| Setup unittest | exit code 0 | 本轮候选；执行记录未采集用例数量 |
-| Skill validation | 通过 | 本轮知识包 |
-| 独立代码复核 | 全部 9 项修复检查 PASS | 冻结实现 |
+| Linux 七模块 PG/TLS/Source/Project/HTTP 组合 | 100 passed，119.48 秒 | 原文件语义审计组合；服务进程 OS 锁由后续选择覆盖 |
+| Linux filesystem/PG/TLS 三模块 | 19 passed，6.21 秒 | 原 OS 锁冻结实现 |
+| Linux 最新 filesystem/PG/TLS/SendWait 四模块 | 30 passed，22.78 秒 | 包含离线 schema 兼容性修订 |
+| Windows 原文件系统用例 | 13 passed，1 项权限场景按平台跳过，共 14 项 | 原机器文件系统实现 |
+| Windows 最新离线 catalog 与文件系统选择 | 18 passed，7 项平台/PG 场景跳过 | 包含离线 schema 兼容性修订 |
+| Setup unittest | exit code 0 | 原文件系统候选；执行记录未采集用例数量 |
+| Skill validation | 通过 | 当前知识包 |
+| 机器文件系统独立代码复核 | 全部 9 项修复检查 PASS | 原文件系统候选 |
+| SCHEMA_FIX_REVIEW | PASS | 离线 SendWait schema、owner path-only、shared/离线 Source schema 一致性 |
 
 各运行按自己的模块与版本范围记录，数量按上述范围分别引用。
-较早 Linux 93 项结果属于本轮前期选择；最终候选使用表中两组结果。
+较早 Linux 93 项结果属于前期选择。既有 SendWait 测试保留原断言，
+本修订通过最新四模块选择及独立 schema 复核。
 历史 P1/P2 Gate 保留其原始输入、绑定和结论。
 
 ## 实际 MCP 与 SSH 读回
 
-最终 stdio MCP 公开 **48 个工具**，`read_file` 仅要求 `path`。
-两次 MCP 会话的机器与目录上下文互相独立。
+最新 wheel 的实际 stdio MCP 重复验证通过 **48 个工具**，
+`read_file` 仅要求 `path`。两次 MCP 会话的机器与目录上下文互相独立。
 
 | 实际路径 | 账户与场景 | 结果 |
 |---|---|---|
 | Core 本机 WSL | `d26fo`；合成隐藏文件、仓库外目录、write/read | 通过 |
 | Node `1302-1` | `changgeng`；合成隐藏文件读取及精确编辑 | 通过 |
 | 游标与文件动作 | 二进制字节续页、改变默认机器后沿原目标继续、glob/grep/patch | 通过 |
-| 固定 SSH 服务 | 固定服务 argv、JSON stdin、读取真实远程 README | 通过 |
 
 二进制页解码拼接的 SHA-256 为：
 `1333fecd12640fb14a1602358f3e1ac54f39104ceed8f73e44b2e51d36dd337b`。
 
-最终本机 README 读取单次实测耗时
-`0.03216319900820963` 秒；该数值描述本次读取。
-前轮 stdio MCP 旅程同样通过 48 工具及上述文件场景，使用安装候选 wheel
-`2dc78dc7e3e49841a056ce50304742f8dda335fbabed08f739c9785d1e993177`。
-最终实际读回使用下节列出的冻结 wheel。
+最新本机 README 读取单次实测耗时
+`0.05162795199430548` 秒；该数值描述本次读取。
+固定 SSH 服务此前已通过固定 argv、JSON stdin 读取真实远程 README 的实际验证。
+上一 wheel
+`8dad97729d3527ad1c28c7ec0e5a6ed8e6faf2b265f4977f581fa3605c553da7`
+上的 48 工具实际旅程保留为该版本的结果，上一绑定修订为 783。
 
 ## 安装与运行身份
 
-Core 与 Receiver 已安装同一最终 wheel，各端 **113 个安装文件**核验通过。
+Core 与 Receiver 已安装同一最新不可变 wheel，各端 **113 个安装文件**核验通过。
 Wheel 中的 **101 个 Runtime Python/SQL 文件**与当前冻结源码逐字节一致。
 
 | 资料 | SHA-256 或读回值 |
 |---|---|
-| 最终 wheel | `8dad97729d3527ad1c28c7ec0e5a6ed8e6faf2b265f4977f581fa3605c553da7` |
-| Core 安装清单 | `6b7a57edaabdc73ce91f3b037a7bcee763359f3a5e25d45fc52fe200ceae189f` |
-| Receiver 安装清单 | `27f3ac1ea321d6a6425709f4ead10f70f82f44321c15fb9dec0b37678efa1977` |
-| 实际绑定修订 | `783` |
-| 已读回配置摘要 | `94fd57ecad846ce79a19af66bfee41487cd0069cd4c7a8cacbf2af11601f86ad` |
+| 最新 wheel | `b0f91e277cc6a77ea9a43694255ba8a5aafc2b45cf9c91f7f619e3fdb163f2ef` |
+| Core 安装清单 | `425d792e504df359472c61a292bbd8461a203b14d069f3d651adf9c18bb31a07` |
+| Receiver 安装清单 | `abadc496d103b0b6432399ba1dfd987d42fdb86f74cdd3cd4b1828799fe392b2` |
+| 实际绑定修订 | `784` |
+| 已读回配置摘要 | `8cd6912d35876fb2ed0345ecd3d4e2773986d19cff5520408e70bd604d731b43` |
 
-验证时 Receiver 为 active/running，Tunnel 进程 PID 为 `14383`，
-监督机制运行并沿用原 Profile。连接绑定读回为 health HTTP 200，Profile
-使用自有 integration entry，该入口使用最终候选。原生配置、账户选择与
-正式远程源码 checkout 保留原身份；远程 checkout HEAD 为
+最新 Tunnel 进程 PID 为 `21334`，health 为 HTTP 200；自有监督机制及原 Profile
+保持运行。Profile 使用自有 integration entry，入口指向本次 schema 修订前缀。
+正式远程源码 checkout 保持
 `e900773fc39d61559a128e7438337ca39d12c02c`。
 
 ## Skills 与私有知识插件
@@ -112,17 +119,24 @@ Source/Runtime 文件确认字节一致，合计 **13 个不同文件**核验通
 
 ## 源码候选与后续核验
 
-| 源码状态 | 冻结时读回 |
+| 源码状态 | 本修订冻结时读回 |
 |---|---|
 | 分支 | `codex/core-cleanup` |
-| 本轮基线 HEAD | `689d47b6a6824198e1906ec5b587e08ef68ca9b5` |
-| 基线 tree | `9e033cf1cc9de0c3e1febb83ac821b01c1bf581a` |
-| 工作树 | 本轮代码与文档为尚待提交的冻结修改 |
+| 原机器文件系统起点 HEAD | `689d47b6a6824198e1906ec5b587e08ef68ca9b5` |
+| 原起点 tree | `9e033cf1cc9de0c3e1febb83ac821b01c1bf581a` |
+| 已提交机器文件系统候选 | `fde54aed7a5be145a1ba5e34d9fcf453dad6d288` |
+| 已提交候选 tree | `59fc0ee25bf9451d3cfab038e2900a7859147c8e` |
+| 当前工作树 | 离线 schema 兼容性修订与相应记录已冻结，待提交 |
 | 评审入口 | [现有 Draft PR #12](https://github.com/D1ChangGeng/Agent-collaboration/pull/12) |
-| 提交 / Push / CI | 评审冻结后进行，结果绑定实际新提交 |
+| 本修订提交 / Push / CI | 待提交后绑定实际新 SHA 读回 |
+
+已提交候选 `fde54aed7a5be145a1ba5e34d9fcf453dad6d288` 的 CI 在
+`test_send_wait_semantics` 离线 catalog schema 用例触发 AttributeError。
+本修订复用已有访问模式探测逻辑，保留既有测试断言，最新回归和独立复核结果
+见上表。本修订的 CI 状态以新提交的实际运行读回为准。
 
 用户 README、`docs/client/` 与 `.git-rewrite/` 工作保留。
-上述源码候选、已安装 wheel、远程 checkout 和插件 release 分别保留自己的
+源码候选、已安装 wheel、远程 checkout 和插件 release 分别保留自己的
 身份与证据。正式 Runtime 发布沿独立 Release 流程进行。
 
 客户端收尾步骤是对现有自定义连接执行 **Refresh**，再开启新对话加载工具定义。

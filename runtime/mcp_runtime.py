@@ -53,10 +53,10 @@ class McpRuntime:
 
     def input_schema(self, name: str) -> dict[str, Any]:
         from runtime.filesystem_schema import ALL_TOOLS, input_schema
-        if self.service.service.authority.access_mode == "owner" and name in ALL_TOOLS:
+        owner = getattr(getattr(getattr(self.service, "service", None), "authority", None), "access_mode", "shared") == "owner"
+        if owner and name in ALL_TOOLS:
             return input_schema(name)
         definition = self.service.catalog["tools"][name]["input_schema"]
-        owner = getattr(getattr(getattr(self.service, "service", None), "authority", None), "access_mode", "shared") == "owner"
         required = list(definition["required"])
         optional = list(definition["optional"])
         if owner:
