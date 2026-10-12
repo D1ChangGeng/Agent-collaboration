@@ -1352,6 +1352,107 @@
       "security_scopes": [
         "operator.command"
       ]
+    },
+    "read_source_file": {
+      "title": "Read Source File",
+      "description": "Read explicitly selected Source content and captured versions. Read source content. Owner omission selects the project's current primary worktree; source_id or source_root can select another readable location. A supplied revision selects a captured snapshot. Report the actual version with the content.",
+      "selection_guidance": "Use after context loading, file listing or search.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-read-file/1",
+        "required": [
+          "project_id",
+          "source_id",
+          "path",
+          "revision"
+        ],
+        "optional": [
+          "start_line",
+          "end_line",
+          "max_inline_bytes"
+        ],
+        "defaults": {
+          "start_line": 1,
+          "max_inline_bytes": 32768
+        }
+      },
+      "result_type": "file_snapshot",
+      "security_scopes": [
+        "source.read"
+      ]
+    },
+    "list_source_files": {
+      "title": "List Source Files",
+      "description": "Read explicitly selected Source content and captured versions. List source files. Owner omission selects the project's current primary worktree; optional source_id/source_root selects a readable location and revision selects a captured snapshot. Continue pagination at its returned revision.",
+      "selection_guidance": "Use for directory discovery from web or local management sessions.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-list-files/1",
+        "required": [
+          "project_id",
+          "source_id",
+          "path",
+          "revision"
+        ],
+        "optional": [
+          "depth",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "depth": 1,
+          "cursor": null,
+          "limit": 100
+        }
+      },
+      "result_type": "file_page",
+      "security_scopes": [
+        "source.read"
+      ]
+    },
+    "search_source_files": {
+      "title": "Search Source Files",
+      "description": "Read explicitly selected Source content and captured versions. Search source paths or content. Owner omission searches the current primary worktree; optional source_id/source_root selects a readable location and revision selects a captured snapshot.",
+      "selection_guidance": "Use when a target path or content location is unknown.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "input_schema": {
+        "schema_version": "acs-mcp-search-files/1",
+        "required": [
+          "project_id",
+          "source_id",
+          "query",
+          "revision"
+        ],
+        "optional": [
+          "path",
+          "glob",
+          "cursor",
+          "limit"
+        ],
+        "defaults": {
+          "cursor": null,
+          "limit": 50
+        }
+      },
+      "result_type": "search_page",
+      "security_scopes": [
+        "source.read"
+      ]
     }
   },
   "result_envelope": {
@@ -1730,7 +1831,10 @@
       "wait_for_response",
       "set_notification",
       "cancel_work",
-      "stop_attempt"
+      "stop_attempt",
+      "read_source_file",
+      "list_source_files",
+      "search_source_files"
     ],
     "reviewer": [
       "read_profile",
@@ -1754,7 +1858,10 @@
       "acknowledge_handoff",
       "submit_review",
       "watch_changes",
-      "wait_for_response"
+      "wait_for_response",
+      "read_source_file",
+      "list_source_files",
+      "search_source_files"
     ],
     "route_manager": [
       "read_profile",
@@ -1785,7 +1892,10 @@
       "wait_for_response",
       "set_notification",
       "cancel_work",
-      "stop_attempt"
+      "stop_attempt",
+      "read_source_file",
+      "list_source_files",
+      "search_source_files"
     ],
     "engineer": [
       "read_profile",
@@ -1808,7 +1918,10 @@
       "apply_patch",
       "create_branch",
       "commit_changes",
-      "push_changes"
+      "push_changes",
+      "read_source_file",
+      "list_source_files",
+      "search_source_files"
     ],
     "operator": [
       "read_profile",

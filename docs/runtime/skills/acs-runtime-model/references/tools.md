@@ -1,5 +1,12 @@
 # Runtime tool map
 
+- filesystem_context reports actual file machine/account/home/platform/cwd and
+  connected machine choices.
+- select_filesystem changes this MCP instance's selected file machine/directory.
+- Owner read_file, list_directory, glob and grep read current account files;
+  write_file, edit_file and apply_patch change them.
+- File tool machine_id/cwd overrides apply to that call. Pagination retains
+  the original machine, directory, path and query.
 - list_connections reads registered Node, Tunnel, provider and Endpoint paths.
 - list_harnesses reads registered capacity and observed Harness or Session facts.
 - list_collaborators shows Slot, Session and Harness bindings.
@@ -11,8 +18,8 @@
   client surface.
 
 In owner mode a discovery result can report continuous binding lifetime and a
-runtime state that has not yet been observed. Execute only after actual
-readiness inspection, reconnection and preparation. Shared mode retains its
+runtime state that has not yet been observed. Native execution proceeds after
+actual readiness inspection, reconnection and preparation. Shared mode retains its
 configured Grant, Profile, capability and expiry checks.
 
 Attached native Session controls depend on the exact installed API. A

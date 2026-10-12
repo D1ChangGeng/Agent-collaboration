@@ -22,7 +22,7 @@ Every owner operation checks:
 
 1. the credential from the trusted transport or enrollment context;
 2. the authenticated tenant, principal, Authority and Authority incarnation;
-3. the active service, Project, Scope and target object;
+3. the active service and any addressed Project, Scope or target object;
 4. explicit identity, Node, Connection or object revocation;
 5. stable request identity and canonical input for deduplication;
 6. the expected revisions and operation-specific prerequisites.
@@ -247,58 +247,77 @@ receipt reports `scope: owned_process_group` and
 session are outside that group's stop proof. A stronger containment profile
 requires the corresponding supervisor and verified containment receipt.
 
-## Source guidance and reading
+## Machine filesystem and Source reading
+
+Owner machine tools operate on the selected machine's current files under its
+connected OS account. `read_file` requires `path`; `list_directory`,
+`glob`, `grep`, `write_file`, `edit_file` and `apply_patch` provide
+the corresponding discovery, search and change actions. Each accepts optional
+`machine_id` and `cwd`.
+
+`filesystem_context` reports the actual machine, OS account, platform, home,
+cwd and connected choices. `select_filesystem` sets this MCP instance's
+selected machine and its directory. A single call's overrides retain their
+local scope. The default `local` target is Core's service OS account, with
+its home as the default cwd unless installation settings choose another
+directory. A Core running in WSL therefore uses the WSL account and paths.
+
+Paths follow the target OS, including absolute and home-relative paths, parent
+directories, ordinary links, Windows drive paths and UNC paths. Account
+permissions govern access to hidden, ignored and untracked files, binaries,
+large files and paths outside repositories. Account or container isolation
+implements a selected deployment boundary. File service readiness is independent of native Harness
+Session activity.
+
+Read/search output is delivered under the effective `max_output_bytes`
+budget, with `complete` and `next_cursor`. The cursor keeps the actual
+machine, directory, path and query across changes to the session default.
+Machine responses report the actual account, path and observation time.
+[The machine filesystem guide](MACHINE-FILESYSTEM.md) defines schemas, ranges,
+write semantics, transports and errors.
 
 SourceBinding describes the project's repository, readable locations and
-recommended versions. An Agent chooses an available Native, Git, repository
-MCP or other existing reader according to its actual connection and access.
-The reading location and execution Node have separate bindings.
+recommended versions. An Agent chooses an available machine, Native, Git,
+repository MCP or other reader according to its actual connection and access.
+Reading location and execution Node have separate bindings.
 
 The Project's primary product source identifies its repository checkout.
 `primary_source_id` selects that product Source hint.
 `primary_source_root` identifies the preferred repository read location;
-default current reads resolve that repository's physical primary worktree.
-The physical checkout uses the branch currently checked out there. Current
-views include its edits and admitted untracked files.
+current Source reads resolve that repository's physical primary worktree,
+observe its actual branch and include edits and admitted untracked files.
 
-Owner Core `read_source`, `read_file`, `list_files` and `search_files`
-can omit `source_id` and `revision`. Core filesystem reads use their
-configured readable roots:
+Owner Core `read_source`, `read_source_file`, `list_source_files` and
+`search_source_files` can omit `source_id` and `revision`. These explicit
+Source tools use the Source provider's configured readable roots:
 
-| Selection | Core filesystem behavior |
+| Selection | Source behavior |
 |---|---|
 | Project product default | Resolves the eligible product Source and reports its `primary_source_id` |
 | Preferred repository location | Uses `primary_source_root` to resolve the physical primary checkout |
-| Explicit `source_root` | Reads the caller's selected current worktree within configured readable roots |
+| Explicit `source_root` | Reads the selected current worktree within configured readable roots |
 | Explicit `revision` | Reads an already captured commit or workspace snapshot |
 
-Version advice remains a reference for the Agent. A fixed commit or captured
-workspace view (`view_snapshot`) is an explicit snapshot selection. A snapshot
-already identifies its reading location. Each other Agent tool exposes its own
-readable locations and repository capabilities.
-
-Owner filesystem readback includes `actual_source` with `provider`, `root`,
-`commit`, `tree`, `view_revision` and `observed_at`. Record these actual
-facts alongside the observed repository, branch and workspace state.
-`list_sources.current_readable_root` reports the Core filesystem location;
-`origin_hint` supplies the repository's origin `host` and `path` as guidance.
+A fixed commit or captured workspace view (`view_snapshot`) is an explicit
+selection. Source readback includes `actual_source` with `provider`,
+`root`, `commit`, `tree`, `view_revision` and `observed_at`. Record
+these facts alongside the repository, branch and workspace state.
+`list_sources.current_readable_root` reports the Source provider's location;
+`origin_hint` supplies repository origin `host` and `path` guidance.
 
 Owner `load_project.source_observation` describes the product Source.
-`management_source_observation` records the Management Root observation when
-distinct. When a product default is unavailable, `source_observation`,
-`source_guidance.primary_source_id` and `source_guidance.version_hint_ref`
-are null. Management context and explicitly selected management reads remain
-available under their own access checks.
+`management_source_observation` records a distinct Management Root observation.
+When a product default is unavailable, product observation and its
+`primary_source_id`/`version_hint_ref` guidance are null. Management context
+and explicitly selected management reads retain their own access checks.
 
-Routine context and knowledge follow-ups use the current view with a version
-hint. Pagination continues at the returned `view_revision` to retain the
-selected page sequence's byte identity. A new current read can observe newer
-edits. Review and acceptance keep the actual candidate, source and Evidence
-identities used by that work.
-
-Core byte bounds, normalized paths, secret handling, tenant/Scope ownership,
-explicit revocation and digest readback apply at its filesystem boundary.
-Shared deployments retain their existing access, permission and version checks.
+Source pagination continues at the returned `view_revision` to retain byte
+identity. A new current Source read can observe newer edits. Review and
+acceptance retain the actual candidate, source and Evidence identities.
+Source byte bounds, normalized paths, secret handling, tenant/Scope ownership,
+revocation and digest readback apply at the Source provider's boundary.
+Shared deployments retain their established `read_file`, `list_files` and
+`search_files` schemas, access, permission and version checks.
 Message delivery, source reading and Git synchronization have separate evidence.
 
 ## Results, Review and acceptance

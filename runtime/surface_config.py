@@ -104,6 +104,27 @@ class RemoteEndpointSettings(ConfigModel):
         return values
 
 
+class FilesystemSshMachine(ConfigModel):
+    machine_id: str
+    ssh_target: str
+    service_argv: tuple[str, ...]
+
+    @model_validator(mode="after")
+    def safe_service_arguments(self):
+        import re
+        if not re.fullmatch(r"[A-Za-z0-9_@.-]+", self.ssh_target) or self.ssh_target.startswith("-"):
+            raise ValueError("SSH target is invalid")
+        if not self.service_argv or any(not value or "\0" in value for value in self.service_argv):
+            raise ValueError("SSH file service command is invalid")
+        return self
+
+
+class FilesystemSettings(ConfigModel):
+    default_machine_id: str = "local"
+    cwd: str | None = None
+    ssh_machines: tuple[FilesystemSshMachine, ...] = ()
+
+
 class SurfaceSettings(ConfigModel):
     schema_version: Literal["acs-surfaces/1"] = "acs-surfaces/1"
     access_mode: Literal["owner", "shared"] = "shared"
@@ -114,6 +135,7 @@ class SurfaceSettings(ConfigModel):
     additional_artifacts: tuple[ArtifactSettings, ...] = Field(default=(), max_length=63)
     effects: EffectSettings | None = None
     remote_endpoints: tuple[RemoteEndpointSettings, ...] = Field(default=(), max_length=64)
+    filesystem: FilesystemSettings = Field(default_factory=FilesystemSettings)
     temporal_endpoint: str | None = None
     presentation_timezone: str = "UTC"
 
@@ -198,6 +220,7 @@ def configured_service(path, *, delivery_endpoints=None, expected_settings=None)
                                  access_mode=settings.access_mode,
                                  delivery_endpoints=delivery_endpoints,
                                  node_response_reader=trusted_local_node_response_reader(delivery_endpoints))
+        domain._filesystem_settings = settings.filesystem
         if settings.remote_endpoints:
             from runtime.machine_connections import ConfiguredRemoteEndpoint
             for target in settings.remote_endpoints:

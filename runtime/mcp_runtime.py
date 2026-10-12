@@ -27,6 +27,7 @@ from runtime.errors import (
 )
 from runtime.project_service import ProjectService
 from runtime.source import SourceError
+from runtime.machine_filesystem import FilesystemError
 
 ARRAYS = frozenset({
     "handles", "constraints", "required_evidence", "include", "states", "kinds",
@@ -51,13 +52,16 @@ class McpRuntime:
         self.presentation_timezone = presentation_timezone
 
     def input_schema(self, name: str) -> dict[str, Any]:
+        from runtime.filesystem_schema import ALL_TOOLS, input_schema
+        if self.service.service.authority.access_mode == "owner" and name in ALL_TOOLS:
+            return input_schema(name)
         definition = self.service.catalog["tools"][name]["input_schema"]
         owner = getattr(getattr(getattr(self.service, "service", None), "authority", None), "access_mode", "shared") == "owner"
         required = list(definition["required"])
         optional = list(definition["optional"])
         if owner:
             relaxed = {"deadline"}
-            if name in {"read_file", "list_files", "search_files", "read_source"}:
+            if name in {"read_file", "list_files", "search_files", "read_source", "read_source_file", "list_source_files", "search_source_files"}:
                 relaxed.update({"revision", "source_id"})
                 optional.append("source_root")
             if name == "configure_team":
@@ -148,7 +152,9 @@ class McpRuntime:
         try:
             credential = self.credential_provider()
             self.service.service.authenticate(credential)
-            if credential and credential in json.dumps(arguments):
+            from runtime.filesystem_schema import ALL_TOOLS
+            machine_file = self.service.service.authority.access_mode == "owner" and name in ALL_TOOLS
+            if not machine_file and credential and credential in json.dumps(arguments):
                 raise ValueError("credentials cannot be tool arguments")
             if name not in self.service.IMPLEMENTED:
                 raise ValueError("tool is not implemented")
@@ -165,8 +171,11 @@ class McpRuntime:
                 {"data": data, "metadata": {"observed_at": result["metadata"]["observed_at"]}},
                 self.presentation_timezone,
             )
-            if credential and credential in json.dumps(result, default=str):
+            if not machine_file and credential and credential in json.dumps(result, default=str):
                 raise ValueError("credentials cannot be tool results")
+        except FilesystemError as error:
+            result = self._problem(error.code, retryable=error.code == "machine_offline")
+            result["data"].update(error.details)
         except BusinessDeadlineExpired:
             result = self._problem("business_deadline_elapsed")
         except IdentityRejected as error:

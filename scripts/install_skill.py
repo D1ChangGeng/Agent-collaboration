@@ -47,6 +47,7 @@ INSTALL_CONTENT = (
     "docs/RELEASE-NOTES-v1.4.0.md",
     "docs/TROUBLESHOOTING.md",
     "docs/runtime/OWNER-RUNTIME.md",
+    "docs/runtime/MACHINE-FILESYSTEM.md",
     "docs/runtime/UPGRADE-CONTRACT.md",
     "docs/runtime/skills/README.md",
     "docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md",

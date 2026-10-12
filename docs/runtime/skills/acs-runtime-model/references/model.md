@@ -19,6 +19,20 @@ and Session readiness are read at execution time. A stopped or changed process
 requires reconnection or preparation under the current binding. Shared
 deployments retain configured registration and capability windows.
 
+## Machine filesystem service
+
+Machine files use the OS account running the selected file service. Local
+means Core's service OS/account; a connected target reports its actual account,
+home, platform and cwd. Each MCP instance retains a selected machine and
+directories. Per-call machine_id/cwd applies to one action; continuation retains
+the original target. OS account or container permissions implement access.
+
+Local, SSH and Node adapters use the portable OS backend. SSH passes structured
+stdin to a fixed installed file service. Node applies the existing Receiver
+TLS/identity binding, active owner authorization, revocation and request journal.
+File requests execute directly in the service. Native Harness Session activity
+and file service readiness have separate observations.
+
 ## Native environment and control
 
 Native Codex and OpenCode modes select the actual user's environment and project

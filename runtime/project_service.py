@@ -58,6 +58,9 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         "accept_work", "cancel_work", "stop_attempt",
         "watch_changes", "set_notification",
         "create_route", "update_route",
+        "list_directory", "glob", "grep", "write_file", "edit_file", "apply_patch",
+        "filesystem_context", "select_filesystem",
+        "read_source_file", "list_source_files", "search_source_files",
     })
     DOMAIN_PERMISSIONS: ClassVar[dict[str, tuple[str, ...]]] = {
         "create_work": ("work_item.create",),
@@ -84,6 +87,13 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             raise ValueError("unknown Profile")
         self.service, self.catalog, self.profile = service, catalog, profile
         self.sources = sources
+        from runtime.filesystem_gateway import FilesystemGateway
+        from runtime.filesystem_schema import ALL_TOOLS, definition
+        self.filesystems = FilesystemGateway(service.authority)
+        if service.authority.access_mode == "owner":
+            self.catalog = {**catalog, "tools": dict(catalog["tools"])}
+            for name in ALL_TOOLS:
+                self.catalog["tools"][name] = definition(name)
         self.artifacts = getattr(service.authority, "_artifact_store", None)
 
     @property
@@ -398,8 +408,9 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
     def _discover_tools(self, credential, candidates):
         self.service.authenticate(credential)
         if self.service.authority.access_mode == "owner":
-            return sorted(name for name in self.IMPLEMENTED if self.sources is not None or name not in {
-                "list_files", "search_files", "read_file", "read_source", "read_diff"})
+            return sorted(name for name in self.IMPLEMENTED if name in self.catalog["tools"] and
+                (self.sources is not None or name not in {"list_files", "search_files", "read_source",
+                    "read_diff", "read_source_file", "list_source_files", "search_source_files"}))
         available = []
         # One discovery transaction and membership scan; every tool retains
         # its live permission/delegation checks. Calls authorize again.
@@ -410,6 +421,9 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 (self.context.tenant_id, self.context.principal_ref, self.profile),
             ).fetchall()
             for name in candidates:
+                from runtime.filesystem_schema import ALL_TOOLS
+                if name in ALL_TOOLS and name != "read_file":
+                    continue
                 if name not in self.IMPLEMENTED or (self.sources is None and name in {
                         "list_files", "search_files", "read_file", "read_source", "read_diff"}):
                     continue
@@ -443,6 +457,18 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         if (name not in self.IMPLEMENTED or (self.service.authority.access_mode != "owner"
                 and name not in self.catalog["profiles"][self.profile])):
             raise ValueError("tool is unavailable in the authenticated Profile")
+        from runtime.filesystem_schema import ALL_TOOLS
+        if self.service.authority.access_mode == "owner" and name in ALL_TOOLS:
+            command = self._command(self.service.authority, "machine.filesystem", {},
+                                    target_kind="node", target_id=args.get("machine_id", "local"))
+            with self.service.authority._connect() as connection, connection.cursor() as cursor:
+                self.service.authority._authorize(command, cursor, "machine.filesystem")
+            data = self.filesystems.execute(name, args)
+            follow = ([{"rel": "next", "tool": name, "arguments": {
+                **{key: value for key, value in args.items() if key != "cwd"},
+                "machine_id": data["machine_id"], "path": data["path"], "cursor": data["next_cursor"]}}]
+                if data.get("next_cursor") else [])
+            return "observed", data, follow
         if self.service.authority.access_mode == "owner" and (name == "check_inbox"
                 or name == "read_message" and args.get("handle", "").startswith("response:")):
             # Finish project authorization before remote I/O; its receiver uses
@@ -452,6 +478,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             from runtime.response_transfer import ensure_response_artifacts
             ensure_response_artifacts(self.service.authority,self.artifacts,
                 project_id=args["project_id"],message_id=parse_handle(args["handle"],"response",args["project_id"]) if name == "read_message" else None)
+        if self.service.authority.access_mode != "owner" and name in ALL_TOOLS and name != "read_file":
+            raise ValueError("machine file tools require the configured owner service")
         if name == "read_profile":
             return self._profile_snapshot()
         if name == "list_connections":
@@ -1087,15 +1115,24 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         page_args["revision"] = snapshot.view_revision
         follow = []
         if data.get("next_start_line"):
-            follow.append({"rel": "next", "tool": "read_file", "arguments":
+            follow.append({"rel": "next", "tool": "read_source_file" if authority.access_mode == "owner" else "read_file", "arguments":
                 dict(page_args, start_line=data["next_start_line"])})
         if data.get("next_cursor"):
-            follow.append({"rel": "next", "tool": name, "arguments":
+            follow.append({"rel": "next", "tool": {"list_files": "list_source_files", "search_files": "search_source_files"}.get(name, name) if authority.access_mode == "owner" else name, "arguments":
                 dict(page_args, cursor=data["next_cursor"])})
         return "observed", data, follow
 
     def _read_file(self, authority, cursor, _project, command, args, _credential):
         return self._source_read("read_file", authority, cursor, command, args)
+
+    def _read_source_file(self, authority, cursor, project, command, args, credential):
+        return self._source_read("read_file", authority, cursor, command, args)
+
+    def _list_source_files(self, authority, cursor, project, command, args, credential):
+        return self._source_read("list_files", authority, cursor, command, args)
+
+    def _search_source_files(self, authority, cursor, project, command, args, credential):
+        return self._source_read("search_files", authority, cursor, command, args)
 
     def _list_files(self, authority, cursor, _project, command, args, _credential):
         return self._source_read("list_files", authority, cursor, command, args)
@@ -1203,7 +1240,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 if len(canonical(data).encode()) + len(payload) + 2048 < maximum:
                     entry["content"] = text
                 else:
-                    read = {"rel": "read_" + label, "tool": "read_file", "arguments": {
+                    read = {"rel": "read_" + label, "tool": "read_source_file" if authority.access_mode == "owner" else "read_file", "arguments": {
                         **source_args, "path": path,
                         **({"revision": snapshot.view_revision} if authority.access_mode != "owner" else {}),
                         "max_inline_bytes": min(maximum, 32768)}}
@@ -1234,7 +1271,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             primary = "acs-project-context"
             if primary in catalog["skills"]:
                 spec = self.sources.skill_spec(skill_catalog["path"], catalog["skills"][primary]["spec"])
-                follow.append({"rel": "read_skill", "skill": primary, "tool": "read_file", "arguments": {
+                follow.append({"rel": "read_skill", "skill": primary, "tool": "read_source_file" if authority.access_mode == "owner" else "read_file", "arguments": {
                     "project_id": args["project_id"], "source_id": skill_catalog["source_id"],
                     "path": spec, **({"revision": skill_snapshot.view_revision}
                                     if authority.access_mode != "owner" else {})},

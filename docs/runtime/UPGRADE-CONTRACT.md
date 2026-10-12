@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-10-12.1.
+is determined by the named Gate records. Contract revision: 2026-10-12.2.
 The original adoption baseline is 2026-09-25.1; recorded Gates retain the exact
 source, configuration and reference Profile they measured.
 
@@ -58,24 +58,40 @@ An unconfigured custom service retains pending delivery for its dispatcher.
 The owner native collector observes the same invocation until terminal result
 or service stop.
 
+Owner machine filesystem tools read and change current OS files under the
+selected account. Each MCP instance retains its selected machine and directories;
+filesystem_context discovers actual account/home/platform/cwd and connected
+choices. select_filesystem sets that session's default. Per-call machine_id/cwd
+selects a local override and continuation keeps the original machine/path.
+The default local target is Core's service OS account and its home directory.
+[The machine filesystem contract](MACHINE-FILESYSTEM.md) defines the file actions,
+output pagination, OS access and transport semantics.
+
+Local, SSH and Node transports use the portable file backend. The registered
+Node file service applies pinned TLS, signed identity, active owner authorization,
+revocation and request journaling. Its requests run directly through the file
+service. Native Harness Session readiness remains an execution concern.
+
 SourceBinding supplies advisory Project repository, location and version hints.
-Agents select an available Native, Git, repository MCP or other reader and
-record its actual source. Execution Node placement has its own binding.
+Agents select an available machine, Native, Git, repository MCP or other reader
+and record the actual source used. Execution Node placement has its own binding.
+Explicit read_source_file/list_source_files/search_source_files, read_source and
+read_diff retain Source repository and captured-version semantics.
 
-Owner defaults resolve the product primary_source_id. primary_source_root
-identifies the preferred repository read location used to resolve its physical
-primary worktree. Current reads observe its actual branch and edits.
+Owner Source defaults resolve the product primary_source_id.
+primary_source_root locates the preferred repository's physical primary worktree.
+Current Source reads observe its actual branch and edits.
 Explicit source_root selects a configured readable current worktree; explicit
-revision selects captured bytes. Pagination preserves the returned view_revision.
+revision selects captured bytes. Source pagination retains returned view_revision.
 
-Owner actual_source records provider, root, commit, tree, view_revision and
-observed_at. list_sources distinguishes current_readable_root from repository
-origin_hint.host/path. Owner load_project.source_observation is product source;
-a distinct management_source_observation retains Management Root context.
+Owner Source actual_source records provider, root, commit, tree, view_revision
+and observed_at. list_sources separates current_readable_root from
+origin_hint.host/path. load_project.source_observation identifies product Source;
+distinct management_source_observation retains Management Root context.
 Unavailable product defaults have null product observation and primary/version
 references. Explicit management reads retain their own access.
 
-Version suggestions guide the Agent. Review and acceptance preserve the actual
+Version guidance supports reader choice. Review and acceptance preserve the actual
 candidate and Evidence identity. Shared access, permission and version checks
 retain their existing boundaries.
 
@@ -257,13 +273,15 @@ the default; sync waits for the same response handle's target condition.
 Caller waiting has an optional timeout.
 
 The machine catalog preserves its shared base required/optional lists and
-Profile support table. McpRuntime exposes the installed mode's input schema:
-owner makes business deadline optional, allows ordinary Team members,
-makes configure_team policies/budgets and create_work budget optional,
-and permits current filesystem reads with omitted source_id/revision,
+Profile support table. McpRuntime exposes the installed mode's input schema.
+Owner makes business deadline optional, allows ordinary Team members and
+makes configure_team policies/budgets and create_work budget optional.
+Owner machine file schemas express the file action plus optional machine/cwd
+and delivery controls. Explicit Source reads permit omitted source_id/revision,
 product Source defaults and an optional configured source_root. Product and
-management observations keep their own context; actual readback records the
-selected source identity.
+management observations retain their own context; actual Source readback records
+the selected version identity. Shared retains its existing Source read_file,
+list_files and search_files contract.
 
 The setup Skill owns guarded installation and migration procedures. Runtime
 Skills are metadata-routed knowledge modules for ACS entities, authority,

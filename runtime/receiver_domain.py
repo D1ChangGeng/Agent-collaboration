@@ -394,6 +394,33 @@ class ReceiverTransportAuthority:
             )
             return cursor.fetchone() is not None
 
+    def current_filesystem_authority(self, request) -> bool:
+        if self.authority.access_mode != "owner":
+            return False
+        try:
+            endpoint = self.load_endpoint(request["endpoint_id"])
+            registration = endpoint["registration"]
+            if any(request[key] != registration[key] for key in
+                   ("tenant_id", "authority_id", "authority_incarnation", "endpoint_id",
+                    "endpoint_revision", "node_id", "machine_id", "boot_incarnation")):
+                return False
+            key = self.load_authority_key()
+            if (request["authority_key_id"], request["authority_key_revision"]) != (key["key_id"], key["revision"]):
+                return False
+            command = CommandEnvelope(command_id=request["request_id"], command_type="machine.filesystem",
+                idempotency_key=request["request_id"], correlation_id=request["request_id"],
+                tenant_id=request["tenant_id"], authority_id=request["authority_id"],
+                authority_incarnation=request["authority_incarnation"], principal_ref=request["principal_ref"],
+                grant_ref=request["grant_ref"], target_kind="node", target_id=request["node_id"],
+                expected_revision=0, issued_at=datetime.fromisoformat(request["issued_at"]), deadline=None)
+            actor = self._command_actor(command)
+            with self.authority._connect() as connection, connection.cursor() as cursor:
+                actor._authorize(command, cursor, "machine.filesystem")
+                self.authority.enrollment._active_runtime(cursor, registration["runtime_id"])
+            return True
+        except (AuthorizationDenied, AcceptanceGuardFailed, BusinessDeadlineExpired, ValueError, KeyError):
+            return False
+
     def current_authority(self, admission, *, clock_skew_seconds: int = 0) -> bool:
         try:
             with self.authority._connect() as connection, connection.cursor() as cursor:

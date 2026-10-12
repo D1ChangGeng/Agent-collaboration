@@ -10,7 +10,7 @@ def test_owner_reads_current_workspace_and_retains_commit_snapshot(source_projec
     (f.repo/"README.md").write_text("current workspace content\n")
     (f.repo/"new-module.py").write_text("NEW_MODULE = True\n")
     args = {"project_id": "project-alpha", "source_id": "source-main", "path": "README.md"}
-    current = ok(f, "read_file", args)["data"]
+    current = ok(f, "read_source_file", args)["data"]
     assert current["content"] == "current workspace content\n"
     assert current["revision"].startswith("workspace:")
     sources = ok(f,"list_sources",{"project_id":"project-alpha"})["data"]["items"]
@@ -19,12 +19,12 @@ def test_owner_reads_current_workspace_and_retains_commit_snapshot(source_projec
     connections = ok(f,"list_connections",{"project_id":"project-alpha","kinds":["source"]})["data"]["items"]
     source_connection = next(item for item in connections if item["source_id"] == "source-main")
     assert source_connection["commit"] == f.commit and source_connection["view_revision"] == current["revision"]
-    retained = ok(f, "read_file", dict(args, revision=f.commit))["data"]
+    retained = ok(f, "read_source_file", dict(args, revision=f.commit))["data"]
     assert retained["content"] == "first line\nsecond line\n"
     assert retained["revision"] == f.commit
-    exact_workspace = ok(f, "read_file", dict(args, revision=current["revision"]))["data"]
+    exact_workspace = ok(f, "read_source_file", dict(args, revision=current["revision"]))["data"]
     assert exact_workspace["content"] == current["content"]
-    listing = ok(f, "list_files", dict(args, path="", depth=1))["data"]["items"]
+    listing = ok(f, "list_source_files", dict(args, path="", depth=1))["data"]["items"]
     assert any(item["path"] == "new-module.py" for item in listing)
     assert not any(item["path"] == ".env" for item in listing)
     assert ok(f, "read_source", {"project_id": "project-alpha", "source_id": "source-main"})["state"] == "current"
@@ -35,7 +35,7 @@ def test_owner_source_defaults_choose_current_primary_hint(source_project):
     f = source_project
     f.authority.access_mode = "owner"
     args = {"project_id": "project-alpha", "path": "README.md"}
-    read = ok(f, "read_file", args)["data"]
+    read = ok(f, "read_source_file", args)["data"]
     assert read["source_id"] == "source-main"
     assert read["content"] == "first line\nsecond line\n"
     assert read["source_selection"]["location_choice"] == "main_worktree"
@@ -43,7 +43,7 @@ def test_owner_source_defaults_choose_current_primary_hint(source_project):
     state = ok(f, "read_source", {"project_id": "project-alpha"})["data"]
     assert state["version_guidance"]["kind"] == "advisory"
     assert state["version_guidance"]["commit"] == f.commit
-    for name in ("read_file", "read_source", "list_files", "search_files"):
+    for name in ("read_source_file", "read_source", "list_source_files", "search_source_files"):
         schema = f.mcp.input_schema(name)
         assert "source_id" not in schema["required"]
         assert "revision" not in schema["required"]
@@ -59,9 +59,9 @@ def test_owner_source_defaults_follow_new_commit_and_retain_baseline(source_proj
     commit_all(f.repo, "advance primary checkout")
     current = git(f.repo, "rev-parse", "HEAD").decode().strip()
     args = {"project_id": "project-alpha", "path": "README.md"}
-    assert ok(f, "read_file", args)["data"]["content"] == "latest main checkout\n"
+    assert ok(f, "read_source_file", args)["data"]["content"] == "latest main checkout\n"
     assert ok(f, "read_source", {"project_id": "project-alpha"})["data"]["commit"] == current
-    retained = ok(f, "read_file", dict(args, revision=baseline))["data"]
+    retained = ok(f, "read_source_file", dict(args, revision=baseline))["data"]
     assert retained["content"] == "first line\nsecond line\n"
     selected = ok(f, "read_source", {"project_id": "project-alpha", "revision": baseline})["data"]
     assert selected["commit"] == current
@@ -80,12 +80,12 @@ def test_owner_location_choice_reads_another_checkout(source_project, tmp_path):
     store = f.projects.sources.store
     f.projects.sources.close()
     f.projects.sources = ProjectSources(store, [f.repo.parent])
-    read = ok(f, "read_file", {"project_id": "project-alpha", "path": "README.md",
+    read = ok(f, "read_source_file", {"project_id": "project-alpha", "path": "README.md",
                              "source_root": str(other)})["data"]
     assert read["content"] == "selected other checkout\n"
     assert read["source_selection"]["location_choice"] == "caller"
     assert read["source_selection"]["provider_choice"] == "agent"
-    assert ok(f, "read_file", {"project_id": "project-alpha", "path": "README.md",
+    assert ok(f, "read_source_file", {"project_id": "project-alpha", "path": "README.md",
                              "revision": f.commit})["data"]["content"] == "first line\nsecond line\n"
 
 
@@ -104,10 +104,10 @@ def test_owner_relocated_hint_defaults_to_primary_worktree(source_project, tmp_p
     f.repo = linked
     bind(f, revision=1)
     (primary / "README.md").write_text("latest primary worktree\n")
-    read = ok(f, "read_file", {"project_id": "project-alpha", "path": "README.md"})["data"]
+    read = ok(f, "read_source_file", {"project_id": "project-alpha", "path": "README.md"})["data"]
     assert read["content"] == "latest primary worktree\n"
     assert read["source_selection"]["location_choice"] == "main_worktree"
-    chosen = ok(f, "read_file", {"project_id": "project-alpha", "path": "README.md",
+    chosen = ok(f, "read_source_file", {"project_id": "project-alpha", "path": "README.md",
                                "source_root": str(linked)})["data"]
     assert chosen["content"] == "first line\nsecond line\n"
 
@@ -129,7 +129,7 @@ def test_owner_context_source_guidance_and_current_skill_followup(source_project
 def test_owner_source_paging_keeps_selected_bytes(source_project):
     f = source_project
     f.authority.access_mode = "owner"
-    first = ok(f, "read_file", {"project_id": "project-alpha", "path": "README.md",
+    first = ok(f, "read_source_file", {"project_id": "project-alpha", "path": "README.md",
                               "max_inline_bytes": 12})
     follow = first["follow_ups"][0]
     assert follow["arguments"]["revision"] == first["data"]["revision"]
@@ -200,7 +200,7 @@ def test_owner_product_guidance_is_separate_from_management(source_project, tmp_
     assert context["management_root"]["source_id"] == "source-main"
     assert context["source_guidance"]["repository"]["name"] == "product-fixture"
     assert context["instructions"][0]["source_id"] == "source-main"
-    read = ok(f, "read_file", {"project_id": "project-alpha", "path": "README.md"})["data"]
+    read = ok(f, "read_source_file", {"project_id": "project-alpha", "path": "README.md"})["data"]
     assert read["content"] == "source-product latest product\n"
     assert read["actual_source"]["root"] == str(product)
     assert read["actual_source"]["commit"] == commit
@@ -225,10 +225,10 @@ def test_owner_preferred_primary_root_survives_other_reader_choice(source_projec
     f.projects.sources = ProjectSources(store, [primary.parent])
     set_source_preferences(f, primary_source_id="source-main", primary_source_root=str(primary))
     args = {"project_id": "project-alpha", "path": "README.md"}
-    chosen = ok(f, "read_file", dict(args, source_root=str(other)))["data"]
+    chosen = ok(f, "read_source_file", dict(args, source_root=str(other)))["data"]
     assert chosen["content"] == "alternate reader contents\n"
     assert chosen["actual_source"]["root"] == str(other)
-    current = ok(f, "read_file", args)["data"]
+    current = ok(f, "read_source_file", args)["data"]
     assert current["content"] == "first line\nsecond line\n"
     assert current["actual_source"]["root"] == str(primary)
     state = ok(f, "read_source", {"project_id": "project-alpha"})["data"]
@@ -242,8 +242,8 @@ def test_owner_multiple_product_sources_use_declared_primary(source_project, tmp
     secondary, _ = split_product_source(f, tmp_path, source_id="source-secondary")
     set_source_preferences(f, primary_source_id="source-product", primary_source_root=str(primary))
     args = {"project_id": "project-alpha", "path": "README.md"}
-    assert ok(f, "read_file", args)["data"]["actual_source"]["root"] == str(primary)
-    selected = ok(f, "read_file", dict(args, source_id="source-secondary"))["data"]
+    assert ok(f, "read_source_file", args)["data"]["actual_source"]["root"] == str(primary)
+    selected = ok(f, "read_source_file", dict(args, source_id="source-secondary"))["data"]
     assert selected["actual_source"]["root"] == str(secondary)
     assert selected["content"] == "source-secondary latest product\n"
 
@@ -256,10 +256,10 @@ def test_owner_management_only_snapshot_is_not_product_default(source_project):
     with psycopg.connect(f.dsn) as conn:
         conn.execute("UPDATE collaboration_sources SET repository_identity=repository_identity || %s::jsonb",
                      (json.dumps({"purpose": "management-only-snapshot"}),))
-    result = f.mcp.call("read_file", {"project_id": "project-alpha", "path": "README.md"})
+    result = f.mcp.call("read_source_file", {"project_id": "project-alpha", "path": "README.md"})
     assert result["isError"]
     assert result["structuredContent"]["data"]["code"] == "invalid_arguments"
-    explicit = ok(f, "read_file", {"project_id": "project-alpha", "source_id": "source-main",
+    explicit = ok(f, "read_source_file", {"project_id": "project-alpha", "source_id": "source-main",
                                   "path": "management/AGENTS.md"})["data"]
     assert "Fixture instructions" in explicit["content"]
     context = ok(f, "load_project", {"project_id": "project-alpha"})["data"]

@@ -68,6 +68,18 @@ class ConfiguredRemoteEndpoint:
             raise RuntimeError("configured machine is offline")
         return self._adapter().deliver(*args, **kwargs)
 
+    def filesystem(self, context, operation, arguments):
+        from runtime.filesystem_transport import node_request
+        try:
+            return node_request(self._adapter(), context, operation, arguments)
+        except Exception as error:
+            from runtime.machine_filesystem import FilesystemError
+            if not isinstance(error, FilesystemError) or error.code != "machine_offline":
+                raise
+            # File service preparation is independent of native Session busy/idle.
+            self._prepare()
+            return node_request(self._adapter(), context, operation, arguments)
+
     def fetch_response_artifact(self, *args, **kwargs):
         return self._adapter().fetch_response_artifact(*args, **kwargs)
 

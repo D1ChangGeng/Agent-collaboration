@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from copy import copy
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 
@@ -136,7 +137,8 @@ def create_project_server(runtime=None, *, runtime_provider=None):
         connection = ctx.session._connection
         key = connection.state.setdefault("acs/connection_ref", "mcp-" + uuid.uuid4().hex)
         states = ctx.lifespan_context["connections"]
-        active_runtime = current_runtime()
+        active_runtime = copy(current_runtime())
+        active_runtime.service = copy(active_runtime.service)
         context = active_runtime.service.context
         owner = (context.tenant_id, context.principal_ref, context.grant_ref, active_runtime.service.profile)
         if key in states and states[key]["owner"] != owner:
@@ -155,6 +157,10 @@ def create_project_server(runtime=None, *, runtime_provider=None):
             # A refreshed OAuth token may continue the same authenticated role.
             # The publisher must not retain the initialization token forever.
             states[key]["runtime"] = active_runtime
+        if "filesystems" not in states[key]:
+            from runtime.filesystem_gateway import FilesystemGateway
+            states[key]["filesystems"] = FilesystemGateway(active_runtime.service.service.authority)
+        active_runtime.service.filesystems = states[key]["filesystems"]
         return states[key]
 
     async def authorized_inbox(uri):

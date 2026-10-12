@@ -178,6 +178,13 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
         self.service = ReceiverService(
             config, node_signing_key, authorize_current=authorize_current, clock=clock,
         )
+        from runtime.filesystem_transport import NodeFilesystemService
+        provider = getattr(native_invoke, "__self__", None)
+        authority = getattr(provider, "authority", None)
+        file_authority = (authority.receiver_transport.current_filesystem_authority
+                          if authority is not None else None)
+        self.filesystem = (NodeFilesystemService(config, node_signing_key, file_authority)
+                           if config.access_mode == "owner" and callable(file_authority) else None)
         self.service.claim_boot(
             config.expected_boot_incarnation, config.journal_generation,
             old_boot_isolation_ref=config.old_boot_isolation_ref,
@@ -265,6 +272,27 @@ class ReceiverHandler(BaseHTTPRequestHandler):
             if not 0 <= length <= self.server.config.maximum_body_bytes:
                 raise ReceiverRejected("body length rejected")
             raw = self.rfile.read(length)
+            if self.path == "/v1/filesystem":
+                from runtime.machine_filesystem import FilesystemError
+                if self.server.filesystem is None:
+                    raise ReceiverRejected("machine file service is unavailable")
+                try:
+                    value = self.server.filesystem.handle(json.loads(raw))
+                except FilesystemError as error:
+                    encoded = json.dumps({"status": "rejected", "code": error.code}).encode()
+                    self.send_response(409)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(encoded)))
+                    self.end_headers()
+                    self.wfile.write(encoded)
+                    return
+                encoded = json.dumps(value).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+                return
             request = SignedRequest.model_validate_json(raw, strict=True)
             if request.admission.path != self.path:
                 raise ReceiverRejected("request path rejected")

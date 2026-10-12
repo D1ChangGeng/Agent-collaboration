@@ -1,10 +1,19 @@
 # Runtime decision map
 
 Use persistent registration to discover the intended Node, Runtime, Connection
-and Endpoint. Before invocation, inspect actual process and native Session
+and Endpoint. Before native invocation, inspect actual process and native Session
 state, verify the current identity and reconnect or prepare the selected user
 environment. A stored registration is a routing fact; fresh readback establishes
 readiness.
+
+For a file action, discover the actual machine account and cwd through
+filesystem_context. Use select_filesystem to choose a session default, or
+machine_id/cwd for one call. Choose the machine file service when the requested
+result is current OS content or a file change. Check the authenticated file
+connection and account permissions. For reproducible Project repository bytes,
+select an explicit Source view and retain its actual version evidence.
+A busy native Session has its own execution state; file service readiness is
+observed through the file connection.
 
 Choose native execution when the Agent should use the selected user's tools,
 MCP servers, plugins, project configuration, provider, model and approval
