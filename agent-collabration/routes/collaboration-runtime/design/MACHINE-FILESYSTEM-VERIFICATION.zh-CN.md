@@ -1,7 +1,8 @@
 # 机器文件系统实现与验证记录
 
-日期：2026-10-12。状态：机器文件系统与离线 schema 兼容性修订完成受影响路径
-回归、实际跨机器读回和安装核验；本修订提交与 CI 读回沿现有 Draft PR #12 跟踪。
+日期：2026-10-12。状态：Runtime、PostgreSQL、实际跨机器读回和安装核验已完成；
+显式 Source 读取分组修订完成本机 Gate 与目录合同验证，其提交与 CI 读回沿
+现有 Draft PR #12 跟踪。
 
 ## 产品与实现范围
 
@@ -47,11 +48,31 @@ shared/离线 Source 参数分别保持其适用的输入定义。
 | Skill validation | 通过 | 当前知识包 |
 | 机器文件系统独立代码复核 | 全部 9 项修复检查 PASS | 原文件系统候选 |
 | SCHEMA_FIX_REVIEW | PASS | 离线 SendWait schema、owner path-only、shared/离线 Source schema 一致性 |
+| 最新本机完整 Gate tooling | 123 项用例，OK，15 项平台跳过，245.759 秒 | 显式 Source 分组元数据修订 |
+| MCP catalog contract | 9 passed，0.005 秒 | 显式 Source 分组元数据修订 |
+| CATALOG_FIX_REVIEW | PASS | 三项 Source 别名分组；既有 schema、Profile 与安全绑定一致 |
 
 各运行按自己的模块与版本范围记录，数量按上述范围分别引用。
 较早 Linux 93 项结果属于前期选择。既有 SendWait 测试保留原断言，
 本修订通过最新四模块选择及独立 schema 复核。
 历史 P1/P2 Gate 保留其原始输入、绑定和结论。
+
+### 当前 CI 与 Source 目录分组
+
+候选 `3fe5c3e9d762c39ff3c249073606d24254b15546` 的 CI runs
+`38259317085` / `38259309928` 已确认三个 setup jobs 与 Runtime components
+通过。Run `38259317085` 的实际 PostgreSQL 选择为 **360 passed、2 skipped**，
+耗时 369.69 秒。
+
+Gate tooling 的 Source 分组检查发现 `tool_groups.source_reads` 缺少已定义的
+`read_source_file`、`list_source_files` 和 `search_source_files`。
+本修订将三项读取工具加入既有 `source_reads` 元数据组。本机完整 Gate 与
+9 项 catalog contract 验证结果见上表。
+
+自有 Core catalog 已精确同步，SHA-256 为
+`671b780a55a0a5c1fac6041a63deac05508d6b16de5ed4e01c8e1de4ea2ed111`。
+此次改动范围是工具分组元数据；运行代码、wheel、工具定义及 Profile
+沿现有已验证版本运行。本修订的 CI 读回绑定后续实际提交。
 
 ## 实际 MCP 与 SSH 读回
 
@@ -124,16 +145,16 @@ Source/Runtime 文件确认字节一致，合计 **13 个不同文件**核验通
 | 分支 | `codex/core-cleanup` |
 | 原机器文件系统起点 HEAD | `689d47b6a6824198e1906ec5b587e08ef68ca9b5` |
 | 原起点 tree | `9e033cf1cc9de0c3e1febb83ac821b01c1bf581a` |
-| 已提交机器文件系统候选 | `fde54aed7a5be145a1ba5e34d9fcf453dad6d288` |
-| 已提交候选 tree | `59fc0ee25bf9451d3cfab038e2900a7859147c8e` |
-| 当前工作树 | 离线 schema 兼容性修订与相应记录已冻结，待提交 |
+| 已提交 schema 兼容性候选 | `3fe5c3e9d762c39ff3c249073606d24254b15546` |
+| 已提交候选 tree | `80e3e159ff2fc672486c50a815176c699a4ddfca` |
+| 当前工作树 | 显式 Source 分组元数据与相应记录已冻结，待提交 |
 | 评审入口 | [现有 Draft PR #12](https://github.com/D1ChangGeng/Agent-collaboration/pull/12) |
 | 本修订提交 / Push / CI | 待提交后绑定实际新 SHA 读回 |
 
-已提交候选 `fde54aed7a5be145a1ba5e34d9fcf453dad6d288` 的 CI 在
-`test_send_wait_semantics` 离线 catalog schema 用例触发 AttributeError。
-本修订复用已有访问模式探测逻辑，保留既有测试断言，最新回归和独立复核结果
-见上表。本修订的 CI 状态以新提交的实际运行读回为准。
+先前 `fde54aed7a5be145a1ba5e34d9fcf453dad6d288` 候选的离线 schema
+AttributeError 已由 `3fe5c3e9d762c39ff3c249073606d24254b15546` 的兼容性修订
+及其验证覆盖。当前 CI 已验证 Runtime 与 PostgreSQL 范围，Source 分组
+元数据修订通过本机 Gate 与 catalog contract；新提交的 CI 状态按实际运行读回。
 
 用户 README、`docs/client/` 与 `.git-rewrite/` 工作保留。
 源码候选、已安装 wheel、远程 checkout 和插件 release 分别保留自己的

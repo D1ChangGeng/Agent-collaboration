@@ -1750,7 +1750,10 @@
       "search_files",
       "read_file",
       "read_source",
-      "read_diff"
+      "read_diff",
+      "read_source_file",
+      "list_source_files",
+      "search_source_files"
     ],
     "project_actions": [
       "create_route",
