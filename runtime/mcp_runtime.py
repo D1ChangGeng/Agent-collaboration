@@ -57,8 +57,9 @@ class McpRuntime:
         optional = list(definition["optional"])
         if owner:
             relaxed = {"deadline"}
-            if name in {"read_file", "list_files", "search_files"}:
-                relaxed.add("revision")
+            if name in {"read_file", "list_files", "search_files", "read_source"}:
+                relaxed.update({"revision", "source_id"})
+                optional.append("source_root")
             if name == "configure_team":
                 relaxed.update({"policies", "budgets"})
             if name == "create_work":
@@ -91,7 +92,7 @@ class McpRuntime:
                     properties[field]["items"] = item_schema
                 else:
                     properties[field]["items"] = {"type": "string"}
-            if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"} or (owner and field == "deadline"):
+            if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"} or (owner and field in {"deadline", "source_id", "source_root", "revision"}):
                 properties[field]["type"] = [kind, "null"]
             if field == "decision" and name in {"submit_review", "accept_work"}:
                 properties[field]["enum"] = (["pass", "fail"] if name == "submit_review"

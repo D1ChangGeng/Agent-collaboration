@@ -123,7 +123,7 @@
     },
     "load_project": {
       "title": "Load project context",
-      "description": "Load Root identity, instructions, Routes, knowledge, SourceBindings and active work with exact context and workspace revisions. Roles describe responsibilities; the authenticated actor and installed access mode establish the current context.",
+      "description": "Load Root identity, instructions, Routes, knowledge, SourceBindings and active work with exact context and workspace revisions. Roles describe responsibilities; the authenticated actor and installed access mode establish the current context. Source guidance recommends the latest primary worktree and lets the Agent choose an available native, filesystem or repository reader.",
       "selection_guidance": "Use before project-scoped management, analysis, review or finalization when context is absent or stale.",
       "annotations": {
         "readOnlyHint": true,
@@ -293,7 +293,7 @@
     },
     "list_sources": {
       "title": "List project sources",
-      "description": "List admitted SourceBindings with repository identity, view revision and provider capabilities. Owner current workspace views and fixed snapshots preserve distinct source identity.",
+      "description": "Discover project repository and source-location hints, recorded version observations and available provider capabilities. Agents choose an available source reader and record the version actually read.",
       "selection_guidance": "Use before source reads or provider selection.",
       "annotations": {
         "readOnlyHint": true,
@@ -531,7 +531,7 @@
     },
     "list_files": {
       "title": "List source files",
-      "description": "List files below an admitted SourceBinding path. Owner may omit revision to capture the current workspace, including admitted local edits; an explicit revision reads its fixed snapshot. Shared inputs require an exact revision.",
+      "description": "List source files. Owner omission selects the project's current primary worktree; optional source_id/source_root selects a readable location and revision selects a captured snapshot. Continue pagination at its returned revision.",
       "selection_guidance": "Use for directory discovery from web or local management sessions.",
       "annotations": {
         "readOnlyHint": true,
@@ -565,7 +565,7 @@
     },
     "search_files": {
       "title": "Search source files",
-      "description": "Search admitted Source paths or content. Owner may omit revision for the current workspace view; an explicit revision searches its fixed snapshot. Shared inputs require an exact revision.",
+      "description": "Search source paths or content. Owner omission searches the current primary worktree; optional source_id/source_root selects a readable location and revision selects a captured snapshot.",
       "selection_guidance": "Use when a target path or content location is unknown.",
       "annotations": {
         "readOnlyHint": true,
@@ -599,7 +599,7 @@
     },
     "read_file": {
       "title": "Read source file",
-      "description": "Read a bounded line range from an admitted Source path. Owner may omit revision to read the current workspace view; an explicit revision reads captured bytes. Shared inputs require an exact revision.",
+      "description": "Read source content. Owner omission selects the project's current primary worktree; source_id or source_root can select another readable location. A supplied revision selects a captured snapshot. Report the actual version with the content.",
       "selection_guidance": "Use after context loading, file listing or search.",
       "annotations": {
         "readOnlyHint": true,
@@ -632,7 +632,7 @@
     },
     "read_source": {
       "title": "Read source state",
-      "description": "Read repository identity, actual branch/commit/tree, workspace state and view revision, plus observed Push and receiver synchronization. Owner omission selects the current admitted workspace; a named revision retains its exact snapshot.",
+      "description": "Read actual branch, commit, tree and workspace state with advisory version and location guidance. Owner omission selects the current primary worktree; source_id/source_root or a captured revision is an explicit reader choice.",
       "selection_guidance": "Use before source-dependent delegation, review, handoff or acceptance.",
       "annotations": {
         "readOnlyHint": true,
@@ -1843,7 +1843,7 @@
       "registration": "Connection, Node, Runtime and Endpoint persist until an explicit lifecycle change; execution inspects actual readiness and prepares the selected native environment",
       "business_deadline": "optional and chosen explicitly; omission keeps continuous validity",
       "response_tracking": "durable until the observed terminal result; caller timeout and disconnect preserve tracking and Inbox",
-      "input_schema": "McpRuntime moves deadline to optional; configure_team policies and budgets, create_work budget, and read_file/list_files/search_files revision are optional",
+      "input_schema": "McpRuntime makes deadline, team policies/budgets and work budget optional. read_file/list_files/search_files/read_source default to the current primary product worktree; source_id, source_root and revision are optional reader or captured-view selections.",
       "team_member": "agent_slot_id, principal_ref, role and harness_requirements",
       "native_environment": "Selected native user environment, tools, MCP, plugins, project configuration, providers, models and approval settings. Native client requests require an installed Driver request handler; the standard headless Receiver reports unsupported client requests.",
       "review": "exact candidate, reviewer assignment and independence, integrity hashes and deterministic storage remain required"

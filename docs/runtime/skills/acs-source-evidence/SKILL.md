@@ -11,12 +11,12 @@ Source and evidence truth. Review decisions belong to acs-review-acceptance; exe
 
 ## Core invariants
 
-- Source content remains authoritative in its filesystem or repository provider and within the configured Source roots.
-- Owner current workspace reads capture admitted tracked edits and untracked files under a workspace revision distinct from the Git baseline.
-- Fixed revision and commit snapshots retain exact bytes, modes, digests and provenance for reproducible work.
-- Message delivery and Git synchronization are separately observed facts.
-- Artifact bytes, Evidence claims and ExecutionReceipt facts retain separate identities; historical facts preserve their recorded context after a former Grant's natural expiry.
-- Imported and endpoint-reported observations retain provenance; current source and readiness claims require current readback.
+- SourceBinding provides advisory repository, location and version hints; the Agent chooses an actually available reader.
+- Owner defaults select the Project product repository; primary_source_root locates the preferred repository and current reads resolve its physical primary worktree, actual branch and edits.
+- Explicit source_root selects a configured readable current location; explicit revision selects captured bytes, and pagination retains the returned view_revision.
+- Owner actual_source reports provider/root/commit/tree/view_revision/observed_at; current_readable_root and origin_hint describe their own locations.
+- Owner product source_observation and distinct management_source_observation retain separate context; unavailable product defaults have null product observation and references.
+- Review/Evidence bind actual candidate/source identity; shared access/version checks and provider boundaries remain effective, and source location is separate from execution placement.
 
 ## Retrieval map
 

@@ -29,7 +29,56 @@ Repository Git cwd: D:/Chatgpt/Agent-collaboration.
 
 ## Current state
 
-### Authoritative completion checkpoint
+### Authoritative completion checkpoint — Source candidate
+
+Source 代码与测试已冻结，当前候选沿 `codex/core-cleanup` 基线
+`e0b76e9aebf9a7d6eee7dce52e70a6b23cb61107`，基线 tree
+`7d6306724a5ab827250b8e10af746179154a3c2e`。
+Source 冻结验证与提交后的结果分别记录。精确验证范围见
+[SOURCE-READING-VERIFICATION.zh-CN.md](SOURCE-READING-VERIFICATION.zh-CN.md)。
+
+产品默认选择 `source-local`，首选位置
+`/mnt/d/Chatgpt/Agent-collaboration`；产品与 Management 观察分开，
+actual_source 保留真实 provider/root/commit/tree/view/time。Agent 自主选择
+实际可用的 Native、Git、外部仓库 MCP；默认当前物理主工作树与实际分支、
+编辑和显式快照的字节身份分别记录。
+
+最终 Source 模块 45 passed、owner Source PG 11 passed，Ruff F 与 Skill
+validator 通过。较早 Source/Scope 选择 76 passed，先于最终临时对象、
+内容容量和显式快照身份修复；这些选择重叠，按原范围分别引用。
+Git/DrvFS index 短读已修复，正常 Git 临时对象得到处理；内容/diff 使用
+配置的 Artifact 容量，实际产品 Scope 保持 256 MiB。
+
+两主机现运行最终 wheel
+`fbabcd2204e49ab9a4c5a3838ea9541963dbd78af64cd6955d80bf9b22f0f289`，
+各 107 个安装文件通过核对；Core/Receiver 前缀分别为
+`manager-core-cleanup-source-identity` /
+`receiver-core-cleanup-source-identity`，Endpoint 与 Message binding 为 781。
+Receiver idle/native Codex 0.155.0；Native checkout e900773、密钥、
+Native 选择、journals 和备份保持原身份。两主机 manifest 指纹载于验证记录。
+
+完整 stdio MCP 37 工具、四个 Source 可选选择字段、真实 README 摘要、
+产品/管理观察和显式 clone→默认主工作树恢复，在 SHA 前缀 9de445 的
+先前 Source wheel 上确认。该运行先于最后两行快照身份修复。
+最终前缀默认读取的重复验证安排在 Source 提交后，并关联 Draft PR #12。
+
+Source Skill 四文件在 Windows/WSL/1302-1 核对，digest
+`cecac6467346802f85b50ab9c18b0c0249ba59403f833d7a275fd0a485e375e5`。
+私人知识插件 0.1.2 在六文件独立 Gate PASS 后完成 USER/PRIVATE 账户更新，
+release `pluginrel_6accb56b8dec8191b1d9fb31e9047ac5`；35 文件读回确认
+六个变更精确匹配冻结 overlay，其余 29 个保持原值。
+
+基线 e0b76e9 的 push/PR CI 的 10 项检查均通过。Source commit/push、
+新 SHA CI 与最终前缀重复读取，在现有
+[Draft PR #12](https://github.com/D1ChangGeng/Agent-collaboration/pull/12)
+跟踪。正式 Runtime tag/主 Release 使用独立发布流程。
+ChatGPT metadata Refresh + 新会话最小省略字段验证保留为用户操作；
+浏览器 host URL policy 限制该页面自动操作。
+
+以下 Owner 基线和历次检查点保留各自时间、输入与结果范围；当前 Source
+候选状态由本检查点和 Source 验证记录共同说明。
+
+### Owner Runtime baseline checkpoint
 
 Implementation and the authorized reversible installation migration are complete
 for the owner candidate. Current engineering evidence is

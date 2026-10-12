@@ -58,9 +58,28 @@ An unconfigured custom service retains pending delivery for its dispatcher.
 The owner native collector observes the same invocation until terminal result
 or service stop.
 
-Owner Source reads provide the current admitted workspace under its view
-revision and retain fixed commit or workspace snapshots for reproducible
-Review. Artifacts, hashes, deterministic storage, independent reviewer
+SourceBinding supplies advisory Project repository, location and version hints.
+Agents select an available Native, Git, repository MCP or other reader and
+record its actual source. Execution Node placement has its own binding.
+
+Owner defaults resolve the product primary_source_id. primary_source_root
+identifies the preferred repository read location used to resolve its physical
+primary worktree. Current reads observe its actual branch and edits.
+Explicit source_root selects a configured readable current worktree; explicit
+revision selects captured bytes. Pagination preserves the returned view_revision.
+
+Owner actual_source records provider, root, commit, tree, view_revision and
+observed_at. list_sources distinguishes current_readable_root from repository
+origin_hint.host/path. Owner load_project.source_observation is product source;
+a distinct management_source_observation retains Management Root context.
+Unavailable product defaults have null product observation and primary/version
+references. Explicit management reads retain their own access.
+
+Version suggestions guide the Agent. Review and acceptance preserve the actual
+candidate and Evidence identity. Shared access, permission and version checks
+retain their existing boundaries.
+
+Artifacts, hashes, deterministic storage, independent reviewer
 assignment and candidate-specific acceptance checks retain their identities.
 Historical execution and Review facts remain recorded after an earlier
 Grant's natural expiry.
@@ -241,7 +260,10 @@ The machine catalog preserves its shared base required/optional lists and
 Profile support table. McpRuntime exposes the installed mode's input schema:
 owner makes business deadline optional, allows ordinary Team members,
 makes configure_team policies/budgets and create_work budget optional,
-and permits current workspace reads with an omitted Source revision.
+and permits current filesystem reads with omitted source_id/revision,
+product Source defaults and an optional configured source_root. Product and
+management observations keep their own context; actual readback records the
+selected source identity.
 
 The setup Skill owns guarded installation and migration procedures. Runtime
 Skills are metadata-routed knowledge modules for ACS entities, authority,

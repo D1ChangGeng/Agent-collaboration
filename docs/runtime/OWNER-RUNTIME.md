@@ -247,23 +247,59 @@ receipt reports `scope: owned_process_group` and
 session are outside that group's stop proof. A stronger containment profile
 requires the corresponding supervisor and verified containment receipt.
 
-## Current workspace and fixed source snapshots
+## Source guidance and reading
 
-The owner Source view reads the current admitted workspace, including tracked
-edits and admitted untracked files. A captured workspace revision identifies
-the exact bytes and modes of that view independently of the Git commit and
-tree. Results retain both the workspace view identity and the repository
-baseline.
+SourceBinding describes the project's repository, readable locations and
+recommended versions. An Agent chooses an available Native, Git, repository
+MCP or other existing reader according to its actual connection and access.
+The reading location and execution Node have separate bindings.
 
-Reads at a named revision remain fixed to that captured view. Committed source
-snapshots remain available for reproducible delegation and Review. A current
-workspace read can advance as files change, while an existing candidate keeps
-the exact source revision it used.
+The Project's primary product source identifies its repository checkout.
+`primary_source_id` selects that product Source hint.
+`primary_source_root` identifies the preferred repository read location;
+default current reads resolve that repository's physical primary worktree.
+The physical checkout uses the branch currently checked out there. Current
+views include its edits and admitted untracked files.
 
-Source paths resolve inside the configured Source roots. Byte bounds,
-normalized paths, secret handling, tenant and Scope checks, content digests
-and Artifact readback apply to current views and fixed snapshots. Message
-delivery and Git fetch, pull or push remain separately observed facts.
+Owner Core `read_source`, `read_file`, `list_files` and `search_files`
+can omit `source_id` and `revision`. Core filesystem reads use their
+configured readable roots:
+
+| Selection | Core filesystem behavior |
+|---|---|
+| Project product default | Resolves the eligible product Source and reports its `primary_source_id` |
+| Preferred repository location | Uses `primary_source_root` to resolve the physical primary checkout |
+| Explicit `source_root` | Reads the caller's selected current worktree within configured readable roots |
+| Explicit `revision` | Reads an already captured commit or workspace snapshot |
+
+Version advice remains a reference for the Agent. A fixed commit or captured
+workspace view (`view_snapshot`) is an explicit snapshot selection. A snapshot
+already identifies its reading location. Each other Agent tool exposes its own
+readable locations and repository capabilities.
+
+Owner filesystem readback includes `actual_source` with `provider`, `root`,
+`commit`, `tree`, `view_revision` and `observed_at`. Record these actual
+facts alongside the observed repository, branch and workspace state.
+`list_sources.current_readable_root` reports the Core filesystem location;
+`origin_hint` supplies the repository's origin `host` and `path` as guidance.
+
+Owner `load_project.source_observation` describes the product Source.
+`management_source_observation` records the Management Root observation when
+distinct. When a product default is unavailable, `source_observation`,
+`source_guidance.primary_source_id` and `source_guidance.version_hint_ref`
+are null. Management context and explicitly selected management reads remain
+available under their own access checks.
+
+Routine context and knowledge follow-ups use the current view with a version
+hint. Pagination continues at the returned `view_revision` to retain the
+selected page sequence's byte identity. A new current read can observe newer
+edits. Review and acceptance keep the actual candidate, source and Evidence
+identities used by that work.
+
+Core byte bounds, normalized paths, secret handling, tenant/Scope ownership,
+explicit revocation and digest readback apply at its filesystem boundary.
+Shared deployments retain their existing access, permission and version checks.
+Message delivery, source reading and Git synchronization have separate evidence.
 
 ## Results, Review and acceptance
 

@@ -1032,3 +1032,79 @@ def test_non_linux_backend_fails_closed_before_source_reads(
             object(),
             authorized_roots=[tmp_path],
         )
+
+
+def test_git_index_short_reads_capture_complete_snapshot(tmp_path, monkeypatch):
+    repo = make_repo(tmp_path / "short-read-repo")
+    (repo / "README.md").write_text("complete index read\n")
+    commit_all(repo, "index fixture")
+    service, store = service_for(tmp_path, repo)
+    original_read = os.read
+    chunks = []
+
+    def short_index_read(descriptor, count):
+        if os.readlink(f"/proc/self/fd/{descriptor}") == str(repo / ".git/index"):
+            data = original_read(descriptor, min(count, 7))
+            chunks.append(len(data))
+            return data
+        return original_read(descriptor, count)
+
+    monkeypatch.setattr(os, "read", short_index_read)
+    try:
+        snapshot = service.admit(request_for(repo), allow)
+        assert snapshot.source_commit == git(repo, "rev-parse", "HEAD").decode().strip()
+        item = next(item for item in snapshot.files if item.path == "README.md")
+        assert store.read(ArtifactRef.model_validate(item.artifact_ref)) == b"complete index read\n"
+        assert len(chunks) > 2 and max(chunks) == 7
+    finally:
+        service.close()
+        store.close()
+
+
+def test_git_temporary_objects_do_not_change_published_source(tmp_path, monkeypatch):
+    repo = make_repo(tmp_path / "temporary-objects-repo")
+    (repo / "README.md").write_text("published source\n")
+    commit_all(repo, "published fixture")
+    objects = repo / ".git/objects"
+    loose = next(item for item in objects.iterdir() if len(item.name) == 2)
+    temporary_names = {"tmp_obj_Ab12Cd", "tmp_pack_Ef34Gh", "tmp_idx_Ij56Kl",
+                       "tmp_rev_Mn78Op", "tmp_mtimes_Qr90St"}
+    for directory, name in [(objects, "tmp_obj_Ab12Cd"), (loose, "tmp_obj_Ab12Cd"),
+                            *( (objects / "pack", name) for name in temporary_names if not name.startswith("tmp_obj"))]:
+        (directory / name).write_bytes(b"incomplete temporary bytes")
+    original_read = os.read
+
+    def published_read(descriptor, count):
+        assert Path(os.readlink(f"/proc/self/fd/{descriptor}")).name not in temporary_names
+        return original_read(descriptor, count)
+
+    monkeypatch.setattr(os, "read", published_read)
+    service, store = service_for(tmp_path, repo)
+    try:
+        snapshot = service.admit(request_for(repo), allow)
+        assert snapshot.source_commit == git(repo, "rev-parse", "HEAD").decode().strip()
+        assert [item.path for item in snapshot.files] == ["README.md"]
+        assert store.read(ArtifactRef.model_validate(snapshot.files[0].artifact_ref)) == b"published source\n"
+    finally:
+        service.close()
+        store.close()
+
+
+def test_content_diff_uses_artifact_capacity_separately_from_git_metadata(tmp_path):
+    repo = make_repo(tmp_path / "content-diff-repo")
+    (repo / "README.md").write_text("old line\n" * 300)
+    commit_all(repo, "diff fixture")
+    current = b"new line\n" * 300
+    (repo / "README.md").write_bytes(current)
+    store = LocalArtifactStore(tmp_path / "content-cas", "scope-source", max_bytes=16384)
+    service = SourceService(store, authorized_roots=[tmp_path], max_bytes=16384, max_metadata_bytes=1024)
+    try:
+        snapshot = service.admit(request_for(repo, allow_dirty=True), allow)
+        patch = store.read(ArtifactRef.model_validate(snapshot.diff_ref))
+        assert len(patch) > 1024
+        assert b"+new line" in patch and b"-old line" in patch
+        assert store.read(ArtifactRef.model_validate(snapshot.files[0].artifact_ref)) == current
+        assert service.readback(snapshot, allow) == snapshot
+    finally:
+        service.close()
+        store.close()
