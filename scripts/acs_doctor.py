@@ -77,7 +77,9 @@ def runtime_readback(config: Path, catalog: Path, profile: str, *, deep: bool = 
             return {
                 "state": snapshot["connection_state"],
                 "profile": snapshot["profile"],
-                "grant": snapshot["grant"],
+                "access_mode": snapshot.get("access_mode", "shared"),
+                "identity": snapshot.get("identity"),
+                "grant": snapshot.get("grant"),
                 "projects": found["items"],
                 "project_contexts": contexts,
                 "tools": projects.available_tools(credential),

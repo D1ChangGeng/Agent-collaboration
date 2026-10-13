@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented here.
 
+## 1.5.1 - 2026-10-13
+
+- Correct machine readiness and upgrade diagnostics to report trusted owner
+  identity, lifetime and actual access mode, with an optional owner Grant summary
+  and the existing shared Grant summary.
+- Preserve credential authentication and Project, Source and tool readbacks
+  during standard Release Bootstrap verification and activation.
+- Add an owner-profile regression and verify candidate diagnostics against the
+  published v1.5.0 Runtime with a real database: authorized owner identity,
+  `until_explicit_change` lifetime, seven projects and 48 tools.
+- Update current installation and guided upgrade references to v1.5.1.
+
 ## 1.5.0 - 2026-10-13
 
 - New private installations use owner access with trusted identity, tenant and
