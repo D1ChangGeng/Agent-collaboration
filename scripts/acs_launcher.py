@@ -128,13 +128,37 @@ def spawn_catchup(root: Path) -> None:
         return
 
 
+def restore_startup(root: Path, active: Path) -> dict:
+    """Use the selected version's verified recovery helper before MCP exec."""
+    import importlib.util
+    manifest = json.loads((active / "RELEASE-MANIFEST.json").read_bytes())
+    if "scripts/acs_startup.py" not in manifest["files"]:
+        return {"startup": "legacy_release_requires_guided_upgrade"}
+    path = verify_file(active, manifest, "scripts/acs_startup.py")
+    spec = importlib.util.spec_from_file_location("acs_owned_startup", path)
+    startup = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(startup)
+    result = startup.restore_configured(root, active)
+    if result.get("core") == "owner_repair_required":
+        raise ValueError("startup_core_unavailable")
+    return result
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--installation-root", type=Path, required=True)
     parser.add_argument("--profile", default="root_manager")
+    parser.add_argument("--check-startup", action="store_true")
     args = parser.parse_args(argv)
     try:
         active, command = resolve_launch(args.installation_root, args.profile)
+        try:
+            restored = restore_startup(args.installation_root, active)
+        except Exception as error:
+            raise ValueError("startup_recovery_unavailable") from error
+        if args.check_startup:
+            print(json.dumps(restored))
+            return 0
         spawn_catchup(args.installation_root)
         os.chdir(active)
         os.execv(command[0], command)

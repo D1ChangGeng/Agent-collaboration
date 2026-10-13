@@ -11,11 +11,12 @@ Durable continuation and recovery. Work semantics belong to acs-collaboration-mo
 
 ## Core invariants
 
-- Authority commit precedes accepted_by_authority receipt.
-- Delivery receipts are layered and missing layers remain unknown.
-- Async response tracking and notification are created with Message submission.
-- Busy Sessions use queue_until_idle; replacement preserves durable Inbox and subscription identity.
-- Retries preserve logical Message identity and deduplicate native invocation.
+- Authority commit precedes accepted_by_authority; delivery and response receipts are separately observed.
+- Owner Message and command validity is continuous by default; an explicit business deadline is optional.
+- Async submission returns committed handles; sync waits for the target condition with an optional caller timeout.
+- Durable Inbox and notification state survives disconnect and Session replacement; immediate delivery follows the actual Connection and Session.
+- Busy Sessions queue until idle; readiness is read from the current native state before invocation.
+- Retries preserve logical Message identity, initiating lineage and request deduplication; caller timeout preserves background tracking.
 
 ## Retrieval map
 
@@ -37,9 +38,12 @@ tools.
 
 ## Application
 
-Apply this knowledge to the user's actual goal and current evidence. Compose
-tools from present state, permissions and required readback. Examples in the references illustrate the model. The Agent derives the
-sequence from current state, authority, evidence and the user's goal.
+Apply this knowledge to the user's goal and current evidence. Read the
+installed access mode and active tool schema, then compose actions from trusted
+identity, object state, revisions and required readback. References explain
+durable semantics; ProjectContextPack and current sources provide project facts.
+The owner product contract is `docs/runtime/OWNER-RUNTIME.md` in the verified
+ACS release or source checkout.
 
 ## Related knowledge
 

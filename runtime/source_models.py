@@ -26,6 +26,7 @@ class SourceRequest:
     include_untracked: bool = True
     max_bytes: int | None = None
     secret_patterns: tuple[str, ...] = ()
+    workspace_view: bool = False
 
     def normalized_root(self) -> Path:
         return Path(self.root)
@@ -78,6 +79,12 @@ class SourceSnapshot:
     working_tree_status_sha256: str
     source_class: str
     snapshot_sha256: str
+
+    @property
+    def view_revision(self) -> str:
+        return (f"workspace:{self.snapshot_sha256}"
+                if self.dirty or self.source_class == "directly_verified_workspace"
+                else self.source_commit)
 
     def manifest_dict(self, *, include_digest: bool = True) -> dict[str, Any]:
         value: dict[str, Any] = {

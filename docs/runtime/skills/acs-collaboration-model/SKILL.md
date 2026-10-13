@@ -11,12 +11,12 @@ Logical collaborators, work intent and communication. Harness lifecycle belongs 
 
 ## Core invariants
 
-- Root/Route responsibility extent and the proposed Task Agent vocabulary are separate from Engineer/Reviewer/Specialist/Finalizer duties.
-- AgentSlot is a durable addressable responsibility inside a Scope; Role is descriptive and Grant is authoritative.
-- configure_team changes bindings inside an existing Scope and preserves prior revisions.
-- WorkItem intent, execution, review, acceptance and effect state are independent dimensions.
+- Root and Route describe responsibility extent; Engineer, Reviewer, Specialist and Finalizer describe duties.
+- AgentSlot is a durable addressable responsibility inside a Scope; role metadata and candidate-specific reviewer independence are distinct.
+- Owner configure_team stores slot, principal, role and Harness requirements as business configuration; shared mode applies its Grant, Policy and budget bindings.
+- WorkItem intent, execution, Review, acceptance and effect state are independent dimensions.
 - Delegation creates or selects work; handoff transfers existing responsibility and preserves lineage.
-- Message identity survives retries and transport changes.
+- Messages retain identity through retry and transport replacement; owner commands and messages use an optional explicit business deadline.
 
 ## Retrieval map
 
@@ -38,9 +38,12 @@ tools.
 
 ## Application
 
-Apply this knowledge to the user's actual goal and current evidence. Compose
-tools from present state, permissions and required readback. Examples in the references illustrate the model. The Agent derives the
-sequence from current state, authority, evidence and the user's goal.
+Apply this knowledge to the user's goal and current evidence. Read the
+installed access mode and active tool schema, then compose actions from trusted
+identity, object state, revisions and required readback. References explain
+durable semantics; ProjectContextPack and current sources provide project facts.
+The owner product contract is `docs/runtime/OWNER-RUNTIME.md` in the verified
+ACS release or source checkout.
 
 ## Related knowledge
 

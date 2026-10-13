@@ -632,6 +632,19 @@ class SourceService:
             target_directory = destination / relative
             target_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
             for name in files:
+                # Git publishes loose objects and packs by renaming temporary
+                # files. Only published object names belong to the read view.
+                # https://github.com/git/git/blob/master/object-file.c
+                # https://github.com/git/git/blob/master/pack-write.c
+                temporary = (
+                    (depth == 0 or (depth == 1 and re.fullmatch(r"[0-9a-f]{2}", relative.name)))
+                    and re.fullmatch(r"tmp_obj_[A-Za-z0-9]{6}", name)
+                ) or (
+                    depth == 1 and relative.name == "pack"
+                    and re.fullmatch(r"tmp_(?:pack|idx|rev|mtimes)_[A-Za-z0-9]{6}", name)
+                )
+                if temporary:
+                    continue
                 allowed_file = (
                     depth == 1
                     and (
@@ -743,7 +756,15 @@ class SourceService:
             before = os.fstat(descriptor)
             if not stat.S_ISREG(before.st_mode) or before.st_size > self._max_metadata_bytes:
                 raise SourceRepositoryError("Git index is not a bounded regular file")
-            payload = os.read(descriptor, self._max_metadata_bytes + 1)
+            chunks = []
+            remaining = self._max_metadata_bytes + 1
+            while remaining:
+                chunk = os.read(descriptor, min(remaining, 65536))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                remaining -= len(chunk)
+            payload = b"".join(chunks)
             after = os.fstat(descriptor)
             if (len(payload) != before.st_size or len(payload) > self._max_metadata_bytes
                     or (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (
@@ -1476,9 +1497,11 @@ class SourceService:
             nonlocal batch, batch_bytes, total_bytes
             if not batch:
                 return
-            remaining = self._max_metadata_bytes - total_bytes
+            # A patch is file content, sized by the configured Artifact store.
+            # Git metadata limits cover identities and path lists separately.
+            remaining = self._artifact_store.max_bytes - total_bytes
             if remaining <= 0:
-                raise SourceOversizeError("Git diff exceeded its bounded limit")
+                raise SourceOversizeError("Git diff exceeded configured Artifact capacity")
             payload = self._run_git(
                 root,
                 [
@@ -1847,7 +1870,7 @@ class SourceService:
             excluded_paths=tuple(sorted(excluded_paths)),
             dirty=dirty,
             working_tree_status_sha256=_sha256(status_raw),
-            source_class="directly_verified",
+            source_class="directly_verified_workspace" if request.workspace_view else "directly_verified",
             snapshot_sha256="",
         )
 
@@ -1910,6 +1933,22 @@ class SourceService:
         )
 
         return snapshot
+
+    def main_worktree(self, request: SourceRequest, authorize: _AUTHORIZER | None) -> tuple[Path, bool]:
+        """Resolve the primary checkout from the repository's common metadata."""
+        self._authorize(request, authorize)
+        root = self._prepare_repository_root(request.root, self._authorized_roots)
+        _git_dir, common = self._repository_metadata(root, self._authorized_roots)
+        if common.name == ".git":
+            try:
+                primary = self._prepare_repository_root(common.parent, self._authorized_roots)
+                _primary_git, primary_common = self._repository_metadata(primary, self._authorized_roots)
+            except (SourceAuthorizationError, FileNotFoundError):
+                return root, False
+            if primary_common == common:
+                self._authorize(request, authorize)
+                return primary, True
+        return root, False
 
     def observe(self, request: SourceRequest, authorize: _AUTHORIZER | None) -> dict[str, Any]:
         """Read current repository identity without admitting or exporting bytes."""

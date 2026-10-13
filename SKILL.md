@@ -11,7 +11,8 @@ metadata:
 # Agent Collaboration Setup
 
 This Skill guides two setup lifecycles: an owner account's ACS machine
-installation and a project's Management Root. Global installation establishes
+installation and a project's Management Root. New single-owner Runtime
+installation records access_mode=owner. Global installation establishes
 the selected Runtime host and client connections. Project setup can follow
 later when the user invokes this Skill for a project. The preferred Management
 Root is nested in the project's Git repository; standalone Workspaces remain
@@ -118,6 +119,61 @@ Machine installation selects a service host and a connection path. Runtime
 Node enrollment, execution placement and cross-host dispatch require their own
 Runtime capability observations.
 
+## Owner Runtime installation contract
+
+Read [the owner Runtime contract](docs/runtime/OWNER-RUNTIME.md) when installing,
+using or repairing the selected service. Owner admission follows its trusted
+credential, tenant/principal/Authority, active service and objects, explicit
+revocation, request deduplication and expected revisions. Roles define duties;
+ordinary team members supply slot, principal, role and Harness requirements.
+Independent candidate Review, Artifact hashes and deterministic storage remain
+acceptance prerequisites.
+
+Keep Connection, Node, Runtime and Endpoint registrations during service or
+client recovery. Execution reads actual process and native Session state,
+reconnects and prepares the selected user's environment. Native Codex and
+OpenCode use that user's tools, MCP servers, plugins, project configuration,
+provider, models and approval configuration. Codex reads the selected
+approval_policy. Interactive approval/information requests require a native
+client handler: the Driver supports server_request_handler, while the standard
+headless Receiver factory uses the transport's explicit -32601 response.
+Verify the installed API, handler binding and decision/response readback.
+API-oriented integrations use the same actual capability and Session readback.
+
+Inspect trusted `SurfaceSettings.remote_endpoints` during machine connection
+setup. Its endpoint_id, authority_signing_key_ref, journal_generation,
+old_boot_isolation_ref and optional prepare_argv bind the registered target and
+saved preparation command. Readiness uses the target's TLS-pinned /healthz;
+preparation executes the stored deterministic argument vector and rechecks
+health. Keep private keys in their reference store.
+
+Owner commands and Messages have an optional chosen business deadline.
+Async returns committed handles; sync waits for the target condition with an
+optional caller timeout. Durable Inbox and result tracking follow the actual
+Connection/Session and survive caller disconnect. Inspect the current workspace
+view for active edits, and use a fixed view or commit snapshot for Review.
+
+Existing unspecified service configuration retains shared behavior until
+explicit owner migration. Shared deployments retain their configured Grants,
+Policy, budgets and bounded reference profiles. Owner adoption preserves
+identity, revocation state, project records and the original configuration
+backup. Verify the access_mode returned by read_profile after activation.
+
+activate_owner_mode updates the trusted Surface configuration and database
+identity/registration records. An existing Receiver has a separately signed
+process configuration whose unspecified mode is shared. For owner/native
+Receiver migration, preserve its original profile, credential, keys and Node
+identity; build the new Runtime/native factory configuration and digest, sign
+the next Endpoint registration with the existing Node key, commit the new
+revision, then restart and read back the matching mode, digest and Session.
+Preserve explicit revocation throughout that transition.
+
+The owner stdio MCP entry automatically maintains committed Message dispatch when
+temporal_endpoint is configured. New installation records the selected local
+Temporal address/port. A custom configuration with that field omitted retains
+pending Outbox state for its separately operated dispatcher. Verify the
+configured provider and actual worker/dispatch result.
+
 ## Installation verification scope
 
 Use [the installation timing guide](docs/INSTALLATION-PERFORMANCE.md) to keep
@@ -128,6 +184,16 @@ Project context checks follow registration and target that project. Read tool
 capabilities from the catalog and knowledge Skills; exercise project actions
 when the user starts that workflow. `acs_doctor.py` uses machine scope by
 default; `--project-id` selects one context and `--deep` is diagnostic scope.
+
+## Startup and transport recovery
+
+Read [startup recovery](docs/runtime/STARTUP-RECOVERY.md) for reboot or disconnect
+repair. Reuse the recorded Runtime host/account and client entry. Verify owner
+service identity before restoring dependencies; keep private SSH/Web Tunnel
+supervision separate from local MCP readiness. Preserve existing credentials,
+configured access mode, durable registrations and signed Runtime facts. Test fault recovery with isolated ports, then
+read actual tools/profile through the configured entry. Machine boot settings
+require the selected host's administration and a rollback backup.
 
 ## Automatic upgrade maintenance
 
@@ -145,9 +211,11 @@ Automatic activation requires a stable Release in the same major version and
 an unchanged license, schema, migration, provider and MCP catalog contract.
 A changed contract requires explicit review and a guided upgrade. Verify archive and file
 digests, the previous installation, the new locked environment, provider health
-and existing Grant authorization before activation. Updates preserve project
-registrations and owner authorization. Project setup, SourceBinding or Grant
-creation, and Compose changes belong to their explicit setup lifecycles.
+and the active identity before activation; shared mode also verifies its
+configured Grant authorization. Updates preserve project registrations,
+access mode and explicit revocation state. Owner mode adoption is an explicit
+configuration/schema transition with backup. Project setup, SourceBinding
+creation and Compose changes retain their setup lifecycles.
 
 Owned local Skills refresh transactionally; selected remote client Skills are
 refreshed through client setup maintenance. Stable launcher commands select the
@@ -165,7 +233,8 @@ For a selected web connection, read
 [the private Tunnel runbook](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md). Fetch its
 official documentation links during setup and verify current account/workspace
 eligibility before presenting page instructions. The supported personal profile
-connects the owner's existing ACS stdio process and Grant.
+connects the owner's existing ACS stdio process, trusted credential and
+configured access mode. Reference P2 runs retain their recorded Grant binding.
 
 Use the owner's external browser on their client machine for Platform and
 ChatGPT account pages. Browser control depends on the current Harness. Verify
@@ -444,3 +513,7 @@ When setup is complete:
 3. State whether the repository has uncommitted changes.
 4. Recommend committing the setup if appropriate.
 5. Explicitly state that normal collaboration now proceeds through `AGENTS.md` and `.agents/`, and that this skill should not be loaded again unless the collaboration setup itself needs maintenance.
+
+For WSL startup maintenance, verify the installed Docker init mechanism with an
+actual successful invocation, and configure an owner login recovery task using
+the verified helper `--maintain` entry. Read back services and Tunnel health.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+from copy import copy
 from datetime import datetime
 
 import psycopg
@@ -26,6 +27,7 @@ from runtime.delivery_node import (
     logical_payload,
 )
 from runtime.errors import AuthorizationDenied, RevisionConflict
+from runtime.lifetimes import earliest, expired
 from runtime.models import AuthenticatedContext, CommandEnvelope, CommandResult
 from runtime.node import RECEIPT_LAYERS, OperationIdentityConflict
 from runtime.team_policy import enforce_team_delivery
@@ -98,7 +100,7 @@ class DeliveryService:
             revision = prior[0] if prior else 0
             if revision != command.expected_revision:
                 raise RevisionConflict(command.target_id, command.expected_revision, revision)
-            if request.expires_at <= self._now(cursor):
+            if self.authority.access_mode != "owner" and (request.expires_at is None or request.expires_at <= self._now(cursor)):
                 raise DeliveryRejected("binding_expired", "expired")
             # Locks and storage can outlive a short Grant. Recheck authority at
             # the actual write boundary using the database clock.
@@ -106,14 +108,15 @@ class DeliveryService:
             cursor.execute(
                 "INSERT INTO delivery_endpoints(tenant_id,endpoint_id,revision,scope_id,agent_slot_id,machine_id,node_id,"
                 "boot_incarnation,supports_invoke,evidence_class,expires_at,command_id,operation_id) "
-                "SELECT %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s WHERE clock_timestamp()<%s "
+                "SELECT %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s WHERE (%s::timestamptz IS NULL OR clock_timestamp()<%s) "
                 "ON CONFLICT(tenant_id,endpoint_id) DO UPDATE SET revision=EXCLUDED.revision,scope_id=EXCLUDED.scope_id,"
                 "agent_slot_id=EXCLUDED.agent_slot_id,machine_id=EXCLUDED.machine_id,node_id=EXCLUDED.node_id,"
                 "boot_incarnation=EXCLUDED.boot_incarnation,supports_invoke=EXCLUDED.supports_invoke,evidence_class=EXCLUDED.evidence_class,"
                 "expires_at=EXCLUDED.expires_at,status='active',command_id=EXCLUDED.command_id,operation_id=EXCLUDED.operation_id",
                 (command.tenant_id, command.target_id, result.revision, request.scope_id, request.agent_slot_id,
                  description["machine_id"], description["node_id"], description["boot_incarnation"], description["supports_invoke"],
-                 description["evidence_class"], request.expires_at, command.command_id, result.operation_id, command.deadline),
+                 description["evidence_class"], None if self.authority.access_mode == "owner" else request.expires_at,
+                 command.command_id, result.operation_id, command.deadline, command.deadline),
             )
             if cursor.rowcount != 1:
                 raise DeliveryRejected("binding_authorization_expired", "expired")
@@ -123,7 +126,7 @@ class DeliveryService:
         return result
 
     def _boundary(self, cursor, authority, command, packet, endpoint_id, revision, *, recovery=False):
-        if min(command.deadline, packet.deadline) <= self._now(cursor):
+        if expired(earliest(command.deadline, packet.deadline), self._now(cursor)):
             raise DeliveryRejected("deadline_expired", "expired")
         authority._authorize(command, cursor, "message.send", packet.target_scope_id)
         if packet.activation == "invoke":
@@ -177,14 +180,15 @@ class DeliveryService:
         if ((binding["revision"] < revision if recovery else binding["revision"] != revision) or binding["status"] != "active"
                 or binding["scope_id"] != packet.target_scope_id or binding["agent_slot_id"] != packet.target_agent_slot_id):
             raise DeliveryRejected("endpoint_binding_changed")
-        if datetime.fromisoformat(binding["expires_at"]) <= self._now(cursor):
+        if (authority.access_mode != "owner"
+                and datetime.fromisoformat(binding["expires_at"]) <= self._now(cursor)):
             raise DeliveryRejected("endpoint_binding_expired", "expired")
         if packet.activation == "invoke" and not binding["supports_invoke"] and not recovery:
             raise DeliveryRejected("invoke_endpoint_unavailable")
         authority._authorize(command, cursor, "message.send", packet.target_scope_id)
         if packet.activation == "invoke":
             authority._authorize(command, cursor, "runtime.invoke", packet.target_scope_id)
-        enforce_team_delivery(cursor, command, packet, work[3], recovery=recovery)
+        enforce_team_delivery(cursor, command, packet, work[3], recovery=recovery, access_mode=authority.access_mode)
         return binding, digest(work[3]), digest(accepted_state)
 
     def send_message(
@@ -199,7 +203,9 @@ class DeliveryService:
         if command.command_type != "message.send" or command.target_kind != "message":
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         packet = DeliveryPacket.model_validate_json(packet.model_dump_json(), strict=True)
-        if packet.deadline > command.deadline or len(packet.model_dump_json().encode()) > 65536:
+        if ((packet.deadline is not None and command.deadline is not None
+             and packet.deadline > command.deadline)
+                or len(packet.model_dump_json().encode()) > 65536):
             raise DeliveryRejected("packet_bound_exceeded")
         if not endpoint_id or type(binding_revision) is not int or binding_revision < 1:
             raise DeliveryRejected("invalid_endpoint_selection")
@@ -231,11 +237,11 @@ class DeliveryService:
                 "packet_json,command_json,canonical_hash,envelope_json,envelope_hash,state,deadline,maximum_attempts,retry_delay_seconds,"
                 "policy_hash,accepted_state_digest,receipt_high_water) "
                 "SELECT %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'queued',%s,%s,%s,%s,%s,'accepted_by_authority' "
-                "WHERE clock_timestamp()<%s",
+                "WHERE (%s::timestamptz IS NULL OR clock_timestamp()<%s)",
                 (command.tenant_id, command.target_id, command.command_id, result.operation_id, endpoint_id, binding_revision,
                  packet.model_dump_json(), command.model_dump_json(), hashed, envelope.model_dump_json(),
                  digest(envelope.model_dump(mode="json")), packet.deadline, packet.maximum_attempts, packet.retry_delay_seconds,
-                 policy_hash, accepted_state_digest, packet.deadline),
+                 policy_hash, accepted_state_digest, packet.deadline, packet.deadline),
             )
             if cursor.rowcount != 1:
                 raise DeliveryRejected("deadline_expired", "expired")
@@ -318,7 +324,7 @@ class DeliveryDispatcher:
         elif isinstance(error, (DeliveryBoundaryRejected, OperationIdentityConflict)):
             status, code = "blocked", "node_boundary_rejected"
         else:
-            status = "budget_exhausted" if row["attempts"] >= row["maximum_attempts"] else "retry_wait"
+            status = "budget_exhausted" if self.service.authority.access_mode != "owner" and row["attempts"] >= row["maximum_attempts"] else "retry_wait"
             code = "transport_ack_unavailable"
         self._finish(cursor, row, status, code)
         return {"status": status, "message_id": row["message_id"], "attempts": row["attempts"],
@@ -441,7 +447,9 @@ class DeliveryDispatcher:
         ctx = AuthenticatedContext(command.tenant_id, command.authority_id, command.authority_incarnation,
                                    command.principal_ref, command.grant_ref)
         # Only the trusted committed ledger creates this recovery context.
-        authority = type(self.service.authority)(self.service.authority._dsn, context=ctx)
+        authority = copy(self.service.authority)
+        authority.context = ctx
+        authority._transaction_connection = None
         binding, policy_hash, accepted_state_digest = self.service._boundary(
             cursor, authority, command, envelope.packet,
             row["endpoint_id"], row["binding_revision"], recovery=True,
@@ -516,7 +524,8 @@ class DeliveryDispatcher:
             candidate = found[0]
             if any(candidate.get(k) != selection.get(k) for k in ("scope_id","agent_slot_id","machine_id","node_id","boot_incarnation","supports_invoke","evidence_class")):
                 raise DeliveryRejected("attempt_resolution_binding_changed")
-            if datetime.fromisoformat(candidate["expires_at"]) <= self.service._now(cursor):
+            if (self.service.authority.access_mode != "owner"
+                    and datetime.fromisoformat(candidate["expires_at"]) <= self.service._now(cursor)):
                 raise DeliveryRejected("attempt_resolution_binding_expired", "expired")
             envelope = envelope.model_copy(update={"endpoint_id": selection["endpoint_id"], "binding_revision": selection["revision"], "machine_id": selection["machine_id"], "node_id": selection["node_id"], "boot_incarnation": selection["boot_incarnation"]})
         endpoint = self.service.endpoints.get(selection["endpoint_id"])
@@ -567,7 +576,8 @@ class DeliveryDispatcher:
                     or binding["scope_id"] != request.target_scope_id or binding["agent_slot_id"] != request.target_agent_slot_id
                     or binding["supports_invoke"] != old["supports_invoke"]
                     or binding["evidence_class"] != old["evidence_class"]
-                    or datetime.fromisoformat(binding["expires_at"]) <= self.service._now(cursor)):
+                    or (self.service.authority.access_mode != "owner"
+                        and datetime.fromisoformat(binding["expires_at"]) <= self.service._now(cursor))):
                 raise DeliveryRejected("resolver_endpoint_ineligible")
             selection = self._selection(row, binding)
             selection["endpoint_id"] = resolution.endpoint_id
@@ -846,7 +856,7 @@ class DeliveryDispatcher:
                                 "attempts": row["attempts"]}
                     reuse_prepared = bool(open_attempt and open_attempt[0] == "prepared")
                     if not reuse_prepared:
-                        if row["attempts"] >= row["maximum_attempts"]:
+                        if self.service.authority.access_mode != "owner" and row["attempts"] >= row["maximum_attempts"]:
                             self._finish(
                                 cursor,
                                 row,

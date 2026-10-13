@@ -133,7 +133,7 @@ class LocalNodeEndpoint:
                 or envelope.packet.target_agent_slot_id != self.agent_slot_id):
             raise DeliveryBoundaryRejected("node_target_changed")
         if self.clock is None:
-            if datetime.now(UTC) >= envelope.packet.deadline:
+            if envelope.packet.deadline is not None and datetime.now(UTC) >= envelope.packet.deadline:
                 raise DeliveryBoundaryRejected("deadline_expired")
         else:
             if any(self.clock.identity.get(name) != getattr(envelope, name)

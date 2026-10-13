@@ -1,7 +1,9 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-09-25.1.
+is determined by the named Gate records. Contract revision: 2026-10-12.2.
+The original adoption baseline is 2026-09-25.1; recorded Gates retain the exact
+source, configuration and reference Profile they measured.
 
 ## Authority and inputs
 
@@ -18,6 +20,90 @@ Codex-to-Codex across machines and sessions, Codex-to-OpenCode, then the public
 MCP collaboration and continuation workflow. P2 Gate Review requires the
 product owner's confirmation. P3 Hosted and P4 Ecosystem remain separate future
 product decisions and evidence scopes.
+
+## Owner Runtime
+
+New single-owner installation records `access_mode=owner`. Trusted credential,
+tenant/principal/Authority identity, active service and objects, explicit
+revocation, request deduplication and expected revisions govern its operations.
+Roles describe responsibilities. Ordinary team members supply AgentSlot,
+principal, role and Harness requirements. The
+[owner contract](OWNER-RUNTIME.md) defines these current product semantics.
+
+Owner Connection, Node, Runtime and Endpoint registrations persist until an
+explicit lifecycle change. Execution reads actual process and native Session
+state, reconnects to the current binding and prepares the selected user's
+environment. Native Codex and OpenCode use that environment's tools, MCP
+servers, plugins, project configuration, provider, models and approval
+configuration. Interactive native client handling is described below.
+Attached Session read, send and cancellation follow the installed native API.
+Process termination requires ownership evidence for the stopped object.
+
+Trusted `SurfaceSettings.remote_endpoints` stores `endpoint_id`,
+`authority_signing_key_ref`, `journal_generation`,
+`old_boot_isolation_ref` and optional `prepare_argv`. Runtime readiness reads
+the registered TLS-pinned target's `/healthz`. When preparation is needed,
+the adapter executes the deterministic argument vector saved in that private
+configuration and reads readiness again. MCP requests address registered
+objects; the preparation command is an installation setting.
+
+Owner commands and Messages remain valid by default while their service,
+identity and target are active. An explicitly chosen business deadline can
+bound a request. Async submission returns committed handles; sync waits for
+the target condition with an optional caller timeout. Durable response
+tracking and Inbox survive disconnect and caller timeout. With a configured
+temporal_endpoint, the owner stdio MCP entry maintains already committed Messages
+through Temporal. The new installer writes the selected local Temporal port.
+An unconfigured custom service retains pending delivery for its dispatcher.
+The owner native collector observes the same invocation until terminal result
+or service stop.
+
+Owner machine filesystem tools read and change current OS files under the
+selected account. Each MCP instance retains its selected machine and directories;
+filesystem_context discovers actual account/home/platform/cwd and connected
+choices. select_filesystem sets that session's default. Per-call machine_id/cwd
+selects a local override and continuation keeps the original machine/path.
+The default local target is Core's service OS account and its home directory.
+[The machine filesystem contract](MACHINE-FILESYSTEM.md) defines the file actions,
+output pagination, OS access and transport semantics.
+
+Local, SSH and Node transports use the portable file backend. The registered
+Node file service applies pinned TLS, signed identity, active owner authorization,
+revocation and request journaling. Its requests run directly through the file
+service. Native Harness Session readiness remains an execution concern.
+
+SourceBinding supplies advisory Project repository, location and version hints.
+Agents select an available machine, Native, Git, repository MCP or other reader
+and record the actual source used. Execution Node placement has its own binding.
+Explicit read_source_file/list_source_files/search_source_files, read_source and
+read_diff retain Source repository and captured-version semantics.
+
+Owner Source defaults resolve the product primary_source_id.
+primary_source_root locates the preferred repository's physical primary worktree.
+Current Source reads observe its actual branch and edits.
+Explicit source_root selects a configured readable current worktree; explicit
+revision selects captured bytes. Source pagination retains returned view_revision.
+
+Owner Source actual_source records provider, root, commit, tree, view_revision
+and observed_at. list_sources separates current_readable_root from
+origin_hint.host/path. load_project.source_observation identifies product Source;
+distinct management_source_observation retains Management Root context.
+Unavailable product defaults have null product observation and primary/version
+references. Explicit management reads retain their own access.
+
+Version guidance supports reader choice. Review and acceptance preserve the actual
+candidate and Evidence identity. Shared access, permission and version checks
+retain their existing boundaries.
+
+Artifacts, hashes, deterministic storage, independent reviewer
+assignment and candidate-specific acceptance checks retain their identities.
+Historical execution and Review facts remain recorded after an earlier
+Grant's natural expiry.
+
+Shared is available for deployments with per-subject Grants, Policy and
+budgets. An existing configuration with unspecified access_mode retains shared
+behavior until explicit migration. Reference Gate isolation, version pins and
+time windows remain facts of their recorded Profile.
 
 ## External Agent boundary
 
@@ -44,7 +130,7 @@ publication read-back. Agent self-reports create candidate evidence only.
 | Optional direct acceptance profile | This upgrade requires independent review of a sealed candidate, integrated-baseline tests, and Finalizer checks. |
 | RFC first Harness examples include Claude | P1 delivers Codex and OpenCode Drivers. P2 first proves Codex-to-Codex; OpenCode follows as a separate Gate. |
 | Setup-only manual relay contract | The existing setup profile retains its explicit relay rules. Runtime bindings use `desired=system_managed_e2e`; Human Bridge is a bounded recovery incident. |
-| Setup observations live in Harness context | Runtime observations have scope, version, expiry and provenance, with Node as observation source and Domain as projection authority. They do not enter the setup manifest or Route registry. |
+| Setup observations live in Harness context | Runtime observations have Scope, version, provenance and applicable freshness. Owner registrations persist and readiness is inspected at execution; shared Profiles retain configured windows. Node supplies observations and Domain owns the projection, independently of setup metadata. |
 | Minimal Workspace schema 0.3 | Preserve Root, Route and knowledge metadata. Add opt-in Runtime schema separately, with PostgreSQL as the domain authority. |
 
 The setup Skill remains an installer/configurator. Its release version,
@@ -57,20 +143,28 @@ storage or source export by implication.
 ### Domain and authorization
 
 Use one logical PostgreSQL authority per domain, with `authority_id`,
-`authority_incarnation` and `home_location`. In one database transaction validate
-authenticated subject, tenant/project scope, Grant, Policy version, deadline,
-resource claim and expected revision; apply the transition, append event and
-Outbox, and persist dedup. Emit `accepted_by_authority` only after commit.
-An idempotency key reused with different canonical input is a conflict.
+`authority_incarnation` and `home_location`. In one transaction validate
+trusted identity, active service and target Scope, explicit revocation,
+canonical request input, expected revisions and operation prerequisites.
+Apply the transition, append event and Outbox, and persist dedup.
+Emit `accepted_by_authority` after commit. Reusing an idempotency key with
+different canonical business input is a conflict.
 
-Authenticated subject and tenant come from trusted transport/enrollment context.
-Body fields cannot grant permissions. Separate send, invoke, source read/write,
-publish and accept. Revocation, expiry, budget and policy changes must be checked
-at the actual protected boundary, including dispatch and retry. Internal recovery
-keeps the original command lineage and cannot expand its scope.
+Owner admission applies those checks continuously and checks a business deadline
+when explicitly supplied. Shared admission additionally validates per-subject
+Grant, Policy version, configured expiry and budgets. Real resource gateways
+and acceptance operations retain their specific prerequisites in both modes.
 
-Cross-Machine sender, receiver and native admission use an authenticated
-Authority connection clock bound to the current Authority incarnation,
+Authenticated subject and tenant come from trusted transport/enrollment.
+Body fields address an object and carry request data. Send, invoke, Source
+read/write, publish and accept retain their operation identities and audit
+lineage. Dispatch and retry recheck explicit revocation, target state and any
+applicable deadline or shared governance. Recovery preserves the original
+command lineage and scope.
+
+Shared admission windows and explicitly bounded owner operations use an
+authenticated Authority connection clock at sender, receiver and native
+boundaries, bound to the current Authority incarnation,
 Connection, Endpoint/Runtime/Node revisions, boot and journal generation.
 Monotonic round-trip calibration supplies a UTC estimate with explicit
 uncertainty; admission requires its upper bound strictly before expiry and
@@ -79,8 +173,9 @@ admission. Private/Tunnel deployment requires the bound Authority provider.
 The Domain reads fresh PostgreSQL UTC before and after locks; final native
 Domain checks use that reference with strict expiry. Authored observation facts
 use a fresh authenticated Authority sample, while deadline and freshness decisions
-use the calibrated UTC interval. Cached terminal facts retain their recorded time. Grant, revocation,
-revision and protected permission checks retain their original boundaries.
+use the calibrated UTC interval. Cached terminal facts retain their recorded
+time. Explicit revocation, revision and protected gateway checks apply in both
+modes; Grant and permission checks retain their shared Profile boundaries.
 Local duration uses monotonic time, while durable deadlines and evidence
 remain canonical UTC. Presentation uses an IANA timezone sidecar. Existing
 aware wire signatures and hashes remain compatible. See
@@ -93,7 +188,8 @@ and HarnessSessionBinding distinct; retain retired binding provenance.
 ### Delivery and durable operations
 
 Messages retain logical `message_id` through retries and Provider changes.
-DeliveryAttempt records connection, selection revision, deadline and errors.
+DeliveryAttempt records Connection, selection revision, optional business
+deadline and errors.
 Inbox dedup checks command/message identity, target Scope, accepted revision and
 preconditions. Packet includes goal, accepted state, request, constraints,
 source baseline, context/artifact digests and expected evidence/response.
@@ -116,9 +212,22 @@ process tree and Provider read-back. Node never becomes a competing Domain write
 
 Drivers map spawn, attach, invoke, resume, cancel, terminate and inspect to
 versioned native APIs, ACP or structured CLI. They return actual structured
-observations and never own Domain policy. Exercise real Codex and OpenCode
-instances for conformance; native multi-agent collaboration must be disabled
-for the relevant independence test.
+observations; Domain owns admitted transitions. Owner native profiles resolve
+the selected user's current binary and configuration at preparation time.
+The factory can accept a compact environment selection and derive its current
+version and available schema/configuration observations. Codex uses the
+selected config's approval_policy. Interactive server requests use the
+Driver's server_request_handler hook into JsonRpcClient. The standard headless
+Receiver factory leaves that hook unconfigured and the transport replies
+-32601 to a server request. An interactive integration needs its actual client
+handler, authorization decision and native response readback. Approval
+configuration and request-handling capability are separately reported facts.
+
+Conformance exercises the actual installed Codex or OpenCode API and records
+its version and results. Reference Gate Profiles retain their recorded version
+pins, restricted launch settings and native multi-agent disablement for the
+specific independence scenarios. Candidate reviewer independence remains a
+separate identity and assignment check in owner mode.
 
 P1 Harness replacement preserves the no-model HarnessSessionBinding component
 as component evidence and requires a same-run live corollary: an owned OpenCode
@@ -142,9 +251,10 @@ Global installation is project-independent; project adoption records one stable
 project_id in the Management Root AGENTS block and machine manifest. Every
 project-scoped runtime tool carries that ID.
 
-The P2 single-user ChatGPT private Tunnel profile binds a local stdio MCP
-process to the installation owner's existing principal, Grant and Profile.
-Its trust and test boundary is
+The single-user ChatGPT private Tunnel binds the local stdio MCP process to
+the installation owner's trusted principal and configured access mode.
+Recorded P2 reference runs retain their original Grant and Profile bindings.
+The Tunnel trust and test boundary is
 [P2-PRIVATE-TUNNEL-PROFILE.md](P2-PRIVATE-TUNNEL-PROFILE.md). The remote HTTPS
 resource-server profile retains its OAuth binding contract.
 
@@ -155,10 +265,23 @@ load_project through remote HTTPS MCP or an admitted Tunnel.
 
 The typed surface covers project context, Route and WorkItem management, team
 configuration, Harness and Source discovery, messaging, waiting, Review,
-acceptance, subscriptions and protected control. configure_team owns AgentSlot,
-role, Grant, Policy and budget bindings within an existing Scope. send_message
-commits response tracking and notification atomically. Async is the default and
-sync performs a bounded wait on the same response handle.
+acceptance, subscriptions and protected control. Owner configure_team stores
+AgentSlot, principal, role and Harness requirements in an existing Scope.
+Shared configuration also applies Grant, Policy and budget bindings.
+send_message commits response tracking and notification atomically. Async is
+the default; sync waits for the same response handle's target condition.
+Caller waiting has an optional timeout.
+
+The machine catalog preserves its shared base required/optional lists and
+Profile support table. McpRuntime exposes the installed mode's input schema.
+Owner makes business deadline optional, allows ordinary Team members and
+makes configure_team policies/budgets and create_work budget optional.
+Owner machine file schemas express the file action plus optional machine/cwd
+and delivery controls. Explicit Source reads permit omitted source_id/revision,
+product Source defaults and an optional configured source_root. Product and
+management observations retain their own context; actual Source readback records
+the selected version identity. Shared retains its existing Source read_file,
+list_files and search_files contract.
 
 The setup Skill owns guarded installation and migration procedures. Runtime
 Skills are metadata-routed knowledge modules for ACS entities, authority,
@@ -178,8 +301,10 @@ and user-visible results from representative fault paths. Each conclusion is
 bound to the exact source, runtime identity, receipts, read-back and cleanup
 evidence that supports it.
 
-Evidence integrity, expiry, validator scope, reviewer identity and acceptance
-authorization remain mandatory prerequisites. They establish whether a claim
+Evidence integrity, applicable freshness, validator scope, candidate-specific
+reviewer identity and independence, and current acceptance identity remain
+mandatory prerequisites. Recorded historical facts retain their original
+provenance after a prior Grant's natural expiry. They establish whether a claim
 is admissible; they do not replace evidence that the implementation performs
 the promised product capability. Component-only, fixture-only, no-model,
 single-normal-delivery and offline-completeness results retain their narrower
@@ -201,18 +326,26 @@ and are rejected.
 
 ### Protected resources and acceptance
 
-Lease binds owner Attempt, Runtime, Resource, mode, authority incarnation,
-generation, fencing token, expiry and Grant. Test stale-owner rejection at the
-real Effect/Resource gateway after replacement. Unfenceable resources stay
-blocked until the old owner is isolated or confirmed stopped. Parallel Engineers
-use separate worktrees/sandboxes; resource admission enforces deterministic
-ordering, budgets, rate, concurrency and deadlines.
+A Lease binds its owner Attempt, Runtime, concrete Resource, mode, Authority
+incarnation, generation, fencing token and applicable expiry. Shared resource
+admission also applies its configured Grant and budget. Test stale-owner
+rejection at the real Effect/Resource gateway after replacement. The lock and
+proof cover the named gateway and its fenced operations.
+
+Native tools use the selected user's environment and approval configuration.
+Interactive approval depends on the native client handler described above.
+The ordinary POSIX owner supervisor reports owned_process_group with
+subtree_containment=false. Process stop evidence covers that actual ownership
+scope; stronger containment requires the corresponding supervisor and readback.
+Parallel Engineers can use distinct worktrees. A resource that cannot fence a
+replaced owner requires confirmed isolation or stop before reuse.
 
 An external effect with an ambiguous result enters `uncertain`. Read back the
 marker/result before adopting, compensating or authorizing a new Attempt. Partial
 artifacts, stale baselines and unresolved protected effects cannot pass acceptance.
 
-Execution evidence includes baseline, output commit/tree/diff/untracked manifest,
+Execution evidence includes baseline and workspace view revision, output
+commit/tree/diff/untracked manifest,
 tests and exits, toolchain/OS/lockfile, artifact digests, actual usage or explicitly
 unknown usage, source sync and unresolved items. A changed integration baseline
 invalidates affected evidence. Hashes prove integrity, not the truth of a claim.
@@ -236,11 +369,31 @@ Inventory Root/Route/project files, AGENTS, knowledge, source relationships and
 external Session references with digest and provenance. Dry-run before adopting.
 Preserve existing identities and original bytes; imported observations retain
 their imported/endpoint_reported/unverified labels. Schema adoption, execution,
-enrollment and data export are separate switches. Drain/checkpoint/export and
-revoke old Grants before authority cutover; rollback exports new durable state
-and retains audit facts.
+enrollment and data export are separate switches. Shared authority cutover
+uses its drain/checkpoint/export and Grant revocation procedure; rollback
+retains new durable state and audit facts.
+
+Explicit private owner adoption verifies the stored credential, preserves
+identity and a configuration backup, and clears natural expiry on active,
+nonrevoked identity and registration records. activate_owner_mode applies
+that Surface/database transition. Revoked and retired objects retain their
+lifecycle state.
+
+Receiver process deployments retain their own mode and signed configuration.
+An existing unspecified process config remains shared. Receiver owner/native
+migration constructs a matching Runtime/factory configuration and deployment
+digest, uses the original Node key to sign the next Endpoint registration,
+commits that revision with its expected prior revision, and restarts with the
+matching process config. Read back the Endpoint digest/revision, actual mode,
+Session and readiness. Preserve the original profile, credential, keys and
+Node identity for recovery.
 
 ## Validation and claims
+
+Named Gate evidence retains its original baseline, access mode, reference
+Profile, version pins, time windows and measured scenarios. Current owner
+behavior requires evidence for its actual configuration. Documentation updates
+preserve historical results and their scope.
 
 `tools/bootstrap/audit_setup_baseline.py` records setup-only fresh-process evidence and
 preservation inventory. Runtime Gate scenarios are defined in
@@ -271,8 +424,9 @@ P2 completion requires P2-MCP-WORKFLOW, P2-MANAGEMENT-WORKFLOW and
 P2-CONTROL-PARITY before P2-REVIEW.
 Representative evidence includes real Codex and OpenCode clients, a remote
 web-capable MCP client, explicit project isolation, local and web context
-hydration, profile-filtered tools, Source reads, default asynchronous and bounded
-synchronous messaging, Session-aware notification, Review, Inbox recovery and
+hydration, the recorded Profile tool view, Source reads, asynchronous messaging
+and the reference Profile's bounded synchronous scenarios, Session-aware
+notification, Review, Inbox recovery and
 metadata-first Skill routing, selective reference loading and Project context integration.
 
 ## External source reference

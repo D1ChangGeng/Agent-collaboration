@@ -22,11 +22,11 @@ class TeamMember(ClosedInput):
     agent_slot_id: str = Field(min_length=1, max_length=128)
     principal_ref: str = Field(min_length=1, max_length=256)
     role: Literal["root", "route", "engineer", "reviewer", "finalizer", "specialist"]
-    profile: Literal["root_manager", "route_manager", "engineer", "reviewer", "operator"]
-    grant_ref: str = Field(min_length=1, max_length=256)
-    permissions: list[str] = Field(min_length=1, max_length=128)
-    expires_at: datetime
-    budget_ref: str = Field(min_length=1, max_length=256)
+    profile: Literal["root_manager", "route_manager", "engineer", "reviewer", "operator"] = "engineer"
+    grant_ref: str | None = Field(default=None, min_length=1, max_length=256)
+    permissions: list[str] = Field(default_factory=list, max_length=128)
+    expires_at: datetime | None = None
+    budget_ref: str | None = Field(default=None, min_length=1, max_length=256)
     harness_requirements: list[Literal["codex", "opencode"]] = Field(max_length=2)
     organization_level: Literal["root", "route", "task"] | None = None
     responsibilities: list[Literal["project_coordination", "route_coordination", "engineer",
@@ -44,6 +44,8 @@ class TeamMember(ClosedInput):
     @field_validator("expires_at")
     @classmethod
     def aware(cls, value):
+        if value is None:
+            return value
         if value.tzinfo is None:
             raise ValueError("Grant expiry requires a timezone")
         return value
@@ -104,6 +106,8 @@ class ManagementActions:
         return scope_id
 
     def _configure_team(self, authority, cursor, project, command, args, _credential):
+        if authority.access_mode == "owner":
+            return self._configure_owner_team(authority, cursor, project, command, args)
         scope = self._scope(cursor, self.context.tenant_id, args["project_id"], args["scope_handle"])
         authority._authorize(command, cursor, "grants.manage", scope)
         members = [TeamMember.model_validate_json(canonical(item), strict=True) for item in args["members"]]
@@ -247,6 +251,68 @@ class ManagementActions:
                            (member.grant_ref, authority.context.grant_ref, self.context.tenant_id,
                             command.command_id, digest(scope_policy)))
 
+    def _configure_owner_team(self, authority, cursor, project, command, args):
+        scope = self._scope(cursor, self.context.tenant_id, args["project_id"], args["scope_handle"])
+        authority._authorize(command, cursor, scope_id=scope)
+        members = [TeamMember.model_validate_json(canonical(item), strict=True) for item in args["members"]]
+        if not 1 <= len(members) <= 32 or len({item.agent_slot_id for item in members}) != len(members):
+            raise ValueError("team needs distinct bounded members")
+        cursor.execute("SELECT revision FROM collaboration_teams WHERE tenant_id=%s AND project_id=%s "
+            "AND scope_id=%s FOR UPDATE", (self.context.tenant_id, args["project_id"], scope))
+        prior = cursor.fetchone()
+        revision = prior[0] if prior else 0
+        if revision != args["expected_revision"]:
+            raise RevisionConflict(args["scope_handle"], args["expected_revision"], revision)
+        definition_members = [member.model_dump(mode="json", exclude={"permissions", "expires_at", "budget_ref", "grant_ref"})
+                              for member in members]
+        definition = {"members": definition_members, "policies": [], "budgets": [], "access_mode": "owner"}
+        cursor.execute("INSERT INTO collaboration_teams VALUES (%s,%s,%s,%s,%s) "
+            "ON CONFLICT(tenant_id,project_id,scope_id) DO UPDATE SET revision=EXCLUDED.revision,definition=EXCLUDED.definition",
+            (self.context.tenant_id, args["project_id"], scope, revision+1, canonical(definition)))
+        for member in members:
+            if not IDENTIFIER.fullmatch(member.agent_slot_id):
+                raise ValueError("invalid collaborator identity")
+            cursor.execute("SELECT principal_ref,grant_ref,scope_id FROM collaboration_team_members "
+                "WHERE tenant_id=%s AND project_id=%s AND agent_slot_id=%s FOR UPDATE",
+                (self.context.tenant_id, args["project_id"], member.agent_slot_id))
+            old = cursor.fetchone()
+            if old and (old[0], old[2]) != (member.principal_ref, scope):
+                raise ValueError("AgentSlot identity cannot be replaced")
+            cursor.execute("SELECT tenant_id,scope_id FROM agent_slots WHERE agent_slot_id=%s FOR UPDATE",
+                (member.agent_slot_id,))
+            existing = cursor.fetchone()
+            if existing and existing != (self.context.tenant_id, scope):
+                raise ValueError("AgentSlot belongs to another collaboration context")
+            # Existing foreign keys retain an identity reference. This row has no
+            # permissions, no expiry, and no delegation; it is never an owner permission gate.
+            reference = old[1] if old else "actor:" + digest([self.context.tenant_id, scope, member.agent_slot_id])
+            cursor.execute("INSERT INTO grants(grant_ref,tenant_id,principal_ref,authority_id,authority_incarnation,"
+                "scope_id,permissions,expires_at,identity_only) VALUES (%s,%s,%s,%s,%s,%s,'[]',NULL,TRUE) "
+                "ON CONFLICT(grant_ref) DO NOTHING", (reference, self.context.tenant_id, member.principal_ref,
+                self.context.authority_id, self.context.authority_incarnation, scope))
+            cursor.execute("INSERT INTO agent_slots VALUES (%s,%s,%s,'active') "
+                "ON CONFLICT(agent_slot_id) DO UPDATE SET status='active'",
+                (member.agent_slot_id, self.context.tenant_id, scope))
+            cursor.execute("INSERT INTO collaboration_team_members VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'active') "
+                "ON CONFLICT(tenant_id,project_id,agent_slot_id) DO UPDATE SET role=EXCLUDED.role,profile=EXCLUDED.profile,"
+                "harness_requirements=EXCLUDED.harness_requirements,status='active'",
+                (self.context.tenant_id, args["project_id"], scope, member.agent_slot_id, member.principal_ref,
+                member.role, member.profile, reference, "", canonical(member.harness_requirements)))
+            cursor.execute("INSERT INTO collaboration_memberships VALUES (%s,%s,%s,%s,%s,%s) "
+                "ON CONFLICT(tenant_id,project_id,principal_ref,profile) DO UPDATE SET "
+                "grant_ref=EXCLUDED.grant_ref,agent_slot_id=EXCLUDED.agent_slot_id",
+                (self.context.tenant_id, args["project_id"], member.principal_ref, reference, member.profile, member.agent_slot_id))
+        retained = [member.agent_slot_id for member in members]
+        cursor.execute("UPDATE collaboration_team_members SET status='retired' WHERE tenant_id=%s "
+            "AND project_id=%s AND scope_id=%s AND NOT(agent_slot_id=ANY(%s))",
+            (self.context.tenant_id, args["project_id"], scope, retained))
+        result = self._management_record(authority, cursor, command, args, target_kind="team",
+            target_id=scope, state="team.configured", revision=revision+1)
+        return "configured", {"project_id": args["project_id"], "operation_id": result.operation_id,
+            "team_handle": handle("team", args["project_id"], scope), "team_revision": revision+1,
+            "scope_handle": args["scope_handle"], "member_handles": [
+                handle("collaborator", args["project_id"], member.agent_slot_id) for member in members]}, []
+
     def _list_collaborators(self, authority, cursor, project, command, args, _credential):
         scope = self._scope(cursor, self.context.tenant_id, args["project_id"], args["scope_handle"]) if args.get("scope_handle") else None
         scopes = self._visible_scopes(authority, cursor, project)
@@ -259,7 +325,7 @@ class ManagementActions:
         items = []
         for slot, principal, role, profile, scope_id, state, harnesses, expires, revoked, grant, permissions, definition in cursor.fetchall():
             declared = next((item for item in definition["members"] if item["agent_slot_id"] == slot), {})
-            state = state if revoked is None and expires > authority.canonical_now(cursor) else "inactive"
+            state = state if revoked is None and (authority.access_mode == "owner" or expires > authority.canonical_now(cursor)) else "inactive"
             if state == "active":
                 child = copy(authority)
                 child.context = replace(authority.context, principal_ref=principal, grant_ref=grant)
@@ -276,10 +342,12 @@ class ManagementActions:
             items.append({"collaborator_handle": handle("collaborator", args["project_id"], slot),
                 "agent_slot_id": slot, "principal_ref": principal, "role": role, "profile": profile,
                 "scope_handle": handle("scope", args["project_id"], scope_id), "state": state,
-                "harness_requirements": harnesses, "expires_at": expires.isoformat(),
+                "harness_requirements": harnesses, "expires_at": expires.isoformat() if expires and authority.access_mode != "owner" else None,
                 "organization": organization,
-                "authorization": {"grant_ref": grant, "declared_permissions": permissions,
-                                  "binding_state": state, "operation_checks": "live Grant and Policy checks"},
+                "authorization": ({"identity_ref":principal, "binding_state":state,
+                                   "operation_checks":"identity and object state"} if authority.access_mode == "owner" else
+                                  {"grant_ref":grant, "declared_permissions":permissions,
+                                   "binding_state":state, "operation_checks":"live Grant and Policy checks"}),
                 "work_query": {"tool": "list_work", "arguments": {"project_id": args["project_id"],
                                "assigned_to": handle("collaborator", args["project_id"], slot)}},
                 "session_query": {"tool": "list_harnesses", "arguments": {
@@ -303,6 +371,7 @@ class ManagementActions:
         if until.tzinfo is None:
             raise ValueError("capability horizon requires a timezone")
         until = max(until, now)
+        owner = authority.access_mode == "owner"
         cursor.execute("SELECT e.endpoint_id,e.agent_slot_id,e.machine_id,e.node_id,e.revision,e.supports_invoke,"
                        "e.evidence_class,e.expires_at,h.driver_kind,h.installed_version,h.native_session_ref,"
                        "h.attempt_context,e.boot_incarnation,m.role "
@@ -313,15 +382,15 @@ class ManagementActions:
                        "LEFT JOIN harness_session_bindings h "
                        "ON h.tenant_id=e.tenant_id AND h.scope_id=e.scope_id AND h.agent_slot_id=e.agent_slot_id "
                        "AND h.status='active' WHERE e.tenant_id=%s AND e.scope_id=%s AND e.status='active' "
-                       "AND e.expires_at>%s ORDER BY e.endpoint_id,h.native_session_ref",
-                       (args["project_id"], self.context.tenant_id, scope, until))
+                       "AND (%s OR e.expires_at>%s) ORDER BY e.endpoint_id,h.native_session_ref",
+                       (args["project_id"], self.context.tenant_id, scope, owner, until))
         items = []
         for (endpoint, slot, machine, node, revision, invoke, evidence, expires, harness,
              version, session, attempt, boot, role) in cursor.fetchall():
             capabilities = ["message", "invoke"] if invoke else ["message"]
             if not set(args["required_capabilities"]) <= set(capabilities):
                 continue
-            if args.get("harness_kinds") and harness not in args["harness_kinds"]:
+            if not owner and args.get("harness_kinds") and harness not in args["harness_kinds"]:
                 continue
             if args.get("role") and role != args["role"]:
                 continue
@@ -333,15 +402,30 @@ class ManagementActions:
                 cursor.execute("SELECT 1 FROM enrolled_nodes n JOIN enrolled_node_bindings b "
                                "ON b.tenant_id=n.tenant_id AND b.node_id=n.node_id WHERE n.tenant_id=%s "
                                "AND n.node_id=%s AND b.binding_revision=%s AND b.boot_incarnation=%s "
-                               "AND n.status='active' AND b.status='active' AND b.expires_at>%s",
-                               (self.context.tenant_id, node, attempt.get("node_binding_revision"), boot, until))
+                               "AND n.status='active' AND b.status='active' AND (%s OR b.expires_at>%s)",
+                               (self.context.tenant_id, node, attempt.get("node_binding_revision"), boot, owner, until))
                 eligible = cursor.fetchone() is not None
+            runtime_state = "not_observed"
+            if owner:
+                configured = authority._delivery_endpoints.get(endpoint)
+                inspector = getattr(configured, "inspect_runtime", None)
+                if callable(inspector):
+                    live = inspector()
+                    runtime_state = live.get("state", "unknown")
+                    harness = live.get("harness", harness)
+                    version = live.get("version", version)
+                    eligible = invoke and runtime_state in {"idle", "busy", "online"}
+                else:
+                    eligible = False
+            if args.get("harness_kinds") and harness not in args["harness_kinds"]:
+                continue
             items.append({"endpoint_id": endpoint, "agent_slot_id": slot, "machine_id": machine,
                 "node_id": node, "binding_revision": revision, "capabilities": capabilities,
                 "harness": harness or "unknown", "version": version or "unknown",
-                "session_ref": session, "expires_at": expires.isoformat(),
+                "session_ref": session, "expires_at": None if owner else expires.isoformat(),
+                "binding_lifetime": "continuous" if owner else "bounded",
                 "capacity_ref": endpoint + "|" + (session or "unknown"),
-                "eligible": eligible, "evidence_class": evidence})
+                "eligible": eligible, "runtime_state": runtime_state, "evidence_class": evidence})
         limit = args.get("limit", 20)
         if type(limit) is not int or not 1 <= limit <= 100:
             raise ValueError("invalid capacity page size")

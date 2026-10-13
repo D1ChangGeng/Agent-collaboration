@@ -89,14 +89,54 @@ class EffectSettings(ConfigModel):
         return value
 
 
+class RemoteEndpointSettings(ConfigModel):
+    endpoint_id: str = Field(min_length=1, max_length=256)
+    authority_signing_key_ref: PrivateReference
+    journal_generation: int = Field(default=1, ge=1)
+    old_boot_isolation_ref: str | None = None
+    prepare_argv: tuple[str, ...] = Field(default=(), max_length=64)
+
+    @field_validator("prepare_argv")
+    @classmethod
+    def valid_preparation(cls, values):
+        if any(not value or len(value) > 4096 or "\0" in value for value in values):
+            raise ValueError("machine preparation arguments are invalid")
+        return values
+
+
+class FilesystemSshMachine(ConfigModel):
+    machine_id: str
+    ssh_target: str
+    service_argv: tuple[str, ...]
+
+    @model_validator(mode="after")
+    def safe_service_arguments(self):
+        import re
+        if not re.fullmatch(r"[A-Za-z0-9_@.-]+", self.ssh_target) or self.ssh_target.startswith("-"):
+            raise ValueError("SSH target is invalid")
+        if not self.service_argv or any(not value or "\0" in value for value in self.service_argv):
+            raise ValueError("SSH file service command is invalid")
+        return self
+
+
+class FilesystemSettings(ConfigModel):
+    default_machine_id: str = "local"
+    cwd: str | None = None
+    ssh_machines: tuple[FilesystemSshMachine, ...] = ()
+
+
 class SurfaceSettings(ConfigModel):
     schema_version: Literal["acs-surfaces/1"] = "acs-surfaces/1"
+    access_mode: Literal["owner", "shared"] = "shared"
     context: RoleContext
     dsn_ref: PrivateReference
     credential_ref: PrivateReference
     artifacts: ArtifactSettings | None = None
     additional_artifacts: tuple[ArtifactSettings, ...] = Field(default=(), max_length=63)
     effects: EffectSettings | None = None
+    remote_endpoints: tuple[RemoteEndpointSettings, ...] = Field(default=(), max_length=64)
+    filesystem: FilesystemSettings = Field(default_factory=FilesystemSettings)
+    temporal_endpoint: str | None = None
     presentation_timezone: str = "UTC"
 
     @field_validator("presentation_timezone")
@@ -177,8 +217,16 @@ def configured_service(path, *, delivery_endpoints=None, expected_settings=None)
         context = AuthenticatedContext(**settings.context.model_dump())
         domain = DomainAuthority(settings.dsn_ref.resolve(), context=context, artifact_store=store,
                                  authority_binding=(context.authority_id, context.authority_incarnation),
+                                 access_mode=settings.access_mode,
                                  delivery_endpoints=delivery_endpoints,
                                  node_response_reader=trusted_local_node_response_reader(delivery_endpoints))
+        domain._filesystem_settings = settings.filesystem
+        if settings.remote_endpoints:
+            from runtime.machine_connections import ConfiguredRemoteEndpoint
+            for target in settings.remote_endpoints:
+                if target.endpoint_id in domain._delivery_endpoints:
+                    raise ConfigurationError("duplicate configured execution endpoint")
+                domain._delivery_endpoints[target.endpoint_id] = ConfiguredRemoteEndpoint(domain, target)
         if settings.effects:
             config = settings.effects
             gateway = resources.enter_context(LocalFileEffectGateway(domain.leases, config.root,

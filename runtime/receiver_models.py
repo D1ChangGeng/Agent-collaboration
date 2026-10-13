@@ -32,11 +32,13 @@ class EndpointRegistration(FrozenModel):
     agent_slot_id: str
     tls_certificate_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     config_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
-    expires_at: datetime
+    expires_at: datetime | None = None
 
     @field_validator("expires_at")
     @classmethod
     def timezone_required(cls, value: datetime) -> datetime:
+        if value is None:
+            return value
         if value.tzinfo is None:
             raise ValueError("registration expiry requires timezone")
         return value.astimezone(UTC)
@@ -86,11 +88,13 @@ class DeliveryAdmission(FrozenModel):
     invocation_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
     journal_generation: int = Field(ge=1, strict=True)
     issued_at: datetime
-    deadline: datetime
+    deadline: datetime | None = None
 
     @field_validator("issued_at", "deadline")
     @classmethod
     def timezone_required(cls, value: datetime) -> datetime:
+        if value is None:
+            return value
         if value.tzinfo is None:
             raise ValueError("admission timestamps require timezone")
         return value.astimezone(UTC)
@@ -110,6 +114,12 @@ class DispatchBody(FrozenModel):
 class ReadbackBody(FrozenModel):
     operation_id: str
     dispatch_id: str
+
+
+class ResponseReadbackBody(ReadbackBody):
+    response_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
+    offset: int = Field(default=0, ge=0, le=256 * 1024 * 1024, strict=True)
+    max_bytes: int = Field(default=32768, ge=1, le=32768, strict=True)
 
 
 class ReadinessBody(FrozenModel):

@@ -46,7 +46,7 @@ jobs:
       - name: Install locked Runtime
         run: uv sync --frozen --group dev
       - name: Check release tooling
-        run: uv run --frozen ruff check scripts/acs_bootstrap.py scripts/acs_update.py scripts/acs_launcher.py scripts/acs_doctor.py scripts/acs_install.py scripts/acs_web_setup.py scripts/acs_source_discovery.py scripts/build_release.py scripts/release_preflight.py tests/test_release_tools.py tests/test_machine_install.py tests/test_web_setup.py tests/test_source_discovery.py tests/test_automatic_updates.py tests/test_update_launcher.py
+        run: uv run --frozen ruff check scripts/acs_bootstrap.py scripts/acs_update.py scripts/acs_launcher.py scripts/acs_startup.py scripts/acs_doctor.py scripts/acs_install.py scripts/acs_web_setup.py scripts/acs_source_discovery.py scripts/build_release.py scripts/release_preflight.py tests/test_release_tools.py tests/test_machine_install.py tests/test_web_setup.py tests/test_source_discovery.py tests/test_automatic_updates.py tests/test_update_launcher.py tests/test_startup_recovery.py
       - name: Runtime component tests
         run: uv run --frozen pytest runtime_tests -q
       - name: Authority clock PostgreSQL integration
@@ -66,6 +66,13 @@ jobs:
           runtime_tests/test_project_http.py
           runtime_tests/test_agent_organization.py
           runtime_tests/test_project_work.py
+          runtime_tests/test_owner_access_pg.py
+          runtime_tests/test_owner_enrollment_pg.py
+          runtime_tests/test_owner_remote_pg.py
+          runtime_tests/test_owner_workspace_pg.py
+          runtime_tests/test_machine_filesystem_pg.py
+          runtime_tests/test_owner_notification_pg.py
+          runtime_tests/test_owner_history_pg.py
       - name: Gate tooling tests
         run: uv run --frozen python -m unittest discover -s tools/runtime/tests -q
 

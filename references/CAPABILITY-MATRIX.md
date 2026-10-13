@@ -28,12 +28,27 @@ journey, not a general natural-language or distributed-runtime guarantee.
 | `unsupported` | No honest current mechanism exists. |
 | `unknown` | The fact depends on the current Harness/host and has not been measured. |
 
+## Runtime access and evidence
+
+[Owner Runtime](../docs/runtime/OWNER-RUNTIME.md) defines the current single-owner
+contract: continuous registration, actual readiness, native user environment,
+optional chosen business deadlines and durable result tracking. Automatic
+owner stdio MCP dispatch depends on configured temporal_endpoint and actual worker
+readback. Interactive native approval depends on its client handler; the
+standard headless factory replies -32601 to those server requests.
+Receiver owner/native migration requires a new matching signed process
+deployment and committed Endpoint revision. Shared/reference
+Profiles preserve their configured permission, version and time windows.
+Historical Gate records retain their exact source and Profile. The status rows
+below retain their measured evidence scope; native or cross-machine deployment
+claims require the actual run and readback for that installation.
+
 ## Current matrix
 
 | Capability | Instruction | Decision | Mechanism | Invariant validation | Representative evidence | Current status | Truthful user wording |
 |---|---:|---:|---:|---:|---:|---|---|
 | Skill discovery and explicit invocation | ✓ | ✓ | ✓ | ✓ | local validator | `supported (narrow)` | “The Skill can be explicitly loaded for setup maintenance.” |
-| Runtime machine installation and client placement | ✓ | ✓ | ✓ | identity and installer regression tests | `tests/test_machine_install.py`; fresh-host/client journey pending | `partial` | “The Agent confirms local Linux, SSH or WSL placement, binds apply to the observed machine, account and home directory, then configures and verifies the selected clients.” |
+| Runtime machine installation and client placement | ✓ | ✓ | ✓ | identity and installer regression tests | `tests/test_machine_install.py`; fresh-host/client journey pending | `partial` | “The Agent confirms Linux, SSH or WSL placement, binds apply to the observed machine/account/home, installs a new single-owner service with access_mode=owner, and verifies access mode, identity and selected client connections.” |
 | ChatGPT web setup choice and private Tunnel guidance | ✓ | explicit enable/skip/later | Bootstrap receipt and `acs_web_setup.py` | web-choice guard and plan tests | `tests/test_machine_install.py`; live ChatGPT owner journey pending | `partial` | “The Agent asks whether to connect ChatGPT, prepares the private Tunnel steps and guides required owner actions; actual ChatGPT read/write calls verify the connection.” |
 | Existing-project Source checkout discovery | ✓ | ✓ | `acs_source_discovery.py` | path, machine, identity, baseline, redaction and no-write tests | `tests/test_source_discovery.py`; local temporary Git repository; selected `1302-1` read-only SSH probe | `supported (narrow)` for local and selected SSH observations; `partial` for WSL | “The Agent observes the actual project checkout on the caller or an authorized selected host and resolves ambiguous Source location before setup or binding.” |
 | Repository bootstrap on a genuinely new target | ✓ | ✓ | ✓ | ✓ | setup tests / temporary repository | `supported (narrow)` | “Repository bootstrap is bounded to a missing or empty target; review the preview.” |

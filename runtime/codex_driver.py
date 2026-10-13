@@ -78,7 +78,7 @@ class AuthorizedOperation:
     command_id: str
     message_id: str
     grant_ref: str
-    deadline: datetime
+    deadline: datetime | None
 
     def validate(self, clock=None):
         if any(
@@ -88,6 +88,8 @@ class AuthorizedOperation:
             raise DriverRejected(
                 "complete bounded operation/command/message/Grant identity required"
             )
+        if self.deadline is None:
+            return
         if self.deadline.tzinfo is None or self.deadline.utcoffset() is None:
             raise DriverRejected("operation authorization deadline expired or lacks timezone")
         if clock is None:
@@ -101,6 +103,8 @@ class AuthorizedOperation:
 
     def remaining(self, clock=None):
         self.validate(clock)
+        if self.deadline is None:
+            return float("inf")
         if clock is None:
             remaining = (self.deadline - datetime.now(UTC)).total_seconds()
         else:
@@ -146,24 +150,27 @@ class LaunchProfile:
     permission_profile: str
     environment: dict[str, str]
     model: str | None = None
+    execution_mode: str = "restricted"
 
     def validate(self):
-        if self.version not in {
+        if self.execution_mode not in {"native", "restricted"}:
+            raise DriverRejected("unsupported execution environment")
+        if self.execution_mode == "restricted" and self.version not in {
             "0.152.1", "0.153.2", "0.153.4", "0.155.0", "0.155.0-alpha.2.6",
         }:
             raise DriverRejected("version has no reviewed reference profile")
         for path in (self.executable, self.cwd, self.codex_home, self.schema_path):
             if not Path(path).is_absolute():
                 raise DriverRejected("profile paths must be absolute")
-        if file_digest(self.executable) != self.executable_sha256:
+        if self.execution_mode == "restricted" and file_digest(self.executable) != self.executable_sha256:
             raise DriverRejected("executable differs from pinned profile")
-        if file_digest(self.schema_path) != self.schema_sha256:
+        if self.execution_mode == "restricted" and file_digest(self.schema_path) != self.schema_sha256:
             raise DriverRejected("schema differs from pinned profile")
         config_path = Path(self.codex_home) / "config.toml"
-        if file_digest(config_path) != self.config_sha256:
+        if self.execution_mode == "restricted" and file_digest(config_path) != self.config_sha256:
             raise DriverRejected("configuration differs from pinned profile")
-        config = tomllib.loads(config_path.read_text(encoding="utf-8"))
-        if (
+        config = tomllib.loads(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
+        if self.execution_mode == "restricted" and (
             config.get("default_permissions") != self.permission_profile
             or (
                 self.permission_profile.startswith(":")
@@ -304,7 +311,7 @@ class DriverJournal:
             "command_id": operation.command_id,
             "message_id": operation.message_id,
             "grant_ref": operation.grant_ref,
-            "deadline": operation.deadline.isoformat(),
+            "deadline": operation.deadline.isoformat() if operation.deadline else None,
             "binding_id": binding,
             "action": action,
             "payload": payload,
@@ -395,9 +402,11 @@ class CodexAppServerDriver:
         supervisor=None,
         rpc_timeout=30,
         clock=None,
+        server_request_handler=None,
     ):
         if not isinstance(binding_id, str) or not binding_id:
             raise DriverRejected("immutable Node binding id/revision identity required")
+        self.server_request_handler = server_request_handler
         self.binding_id, self.profile, self.journal = binding_id, profile, journal
         self.clock = clock if clock is not None else getattr(journal, "clock", None)
         if self.clock is not None:
@@ -565,10 +574,10 @@ class CodexAppServerDriver:
         )
         if (
             not isinstance(result, dict)
-            or not re.search(
+            or (self.profile.execution_mode == "restricted" and not re.search(
                 r"(?<![\d.])" + re.escape(self.profile.version) + r"(?![\d.])",
                 result.get("userAgent", ""),
-            )
+            ))
             or Path(result.get("codexHome", "")) != Path(self.profile.codex_home)
         ):
             raise DriverRejected("initialize response does not bind expected version/CODEX_HOME")
@@ -589,6 +598,10 @@ class CodexAppServerDriver:
         return thread
 
     def _settings(self, operation, response):
+        if self.profile.execution_mode == "native":
+            if Path(response.get("cwd", "")) != Path(self.profile.cwd):
+                raise DriverRejected("native session cwd differs from the selected project")
+            return
         if (
             response.get("activePermissionProfile", {}).get("id") != self.profile.permission_profile
             or response.get("approvalPolicy") != "never"
@@ -617,14 +630,10 @@ class CodexAppServerDriver:
                 raise DriverRejected("Driver already has an endpoint")
             self.profile.validate()
             self.check_current(operation, self.identity)
-            argv = [
-                self.profile.executable,
-                "--disable",
-                "multi_agent",
-                "--disable",
-                "multi_agent_v2",
-                "app-server",
-            ]
+            argv = [self.profile.executable]
+            if self.profile.execution_mode == "restricted":
+                argv.extend(["--disable", "multi_agent", "--disable", "multi_agent_v2"])
+            argv.append("app-server")
             env = dict(self.profile.environment, CODEX_HOME=self.profile.codex_home)
             self.journal.event(
                 operation.operation_id,
@@ -664,9 +673,17 @@ class CodexAppServerDriver:
                 self.owned.process.stdout,
                 self.owned.process.stdin,
                 stderr=self.owned.process.stderr,
+                server_request_handler=self.server_request_handler,
             )
             self._initialize(operation)
-            params = {"cwd": self.profile.cwd, "approvalPolicy": "never", "ephemeral": False}
+            params = {"cwd": self.profile.cwd, "ephemeral": False}
+            if self.profile.execution_mode == "restricted":
+                params["approvalPolicy"] = "never"
+            else:
+                selected_config = Path(self.profile.codex_home) / "config.toml"
+                chosen = tomllib.loads(selected_config.read_text()) if selected_config.exists() else {}
+                if chosen.get("approval_policy"):
+                    params["approvalPolicy"] = chosen["approval_policy"]
             if self.profile.model:
                 params["model"] = self.profile.model
             response = self._rpc(operation, "thread/start", params)
@@ -695,7 +712,8 @@ class CodexAppServerDriver:
         return self._run(operation, "attach", {"thread_id": thread_id}, perform)
 
     def _owned_mutation(self):
-        if self.ownership != "exclusive_owned" or self.client is None or self.thread_id is None:
+        controlled = self.ownership == "exclusive_owned" or (self.profile.execution_mode == "native" and self.ownership == "shared_attached")
+        if not controlled or self.client is None or self.thread_id is None:
             raise DriverRejected("mutation requires this Driver's exclusive owned native binding")
 
     def _binding_receipt(self, layer, **values):
@@ -998,6 +1016,16 @@ class CodexAppServerDriver:
             self.check_current(operation, self.identity)
             operation.validate(self.clock)
             proof = self.supervisor.terminate_tree(self.owned)
+            if self.profile.execution_mode == "native" and proof.get("scope") == "owned_process_group":
+                if (proof.get("verified") is not True or proof.get("birth_ref") != self.owned.birth_ref
+                        or proof.get("containment_id") != self.owned.containment_id
+                        or proof.get("root_exit_code") is None or proof.get("remaining_group_members") != []
+                        or self.owned.process.poll() is None):
+                    raise OutcomeUncertain("owned process group stop readback is incomplete")
+                if self.client is not None:
+                    self.client.close()
+                return self._binding_receipt("process_group_terminated", supervisor_proof=proof)
+
             if (
                 proof.get("verified") is not True
                 or proof.get("birth_ref") != self.owned.birth_ref
@@ -1103,7 +1131,9 @@ class CodexAppServerDriver:
                 if (proof.get("verified") is not True
                         or proof.get("birth_ref") != self.owned.birth_ref
                         or proof.get("containment_id") != self.owned.containment_id
-                        or proof.get("root_exited") is not True or proof.get("remaining_pids") != []
+                        or ((proof.get("root_exit_code") is None or proof.get("remaining_group_members") != [])
+                        if self.profile.execution_mode == "native" and proof.get("scope") == "owned_process_group" else
+                        (proof.get("root_exited") is not True or proof.get("remaining_pids") != []))
                         or self.owned.process.poll() is None):
                     raise DriverRejected("live exclusive capacity must be terminated before detach")
             if self.client:

@@ -72,6 +72,25 @@ def activate(root, active, machine=MACHINE):
     return state
 
 
+class StartupSelectionTests(unittest.TestCase):
+    def test_verified_web_failure_preserves_local_core(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            active = release_fixture(root, "1.4.1")
+            helper = active / "scripts/acs_startup.py"
+            helper.parent.mkdir()
+            helper.write_text("def restore_configured(root, active): return {'core': 'ready', 'web_tunnel': 'owner_repair_required'}\n")
+            manifest_path = active / "RELEASE-MANIFEST.json"
+            manifest = json.loads(manifest_path.read_bytes())
+            manifest["files"]["scripts/acs_startup.py"] = {"bytes": helper.stat().st_size, "sha256": hashlib.sha256(helper.read_bytes()).hexdigest()}
+            manifest_path.write_text(json.dumps(manifest))
+            (root / "state.json").write_text(json.dumps({"startup": {"web_profile_ref": "/private/profile"}}))
+            self.assertEqual(launcher.restore_startup(root, active), {"core": "ready", "web_tunnel": "owner_repair_required"})
+            helper.write_text("tampered")
+            with self.assertRaises(ValueError):
+                launcher.restore_startup(root, active)
+
+
 class UpdateLauncherTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()

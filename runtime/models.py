@@ -65,12 +65,14 @@ class CommandEnvelope(BaseModel):
     target_id: str = Field(min_length=1, max_length=256)
     expected_revision: int = Field(ge=0)
     issued_at: datetime
-    deadline: datetime
+    deadline: datetime | None = None
     payload: dict[str, PayloadValue] = Field(default_factory=dict)
 
     @field_validator("issued_at", "deadline")
     @classmethod
     def aware_command_time(cls, value: datetime) -> datetime:
+        if value is None:
+            return value
         if value.tzinfo is None or value.utcoffset() is None:
             raise ValueError("command timestamps require an explicit timezone")
         # Historical v1/v2 signed/hash inputs preserve their original offset.
@@ -86,7 +88,7 @@ class CommandEnvelope(BaseModel):
     @classmethod
     def deadline_after_issue(cls, value: datetime, info: ValidationInfo) -> datetime:
         issued_at = info.data.get("issued_at")
-        if isinstance(issued_at, datetime) and value < issued_at:
+        if value is not None and isinstance(issued_at, datetime) and value < issued_at:
             raise ValueError("deadline must not precede issued_at")
         return value
 
@@ -116,7 +118,7 @@ class CommandEnvelope(BaseModel):
             "target_id": self.target_id,
             "expected_revision": self.expected_revision,
             "issued_at": self.issued_at.isoformat(),
-            "deadline": self.deadline.isoformat(),
+            "deadline": self.deadline.isoformat() if self.deadline else None,
             "payload": self.payload,
             "extra": dict(extra or {}),
         }

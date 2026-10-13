@@ -70,7 +70,7 @@ class SurfaceCommand(BaseModel):
         "project", "route", "team",
     ] = "work_item"
     issued_at: datetime
-    deadline: datetime
+    deadline: datetime | None = None
     payload: dict[str, JsonValue] = Field(default_factory=dict)
 
     @field_validator("payload", mode="before")
@@ -81,6 +81,8 @@ class SurfaceCommand(BaseModel):
     @field_validator("issued_at", "deadline")
     @classmethod
     def timezone_required(cls, value):
+        if value is None:
+            return value
         if value.tzinfo is None:
             raise ValueError("surface timestamps require a timezone")
         return value
@@ -88,7 +90,7 @@ class SurfaceCommand(BaseModel):
     @field_validator("deadline")
     @classmethod
     def ordered_deadline(cls, value, info):
-        if info.data.get("issued_at") is not None and value < info.data["issued_at"]:
+        if value is not None and info.data.get("issued_at") is not None and value < info.data["issued_at"]:
             raise ValueError("deadline must not precede issued_at")
         return value
 
@@ -220,12 +222,12 @@ class EffectReconciliation(PayloadModel):
 
 class RuntimePayload(PayloadModel):
     request: RuntimeRegistration
-    proof: NodeCommandProof
+    proof: NodeCommandProof | None = None
 
 
 class AttemptPayload(PayloadModel):
     request: AttemptRegistration
-    proof: NodeCommandProof
+    proof: NodeCommandProof | None = None
 
 
 class LeasePayload(PayloadModel):

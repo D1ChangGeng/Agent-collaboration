@@ -1,6 +1,6 @@
 ---
 name: acs-web-collaboration
-description: Remote MCP, web SaaS Agent, ProjectContextPack, OAuth, HTTPS, secure Tunnel, plugin, filesystem SourceBinding, GitHub MCP coordination, and web Session capability knowledge for ACS. Use when a browser-based Agent manages or reviews ACS projects.
+description: Remote MCP, web SaaS Agent, ProjectContextPack, OAuth, HTTPS, secure Tunnel, plugin, machine files, SourceBinding, GitHub MCP coordination, and web Session capability knowledge for ACS. Use when a browser-based Agent manages or reviews ACS projects.
 ---
 
 # acs-web-collaboration
@@ -11,11 +11,15 @@ Remote client context and access pathways. Project semantics belong to acs-proje
 
 ## Core invariants
 
-- One global remote MCP connection can access multiple authorized Projects.
-- Web Sessions use explicit project_id and load_project because local cwd and AGENTS discovery are absent.
-- Remote source access uses an admitted filesystem SourceBinding, external repository MCP, or both.
-- Web management and review are supported by read and governed mutation capabilities; execution depends on admitted Runtime capacity.
-- Wake behavior follows observed Harness capability and Project Inbox remains the portable recovery path.
+- One global remote MCP connection can expose multiple Projects within the authenticated tenant and active service context.
+- Web Sessions select project_id and load_project to obtain current Project context and source or workspace revisions.
+- Owner private Tunnel access binds to the installation owner's trusted credential; OAuth HTTPS services validate their token and deployment rules.
+- Owner machine tools operate on current files under the selected OS account through Local, SSH or Node; read_file requires path.
+- filesystem_context and select_filesystem expose each MCP connection's machine/account/directory context; machine_id/cwd can select one call's target.
+- SourceBinding supplies repository, location and version guidance; explicit Project Source readers select current views or captured revisions.
+- Shared deployments retain their existing Source catalog and configured access.
+- Management, Review and execution tools use actual advertised capabilities; execution prepares the selected native environment.
+- Notifications follow the active MCP Connection and Session; durable Project Inbox remains available after reconnect or Session replacement.
 
 ## Retrieval map
 
@@ -29,7 +33,10 @@ Read the smallest reference that resolves the material question.
 
 ## Tool vocabulary
 
-Relevant tools: read_profile, list_projects, load_project, list_sources, list_files, read_file, read_diff, check_inbox.
+Relevant tools: read_profile, list_projects, load_project, filesystem_context,
+select_filesystem, read_file, list_directory, glob, grep, write_file, edit_file,
+apply_patch, list_sources, read_source_file, list_source_files,
+search_source_files, read_source, read_diff, check_inbox.
 
 Tool descriptions and the machine contract define exact invocation schemas.
 This Skill explains the model, authority and decision implications around those
@@ -37,9 +44,13 @@ tools.
 
 ## Application
 
-Apply this knowledge to the user's actual goal and current evidence. Compose
-tools from present state, permissions and required readback. Examples in the references illustrate the model. The Agent derives the
-sequence from current state, authority, evidence and the user's goal.
+Apply this knowledge to the user's goal and current evidence. Read the
+installed access mode and active tool schema, then compose actions from trusted
+identity, object state, revisions and required readback. References explain
+durable semantics; ProjectContextPack and current sources provide project facts.
+The product contracts are `docs/runtime/OWNER-RUNTIME.md` and
+`docs/runtime/MACHINE-FILESYSTEM.md` in the verified ACS release or source
+checkout.
 
 ## Related knowledge
 

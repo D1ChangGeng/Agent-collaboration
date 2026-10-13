@@ -52,7 +52,7 @@ def preview(root, specification, settings, catalog):
     if (not root.is_relative_to(source) or Path(_git(source, "rev-parse", "--show-toplevel")) != source
             or _git(source, "rev-parse", "HEAD") != specification["expected_commit"]
             or _git(source, "rev-parse", "HEAD^{tree}") != specification["expected_tree"]
-            or _git(source, "status", "--porcelain=v1", "--untracked-files=all")):
+            or (settings.access_mode != "owner" and _git(source, "status", "--porcelain=v1", "--untracked-files=all"))):
         raise ValueError("registration requires the exact clean containing Source checkout")
     for key in ("scope_id", "agent_slot_id", "source_id"):
         if not isinstance(specification[key], str) or not IDENTIFIER.fullmatch(specification[key]):
@@ -80,7 +80,7 @@ def preview(root, specification, settings, catalog):
                 return None
             raise ValueError("registration context path is unavailable")
         logical = target.relative_to(source).as_posix()
-        if not _git(source, "ls-files", "--", logical):
+        if settings.access_mode != "owner" and not _git(source, "ls-files", "--", logical):
             raise ValueError("registration context must be tracked in Source")
         inventory[logical] = hashlib.sha256(target.read_bytes()).hexdigest()
         return logical
@@ -182,7 +182,8 @@ def apply(root, specification, config_path, catalog, expected_plan_digest, *, ad
                     return
                 request = SourceRequest(root=plan["source_root"], tenant_id=authority.context.tenant_id, scope_id=scope,
                     root_id=plan["root_id"], route_id=route_id, expected_commit=specification["expected_commit"],
-                    expected_tree=specification["expected_tree"], include_untracked=False,
+                    expected_tree=specification["expected_tree"], allow_dirty=authority.access_mode == "owner",
+                    include_untracked=authority.access_mode == "owner",
                     max_bytes=specification.get("max_source_bytes", 16*1024*1024))
                 projects.admit_source(command("source.bind", source_id, old[0] if old else 0), project_id=plan["project_id"],
                     source_id=source_id, request=request, repository_identity=specification["repository_identity"], credential=credential)

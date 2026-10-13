@@ -61,8 +61,7 @@ class HarnessSessionAuthority:
     def __init__(self, authority):
         self.authority = authority
 
-    @staticmethod
-    def _validate_attempt_context(cursor, command, request: BindingChange) -> None:
+    def _validate_attempt_context(self, cursor, command, request: BindingChange) -> None:
         context = request.attempt_context
         if context is None:
             return  # Historical Slot-level bindings cannot advance a native response.
@@ -99,9 +98,9 @@ class HarnessSessionAuthority:
         cursor.execute(
             "SELECT node_id,node_binding_revision,node_boot_incarnation,scope_id,agent_slot_id "
             "FROM enrolled_runtimes WHERE tenant_id=%s AND runtime_id=%s "
-            "AND status='active' AND expires_at>clock_timestamp() "
+            "AND status='active' AND (%s OR expires_at>clock_timestamp()) "
             "AND authority_id=%s AND authority_incarnation=%s",
-            (command.tenant_id, context.runtime_id,
+            (command.tenant_id, context.runtime_id, self.authority.access_mode == "owner",
              command.authority_id, command.authority_incarnation),
         )
         if cursor.fetchone() != (

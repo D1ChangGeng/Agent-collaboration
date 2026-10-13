@@ -1,24 +1,27 @@
 # Web access decision map
 
-Use the single-user private Tunnel profile for an installation owner's Linux
-stdio ACS server when the Host supports it. Keep the Tunnel in that owner's
-Platform organization and ChatGPT workspace, and keep its ACS credential bound
-to one existing Grant. Use stable HTTPS with OAuth for a shared or hosted
-resource server. In both paths, server-side Domain checks are authoritative.
+Use the owner private Tunnel profile for the installation owner's stdio ACS
+server when the client supports it. Keep the Tunnel in the intended owner's
+Platform organization and ChatGPT workspace. Bind its ACS process to the trusted
+owner credential. Use stable HTTPS with OAuth for a resource-server deployment.
+The server checks the actual authenticated context and installed access mode.
 See [the private Tunnel profile](../../../P2-PRIVATE-TUNNEL-PROFILE.md).
 
-Account setup uses the installation owner's external browser on their client
-device. Select external browser control only after verifying that capability
-and the intended account/workspace context. Otherwise supply official links,
-page locations, actions, expected results and the next step for the owner to
-complete. Required login, secret entry, permission approval and connection
-consent remain owner actions. Public documentation retrieval is a separate
-read-only activity; embedded Harness browser availability does not establish
-access to the owner's account browser.
+Account setup uses the owner's account browser on the selected client device.
+Verify browser capability and account/workspace context before configuration.
+Login, secret entry and connection consent remain owner account actions.
 
-Use ACS filesystem tools for local Management Root, dirty state and Node-bound
-Evidence. Use official GitHub MCP or another repository provider for remote
-commits and review context. With both paths, compare exact commit and tree.
+Use load_project for the current Project context. Choose ACS filesystem tools
+for the current admitted workspace, Management Root and Node Evidence. Choose
+the external repository provider for remote commits and Review context. Keep
+workspace view identity separate from Git commit and tree.
 
-When native push wake is unavailable, retain notification in Project Inbox for
-the next authorized Session. Capability observations decide the path.
+Use current native capability to decide execution, attached Session control and
+immediate notifications. A lost client connection leaves durable Inbox and
+response tracking available; reconnect and check_inbox through the actual
+Session.
+
+Remote TLS, keys, Node identity and replay checks remain effective in owner
+mode. OAuth token expiry belongs to the resource-server credential boundary.
+Existing unspecified access_mode configuration retains shared semantics until
+explicit migration.

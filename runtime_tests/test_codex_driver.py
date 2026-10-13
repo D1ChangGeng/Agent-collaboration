@@ -1215,3 +1215,17 @@ def test_actual_sandbox_startup_error_stays_uncertain_without_fallback(native):
     assert len(native.launches) == 1
     request = next(r for r in native.peer.requests if r["method"] == "thread/start")
     assert "sandbox" not in request["params"] and "config" not in request["params"]
+
+
+def test_native_environment_preserves_selected_settings_and_multiagent(native):
+    from dataclasses import replace
+    f = native
+    f.driver.profile = replace(f.driver.profile, execution_mode="native", version="compatible-installed-version")
+    config = Path(f.driver.profile.codex_home) / "config.toml"
+    config.write_text('default_permissions="owner-selected"\napproval_policy="on-request"\n')
+    f.state["features"] = True
+    op = replace(operation("native-spawn"), deadline=None)
+    f.driver.spawn(op)
+    assert "--disable" not in f.launches[0][0]
+    f.driver.invoke(replace(operation("native-invoke"), deadline=None), "fixture request")
+    assert f.state["turn_calls"] == 1

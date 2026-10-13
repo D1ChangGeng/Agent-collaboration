@@ -226,7 +226,9 @@ class ConnectionClock:
         """Conservative issuer stamp that cannot be future at its authority."""
         return self.reading().earliest_utc
 
-    def require_before(self, deadline: datetime) -> ClockReading:
+    def require_before(self, deadline: datetime | None) -> ClockReading:
+        if deadline is None:
+            return self.reading()
         expiry = canonical_utc(deadline)
         reading = self.reading()
         if reading.latest_utc < expiry:
@@ -238,12 +240,20 @@ class ConnectionClock:
             raise ClockExpired("authority deadline has expired")
         raise ClockUncertain("authority deadline overlaps time uncertainty")
 
-    def remaining(self, deadline: datetime) -> float:
+    def remaining(self, deadline: datetime | None) -> float:
+        if deadline is None:
+            return float("inf")
         reading = self.require_before(deadline)
         return (canonical_utc(deadline) - reading.latest_utc).total_seconds()
 
-    def fresh(self, issued_at: datetime, expires_at: datetime, max_lifetime: float | None = None) -> bool:
-        issued, expiry = canonical_utc(issued_at), canonical_utc(expires_at)
+    def fresh(self, issued_at: datetime, expires_at: datetime | None, max_lifetime: float | None = None) -> bool:
+        issued = canonical_utc(issued_at)
+        if expires_at is None:
+            try:
+                return issued <= self.reading().latest_utc
+            except ClockUnavailable:
+                return False
+        expiry = canonical_utc(expires_at)
         if expiry <= issued or (max_lifetime is not None and (expiry - issued).total_seconds() > max_lifetime):
             return False
         try:

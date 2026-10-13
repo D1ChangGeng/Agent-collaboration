@@ -11,8 +11,11 @@ from nacl.exceptions import BadSignatureError
 from nacl.signing import SigningKey, VerifyKey
 from pydantic import BaseModel
 
-from runtime.receiver_paths import PathSecurityRejected, open_validated_file
-from runtime.receiver_paths import descriptor_file_identity
+from runtime.receiver_paths import (
+    PathSecurityRejected,
+    descriptor_file_identity,
+    open_validated_file,
+)
 
 
 class SignatureRejected(ValueError):

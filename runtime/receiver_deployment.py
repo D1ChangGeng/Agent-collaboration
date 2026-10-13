@@ -160,6 +160,7 @@ def deployment_policy(config: ReceiverRuntimeConfig, factory: FactoryBinding) ->
     registration = config.binding.registration.model_dump(mode="json")
     registration.pop("config_sha256")
     return {
+        **({"access_mode": config.access_mode} if config.access_mode == "owner" else {}),
         "schema_version": "acs-receiver-deployment-policy/1",
         "factory": factory.model_dump(mode="json"),
         "registration_without_config_digest": registration,
@@ -242,6 +243,7 @@ def parse_process_config(raw: str) -> ReceiverProcessConfig:
     runtime = value["runtime"]
     if not isinstance(runtime, dict):
         raise TypeError("receiver runtime configuration must be an object")
+    runtime.setdefault("access_mode", "shared")
     expected = {field.name for field in fields(ReceiverRuntimeConfig)}
     if set(runtime) != expected:
         raise ValueError("receiver runtime configuration fields differ")

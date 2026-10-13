@@ -11,10 +11,12 @@ Project identity, management context and Root-to-Route topology. Work execution 
 
 ## Core invariants
 
-- Root Agent is a project responsibility projection of an authenticated external Session, explicit project_id, current Project context and management Grant.
-- Project, Root, Route and Scope are durable identities; Harness Session and filesystem path are replaceable bindings.
-- Every project-scoped tool carries project_id, and typed handles must resolve to the same Project.
-- Management context is revisioned and reports completeness, source revision, evidence class and missing context.
+- Root Agent is the project responsibility projection of an authenticated external Session with an explicit project_id and current Project context.
+- Project, Root, Route and Scope are durable identities; Harness Session, machine and filesystem path are replaceable bindings.
+- Every project-scoped tool carries project_id, and typed handles resolve to the same tenant and Project.
+- Owner access follows trusted identity, active service and objects, explicit revocation, request deduplication and expected revisions; shared access also applies configured Grants and Policy.
+- ProjectContextPack reports source and workspace revisions, completeness, evidence class and missing context.
+- Current workspace context and fixed source snapshots preserve their distinct source identities.
 
 ## Retrieval map
 
@@ -36,9 +38,12 @@ tools.
 
 ## Application
 
-Apply this knowledge to the user's actual goal and current evidence. Compose
-tools from present state, permissions and required readback. Examples in the references illustrate the model. The Agent derives the
-sequence from current state, authority, evidence and the user's goal.
+Apply this knowledge to the user's goal and current evidence. Read the
+installed access mode and active tool schema, then compose actions from trusted
+identity, object state, revisions and required readback. References explain
+durable semantics; ProjectContextPack and current sources provide project facts.
+The owner product contract is `docs/runtime/OWNER-RUNTIME.md` in the verified
+ACS release or source checkout.
 
 ## Related knowledge
 

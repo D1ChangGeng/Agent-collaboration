@@ -1,17 +1,22 @@
 """Production Codex receiver factory for one supervised native capacity."""
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
 import re
+import subprocess
 import threading
-import time
+import uuid
+from copy import copy
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
 from runtime.artifacts import LocalArtifactStore, WindowsArtifactStore
+from runtime.auth import AuthenticatedContext
 from runtime.codex_driver import (
     AuthorizedOperation,
     BindingIdentity,
@@ -22,9 +27,11 @@ from runtime.codex_driver import (
 from runtime.connection_clock import ConnectionClock
 from runtime.delivery_models import InvocationRequest
 from runtime.domain import DomainAuthority
+from runtime.lifetimes import earliest
 from runtime.models import CommandEnvelope
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.node import NodeJournal
+from runtime.posix_process_supervisor import PosixProcessSupervisor
 from runtime.receiver_config import receiver_clock_identity
 from runtime.receiver_delivery import ReceiverNativeDeliveryBridge
 from runtime.receiver_entry import DeploymentCallbacks
@@ -67,7 +74,39 @@ def _absolute(settings: dict[str, Any], name: str) -> str:
     return value
 
 
-def validate_settings(settings: object) -> dict[str, str]:
+def native_settings(settings):
+    """Resolve the selected environment at preparation time; digests are observations."""
+    required = {"schema_version", "binding_id", "capacity_attempt_id", "executable", "cwd", "codex_home",
+                "driver_journal", "node_journal", "runtime_id", "artifact_root"}
+    if not isinstance(settings, dict) or not required <= set(settings) or set(settings)-FIELDS:
+        raise CodexReceiverRejected("native receiver environment is incomplete")
+    current = dict(settings)
+    private = Path(current["driver_journal"]).parent
+    current.setdefault("protocol_schema", str(private/"api-schema.json"))
+    current.setdefault("model_catalog", str(private/"model-catalog.json"))
+    current.setdefault("systemd_environment_dir", str(private/"process-manager"))
+    current.setdefault("permission_profile", "native-user-settings")
+    current.setdefault("model", None)
+    current.setdefault("source_commit", "unknown")
+    current.setdefault("source_tree", "unknown")
+    current.setdefault("collector_max_reads", 120)
+    current.setdefault("collector_interval_seconds", 1.0)
+    for prefix in ("spawn", "close"):
+        for kind in ("operation", "command", "message"):
+            current.setdefault(prefix+"_"+kind+"_id", f"native-{prefix}-{kind}:{current['runtime_id']}")
+    for path, digest in (("executable", "executable_sha256"), ("protocol_schema", "protocol_schema_sha256"),
+                         ("model_catalog", "model_catalog_sha256")):
+        value = Path(current[path])
+        current[digest] = hashlib.sha256(value.read_bytes()).hexdigest() if value.is_file() else "not-measured"
+    config = Path(current["codex_home"])/"config.toml"
+    current["config_sha256"] = hashlib.sha256(config.read_bytes()).hexdigest() if config.is_file() else "not-configured"
+    observed = subprocess.run([current["executable"], "--version"], capture_output=True, text=True, timeout=10, check=True)
+    current["codex_version"] = observed.stdout.strip().removeprefix("codex-cli ")
+    return current
+
+def validate_settings(settings: object, *, execution_mode="restricted") -> dict[str, str]:
+    if execution_mode == "native":
+        settings = native_settings(settings)
     if not isinstance(settings, dict) or set(settings) != FIELDS:
         raise CodexReceiverRejected("Codex receiver factory settings differ")
     if settings.get("schema_version") != SCHEMA:
@@ -86,19 +125,19 @@ def validate_settings(settings: object) -> dict[str, str]:
     ):
         _text(settings, name)
     for name in ("source_commit", "source_tree"):
-        if not re.fullmatch(r"[a-f0-9]{40}", settings[name]):
+        if execution_mode == "restricted" and not re.fullmatch(r"[a-f0-9]{40}", settings[name]):
             raise CodexReceiverRejected(f"Codex receiver {name} is invalid")
     if settings.get("model") is not None:
         _text(settings, "model")
     for name in ("executable_sha256", "protocol_schema_sha256", "config_sha256"):
         value = settings.get(name)
-        if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
+        if execution_mode == "restricted" and (not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value)):
             raise CodexReceiverRejected(f"Codex receiver digest {name} is invalid")
-    if settings["codex_version"] not in {
+    if execution_mode == "restricted" and settings["codex_version"] not in {
         "0.152.1", "0.153.2", "0.153.4", "0.155.0", "0.155.0-alpha.2.6",
     }:
         raise CodexReceiverRejected("Codex receiver version has no reviewed Driver profile")
-    if (
+    if execution_mode == "restricted" and (
         settings["codex_version"] == "0.155.0" and settings["permission_profile"] != "achp-engineer"
         or settings["codex_version"] == "0.155.0-alpha.2.6"
         and settings["permission_profile"] != ":workspace"
@@ -106,16 +145,16 @@ def validate_settings(settings: object) -> dict[str, str]:
         raise CodexReceiverRejected("Codex receiver permission profile is not reviewed for version")
     _absolute(settings, "model_catalog")
     value = settings["model_catalog_sha256"]
-    if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
+    if execution_mode == "restricted" and (not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value)):
         raise CodexReceiverRejected("Codex receiver model catalog digest is invalid")
     catalog = Path(settings["model_catalog"])
-    if not catalog.is_file() or catalog.is_symlink():
+    if execution_mode == "restricted" and (not catalog.is_file() or catalog.is_symlink()):
         raise CodexReceiverRejected("Codex receiver model catalog is unavailable")
-    if hashlib.sha256(catalog.read_bytes()).hexdigest() != value:
+    if execution_mode == "restricted" and hashlib.sha256(catalog.read_bytes()).hexdigest() != value:
         raise CodexReceiverRejected("Codex receiver model catalog differs from pinned profile")
-    if os.name == "posix" and Path(settings["systemd_environment_dir"]).name != "systemd-env":
+    if execution_mode == "restricted" and os.name == "posix" and Path(settings["systemd_environment_dir"]).name != "systemd-env":
         raise CodexReceiverRejected("Codex receiver Systemd environment directory differs")
-    if os.name == "nt" and Path(settings["systemd_environment_dir"]).name != "windows-job":
+    if execution_mode == "restricted" and os.name == "nt" and Path(settings["systemd_environment_dir"]).name != "windows-job":
         raise CodexReceiverRejected("Codex receiver Windows Job directory differs")
     if (
         type(settings.get("collector_max_reads")) is not int
@@ -130,8 +169,15 @@ def validate_settings(settings: object) -> dict[str, str]:
 class CodexReceiverCapacity:
     def __init__(self, config, deployment_policy_sha256: str, settings: dict[str, Any]):
         self.config = config
-        self.settings = validate_settings(settings)
-        self.authority = DomainAuthority(os.environ.get("ACS_RECEIVER_DSN", ""))
+        self.settings = validate_settings(settings, execution_mode="native" if getattr(config, "access_mode", "shared") == "owner" else "restricted")
+        if getattr(config, "access_mode", "shared") == "owner":
+            instance = uuid.uuid4().hex
+            for prefix in ("spawn", "close"):
+                for kind in ("operation", "command", "message"):
+                    self.settings[prefix+"_"+kind+"_id"] += ":" + instance
+        self.authority = (DomainAuthority(os.environ.get("ACS_RECEIVER_DSN", ""), access_mode="owner")
+                          if getattr(config, "access_mode", "shared") == "owner" else
+                          DomainAuthority(os.environ.get("ACS_RECEIVER_DSN", "")))
         if not self.authority._dsn:
             raise CodexReceiverRejected("receiver Domain DSN is unavailable")
         registration = config.binding.registration
@@ -140,6 +186,19 @@ class CodexReceiverCapacity:
             or registration.runtime_id != self.settings["runtime_id"]
         ):
             raise CodexReceiverRejected("Codex receiver deployment binding changed")
+        if getattr(config, "access_mode", "shared") == "owner":
+            with self.authority._connect() as connection:
+                actor = connection.execute(
+                    "SELECT observer_ref,observer_grant_ref FROM enrolled_nodes WHERE tenant_id=%s "
+                    "AND node_id=%s AND authority_id=%s AND authority_incarnation=%s AND status='active'",
+                    (registration.tenant_id, registration.node_id, registration.authority_id,
+                     registration.authority_incarnation),
+                ).fetchone()
+            if actor is None:
+                raise CodexReceiverRejected("configured Node identity is unavailable")
+            self.authority.context = AuthenticatedContext(registration.tenant_id, registration.authority_id,
+                registration.authority_incarnation, actor[0], actor[1])
+            self.authority.owner_identity_ref = actor[1]
         self.binding = BindingIdentity(
             registration.node_id, registration.boot_incarnation, registration.runtime_id,
             self.settings["capacity_attempt_id"], registration.agent_slot_id,
@@ -172,6 +231,10 @@ class CodexReceiverCapacity:
                 "TMPDIR": str(Path(self.settings["codex_home"]).parent / "tmp"),
                 "LANG": "C.UTF-8",
             }
+        if getattr(config, "access_mode", "shared") == "owner":
+            environment = dict(os.environ)
+            environment["PATH"] = str(Path(self.settings["executable"]).parent) + os.pathsep + environment.get("PATH", "")
+            environment["CODEX_HOME"] = self.settings["codex_home"]
         profile = LaunchProfile(
             self.settings["executable"], self.settings["executable_sha256"],
             self.settings["codex_version"], self.settings["protocol_schema"],
@@ -180,10 +243,12 @@ class CodexReceiverCapacity:
             self.settings["permission_profile"],
             environment,
             self.settings.get("model"),
+            **({"execution_mode": "native"} if getattr(config, "access_mode", "shared") == "owner" else {}),
         )
         self.supervisor = (
-            WindowsJobSupervisor(max_processes=64, termination_timeout=10)
+            WindowsJobSupervisor(max_processes=None if getattr(config, "access_mode", "shared") == "owner" else 64, termination_timeout=10)
             if os.name == "nt"
+            else PosixProcessSupervisor(termination_timeout=10) if getattr(config, "access_mode", "shared") == "owner"
             else SystemdUserSupervisor(
                 tasks_max=64, memory_max=1_073_741_824, cpu_quota_percent=100,
                 termination_timeout=10,
@@ -200,7 +265,8 @@ class CodexReceiverCapacity:
             rpc_timeout=120 if os.name == "nt" else 30, clock=self.clock,
         )
         self.adapter = NativeDeliveryAdapter(
-            self.driver, authorize_invocation=self._authorize_invocation, clock=self.clock,
+            self.driver, authorize_invocation=self._authorize_invocation,
+            authorize_observation=self._authorize_observation if getattr(config, "access_mode", "shared") == "owner" else None, clock=self.clock,
         )
         self.bridge = ReceiverNativeDeliveryBridge(
             config.ledger_path, self.adapter,
@@ -221,6 +287,7 @@ class CodexReceiverCapacity:
         self._collector_errors: dict[str, str] = {}
         self._collector_lock = threading.Lock()
         self._closed = False
+        self._collector_stop = threading.Event()
         try:
             self.driver.spawn(self._lifecycle_operation("spawn"))
         except BaseException:
@@ -236,6 +303,16 @@ class CodexReceiverCapacity:
                 self.supervisor.close()
             raise
 
+    def health(self):
+        operation = self._lifecycle_operation("spawn")
+        with self.authority._connect() as connection, connection.cursor() as cursor:
+            self.authority.enrollment._active_runtime(cursor, self.config.binding.registration.runtime_id)
+        with self.driver._lock:
+            view = self.driver._inspect(operation)
+        state = view.get("thread", {}).get("status", {}).get("type")
+        return {"state": "idle" if state == "idle" else "busy" if state in {"active", "running"} else "unknown",
+                "harness": "codex", "version": self.driver.profile.version}
+
     def _lifecycle_operation(self, action: str) -> AuthorizedOperation:
         prefix = "spawn" if action == "spawn" else "close"
         return AuthorizedOperation(
@@ -243,14 +320,16 @@ class CodexReceiverCapacity:
             self.settings[prefix + "_command_id"],
             self.settings[prefix + "_message_id"],
             self.authority.context.grant_ref,
-            min(self.config.binding.registration.expires_at,
+            None if getattr(self.config, "access_mode", "shared") == "owner" else earliest(self.config.binding.registration.expires_at,
                 self.clock.now() + timedelta(minutes=5)),
         )
 
     def _domain_invocation(self, operation: AuthorizedOperation) -> InvocationRequest:
-        if not operation.operation_id.startswith("delivery-invocation:"):
+        observation = operation.operation_id.startswith("delivery-observation:") and getattr(self.config, "access_mode", "shared") == "owner"
+        prefix = "delivery-observation:" if observation else "delivery-invocation:"
+        if not operation.operation_id.startswith(prefix):
             raise CodexReceiverRejected("Codex Driver operation is outside a Delivery Attempt")
-        attempt_id = operation.operation_id.removeprefix("delivery-invocation:")
+        attempt_id = operation.operation_id.removeprefix(prefix)
         with self.authority._connect() as connection:
             row = connection.execute(
                 "SELECT a.invocation_json,m.command_json,m.deadline FROM delivery_attempts a "
@@ -263,21 +342,25 @@ class CodexReceiverCapacity:
             invocation = InvocationRequest.model_validate_json(json.dumps(row[0]), strict=True)
             command = CommandEnvelope.model_validate_json(json.dumps(row[1], default=str), strict=True)
             self._authorize_domain_command(
-                command,
+                command.model_copy(update={"deadline": None}) if observation else command,
                 connection.cursor(),
-                "runtime.invoke",
+                "message.read" if observation else "runtime.invoke",
                 invocation.envelope.packet.target_scope_id,
             )
         if (
             (invocation.invocation_id, invocation.command_id, invocation.message_id)
-            != (operation.operation_id, operation.command_id, operation.message_id)
-            or operation.deadline > row[2]
+            != (operation.operation_id.replace("delivery-observation:", "delivery-invocation:", 1), operation.command_id, operation.message_id)
+            or not observation and row[2] is not None and (operation.deadline is None or operation.deadline > row[2])
         ):
             raise CodexReceiverRejected("Codex Driver operation lineage changed")
         return invocation
 
     def _authorize_domain_command(self, command, cursor, permission, scope_id) -> None:
-        self.authority._authorize(
+        actor = self.authority
+        if getattr(actor, "access_mode", "shared") == "owner":
+            actor = copy(actor)
+            actor.context = replace(actor.context, principal_ref=command.principal_ref, grant_ref=command.grant_ref)
+        actor._authorize(
             command,
             cursor,
             permission,
@@ -286,7 +369,7 @@ class CodexReceiverCapacity:
         )
 
     def _current(self, operation: AuthorizedOperation, observed: BindingIdentity) -> None:
-        if observed != self.binding or operation.grant_ref != self.authority.context.grant_ref:
+        if observed != self.binding or (self.authority.access_mode != "owner" and operation.grant_ref != self.authority.context.grant_ref):
             raise CodexReceiverRejected("Codex receiver Driver binding changed")
         if operation.operation_id in {
             self.settings["spawn_operation_id"], self.settings["close_operation_id"],
@@ -301,6 +384,14 @@ class CodexReceiverCapacity:
             invocation.invocation_id, invocation.command_id, invocation.message_id,
             invocation.envelope.grant_ref, invocation.envelope.packet.deadline,
         )
+        self._domain_invocation(operation)
+        return operation
+
+    def _authorize_observation(self, invocation, observed):
+        if observed != self.binding:
+            raise CodexReceiverRejected("Codex receiver observation binding changed")
+        operation = AuthorizedOperation("delivery-observation:" + invocation.attempt_id,
+            invocation.command_id, invocation.message_id, invocation.envelope.grant_ref, None)
         self._domain_invocation(operation)
         return operation
 
@@ -395,7 +486,7 @@ class CodexReceiverCapacity:
             (message[0]["work_item_id"], native.tenant_id),
         ).fetchone()
         authorized = bool(
-            grant and grant[0] is None and grant[1] > self.authority.canonical_now(cursor)
+            grant and grant[0] is None and (self.authority.access_mode == "owner" or grant[1] > self.authority.canonical_now(cursor))
             and grant[2] == envelope["principal_ref"]
             and (grant[3], grant[4]) == (
                 self.authority.context.authority_id,
@@ -425,15 +516,40 @@ class CodexReceiverCapacity:
             policy_version="receiver-codex:" + message[3],
         )
 
+    def read_response_artifact(self, admission, body):
+        # Read only the terminal artifact correlated to this committed dispatch.
+        with self.node._connect() as connection:
+            row = connection.execute("SELECT payload_json FROM native_response_observations "
+                "WHERE tenant_id=? AND invocation_id=?", (admission.tenant_id, "delivery-invocation:" + admission.attempt_id)).fetchone()
+        if row is None:
+            raise CodexReceiverRejected("terminal response artifact is unavailable")
+        observation = json.loads(row[0])
+        identity = observation["identity"]
+        if (observation["response_digest"] != body.response_digest
+                or any(identity.get(name) != getattr(admission, name) for name in
+                       ("message_id", "operation_id", "attempt_id", "dispatch_id", "endpoint_id", "machine_id", "node_id", "boot_incarnation"))
+                or admission.scope_id != self.artifact_store.scope_id):
+            raise CodexReceiverRejected("response artifact does not belong to this dispatch")
+        reference = self.artifact_store.reference_for_digest(body.response_digest,
+            kind="readback", media_type="application/json")
+        data = self.artifact_store.read(reference)
+        if hashlib.sha256(data).hexdigest() != body.response_digest or body.offset > len(data):
+            raise CodexReceiverRejected("response artifact bytes or offset differ")
+        return {"sha256":body.response_digest, "offset":body.offset, "size_bytes":len(data),
+                "data_base64":base64.b64encode(data[body.offset:body.offset+body.max_bytes]).decode("ascii")}
+
     def _collect(self, invocation: InvocationRequest) -> None:
         try:
-            for _ in range(self.settings["collector_max_reads"]):
+            reads = 0
+            while not self._collector_stop.is_set() and (getattr(self.config, "access_mode", "shared") == "owner" or
+                    reads < self.settings["collector_max_reads"]):
+                reads += 1
                 try:
                     self.collector.collect_and_project(invocation)
                     return
                 except Exception as error:  # noqa: BLE001 -- bounded readback; never reinvokes
                     last = type(error).__name__
-                    time.sleep(self.settings["collector_interval_seconds"])
+                    self._collector_stop.wait(self.settings["collector_interval_seconds"])
             with self._collector_lock:
                 self._collector_errors[invocation.invocation_id] = last
         except BaseException as error:  # noqa: BLE001 -- preserve cleanup uncertainty
@@ -471,6 +587,7 @@ class CodexReceiverCapacity:
         if self._closed:
             return
         self._closed = True
+        self._collector_stop.set()
         try:
             for thread in tuple(self._collector_threads.values()):
                 thread.join(timeout=30)

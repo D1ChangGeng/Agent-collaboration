@@ -1,6 +1,8 @@
 """Delivery endpoint backed by the authenticated TLS receiver protocol."""
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import secrets
 import sqlite3
@@ -30,6 +32,7 @@ from runtime.receiver_models import (
     EndpointRegistration,
     PrepareBody,
     ReadbackBody,
+    ResponseReadbackBody,
     ReadinessBody,
     RecoveryBody,
 )
@@ -202,6 +205,7 @@ class RemoteNodeEndpointAdapter:
             "expected_boot_incarnation": deployment.expected_boot_incarnation,
             "journal_generation": deployment.journal_generation,
             "old_boot_isolation_ref": deployment.old_boot_isolation_ref,
+            "access_mode": authority.access_mode,
         }
         if isinstance(deployment, ReceiverDeployment):
             self.config = ReceiverRuntimeConfig(
@@ -341,8 +345,13 @@ class RemoteNodeEndpointAdapter:
                 ready = self._send(request)
                 observation = ready.receipt.evidence
                 observed_at = datetime.fromisoformat(observation["observed_at"])
-                expires_at = datetime.fromisoformat(observation["expires_at"])
-                fresh = self.clock.fresh(observed_at, expires_at, max_lifetime=2)
+                if self.config.access_mode == "owner":
+                    # This is a response to this exact readiness request. Native admission
+                    # rechecks activity before invoking; it is not a two-second ticket.
+                    fresh = True
+                else:
+                    expires_at = datetime.fromisoformat(observation["expires_at"])
+                    fresh = self.clock.fresh(observed_at, expires_at, max_lifetime=2)
             except (RemoteTransportRejected, ValueError, RuntimeError, KeyError, TypeError):
                 raise InvocationDeferred("unknown") from None
             if not fresh or observation.get("activity") != "idle":
@@ -408,6 +417,43 @@ class RemoteNodeEndpointAdapter:
         stored_state = readback.receipt.evidence.get("stored_state")
         observed_status = "delivered" if stored_state == "runtime_acknowledged" else stored_state or status
         return self._projection([readback], observed_status)
+
+    def fetch_response_artifact(self, operation_id, response_digest, *, max_bytes, dispatch_id=None):
+        dispatch = self.store.dispatch_admission(operation_id, dispatch_id=dispatch_id)
+        if dispatch is None or dispatch.admission.endpoint_id != self.identity.endpoint_id:
+            raise DeliveryTransportError("response dispatch provider unavailable")
+        admission = dispatch.admission
+        identity = DeliveryIdentity(**{name: getattr(admission, name)
+            for name in DeliveryIdentity.__dataclass_fields__})
+        factory = AdmissionFactory(self.config, self._signing_key, identity, clock=self.clock)
+        data = bytearray()
+        size = None
+        while size is None or len(data) < size:
+            body = ResponseReadbackBody(operation_id=operation_id, dispatch_id=admission.dispatch_id,
+                                        response_digest=response_digest, offset=len(data))
+            request_id = f"receiver-response:{admission.dispatch_id}:{self.identity.endpoint_revision}:{response_digest}:{len(data)}"
+            request = self.store.admission(request_id)
+            if request is None:
+                request = factory.request("delivery.readback", body, request_id=request_id,
+                    boot_incarnation=self.identity.boot_incarnation, journal_generation=self.config.journal_generation)
+                request = self.store.persist_admission(request)
+            receipt = self._send(request)
+            chunk = receipt.receipt.evidence.get("response_artifact", {})
+            if (chunk.get("sha256") != response_digest or chunk.get("offset") != len(data)
+                    or type(chunk.get("size_bytes")) is not int or not 0 <= chunk["size_bytes"] <= max_bytes
+                    or size is not None and size != chunk["size_bytes"]):
+                raise DeliveryTransportError("response artifact chunk identity differs")
+            size = chunk["size_bytes"]
+            try:
+                part = base64.b64decode(chunk["data_base64"], validate=True)
+            except (KeyError, TypeError, ValueError) as error:
+                raise DeliveryTransportError("response artifact chunk is malformed") from error
+            if len(part) > body.max_bytes or len(data) + len(part) > size or (not part and len(data) < size):
+                raise DeliveryTransportError("response artifact chunk size differs")
+            data.extend(part)
+        if hashlib.sha256(data).hexdigest() != response_digest:
+            raise DeliveryTransportError("response artifact bytes differ from terminal receipt")
+        return bytes(data)
 
     def reconcile_marked(self, invocation):
         """Resend the exact persisted dispatch after a marked transport outage.

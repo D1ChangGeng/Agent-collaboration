@@ -11,11 +11,12 @@ Evaluation and accepted state. Source truth belongs to acs-source-evidence; auth
 
 ## Core invariants
 
-- Review is bound to an exact candidate and source baseline.
-- Reviewer independence is a verified identity and assignment property.
-- Architecture, engineering, evidence and finalization reviews have distinct questions.
-- Attempt success, Review pass, publication and accepted state are separate facts.
-- Acceptance preserves unresolved items and applicable Policy and product-owner boundaries.
+- Review binds an exact candidate, source baseline and workspace revision when applicable.
+- Reviewer independence is a verified candidate-specific identity and assignment property in the adopted acceptance profile.
+- Architecture, engineering, evidence and finalization Reviews answer distinct questions.
+- Owner access preserves candidate checks, hashes, deterministic storage and historical Review provenance.
+- Attempt completion, Review pass, publication and AcceptedStateRevision are separately recorded facts.
+- Acceptance evaluates integrated evidence, protected effects, readback, unresolved items and applicable product-owner decisions; shared admission also applies Grant and Policy.
 
 ## Retrieval map
 
@@ -37,9 +38,12 @@ tools.
 
 ## Application
 
-Apply this knowledge to the user's actual goal and current evidence. Compose
-tools from present state, permissions and required readback. Examples in the references illustrate the model. The Agent derives the
-sequence from current state, authority, evidence and the user's goal.
+Apply this knowledge to the user's goal and current evidence. Read the
+installed access mode and active tool schema, then compose actions from trusted
+identity, object state, revisions and required readback. References explain
+durable semantics; ProjectContextPack and current sources provide project facts.
+The owner product contract is `docs/runtime/OWNER-RUNTIME.md` in the verified
+ACS release or source checkout.
 
 ## Related knowledge
 

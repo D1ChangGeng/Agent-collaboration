@@ -632,6 +632,7 @@ def _install(version: str, *, apply: bool, project: Path | None, project_id: str
         activation(root, {"schema_version": SCHEMA, "version": version,
                            "current": str(target), "previous": previous, "machine": machine,
                            "harnesses": harnesses, "runtime_only": runtime_only, "launcher_python": sys.executable,
+                           "startup": stored.get("startup", {"enabled": True}),
                            "helper_digests": helpers,
                            "auto_update": {**stored.get("auto_update", {}), "enabled": automatic_updates,
                                            "next_check": stored.get("auto_update", {}).get("next_check", time.time() + 86400)},

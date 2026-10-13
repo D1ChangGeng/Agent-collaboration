@@ -174,7 +174,7 @@ def configure_harnesses(harnesses: list[str], config_path: Path) -> dict[str, st
         if harness == "codex":
             path = Path.home() / ".codex" / "config.toml"
             marker = "[mcp_servers.agent_collaboration]"
-            block = marker + "\ncommand = " + json.dumps(command[0]) + "\nargs = " + json.dumps(command[1:]) + "\n"
+            block = marker + "\ncommand = " + json.dumps(command[0]) + "\nargs = " + json.dumps(command[1:]) + "\nstartup_timeout_sec = 120\n"
             if path.exists():
                 text = path.read_text(encoding="utf-8")
                 entry = tomllib.loads(text).get("mcp_servers", {}).get("agent_collaboration")
@@ -193,17 +193,26 @@ def configure_harnesses(harnesses: list[str], config_path: Path) -> dict[str, st
             configured[harness] = str(path)
         elif harness == "opencode":
             path = Path.home() / ".config" / "opencode" / "opencode.json"
-            entry = {"type": "local", "command": command, "enabled": True}
+            entry = {"type": "local", "command": command, "enabled": True, "timeout": 120000}
             data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
             if not isinstance(data, dict) or not isinstance(data.get("mcp", {}), dict):
                 raise ValueError("OpenCode configuration shape requires explicit review")
             servers = data.setdefault("mcp", {})
             if "agent_collaboration" in servers and servers["agent_collaboration"] != entry:
                 old = servers["agent_collaboration"]
-                if (not installation_root or not isinstance(old, dict)
-                        or old != {"type": "local", "command": old.get("command"), "enabled": True}
-                        or old.get("command") not in [pinned, allowed_previous]):
+                old_timeout = old.get("timeout") if isinstance(old, dict) else None
+                basic_old = {key: value for key, value in old.items() if key != "timeout"} if isinstance(old, dict) else {}
+                owned_command = basic_old.get("command") in [command, pinned, allowed_previous]
+                if (not isinstance(old, dict)
+                        or basic_old != {"type": "local", "command": basic_old.get("command"), "enabled": True}
+                        or not owned_command or (old_timeout is not None and type(old_timeout) is not int)
+                        or (basic_old.get("command") != command and not installation_root)):
                     raise ValueError("existing OpenCode ACS MCP entry differs; review it explicitly")
+                if old_timeout is not None:
+                    entry["timeout"] = old_timeout
+                if old == entry:
+                    configured[harness] = str(path)
+                    continue
                 servers["agent_collaboration"] = entry
                 changes.append((path, json.dumps(data, ensure_ascii=False, indent=2) + "\n",
                                 "opencode.json"))
@@ -313,6 +322,14 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
             service.authenticate(settings.credential())
             if settings.context.grant_ref != "grant:root":
                 raise ValueError("existing Runtime authority requires explicit enrollment")
+        prior = json.loads(config_path.read_text(encoding="utf-8"))
+        if settings.access_mode == "owner" or ("access_mode" not in prior and
+                settings.context.principal_ref == "agent:root" and
+                settings.context.tenant_id == "local-tenant" and
+                settings.dsn_ref.kind == "file" and settings.dsn_ref.name == str(dsn_path) and
+                settings.credential_ref.kind == "file" and settings.credential_ref.name == str(credential_path)):
+            from runtime.owner_upgrade import activate_owner_mode
+            activate_owner_mode(config_path)
         return config_path
 
     catalog = json.loads((ROOT / "docs/runtime/p2-mcp-tool-contract.json").read_text(encoding="utf-8"))
@@ -329,7 +346,7 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
                                    hashlib.sha256(secret.encode()).hexdigest())
     dsn = ("postgresql://acs:" + quote(environment["ACS_POSTGRES_PASSWORD"], safe="")
            + "@127.0.0.1:" + environment["ACS_POSTGRES_PORT"] + "/acs")
-    authority = DomainAuthority(dsn, context=context)
+    authority = DomainAuthority(dsn, context=context, access_mode="owner")
     authority.initialize()
     with authority._connect() as connection:
         existing = connection.execute("SELECT count(*) FROM grants").fetchone()[0]
@@ -340,7 +357,8 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
     ProjectService(service, catalog, profile="root_manager").initialize()
     owner_file(dsn_path, dsn + "\n")
     owner_file(credential_path, secret + "\n")
-    surface = {"schema_version": "acs-surfaces/1", "context": {
+    surface = {"schema_version": "acs-surfaces/1", "access_mode": "owner",
+        "temporal_endpoint": "127.0.0.1:"+environment["ACS_TEMPORAL_PORT"], "context": {
         "tenant_id": context.tenant_id, "authority_id": context.authority_id,
         "authority_incarnation": context.authority_incarnation,
         "principal_ref": context.principal_ref, "grant_ref": context.grant_ref,

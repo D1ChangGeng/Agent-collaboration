@@ -72,6 +72,38 @@ Responsibilities:
 
 The runtime MUST remain functional if this Skill is deleted from the machine after setup.
 
+### Owner service and native execution
+
+The installed ACS service has a configured access mode. New single-owner
+installation records owner; shared remains available for per-subject governance
+and as the compatibility interpretation of existing unspecified configuration.
+Owner operations follow trusted identity, active service and objects, explicit
+revocation, deduplication and revisions.
+
+Connection, Node, Runtime and Endpoint registration is durable. Execution
+reads actual readiness and prepares the selected native user environment.
+Codex/OpenCode tools, MCP servers, plugins, project configuration, provider,
+models and approval configuration follow that environment. Codex interactive
+requests use a configured native client handler; the standard headless factory
+uses its transport's explicit -32601 response. Trusted remote_endpoints
+can store a deterministic prepare_argv for TLS-pinned readiness recovery.
+
+Commands and Messages use optional chosen business deadlines. Async handles,
+Inbox and terminal result tracking persist independently of caller waiting.
+Configured temporal_endpoint enables owner stdio MCP maintenance of committed
+delivery; pending Outbox state remains available to a separate dispatcher for
+a custom service that omits that setting. Current workspace views have source revision identity alongside fixed snapshots.
+Review, independent candidate checks, hashes and accepted-state lineage retain
+their own records. Specific resource gateways enforce their own Lease claims.
+
+The [owner contract](../docs/runtime/OWNER-RUNTIME.md) defines this service
+behavior. Surface/database owner adoption and signed Receiver process
+deployment are separate state transitions. Receiver owner/native activation
+binds the new factory/configuration digest to a Node-signed Endpoint revision
+before restart and readback, preserving original identities and revocation.
+Reference Gate evidence retains its measured Profile and baseline;
+Workspace metadata and protocol upgrades retain their separate lifecycle.
+
 ## Four runtime planes
 
 ### Execution Plane

@@ -197,7 +197,7 @@ def test_1_11_migration_preserves_existing_domain_rows(setup):
     f.authority.initialize()
     with psycopg.connect(f.dsn) as connection:
         assert connection.execute("SELECT row_to_json(g) FROM grants g ORDER BY grant_ref").fetchall() == before
-        assert connection.execute("SELECT schema_version FROM runtime_schema_metadata").fetchone() == ("1.12",)
+        assert connection.execute("SELECT schema_version FROM runtime_schema_metadata").fetchone() == ("1.13",)
         assert connection.execute("SELECT count(*) FROM grant_delegations").fetchone() == (0,)
 
 

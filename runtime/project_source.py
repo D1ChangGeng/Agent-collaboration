@@ -6,6 +6,7 @@ import fnmatch
 import hashlib
 import json
 from collections.abc import Mapping
+from dataclasses import replace
 from pathlib import PurePosixPath
 
 from runtime.artifacts import ArtifactError
@@ -80,7 +81,7 @@ class ProjectSources:
             reader.close()
 
     def capture(self, request, authority, command):
-        if request.allow_dirty or request.include_untracked or not request.expected_commit or not request.expected_tree:
+        if authority.access_mode != "owner" and (request.allow_dirty or request.include_untracked or not request.expected_commit or not request.expected_tree):
             raise ValueError("project Source binding requires an exact clean committed baseline")
         return self._reader(request.scope_id).admit(request, source_authorizer(authority, command),
                                  artifact_authorize=artifact_authorizer(authority, command))
@@ -107,6 +108,23 @@ class ProjectSources:
         if type(value) is not int or not minimum <= value <= maximum:
             raise ValueError("Source output bound is invalid")
         return value
+
+    def current(self, snapshot, authority, command, *, root=None, preferred_root=None):
+        """Read the chosen current workspace independently of the recorded location."""
+        request = SourceRequest(root=root or preferred_root or snapshot.repository_root, tenant_id=snapshot.tenant_id,
+            scope_id=snapshot.scope_id, root_id=snapshot.root_id, route_id=snapshot.route_id,
+            allow_dirty=True, include_untracked=True)
+        reader = self._reader(snapshot.scope_id)
+        primary = None
+        if root is None:
+            selected, primary = reader.main_worktree(request, source_authorizer(authority, command))
+            request = replace(request, root=selected)
+        observed = reader.observe(request, source_authorizer(authority, command))
+        selection = {"mode": "current_workspace", "location_choice": "caller" if root else
+                     "main_worktree" if primary else "available_worktree",
+                     "main_worktree_available": primary, "version_guidance": "advisory",
+                     "provider_choice": "agent"}
+        return request, observed, selection
 
     def observe(self, snapshot, authority, command):
         request = SourceRequest(root=snapshot.repository_root, tenant_id=snapshot.tenant_id,
@@ -170,7 +188,7 @@ class ProjectSources:
         truncated = last < min(len(lines), end)
         # A single oversized line cannot be paged by line number. Its verified
         # ArtifactRef remains available rather than repeating the same follow-up.
-        return {"path": item.path, "revision": snapshot.source_commit,
+        return {"path": item.path, "revision": snapshot.view_revision,
                 "sha256": item.sha256, "bytes": item.size_bytes,
                 "start_line": start, "end_line": last, "total_lines": len(lines),
                 "content": content, "truncated": truncated,
@@ -190,7 +208,7 @@ class ProjectSources:
             parts = item.path[len(prefix):].split("/")
             selected = prefix + "/".join(parts[:depth])
             entries[selected] = {"path": selected, "kind": "directory" if len(parts) > depth else "file",
-                                 "revision": snapshot.source_commit}
+                                 "revision": snapshot.view_revision}
             if len(parts) <= depth:
                 entries[selected].update(bytes=item.size_bytes, sha256=item.sha256)
         cursor = args.get("cursor")
@@ -231,7 +249,7 @@ class ProjectSources:
             matches = [n for n, line in enumerate(text.splitlines(), 1) if query in line]
             if query in item.path or matches:
                 rows.append({"path": item.path, "lines": matches[:20], "sha256": item.sha256,
-                             "revision": snapshot.source_commit})
+                             "revision": snapshot.view_revision})
         return {"items": rows, "next_cursor": last if more else None, "scanned_bytes": scanned}
 
     def read_diff(self, base, target, args, authority, command):
@@ -268,7 +286,7 @@ class ProjectSources:
                 content += diff
             else:
                 truncated = True
-        return {"base_revision": base.source_commit, "target_revision": target.source_commit,
+        return {"base_revision": base.view_revision, "target_revision": target.view_revision,
                 "content": content, "changes": changes, "truncated": truncated}
 
     @staticmethod

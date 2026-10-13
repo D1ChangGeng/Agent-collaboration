@@ -10,6 +10,7 @@ from typing import Any, ClassVar
 from runtime.delivery import digest as delivery_digest
 from runtime.delivery_models import DeliveryEnvelope, InvocationRequest
 from runtime.errors import AuthorizationDenied, IdempotencyConflict
+from runtime.lifetimes import earliest
 from runtime.models import CommandEnvelope, CommandResult
 from runtime.recovery import (
     AuthoritySnapshot,
@@ -100,6 +101,13 @@ class RecoveryService:
     def _authorize(self, cursor: Any, command: CommandEnvelope, name: str, scope_id: str | None) -> str:
         permission = self.PERMISSIONS[name]
         self.authority._authorize(command, cursor, permission, scope_id)
+        if self.authority.access_mode == "owner":
+            cursor.execute("SELECT policy FROM scopes WHERE tenant_id=%s AND scope_id=%s AND status='active'",
+                           (command.tenant_id, scope_id))
+            row = cursor.fetchone()
+            if row is None:
+                raise BoundaryRejected("response project context is unavailable")
+            return delivery_digest(row[0])
         cursor.execute(
             "SELECT g.scope_id,g.permissions,g.expires_at,g.revoked_at,s.status,s.policy,"
             "a.status,clock_timestamp() FROM grants g "
@@ -131,8 +139,7 @@ class RecoveryService:
                 or stored.canonical() != observation.canonical()):
             raise BoundaryRejected("Node response Outbox differs from submitted observation")
 
-    @staticmethod
-    def _harness_current(cursor, command, packet, observation, selected) -> tuple[bool, bool]:
+    def _harness_current(self, cursor, command, packet, observation, selected) -> tuple[bool, bool]:
         proof = observation.harness_proof
         if proof is None:
             raise BoundaryRejected("authoritative Harness session proof is required")
@@ -231,11 +238,12 @@ class RecoveryService:
         cursor.execute("SELECT clock_timestamp()")
         database_now = cursor.fetchone()[0]
         node_current = (node is not None and node[0:2] == ("active", "active")
-                        and node[2] > database_now)
+                        and (self.authority.access_mode == "owner" or node[2] > database_now))
         current = (head[0] == proof.revision and head[1] == proof.binding_id
                    and binding[7] == "active" and slot[2] == "active"
                    and causal_current
-                   and node_current and runtime[5] == "active" and runtime[6] > database_now
+                   and node_current and runtime[5] == "active"
+                   and (self.authority.access_mode == "owner" or runtime[6] > database_now)
                    and work[2] not in {"failed", "cancelled"}
                    and work[3] == packet.source_baseline)
         return current, producer_authenticated
@@ -302,7 +310,7 @@ class RecoveryService:
             current_attempt_id=str(latest[0]) if latest else "unavailable",
             current_accepted_revision=packet.accepted_revision,
             current_accepted_state_digest=str(row[3]),
-            deadline=min(command.deadline, row[2]),
+            deadline=earliest(command.deadline, row[2]),
             principal_ref=command.principal_ref,
             grant_ref=command.grant_ref,
             policy_version=str(row[4]),
@@ -340,7 +348,7 @@ class RecoveryService:
         accepted_digest = (
             incident["accepted_state_digest"] if incident else seed["accepted_state_digest"]
         )
-        deadline = min(
+        deadline = earliest(
             command.deadline,
             message[1],
             incident["expires_at"] if incident else seed["expires_at"],

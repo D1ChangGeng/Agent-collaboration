@@ -12,6 +12,7 @@ from typing import Any
 from nacl.signing import SigningKey
 
 from runtime.connection_clock import ClockUnavailable, ConnectionClock
+from runtime.lifetimes import earliest
 from runtime.receiver import ReceiverRejected, ReceiverService
 from runtime.receiver_config import (
     ReceiverClientConfig,
@@ -47,7 +48,7 @@ class RemoteNodeTransport:
     def send(self, request: SignedRequest) -> SignedReceipt:
         registration = self.config.binding.registration
         try:
-            self.clock.require_before(min(request.admission.deadline, registration.expires_at))
+            self.clock.require_before(earliest(request.admission.deadline, None if self.config.access_mode == "owner" else registration.expires_at))
         except ClockUnavailable as error:
             raise RemoteTransportRejected("receiver transport Authority time is unavailable or expired") from error
         connection = http.client.HTTPSConnection(
@@ -78,6 +79,25 @@ class RemoteNodeTransport:
             ValueError,
         ) as error:
             raise RemoteTransportRejected("receiver transport acknowledgement unavailable") from error
+        finally:
+            connection.close()
+
+    def inspect_runtime(self):
+        connection = http.client.HTTPSConnection(self.config.binding.locator_host,
+            self.config.binding.locator_port, context=self._context(), timeout=self.timeout)
+        try:
+            connection.connect()
+            if tls_fingerprint(connection.sock.getpeercert(binary_form=True)) != self.config.binding.registration.tls_certificate_sha256:
+                raise RemoteTransportRejected("receiver TLS fingerprint rejected")
+            connection.request("GET", "/healthz")
+            response = connection.getresponse()
+            data = response.read(16385)
+            if response.status != 200 or len(data) > 16384:
+                raise RemoteTransportRejected("receiver health readback unavailable")
+            value = json.loads(data)
+            if value.get("state") not in {"idle", "busy", "online", "unknown", "offline"}:
+                raise RemoteTransportRejected("receiver health state rejected")
+            return value
         finally:
             connection.close()
 
@@ -131,7 +151,7 @@ class RemoteNodeTransport:
         )
         if (actual != expected or observed.state not in states[admission.purpose]
                 or not links_ok
-                or not self.clock.fresh(observed.observed_at, admission.deadline)):
+                or not self.clock.fresh(observed.observed_at, None if self.config.access_mode == "owner" else admission.deadline)):
             raise RemoteTransportRejected("receiver receipt identity rejected")
 
 
@@ -158,6 +178,13 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
         self.service = ReceiverService(
             config, node_signing_key, authorize_current=authorize_current, clock=clock,
         )
+        from runtime.filesystem_transport import NodeFilesystemService
+        provider = getattr(native_invoke, "__self__", None)
+        authority = getattr(provider, "authority", None)
+        file_authority = (authority.receiver_transport.current_filesystem_authority
+                          if authority is not None else None)
+        self.filesystem = (NodeFilesystemService(config, node_signing_key, file_authority)
+                           if config.access_mode == "owner" and callable(file_authority) else None)
         self.service.claim_boot(
             config.expected_boot_incarnation, config.journal_generation,
             old_boot_isolation_ref=config.old_boot_isolation_ref,
@@ -167,6 +194,8 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
             config.listen_port or config.binding.locator_port,
         )
         super().__init__(listen, ReceiverHandler)
+        # A disconnected peer can disappear after selector readiness.
+        self.socket.settimeout(0.5)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version = ssl.TLSVersion.TLSv1_3
         context.maximum_version = ssl.TLSVersion.TLSv1_3
@@ -177,7 +206,18 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
                 raise RemoteTransportRejected("receiver TLS identity changed while loading")
         except PathSecurityRejected:
             raise RemoteTransportRejected("receiver TLS path admission rejected") from None
-        self.socket = context.wrap_socket(self.socket, server_side=True)
+        self._tls_context = context
+
+    def get_request(self):
+        raw, address = self.socket.accept()
+        raw.settimeout(2)
+        try:
+            secured = self._tls_context.wrap_socket(raw, server_side=True)
+            secured.settimeout(5)
+            return secured, address
+        except BaseException:
+            raw.close()
+            raise
 
     def verify_presented_certificate(self):
         context = RemoteNodeTransport._context()
@@ -208,6 +248,22 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
 class ReceiverHandler(BaseHTTPRequestHandler):
     server: ReceiverHTTPServer
 
+    def do_GET(self):
+        if self.path != "/healthz":
+            self.send_error(404)
+            return
+        provider = getattr(getattr(self.server._native_invoke, "__self__", None), "health", None)
+        try:
+            value = provider() if callable(provider) else {"state": "online", "harness": "unknown", "version": "unknown"}
+        except Exception:  # noqa: BLE001 -- health output never contains private errors
+            value = {"state": "offline", "harness": "unknown", "version": "unknown"}
+        encoded = json.dumps(value).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(encoded)))
+        self.end_headers()
+        self.wfile.write(encoded)
+
     def do_POST(self):
         try:
             if self.headers.get("Content-Type") != "application/json":
@@ -216,11 +272,33 @@ class ReceiverHandler(BaseHTTPRequestHandler):
             if not 0 <= length <= self.server.config.maximum_body_bytes:
                 raise ReceiverRejected("body length rejected")
             raw = self.rfile.read(length)
+            if self.path == "/v1/filesystem":
+                from runtime.machine_filesystem import FilesystemError
+                if self.server.filesystem is None:
+                    raise ReceiverRejected("machine file service is unavailable")
+                try:
+                    value = self.server.filesystem.handle(json.loads(raw))
+                except FilesystemError as error:
+                    encoded = json.dumps({"status": "rejected", "code": error.code}).encode()
+                    self.send_response(409)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(encoded)))
+                    self.end_headers()
+                    self.wfile.write(encoded)
+                    return
+                encoded = json.dumps(value).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+                return
             request = SignedRequest.model_validate_json(raw, strict=True)
             if request.admission.path != self.path:
                 raise ReceiverRejected("request path rejected")
             receipt = self.server.service.handle(request, self.server.native_invoke,
-                                                 native_readiness=self.server.native_readiness)
+                                                 native_readiness=self.server.native_readiness,
+                                                 response_reader=getattr(getattr(self.server._native_invoke, "__self__", None), "read_response_artifact", None))
             if self.server.drop_response(request.admission.purpose):
                 self.close_connection = True
                 try:
@@ -263,9 +341,11 @@ def serve(config: ReceiverRuntimeConfig, ready=None, authorize_current=None, nat
     worker = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
     worker.start()
     previous_handlers = {}
+    stop_requested = False
     if threading.current_thread() is threading.main_thread():
         def stop(_signum, _frame):
-            server.shutdown()
+            nonlocal stop_requested
+            stop_requested = True
 
         for name in ("SIGTERM", "SIGINT"):
             number = getattr(signal, name, None)
@@ -277,11 +357,14 @@ def serve(config: ReceiverRuntimeConfig, ready=None, authorize_current=None, nat
             raise RemoteTransportRejected("receiver deployment policy readiness check rejected")
         if ready is not None:
             ready.set()
-        worker.join()
+        while worker.is_alive() and not stop_requested:
+            worker.join(timeout=0.1)
     finally:
-        for number, previous in previous_handlers.items():
-            signal.signal(number, previous)
-        server.shutdown()
-        server.server_close()
-        worker.join(timeout=5)
-        server.close_runtime()
+        try:
+            server.shutdown()
+            server.server_close()
+            worker.join(timeout=5)
+            server.close_runtime()
+        finally:
+            for number, previous in previous_handlers.items():
+                signal.signal(number, previous)

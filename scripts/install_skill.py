@@ -46,11 +46,16 @@ INSTALL_CONTENT = (
     "docs/RELEASE-NOTES-v1.3.1.md",
     "docs/RELEASE-NOTES-v1.4.0.md",
     "docs/TROUBLESHOOTING.md",
+    "docs/runtime/OWNER-RUNTIME.md",
+    "docs/runtime/MACHINE-FILESYSTEM.md",
+    "docs/runtime/UPGRADE-CONTRACT.md",
+    "docs/runtime/skills/README.md",
     "docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md",
     "docs/runtime/PROJECT-ADOPTION.md",
     "docs/runtime/SEND-WAIT-LIFECYCLE.md",
     "docs/runtime/TIME-MODEL.md",
     "docs/runtime/AGENT-ORGANIZATION-MODEL.md",
+    "docs/runtime/STARTUP-RECOVERY.md",
     "docs/runtime/SOURCE-DISCOVERY.md",
 )
 REQUIRED_CONTENT = {"SKILL.md", "VERSION", "scripts"}

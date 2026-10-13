@@ -4,6 +4,8 @@ from __future__ import annotations
 import ipaddress
 import json
 import uuid
+from copy import copy
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any, Literal
 
@@ -11,7 +13,13 @@ from nacl.bindings import crypto_core_ed25519_is_valid_point
 from pydantic import BaseModel, ConfigDict, Field
 
 from runtime.enrollment_models import NodeCommandProof
-from runtime.errors import AcceptanceGuardFailed, AuthorizationDenied, RevisionConflict
+from runtime.errors import (
+    AcceptanceGuardFailed,
+    AuthorizationDenied,
+    BusinessDeadlineExpired,
+    RevisionConflict,
+)
+from runtime.lifetimes import earliest, expired
 from runtime.models import CommandEnvelope, CommandResult
 from runtime.receiver_crypto import key_fingerprint, sha256, verify
 from runtime.receiver_models import EndpointRegistration, SignedReceipt, SignedRequest
@@ -25,7 +33,7 @@ class AuthorityTransportKeyRegistration(ReceiverDomainInput):
     key_id: str = Field(min_length=1, max_length=256)
     revision: int = Field(ge=1, strict=True)
     public_key: str = Field(pattern=r"^[a-f0-9]{64}$")
-    expires_at: datetime
+    expires_at: datetime | None = None
 
 
 class ConnectionReferenceRegistration(ReceiverDomainInput):
@@ -35,16 +43,18 @@ class ConnectionReferenceRegistration(ReceiverDomainInput):
     locator_port: int = Field(ge=1, le=65535, strict=True)
     route_class: Literal["loopback", "private", "tunnel"]
     policy_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
-    expires_at: datetime
+    expires_at: datetime | None = None
 
 
 class EndpointRegistrationCommand(ReceiverDomainInput):
     registration: EndpointRegistration
     registration_signature: str = Field(pattern=r"^[a-f0-9]{128}$")
-    proof: NodeCommandProof
+    proof: NodeCommandProof | None = None
 
 
-def _time(value: datetime) -> datetime:
+def _time(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
     if value.tzinfo is None:
         raise AcceptanceGuardFailed("receiver timestamp requires timezone")
     return value.astimezone(UTC)
@@ -111,7 +121,7 @@ class ReceiverTransportAuthority:
             actual_revision = int(prior[0]) if prior else 0
             if actual_revision != command.expected_revision:
                 raise RevisionConflict(command.target_id, command.expected_revision, actual_revision)
-            if _time(request.expires_at) <= self.authority.canonical_now(cursor):
+            if self.authority.access_mode != "owner" and (request.expires_at is None or expired(_time(request.expires_at), self.authority.canonical_now(cursor))):
                 raise AcceptanceGuardFailed("receiver authority key is expired")
             cursor.execute(
                 "UPDATE authority_transport_keys SET status='retired',retired_at=clock_timestamp() "
@@ -119,7 +129,7 @@ class ReceiverTransportAuthority:
                 (command.tenant_id, command.authority_id, command.authority_incarnation),
             )
             self.authority._authorize(command, cursor, "receiver.manage")
-            if _time(request.expires_at) <= self.authority.canonical_now(cursor):
+            if self.authority.access_mode != "owner" and (request.expires_at is None or expired(_time(request.expires_at), self.authority.canonical_now(cursor))):
                 raise AcceptanceGuardFailed("receiver authority key is expired")
             cursor.execute(
                 "INSERT INTO authority_transport_keys(tenant_id,authority_id,authority_incarnation,key_id,"
@@ -127,7 +137,7 @@ class ReceiverTransportAuthority:
                 "VALUES (%s,%s,%s,%s,%s,%s,%s,'active',%s,%s,%s)",
                 (command.tenant_id, command.authority_id, command.authority_incarnation,
                  request.key_id, request.revision, request.public_key, fingerprint,
-                 request.expires_at, command.command_id, result.operation_id),
+                 None if self.authority.access_mode == "owner" else request.expires_at, command.command_id, result.operation_id),
             )
             self._event(cursor, command, result, digest, "receiver.authority_key_registered")
         return result
@@ -159,10 +169,10 @@ class ReceiverTransportAuthority:
             actual_revision = int(prior[0]) if prior else 0
             if actual_revision != command.expected_revision or request.revision != actual_revision + 1:
                 raise RevisionConflict(command.target_id, command.expected_revision, actual_revision)
-            if _time(request.expires_at) <= self.authority.canonical_now(cursor):
+            if self.authority.access_mode != "owner" and (request.expires_at is None or expired(_time(request.expires_at), self.authority.canonical_now(cursor))):
                 raise AcceptanceGuardFailed("receiver connection reference is expired")
             self.authority._authorize(command, cursor, "receiver.manage")
-            if _time(request.expires_at) <= self.authority.canonical_now(cursor):
+            if self.authority.access_mode != "owner" and (request.expires_at is None or expired(_time(request.expires_at), self.authority.canonical_now(cursor))):
                 raise AcceptanceGuardFailed("receiver connection reference is expired")
             cursor.execute(
                 "INSERT INTO deployment_connection_refs(tenant_id,connection_ref,revision,locator_host,"
@@ -173,7 +183,8 @@ class ReceiverTransportAuthority:
                 "route_class=EXCLUDED.route_class,policy_digest=EXCLUDED.policy_digest,"
                 "status='active',valid_from=clock_timestamp(),expires_at=EXCLUDED.expires_at",
                 (command.tenant_id, request.connection_ref, request.revision, request.locator_host,
-                 request.locator_port, request.route_class, request.policy_digest, request.expires_at),
+                 request.locator_port, request.route_class, request.policy_digest,
+                 None if self.authority.access_mode == "owner" else request.expires_at),
             )
             self._event(cursor, command, result, digest, "receiver.connection_registered")
         return result
@@ -216,8 +227,8 @@ class ReceiverTransportAuthority:
             key_row = cursor.fetchone()
             cursor.execute(
                 "SELECT 1 FROM deployment_connection_refs WHERE tenant_id=%s AND connection_ref=%s "
-                "AND status='active' AND expires_at>clock_timestamp() FOR UPDATE",
-                (command.tenant_id, registration.connection_ref),
+                "AND status='active' AND (%s OR expires_at>clock_timestamp()) FOR UPDATE",
+                (command.tenant_id, registration.connection_ref, self.authority.access_mode == "owner"),
             )
             connection_current = cursor.fetchone()
             expected = (
@@ -239,7 +250,7 @@ class ReceiverTransportAuthority:
                     or runtime_value["node_boot_incarnation"] != registration.boot_incarnation):
                 raise AcceptanceGuardFailed("receiver endpoint Runtime binding differs")
             verify(key_row[1], request.registration_signature, registration)
-            if not self.authority.canonical_now(cursor) < _time(registration.expires_at) <= _time(valid_until):
+            if self.authority.access_mode != "owner" and (registration.expires_at is None or not self.authority.canonical_now(cursor) < _time(registration.expires_at) <= _time(valid_until)):
                 raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node proof")
             cursor.execute(
                 "SELECT endpoint_revision FROM delivery_endpoint_registrations WHERE tenant_id=%s "
@@ -256,7 +267,7 @@ class ReceiverTransportAuthority:
                 (command.tenant_id, registration.endpoint_id),
             )
             self.authority._authorize(command, cursor, "endpoint.register", registration.scope_id)
-            if not self.authority.canonical_now(cursor) < _time(registration.expires_at) <= _time(valid_until):
+            if self.authority.access_mode != "owner" and (registration.expires_at is None or not self.authority.canonical_now(cursor) < _time(registration.expires_at) <= _time(valid_until)):
                 raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node proof")
             cursor.execute(
                 "INSERT INTO delivery_endpoint_registrations(tenant_id,authority_id,authority_incarnation,"
@@ -272,7 +283,8 @@ class ReceiverTransportAuthority:
                  registration.boot_incarnation, registration.scope_id, registration.agent_slot_id,
                  registration.tls_certificate_sha256, registration.config_sha256, key_row[0],
                  registration.model_dump_json(), sha256(registration), request.registration_signature,
-                 request.proof.challenge_id, registration.expires_at, command.command_id, result.operation_id),
+                 request.proof.challenge_id if request.proof else None,
+                 None if self.authority.access_mode == "owner" else registration.expires_at, command.command_id, result.operation_id),
             )
             self._event(cursor, command, result, digest, "receiver.endpoint_registered")
         return result
@@ -284,9 +296,9 @@ class ReceiverTransportAuthority:
                 "JOIN deployment_connection_refs c ON c.tenant_id=e.tenant_id AND c.connection_ref=e.connection_ref "
                 "JOIN enrolled_node_keys k ON k.key_id=e.node_key_id "
                 "WHERE e.tenant_id=%s AND e.endpoint_id=%s AND e.status='active' "
-                "AND c.status='active' AND k.status='active' AND e.expires_at>clock_timestamp() "
-                "AND c.expires_at>clock_timestamp()",
-                (self.authority.tenant_id, endpoint_id),
+                "AND c.status='active' AND k.status='active' "
+                "AND (%s OR (e.expires_at>clock_timestamp() AND c.expires_at>clock_timestamp()))",
+                (self.authority.tenant_id, endpoint_id, self.authority.access_mode == "owner"),
             )
             row = cursor.fetchone()
             if row is None:
@@ -298,9 +310,9 @@ class ReceiverTransportAuthority:
             cursor.execute(
                 "SELECT key_id,revision,public_key,fingerprint,expires_at FROM authority_transport_keys "
                 "WHERE tenant_id=%s AND authority_id=%s AND authority_incarnation=%s AND status='active' "
-                "AND expires_at>clock_timestamp()",
+                "AND (%s OR expires_at>clock_timestamp())",
                 (self.authority.tenant_id, self.authority.context.authority_id,
-                 self.authority.context.authority_incarnation),
+                 self.authority.context.authority_incarnation, self.authority.access_mode == "owner"),
             )
             row = cursor.fetchone()
             if row is None:
@@ -318,13 +330,13 @@ class ReceiverTransportAuthority:
             return [{"receipt_id": row[0], "state": row[1], "receipt": row[2]}
                     for row in cursor.fetchall()]
 
-    def dispatch_admission(self, operation_id: str) -> SignedRequest | None:
+    def dispatch_admission(self, operation_id: str, *, dispatch_id=None) -> SignedRequest | None:
         with self.authority._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 "SELECT signed_request_json FROM delivery_transport_admissions WHERE tenant_id=%s "
                 "AND operation_id=%s AND purpose IN ('delivery.dispatch','delivery.recover') "
-                "ORDER BY recorded_at DESC LIMIT 1",
-                (self.authority.tenant_id, operation_id),
+                "AND (%s::text IS NULL OR dispatch_id=%s) ORDER BY recorded_at DESC LIMIT 1",
+                (self.authority.tenant_id, operation_id, dispatch_id, dispatch_id),
             )
             row = cursor.fetchone()
             return _model(SignedRequest, row[0]) if row else None
@@ -364,6 +376,13 @@ class ReceiverTransportAuthority:
                 return None
             return request, receipt
 
+    def _command_actor(self, command):
+        actor = self.authority
+        if actor.access_mode == "owner":
+            actor = copy(actor)
+            actor.context = replace(actor.context, principal_ref=command.principal_ref, grant_ref=command.grant_ref)
+        return actor
+
     def dispatch_marker_current(self, invocation) -> bool:
         with self.authority._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
@@ -374,6 +393,33 @@ class ReceiverTransportAuthority:
                  invocation.dispatch_id),
             )
             return cursor.fetchone() is not None
+
+    def current_filesystem_authority(self, request) -> bool:
+        if self.authority.access_mode != "owner":
+            return False
+        try:
+            endpoint = self.load_endpoint(request["endpoint_id"])
+            registration = endpoint["registration"]
+            if any(request[key] != registration[key] for key in
+                   ("tenant_id", "authority_id", "authority_incarnation", "endpoint_id",
+                    "endpoint_revision", "node_id", "machine_id", "boot_incarnation")):
+                return False
+            key = self.load_authority_key()
+            if (request["authority_key_id"], request["authority_key_revision"]) != (key["key_id"], key["revision"]):
+                return False
+            command = CommandEnvelope(command_id=request["request_id"], command_type="machine.filesystem",
+                idempotency_key=request["request_id"], correlation_id=request["request_id"],
+                tenant_id=request["tenant_id"], authority_id=request["authority_id"],
+                authority_incarnation=request["authority_incarnation"], principal_ref=request["principal_ref"],
+                grant_ref=request["grant_ref"], target_kind="node", target_id=request["node_id"],
+                expected_revision=0, issued_at=datetime.fromisoformat(request["issued_at"]), deadline=None)
+            actor = self._command_actor(command)
+            with self.authority._connect() as connection, connection.cursor() as cursor:
+                actor._authorize(command, cursor, "machine.filesystem")
+                self.authority.enrollment._active_runtime(cursor, registration["runtime_id"])
+            return True
+        except (AuthorizationDenied, AcceptanceGuardFailed, BusinessDeadlineExpired, ValueError, KeyError):
+            return False
 
     def current_authority(self, admission, *, clock_skew_seconds: int = 0) -> bool:
         try:
@@ -387,12 +433,12 @@ class ReceiverTransportAuthority:
                     "AND k.authority_id=%s AND k.authority_incarnation=%s "
                     "WHERE m.tenant_id=%s AND m.message_id=%s AND m.operation_id=%s "
                     "AND e.endpoint_id=%s AND e.endpoint_revision=%s AND e.status='active' "
-                    "AND e.expires_at>clock_timestamp() AND k.key_id=%s AND k.revision=%s "
-                    "AND k.status='active' AND k.expires_at>clock_timestamp() FOR UPDATE OF m,e,k",
+                    "AND k.key_id=%s AND k.revision=%s AND k.status='active' "
+                    "AND (%s OR (e.expires_at>clock_timestamp() AND k.expires_at>clock_timestamp())) FOR UPDATE OF m,e,k",
                     (admission.authority_id, admission.authority_incarnation, admission.tenant_id,
                      admission.message_id, admission.operation_id, admission.endpoint_id,
                      admission.endpoint_revision, admission.authority_key_id,
-                     admission.authority_key_revision),
+                     admission.authority_key_revision, self.authority.access_mode == "owner"),
                 )
                 row = cursor.fetchone()
                 if row is None or tuple(row[1:9]) != (
@@ -402,24 +448,29 @@ class ReceiverTransportAuthority:
                 ):
                     return False
                 command = _model(CommandEnvelope, row[0])
-                self.authority._authorize(
-                    command,
+                actor = self._command_actor(command)
+                actor._authorize(
+                    command.model_copy(update={"deadline": None}) if self.authority.access_mode == "owner" and admission.purpose == "delivery.readback" else command,
                     cursor,
-                    "message.send",
+                    "message.read" if self.authority.access_mode == "owner" and admission.purpose == "delivery.readback" else "message.send",
                     admission.scope_id,
                     clock_skew_seconds=clock_skew_seconds,
                 )
                 if admission.purpose in {"delivery.dispatch", "delivery.recover", "delivery.readiness"}:
-                    self.authority._authorize(
+                    actor._authorize(
                         command,
                         cursor,
                         "runtime.invoke",
                         admission.scope_id,
                         clock_skew_seconds=clock_skew_seconds,
                     )
+                if self.authority.access_mode == "owner":
+                    self.authority.enrollment._active_runtime(cursor, admission.runtime_id)
                 now = self.authority.canonical_now(cursor)
-                return now < min(command.deadline, admission.deadline, row[9], row[10])
-        except (AuthorizationDenied, AcceptanceGuardFailed, ValueError):
+                bound = earliest(command.deadline, admission.deadline,
+                                 *(row[9:11] if self.authority.access_mode != "owner" else ()))
+                return not expired(bound, now)
+        except (AuthorizationDenied, AcceptanceGuardFailed, BusinessDeadlineExpired, ValueError):
             return False
 
     def admission(self, request_id: str) -> SignedRequest | None:
@@ -438,14 +489,14 @@ class ReceiverTransportAuthority:
         with self.authority._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 "SELECT public_key,expires_at FROM authority_transport_keys WHERE tenant_id=%s AND key_id=%s "
-                "AND revision=%s AND status='active' AND expires_at>clock_timestamp() FOR UPDATE",
-                (admission.tenant_id, admission.authority_key_id, admission.authority_key_revision),
+                "AND revision=%s AND status='active' AND (%s OR expires_at>clock_timestamp()) FOR UPDATE",
+                (admission.tenant_id, admission.authority_key_id, admission.authority_key_revision, self.authority.access_mode == "owner"),
             )
             key = cursor.fetchone()
-            if key is None or key[1] <= self.authority.canonical_now(cursor):
+            if key is None or (self.authority.access_mode != "owner" and expired(key[1], self.authority.canonical_now(cursor))):
                 raise AuthorizationDenied("receiver", admission.authority_key_id)
             verify(key[0], request.signature, admission)
-            if admission.body_sha256 != sha256(body) or admission.deadline <= self.authority.canonical_now(cursor):
+            if admission.body_sha256 != sha256(body) or expired(admission.deadline, self.authority.canonical_now(cursor)):
                 raise AcceptanceGuardFailed("receiver admission body or deadline rejected")
             cursor.execute(
                 "SELECT m.command_json,m.envelope_hash,m.accepted_state_digest,"
@@ -461,14 +512,17 @@ class ReceiverTransportAuthority:
             if lineage is None:
                 raise AcceptanceGuardFailed("receiver admission delivery lineage is unavailable")
             command = _model(CommandEnvelope, lineage[0])
-            self.authority._authorize(command, cursor, "message.send", admission.scope_id)
+            actor = self._command_actor(command)
+            if self.authority.access_mode == "owner" and admission.purpose == "delivery.readback":
+                command = command.model_copy(update={"deadline": None})
+            actor._authorize(command, cursor, "message.send", admission.scope_id)
             if admission.purpose in {"delivery.dispatch", "delivery.recover", "delivery.readiness"}:
-                self.authority._authorize(command, cursor, "runtime.invoke", admission.scope_id)
+                actor._authorize(command, cursor, "runtime.invoke", admission.scope_id)
             cursor.execute(
                 "SELECT to_jsonb(e) FROM delivery_endpoint_registrations e WHERE tenant_id=%s "
                 "AND endpoint_id=%s AND endpoint_revision=%s AND status='active' "
-                "AND expires_at>clock_timestamp() FOR UPDATE",
-                (admission.tenant_id, admission.endpoint_id, admission.endpoint_revision),
+                "AND (%s OR expires_at>clock_timestamp()) FOR UPDATE",
+                (admission.tenant_id, admission.endpoint_id, admission.endpoint_revision, self.authority.access_mode == "owner"),
             )
             endpoint = cursor.fetchone()
             if endpoint is None:
@@ -494,6 +548,8 @@ class ReceiverTransportAuthority:
                 admission.machine_id, admission.boot_incarnation, admission.scope_id,
                 admission.agent_slot_id,
             )
+            if self.authority.access_mode == "owner" and admission.purpose == "delivery.readback":
+                expected, actual = expected[:-1], actual[:-1]
             if expected != actual or endpoint_expected != endpoint_actual:
                 lineage_names = (
                     "authority_id", "authority_incarnation", "envelope_digest",
@@ -504,7 +560,7 @@ class ReceiverTransportAuthority:
                     "runtime_id", "runtime_revision", "node_id", "machine_id",
                     "boot_incarnation", "scope_id", "agent_slot_id",
                 )
-                changed = [name for name, left, right in zip(lineage_names, expected, actual, strict=True)
+                changed = [name for name, left, right in zip(lineage_names[:len(expected)], expected, actual, strict=True)
                            if left != right]
                 changed.extend(name for name, left, right in zip(
                     endpoint_names, endpoint_expected, endpoint_actual, strict=True,
@@ -520,12 +576,13 @@ class ReceiverTransportAuthority:
             )
             prior = cursor.fetchone()
             signed_digest = sha256(request)
-            self.authority._authorize(command, cursor, "message.send", admission.scope_id)
+            actor._authorize(command, cursor, "message.send", admission.scope_id)
             if admission.purpose in {"delivery.dispatch", "delivery.recover", "delivery.readiness"}:
-                self.authority._authorize(command, cursor, "runtime.invoke", admission.scope_id)
+                actor._authorize(command, cursor, "runtime.invoke", admission.scope_id)
             now = self.authority.canonical_now(cursor)
-            endpoint_expiry = _time(datetime.fromisoformat(endpoint["expires_at"]))
-            if now >= min(admission.deadline, key[1], endpoint_expiry):
+            endpoint_expiry = _time(datetime.fromisoformat(endpoint["expires_at"])) if endpoint["expires_at"] else None
+            bound = earliest(admission.deadline, *( (key[1], endpoint_expiry) if self.authority.access_mode != "owner" else ()))
+            if expired(bound, now):
                 raise AcceptanceGuardFailed("receiver admission binding or deadline expired during verification")
             if prior:
                 if prior[0] != signed_digest:

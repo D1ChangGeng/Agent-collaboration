@@ -58,6 +58,9 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         "accept_work", "cancel_work", "stop_attempt",
         "watch_changes", "set_notification",
         "create_route", "update_route",
+        "list_directory", "glob", "grep", "write_file", "edit_file", "apply_patch",
+        "filesystem_context", "select_filesystem",
+        "read_source_file", "list_source_files", "search_source_files",
     })
     DOMAIN_PERMISSIONS: ClassVar[dict[str, tuple[str, ...]]] = {
         "create_work": ("work_item.create",),
@@ -84,6 +87,13 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             raise ValueError("unknown Profile")
         self.service, self.catalog, self.profile = service, catalog, profile
         self.sources = sources
+        from runtime.filesystem_gateway import FilesystemGateway
+        from runtime.filesystem_schema import ALL_TOOLS, definition
+        self.filesystems = FilesystemGateway(service.authority)
+        if service.authority.access_mode == "owner":
+            self.catalog = {**catalog, "tools": dict(catalog["tools"])}
+            for name in ALL_TOOLS:
+                self.catalog["tools"][name] = definition(name)
         self.artifacts = getattr(service.authority, "_artifact_store", None)
 
     @property
@@ -201,7 +211,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             authority._authorize(command, cursor, "source.manage")
             bound, project, _ = self._authorize(authority, cursor, project_id, "list_sources",
                 {"project_id": project_id, "scope_handle": handle("scope", project_id, request.scope_id),
-                 "deadline": command.deadline.isoformat()})
+                 "deadline": command.deadline.isoformat() if command.deadline else None})
             command = command.model_copy(update={"grant_ref": bound.context.grant_ref})
             bound._authorize(command, cursor, "source.manage", request.scope_id)
             if (request.tenant_id, request.scope_id, request.root_id) != (
@@ -224,6 +234,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 "commit": request.expected_commit, "tree": request.expected_tree,
                 "scope_id": request.scope_id, "root_id": request.root_id, "route_id": request.route_id,
                 "max_bytes": request.max_bytes, "secret_patterns": request.secret_patterns,
+                **({"allow_dirty": request.allow_dirty, "include_untracked": request.include_untracked} if authority.access_mode == "owner" else {}),
                 "repository_identity": repository_identity,
             })
             if replay:
@@ -245,15 +256,18 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 previous_identity = cursor.fetchone()[0]
                 if any(previous_identity[key] != getattr(request, key) for key in ("scope_id", "root_id", "route_id")):
                     raise ValueError("Source Scope, Root and Route identity cannot be replaced")
+            if old and authority.access_mode == "owner":
+                if previous_identity["repository_root"] != str(request.root):
+                    request = replace(request, workspace_view=True)
             snapshot = self.sources.capture(request, bound, command)
             cursor.execute("INSERT INTO collaboration_sources VALUES (%s,%s,%s,%s,%s,%s) "
                            "ON CONFLICT(tenant_id,project_id,source_id) DO UPDATE "
                            "SET revision=EXCLUDED.revision,current_commit=EXCLUDED.current_commit",
                            (self.context.tenant_id, project_id, source_id, revision + 1,
-                            snapshot.source_commit, canonical(repository_identity)))
+                            snapshot.view_revision, canonical(repository_identity)))
             cursor.execute("SELECT snapshot_json FROM collaboration_source_snapshots WHERE tenant_id=%s "
                            "AND project_id=%s AND source_id=%s AND source_commit=%s",
-                           (self.context.tenant_id, project_id, source_id, snapshot.source_commit))
+                           (self.context.tenant_id, project_id, source_id, snapshot.view_revision))
             previous = cursor.fetchone()
             if previous:
                 retained = self.sources.snapshot(previous[0])
@@ -265,11 +279,11 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 cursor.execute("INSERT INTO collaboration_source_snapshots(tenant_id,project_id,source_id,"
                                "source_commit,snapshot_digest,snapshot_json,command_id) "
                                "VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                               (self.context.tenant_id, project_id, source_id, snapshot.source_commit,
+                               (self.context.tenant_id, project_id, source_id, snapshot.view_revision,
                                 snapshot.snapshot_sha256, canonical(snapshot.manifest_dict()), command.command_id))
             bound._operation(cursor, command, result.operation_id)
             bound._outbox(cursor, command, result.operation_id, "source.bound",
-                          {"project_id": project_id, "source_id": source_id, "commit": snapshot.source_commit})
+                          {"project_id": project_id, "source_id": source_id, "commit": snapshot.view_revision})
             cursor.execute("INSERT INTO domain_events(tenant_id,target_kind,target_id,to_state,initiated_by,"
                            "lineage_mode,command_id,resulting_revision,evidence_refs,command_hash_version,"
                            "canonical_hash) VALUES (%s,'project',%s,'source.bound',%s,'external_command',"
@@ -297,11 +311,13 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             principal_ref=context.principal_ref, grant_ref=context.grant_ref,
             target_kind=target_kind, target_id=target_id or args["project_id"],
             expected_revision=expected_revision, issued_at=now,
-            deadline=datetime.fromisoformat(args["deadline"]) if "deadline" in args and name != "project.send_message"
-            else now + timedelta(seconds=30), payload=payload or {},
+            deadline=datetime.fromisoformat(args["deadline"]) if args.get("deadline") and name != "project.send_message"
+            else (None if authority.access_mode == "owner" else now + timedelta(seconds=30)), payload=payload or {},
         )
 
     def _authorize(self, authority, cursor, project_id, name, args):
+        if authority.access_mode == "owner":
+            return self._owner_project_context(authority, cursor, project_id, name, args)
         cursor.execute(
             "SELECT p.scope_id,p.root_id,p.revision,p.context_manifest,m.grant_ref,m.agent_slot_id "
             "FROM collaboration_projects p JOIN collaboration_memberships m "
@@ -343,8 +359,30 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         return self._route_authority(bound, cursor, project_id, row, requested_scope,
                                      permissions, dict(args, _tool_name=name))
 
+    def _owner_project_context(self, authority, cursor, project_id, name, args):
+        cursor.execute(
+            "SELECT p.scope_id,p.root_id,p.revision,p.context_manifest,m.grant_ref,m.agent_slot_id "
+            "FROM collaboration_projects p JOIN LATERAL (SELECT grant_ref,agent_slot_id "
+            "FROM collaboration_memberships WHERE tenant_id=p.tenant_id AND project_id=p.project_id "
+            "ORDER BY (principal_ref=%s AND profile=%s) DESC,principal_ref,profile LIMIT 1) m ON TRUE "
+            "WHERE p.tenant_id=%s AND p.project_id=%s AND p.state='active' FOR UPDATE OF p",
+            (self.context.principal_ref, self.profile, self.context.tenant_id, project_id),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            raise NotFound("project", project_id)
+        scope = self._requested_scope(cursor, project_id, args)
+        return self._route_authority(authority, cursor, project_id, row, scope, (),
+                                     dict(args, _tool_name=name))
+
     def _accessible(self, credential, name="list_projects"):
         self.service.authenticate(credential)
+        if self.service.authority.access_mode == "owner":
+            with self.service.authority.transaction() as (_authority, connection):
+                rows = connection.execute("SELECT project_id,root_id,revision FROM collaboration_projects "
+                    "WHERE tenant_id=%s AND state='active' ORDER BY project_id", (self.context.tenant_id,)).fetchall()
+            return [{"project_id": project_id, "root_handle": handle("project", project_id, root),
+                     "project_revision": revision} for project_id, root, revision in rows]
         with self.service.authority.transaction() as (authority, connection):
             rows = connection.execute(
                 "SELECT project_id FROM collaboration_memberships WHERE tenant_id=%s "
@@ -369,6 +407,10 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
 
     def _discover_tools(self, credential, candidates):
         self.service.authenticate(credential)
+        if self.service.authority.access_mode == "owner":
+            return sorted(name for name in self.IMPLEMENTED if name in self.catalog["tools"] and
+                (self.sources is not None or name not in {"list_files", "search_files", "read_source",
+                    "read_diff", "read_source_file", "list_source_files", "search_source_files"}))
         available = []
         # One discovery transaction and membership scan; every tool retains
         # its live permission/delegation checks. Calls authorize again.
@@ -379,6 +421,9 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 (self.context.tenant_id, self.context.principal_ref, self.profile),
             ).fetchall()
             for name in candidates:
+                from runtime.filesystem_schema import ALL_TOOLS
+                if name in ALL_TOOLS and name != "read_file":
+                    continue
                 if name not in self.IMPLEMENTED or (self.sources is None and name in {
                         "list_files", "search_files", "read_file", "read_source", "read_diff"}):
                     continue
@@ -409,8 +454,32 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
 
     def execute(self, name: str, args: dict[str, Any], credential: str):
         self.service.authenticate(credential)
-        if name not in self.catalog["profiles"][self.profile] or name not in self.IMPLEMENTED:
+        if (name not in self.IMPLEMENTED or (self.service.authority.access_mode != "owner"
+                and name not in self.catalog["profiles"][self.profile])):
             raise ValueError("tool is unavailable in the authenticated Profile")
+        from runtime.filesystem_schema import ALL_TOOLS
+        if self.service.authority.access_mode == "owner" and name in ALL_TOOLS:
+            command = self._command(self.service.authority, "machine.filesystem", {},
+                                    target_kind="node", target_id=args.get("machine_id", "local"))
+            with self.service.authority._connect() as connection, connection.cursor() as cursor:
+                self.service.authority._authorize(command, cursor, "machine.filesystem")
+            data = self.filesystems.execute(name, args)
+            follow = ([{"rel": "next", "tool": name, "arguments": {
+                **{key: value for key, value in args.items() if key != "cwd"},
+                "machine_id": data["machine_id"], "path": data["path"], "cursor": data["next_cursor"]}}]
+                if data.get("next_cursor") else [])
+            return "observed", data, follow
+        if self.service.authority.access_mode == "owner" and (name == "check_inbox"
+                or name == "read_message" and args.get("handle", "").startswith("response:")):
+            # Finish project authorization before remote I/O; its receiver uses
+            # independent Domain transactions. The main read rechecks identity.
+            with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
+                self._authorize(authority,cursor,args["project_id"],name,args)
+            from runtime.response_transfer import ensure_response_artifacts
+            ensure_response_artifacts(self.service.authority,self.artifacts,
+                project_id=args["project_id"],message_id=parse_handle(args["handle"],"response",args["project_id"]) if name == "read_message" else None)
+        if self.service.authority.access_mode != "owner" and name in ALL_TOOLS and name != "read_file":
+            raise ValueError("machine file tools require the configured owner service")
         if name == "read_profile":
             return self._profile_snapshot()
         if name == "list_connections":
@@ -749,7 +818,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             try:
                 observation = driver.terminate(operation)
                 if (not isinstance(observation, dict)
-                        or observation.get("receipt_layer") != "process_tree_terminated"):
+                        or observation.get("receipt_layer") not in {"process_tree_terminated", "process_group_terminated"}):
                     raise OutcomeUncertain("Driver did not return a termination acknowledgement")
                 outcome = "stopped"
             except DriverRejected as error:
@@ -767,6 +836,18 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         return self._finalize_attempt_control(args, requested, outcome, observation)
 
     def _profile_snapshot(self):
+        if self.service.authority.access_mode == "owner":
+            with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
+                command = self._command(authority, "project.read_profile", {"project_id": "identity"})
+                authority._authorize(command, cursor)
+            return "observed", {"subject": self.context.principal_ref,
+                "tenant_id": self.context.tenant_id, "profile": self.profile,
+                "granted_profiles": sorted(self.catalog["profiles"]),
+                "authority_id": self.context.authority_id,
+                "authority_incarnation": self.context.authority_incarnation,
+                "domain_schema_version": self.service.authority.SCHEMA_VERSION,
+                "connection_state": "authorized", "access_mode": "owner",
+                "identity": {"ref": self.context.principal_ref, "lifetime": "until_explicit_change"}}, []
         with self.service.authority._connect() as connection, connection.cursor() as cursor:
             cursor.execute("SELECT scope_id,permissions,expires_at,revoked_at FROM grants WHERE tenant_id=%s "
                            "AND principal_ref=%s AND grant_ref=%s AND authority_id=%s AND authority_incarnation=%s",
@@ -814,14 +895,21 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 connection_rows = cursor.fetchall()
                 now = authority.canonical_now(cursor)
                 for ref, revision, kind, state, expiry, endpoint, endpoint_revision, machine, node, endpoint_expiry in connection_rows:
-                    expires = min(expiry, endpoint_expiry)
+                    owner = authority.access_mode == "owner"
+                    expires = min(expiry, endpoint_expiry) if not owner else None
                     rows.append({"connection_key": project_id + ":" + ref + ":" + endpoint,
                         "project_id": project_id, "connection_ref": ref, "revision": revision,
-                        "kind": kind, "state": state if expires > now else "expired",
+                        "kind": kind, "state": ("registered" if state == "active" else state) if owner
+                            else state if expires > now else "expired",
                         "endpoint_id": endpoint, "endpoint_revision": endpoint_revision,
-                        "machine_id": machine, "node_id": node, "expires_at": expires.isoformat(),
+                        "machine_id": machine, "node_id": node,
+                        "expires_at": expires.isoformat() if expires else None,
+                        "runtime_state": "not_observed" if owner else "registration_observation",
                         "evidence_class": "authority_observation"})
-                cursor.execute("SELECT source_id,revision,current_commit,repository_identity FROM collaboration_sources s "
+                cursor.execute("SELECT source_id,revision,current_commit,repository_identity,"
+                               "(SELECT snapshot_json->>'source_commit' FROM collaboration_source_snapshots p "
+                               "WHERE p.tenant_id=s.tenant_id AND p.project_id=s.project_id AND p.source_id=s.source_id "
+                               "AND p.source_commit=s.current_commit) FROM collaboration_sources s "
                                "WHERE tenant_id=%s AND project_id=%s AND (%s::text[] IS NULL OR EXISTS "
                                "(SELECT 1 FROM collaboration_routes r WHERE r.tenant_id=s.tenant_id AND r.project_id=s.project_id "
                                "AND r.scope_id=ANY(%s) AND COALESCE(r.definition->'source_binding_ids','[]') ? s.source_id) "
@@ -830,7 +918,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                                "AND p.snapshot_json->>'scope_id'=ANY(%s)))",
                                (self.context.tenant_id, project_id, scopes, scopes, scopes))
                 rows.extend({"connection_key": project_id + ":source:" + row[0], "project_id": project_id,
-                    "source_id": row[0], "revision": row[1], "commit": row[2], "repository": row[3],
+                    "source_id": row[0], "revision": row[1], "commit": row[4], "view_revision":row[2], "repository": row[3],
                     "kind": "source", "state": "registered", "evidence_class": "authority_observation"}
                     for row in cursor.fetchall())
         rows = [row for row in rows if (not args.get("kinds") or row["kind"] in args["kinds"])
@@ -857,15 +945,16 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             if cursor.fetchone():
                 role = "route"
             elif (scope == project[0] and self.profile == "root_manager"
-                  and {"routes.manage", "collaborators.manage"}.intersection(permissions)):
+                  and (authority.access_mode == "owner" or {"routes.manage", "collaborators.manage"}.intersection(permissions))):
                 role = "root"
         return {"principal_ref": self.context.principal_ref, "agent_slot_id": project[5],
                 "scope_handle": handle("scope", project_id, scope),
                 "organization": organization_projection(role, level=declared.get("organization_level"),
                     responsibilities=declared.get("responsibilities")), "profile": self.profile,
                 "authorization": {"grant_ref": authority.context.grant_ref,
-                                  "declared_permissions": permissions, "expires_at": expires.isoformat(),
-                                  "operation_checks": "live Grant, Policy and candidate checks"},
+                                  "declared_permissions": permissions if authority.access_mode != "owner" else [],
+                                  "expires_at": expires.isoformat() if expires and authority.access_mode != "owner" else None,
+                                  "operation_checks": "project and operation identity" if authority.access_mode == "owner" else "live Grant, Policy and candidate checks"},
                 "work_query": {"tool": "list_work", "arguments": {"project_id": project_id,
                               "assigned_to": handle("collaborator", project_id, project[5])}},
                 "session_query": {"tool": "list_harnesses", "arguments": {
@@ -885,6 +974,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             "active_work": self._list_work(authority, cursor, project, command, args, credential)[1]["items"],
             "context_completeness": "partial", "missing_context": [],
             "agent_organization_model": organization_model(),
+            "source_guidance": {"default_read": "current_main_worktree",
+                                "version_guidance": "advisory", "provider_choice": "agent"},
             "actor_binding": self._agent_context_binding(authority, cursor, project, args["project_id"]),
         }
         data["missing_context"].extend("route_metadata_sync:" + item["route_handle"] for item in data["routes"]
@@ -903,9 +994,39 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             project = (*project[:3], data["manifest"], *project[4:])
         return self._hydrate_context(authority, cursor, project, command, args, data)
 
-    def _snapshot(self, cursor, args):
+    def _default_source(self, cursor, project_id):
+        cursor.execute("SELECT context_manifest FROM collaboration_projects WHERE tenant_id=%s "
+                       "AND project_id=%s AND state='active'", (self.context.tenant_id, project_id))
+        project = cursor.fetchone()
+        if project is None:
+            raise NotFound("project", project_id)
+        manifest = project[0]
+        cursor.execute("SELECT source_id,repository_identity FROM collaboration_sources WHERE tenant_id=%s "
+                       "AND project_id=%s ORDER BY source_id", (self.context.tenant_id, project_id))
+        rows = cursor.fetchall()
+        sources = [(source_id, identity) for source_id, identity in rows
+                   if identity.get("purpose") != "management-only-snapshot"]
+        if manifest.get("primary_source_id"):
+            if any(source_id == manifest["primary_source_id"] for source_id, _identity in sources):
+                return manifest["primary_source_id"]
+            raise ValueError("primary_source_id must identify a project source checkout")
+        primary = [source_id for source_id, identity in sources if identity.get("primary") is True]
+        if len(primary) == 1:
+            return primary[0]
+        management = manifest.get("management", {}).get("source_id")
+        if any(source_id == management for source_id, _identity in sources):
+            return management
+        if len(sources) == 1:
+            return sources[0][0]
+        raise ValueError("select a primary_source_id or source_id from the project's source hints")
+
+    def _snapshot(self, cursor, args, authority=None, command=None):
         if self.sources is None:
             raise ValueError("Source provider is unavailable")
+        if not args.get("source_id"):
+            args["source_id"] = self._default_source(cursor, args["project_id"])
+        if args.get("source_root") and args.get("revision"):
+            raise ValueError("select a current source_root or a captured revision")
         cursor.execute("SELECT s.revision,s.current_commit,s.repository_identity,p.snapshot_json "
                        "FROM collaboration_sources s JOIN collaboration_source_snapshots p "
                        "ON (p.tenant_id,p.project_id,p.source_id)=(s.tenant_id,s.project_id,s.source_id) "
@@ -915,12 +1036,51 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         row = cursor.fetchone()
         if row is None:
             raise NotFound("source_revision", args["source_id"])
-        return row, self.sources.snapshot(row[3])
+        snapshot = self.sources.snapshot(row[3])
+        if authority is not None and authority.access_mode == "owner" and args.get("revision") is None:
+            cursor.execute("SELECT context_manifest FROM collaboration_projects WHERE tenant_id=%s "
+                           "AND project_id=%s", (self.context.tenant_id, args["project_id"]))
+            manifest = cursor.fetchone()[0]
+            preferred_root = (manifest.get("primary_source_root")
+                              if manifest.get("primary_source_id") == args["source_id"] else None)
+            request, observed, selection = self.sources.current(
+                snapshot, authority, command, root=args.get("source_root"), preferred_root=preferred_root)
+            args["_source_selection"] = selection
+            location_changed = str(request.root) != snapshot.repository_root
+            if (location_changed or observed["commit"] != snapshot.source_commit
+                    or observed["tree"] != snapshot.source_tree
+                    or observed["working_tree"] != "clean" or snapshot.dirty):
+                if location_changed:
+                    cursor.execute("SELECT snapshot_json->>'repository_root' FROM collaboration_source_snapshots "
+                                   "WHERE tenant_id=%s AND project_id=%s AND source_id=%s AND source_commit=%s",
+                                   (self.context.tenant_id, args["project_id"], args["source_id"], observed["commit"]))
+                    retained = cursor.fetchone()
+                    if retained and retained[0] != str(request.root):
+                        request = replace(request, workspace_view=True)
+                snapshot = self.sources.capture(request, authority, command)
+                cursor.execute(
+                    "INSERT INTO collaboration_source_snapshots(tenant_id,project_id,source_id,source_commit,"
+                    "snapshot_digest,snapshot_json,command_id) VALUES (%s,%s,%s,%s,%s,%s,%s) "
+                    "ON CONFLICT(tenant_id,project_id,source_id,source_commit) DO NOTHING",
+                    (self.context.tenant_id, args["project_id"], args["source_id"], snapshot.view_revision,
+                     snapshot.snapshot_sha256, canonical(snapshot.manifest_dict()), command.command_id),
+                )
+                cursor.execute(
+                    "UPDATE collaboration_sources SET current_commit=%s WHERE tenant_id=%s AND project_id=%s AND source_id=%s",
+                    (snapshot.view_revision, self.context.tenant_id, args["project_id"], args["source_id"]),
+                )
+                row = (row[0], snapshot.view_revision, row[2], snapshot.manifest_dict())
+        return row, snapshot
 
     def _list_sources(self, authority, cursor, project, _command, args, _credential):
         scopes = self._visible_scopes(authority, cursor, project)
-        cursor.execute("SELECT source_id,revision,current_commit,repository_identity "
-                       "FROM collaboration_sources s WHERE tenant_id=%s AND project_id=%s "
+        cursor.execute("SELECT source_id,revision,current_commit,repository_identity,"
+                       "(SELECT snapshot_json->>'source_commit' FROM collaboration_source_snapshots p "
+                       "WHERE p.tenant_id=s.tenant_id AND p.project_id=s.project_id AND p.source_id=s.source_id "
+                       "AND p.source_commit=s.current_commit),"
+                       "(SELECT snapshot_json->>'repository_root' FROM collaboration_source_snapshots p "
+                       "WHERE p.tenant_id=s.tenant_id AND p.project_id=s.project_id AND p.source_id=s.source_id "
+                       "AND p.source_commit=s.current_commit) FROM collaboration_sources s WHERE tenant_id=%s AND project_id=%s "
                        "AND (%s::text[] IS NULL OR EXISTS (SELECT 1 FROM collaboration_routes r "
                        "WHERE r.tenant_id=s.tenant_id AND r.project_id=s.project_id AND r.scope_id=ANY(%s) "
                        "AND COALESCE(r.definition->'source_binding_ids','[]') ? s.source_id) OR EXISTS "
@@ -929,28 +1089,50 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                        "AND p.snapshot_json->>'scope_id'=ANY(%s))) ORDER BY source_id",
                        (self.context.tenant_id, args["project_id"], scopes, scopes, scopes))
         return "observed", {"project_id": args["project_id"], "items": [
-            {"source_id": row[0], "revision": row[1], "commit": row[2],
-             "repository": row[3], "capabilities": ["read"], "provider": "local-node",
+            {"source_id": row[0], "revision": row[1], "commit": row[4], "view_revision": row[2],
+             "repository": row[3], "capabilities": ["read"], "provider": "filesystem",
+             "binding_kind": "source_hint", "version_guidance": "advisory",
+             "default_read": "current_main_worktree", "provider_choice": "agent",
+             "origin_hint": {"host": row[3].get("origin_host"), "path": row[3].get("origin_path")},
+             **({"current_readable_root": row[5]} if authority.access_mode == "owner" else {}),
              "read": {"tool": "read_source", "arguments": {
                  "project_id": args["project_id"], "source_id": row[0]}}}
             for row in cursor.fetchall()]}, []
 
     def _source_read(self, name, authority, cursor, command, args):
-        _row, snapshot = self._snapshot(cursor, args)
+        args = dict(args)
+        _row, snapshot = self._snapshot(cursor, args, authority, command)
         method = getattr(self.sources, name)
         data = method(snapshot, args, authority, command)
-        data.update(project_id=args["project_id"], source_id=args["source_id"])
+        data.update(project_id=args["project_id"], source_id=args["source_id"],
+                    source_selection=args.get("_source_selection", {"mode": "snapshot"}))
+        if authority.access_mode == "owner":
+            data["actual_source"] = {"provider": "filesystem", "root": snapshot.repository_root,
+                "commit": snapshot.source_commit, "tree": snapshot.source_tree,
+                "view_revision": snapshot.view_revision, "observed_at": snapshot.observed_at}
+        page_args = {key: value for key, value in args.items()
+                     if not key.startswith("_") and key != "source_root"}
+        page_args["revision"] = snapshot.view_revision
         follow = []
         if data.get("next_start_line"):
-            follow.append({"rel": "next", "tool": "read_file", "arguments":
-                dict(args, start_line=data["next_start_line"])})
+            follow.append({"rel": "next", "tool": "read_source_file" if authority.access_mode == "owner" else "read_file", "arguments":
+                dict(page_args, start_line=data["next_start_line"])})
         if data.get("next_cursor"):
-            follow.append({"rel": "next", "tool": name, "arguments":
-                dict(args, cursor=data["next_cursor"])})
+            follow.append({"rel": "next", "tool": {"list_files": "list_source_files", "search_files": "search_source_files"}.get(name, name) if authority.access_mode == "owner" else name, "arguments":
+                dict(page_args, cursor=data["next_cursor"])})
         return "observed", data, follow
 
     def _read_file(self, authority, cursor, _project, command, args, _credential):
         return self._source_read("read_file", authority, cursor, command, args)
+
+    def _read_source_file(self, authority, cursor, project, command, args, credential):
+        return self._source_read("read_file", authority, cursor, command, args)
+
+    def _list_source_files(self, authority, cursor, project, command, args, credential):
+        return self._source_read("list_files", authority, cursor, command, args)
+
+    def _search_source_files(self, authority, cursor, project, command, args, credential):
+        return self._source_read("search_files", authority, cursor, command, args)
 
     def _list_files(self, authority, cursor, _project, command, args, _credential):
         return self._source_read("list_files", authority, cursor, command, args)
@@ -959,15 +1141,23 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         return self._source_read("search_files", authority, cursor, command, args)
 
     def _read_source(self, authority, cursor, _project, command, args, _credential):
-        row, snapshot = self._snapshot(cursor, args)
+        args = dict(args)
+        row, snapshot = self._snapshot(cursor, args, authority, command)
         self.sources.verify(snapshot, authority, command)
         observed = self.sources.observe(snapshot, authority, command)
         current = (observed["commit"], observed["tree"], observed["working_tree"]) == (
-            snapshot.source_commit, snapshot.source_tree, "clean")
+            snapshot.source_commit, snapshot.source_tree, "dirty" if snapshot.dirty else "clean")
         return "current" if current else "stale", dict(observed, project_id=args["project_id"],
             source_id=args["source_id"], binding_revision=row[0], repository=row[2],
             admitted_commit=snapshot.source_commit, admitted_tree=snapshot.source_tree,
-            snapshot_digest=snapshot.snapshot_sha256), []
+            snapshot_digest=snapshot.snapshot_sha256, view_revision=snapshot.view_revision,
+            source_selection=args.get("_source_selection", {"mode": "snapshot"}),
+            version_guidance={"kind": "advisory", "commit": observed["commit"],
+                              "tree": observed["tree"], "provider_choice": "agent"},
+            **({"actual_source": {"provider": "filesystem", "root": snapshot.repository_root,
+                  "commit": snapshot.source_commit, "tree": snapshot.source_tree,
+                  "view_revision": snapshot.view_revision, "observed_at": snapshot.observed_at}}
+               if authority.access_mode == "owner" else {})), []
 
     def _read_diff(self, authority, cursor, _project, command, args, _credential):
         _, base = self._snapshot(cursor, dict(args, revision=args["base_revision"]))
@@ -992,7 +1182,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 "root_management", "route_management", "reviewer", "finalizer"}:
             raise ValueError("invalid project context view")
         source_args = {"project_id": args["project_id"], "source_id": management["source_id"]}
-        _, snapshot = self._snapshot(cursor, source_args)
+        _, snapshot = self._snapshot(cursor, source_args, authority, command)
         try:
             authority._authorize(command, cursor, "source.read", snapshot.scope_id)
             authority._authorize(command, cursor, "artifact.read", snapshot.scope_id)
@@ -1000,10 +1190,42 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             data["missing_context"] = ["source_read_authorization"]
             return "partial", data, follow
         observed = self.sources.observe(snapshot, authority, command)
-        stale = observed["commit"] != snapshot.source_commit or observed["tree"] != snapshot.source_tree or observed["working_tree"] != "clean"
+        stale = observed["commit"] != snapshot.source_commit or observed["tree"] != snapshot.source_tree or observed["working_tree"] != ("dirty" if snapshot.dirty else "clean")
         data["source_observation"] = observed
-        data["management_root"] = dict(management, revision=snapshot.source_commit)
+        data["source_guidance"] = {"default_read": "current_main_worktree",
+            "version_guidance": "advisory", "provider_choice": "agent",
+            "version_hint_ref": "source_observation"}
+        if authority.access_mode == "owner":
+            try:
+                primary_id = self._default_source(cursor, args["project_id"])
+            except ValueError:
+                primary_id = None
+            data["source_guidance"]["primary_source_id"] = primary_id
+            if primary_id is None:
+                data["management_source_observation"] = data["source_observation"]
+                data["source_observation"] = None
+                data["source_guidance"]["version_hint_ref"] = None
+            if primary_id and primary_id != management["source_id"]:
+                cursor.execute("SELECT p.snapshot_json,s.repository_identity FROM collaboration_sources s "
+                               "JOIN collaboration_source_snapshots p ON "
+                               "(p.tenant_id,p.project_id,p.source_id,p.source_commit)="
+                               "(s.tenant_id,s.project_id,s.source_id,s.current_commit) "
+                               "WHERE s.tenant_id=%s AND s.project_id=%s AND s.source_id=%s",
+                               (self.context.tenant_id, args["project_id"], primary_id))
+                selected_source = cursor.fetchone()
+                selected_snapshot = self.sources.snapshot(selected_source[0])
+                _request, code_observed, selected = self.sources.current(
+                    selected_snapshot, authority, command, preferred_root=manifest.get("primary_source_root"))
+                data["management_source_observation"] = data["source_observation"]
+                data["source_observation"] = code_observed
+                data["source_guidance"]["repository"] = selected_source[1]
+                data["source_guidance"]["selection"] = selected
+        data["management_root"] = dict(management, revision=snapshot.view_revision)
         data["source_bindings"] = self._list_sources(authority, cursor, project, command, args, None)[1]["items"]
+        for source in data["source_bindings"]:
+            for field in ("binding_kind", "version_guidance", "default_read", "provider_choice",
+                          "origin_hint", "current_readable_root"):
+                source.pop(field, None)
         for label, key in (("instructions", "instruction_paths"), ("knowledge_indexes", "knowledge_index_paths")):
             if label not in include:
                 continue
@@ -1011,16 +1233,19 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             for path in manifest.get(key, []):
                 payload, item = self.sources.file_bytes(snapshot, path, authority, command)
                 entry = {"path": path, "source_id": management["source_id"],
-                         "revision": snapshot.source_commit, "sha256": item.sha256}
+                         "revision": snapshot.view_revision, "sha256": item.sha256}
                 text = payload.decode("utf-8")
                 # Reserve metadata space and return an exact read when a full
                 # instruction body does not fit. Never truncate instructions.
                 if len(canonical(data).encode()) + len(payload) + 2048 < maximum:
                     entry["content"] = text
                 else:
-                    read = {"rel": "read_" + label, "tool": "read_file", "arguments": {
-                        **source_args, "path": path, "revision": snapshot.source_commit,
+                    read = {"rel": "read_" + label, "tool": "read_source_file" if authority.access_mode == "owner" else "read_file", "arguments": {
+                        **source_args, "path": path,
+                        **({"revision": snapshot.view_revision} if authority.access_mode != "owner" else {}),
                         "max_inline_bytes": min(maximum, 32768)}}
+                    if authority.access_mode == "owner":
+                        read["source_version_hint"] = snapshot.view_revision
                     follow.append(read)
                     entry["read"] = read
                     data["missing_context"].append(path)
@@ -1038,7 +1263,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         skill_catalog = manifest.get("skill_catalog")
         if skill_catalog:
             _, skill_snapshot = self._snapshot(cursor, {**source_args,
-                "source_id": skill_catalog["source_id"]})
+                "source_id": skill_catalog["source_id"]}, authority, command)
             raw, _ = self.sources.file_bytes(skill_snapshot, skill_catalog["path"], authority, command)
             catalog = json.loads(raw)
             for name, skill in catalog["skills"].items():
@@ -1046,9 +1271,12 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             primary = "acs-project-context"
             if primary in catalog["skills"]:
                 spec = self.sources.skill_spec(skill_catalog["path"], catalog["skills"][primary]["spec"])
-                follow.append({"rel": "read_skill", "skill": primary, "tool": "read_file", "arguments": {
+                follow.append({"rel": "read_skill", "skill": primary, "tool": "read_source_file" if authority.access_mode == "owner" else "read_file", "arguments": {
                     "project_id": args["project_id"], "source_id": skill_catalog["source_id"],
-                    "path": spec, "revision": skill_snapshot.source_commit}})
+                    "path": spec, **({"revision": skill_snapshot.view_revision}
+                                    if authority.access_mode != "owner" else {})},
+                    **({"source_version_hint": skill_snapshot.view_revision}
+                       if authority.access_mode == "owner" else {})})
                 data["knowledge_hint"] = [{"skill": primary, "topic": "Project identity and context",
                     "reason": "Project context loaded", "reference": "references/model.md"}]
         if "policies" in include:
@@ -1058,9 +1286,31 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                            (authority.context.grant_ref, self.context.tenant_id))
             policy, permissions, expires = cursor.fetchone()
             data["policy"] = policy
-            data["grant_summary"] = {"permissions": permissions, "expires_at": expires.isoformat(),
-                                     "profile": self.profile}
+            if authority.access_mode == "owner":
+                data["access_mode"] = "owner"
+                data["identity_summary"] = {"subject": self.context.principal_ref, "lifetime": "until_explicit_change"}
+            else:
+                data["grant_summary"] = {"permissions": permissions, "expires_at": expires.isoformat(),
+                                         "profile": self.profile}
         data["context_completeness"] = "stale" if stale else "partial" if data["missing_context"] else "current"
+        if len(canonical(data).encode()) > maximum:
+            # Keep the chosen small context useful. Detailed access and task
+            # queries remain available through complete follow-up operations.
+            data.pop("grant_summary", None)
+            binding = data.get("actor_binding", {})
+            binding.get("authorization", {}).pop("declared_permissions", None)
+            for key in ("work_query", "session_query", "review_query"):
+                query = binding.pop(key, None)
+                if query:
+                    follow.append({"rel": key, **query})
+            follow.append({"rel": "identity_details", "tool": "read_profile", "arguments": {}})
+            data["missing_context"].append("identity_details")
+            data["context_completeness"] = "stale" if stale else "partial"
+        if len(canonical(data).encode()) > maximum:
+            for source in data.get("source_bindings", []):
+                read = source.pop("read", None)
+                if read:
+                    follow.append({"rel": "source_state", "source_id": source["source_id"], **read})
         if len(canonical(data).encode()) > maximum:
             raise ValueError("project metadata exceeds requested context bound")
         return data["context_completeness"], data, follow
@@ -1169,6 +1419,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
             raise ValueError("waiting for a response requires response tracking")
 
     def _message_expiry(self, authority, cursor, work, target, policy, args, issued_at):
+        if authority.access_mode == "owner":
+            return canonical_utc(datetime.fromisoformat(args["deadline"])) if args.get("deadline") else None
         """Derive business validity independently of command and wait budgets."""
         now = authority.canonical_now(cursor)
         team = policy.get("collaboration_team")
@@ -1232,8 +1484,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         cursor.execute(
             "SELECT endpoint_id,revision FROM delivery_endpoints WHERE tenant_id=%s "
             "AND scope_id=%s AND agent_slot_id=%s AND status='active' "
-            "AND expires_at>clock_timestamp() ORDER BY endpoint_id FOR UPDATE",
-            (self.context.tenant_id, work[0], target["agent_slot_id"]),
+            "AND (%s OR expires_at>clock_timestamp()) ORDER BY endpoint_id FOR UPDATE",
+            (self.context.tenant_id, work[0], target["agent_slot_id"], authority.access_mode == "owner"),
         )
         endpoints = cursor.fetchall()
         if len(endpoints) != 1:
@@ -1244,7 +1496,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                        (self.context.tenant_id, work[0]))
         scope_policy = cursor.fetchone()[0]
         configured_team = scope_policy.get("collaboration_team")
-        if configured_team and any(args.get("delivery_policy", "queue_until_idle") not in
+        if authority.access_mode != "owner" and configured_team and any(args.get("delivery_policy", "queue_until_idle") not in
                 item["rules"]["allowed_delivery_policies"] for item in configured_team["policies"]):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         if args.get("response_mode", "async") not in {"async", "sync"}:
@@ -1260,7 +1512,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                   "source_baseline": work[1], "expected_response": "Structured response with required evidence",
                   "required_evidence": args["required_evidence"],
                   "activation": args.get("activation", "invoke"), "delivery_policy": "queue_until_idle",
-                  "deadline": expiry.isoformat()}
+                  "deadline": expiry.isoformat() if expiry else None}
         request = SurfaceCommand(
             command_type="message.send", target_kind="message", target_id=message_id,
             expected_revision=args["expected_work_revision"], command_id=command.command_id,
@@ -1285,7 +1537,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                        "VALUES (%s,%s,%s)", (self.context.tenant_id, args["project_id"], message_id))
         return "accepted", dict(result.model_dump(mode="json"), project_id=args["project_id"],
             message_id=message_id, message_handle=handle("message", args["project_id"], message_id),
-            response_handle=response_handle, deadline=expiry.isoformat(),
+            response_handle=response_handle, deadline=expiry.isoformat() if expiry else None,
             notification_handle=handle("subscription", args["project_id"], message_id)), [
                 {"rel": "read_response", "tool": "read_message", "arguments": {
                     "project_id": args["project_id"], "handle": response_handle, "consume": True}},
@@ -1379,6 +1631,29 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                             raise SourceReadbackError(
                                 "response artifact is not canonical JSON"
                             ) from error
+            if authority.access_mode == "owner":
+                cursor.execute("SELECT projection_id,attempt_id,dispatch_id,native_outcome,response_digest,observed_at "
+                    "FROM native_response_observations WHERE tenant_id=%s AND message_id=%s "
+                    "AND disposition='fenced_late' ORDER BY observed_at,projection_id",
+                    (authority.tenant_id,message_id))
+                historical=[]
+                store=self.sources.store if self.sources is not None else self.artifacts
+                for projection,attempt,dispatch,outcome,response_digest,observed_at in cursor.fetchall():
+                    item={"projection_id":projection,"attempt_id":attempt,"dispatch_id":dispatch,
+                        "native_outcome":outcome,"disposition":"fenced_late","observed_at":observed_at.isoformat(),
+                        "response_artifact":{"opaque_ref":"artifact:"+response_digest,"sha256":response_digest,
+                                             "content_state":"provider_unavailable"}}
+                    if store is not None:
+                        reference,payload=read_response_artifact(store,message["packet_json"]["target_scope_id"],
+                            response_digest,args.get("max_inline_bytes",16384),authority,command)
+                        item["response_artifact"]={**reference.model_dump(mode="json"),
+                            "opaque_ref":"artifact:"+response_digest,
+                            "content_state":"inline" if payload is not None else "verified_reference"}
+                        if payload is not None:
+                            item["response"]=json.loads(payload)
+                    historical.append(item)
+                if historical:
+                    data["historical_responses"]=historical
         return "observed", data, []
 
     def _check_inbox(self, authority, cursor, project, command, args, credential):
