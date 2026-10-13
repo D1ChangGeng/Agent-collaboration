@@ -225,7 +225,7 @@ their running version. A manual rollback records the rejected version in
 again.
 
 Existing installations with a changed MCP catalog require an AI-guided upgrade with the verified
-v1.4.0 Release Bootstrap before invoking the installed update controls.
+v1.5.0 Release Bootstrap before invoking the installed update controls.
 
 ## ChatGPT web setup route
 
