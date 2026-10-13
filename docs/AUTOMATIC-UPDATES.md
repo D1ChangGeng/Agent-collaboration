@@ -6,13 +6,13 @@ and activates eligible updates after verification. The installation's recorded
 machine, owner account, home directory, Harness selection and web settings
 determine the update target.
 
-v1.5.0 changes the Runtime schema and MCP catalog. Existing installations use
-the verified
-[v1.5.0 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.0)
+The v1.5 Runtime schema and MCP catalog transition requires a guided upgrade.
+Use the verified
+[v1.5.1 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.1)
 for an AI-guided upgrade. The Agent inspects the installation, verifies Bootstrap
 and Release digests, executes the preview and upgrade commands, and validates
 the actual access mode and connections afterward. See the
-[release notes](RELEASE-NOTES-v1.5.0.md) and the transition below.
+[release notes](RELEASE-NOTES-v1.5.1.md) and the transition below.
 
 ## Controls
 
@@ -99,9 +99,9 @@ respective setup operations. Custom edits to managed files need ownership review
 before an upgrade can proceed. Skills on separate client hosts are refreshed
 through the setup Skill's client maintenance lifecycle.
 
-## Guided transition to v1.5.0
+## Guided transition to v1.5.1
 
-The Agent uses `--version v1.5.0` with the verified Release Bootstrap and the
+The Agent uses `--version v1.5.1` with the verified Release Bootstrap and the
 recorded Runtime host, machine/account/home binding, client selection and web
 choice. It executes installation and diagnostic commands, retaining the existing
 configuration, credentials, cryptographic key references, projects, Root/Route
