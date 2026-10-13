@@ -53,7 +53,11 @@ class ReleaseToolTests(unittest.TestCase):
             catalog.write_text("{}")
             context = mock.MagicMock()
             context.__enter__.return_value = (service, configured)
-            with mock.patch("runtime.surface_config.configured_service", return_value=context), mock.patch("runtime.project_service.ProjectService", return_value=project):
+            with mock.patch.dict(sys.modules, {
+                "runtime.project_source": SimpleNamespace(ProjectSources=mock.Mock()),
+                "runtime.project_service": SimpleNamespace(ProjectService=mock.Mock(return_value=project)),
+                "runtime.surface_config": SimpleNamespace(configured_service=mock.Mock(return_value=context)),
+            }):
                 result = doctor.runtime_readback(Path(td) / "config.json", catalog, "root_manager", deep=False)
         self.assertEqual(result["state"], "authorized")
         self.assertEqual(result["access_mode"], "owner")
