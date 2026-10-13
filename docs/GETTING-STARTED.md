@@ -5,20 +5,21 @@ to a local Codex or OpenCode session and ask it to guide the installation.
 The Agent inspects your operating system, active Harness and existing ACS
 setup. You choose the Runtime machine, the client hosts that should connect,
 and whether to enable ChatGPT web now, use local clients only, or configure web
-later. The Agent probes those targets and performs the supported setup actions.
-You complete required system or account approvals. Project setup is available
-when you are ready to start a project.
+later. The Agent probes those targets and executes installation, client setup,
+diagnostic and verification commands. You complete required system or account
+approvals. Project setup is available when you are ready to start a project.
 For web setup, account pages use your external browser on your client machine.
 You confirm required login, permissions, secret entry and connection consent.
 
 ## Agent launch request
 
-Use the [v1.4.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.4.0)
-and its `acs_bootstrap.py` asset for the machine selection flow described here.
-The default Bootstrap version is `v1.4.0`. Existing v1.2.0 installations use the
-verified v1.4.0 Bootstrap for their first guided upgrade; afterward the installed
-updater provides the automatic upgrade controls. See the
-[release notes](RELEASE-NOTES-v1.4.0.md).
+Use the [v1.5.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.0)
+and its `acs_bootstrap.py` asset for this machine selection flow.
+The default Bootstrap version is `v1.5.0`. Existing installations use the verified
+v1.5.0 Bootstrap for an AI-guided upgrade because the Runtime schema and MCP
+catalog have changed. The Agent previews the transition, preserves identity and
+configuration, and verifies the activated access mode and connections. See the
+[release notes](RELEASE-NOTES-v1.5.0.md).
 
 For a fresh machine, use the standard Release Bootstrap shipped with that
 Release before project setup:
@@ -29,8 +30,9 @@ Release. Verify the Bootstrap digest before running it. Confirm the
 Runtime host and client hosts, ask whether ChatGPT web should be enabled now,
 skipped or configured later, probe the chosen Runtime host read-only, and
 preview installation. Verify SHA256SUMS.txt and the release manifest, bind apply
-to the observed machine identity, and configure the selected clients. Report
-the machine and account binding, version, services and actual MCP readback.
+to the observed machine identity, and configure the selected clients. Execute
+the setup and verification commands. Report the machine/account binding, version,
+actual access mode, services, filesystem context and actual MCP readback.
 ```
 
 > Use this repository as the ACS distribution source. Inspect its current
@@ -111,8 +113,10 @@ The Agent uses `scripts/acs_doctor.py` and actual service readback on the Runtim
 host. For SSH or WSL it configures clients on their own hosts with the Bootstrap
 stdio descriptor and each client's configuration mechanism. A descriptor is
 connection setup data; actual readiness comes from the client's handshake.
-It verifies
-`tools/list`, `read_profile` and `list_projects` from every selected client.
+It verifies `tools/list`, `read_profile` and `list_projects` from every selected
+client. Record the actual `access_mode` and discovered input schemas. For owner
+access, also read `filesystem_context` to confirm the service machine, OS account,
+home and working directory.
 An empty project list is a valid new installation. Project-specific
 `load_project` readback follows project registration.
 
@@ -128,9 +132,38 @@ receive their own setup and knowledge Skills and MCP configuration. The Agent
 reports client readiness after actual MCP calls pass and explains available
 tools and the optional project setup step.
 
+## Owner collaboration and machine access
+
+New single-owner installations use `access_mode: owner`. Operations check trusted
+credentials, tenant/principal and Authority identity, active service and objects,
+explicit revocation, request deduplication and expected revisions. Machine, Node,
+Connection and Endpoint registrations persist until an explicit lifecycle change.
+Execution reads actual process, transport and native Session readiness. Native
+Codex/OpenCode use the selected user's tools, MCP servers, plugins, project
+configuration, provider, models and approval settings. Interactive approval
+requires the actual native client handler and response readback.
+
+Owner machine tools operate under the connected OS account. Call
+`filesystem_context` to discover machines and directories; `select_filesystem`
+sets this MCP connection's default. `read_file` requires only `path`;
+`list_directory`, `glob`, `grep`, `write_file`, `edit_file` and
+`apply_patch` provide discovery, search and changes. All accept optional
+`machine_id` and `cwd` for one call. Local uses Core's account and home;
+SSH uses an installed fixed service, and registered Nodes use pinned TLS,
+signed identity, owner authorization and request journaling. Their file service
+readiness is independent of a native Harness Session's busy state.
+
+OS account permissions govern hidden, ignored and untracked files, paths outside
+repositories, large files and binaries. Continue paginated results with their
+`next_cursor` until `complete=true`, retaining the original machine and path.
+Use the [machine filesystem guide](runtime/MACHINE-FILESYSTEM.md) for file
+ranges, changes and recovery. Shared deployments retain their configured
+Grants, Policies, budgets and Source interfaces; the
+[owner contract](runtime/OWNER-RUNTIME.md) describes each access mode.
+
 ## Automatic upgrades
 
-ACS v1.3.0 enables automatic upgrades by default for new installations.
+New installations enable automatic upgrades by default.
 The Agent records the actual scheduling backend and state: an active same-owner
 systemd user timer, a registered cron entry or background catch-up checks on new
 MCP connections. Host sleep and user manager availability affect scheduled
@@ -150,13 +183,20 @@ requires explicit review.
 Stable launcher commands follow the active version for future local, SSH, WSL
 and Tunnel MCP processes. Existing sessions continue on their running version.
 ACS verifies the new environment, provider health and existing authorization
-before activation and retains the previous version for rollback. Owned local
-Skills refresh with the upgrade; Skills on separate client hosts are refreshed
-through client setup maintenance.
+before activation and retains the previous version for rollback. Stable startup
+restores the existing owner Core services; configured private SSH and Tunnel
+profiles supervise their processes and recover connections. Read back their
+actual health after startup. Owned local Skills refresh with the upgrade;
+Skills on separate client hosts are refreshed through client setup maintenance.
 
-Existing v1.2.0 installations first need one AI-guided upgrade using the verified
-v1.4.0 Release Bootstrap. Read [automatic upgrades](AUTOMATIC-UPDATES.md) for
-the installed controls, status meanings and rollback procedure.
+Existing installations use the verified v1.5.0 Bootstrap for the schema/catalog
+transition. The Agent preserves project and Root/Route identity, configuration,
+credentials, keys, explicit revocation and rollback data. It verifies the actual
+mode and separately updated Receiver configuration. Reconnect Codex/OpenCode
+after activation; for ChatGPT, restart the configured Tunnel/MCP process,
+select **Refresh** on the existing connection in ChatGPT Plugins and start a
+new chat. Read [automatic upgrades](AUTOMATIC-UPDATES.md) for the full transition,
+controls, status meanings and rollback procedure.
 
 ## Start a project
 
@@ -179,11 +219,22 @@ reviewed Source scopes when registering the project. The identity and Source
 registration procedures are in
 [Runtime project adoption](runtime/PROJECT-ADOPTION.md).
 
-For a linked Git worktree, the Agent must locate and explicitly authorize its
-Git control directory and common object directory. The Source service checks
-both paths through pinned directory handles. It validates that `AGENTS.md` and
-the manifest carry the same `project_id`, registers the exact clean committed
-Source, and verifies `load_project` before reporting project readiness.
+SourceBinding supplies repository, location and version guidance. Record the
+product Source through `primary_source_id` and its preferred repository location
+through `primary_source_root`. Current owner Source reads resolve that
+repository's physical primary worktree, observe its actual branch and edits,
+and report `actual_source`. An explicit `source_root` selects another configured
+readable worktree; an explicit `revision` selects captured bytes.
+`read_source_file`, `list_source_files`, `search_source_files`,
+`read_source` and `read_diff` retain these Source semantics. Pagination uses
+the returned `view_revision`; the Agent records the reader and actual source
+used for Review and Evidence.
+
+For a linked Git worktree read through the Source service, locate and authorize
+its Git control directory and common object directory. The service checks both
+through pinned directory handles. Verify that `AGENTS.md` and the manifest carry
+the same `project_id`, then inspect `load_project` product Source and Management
+Root observations before reporting project readiness.
 
 After setup, open Codex or OpenCode with the
 Management Root as its working directory. The Root Agent reads its `AGENTS.md`,
@@ -203,7 +254,8 @@ For `enable`, follow the [private Tunnel runbook](runtime/P2-PRIVATE-TUNNEL-PROF
 The Agent prepares the Tunnel on the confirmed Runtime host. Account pages use
 your external browser on your client machine:
 
-1. Verify the exact ACS stdio command and owner Grant; generate the plan with
+1. Verify the exact ACS stdio command, actual access mode and owner identity;
+   generate the plan with
    `scripts/acs_web_setup.py --choice enable --runtime-root <release-directory>
    --config <private-surface-config> --json`.
    For a managed installation, add `--installation-root <installation-root>`
@@ -225,9 +277,12 @@ your external browser on your client machine:
 3. Install and configure the Tunnel client, execute its diagnostics, and keep
    its runtime service healthy. The Agent executes commands; the owner completes
    required authorization and confirmation steps.
-4. Verify tool discovery and `read_profile`/`list_projects` from ChatGPT. Start
-   with an empty list when appropriate; after project setup, verify
-   `load_project` and a bounded authorized write.
+4. Verify tool discovery, the actual mode in `read_profile` and `list_projects`
+   from ChatGPT. For owner access, verify `filesystem_context` and a selected
+   path read. Start with an empty project list when appropriate; after project
+   setup, verify `load_project` and a bounded authorized write. Following a
+   schema upgrade, select **Refresh** on the existing connection in ChatGPT
+   Plugins, inspect the current metadata and use a new chat for verification.
 
 To resume a deferred choice, tell the setup Skill: "Connect this ACS installation
 to ChatGPT web." It inspects the current connection before applying the same
@@ -241,13 +296,14 @@ Ask the Agent to report these observed facts after setup:
 | --- | --- |
 | Runtime placement | Local/SSH/WSL target, machine identity, hostname and owner account |
 | Distribution | Release tag, version, commit, tree and distribution digest |
-| Services | PostgreSQL, Temporal, ACS Runtime and MCP health on the selected host |
-| Access | Principal, Profile, Grant expiry and visible tools |
-| Harnesses | Client hosts, selected Codex/OpenCode connections and actual tool discovery |
+| Services | PostgreSQL, Temporal, Core/MCP health, configured delivery worker and startup recovery readback |
+| Access | Actual owner/shared mode, tenant/principal and Authority identity, active state, explicit revocation and visible schemas; configured Grants/Policies for shared |
+| Harnesses | Client hosts, selected user/environment, native version, tools/MCP/plugins/approval configuration and actual connection readback |
+| Machine files | Selected machine, OS account, platform, home/cwd, available Local/SSH/Node choices and a current file read |
 | ChatGPT web | Explicit `enable`/`skip`/`later` choice, Tunnel identity and health, ChatGPT discovery/readback, exact pending owner actions and resume entry |
 | Automatic upgrades | Enabled policy, actual scheduler backend/state, connection catch-up, last result and next eligible check |
-| Recovery | Installation state, previous version and configuration rollback references |
-| Projects | Current project list; after setup, `project_id`, Management Root, Routes and SourceBinding |
+| Recovery | Active/previous version, configuration and key references, preserved revocation state, restart/reconnect result and rollback references |
+| Projects | Current project list; after setup, `project_id`, Management Root, Routes, SourceBinding guidance and actual product/management Source observations |
 | Next action | Optional project setup through the installed Skill; for a ready project, Root Agent directory and prompt |
 
 The report distinguishes installed files, configured connections and observed
@@ -274,10 +330,12 @@ verifies its own `load_project` context. Capability knowledge comes from the
 catalog and Skills; project operations are exercised when that workflow begins.
 See [installation verification and timing](INSTALLATION-PERFORMANCE.md).
 
-For messaging, async returns after submission; sync waits for the final
-response by default. Optional caller timeouts return pending handles and retain
-background tracking. Business expiry is derived by ACS. See
-[Send/Wait lifecycle](runtime/SEND-WAIT-LIFECYCLE.md).
+For messaging, async returns committed Message, response and notification
+handles; sync waits for the selected condition, defaulting to the final response.
+Optional caller timeouts return pending handles and retain tracking. Owner
+requests stay valid while service, identity and targets are active, with an
+optional business deadline. Shared validity follows configured Policy, Grant
+and budget horizons. See [Send/Wait lifecycle](runtime/SEND-WAIT-LIFECYCLE.md).
 
 ## Agent responsibility and duties
 

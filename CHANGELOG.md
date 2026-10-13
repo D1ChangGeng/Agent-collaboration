@@ -2,12 +2,34 @@
 
 All notable changes to this project will be documented here.
 
-## Unreleased
+## 1.5.0 - 2026-10-13
 
-- Stable MCP startup restores the existing owner Core provider project before
-  executing the selected Runtime. Private SSH and Secure MCP Tunnel profiles
-  support single-instance supervision and reconnect/process recovery while
-  preserving credentials, Grant authorization and independent local/web health.
+- New private installations use owner access with trusted identity, tenant and
+  Authority checks, active objects, explicit revocation, request deduplication
+  and expected revisions. Durable Machine, Node, Connection and Endpoint
+  registrations support reconnect and actual readiness inspection; shared mode
+  retains its configured Grants, Policies and budgets.
+- Native Codex/OpenCode execution uses the selected user's tools, MCP servers,
+  plugins, project settings, provider, models and approval configuration.
+  Attached Session actions and owned-process controls retain native readback.
+- Owner commands and messages support optional business deadlines. Async
+  returns committed handles; sync and response waits observe their condition
+  with optional caller timeouts. Temporal delivery recovery and signed terminal
+  response transfer preserve tracking, result digests and historical responses.
+- Add independent owner machine filesystem tools: `read_file`,
+  `list_directory`, `glob`, `grep`, `write_file`, `edit_file` and
+  `apply_patch`, with per-connection machine/directory selection and optional
+  per-call overrides. Local, SSH and signed Node services use OS account
+  permissions and paginate text, binary, discovery and search results.
+- SourceBinding provides repository, location and version guidance. Current
+  product reads resolve the physical primary worktree; explicit Source tools
+  retain captured versions, actual-source readback and stable pagination.
+- Stable MCP startup restores existing owner Core services. Configured private
+  SSH and Secure MCP Tunnel profiles supervise owned processes and recover
+  connections with preserved credentials and authorization.
+- Publish v1.5.0 installation and guided upgrade documentation covering owner
+  adoption, matching signed Receiver configuration, mode/readiness readback,
+  preserved identities and revocations, rollback and client metadata refresh.
 
 ## 1.4.0 - 2026-10-03
 
