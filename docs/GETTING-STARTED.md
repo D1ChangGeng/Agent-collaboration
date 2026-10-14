@@ -13,13 +13,13 @@ You confirm required login, permissions, secret entry and connection consent.
 
 ## Agent launch request
 
-Use the [v1.5.1 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.1)
+Use the [v1.5.2 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.2)
 and its `acs_bootstrap.py` asset for this machine selection flow.
-The default Bootstrap version is `v1.5.1`. Existing installations use the verified
-v1.5.1 Bootstrap for an AI-guided upgrade through the v1.5 Runtime schema and
+The default Bootstrap version is `v1.5.2`. Existing installations use the verified
+v1.5.2 Bootstrap for an AI-guided upgrade through the v1.5 Runtime schema and
 MCP catalog transition. The Agent previews the transition, preserves identity and
 configuration, and verifies the activated access mode and connections. See the
-[release notes](RELEASE-NOTES-v1.5.1.md).
+[release notes](RELEASE-NOTES-v1.5.2.md).
 
 For a fresh machine, use the standard Release Bootstrap shipped with that
 Release before project setup:
@@ -132,6 +132,33 @@ receive their own setup and knowledge Skills and MCP configuration. The Agent
 reports client readiness after actual MCP calls pass and explains available
 tools and the optional project setup step.
 
+## Configure owner startup recovery
+
+Stable MCP startup restores the recorded owner Core services and requests
+configured SSH and web recovery independently. On a Windows client using WSL,
+the Agent also runs `scripts/acs_windows_startup.ps1` from the verified Release
+or its verified installed setup Skill payload under the installing Windows
+account. This helper targets Windows x64 and requires WSL, the Task Scheduler
+PowerShell cmdlets and the installed 64-bit .NET Framework C# compiler.
+The Agent checks these prerequisites before apply. It uses the confirmed
+`-WslDistribution`, `-RuntimeUser`, `-LinuxInstallationRoot` and full
+`-ExpectedMachineId` from the Runtime probe. The default invocation previews
+the task; `-Apply` installs or migrates it and `-Check` reads back its startup
+state. The Bootstrap's `client_connection.background_startup` object supplies
+the script source, this parameter binding and preview/apply/check sequence; the WSL stdio entry also selects the
+recorded Linux account explicitly. An installation with `startup.enabled=false`
+returns `owner_disabled`. The GUI host keeps the selected WSL recovery process
+in the background and passes its exit code to Task Scheduler.
+
+The Agent verifies the Runtime's actual Docker init mechanism, the task's
+owner/action, PostgreSQL and Temporal, each configured transport, and MCP
+calls through every selected client. A Docker backend diagnosis reads the
+daemon's actual data root and checks the preserved ACS container store.
+A repair plan that changes shared Docker/containerd services requires explicit
+authorization and a new private backup directory before apply.
+See [owner startup recovery](runtime/STARTUP-RECOVERY.md) for commands, existing
+task adoption and component diagnostics.
+
 ## Owner collaboration and machine access
 
 New single-owner installations use `access_mode: owner`. Operations check trusted
@@ -189,7 +216,7 @@ profiles supervise their processes and recover connections. Read back their
 actual health after startup. Owned local Skills refresh with the upgrade;
 Skills on separate client hosts are refreshed through client setup maintenance.
 
-Existing installations use the verified v1.5.1 Bootstrap for the schema/catalog
+Existing installations use the verified v1.5.2 Bootstrap for the schema/catalog
 transition. The Agent preserves project and Root/Route identity, configuration,
 credentials, keys, explicit revocation and rollback data. It verifies the actual
 mode and separately updated Receiver configuration. Reconnect Codex/OpenCode
@@ -302,7 +329,7 @@ Ask the Agent to report these observed facts after setup:
 | Machine files | Selected machine, OS account, platform, home/cwd, available Local/SSH/Node choices and a current file read |
 | ChatGPT web | Explicit `enable`/`skip`/`later` choice, Tunnel identity and health, ChatGPT discovery/readback, exact pending owner actions and resume entry |
 | Automatic upgrades | Enabled policy, actual scheduler backend/state, connection catch-up, last result and next eligible check |
-| Recovery | Active/previous version, configuration and key references, preserved revocation state, restart/reconnect result and rollback references |
+| Recovery | Active/previous version, configuration and key references, preserved revocation state, Windows/WSL task binding and running state where selected, component health, restart/reconnect result and rollback references |
 | Projects | Current project list; after setup, `project_id`, Management Root, Routes, SourceBinding guidance and actual product/management Source observations |
 | Next action | Optional project setup through the installed Skill; for a ready project, Root Agent directory and prompt |
 

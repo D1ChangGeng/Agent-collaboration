@@ -46,7 +46,7 @@ jobs:
       - name: Install locked Runtime
         run: uv sync --frozen --group dev
       - name: Check release tooling
-        run: uv run --frozen ruff check scripts/acs_bootstrap.py scripts/acs_update.py scripts/acs_launcher.py scripts/acs_startup.py scripts/acs_doctor.py scripts/acs_install.py scripts/acs_web_setup.py scripts/acs_source_discovery.py scripts/build_release.py scripts/release_preflight.py tests/test_release_tools.py tests/test_machine_install.py tests/test_web_setup.py tests/test_source_discovery.py tests/test_automatic_updates.py tests/test_update_launcher.py tests/test_startup_recovery.py
+        run: uv run --frozen ruff check scripts/acs_docker_backend.py scripts/acs_bootstrap.py scripts/acs_update.py scripts/acs_launcher.py scripts/acs_startup.py scripts/acs_doctor.py scripts/acs_install.py scripts/acs_web_setup.py scripts/acs_source_discovery.py scripts/build_release.py scripts/release_preflight.py tests/test_docker_backend.py tests/test_windows_startup.py tests/test_release_tools.py tests/test_machine_install.py tests/test_web_setup.py tests/test_source_discovery.py tests/test_automatic_updates.py tests/test_update_launcher.py tests/test_startup_recovery.py
       - name: Runtime component tests
         run: uv run --frozen pytest runtime_tests -q
       - name: Authority clock PostgreSQL integration
@@ -76,9 +76,19 @@ jobs:
       - name: Gate tooling tests
         run: uv run --frozen python -m unittest discover -s tools/runtime/tests -q
 
+  windows-startup:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate native background startup
+        run: python -m unittest discover -s tests -p test_windows_startup.py -v
+
   package:
     runs-on: ubuntu-latest
-    needs: [validate, runtime]
+    needs: [validate, runtime, windows-startup]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -87,4 +97,4 @@ jobs:
       - name: Build Runtime wheel
         run: uv build --wheel
       - name: Assemble candidate distribution
-        run: python scripts/build_release.py --output dist/release --version 1.5.1
+        run: python scripts/build_release.py --output dist/release --version 1.5.2

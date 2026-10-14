@@ -8,11 +8,11 @@ determine the update target.
 
 The v1.5 Runtime schema and MCP catalog transition requires a guided upgrade.
 Use the verified
-[v1.5.1 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.1)
+[v1.5.2 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.2)
 for an AI-guided upgrade. The Agent inspects the installation, verifies Bootstrap
 and Release digests, executes the preview and upgrade commands, and validates
 the actual access mode and connections afterward. See the
-[release notes](RELEASE-NOTES-v1.5.1.md) and the transition below.
+[release notes](RELEASE-NOTES-v1.5.2.md) and the transition below.
 
 ## Controls
 
@@ -99,9 +99,9 @@ respective setup operations. Custom edits to managed files need ownership review
 before an upgrade can proceed. Skills on separate client hosts are refreshed
 through the setup Skill's client maintenance lifecycle.
 
-## Guided transition to v1.5.1
+## Guided upgrade to v1.5.2
 
-The Agent uses `--version v1.5.1` with the verified Release Bootstrap and the
+The Agent uses `--version v1.5.2` with the verified Release Bootstrap and the
 recorded Runtime host, machine/account/home binding, client selection and web
 choice. It executes installation and diagnostic commands, retaining the existing
 configuration, credentials, cryptographic key references, projects, Root/Route
@@ -151,18 +151,35 @@ projects, and actual ChatGPT calls in a new chat for enabled web access.
 
 Before executing the active MCP version, the stable launcher restores the
 existing owner Core provider project from its private installation configuration.
-It checks the owned files and Release composition and brings the recorded
+It verifies owned files and Release composition and brings the recorded
 PostgreSQL/Temporal services up. Normal Runtime authentication applies the
 existing identity and revocation state.
 
-Configured private SSH and Secure MCP Tunnel profiles supervise their owned
-processes and recover after interruption. Local Core, SSH transport and web
-Tunnel have independent health observations. The Agent reports each configured
-profile's startup/recovery result, actual process and connection state, then
-verifies the selected MCP clients. Service persistence and scheduler availability
-depend on the actual host configuration; use
-`acs_launcher.py --installation-root <installation-root> --check-startup`
-and service diagnostics for the observed startup state.
+For Windows/WSL installations, maintain the owner login task from the full
+verified Release on the Windows client. Run `scripts/acs_windows_startup.ps1`
+with the recorded distribution, Linux account, installation root and machine
+identity: preview first, then `-Apply`, then `-Check`. Existing task migration
+backs up its definition and receipt. The GUI host launches WSL in the background,
+and the task calls the stable launcher's `--maintain-startup` entry.
+New maintenance processes verify and select the active Release helper.
+After activation, restart the registered task and verify the selected version
+and actual service/connection health. The
+[startup recovery guide](runtime/STARTUP-RECOVERY.md) includes commands and
+reviewed adoption of existing tasks.
+
+Core, private SSH and Secure MCP Tunnel recovery have independent attempts and
+health observations. A `provider_backend_repair_required` result directs the
+Agent to `scripts/acs_docker_backend.py --provider-config <private-provider-config>`.
+A readable existing provider returns `ready`; otherwise the helper inspects
+the actual Docker data root and preserved containerd store before presenting a
+repair plan. Applying a plan requires its current digest, explicit authorization
+for shared Docker/containerd changes, OS administration and a new private
+backup directory. Record the repair and rollback result separately from
+ordinary startup.
+
+Use `acs_launcher.py --installation-root <installation-root> --check-startup`,
+task readback and service diagnostics to establish observed startup state.
+The Agent verifies each selected client's actual MCP calls afterward.
 
 ## Rollback and recovery
 
