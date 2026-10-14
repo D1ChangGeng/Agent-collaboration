@@ -13,13 +13,13 @@ You confirm required login, permissions, secret entry and connection consent.
 
 ## Agent launch request
 
-Use the [v1.5.2 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.2)
+Use the [v1.5.3 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.3)
 and its `acs_bootstrap.py` asset for this machine selection flow.
-The default Bootstrap version is `v1.5.2`. Existing installations use the verified
-v1.5.2 Bootstrap for an AI-guided upgrade through the v1.5 Runtime schema and
+The default Bootstrap version is `v1.5.3`. Existing installations use the verified
+v1.5.3 Bootstrap for an AI-guided upgrade through the v1.5 Runtime schema and
 MCP catalog transition. The Agent previews the transition, preserves identity and
 configuration, and verifies the activated access mode and connections. See the
-[release notes](RELEASE-NOTES-v1.5.2.md).
+[release notes](RELEASE-NOTES-v1.5.3.md).
 
 For a fresh machine, use the standard Release Bootstrap shipped with that
 Release before project setup:
@@ -149,6 +149,9 @@ the script source, this parameter binding and preview/apply/check sequence; the 
 recorded Linux account explicitly. An installation with `startup.enabled=false`
 returns `owner_disabled`. The GUI host keeps the selected WSL recovery process
 in the background and passes its exit code to Task Scheduler.
+When adopting an existing task, migration verifies the selected installation's
+Linux maintainer and hands off its recovery lock before starting the stable
+entry. Core, SSH and web processes retain their existing supervision.
 
 The Agent verifies the Runtime's actual Docker init mechanism, the task's
 owner/action, PostgreSQL and Temporal, each configured transport, and MCP
@@ -216,7 +219,7 @@ profiles supervise their processes and recover connections. Read back their
 actual health after startup. Owned local Skills refresh with the upgrade;
 Skills on separate client hosts are refreshed through client setup maintenance.
 
-Existing installations use the verified v1.5.2 Bootstrap for the schema/catalog
+Existing installations use the verified v1.5.3 Bootstrap for the schema/catalog
 transition. The Agent preserves project and Root/Route identity, configuration,
 credentials, keys, explicit revocation and rollback data. It verifies the actual
 mode and separately updated Receiver configuration. Reconnect Codex/OpenCode

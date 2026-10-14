@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented here.
 
+## 1.5.3 - 2026-10-14
+
+- Complete the maintenance-lock handoff when migrating an existing Windows/WSL
+  owner login task to the stable background startup entry.
+- Verify the selected installation's Linux lock holder, owner account, reviewed
+  previous or stable maintenance command and process creation identity before
+  sending SIGTERM and waiting for exit. Core, SSH and web processes retain
+  their existing supervision.
+- Validate the candidate helper against an existing production owner task with
+  the published v1.5.2 Core: adoption and apply completed, and the migrated task
+  ran in the background through the stable maintenance entry.
+- Update current Release installation and migration guidance to v1.5.3.
+
 ## 1.5.2 - 2026-10-14
 
 - Add a Windows owner login recovery task with preview, apply and check modes,

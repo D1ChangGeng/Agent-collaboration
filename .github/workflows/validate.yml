@@ -97,4 +97,4 @@ jobs:
       - name: Build Runtime wheel
         run: uv build --wheel
       - name: Assemble candidate distribution
-        run: python scripts/build_release.py --output dist/release --version 1.5.2
+        run: python scripts/build_release.py --output dist/release --version 1.5.3

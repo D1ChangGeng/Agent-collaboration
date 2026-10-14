@@ -43,9 +43,9 @@ independent Review.
 
 ## Standard release installation
 
-Use the [v1.5.2 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.2)
+Use the [v1.5.3 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.3)
 and its `acs_bootstrap.py` asset to start verified installation.
-See the [release notes](docs/RELEASE-NOTES-v1.5.2.md) for capabilities and the
+See the [release notes](docs/RELEASE-NOTES-v1.5.3.md) for capabilities and the
 guided upgrade path.
 
 The Release Bootstrap uses an explicit Runtime destination: local Linux,
@@ -114,12 +114,15 @@ For a Windows client using WSL, the Agent configures an owner login task with
 `scripts/acs_windows_startup.ps1`. Its GUI host keeps recovery in the background
 and invokes the stable launcher's `--maintain-startup` entry. Preview, apply and
 check bind the task to the confirmed distribution, Linux account and machine.
+Existing task migration verifies the selected installation's maintainer and
+hands off its recovery lock while Core, SSH and web processes retain their
+existing supervision.
 The [startup recovery guide](docs/runtime/STARTUP-RECOVERY.md) covers task
 migration and Docker/containerd diagnosis, including a reviewed repair plan,
 explicit authorization for shared services and a private backup.
 
 The v1.5 Runtime schema and MCP catalog transition uses an AI-guided upgrade
-with the verified v1.5.2 Bootstrap. The Agent preserves
+with the verified v1.5.3 Bootstrap. The Agent preserves
 identity, projects, configuration, keys, explicit revocation and rollback data,
 then verifies the actual mode and Receiver bindings. Reconnect Codex/OpenCode
 after activation. For ChatGPT, restart the configured Tunnel/MCP process,
@@ -311,5 +314,5 @@ The repository includes [contribution guidance](CONTRIBUTING.md),
 [security reporting](SECURITY.md), [change history](CHANGELOG.md) and a
 [Sustainable Use License 1.0](LICENSE). The license permits free public
 distribution under its stated use and redistribution terms. Release packages
-carry a source-bound manifest and SHA-256 digest list. Distribution v1.5.2,
+carry a source-bound manifest and SHA-256 digest list. Distribution v1.5.3,
 setup Skill v0.4.0 and Runtime package v0.1.0 are independently versioned.
