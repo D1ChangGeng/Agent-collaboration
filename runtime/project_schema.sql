@@ -212,3 +212,6 @@ CREATE TABLE IF NOT EXISTS collaboration_notification_sessions (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS collaboration_one_notification_session
     ON collaboration_notification_sessions(tenant_id,project_id,owner_ref) WHERE state='active';
+
+-- Work selection is optional and independent of the Source archive.
+ALTER TABLE collaboration_review_requests ALTER COLUMN source_baseline DROP NOT NULL;

@@ -157,7 +157,30 @@ fails before a result is confirmed. Read back the affected path on the original
 machine before choosing a further write. The Node request journal retains
 completed receipts and identifies an interrupted write for recovery.
 
-## Connections and Source versions
+## Project context and file locations
+
+Owner project registration records the machine and directory containing current
+management documents. The directory may be in Git or another location accessible
+to its OS account. `load_project` uses the same machine file backend to read
+configured instruction and knowledge index paths. Results carry observed paths,
+timestamps and content hashes. Partial context identifies unavailable documents;
+larger documents supply `read_file` follow-ups.
+
+`configure_project` updates `management`, `instruction_paths` and
+`knowledge_index_paths` using `project_id`, `client_request_id` and the current
+`expected_revision`. A location has `mode: current_files`, `machine_id` and
+`path`; `management: null` clears the saved location. A single `load_project`
+call can override `machine_id` and `management_path` for its read. Everyday
+inspection and changes use the file operations described above.
+
+The Agent chooses the reader and source version appropriate to the work.
+Owner `WorkItem.source_baseline` may be omitted or null, and `revise_work`
+can select, change or clear that version when the WorkItem is eligible for an
+intent revision. For Review and acceptance, the Agent reports the commit/tree
+actually observed through Git, native tools or machine files. Recorded candidate
+Evidence retains the source facts and bytes supporting the claim.
+
+## Connections and recorded Source history
 
 Local, SSH and Node transports use the portable OS file backend. SSH runs an
 installed fixed service argument vector and passes the structured request on
@@ -166,21 +189,22 @@ owner authorization, revocation checks and request journal. File requests go
 directly to this service, whose readiness is independent of native Harness
 Session activity.
 
-SourceBinding supplies repository, location and version guidance. An Agent
-chooses a reader that can observe the intended location. Use the machine tools
-for current account files. Use `read_source_file`, `list_source_files`,
-`search_source_files`, `read_source` and `read_diff` for Project Source
-observations and explicit captured versions. Source results report their actual
-`view_revision`, commit and tree for reproducible Review and Evidence.
+Existing SourceBinding records and captured Source versions remain available
+as an explicit archive. `list_sources` discovers recorded IDs and view
+references. Select `source_id` and `revision` when reading through
+`read_source_file`, `list_source_files`, `search_source_files` or `read_source`.
+`read_diff` selects `source_id` with `base_revision` and `target_revision`.
+Their captured `view_revision`, commit, tree and byte digests retain the
+identity of the historical material.
 
 | Reader | Selection and continuation |
 |---|---|
 | Machine file tools | Selected machine/account/directory; OS paths; `next_cursor` retains the actual target |
-| Explicit Source tools | Project product default or selected Source/root/revision; captured `view_revision` retains byte identity |
+| Recorded Source tools | Explicit Source ID and captured revision; `view_revision` retains archived byte identity |
 
 Shared installations retain the existing Source `read_file`, `list_files`
 and `search_files` schemas and their configured identity, Grant, Policy and
 isolation. The machine filesystem catalog is enabled for owner access.
 
-See [Owner Runtime](OWNER-RUNTIME.md) for Source defaults and
-[the adoption contract](UPGRADE-CONTRACT.md) for authority and evidence.
+See [Owner Runtime](OWNER-RUNTIME.md) for Project context and acceptance, and
+[the adoption contract](UPGRADE-CONTRACT.md) for authority, migration and evidence.

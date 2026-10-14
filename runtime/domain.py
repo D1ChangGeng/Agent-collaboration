@@ -43,9 +43,10 @@ class DomainAuthority:
     """PostgreSQL Domain authority for the local Runtime profile."""
 
     SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.13"
+    SCHEMA_VERSION = "1.14"
 
     _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
+        ("1.13", "faf4b7edd70228be14d77cf9d176077fc349746fad2d4b6436eab6490e9762fe"),
         ("1.12", "b5d1e8063c52e5d1ab5c7d286ec3fbd02661bf0ff535f6cf36f45c8e6156a6a2"),
         ("1.11", "e840b74d16389bd9b07df1aee061e696955e78a0397dd8649571b04193c49b9d"),
         ("1.10", "3220ec5379b4effbbfe4fb293684881c0e14cd03d681fda8b98aacd6185c162d"),
@@ -293,6 +294,7 @@ class DomainAuthority:
     def initialize(self) -> None:
         schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
         schema += "\n" + Path(__file__).with_name("schema_1_13.sql").read_text(encoding="utf-8")
+        schema += "\n" + Path(__file__).with_name("schema_1_14.sql").read_text(encoding="utf-8")
         checksum = hashlib.sha256(schema.encode("utf-8")).hexdigest()
 
         with self._connect() as connection, connection.cursor() as cursor:
@@ -697,7 +699,7 @@ class DomainAuthority:
         command: CommandEnvelope,
         scope_id: str,
         agent_slot_id: str,
-        source_baseline: str,
+        source_baseline: str | None,
     ) -> CommandResult:
         self._expect_command(command, 'work_item.create')
         result = CommandResult(
@@ -851,7 +853,7 @@ class DomainAuthority:
                 command,
                 current,
                 transition,
-                str(row[2]),
+                row[2],
                 str(row[3]),
             )
 
@@ -1048,7 +1050,7 @@ class DomainAuthority:
             if (stored_evidence["scope_id"] != scope_id
                     or stored_bundle["bundle_id"] != evidence.bundle_ref
                     or stored_bundle["receipt_id"] != receipt.receipt_id
-                    or stored_bundle["baseline_ref"] != baseline
+                    or (baseline is not None and stored_bundle["baseline_ref"] != baseline)
                     or stored_bundle["producer_ref"] != bound["producer_ref"]
                     or stored_bundle["observer_ref"] != bound["observer_ref"]
                     or stored_bundle["source_class"] != bundle.source_class
@@ -1077,13 +1079,13 @@ class DomainAuthority:
             "AND ai.authority_incarnation=g.authority_incarnation "
             "JOIN scopes s ON s.scope_id=a.scope_id AND s.tenant_id=a.tenant_id "
             "WHERE r.tenant_id=%s AND r.work_item_id=%s AND r.review_id=%s AND r.verdict='pass' "
-            "AND r.baseline_ref=%s AND r.evidence_ref=ANY(%s) AND a.scope_id=%s "
+            "AND (%s::text IS NULL OR r.baseline_ref=%s) AND r.evidence_ref=ANY(%s) AND a.scope_id=%s "
             "AND g.authority_id=%s AND g.authority_incarnation=%s "
             "AND r.authority_incarnation=g.authority_incarnation "
             "AND ai.status='active' AND s.status='active' "
             "AND (%s OR (g.revoked_at IS NULL AND g.expires_at>clock_timestamp())) "
             "FOR UPDATE OF r,a,g,ai,s",
-            (self.access_mode == "owner", self.tenant_id, command.target_id, transition.review_ref, baseline,
+            (self.access_mode == "owner", self.tenant_id, command.target_id, transition.review_ref, baseline, baseline,
              list(transition.evidence_refs), scope_id, self.authority_id, self.context.authority_incarnation, self.access_mode == "owner"),
         )
         review = cursor.fetchone()
@@ -1190,7 +1192,8 @@ class DomainAuthority:
         identity = (
             bundle.evidence_id == evidence.evidence_id == evidence.bundle_ref,
             bundle.work_item_id == receipt.work_item_id == evidence.work_item_id == work_item_id,
-            bundle.source_baseline == receipt.source_baseline == evidence.baseline_ref == baseline,
+            bundle.source_baseline == receipt.source_baseline == evidence.baseline_ref
+            and (baseline is None or bundle.source_baseline == baseline),
             bundle.candidate_ref == receipt.candidate_ref == evidence.candidate_ref,
             bundle.observer_ref == evidence.observer_ref,
             bundle.producer_ref == evidence.producer_ref,
@@ -1222,7 +1225,7 @@ class DomainAuthority:
         if (stored_receipt.model_dump(mode="json") != receipt.model_dump(mode="json")
                 or stored[0] != receipt.operation_id or stored[1] != receipt.attempt_id
                 or stored[2] != bound["producer_ref"] or stored[3] != bound["agent_slot_id"]
-                or stored[4] != baseline or stored[5] != "directly_verified"
+                or stored[4] != receipt.source_baseline or stored[5] != "directly_verified"
                 or stored[6] != receipt.observed_at or stored[15] != bound["execution_started_at"]
                 or stored[7] != 0 or stored[8] != receipt.os
                 or stored[9] != receipt.toolchain or list(stored[10]) != list(receipt.test_commands)
@@ -1267,11 +1270,11 @@ class DomainAuthority:
                 return duplicate
             if command.expected_revision != int(row[2]):
                 raise RevisionConflict(command.target_id, command.expected_revision, int(row[2]))
-            if evidence.baseline_ref != str(row[3]):
+            if row[3] is not None and evidence.baseline_ref != row[3]:
                 raise AcceptanceGuardFailed("evidence source baseline differs from work item")
             if bundle is not None:
                 bundle, receipt, bound = self._validate_bundle(
-                    cursor, evidence, bundle, command.target_id, str(row[3]), str(row[0]))
+                    cursor, evidence, bundle, command.target_id, row[3], str(row[0]))
                 producer = bound["producer_ref"]
             else:
                 if (evidence.source_class == "directly_verified" or evidence.evidence_state != "incomplete"
@@ -1379,7 +1382,7 @@ class DomainAuthority:
                 (self.context.tenant_id, work_item_id, evidence_ref),
             )
             evidence = cursor.fetchone()
-            if evidence is None or evidence[0] != baseline_ref:
+            if evidence is None or (baseline_ref is not None and evidence[0] != baseline_ref):
                 raise AcceptanceGuardFailed("review evidence is not bound")
 
             if command.principal_ref in {
@@ -1396,7 +1399,7 @@ class DomainAuthority:
                                "WHERE tenant_id=%s AND work_item_id=%s AND evidence_id=%s FOR UPDATE",
                                (self.tenant_id, work_item_id, reference))
                 additional = cursor.fetchone()
-                if additional is None or additional[0] != baseline_ref or additional[3] != evidence[3]:
+                if additional is None or additional[0] != evidence[0] or additional[3] != evidence[3]:
                     raise AcceptanceGuardFailed("review evidence set is not bound to one candidate")
                 if command.principal_ref in {additional[1], additional[2] or additional[1]}:
                     raise AuthorizationDenied(command.principal_ref, command.grant_ref)
@@ -1776,10 +1779,10 @@ class DomainAuthority:
             "a.execution_started_at,g.expires_at,og.expires_at,g.permissions,og.permissions "
             "FROM attempts a JOIN work_items w ON w.tenant_id=a.tenant_id "
             "AND w.work_item_id=a.work_item_id AND w.scope_id=a.scope_id "
-            "AND w.source_baseline=a.source_baseline AND (w.agent_slot_id=a.agent_slot_id OR EXISTS ("
+            "AND (w.source_baseline IS NULL OR w.source_baseline=COALESCE(a.source_baseline,%s)) AND (w.agent_slot_id=a.agent_slot_id OR EXISTS ("
             "SELECT 1 FROM work_item_revisions history WHERE history.tenant_id=w.tenant_id "
             "AND history.work_item_id=w.work_item_id AND history.agent_slot_id=a.agent_slot_id "
-            "AND history.source_baseline=a.source_baseline AND history.revision<w.revision)) "
+            "AND history.source_baseline IS NOT DISTINCT FROM a.source_baseline AND history.revision<w.revision)) "
             "JOIN agent_slots slot ON slot.agent_slot_id=a.agent_slot_id "
             "AND slot.tenant_id=a.tenant_id AND slot.scope_id=a.scope_id AND slot.status='active' "
             "JOIN grants g ON g.grant_ref=a.grant_ref AND g.tenant_id=a.tenant_id "
@@ -1797,7 +1800,7 @@ class DomainAuthority:
             "AND (%s OR (g.revoked_at IS NULL AND g.expires_at>clock_timestamp())) "
             "AND (%s OR (og.revoked_at IS NULL AND og.expires_at>clock_timestamp())) "
             "FOR UPDATE OF a,w,g,og,ai,s,slot",
-            (self.access_mode == "owner", self.access_mode == "owner", receipt.attempt_id, self.tenant_id, receipt.work_item_id, scope_id,
+            (receipt.source_baseline, self.access_mode == "owner", self.access_mode == "owner", receipt.attempt_id, self.tenant_id, receipt.work_item_id, scope_id,
              self.authority_id, self.context.authority_incarnation, self.access_mode == "owner", self.access_mode == "owner"),
         )
         row = cursor.fetchone()
@@ -1811,6 +1814,9 @@ class DomainAuthority:
                 "producer_permissions", "observer_permissions")
         bound = dict(zip(keys, row, strict=True))
         required = keys[:-4] if self.access_mode == "owner" else keys[:-2]
+        selected_source_fields = {"source_baseline", "source_commit", "source_tree", "candidate_ref"}
+        if self.access_mode == "owner":
+            required = tuple(key for key in required if key not in selected_source_fields)
         if (any(not bound[key] for key in required)
                 or (self.access_mode != "owner" and (
                     "execution.record" not in tuple(bound["observer_permissions"] or ())
@@ -1827,6 +1833,8 @@ class DomainAuthority:
                 raise AcceptanceGuardFailed("execution participant delegated authority is no longer valid") from None
         for key in ("runtime_id", "command_id", "operation_id", "event_id", "provider",
                     "source_baseline", "source_commit", "source_tree", "candidate_ref"):
+            if self.access_mode == "owner" and key in selected_source_fields and bound[key] is None:
+                continue
             if getattr(receipt, key) != bound[key]:
                 raise AcceptanceGuardFailed("receipt does not match trusted execution attempt")
         if receipt.observed_at.tzinfo is None or receipt.observed_at < bound["execution_started_at"]:
@@ -1942,7 +1950,7 @@ class DomainAuthority:
             if (not effect["operation_id"] or not effect["expected_sha256"]
                     or effect["expected_size_bytes"] is None or not effect["intent_sha256"]):
                 raise AcceptanceGuardFailed("effect execution proof binding is missing")
-            if (effect["baseline_ref"] != baseline or not effect["readback_ref"]
+            if ((baseline is not None and effect["baseline_ref"] != baseline) or not effect["readback_ref"]
                     or requested[effect["effect_id"]] != effect["readback_ref"]):
                 raise AcceptanceGuardFailed("effect readback binding differs")
             # Preserve historical lease lineage but do not require a completed

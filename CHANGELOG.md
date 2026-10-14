@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented here.
 
+## 1.6.0 - 2026-10-14
+
+- Register owner Projects and Routes with their current management machine and
+  directory, including authorized standalone Management Roots. Read current
+  instructions and knowledge indexes through the selected machine filesystem.
+- Add `configure_project` to set, replace or clear saved management locations
+  and document paths. Support per-call `machine_id` and `management_path`
+  selection in `load_project`, with observed paths and context completeness.
+- Let Agents select the source version appropriate to each WorkItem. Owner
+  `source_baseline` may be omitted or null and can be selected, changed or
+  cleared through eligible `revise_work` intent revisions.
+- Admit owner Attempt source observations through authenticated execution
+  receipts after execution. Review and acceptance record the Agent's inspected
+  commit/tree and check exact candidate, Evidence and receipt consistency,
+  Reviewer and Finalizer independence, trusted identity, deduplication and
+  explicit revocation.
+- Preserve recorded Source history through explicit `source_id` and `revision`
+  archive reads, together with existing shared Source and permission contracts.
+- Introduce Domain schema 1.14 with formal migration from known schema 1.13.
+  Accept both exact Project schema version 1 checksums for prior LF source and
+  CRLF Windows Release assets; preserve recorded source values and evidence.
+- Update installation and guided upgrade documentation to v1.6.0. Runtime
+  package advances to v0.2.0; setup Skill remains v0.4.0. Guided upgrades retain
+  automatic update policy, startup recovery and Sustainable Use License 1.0.
+
 ## 1.5.3 - 2026-10-14
 
 - Complete the maintenance-lock handoff when migrating an existing Windows/WSL
@@ -40,9 +65,9 @@ All notable changes to this project will be documented here.
   and the existing shared Grant summary.
 - Preserve credential authentication and Project, Source and tool readbacks
   during standard Release Bootstrap verification and activation.
-- Add an owner-profile regression and verify candidate diagnostics against the
-  published v1.5.0 Runtime with a real database: authorized owner identity,
-  `until_explicit_change` lifetime, seven projects and 48 tools.
+- Validate diagnostics against the v1.5.0 Runtime with a real database:
+  authenticated owner identity, registrations retained until explicit change,
+  and Project, Source and tool readbacks.
 - Update current installation and guided upgrade references to v1.5.1.
 
 ## 1.5.0 - 2026-10-13

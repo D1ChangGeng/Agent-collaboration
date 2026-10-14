@@ -190,7 +190,7 @@ def test_live_credential_cannot_select_unrelated_scoped_grant(project):
 def test_profile_reports_live_authorization_and_revocation(project):
     profile = ok(project, "read_profile", {})["data"]
     assert profile["granted_profiles"] == ["root_manager"]
-    assert profile["domain_schema_version"] == "1.13"
+    assert profile["domain_schema_version"] == "1.14"
     assert profile["grant"]["ref"] == "grant:p1"
     with psycopg.connect(project.dsn) as connection:
         connection.execute("UPDATE grants SET revoked_at=clock_timestamp() WHERE grant_ref='grant:p1'")

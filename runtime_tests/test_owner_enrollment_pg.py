@@ -84,3 +84,34 @@ def test_owner_review_and_acceptance_follow_work_scope_not_identity_storage_scop
                      (f.actor.tenant_id,))
         conn.execute("UPDATE grants SET scope_id='identity-storage'")
     assert reference.ready(f, receipt).state == "acceptance_ready"
+
+
+def test_owner_attempt_registers_before_source_selection_and_records_actual_receipt(owner,monkeypatch):
+    from runtime.enrollment_models import AttemptRegistration
+    f=owner
+    reference.enroll(f)
+    reference.runtime(f)
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("UPDATE work_items SET source_baseline=NULL WHERE work_item_id='work'")
+    construct=AttemptRegistration
+    def unspecified(**values):
+        for key in ("source_baseline","source_commit","source_tree","candidate_ref"):
+            values.pop(key,None)
+        return construct(**values)
+    monkeypatch.setattr(reference,"AttemptRegistration",unspecified)
+    receipt,registered,_=reference.execute_and_register_attempt(f)
+    assert registered.binding["source_baseline"] is None
+    assert registered.binding["source_commit"] is None
+    recorded,_,_=reference.record(f,receipt)
+    assert recorded.state=="execution_receipt"
+    assert reference.ready(f,receipt).revision==1
+    with psycopg.connect(f.dsn) as connection:
+        connection.execute("UPDATE work_items SET source_baseline=%s WHERE work_item_id='work'",(receipt.source_baseline,))
+        with connection.cursor() as cursor:
+            f.actor._execution_binding(cursor,receipt,"local-scope")
+        row=connection.execute("SELECT agent_slot_id,revision FROM work_items WHERE work_item_id='work'").fetchone()
+        connection.execute("INSERT INTO work_item_revisions(tenant_id,work_item_id,revision,definition,source_baseline,agent_slot_id,command_id,reason) VALUES (%s,'work',%s,'{}',NULL,%s,'fixture-handoff-history','record unversioned source choice')",(f.actor.tenant_id,row[1],row[0]))
+        connection.execute("INSERT INTO agent_slots VALUES ('new-owner-slot',%s,'local-scope','active')",(f.actor.tenant_id,))
+        connection.execute("UPDATE work_items SET agent_slot_id='new-owner-slot',source_baseline=NULL,revision=revision+1 WHERE work_item_id='work'")
+        with connection.cursor() as cursor:
+            f.actor._execution_binding(cursor,receipt,"local-scope")

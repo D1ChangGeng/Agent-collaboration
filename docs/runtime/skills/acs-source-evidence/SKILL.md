@@ -12,13 +12,13 @@ execution placement and machine connections belong to acs-runtime-model.
 
 ## Core invariants
 
-- SourceBinding supplies advisory repository, location and version hints; the Agent chooses an actually available reader.
 - Owner machine tools operate on current files under the selected OS account. Machine, account, directory and cursor identify the actual read.
-- Explicit Source tools resolve the Project product default or a selected Source/root/revision. Captured pagination retains the returned view_revision.
-- primary_source_root identifies the preferred repository location; current Source reads resolve its physical primary worktree, actual branch and edits.
-- Source actual_source reports provider/root/commit/tree/view_revision/observed_at. current_readable_root and origin_hint describe their own locations.
-- Product source_observation and distinct management_source_observation retain separate context; unavailable product defaults have null product observation and references.
-- Review/Evidence bind the actual candidate/source identity. Shared access/version checks and each reader's authority remain effective.
+- Owner Project context loads current management documents from its registered machine and directory; configuration can set, replace or clear that location.
+- The Agent chooses an available machine, native, Git or repository reader and reports the source version actually inspected.
+- Owner WorkItem.source_baseline may be omitted or null. Eligible intent revisions can select, change or clear that work version.
+- Historical SourceBinding records and captured views are an explicit archive, selected by source_id and revision. Captured pagination retains view_revision.
+- Review and acceptance bind the exact candidate, reported commit/tree and recorded Evidence. Historical facts retain their original source, author and digests.
+- Shared access/version checks and each reader's authority remain effective under their recorded contract.
 
 ## Retrieval map
 

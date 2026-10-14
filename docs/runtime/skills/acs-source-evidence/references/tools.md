@@ -20,42 +20,43 @@ Use complete/next_cursor to finish the requested range. OS and transport failure
 report their actual boundary. For an uncertain remote write, read back the target
 before choosing a further action.
 
-## Project Source and evidence
+## Project context and work versions
 
-- list_sources reports repository/version hints, provider capabilities,
-  current_readable_root and origin_hint.host/path.
-- read_source reports observed repository/branch/workspace state and selected
-  view identity; owner actual_source supplies captured readback fields.
-- read_source_file, list_source_files and search_source_files read the selected
-  Project Source view.
-- read_diff compares two explicit captured commit or workspace revisions.
+- load_project reads current instructions and knowledge indexes from the
+  registered management machine/path; machine_id and management_path can
+  override that read.
+- configure_project updates or clears management and its document paths with
+  project_id, client_request_id, expected_revision and changes.
+- Owner create_work accepts omitted or null source_baseline.
+- revise_work can select, change or clear source_baseline when an intent
+  revision is eligible; read_resource exposes work revision history.
+- submit_review and accept_work receive the commit/tree actively observed and
+  reported by the Agent in source_readback, and check recorded candidate Evidence.
+
+## Recorded Source and evidence
+
+- list_sources discovers archived Source IDs, repository metadata and captured
+  view references.
+- read_source, read_source_file, list_source_files and search_source_files read
+  an explicitly selected source_id and revision.
+- read_diff compares base_revision and target_revision for an explicit source_id.
 - list_evidence and read_resource inspect recorded claims and exact evidence.
 
-Owner Source tools can omit source_id/revision while retaining project_id and
-the file/query action. The service resolves the product repository Source.
-primary_source_root locates its preferred physical primary checkout.
-Explicit source_root selects a configured readable current worktree; revision
-selects captured bytes. Source pagination retains the returned view_revision.
-
-Owner Source results include actual_source with provider, root, commit, tree,
-view_revision and observed_at. Record actual repository, branch and workspace
-observations. current_readable_root describes the Source provider's location;
-origin_hint.host/path remains repository guidance.
-
-load_project.source_observation refers to product source.
-management_source_observation retains distinct management context. Unavailable
-product defaults leave product observation and primary/version references null.
-Source follow-ups use the explicit Source tool names and preserve the selected
-view where needed.
+Historical Source file results retain captured actual_source fields including
+provider, root, commit, tree, view_revision and observed_at. read_source reports
+the archived commit/tree, view identity and snapshot digest. Pagination continues
+at that view_revision. Existing location and repository hints retain their
+recorded provenance.
 
 read_message retrieves terminal native content from Core Scope CAS. Missing
 bytes use signed delivery.readback with the original Dispatch and digest.
 check_inbox prepares response references. Verified historical results retain
 cached Artifact identity and provenance.
 
-The Source provider retains its configured roots, normalization, tenant/Scope
-ownership, revocation, secret handling, byte bounds and digest checks. Shared mode
-retains the existing read_file/list_files/search_files schemas, access/version
-rules and exact snapshot inputs. Machine file service access follows the selected
-OS account and authenticated connection. Source reading, execution placement,
-Message delivery and Git synchronization have separate observations.
+The Source archive retains configured roots, normalization, tenant/Scope
+ownership, revocation, secret handling, byte bounds and digest checks. Shared
+mode retains the existing read_file/list_files/search_files schemas,
+access/version rules and exact snapshot inputs. Machine file service access
+follows the selected OS account and authenticated connection. Source reading,
+execution placement, Message delivery and Git synchronization have separate
+observations. Exact tool inputs follow the installed mode's active catalog.

@@ -13,35 +13,48 @@ Root and Route describe responsibility extent; Engineer, Reviewer, Specialist
 and Finalizer describe duties. Team roles and organization metadata guide
 delegation. Candidate-specific reviewer independence remains a separate check.
 
-A branch, worktree, machine, provider thread or native Session is a source or
-execution binding. Replacing one preserves the durable Project and work
-identities.
+A branch, worktree, machine, directory, provider thread or native Session is a
+source, file or execution binding. Replacing one preserves the durable Project
+and work identities.
 
 ## Authority and storage
 
 Project and Root identity originate in the adopted Management Root and manifest.
-The Runtime stores adopted identities, revisions, business bindings and events.
-Repository files remain authoritative for project-owned instructions and
-source. Current workspace observations have a view revision; a fixed source
-snapshot keeps its exact baseline and bytes.
+Owner registration stores these identities, Routes and the current management
+machine, directory and document paths. The directory can reside in Git or another
+authorized location. Project-owned files supply instructions and knowledge;
+Runtime records supply collaboration state, revisions, bindings and events.
 
-New single-owner installations select `access_mode=owner`. Trusted identity,
+load_project reads current instructions and knowledge indexes through the
+machine filesystem. configure_project sets, replaces or clears their saved
+location and paths using the current Project revision. A per-call machine_id
+and management_path can select another read location.
+
+New single-owner installations select access_mode=owner. Trusted identity,
 active service and objects, explicit revocation, deduplication and expected
 revisions govern access. A shared deployment also applies configured Grants,
 Policy and Profile. An existing configuration with no access mode retains
 shared behavior until explicit migration.
 
-## Context completeness
+## Context completeness and source selection
 
 Local Sessions obtain project_id from AGENTS and the manifest. Web Sessions
-discover it through list_projects and load_project. ProjectContextPack reports
-Root, Routes, instructions, SourceBindings, knowledge and active work.
+discover it through list_projects and load_project. The owner ProjectContextPack
+reports Root, Routes, current instructions, knowledge indexes and active work,
+with management_root.machine_id/path and each observed document's provenance.
 
-`current` means required context has been read at the reported revision.
-`partial` lists missing sources. `stale` records a newer known source revision
-or an observation that needs refresh. Owner registration persists, while
-current source and process readiness still require actual readback.
+current means the requested management files were read within the reported
+budget. partial lists missing locations or documents and provides read_file
+follow-ups for larger content. A changed file calls for a new observation
+before an action that depends on it. Project revisions track configuration and
+collaboration changes; document hashes identify the file contents actually read.
 
-The product contract is `docs/runtime/OWNER-RUNTIME.md` in the ACS release or
+Owner WorkItem.source_baseline may be omitted or null and selected, changed or
+cleared by the Agent through eligible intent revisions. Historical Source records
+retain their captured identities for explicit source_id/revision queries. The
+Agent supplies source observations for the candidate being reviewed. Shared
+context and version checks retain their original contract and reference Profile.
+
+The product contract is docs/runtime/OWNER-RUNTIME.md in the ACS release or
 source checkout; organization vocabulary is in
-`docs/runtime/AGENT-ORGANIZATION-MODEL.md`.
+docs/runtime/AGENT-ORGANIZATION-MODEL.md.
