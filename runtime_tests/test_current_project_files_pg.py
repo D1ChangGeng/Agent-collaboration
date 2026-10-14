@@ -7,7 +7,9 @@ import pytest
 
 from runtime_tests.test_project_service import ok, scalar, work_args
 
-pytest_plugins = ("runtime_tests.test_project_work", "runtime_tests.test_project_registration")
+from runtime_tests.test_project_registration import registration_case as registration_case
+from runtime_tests.test_project_work import managed_work as managed_work
+from runtime_tests.test_project_work import review_project as review_project
 
 
 def owner(f):
