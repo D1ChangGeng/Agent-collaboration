@@ -29,6 +29,7 @@ from runtime.errors import (
 from runtime.models import CommandEnvelope, CommandResult
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.project_common import IDENTIFIER, canonical, digest, handle, parse_handle
+from runtime.project_context import CurrentProjectContext
 from runtime.project_continuation import ContinuationActions
 from runtime.project_inbox import InboxActions
 from runtime.project_management import ManagementActions
@@ -44,11 +45,11 @@ RECEIPTS = (
 )
 
 
-class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteActions, InboxActions):
+class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, ManagementActions, RouteActions, InboxActions):
     """Authenticated project adapter; never owns an alternate execution state."""
 
     IMPLEMENTED = frozenset({
-        "read_profile", "list_projects", "list_connections", "load_project", "list_routes", "list_work",
+        "read_profile", "configure_project", "list_projects", "list_connections", "load_project", "list_routes", "list_work",
         "create_work", "send_message", "read_message", "check_inbox", "wait_for_response",
         "list_sources", "list_files", "search_files", "read_file", "read_source", "read_diff",
         "configure_team", "list_collaborators", "list_harnesses",
@@ -111,7 +112,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 "SELECT schema_version,schema_checksum FROM runtime_schema_metadata "
                 "WHERE schema_name='acs-project-runtime' FOR UPDATE",
             ).fetchone()
-            if old and old != ("1", checksum):
+            if old and old not in {("1", checksum), ("1", "6fedb1731cde6224c0ec4770d7d5b18580d60554e9ef7b82739679b9bcfc0440"), ("1", "ccad2138f9ed4cddbe2e7e30ed797b4ead75d3c1359e4401997906e1233bfa3a")}:
                 raise ValueError("project schema requires explicit migration")
             connection.execute(schema)
             connection.execute(
@@ -119,6 +120,7 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 "VALUES ('acs-project-runtime','1',%s) ON CONFLICT(schema_name) DO NOTHING",
                 (checksum,),
             )
+            connection.execute("UPDATE runtime_schema_metadata SET schema_checksum=%s WHERE schema_name='acs-project-runtime'", (checksum,))
             control = Path(__file__).with_name("project_control_schema.sql").read_bytes()
             control_checksum = hashlib.sha256(control).hexdigest()
             current = connection.execute(
@@ -256,9 +258,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 previous_identity = cursor.fetchone()[0]
                 if any(previous_identity[key] != getattr(request, key) for key in ("scope_id", "root_id", "route_id")):
                     raise ValueError("Source Scope, Root and Route identity cannot be replaced")
-            if old and authority.access_mode == "owner":
-                if previous_identity["repository_root"] != str(request.root):
-                    request = replace(request, workspace_view=True)
+            if old and authority.access_mode == "owner" and previous_identity["repository_root"] != str(request.root):
+                request = replace(request, workspace_view=True)
             snapshot = self.sources.capture(request, bound, command)
             cursor.execute("INSERT INTO collaboration_sources VALUES (%s,%s,%s,%s,%s,%s) "
                            "ON CONFLICT(tenant_id,project_id,source_id) DO UPDATE "
@@ -545,6 +546,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         return result
 
     def _verify_command_management_identity(self, authority, cursor, project, command, args):
+        if authority.access_mode == "owner":
+            return
         if not project[3].get("management"):
             return
         # Management identity is checked with the primary project membership;
@@ -992,39 +995,17 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
                 data["missing_context"] = ["route_scoped_source_hydration"]
                 return "partial", data, []
             project = (*project[:3], data["manifest"], *project[4:])
+        if authority.access_mode == "owner":
+            return self._hydrate_current_context(authority, cursor, project, command, args, data)
         return self._hydrate_context(authority, cursor, project, command, args, data)
-
-    def _default_source(self, cursor, project_id):
-        cursor.execute("SELECT context_manifest FROM collaboration_projects WHERE tenant_id=%s "
-                       "AND project_id=%s AND state='active'", (self.context.tenant_id, project_id))
-        project = cursor.fetchone()
-        if project is None:
-            raise NotFound("project", project_id)
-        manifest = project[0]
-        cursor.execute("SELECT source_id,repository_identity FROM collaboration_sources WHERE tenant_id=%s "
-                       "AND project_id=%s ORDER BY source_id", (self.context.tenant_id, project_id))
-        rows = cursor.fetchall()
-        sources = [(source_id, identity) for source_id, identity in rows
-                   if identity.get("purpose") != "management-only-snapshot"]
-        if manifest.get("primary_source_id"):
-            if any(source_id == manifest["primary_source_id"] for source_id, _identity in sources):
-                return manifest["primary_source_id"]
-            raise ValueError("primary_source_id must identify a project source checkout")
-        primary = [source_id for source_id, identity in sources if identity.get("primary") is True]
-        if len(primary) == 1:
-            return primary[0]
-        management = manifest.get("management", {}).get("source_id")
-        if any(source_id == management for source_id, _identity in sources):
-            return management
-        if len(sources) == 1:
-            return sources[0][0]
-        raise ValueError("select a primary_source_id or source_id from the project's source hints")
 
     def _snapshot(self, cursor, args, authority=None, command=None):
         if self.sources is None:
             raise ValueError("Source provider is unavailable")
         if not args.get("source_id"):
-            args["source_id"] = self._default_source(cursor, args["project_id"])
+            raise ValueError("select source_id explicitly for the recorded Source reader")
+        if authority is not None and authority.access_mode == "owner" and not args.get("revision"):
+            raise ValueError("select a recorded revision explicitly; current files use machine readers")
         if args.get("source_root") and args.get("revision"):
             raise ValueError("select a current source_root or a captured revision")
         cursor.execute("SELECT s.revision,s.current_commit,s.repository_identity,p.snapshot_json "
@@ -1037,39 +1018,6 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         if row is None:
             raise NotFound("source_revision", args["source_id"])
         snapshot = self.sources.snapshot(row[3])
-        if authority is not None and authority.access_mode == "owner" and args.get("revision") is None:
-            cursor.execute("SELECT context_manifest FROM collaboration_projects WHERE tenant_id=%s "
-                           "AND project_id=%s", (self.context.tenant_id, args["project_id"]))
-            manifest = cursor.fetchone()[0]
-            preferred_root = (manifest.get("primary_source_root")
-                              if manifest.get("primary_source_id") == args["source_id"] else None)
-            request, observed, selection = self.sources.current(
-                snapshot, authority, command, root=args.get("source_root"), preferred_root=preferred_root)
-            args["_source_selection"] = selection
-            location_changed = str(request.root) != snapshot.repository_root
-            if (location_changed or observed["commit"] != snapshot.source_commit
-                    or observed["tree"] != snapshot.source_tree
-                    or observed["working_tree"] != "clean" or snapshot.dirty):
-                if location_changed:
-                    cursor.execute("SELECT snapshot_json->>'repository_root' FROM collaboration_source_snapshots "
-                                   "WHERE tenant_id=%s AND project_id=%s AND source_id=%s AND source_commit=%s",
-                                   (self.context.tenant_id, args["project_id"], args["source_id"], observed["commit"]))
-                    retained = cursor.fetchone()
-                    if retained and retained[0] != str(request.root):
-                        request = replace(request, workspace_view=True)
-                snapshot = self.sources.capture(request, authority, command)
-                cursor.execute(
-                    "INSERT INTO collaboration_source_snapshots(tenant_id,project_id,source_id,source_commit,"
-                    "snapshot_digest,snapshot_json,command_id) VALUES (%s,%s,%s,%s,%s,%s,%s) "
-                    "ON CONFLICT(tenant_id,project_id,source_id,source_commit) DO NOTHING",
-                    (self.context.tenant_id, args["project_id"], args["source_id"], snapshot.view_revision,
-                     snapshot.snapshot_sha256, canonical(snapshot.manifest_dict()), command.command_id),
-                )
-                cursor.execute(
-                    "UPDATE collaboration_sources SET current_commit=%s WHERE tenant_id=%s AND project_id=%s AND source_id=%s",
-                    (snapshot.view_revision, self.context.tenant_id, args["project_id"], args["source_id"]),
-                )
-                row = (row[0], snapshot.view_revision, row[2], snapshot.manifest_dict())
         return row, snapshot
 
     def _list_sources(self, authority, cursor, project, _command, args, _credential):
@@ -1091,12 +1039,11 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         return "observed", {"project_id": args["project_id"], "items": [
             {"source_id": row[0], "revision": row[1], "commit": row[4], "view_revision": row[2],
              "repository": row[3], "capabilities": ["read"], "provider": "filesystem",
-             "binding_kind": "source_hint", "version_guidance": "advisory",
-             "default_read": "current_main_worktree", "provider_choice": "agent",
+             "record_kind": "source_archive", "version_selection": "explicit",
              "origin_hint": {"host": row[3].get("origin_host"), "path": row[3].get("origin_path")},
              **({"current_readable_root": row[5]} if authority.access_mode == "owner" else {}),
              "read": {"tool": "read_source", "arguments": {
-                 "project_id": args["project_id"], "source_id": row[0]}}}
+                 "project_id": args["project_id"], "source_id": row[0], "revision": row[2]}}}
             for row in cursor.fetchall()]}, []
 
     def _source_read(self, name, authority, cursor, command, args):
@@ -1144,6 +1091,12 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         args = dict(args)
         row, snapshot = self._snapshot(cursor, args, authority, command)
         self.sources.verify(snapshot, authority, command)
+        if authority.access_mode == "owner":
+            return "observed", {"project_id":args["project_id"], "source_id":args["source_id"],
+                "commit":snapshot.source_commit, "tree":snapshot.source_tree,
+                "view_revision":snapshot.view_revision, "repository":row[2],
+                "observed_at":snapshot.observed_at, "record_kind":"source_archive",
+                "version_selection":"explicit", "snapshot_digest":snapshot.snapshot_sha256}, []
         observed = self.sources.observe(snapshot, authority, command)
         current = (observed["commit"], observed["tree"], observed["working_tree"]) == (
             snapshot.source_commit, snapshot.source_tree, "dirty" if snapshot.dirty else "clean")
@@ -1195,31 +1148,6 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         data["source_guidance"] = {"default_read": "current_main_worktree",
             "version_guidance": "advisory", "provider_choice": "agent",
             "version_hint_ref": "source_observation"}
-        if authority.access_mode == "owner":
-            try:
-                primary_id = self._default_source(cursor, args["project_id"])
-            except ValueError:
-                primary_id = None
-            data["source_guidance"]["primary_source_id"] = primary_id
-            if primary_id is None:
-                data["management_source_observation"] = data["source_observation"]
-                data["source_observation"] = None
-                data["source_guidance"]["version_hint_ref"] = None
-            if primary_id and primary_id != management["source_id"]:
-                cursor.execute("SELECT p.snapshot_json,s.repository_identity FROM collaboration_sources s "
-                               "JOIN collaboration_source_snapshots p ON "
-                               "(p.tenant_id,p.project_id,p.source_id,p.source_commit)="
-                               "(s.tenant_id,s.project_id,s.source_id,s.current_commit) "
-                               "WHERE s.tenant_id=%s AND s.project_id=%s AND s.source_id=%s",
-                               (self.context.tenant_id, args["project_id"], primary_id))
-                selected_source = cursor.fetchone()
-                selected_snapshot = self.sources.snapshot(selected_source[0])
-                _request, code_observed, selected = self.sources.current(
-                    selected_snapshot, authority, command, preferred_root=manifest.get("primary_source_root"))
-                data["management_source_observation"] = data["source_observation"]
-                data["source_observation"] = code_observed
-                data["source_guidance"]["repository"] = selected_source[1]
-                data["source_guidance"]["selection"] = selected
         data["management_root"] = dict(management, revision=snapshot.view_revision)
         data["source_bindings"] = self._list_sources(authority, cursor, project, command, args, None)[1]["items"]
         for source in data["source_bindings"]:
@@ -1317,6 +1245,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
 
     def _verify_management_identity(self, authority, cursor, project, command,
                                     project_id, *, require_current):
+        if authority.access_mode == "owner":
+            return
         management = project[3]["management"]
         if self.sources is None:
             raise ValueError("Management Source is unavailable")
@@ -1350,6 +1280,10 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         rows = [{"route_handle": handle("route", args["project_id"], row[0]),
             "scope_id": row[1], "revision": row[2], "state": row[3], "definition": row[4]}
             for row in cursor.fetchall()]
+        if authority.access_mode == "owner":
+            for item in rows:
+                item["definition"] = {key:value for key,value in item["definition"].items()
+                    if key not in {"source_binding_ids","management_source_state","management_source_readback"}}
         return self._page_result(args["project_id"], rows, args, "route_handle")
 
     def _list_work(self, authority, cursor, project, _command, args, _credential):
@@ -1399,7 +1333,8 @@ class ProjectService(ContinuationActions, WorkActions, ManagementActions, RouteA
         domain_command = command.model_copy(update={"command_type": "work_item.create",
             "target_kind": "work_item", "target_id": args["work_item_id"],
             "expected_revision": 0})
-        result = authority.create_work_item(domain_command, route[1], project[5], args["source_baseline"])
+        result = authority.create_work_item(domain_command, route[1], project[5], args.get("source_baseline"))
+        args = dict(args, source_baseline=args.get("source_baseline"))
         cursor.execute("INSERT INTO collaboration_work_links VALUES (%s,%s,%s,%s,%s)",
                        (self.context.tenant_id, args["project_id"], args["work_item_id"],
                         route_id, canonical(args)))

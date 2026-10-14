@@ -44,7 +44,9 @@ class RouteActions:
         if (not IDENTIFIER.fullmatch(route_id) or not 1 <= len(args["display_name"]) <= 256
                 or not 1 <= len(args["goal"]) <= 8192):
             raise ValueError("invalid Route metadata")
-        self._route_sources(cursor, args["project_id"], args["source_binding_ids"])
+        args = dict(args, source_binding_ids=args.get("source_binding_ids", []))
+        if authority.access_mode != "owner":
+            self._route_sources(cursor, args["project_id"], args["source_binding_ids"])
         cursor.execute("SELECT 1 FROM collaboration_routes WHERE tenant_id=%s AND project_id=%s AND route_id=%s",
                        (self.context.tenant_id, args["project_id"], route_id))
         if cursor.fetchone():
@@ -71,9 +73,8 @@ class RouteActions:
             cursor.execute("INSERT INTO grant_delegations(grant_ref,parent_grant_ref,tenant_id,command_id,parent_policy_digest) "
                            "VALUES (%s,%s,%s,%s,%s)",
                            (grant, authority.context.grant_ref, self.context.tenant_id, command.command_id, digest(parent_policy)))
-        definition = {"display_name": args["display_name"], "goal": args["goal"],
-                      "source_binding_ids": args["source_binding_ids"], "root_id": root,
-                      "management_source_state": "not_materialized"}
+        definition = {"display_name": args["display_name"], "goal": args["goal"], "root_id":root,
+                      **({"source_binding_ids":args["source_binding_ids"],"management_source_state":"not_materialized"} if not owner else {})}
         cursor.execute("INSERT INTO collaboration_routes(tenant_id,project_id,route_id,scope_id,definition) "
                        "VALUES (%s,%s,%s,%s,%s)",
                        (self.context.tenant_id, args["project_id"], route_id, scope, canonical(definition)))
@@ -87,7 +88,7 @@ class RouteActions:
         return "created", {"project_id": args["project_id"], "route_handle": handle("route", args["project_id"], route_id),
             "scope_handle": handle("scope", args["project_id"], scope), "revision": 1,
             "root_revision": project[2]+1, "operation_id": result.operation_id,
-            "management_source_state": "not_materialized"}, []
+            **({"management_source_state":"not_materialized"} if not owner else {})}, []
 
     def _update_route(self, authority, cursor, project, command, args, _credential):
         route_id = parse_handle(args["route_handle"], "route", args["project_id"])
@@ -109,12 +110,15 @@ class RouteActions:
         for key, maximum in (("display_name", 256), ("goal", 8192)):
             if key in changes and (not isinstance(changes[key], str) or not 1 <= len(changes[key]) <= maximum):
                 raise ValueError("invalid Route text")
+        if authority.access_mode == "owner" and "source_binding_ids" in changes:
+            raise ValueError("select a source reader for the task or review")
         if "source_binding_ids" in changes:
             values = changes["source_binding_ids"]
             if not isinstance(values, list) or any(not isinstance(item, str) for item in values):
                 raise ValueError("invalid Route SourceBindings")
-            self._route_sources(cursor, args["project_id"], values)
-        if "context_manifest" in changes:
+            if authority.access_mode != "owner":
+                self._route_sources(cursor, args["project_id"], values)
+        if "context_manifest" in changes and authority.access_mode != "owner":
             manifest = changes["context_manifest"]
             if (not isinstance(manifest, dict) or set(manifest) - {
                     "management", "instruction_paths", "knowledge_index_paths", "skill_catalog", "route_path"}
@@ -143,13 +147,13 @@ class RouteActions:
             self._verify_management_identity(authority, cursor,
                 (*project[:3], manifest, *project[4:]), command, args["project_id"], require_current=True)
         definition = {**row[3], **{key: value for key, value in changes.items() if key != "state"}}
-        if (definition.get("management_source_readback") and "context_manifest" not in changes
+        if (authority.access_mode != "owner" and definition.get("management_source_readback") and "context_manifest" not in changes
                 and (state != row[2] or definition.get("display_name") != row[3].get("display_name"))):
             # Git registry ownership is not silently transferred to a PG-only
             # metadata update. Retain the last imported revision and surface the
             # reconciliation requirement until direct Source readback matches.
             definition["management_source_state"] = "source_sync_required"
-        if "context_manifest" in changes:
+        if "context_manifest" in changes and authority.access_mode != "owner":
             definition["management_source_state"] = "not_materialized"
             definition.pop("management_source_readback", None)
             manifest = changes["context_manifest"]
@@ -176,6 +180,13 @@ class RouteActions:
                     "source_commit": snapshot.source_commit, "source_tree": snapshot.source_tree,
                     "route_path": route_path, "registry_sha256": registry_file.sha256,
                     "metadata_sha256": metadata_file.sha256}
+        if authority.access_mode == "owner":
+            for field in ("source_binding_ids", "management_source_state", "management_source_readback"):
+                definition.pop(field, None)
+            if "context_manifest" in changes:
+                manifest = changes["context_manifest"]
+                if not isinstance(manifest, dict) or manifest.get("management", {}).get("mode") != "current_files":
+                    raise ValueError("Route context requires current management file locations")
         cursor.execute("UPDATE collaboration_routes SET state=%s,definition=%s,revision=revision+1,updated_at=clock_timestamp() "
                        "WHERE tenant_id=%s AND project_id=%s AND route_id=%s",
                        (state, canonical(definition), self.context.tenant_id, args["project_id"], route_id))

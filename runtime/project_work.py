@@ -34,8 +34,8 @@ class WorkActions:
     def _candidate_inventory(self, cursor, work_id, candidate, baseline):
         cursor.execute("SELECT evidence_id,source_class,evidence_state,test_exit_code,artifact_sha256,"
                        "observer_ref,producer_ref,bundle_ref,summary FROM evidence WHERE tenant_id=%s "
-                       "AND work_item_id=%s AND candidate_ref=%s AND baseline_ref=%s ORDER BY evidence_id FOR UPDATE",
-                       (self.context.tenant_id, work_id, candidate, baseline))
+                       "AND work_item_id=%s AND candidate_ref=%s AND (%s::text IS NULL OR baseline_ref=%s) ORDER BY evidence_id FOR UPDATE",
+                       (self.context.tenant_id, work_id, candidate, baseline, baseline))
         return [dict(zip(("evidence_id", "source_class", "evidence_state", "test_exit_code", "artifact_sha256",
                           "observer_ref", "producer_ref", "bundle_ref", "summary"), row, strict=True))
                 for row in cursor.fetchall()]
@@ -392,6 +392,8 @@ class WorkActions:
         if not changes or set(changes) - allowed:
             raise ValueError("invalid work intent changes")
         for key, value in changes.items():
+            if key == "source_baseline" and authority.access_mode == "owner" and value is None:
+                continue
             expected = dict if key == "budget" else list if key in {"constraints", "required_evidence"} else str
             if type(value) is not expected or (expected is str and not value):
                 raise ValueError("work intent change type differs")
@@ -497,11 +499,12 @@ class WorkActions:
                 raise AuthorizationDenied(target[0], target[1])
             for permission in ("handoff.ack", "resources.read", "messages.read", "message.read"):
                 authority._authorize_delegation(cursor, target_command, permission)
-        source = args["source_state"]
+        source = args.get("source_state") or {}
+        args = dict(args,source_state=source)
         required = {"branch", "commit", "tree", "working_tree", "push", "receiver_sync"}
-        if not required <= set(source) or source["commit"] != work[4]:
+        if authority.access_mode != "owner" and (not required <= set(source) or source["commit"] != work[4]):
             raise ValueError("handoff requires exact source and explicit sync observations")
-        if any(not isinstance(source[key], str) or not source[key] for key in required):
+        if authority.access_mode != "owner" and any(not isinstance(source[key],str) or not source[key] for key in required):
             raise ValueError("invalid handoff source observation")
         for value in args["context_handles"]:
             kind = value.split(":", 1)[0]
@@ -761,7 +764,7 @@ class WorkActions:
         self._require_confirmed_handoff(cursor, self.context.tenant_id, work_id)
         if work[1] != args["expected_work_revision"]:
             raise RevisionConflict(work_id, args["expected_work_revision"], work[1])
-        if args["source_baseline"] != work[4]:
+        if work[4] is not None and args.get("source_baseline") != work[4]:
             raise ValueError("review baseline differs from WorkItem")
         # Reviewer selection is an external Agent decision. This field carries
         # its explicit collaborator handle; Core never chooses a reviewer.
@@ -870,14 +873,17 @@ class WorkActions:
             if handled != set(excluded):
                 raise AcceptanceGuardFailed("Reviewer must explicitly disposition all excluded evidence")
             source = args["source_readback"]
-            if not {"source_id", "commit", "tree"} <= set(source):
-                raise ValueError("passing Review requires direct SourceBinding readback")
-            _, source_snapshot = self._snapshot(cursor, {"project_id": args["project_id"],
-                "source_id": source["source_id"], "revision": source["commit"]})
-            self.sources.verify(source_snapshot, authority, command)
-            current = self.sources.observe(source_snapshot, authority, command)
-            if (current["commit"], current["tree"], current["working_tree"]) != (source["commit"], source["tree"], "clean"):
-                raise AcceptanceGuardFailed("Review Source readback is stale")
+            if not {"commit", "tree"} <= set(source) or any(not isinstance(source[key], str) or not source[key] for key in ("commit", "tree")):
+                raise ValueError("report the source version actually inspected")
+            if authority.access_mode != "owner":
+                if not {"source_id", "commit", "tree"} <= set(source):
+                    raise ValueError("passing Review requires direct SourceBinding readback")
+                _, source_snapshot = self._snapshot(cursor, {"project_id": args["project_id"],
+                    "source_id": source["source_id"], "revision": source["commit"]})
+                self.sources.verify(source_snapshot, authority, command)
+                current = self.sources.observe(source_snapshot, authority, command)
+                if (current["commit"], current["tree"], current["working_tree"]) != (source["commit"], source["tree"], "clean"):
+                    raise AcceptanceGuardFailed("Review Source readback is stale")
             for value in args["evidence_handles"]:
                 stored, bundle = self._evidence(cursor, args["project_id"], value, work_id)
                 if bundle is None:
@@ -912,14 +918,17 @@ class WorkActions:
                 or not 1 <= len(review_handles) <= 8 or len(set(review_handles)) != len(review_handles)):
             raise ValueError("acceptance requires bounded unique Evidence and Review sets")
         source = args["source_readback"]
-        if not {"source_id", "commit", "tree"} <= set(source):
-            raise ValueError("Finalizer requires explicit Source readback")
-        _, snapshot = self._snapshot(cursor, {"project_id": args["project_id"],
-            "source_id": source["source_id"], "revision": source["commit"]})
-        self.sources.verify(snapshot, authority, command)
-        current = self.sources.observe(snapshot, authority, command)
-        if (current["commit"], current["tree"], current["working_tree"]) != (source["commit"], source["tree"], "clean"):
-            raise AcceptanceGuardFailed("Finalizer Source readback is stale")
+        if not {"commit", "tree"} <= set(source) or any(not isinstance(source[key], str) or not source[key] for key in ("commit", "tree")):
+            raise ValueError("report the candidate source version actually observed")
+        if authority.access_mode != "owner":
+            if not {"source_id", "commit", "tree"} <= set(source):
+                raise ValueError("Finalizer requires explicit Source readback")
+            _, snapshot = self._snapshot(cursor, {"project_id": args["project_id"],
+                "source_id": source["source_id"], "revision": source["commit"]})
+            self.sources.verify(snapshot, authority, command)
+            current = self.sources.observe(snapshot, authority, command)
+            if (current["commit"], current["tree"], current["working_tree"]) != (source["commit"], source["tree"], "clean"):
+                raise AcceptanceGuardFailed("Finalizer Source readback is stale")
         evidence_refs = []
         for value in bundle_handles:
             bundle_id = parse_handle(value, "bundle", args["project_id"])

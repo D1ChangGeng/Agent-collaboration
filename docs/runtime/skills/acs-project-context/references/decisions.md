@@ -19,10 +19,17 @@ that same tenant and Project. Read the installed access mode when a decision
 depends on admission: owner uses continuous trusted identity and explicit
 revocation; shared adds configured Grant, Policy and budget checks.
 
-Use current workspace context to understand active local changes. Use an exact
-view revision or committed snapshot for delegation, Review and reproducible
-acceptance. A changed instruction or source view requires refreshed context
-before an action that depends on it.
+Register the machine and directory containing current management documents.
+Use the selected machine's OS path namespace and verify access. For a moved
+directory or changed document set, configure_project updates the saved location
+and paths with the current revision. Set management to null to clear its location.
+Use a load_project machine_id/management_path override for a single read.
+
+Read the resulting context completeness and observed document facts. Resolve
+partial context through the ordinary file tools and refresh changed instructions
+before a dependent action. Choose a work version when the task needs one;
+owner source_baseline can be omitted, null, selected, changed or cleared through
+an eligible WorkItem revision. Historical Source views are queried explicitly.
 
 Cross-project analysis keeps separate Project IDs, Authorities, revisions and
 evidence. Create explicit relationships or WorkItems for coordination in each

@@ -11,12 +11,14 @@ Evaluation and accepted state. Source truth belongs to acs-source-evidence; auth
 
 ## Core invariants
 
-- Review binds an exact candidate, source baseline and workspace revision when applicable.
+- Review binds an exact candidate, its recorded Evidence and the WorkItem's selected source baseline when present.
+- Owner Review and acceptance use the commit/tree actively observed and reported by the Agent through Git, native tools or machine files.
+- An optional work version can be selected, changed or cleared through eligible intent revisions; recorded candidate Evidence preserves its original contents and provenance.
 - Reviewer independence is a verified candidate-specific identity and assignment property in the adopted acceptance profile.
 - Architecture, engineering, evidence and finalization Reviews answer distinct questions.
-- Owner access preserves candidate checks, hashes, deterministic storage and historical Review provenance.
+- Owner access preserves candidate checks, hashes, deterministic storage, authorized decisions and historical Review provenance.
 - Attempt completion, Review pass, publication and AcceptedStateRevision are separately recorded facts.
-- Acceptance evaluates integrated evidence, protected effects, readback, unresolved items and applicable product-owner decisions; shared admission also applies Grant and Policy.
+- Acceptance evaluates integrated evidence, protected effects, readback, unresolved items and applicable product-owner decisions; shared admission retains its Grant, Policy and Source checks.
 
 ## Retrieval map
 
@@ -30,7 +32,7 @@ Read the smallest reference that resolves the material question.
 
 ## Tool vocabulary
 
-Relevant tools: list_reviews, request_review, submit_review, list_evidence, read_diff, read_source, accept_work.
+Relevant tools: list_reviews, request_review, submit_review, list_evidence, read_file, read_diff, read_source, accept_work, revise_work.
 
 Tool descriptions and the machine contract define exact invocation schemas.
 This Skill explains the model, authority and decision implications around those

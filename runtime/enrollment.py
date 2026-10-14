@@ -569,7 +569,9 @@ class EnrollmentAuthority:
             if request.expected_work_item_revision != work[2]:
                 raise RevisionConflict(request.work_item_id, request.expected_work_item_revision, int(work[2]))
             self.authority._require_confirmed_project_handoff(cursor, request.work_item_id)
-            if (work[0] != runtime["scope_id"] or work[5] != runtime["agent_slot_id"] or work[3] != request.source_baseline):
+            if (work[0] != runtime["scope_id"] or work[5] != runtime["agent_slot_id"] or (work[3] is not None and work[3] != request.source_baseline)):
+                raise AcceptanceGuardFailed("Attempt WorkItem/Scope/Slot/source binding differs")
+            if self.authority.access_mode != "owner" and any(getattr(request,field) is None for field in ("source_baseline","source_commit","source_tree","candidate_ref")):
                 raise AcceptanceGuardFailed("Attempt WorkItem/Scope/Slot/source binding differs")
             observed_start = self._time(request.observed_started_at)
             if not self._time(runtime["registered_at"]) <= observed_start <= self._now(cursor):
@@ -622,7 +624,7 @@ class EnrollmentAuthority:
         cursor.execute("SELECT scope_id,agent_slot_id,source_baseline FROM work_items WHERE tenant_id=%s AND work_item_id=%s FOR UPDATE",
                        (self.authority.tenant_id, attempt["work_item_id"]))
         work = cursor.fetchone()
-        if work != (attempt["scope_id"], attempt["agent_slot_id"], attempt["source_baseline"]):
+        if work is None or work[:2] != (attempt["scope_id"], attempt["agent_slot_id"]) or (work[2] is not None and work[2] != attempt["source_baseline"]):
             raise AcceptanceGuardFailed("Attempt current WorkItem/source binding differs")
         self.authority._require_confirmed_project_handoff(cursor, attempt["work_item_id"])
         if self.authority.access_mode == "owner" and attempt["enrollment_proof_ref"] is None:

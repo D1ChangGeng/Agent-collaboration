@@ -248,9 +248,6 @@ def register_local_project(project: Path, project_id: str, config_path: Path,
     from runtime.project_common import digest
     from runtime.surface_config import load_settings
 
-    source = Path(git_observation(project, "rev-parse", "--show-toplevel")).resolve()
-    if git_observation(source, "status", "--porcelain=v1", "--untracked-files=all"):
-        raise ValueError("Runtime registration requires a clean committed Source")
     root = private_root()
     catalog = json.loads((ROOT / "docs/runtime/p2-mcp-tool-contract.json").read_text(encoding="utf-8"))
     route_registry = json.loads((project / ".agents/coordination/routes.yaml").read_text(encoding="utf-8"))
@@ -259,7 +256,7 @@ def register_local_project(project: Path, project_id: str, config_path: Path,
         for route in route_registry["routes"]
     ]
     artifacts = [{"root": str(root / "cas" / scope), "scope_id": scope,
-                  "authorized_source_roots": source_metadata_roots(source),
+                  "authorized_source_roots": [],
                   "max_bytes": 16 * 1024 * 1024} for scope in scope_ids]
     data = json.loads(config_path.read_text(encoding="utf-8"))
     selected = [data["artifacts"]] if data.get("artifacts") else []
@@ -273,18 +270,9 @@ def register_local_project(project: Path, project_id: str, config_path: Path,
         config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         if os.name == "posix":
             config_path.chmod(0o600)
-    specification = {"schema_version": "acs-runtime-registration/1", "source_root": str(source),
-                     "expected_commit": git_observation(source, "rev-parse", "HEAD"),
-                     "expected_tree": git_observation(source, "rev-parse", "HEAD^{tree}"),
-                     "scope_id": "local-scope", "agent_slot_id": "local-slot",
-                     "name": source_name, "source_id": "source-root",
-                     "repository_identity": {"kind": "git", "name": source_name},
-                     "route_goals": {route["id"]: route["display_name"]
-                                     for route in route_registry["routes"]},
-                     "max_source_bytes": 16 * 1024 * 1024}
-    skill_catalog = "docs/runtime/p2-skill-contract.json"
-    if (source / skill_catalog).is_file() and git_observation(source, "ls-files", "--", skill_catalog):
-        specification["skill_catalog_path"] = skill_catalog
+    specification = {"schema_version": "acs-runtime-registration/1",
+                     "scope_id": "local-scope", "agent_slot_id": "local-slot", "name": source_name,
+                     "route_goals": {route["id"]: route["display_name"] for route in route_registry["routes"]}}
     planned = preview(project, specification, load_settings(config_path), catalog)
     return apply(project, specification, config_path, catalog, planned["plan_digest"])
 
@@ -605,15 +593,8 @@ def install(
     result["state"] = "local_authority_ready"
     result["remaining"] = []
     if project is not None:
-        source = Path(git_observation(project, "rev-parse", "--show-toplevel"))
-        if git_observation(source, "status", "--porcelain=v1", "--untracked-files=all"):
-            result["remaining"].append(
-                "Review and commit adopted Management Root files, then register the exact clean Source."
-            )
-        else:
-            result["registration"] = register_local_project(project, project_id, config_path,
-                                                            source.name)
-            result["state"] = "project_registered"
+        result["registration"] = register_local_project(project, project_id, config_path, project.name)
+        result["state"] = "project_registered"
     result["harness_configs"] = {} if runtime_only else configure_harnesses(harnesses, config_path)
     result["remaining"].append("Verify read_profile and tool discovery in each configured Harness.")
     result["next_action"] = (

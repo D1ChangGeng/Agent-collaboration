@@ -15,8 +15,9 @@ Project identity, management context and Root-to-Route topology. Work execution 
 - Project, Root, Route and Scope are durable identities; Harness Session, machine and filesystem path are replaceable bindings.
 - Every project-scoped tool carries project_id, and typed handles resolve to the same tenant and Project.
 - Owner access follows trusted identity, active service and objects, explicit revocation, request deduplication and expected revisions; shared access also applies configured Grants and Policy.
-- ProjectContextPack reports source and workspace revisions, completeness, evidence class and missing context.
-- Current workspace context and fixed source snapshots preserve their distinct source identities.
+- Owner registration records the machine and directory of current management files, including Management Roots in other authorized directories.
+- load_project reads current instructions and knowledge indexes through machine files and reports observed paths, content hashes, completeness and missing context.
+- configure_project sets, replaces or clears the current file location; WorkItem versions are chosen by the Agent and historical Source views are explicitly queried by their recorded identity.
 
 ## Retrieval map
 
@@ -30,7 +31,7 @@ Read the smallest reference that resolves the material question.
 
 ## Tool vocabulary
 
-Relevant tools: read_profile, list_projects, load_project, list_routes, list_work, list_activity, read_resource.
+Relevant tools: read_profile, list_projects, load_project, configure_project, list_routes, list_work, list_activity, read_resource, read_file.
 
 Tool descriptions and the machine contract define exact invocation schemas.
 This Skill explains the model, authority and decision implications around those

@@ -15,8 +15,9 @@ installation and a project's Management Root. New single-owner Runtime
 installation records access_mode=owner. Global installation establishes
 the selected Runtime host and client connections. Project setup can follow
 later when the user invokes this Skill for a project. The preferred Management
-Root is nested in the project's Git repository; standalone Workspaces remain
-supported for compatibility.
+Root is nested in the project's Git repository. Owner project registration also
+supports Management Roots in other authorized directories and records the
+machine and directory of their current files.
 
 After setup, ordinary collaboration proceeds through project `AGENTS.md`,
 `.agents/`, knowledge Skills and MCP tools. Invoke this Skill for installation,
@@ -153,8 +154,10 @@ health. Keep private keys in their reference store.
 Owner commands and Messages have an optional chosen business deadline.
 Async returns committed handles; sync waits for the target condition with an
 optional caller timeout. Durable Inbox and result tracking follow the actual
-Connection/Session and survive caller disconnect. Inspect the current workspace
-view for active edits, and use a fixed view or commit snapshot for Review.
+Connection/Session and survive caller disconnect. Load current management
+documents through machine files. For Review, report the candidate's commit/tree
+actually observed through Git, native tools or the selected machine reader,
+together with its recorded Evidence.
 
 Existing unspecified service configuration retains shared behavior until
 explicit owner migration. Shared deployments retain their configured Grants,
@@ -262,8 +265,8 @@ digests, the previous installation, the new locked environment, provider health
 and the active identity before activation; shared mode also verifies its
 configured Grant authorization. Updates preserve project registrations,
 access mode and explicit revocation state. Owner mode adoption is an explicit
-configuration/schema transition with backup. Project setup, SourceBinding
-creation and Compose changes retain their setup lifecycles.
+configuration/schema transition with backup. Project setup and Compose changes
+retain their setup lifecycles. Existing Source records keep their archive identity.
 
 Owned local Skills refresh transactionally; selected remote client Skills are
 refreshed through client setup maintenance. Stable launcher commands select the
@@ -331,15 +334,30 @@ pending steps.
 
 ## Project setup lifecycle
 
-For an existing project, discover its working Source before choosing a setup
-or SourceBinding target. Inspect the session checkout, Management Root identity
-and authorized existing SourceBinding metadata, then probe related local or
-authorized SSH/WSL paths with `scripts/acs_source_discovery.py --include-untracked`.
-Compare actual machine/account, repository root and commit/tree. Ask for the
-smallest missing location or access fact when observations are incomplete or
-ambiguous. Use the discovered host's own path namespace; see
-[Source discovery](docs/runtime/SOURCE-DISCOVERY.md) and
-[project adoption](docs/runtime/PROJECT-ADOPTION.md).
+For an existing project, inspect the Management Root, its Project/Root identity
+and the machine and directory that hold its current files. Use the selected
+machine's OS path namespace and verify access through the available machine,
+native or Git tools. Inspect the actual repository and commit/tree when the
+work depends on a source version. Ask for the smallest missing location or
+access fact when observations are incomplete or ambiguous.
+
+Owner registration records durable Project/Root identity, Routes and current
+management file locations. A Management Root may be nested in Git or stored in
+another authorized directory. `load_project` reads its configured instruction
+and knowledge index paths through the machine filesystem. Use
+`configure_project` with `project_id`, `client_request_id`, `expected_revision`
+and `changes` to set or replace `management`, `instruction_paths` and
+`knowledge_index_paths`; `management: null` clears the saved location.
+Read back the resulting revision and current context.
+
+Agents choose the source version for each WorkItem. Owner `source_baseline`
+may be omitted or null; `revise_work` can select, change or clear it when the
+WorkItem is eligible for an intent revision. Review and acceptance use the
+Agent's reported commit/tree and exact candidate Evidence. Existing Source
+records are available for explicit historical queries by `source_id` and
+`revision`. See [Owner Runtime](docs/runtime/OWNER-RUNTIME.md) for project
+registration, current context and acceptance, and
+[the adoption contract](docs/runtime/UPGRADE-CONTRACT.md) for schema migration.
 
 For a management workspace, use the explicit command families:
 

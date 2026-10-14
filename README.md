@@ -140,7 +140,7 @@ controls and recovery steps.
 | Continue later | Condition waits, optional caller timeouts, notifications, Inbox reads and Session replacement recovery |
 | Use native Agents | Selected user's Codex/OpenCode tools, MCP servers, plugins, project settings, provider, models and approval configuration |
 | Work with machine files | Read, discover, search and change current files through Local, SSH or registered Node file services |
-| Review a result | Source observations, captured versions, Artifacts, Evidence, independent Review and accepted state |
+| Review a result | Agent source readback, Artifacts, Evidence, independent Review and accepted state |
 | Connect clients | MCP tools for Codex, OpenCode and a single-owner private ChatGPT Tunnel |
 
 Async submission returns committed Message, response and notification handles.
@@ -178,15 +178,25 @@ owner authorization and request journaling. File service readiness is
 independent of a native Harness Session's busy state. See the
 [machine filesystem guide](docs/runtime/MACHINE-FILESYSTEM.md).
 
-SourceBinding supplies repository, location and version guidance. Agents choose
-an available machine, native tool, Git or repository reader and record the
-actual source observed. Current product Source reads resolve the repository's
-physical primary worktree and its actual edits. `read_source_file`,
-`list_source_files`, `search_source_files`, `read_source` and `read_diff`
-provide Project Source observations and explicit captured versions; Source
-pagination retains `view_revision`. Shared mode retains its established Source
-schemas and permission contracts. Review and acceptance bind the exact
-candidate and Evidence.
+Owner projects register the machine and directory holding current management
+documents, in a Git checkout or another authorized directory. `load_project`
+reads their current instructions and knowledge indexes through machine files;
+`configure_project` sets, replaces or clears that location and its document
+paths. Everyday file operations use the tools above.
+
+Agents choose an available machine, native tool, Git or repository reader and
+record the source actually observed. Owner `WorkItem.source_baseline` can be
+omitted or null, and an eligible `revise_work` can select, change or clear it.
+Review and acceptance compare the Agent's reported commit/tree with the exact
+candidate and recorded Evidence, while preserving reviewer independence and
+authorized decisions.
+
+Historical Source records remain available through explicit `source_id` and
+`revision` queries. Captured Source pagination retains `view_revision`.
+Shared mode retains its established Source schemas and permission contracts.
+The [owner contract](docs/runtime/OWNER-RUNTIME.md) defines context and acceptance;
+the [adoption contract](docs/runtime/UPGRADE-CONTRACT.md) records schema migration.
+Installed schemas and readback establish the active capabilities.
 
 ## Agent organization
 
@@ -235,7 +245,7 @@ flowchart LR
         FS --> NF[Node: TLS and signed file service]
     end
     D --> FS
-    D --> S[Source and artifact providers]
+    D --> S[Recorded Source and artifact providers]
 ```
 
 External Agents choose goals, delegation and Review decisions. Core checks
@@ -243,7 +253,8 @@ trusted identity, active scope, explicit revocation and revisions before
 committing state; shared mode applies its configured Grants and Policies.
 Execution Drivers observe actual native Sessions and use the selected user's
 environment. Machine file services operate directly under their connected OS
-accounts. Source providers report the actual repository view used for evidence.
+accounts and load current project documents. Agents report the candidate source
+they actually inspected; Source archives retain captured historical views.
 
 ## A collaboration cycle
 
@@ -304,8 +315,9 @@ for platform permissions and connection steps.
 The preferred layout keeps the Management Root inside the project's Git source
 checkout. Root and Route instructions, knowledge and project metadata travel
 with the repository; Runtime observations and credentials stay in private local
-storage. Message delivery, source reading and Git synchronization have their
-own readbacks. The [setup Skill](SKILL.md) provides guarded bootstrap, adopt,
+storage. Owner registration also supports Management Roots in other authorized
+directories and records their current machine/path. Message delivery, source
+reading and Git synchronization have their own readbacks. The [setup Skill](SKILL.md) provides guarded bootstrap, adopt,
 repair, upgrade and validation operations for project files.
 
 ## Development and support

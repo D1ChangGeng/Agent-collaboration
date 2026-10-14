@@ -123,7 +123,7 @@
     },
     "load_project": {
       "title": "Load project context",
-      "description": "Load Root identity, instructions, Routes, knowledge, SourceBindings and active work with exact context and workspace revisions. Roles describe responsibilities; the authenticated actor and installed access mode establish the current context. Source guidance recommends the latest primary worktree and lets the Agent choose an available native, filesystem or repository reader.",
+      "description": "Load Project identity, Routes, active work and current management instructions through machine filesystem readers. Agents select source versions for their own work; historical Source records are explicitly requested.",
       "selection_guidance": "Use before project-scoped management, analysis, review or finalization when context is absent or stale.",
       "annotations": {
         "readOnlyHint": true,
@@ -293,7 +293,7 @@
     },
     "list_sources": {
       "title": "List project sources",
-      "description": "Discover project repository and source-location hints, recorded version observations and available provider capabilities. Agents choose an available source reader and record the version actually read.",
+      "description": "List recorded Source observations and exact archive-reader follow-ups. Agents select a recorded Source and revision explicitly.",
       "selection_guidance": "Use before source reads or provider selection.",
       "annotations": {
         "readOnlyHint": true,
@@ -531,7 +531,7 @@
     },
     "list_files": {
       "title": "List source files",
-      "description": "List source files. Owner omission selects the project's current primary worktree; optional source_id/source_root selects a readable location and revision selects a captured snapshot. Continue pagination at its returned revision.",
+      "description": "List files in an explicitly selected Source snapshot.",
       "selection_guidance": "Use for directory discovery from web or local management sessions.",
       "annotations": {
         "readOnlyHint": true,
@@ -565,7 +565,7 @@
     },
     "search_files": {
       "title": "Search source files",
-      "description": "Search source paths or content. Owner omission searches the current primary worktree; optional source_id/source_root selects a readable location and revision selects a captured snapshot.",
+      "description": "Search file content in an explicitly selected Source snapshot.",
       "selection_guidance": "Use when a target path or content location is unknown.",
       "annotations": {
         "readOnlyHint": true,
@@ -599,7 +599,7 @@
     },
     "read_file": {
       "title": "Read source file",
-      "description": "Read source content. Owner omission selects the project's current primary worktree; source_id or source_root can select another readable location. A supplied revision selects a captured snapshot. Report the actual version with the content.",
+      "description": "Read current machine files under the selected OS account. Owner calls use ordinary file paths; the Shared reference profile retains explicit captured Source reads.",
       "selection_guidance": "Use after context loading, file listing or search.",
       "annotations": {
         "readOnlyHint": true,
@@ -632,7 +632,7 @@
     },
     "read_source": {
       "title": "Read source state",
-      "description": "Read actual branch, commit, tree and workspace state with advisory version and location guidance. Owner omission selects the current primary worktree; source_id/source_root or a captured revision is an explicit reader choice.",
+      "description": "Read repository and version facts from an explicitly selected recorded Source and revision.",
       "selection_guidance": "Use before source-dependent delegation, review, handoff or acceptance.",
       "annotations": {
         "readOnlyHint": true,
@@ -719,7 +719,7 @@
     },
     "update_route": {
       "title": "Update development Route",
-      "description": "Apply one versioned lifecycle or management-metadata change to an existing Route. A context_manifest change requires direct identity readback from an admitted Source snapshot in the same Route Scope.",
+      "description": "Apply a versioned lifecycle or management-metadata change to a Route. Owner context uses a current machine file location; the Shared reference profile retains admitted Source snapshot identity checks.",
       "selection_guidance": "Use for lifecycle, goal-summary or display changes.",
       "annotations": {
         "readOnlyHint": false,
@@ -777,7 +777,7 @@
     },
     "create_work": {
       "title": "Create collaboration work",
-      "description": "Create a WorkItem with goal, accepted state, constraints, exact source baseline and required evidence. Owner budget and chosen business deadline are optional; shared inputs retain their configured budget and admission window.",
+      "description": "Create a WorkItem with a goal, constraints and evidence requirements. Owner source selection, budget and business deadline are optional; Agents can select, change or clear their work version.",
       "selection_guidance": "Use before delegation when no suitable WorkItem exists.",
       "annotations": {
         "readOnlyHint": false,
@@ -838,7 +838,7 @@
     },
     "handoff_work": {
       "title": "Hand off collaboration work",
-      "description": "Transfer an existing WorkItem with exact source state, context, evidence and unresolved items. require_ack=true creates a pending recipient acknowledgement. Owner deadline is optional; assignment, acknowledgement and acceptance have separate revisions.",
+      "description": "Transfer a WorkItem to a selected collaborator and record context, evidence and unresolved items. Owner source observations are optional; a receiving Agent chooses the reader and version for its work.",
       "selection_guidance": "Use for Session, AgentSlot or role ownership transfer.",
       "annotations": {
         "readOnlyHint": false,
@@ -1015,7 +1015,7 @@
     },
     "submit_review": {
       "title": "Submit structured review",
-      "description": "Record a reviewer decision with findings, exact source readback, evidence handles and unresolved items. Expected revision, assignment and candidate checks preserve independent Review; owner command deadline is optional.",
+      "description": "Record an independent Reviewer decision, findings and the source version actually inspected through the chosen reader. Candidate and evidence identity checks apply; owner Review accepts native commit/tree observations.",
       "selection_guidance": "Use after authorized independent inspection.",
       "annotations": {
         "readOnlyHint": false,
@@ -1048,7 +1048,7 @@
     },
     "accept_work": {
       "title": "Accept collaboration work",
-      "description": "Commit acceptance for an exact candidate after independent Review, evidence, integrated source and effect readback. Finalizer describes responsibility. Owner admission uses trusted identity, active objects and explicit revocation; shared mode also checks its Grant and Policy.",
+      "description": "Record an authorized Finalizer decision for the chosen candidate and its reviewed evidence. Owner source observation reports the inspected commit/tree through the Agent-selected reader.",
       "selection_guidance": "Use from an authorized Finalizer or product-owner boundary.",
       "annotations": {
         "readOnlyHint": false,
@@ -1355,8 +1355,8 @@
     },
     "read_source_file": {
       "title": "Read Source File",
-      "description": "Read explicitly selected Source content and captured versions. Read source content. Owner omission selects the project's current primary worktree; source_id or source_root can select another readable location. A supplied revision selects a captured snapshot. Report the actual version with the content.",
-      "selection_guidance": "Use after context loading, file listing or search.",
+      "description": "Read file bytes from an explicitly selected recorded Source and revision. Current OS files are available through machine file tools.",
+      "selection_guidance": "Use for an explicitly selected recorded Source and revision.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -1388,8 +1388,8 @@
     },
     "list_source_files": {
       "title": "List Source Files",
-      "description": "Read explicitly selected Source content and captured versions. List source files. Owner omission selects the project's current primary worktree; optional source_id/source_root selects a readable location and revision selects a captured snapshot. Continue pagination at its returned revision.",
-      "selection_guidance": "Use for directory discovery from web or local management sessions.",
+      "description": "List files in an explicitly selected recorded Source and revision.",
+      "selection_guidance": "Use for an explicitly selected recorded Source and revision.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -1422,8 +1422,8 @@
     },
     "search_source_files": {
       "title": "Search Source Files",
-      "description": "Read explicitly selected Source content and captured versions. Search source paths or content. Owner omission searches the current primary worktree; optional source_id/source_root selects a readable location and revision selects a captured snapshot.",
-      "selection_guidance": "Use when a target path or content location is unknown.",
+      "description": "Search an explicitly selected recorded Source and revision.",
+      "selection_guidance": "Use for an explicitly selected recorded Source and revision.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -1453,6 +1453,31 @@
       "security_scopes": [
         "source.read"
       ]
+    },
+    "configure_project": {
+      "title": "Configure project management files",
+      "description": "Set, replace or clear the current machine and management document location of a Project. Agents select source versions explicitly for their work.",
+      "selection_guidance": "Use to maintain the current Project management file location.",
+      "input_schema": {
+        "schema_version": "acs-mcp-configure-project/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "expected_revision",
+          "changes"
+        ],
+        "optional": []
+      },
+      "result_type": "project_configuration_receipt",
+      "security_scopes": [
+        "project.adopt"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
     }
   },
   "result_envelope": {
@@ -1837,7 +1862,8 @@
       "stop_attempt",
       "read_source_file",
       "list_source_files",
-      "search_source_files"
+      "search_source_files",
+      "configure_project"
     ],
     "reviewer": [
       "read_profile",
@@ -1930,7 +1956,8 @@
       "read_profile",
       "list_projects",
       "list_connections",
-      "submit_command"
+      "submit_command",
+      "configure_project"
     ]
   },
   "agent_organization_model": {
@@ -1959,7 +1986,7 @@
       "registration": "Connection, Node, Runtime and Endpoint persist until an explicit lifecycle change; execution inspects actual readiness and prepares the selected native environment",
       "business_deadline": "optional and chosen explicitly; omission keeps continuous validity",
       "response_tracking": "durable until the observed terminal result; caller timeout and disconnect preserve tracking and Inbox",
-      "input_schema": "McpRuntime makes deadline, team policies/budgets and work budget optional. read_file/list_files/search_files/read_source default to the current primary product worktree; source_id, source_root and revision are optional reader or captured-view selections.",
+      "input_schema": "Owner WorkItem source_baseline, budget and command deadline are optional. Machine tools read current account files. Recorded Source readers require explicit source_id and revision. configure_project maintains the current management file location.",
       "team_member": "agent_slot_id, principal_ref, role and harness_requirements",
       "native_environment": "Selected native user environment, tools, MCP, plugins, project configuration, providers, models and approval settings. Native client requests require an installed Driver request handler; the standard headless Receiver reports unsupported client requests.",
       "review": "exact candidate, reviewer assignment and independence, integrity hashes and deterministic storage remain required"

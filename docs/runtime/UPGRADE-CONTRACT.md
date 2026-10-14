@@ -1,7 +1,7 @@
 # Collaboration Runtime adoption contract
 
 Status: accepted architecture and implementation authorization; Runtime support
-is determined by the named Gate records. Contract revision: 2026-10-12.2.
+is determined by the named Gate records. Contract revision: 2026-10-14.1.
 The original adoption baseline is 2026-09-25.1; recorded Gates retain the exact
 source, configuration and reference Profile they measured.
 
@@ -72,28 +72,30 @@ Node file service applies pinned TLS, signed identity, active owner authorizatio
 revocation and request journaling. Its requests run directly through the file
 service. Native Harness Session readiness remains an execution concern.
 
-SourceBinding supplies advisory Project repository, location and version hints.
-Agents select an available machine, Native, Git, repository MCP or other reader
+Owner project registration records durable Project/Root identity, Routes and
+the machine and directory of current management documents. Management Roots
+may reside in Git or another authorized directory. `load_project` reads
+configured instruction and knowledge index paths through the machine filesystem
+and reports observed paths, timestamps, content hashes and missing context.
+`configure_project` sets, replaces or clears this location and its document
+paths using the expected Project revision. Ordinary file operations use the
+standard machine tools and their connected OS account.
+
+Agents select an available machine, native, Git, repository MCP or other reader
 and record the actual source used. Execution Node placement has its own binding.
-Explicit read_source_file/list_source_files/search_source_files, read_source and
-read_diff retain Source repository and captured-version semantics.
+Owner WorkItem.source_baseline may be omitted or null; the Agent can select,
+change or clear that work version through eligible intent revisions.
+Review and acceptance use the Agent's actively reported commit/tree from the
+candidate actually inspected, together with its recorded Evidence and execution
+receipts. Candidate identity, Evidence content, reviewer independence, trusted
+authorization, deduplication and explicit revocation remain acceptance checks.
 
-Owner Source defaults resolve the product primary_source_id.
-primary_source_root locates the preferred repository's physical primary worktree.
-Current Source reads observe its actual branch and edits.
-Explicit source_root selects a configured readable current worktree; explicit
-revision selects captured bytes. Source pagination retains returned view_revision.
-
-Owner Source actual_source records provider, root, commit, tree, view_revision
-and observed_at. list_sources separates current_readable_root from
-origin_hint.host/path. load_project.source_observation identifies product Source;
-distinct management_source_observation retains Management Root context.
-Unavailable product defaults have null product observation and primary/version
-references. Explicit management reads retain their own access.
-
-Version guidance supports reader choice. Review and acceptance preserve the actual
-candidate and Evidence identity. Shared access, permission and version checks
-retain their existing boundaries.
+Existing SourceBindings and captured Source views retain their archive identity.
+Select source_id and revision explicitly for historical Source reads, or source_id
+with base_revision/target_revision for read_diff. Captured pagination retains
+view_revision and the archived source facts. Each new WorkItem's version
+is selected by its Agent. Shared access, permission, SourceBinding and version
+checks retain their original contract and reference Profile.
 
 Artifacts, hashes, deterministic storage, independent reviewer
 assignment and candidate-specific acceptance checks retain their identities.
@@ -192,7 +194,8 @@ DeliveryAttempt records Connection, selection revision, optional business
 deadline and errors.
 Inbox dedup checks command/message identity, target Scope, accepted revision and
 preconditions. Packet includes goal, accepted state, request, constraints,
-source baseline, context/artifact digests and expected evidence/response.
+the selected source baseline when present, context/artifact digests and
+expected evidence/response.
 
 Record the layers independently:
 `accepted_by_authority -> target_inbox_committed -> runtime_dispatched ->
@@ -275,13 +278,13 @@ Caller waiting has an optional timeout.
 The machine catalog preserves its shared base required/optional lists and
 Profile support table. McpRuntime exposes the installed mode's input schema.
 Owner makes business deadline optional, allows ordinary Team members and
-makes configure_team policies/budgets and create_work budget optional.
-Owner machine file schemas express the file action plus optional machine/cwd
-and delivery controls. Explicit Source reads permit omitted source_id/revision,
-product Source defaults and an optional configured source_root. Product and
-management observations retain their own context; actual Source readback records
-the selected version identity. Shared retains its existing Source read_file,
-list_files and search_files contract.
+makes configure_team policies/budgets and create_work budget/source_baseline
+optional. Owner configure_project records current management machine/path and
+document paths; load_project reads those files with optional per-call machine
+and directory selection. Machine file schemas express the file action plus
+optional machine/cwd and delivery controls. Recorded Source reads select explicit
+source_id/revision, and read_diff selects both captured revisions. Shared retains
+its existing Source read_file, list_files and search_files contract.
 
 The setup Skill owns guarded installation and migration procedures. Runtime
 Skills are metadata-routed knowledge modules for ACS entities, authority,
@@ -344,7 +347,8 @@ An external effect with an ambiguous result enters `uncertain`. Read back the
 marker/result before adopting, compensating or authorizing a new Attempt. Partial
 artifacts, stale baselines and unresolved protected effects cannot pass acceptance.
 
-Execution evidence includes baseline and workspace view revision, output
+Execution evidence includes the Agent's observed source version, any selected
+WorkItem baseline and applicable workspace view revision, output
 commit/tree/diff/untracked manifest,
 tests and exits, toolchain/OS/lockfile, artifact digests, actual usage or explicitly
 unknown usage, source sync and unresolved items. A changed integration baseline
@@ -378,6 +382,35 @@ identity and a configuration backup, and clears natural expiry on active,
 nonrevoked identity and registration records. activate_owner_mode applies
 that Surface/database transition. Revoked and retired objects retain their
 lifecycle state.
+
+### Current file context and work-version migration
+
+Domain schema 1.14 recognizes the recorded 1.13 schema checksum as a known
+migration. Explicit operator initialization applies schema_1_14.sql to allow
+null work_items.source_baseline, work_item_revisions.source_baseline,
+reviews.baseline_ref and accepted_state_revisions.baseline_ref. Existing
+source values, candidate records and Evidence contents retain their identities.
+
+Project schema version 1 recognizes both recorded byte forms of its prior
+schema:
+
+| Prior schema bytes | SHA-256 |
+|---|---|
+| Linux/Git source with LF line endings | `ccad2138f9ed4cddbe2e7e30ed797b4ead75d3c1359e4401997906e1233bfa3a` |
+| Windows release assets with CRLF line endings | `6fedb1731cde6224c0ec4770d7d5b18580d60554e9ef7b82739679b9bcfc0440` |
+
+The known migration accepts these two exact prior identities and allows null
+collaboration_review_requests.source_baseline. Initialization updates the
+recorded checksum after applying the migration. Unknown schema identities
+require explicit migration review. The ACHP Workspace schema remains 0.3 and
+the setup Skill remains separately versioned at v0.4.0.
+
+Owner registration saves current management file locations. Existing Source
+records and completed facts remain available by their explicit historical
+identity. Shared reference Profiles retain their original Source, version and
+admission contract; historical Gates retain the configuration and Profile
+they measured. Installed code, schema readback and deployment evidence establish
+which behaviors are active in a particular installation.
 
 Receiver process deployments retain their own mode and signed configuration.
 An existing unspecified process config remains shared. Receiver owner/native

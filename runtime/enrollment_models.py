@@ -66,10 +66,10 @@ class AttemptRegistration(EnrollmentInput):
     runtime_id: str = Field(min_length=1, max_length=256)
     work_item_id: str = Field(min_length=1, max_length=256)
     expected_work_item_revision: int = Field(ge=0, strict=True)
-    source_baseline: str = Field(min_length=1, max_length=512)
-    source_commit: str = Field(min_length=1, max_length=256)
-    source_tree: str = Field(min_length=1, max_length=256)
-    candidate_ref: str = Field(min_length=1, max_length=512)
+    source_baseline: str | None = Field(default=None, min_length=1, max_length=512)
+    source_commit: str | None = Field(default=None, min_length=1, max_length=256)
+    source_tree: str | None = Field(default=None, min_length=1, max_length=256)
+    candidate_ref: str | None = Field(default=None, min_length=1, max_length=512)
     observed_started_at: datetime
 
 

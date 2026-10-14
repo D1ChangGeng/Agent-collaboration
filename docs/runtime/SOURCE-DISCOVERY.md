@@ -1,41 +1,51 @@
-# Locate an existing project's Source checkout
+# Inspect project source locations
 
-Project setup begins by discovering the actual checkout and its machine. The
-Runtime service host, client host, Git hosting provider and Source checkout
-location are separate facts. A project can have several clones with different
-branches and revisions.
+Agents inspect source through the machine, native, Git or repository tools
+available to them. The Runtime service host, client host, Management Root and
+product source location are separate facts. A project can have several clones
+with different branches and revisions. The Agent actively chooses the work
+version and records the source that supports each candidate.
+
+Owner project registration starts from the initialized Management Root and its
+current machine and directory. It supports nested Git and standalone management
+directories. Source discovery is an optional inspection step when the work needs
+repository identity or a chosen source version.
 
 ## Agent discovery sequence
 
-1. Inspect the active project session's directory and containing Git repository.
-   Read its Management Root manifest and existing Source state when present.
-   With an existing ACS project, read authorized `list_sources` metadata for
-   candidate repository identity, revision and location information.
-2. Derive candidate paths from that project context, recorded SourceBinding and
-   the user's already authorized machine connections. Inspect exact paths and
-   parent directories. An SSH alias is an address candidate; the confirmed
-   project inspection scope determines whether it may be probed.
-3. Run the read-only discovery helper on each relevant candidate. Use the path
-   spelling of the machine being inspected. Compare Project/Root identity,
-   repository identity, machine/account, commit/tree, branch and working tree.
-4. Prefer verified active-session Source evidence. If several copies still match
-   and differ materially, show their host/path/revision differences and ask only
-   which checkout is intended. If a candidate is inaccessible, report the exact
-   missing access or path. A Git hosting URL identifies a repository provider;
-   it does not identify a local or remote filesystem checkout.
-5. Pass the observed Source and Management paths to the guarded project setup
-   preview on that actual host. Preserve existing identity and knowledge. Read
-   back setup changes before selecting a clean committed registration baseline.
+1. Inspect the active project directory and configured Management Root. Read its
+   manifest and current instructions through the available file tools. When
+   source facts matter to the task, inspect the actual product files and Git
+   metadata where available. Existing `list_sources` metadata provides recorded
+   repository and historical view references for explicit archive queries.
+2. Derive candidate locations from current project context and the user's
+   authorized machine connections. Inspect exact paths and relevant parent
+   directories. An SSH alias identifies an address candidate; the authorized
+   project inspection scope determines which paths may be probed.
+3. Use machine or native tools for current files. For a Git checkout, the
+   read-only discovery helper can inspect each relevant candidate using the
+   target machine's path spelling. Compare Project/Root identity, repository,
+   machine/account, commit/tree, branch and working tree.
+4. Choose the working copy from verified observations. If several copies differ
+   materially and the intended source remains unresolved, present their actual
+   host/path/revision differences and request the smallest missing decision.
+   Report unavailable access with its exact path. Git hosting metadata identifies
+   a repository provider; filesystem observations identify a working copy.
+5. Record the selected reader, location and source version with the candidate's
+   Evidence. Owner WorkItem.source_baseline may be omitted or null; eligible
+   intent revisions can select, change or clear it. For Owner project setup,
+   pass the current Management Root to the registration preview. Shared exact
+   Source export follows the procedure below.
 
-## Read-only helper
+## Read-only Git helper
 
-AI performs these commands for the user. Run from the verified Release or the
-installed setup Skill's root directory:
+AI performs these commands for the user when Git checkout inspection is useful.
+Run from the verified Release or installed setup Skill's root directory:
 
 ```text
-python scripts/acs_source_discovery.py --path <project-or-management-path> --include-untracked
-python scripts/acs_source_discovery.py --ssh-target <authorized-source-host> --path <absolute-path-on-that-host> --include-untracked
-python scripts/acs_source_discovery.py --wsl-distribution <selected-distribution> --path <absolute-Linux-path> --include-untracked
+python scripts/acs_source_discovery.py --path <Git-checkout-path> --include-untracked
+python scripts/acs_source_discovery.py --ssh-target <authorized-source-host> --path <absolute-Git-checkout-path-on-that-host> --include-untracked
+python scripts/acs_source_discovery.py --wsl-distribution <selected-distribution> --path <absolute-Linux-Git-checkout-path> --include-untracked
 ```
 
 Use `--management-path` for an already known nested Management Root. Available
@@ -45,12 +55,16 @@ expectations include `--expected-project-id`, `--expected-root-id`,
 
 The helper returns the actual Source machine and account, repository root,
 Management Root identities, commit/tree, branch, scoped working-tree observation
-and credential-free remote locators. It creates no SourceBinding or authority
-Grant. Candidate states distinguish a successful observation, missing location,
+and credential-free remote locators. The result is a discovery candidate.
+Candidate states distinguish a successful observation, missing location,
 identity conflict and unavailable access. Git status uses optional locks disabled
-and probing reads only the exact candidate scope.
+and probing reads only the exact candidate scope. Ordinary directories are
+inspected through the machine filesystem tools.
 
-## Register the Source under the Runtime
+## Shared Source export and recorded views
+
+Shared deployments and their historical reference Profiles retain the exact
+Source export and configured provider contract:
 
 The current filesystem Source/CAS provider requires an explicitly admitted
 Linux view of the checkout on its provider host. If the working Source and that
@@ -72,3 +86,11 @@ baseline and admitted provider scope agree. Read back `list_sources` and
 checkout, provider view, synchronization status and exact accepted Source
 revision. See [project adoption](PROJECT-ADOPTION.md) for the registration
 specification and expected plan digest.
+
+Existing captured Source records retain their original repository, Scope,
+revision and provenance. Owner archive queries select `source_id` and `revision`
+explicitly, with `base_revision` and `target_revision` for `read_diff`.
+The Agent reports the actual commit/tree observed for new Review and acceptance
+through its selected Git, native or machine reader. Current management documents
+load from their registered file location. See [Owner Runtime](OWNER-RUNTIME.md)
+for the active Project context and evidence contract.

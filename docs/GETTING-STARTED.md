@@ -230,53 +230,52 @@ controls, status meanings and rollback procedure.
 
 ## Start a project
 
-For an existing project, the Agent first inspects the active session's checkout,
-Management Root manifest and authorized existing SourceBinding metadata. It
-probes relevant local, SSH or WSL paths with
-`scripts/acs_source_discovery.py --include-untracked` and identifies the actual
-Source machine, account, repository root, Project/Root identity, commit/tree and
-working tree. Several clones may exist; the Agent compares their observed
-revisions before choosing a registration view. It asks for a source host/path
-only when that information or access remains unresolved. Follow
-[Source discovery](runtime/SOURCE-DISCOVERY.md) for the complete procedure.
-
 Invoke the installed `agent-collaboration-setup` Skill when you want to use ACS
-for a project. It asks for the project location and collaboration goal at this
-point, inspects existing state, and creates or adopts the Management Root inside
-the project source checkout. It preserves Root/Route identities, project
-instructions and knowledge. Use the exact confirmed Runtime connection and
-reviewed Source scopes when registering the project. The identity and Source
-registration procedures are in
-[Runtime project adoption](runtime/PROJECT-ADOPTION.md).
+for a project. The Agent inspects the Management Root, its Project/Root identity
+and the machine and directory containing its current files. It uses the target
+machine's OS path namespace and asks for a location or access detail when that
+fact remains unresolved. The preferred Management Root is inside the project
+source checkout; owner registration also supports other authorized directories.
+Existing Root/Route identities, project instructions and knowledge are preserved.
 
-SourceBinding supplies repository, location and version guidance. Record the
-product Source through `primary_source_id` and its preferred repository location
-through `primary_source_root`. Current owner Source reads resolve that
-repository's physical primary worktree, observe its actual branch and edits,
-and report `actual_source`. An explicit `source_root` selects another configured
-readable worktree; an explicit `revision` selects captured bytes.
-`read_source_file`, `list_source_files`, `search_source_files`,
-`read_source` and `read_diff` retain these Source semantics. Pagination uses
-the returned `view_revision`; the Agent records the reader and actual source
-used for Review and Evidence.
+Owner project registration records identity, Routes and current management file
+locations. `load_project` reads the configured instructions and knowledge indexes
+through the machine filesystem. Use `configure_project` to set or replace
+`management`, `instruction_paths` and `knowledge_index_paths` with the current
+Project revision; `management: null` clears the saved location. Inspect the
+installed access mode and active tool schemas, then read back the Project
+revision, observed document paths and context completeness.
 
-For a linked Git worktree read through the Source service, locate and authorize
-its Git control directory and common object directory. The service checks both
-through pinned directory handles. Verify that `AGENTS.md` and the manifest carry
-the same `project_id`, then inspect `load_project` product Source and Management
-Root observations before reporting project readiness.
+Use `filesystem_context`, `read_file`, `list_directory`, `glob` and `grep`
+to inspect current files, and `write_file`, `edit_file` or `apply_patch` for
+changes. Git, native tools and other connected readers can establish the source
+version used by the work. Record their actual machine, repository, branch,
+commit/tree and workspace state when those facts support the result.
 
-After setup, open Codex or OpenCode with the
-Management Root as its working directory. The Root Agent reads its `AGENTS.md`,
-project identity and Route registry. Tell it the collaboration goal and ask it
-to create the first Route and Team.
+Owner `WorkItem.source_baseline` is optional. Omit it or use null when the
+Agent will choose the work version; use `revise_work` to select, change or clear
+it when the WorkItem is eligible for an intent revision. For independent Review
+and acceptance, the Agent observes the candidate and actively reports its
+commit/tree together with recorded Evidence. The acceptance checks retain exact
+candidate identity, Evidence integrity, reviewer independence and authorized
+decisions. See [Owner Runtime](runtime/OWNER-RUNTIME.md) for the product contract
+and [Runtime adoption](runtime/UPGRADE-CONTRACT.md) for schema migration.
+
+Historical Source records can be inspected through `list_sources` and explicitly
+selected `source_id`/`revision` archive reads. Each new WorkItem's source version
+is an Agent decision. Shared deployments keep their original Source and
+acceptance contract.
+
+After setup, open Codex or OpenCode with the Management Root as its working
+directory. The Root Agent reads its `AGENTS.md`, project identity and Route
+registry. Tell it the collaboration goal and ask it to create the first Route
+and Team.
 
 For a first collaborative task, ask the Root Agent to create a WorkItem, hand
 the work to an authorized AgentSlot, inspect the message receipts, wait for a
 response or recover it from Inbox, then request an independent Review of the
-resulting evidence. The Agent should report exact source commit and tree,
-delivery state, reviewer identity, unresolved items and the next authorized
-action before accepting work.
+resulting evidence. The Agent reports the candidate commit/tree it inspected,
+delivery state, reviewer identity and unresolved items before accepting work.
 
 ## ChatGPT web connection
 
@@ -333,7 +332,7 @@ Ask the Agent to report these observed facts after setup:
 | ChatGPT web | Explicit `enable`/`skip`/`later` choice, Tunnel identity and health, ChatGPT discovery/readback, exact pending owner actions and resume entry |
 | Automatic upgrades | Enabled policy, actual scheduler backend/state, connection catch-up, last result and next eligible check |
 | Recovery | Active/previous version, configuration and key references, preserved revocation state, Windows/WSL task binding and running state where selected, component health, restart/reconnect result and rollback references |
-| Projects | Current project list; after setup, `project_id`, Management Root, Routes, SourceBinding guidance and actual product/management Source observations |
+| Projects | Current project list; after setup, `project_id`, Management Root machine/path, Routes, observed management documents and context completeness |
 | Next action | Optional project setup through the installed Skill; for a ready project, Root Agent directory and prompt |
 
 The report distinguishes installed files, configured connections and observed
@@ -347,8 +346,8 @@ maintains `state.json` with the active version, previous version, source commit
 and source tree. A failed archive or installer step leaves the active version
 unchanged. A verified automatic or guided upgrade can switch the active version;
 the previous version remains available for rollback. The Agent verifies service
-and selected-client MCP readback after activation. Project Source registration
-has its own identity and context validation.
+and selected-client MCP readback after activation. Project registration
+has its own identity, current file location and context validation.
 Manual rollback records the rejected version in `held_version` for explicit
 review before the updater applies that same version again.
 

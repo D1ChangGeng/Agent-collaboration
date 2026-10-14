@@ -247,7 +247,50 @@ receipt reports `scope: owned_process_group` and
 session are outside that group's stop proof. A stronger containment profile
 requires the corresponding supervisor and verified containment receipt.
 
-## Machine filesystem and Source reading
+## Current project context
+
+Owner project registration stores durable Project/Root identity, Routes, the
+machine and directory containing current management files, and the instruction
+and knowledge index paths to read. A Management Root can be in a Git checkout
+or another directory accessible to the selected OS account. The registration
+record supplies a current file location; existing Source records retain their
+historical archive identity.
+
+`load_project` reads management instructions and knowledge indexes through the
+machine filesystem. Its context reports `management_root.machine_id`,
+`management_root.path`, observed document paths and timestamps, completeness
+and missing context. Inline documents include their content hash. An unavailable
+location or file yields partial context; a document that exceeds the inline
+budget supplies a `read_file` follow-up. Continue file reads using the ordinary
+file tool's pagination.
+
+`configure_project` sets, replaces or clears the saved location and document
+paths with the current Project revision. For example:
+
+```json
+{
+  "project_id": "project-example",
+  "client_request_id": "project-files-1",
+  "expected_revision": 1,
+  "changes": {
+    "management": {
+      "mode": "current_files",
+      "machine_id": "local",
+      "path": "/home/owner/project-management"
+    },
+    "instruction_paths": ["AGENTS.md", ".agents/coordination/PROJECT.md"],
+    "knowledge_index_paths": [".agents/knowledge/index.yaml"]
+  }
+}
+```
+
+Set `changes.management` to null to clear the saved location. An individual
+`load_project` call can select `machine_id` and `management_path` for that read.
+These locations use the selected machine's OS path namespace. Changing a file
+location preserves the durable Project and Root identities. Read back the new
+Project revision and resulting context after configuration.
+
+## Machine files and recorded Source history
 
 Owner machine tools operate on the selected machine's current files under its
 connected OS account. `read_file` requires `path`; `list_directory`,
@@ -266,8 +309,8 @@ Paths follow the target OS, including absolute and home-relative paths, parent
 directories, ordinary links, Windows drive paths and UNC paths. Account
 permissions govern access to hidden, ignored and untracked files, binaries,
 large files and paths outside repositories. Account or container isolation
-implements a selected deployment boundary. File service readiness is independent of native Harness
-Session activity.
+implements a selected deployment boundary. File service readiness is independent
+of native Harness Session activity.
 
 Read/search output is delivered under the effective `max_output_bytes`
 budget, with `complete` and `next_cursor`. The cursor keeps the actual
@@ -276,49 +319,28 @@ Machine responses report the actual account, path and observation time.
 [The machine filesystem guide](MACHINE-FILESYSTEM.md) defines schemas, ranges,
 write semantics, transports and errors.
 
-SourceBinding describes the project's repository, readable locations and
-recommended versions. An Agent chooses an available machine, Native, Git,
-repository MCP or other reader according to its actual connection and access.
-Reading location and execution Node have separate bindings.
+Agents choose an available machine, native, Git, repository MCP or other reader
+for the work and record the actual repository, location, branch, commit/tree
+and workspace state relevant to the claim. Reading location and execution
+Node have separate bindings. Owner WorkItems have optional `source_baseline`:
+omission or null leaves the work version open for the Agent to choose.
+`revise_work` can select a version, replace it or set it to null when the
+WorkItem is eligible for an intent revision. Existing Evidence keeps the
+source facts originally recorded for its candidate.
 
-The Project's primary product source identifies its repository checkout.
-`primary_source_id` selects that product Source hint.
-`primary_source_root` identifies the preferred repository read location;
-current Source reads resolve that repository's physical primary worktree,
-observe its actual branch and include edits and admitted untracked files.
+Historical SourceBinding records and captured Source views form an explicit
+archive. Use `list_sources` to discover recorded IDs and available view
+references. Select both `source_id` and `revision` for `read_source`,
+`read_source_file`, `list_source_files` and `search_source_files`;
+`read_diff` selects `source_id`, `base_revision` and `target_revision`.
+Archive results report their captured source identity and paginate
+at that `view_revision`. A new WorkItem's source version is an Agent decision.
 
-Owner Core `read_source`, `read_source_file`, `list_source_files` and
-`search_source_files` can omit `source_id` and `revision`. These explicit
-Source tools use the Source provider's configured readable roots:
-
-| Selection | Source behavior |
-|---|---|
-| Project product default | Resolves the eligible product Source and reports its `primary_source_id` |
-| Preferred repository location | Uses `primary_source_root` to resolve the physical primary checkout |
-| Explicit `source_root` | Reads the selected current worktree within configured readable roots |
-| Explicit `revision` | Reads an already captured commit or workspace snapshot |
-
-A fixed commit or captured workspace view (`view_snapshot`) is an explicit
-selection. Source readback includes `actual_source` with `provider`,
-`root`, `commit`, `tree`, `view_revision` and `observed_at`. Record
-these facts alongside the repository, branch and workspace state.
-`list_sources.current_readable_root` reports the Source provider's location;
-`origin_hint` supplies repository origin `host` and `path` guidance.
-
-Owner `load_project.source_observation` describes the product Source.
-`management_source_observation` records a distinct Management Root observation.
-When a product default is unavailable, product observation and its
-`primary_source_id`/`version_hint_ref` guidance are null. Management context
-and explicitly selected management reads retain their own access checks.
-
-Source pagination continues at the returned `view_revision` to retain byte
-identity. A new current Source read can observe newer edits. Review and
-acceptance retain the actual candidate, source and Evidence identities.
-Source byte bounds, normalized paths, secret handling, tenant/Scope ownership,
-revocation and digest readback apply at the Source provider's boundary.
-Shared deployments retain their established `read_file`, `list_files` and
-`search_files` schemas, access, permission and version checks.
-Message delivery, source reading and Git synchronization have separate evidence.
+Archived bytes retain Source provider roots, normalized paths, secret handling,
+tenant/Scope ownership, revocation and digest readback at that provider's
+boundary. Shared deployments retain their established `read_file`, `list_files`
+and `search_files` schemas, access, permission and version checks. Message
+delivery, source reading and Git synchronization have separate evidence.
 
 ## Results, Review and acceptance
 
@@ -327,11 +349,22 @@ accepted state are separate records. Deterministic storage and hashes retain
 their exact identities. A hash establishes byte identity; execution and Review
 evidence establish what those bytes demonstrate.
 
-A Review names the candidate, source revision, criteria and reviewer
-assignment. The adopted acceptance profile checks reviewer independence,
-required evidence, the integrated baseline, protected effects, publication
-readback and unresolved items before accepting work. Owner access changes
-invocation admission; it preserves these candidate and integrity checks.
+A Review names the exact candidate, criteria, recorded Evidence and reviewer
+assignment, together with the WorkItem's selected source baseline when present.
+For owner `submit_review` and `accept_work`, the Agent observes the candidate
+through Git, native tools or machine files and reports `source_readback.commit`
+and `source_readback.tree`. Report relevant local edits and workspace state in
+the Evidence for that candidate. These operations compare the reported version
+with the recorded Evidence and execution receipts. Repository edits and files
+outside Git remain accessible through their ordinary readers.
+
+The adopted acceptance profile checks candidate identity, reviewer independence,
+required Evidence, integrated results, protected effects, publication readback
+and unresolved items before accepting work. Trusted identity, explicit
+revocation, request deduplication and expected revisions govern each new action.
+Shared admission retains its configured SourceBinding and current clean-checkout
+readback checks. Historical candidate and Evidence facts preserve their original
+source and integrity.
 
 Completed facts keep their recorded author, source, Authority, binding,
 timestamps and digests. Natural expiry of a historical Grant does not erase or
@@ -410,8 +443,9 @@ cryptographic checks continue in both modes.
 
 An existing custom MCP connection can retain its discovered tool metadata after
 a server schema update. The owner server exposes optional chosen deadlines,
-create_work budget and caller wait timeout; verify those fields in the active
-client's refreshed schema.
+create_work budget and source_baseline, current-file Project configuration,
+and caller wait timeout; verify those fields in the active client's refreshed
+schema.
 
 After starting the updated MCP server, open its existing connection in ChatGPT
 Plugins, select **Refresh**, inspect the refreshed metadata, and start a new
