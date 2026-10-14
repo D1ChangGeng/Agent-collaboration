@@ -1743,6 +1743,11 @@
       "before_revision",
       "after_revision",
       "readback"
+    ],
+    "project_configuration_receipt": [
+      "project_id",
+      "revision",
+      "operation_id"
     ]
   },
   "result_revision": "acs-mcp-result/3",
@@ -1781,6 +1786,7 @@
       "search_source_files"
     ],
     "project_actions": [
+      "configure_project",
       "create_route",
       "update_route",
       "configure_team",
