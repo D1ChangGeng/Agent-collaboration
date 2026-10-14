@@ -165,9 +165,9 @@ Root Agent 可以将一次功能改动交给 Engineer，在会话重启后继续
 
 ### 标准 Release 安装
 
-使用 [v1.5.2 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.2)
+使用 [v1.5.3 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.3)
 提供的 `acs_bootstrap.py` 入口，开始经过校验的安装流程。
-能力与升级路径见[发布说明](docs/RELEASE-NOTES-v1.5.2.md)。
+能力与升级路径见[发布说明](docs/RELEASE-NOTES-v1.5.3.md)。
 
 Release Bootstrap 使用明确的 Runtime 安装目标：本机 Linux、指定的远程 SSH
 目标，或指定的 WSL 发行版。它检查选定机器与账号，下载指定 GitHub Release，
@@ -238,10 +238,11 @@ Linux MCP 进程、OpenAI Platform organization 与 ChatGPT workspace。手册�
 Windows 客户端使用 WSL 时，AI 通过 `scripts/acs_windows_startup.ps1`
 配置安装者的登录任务。GUI host 在后台运行恢复进程，调用稳定启动器的
 `--maintain-startup` 入口。预览、执行与核对绑定已确认的发行版、Linux 账号和
-机器身份。[启动恢复指南](docs/runtime/STARTUP-RECOVERY.md)说明既有任务迁移、
+机器身份。迁移既有任务时，脚本核验当前安装维护锁的持有进程并完成交接；
+Core、SSH 和 Web 进程继续由既有监督机制管理。[启动恢复指南](docs/runtime/STARTUP-RECOVERY.md)说明既有任务迁移、
 Docker/containerd 诊断和修复流程；共享服务变化需要审阅计划、明确授权与私有备份。
 
-v1.5 Runtime schema 与 MCP 工具目录的迁移使用经过校验的 v1.5.2 Bootstrap
+v1.5 Runtime schema 与 MCP 工具目录的迁移使用经过校验的 v1.5.3 Bootstrap
 进行 AI 引导升级。AI 保留身份、项目、配置、密钥、显式撤销与回滚数据，
 随后验证实际模式及 Receiver 绑定。激活后重新连接 Codex/OpenCode；ChatGPT
 需要重启所配置的 Tunnel/MCP 进程，在 Plugins 中对既有连接选择 **Refresh**，
@@ -256,4 +257,4 @@ v1.5 Runtime schema 与 MCP 工具目录的迁移使用经过校验的 v1.5.2 Bo
 仓库提供[贡献说明](CONTRIBUTING.md)、[安全报告方式](SECURITY.md)、
 [变更记录](CHANGELOG.md)与 [Sustainable Use License 1.0](LICENSE)。许可允许在其
 用途和再分发条款内免费公开分发。发行包附带源码绑定清单和 SHA-256 摘要。
-产品发行 v1.5.2、setup Skill v0.4.0 与 Runtime package v0.1.0 分别版本化。
+产品发行 v1.5.3、setup Skill v0.4.0 与 Runtime package v0.1.0 分别版本化。

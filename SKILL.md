@@ -221,7 +221,12 @@ The task invokes a GUI background host and the stable launcher's
 single-instance behavior, login trigger and failure retry. For a verified
 existing task, retain its task name and use `-AdoptExisting` with the reviewed
 `-LegacyEntrypoint`; the helper backs up the task definition and receipt before
-migration. Read back task state, Core dependencies, each selected transport and
+migration. During the lock handoff, it identifies the current installation's
+Linux maintainer, checks its owner account, reviewed previous entry or stable
+same-root command and process creation identity, then sends SIGTERM and waits
+for exit before starting the replacement task. A mismatched lock holder requires
+owner review. Core, SSH and web processes retain their existing supervision.
+Read back task state, Core dependencies, each selected transport and
 actual client MCP calls. Record task restart evidence and machine reboot
 evidence according to what was measured.
 
@@ -268,7 +273,7 @@ their running version. A manual rollback records the rejected version in
 again.
 
 Existing installations with a changed MCP catalog require an AI-guided upgrade with the verified
-v1.5.2 Release Bootstrap before invoking the installed update controls.
+v1.5.3 Release Bootstrap before invoking the installed update controls.
 
 ## ChatGPT web setup route
 

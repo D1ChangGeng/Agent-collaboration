@@ -46,6 +46,46 @@ function Invoke-WslReadback([string[]]$Arguments) {
         return $stdout.Result
     } finally { $process.Dispose() }
 }
+function Stop-OwnedMaintainer {
+    $code = @'
+import json,os,select,signal,sys
+from pathlib import Path
+r=Path(sys.argv[1]); legacy=sys.argv[2] if len(sys.argv)>2 else ''
+state=json.loads((r/'state.json').read_text())
+lock=Path(state['runtime_config_ref']).parent/'login-recovery.lock'
+if not lock.exists():
+    print('{}');raise SystemExit(0)
+info=lock.stat()
+for line in Path('/proc/locks').read_text().splitlines():
+    fields=line.split()
+    if len(fields)<6 or fields[1]!='FLOCK':continue
+    device=fields[5].split(':')
+    if len(device)!=3:continue
+    if (int(device[0],16),int(device[1],16),int(device[2]))!=(os.major(info.st_dev),os.minor(info.st_dev),info.st_ino):continue
+    pid=int(fields[4]);proc=Path('/proc')/str(pid)
+    try:
+        handle=os.pidfd_open(pid,0)
+    except ProcessLookupError:
+        continue
+    try:
+        initial=(proc/'stat').read_text().rsplit(')',1)[1].split()[19]
+        if proc.stat().st_uid!=os.getuid():raise RuntimeError('maintenance process owner requires review')
+        args=(proc/'cmdline').read_bytes().decode().split('\0')
+        original=legacy and len(args)>1 and args[1]==legacy
+        current=len(args)>1 and args[1]==str(r/'acs_launcher.py') and '--maintain-startup' in args and '--installation-root' in args and args[args.index('--installation-root')+1]==str(r)
+        if not (original or current):raise RuntimeError('maintenance lock holder requires owner review')
+        if (proc/'stat').read_text().rsplit(')',1)[1].split()[19]!=initial:raise RuntimeError('maintenance process identity changed')
+        signal.pidfd_send_signal(handle,signal.SIGTERM,None,0)
+        poll=select.poll();poll.register(handle,select.POLLIN)
+        if not poll.poll(5000):raise RuntimeError('previous maintenance process has not stopped')
+    except (FileNotFoundError,ProcessLookupError):
+        continue
+    finally:
+        os.close(handle)
+print('{}')
+'@
+    Invoke-WslReadback -Arguments @('/usr/bin/python3','-c',$code,$LinuxInstallationRoot,$LegacyEntrypoint) | Out-Null
+}
 $probeCode = @'
 import hashlib,importlib.util,json,sys
 from pathlib import Path
@@ -55,8 +95,8 @@ m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
 active,argv=m.resolve_launch(r)
 observed=m.observe_machine()
 state=json.loads((r/'state.json').read_text())
-assert hashlib.sha256((r/'acs_launcher.py').read_bytes()).hexdigest()==state['helper_digests']['acs_launcher.py']
-assert '--maintain-startup' in (r/'acs_launcher.py').read_text()
+if hashlib.sha256((r/'acs_launcher.py').read_bytes()).hexdigest()!=state['helper_digests']['acs_launcher.py']:raise RuntimeError('installed launcher digest differs')
+if '--maintain-startup' not in (r/'acs_launcher.py').read_text():raise RuntimeError('selected release needs startup maintenance entry')
 print(json.dumps({'machine_id':observed['machine_id'],'account':observed['account'],'installation_root':str(r),'version':state['version'],'startup_enabled':state.get('startup',{}).get('enabled',True)}))
 '@
 $machine = (Invoke-WslReadback -Arguments @('/usr/bin/python3','-c',$probeCode,$LinuxInstallationRoot)) | ConvertFrom-Json
@@ -157,6 +197,7 @@ try {
         $existing.Settings.Hidden = $true
         Set-ScheduledTask -TaskName $TaskName -TaskPath '\' -Action $action -Settings $existing.Settings | Out-Null
         Stop-ScheduledTask -TaskName $TaskName -TaskPath '\'
+        Stop-OwnedMaintainer
     } else {
         $trigger = New-ScheduledTaskTrigger -AtLogOn -User $sid
         $principal = New-ScheduledTaskPrincipal -UserId $sid -LogonType Interactive -RunLevel Limited

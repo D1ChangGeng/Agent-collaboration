@@ -8,11 +8,11 @@ determine the update target.
 
 The v1.5 Runtime schema and MCP catalog transition requires a guided upgrade.
 Use the verified
-[v1.5.2 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.2)
+[v1.5.3 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.3)
 for an AI-guided upgrade. The Agent inspects the installation, verifies Bootstrap
 and Release digests, executes the preview and upgrade commands, and validates
 the actual access mode and connections afterward. See the
-[release notes](RELEASE-NOTES-v1.5.2.md) and the transition below.
+[release notes](RELEASE-NOTES-v1.5.3.md) and the transition below.
 
 ## Controls
 
@@ -99,9 +99,9 @@ respective setup operations. Custom edits to managed files need ownership review
 before an upgrade can proceed. Skills on separate client hosts are refreshed
 through the setup Skill's client maintenance lifecycle.
 
-## Guided upgrade to v1.5.2
+## Guided upgrade to v1.5.3
 
-The Agent uses `--version v1.5.2` with the verified Release Bootstrap and the
+The Agent uses `--version v1.5.3` with the verified Release Bootstrap and the
 recorded Runtime host, machine/account/home binding, client selection and web
 choice. It executes installation and diagnostic commands, retaining the existing
 configuration, credentials, cryptographic key references, projects, Root/Route
@@ -159,7 +159,10 @@ For Windows/WSL installations, maintain the owner login task from the full
 verified Release on the Windows client. Run `scripts/acs_windows_startup.ps1`
 with the recorded distribution, Linux account, installation root and machine
 identity: preview first, then `-Apply`, then `-Check`. Existing task migration
-backs up its definition and receipt. The GUI host launches WSL in the background,
+backs up its definition and receipt, verifies the selected installation's Linux
+maintainer and hands off its recovery lock before the replacement task starts.
+Core, SSH and web processes retain their existing supervision.
+The GUI host launches WSL in the background,
 and the task calls the stable launcher's `--maintain-startup` entry.
 New maintenance processes verify and select the active Release helper.
 After activation, restart the registered task and verify the selected version

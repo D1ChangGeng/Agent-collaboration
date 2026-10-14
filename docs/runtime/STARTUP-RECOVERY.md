@@ -139,6 +139,21 @@ preserves its trigger and settings, then selects the GUI host and stable
 maintenance entry. A task whose binding needs review remains a separate
 maintenance decision.
 
+### Maintenance lock handoff during migration
+
+When migrating an existing task, the helper hands off the selected
+installation's Linux `login-recovery.lock` before starting the replacement
+action. It locates the lock through the installation's private Runtime
+configuration and reads its holder from the kernel lock table.
+
+The helper verifies the holder's Linux owner account, the reviewed
+`-LegacyEntrypoint` or the same installation's stable
+`acs_launcher.py --maintain-startup` command, and process creation identity.
+It sends SIGTERM to that verified holder and waits for exit. A holder whose
+identity needs review stops migration for owner review; the saved task
+definition supplies rollback. Core, SSH and web processes retain their
+existing supervision.
+
 After applying or restarting the task, read back its principal/action, running
 state and actual selected Runtime version. A long-running task is the expected
 maintenance state. Check Docker, PostgreSQL/Temporal, configured SSH/Tunnel
@@ -204,12 +219,17 @@ Use isolated test profiles and ports for fault injection and preserve production
 sessions. Read actual MCP discovery and `read_profile` through each configured
 entry. Keep host, Release and channel evidence with the run that measured it.
 
-The standard Windows helper also completed preview/apply/check on an isolated
+The v1.5.2 Windows helper completed preview/apply/check on an isolated
 Scheduled Task bound to a real WSL distribution. Its GUI host and WSL ran in
 the background; repeated apply retained the same process and one backup.
 This fixture validates the task installation mechanism. The standard Docker
 helper read both existing ACS provider containers from the current backend and
 returned `ready` with `changes: []`.
+
+The v1.5.3 candidate helper completed `-AdoptExisting` and `-Apply` against an
+existing production owner task using the published v1.5.2 Core. The migrated
+task selected the stable maintenance entry and was observed running in the
+background. This run measures task migration and maintainer handoff.
 
 The owner recovery exercise observed the Windows task running after restart,
 background host and WSL window handles at zero, restored existing
