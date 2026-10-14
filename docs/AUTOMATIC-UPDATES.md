@@ -6,13 +6,13 @@ and activates eligible updates after verification. The installation's recorded
 machine, owner account, home directory, Harness selection and web settings
 determine the update target.
 
-The v1.5 Runtime schema and MCP catalog transition requires a guided upgrade.
+The v1.6 Runtime schema and MCP catalog transition requires a guided upgrade.
 Use the verified
-[v1.5.3 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.3)
+[v1.6.0 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.6.0)
 for an AI-guided upgrade. The Agent inspects the installation, verifies Bootstrap
 and Release digests, executes the preview and upgrade commands, and validates
 the actual access mode and connections afterward. See the
-[release notes](RELEASE-NOTES-v1.5.3.md) and the transition below.
+[release notes](RELEASE-NOTES-v1.6.0.md) and the transition below.
 
 ## Controls
 
@@ -99,13 +99,31 @@ respective setup operations. Custom edits to managed files need ownership review
 before an upgrade can proceed. Skills on separate client hosts are refreshed
 through the setup Skill's client maintenance lifecycle.
 
-## Guided upgrade to v1.5.3
+## Guided upgrade to v1.6.0
 
-The Agent uses `--version v1.5.3` with the verified Release Bootstrap and the
+The Agent uses `--version v1.6.0` with the verified Release Bootstrap and the
 recorded Runtime host, machine/account/home binding, client selection and web
 choice. It executes installation and diagnostic commands, retaining the existing
 configuration, credentials, cryptographic key references, projects, Root/Route
-identities, SourceBindings, deduplication, recorded evidence and revocation state.
+identities, SourceBindings, deduplication, recorded evidence, explicit revocation
+state and the existing automatic update policy.
+
+Domain schema 1.14 includes a formal migration from the known schema 1.13
+identity. Project schema version 1 accepts the two exact prior checksums for
+Linux/Git LF bytes and Windows Release CRLF bytes. The migration enables
+optional work and Review baselines while retaining existing source values,
+candidates and Evidence. The Agent checks the installed schema identity,
+previews the migration, applies it through the guided upgrade and reads back
+the recorded versions and checksums. An unknown schema identity requires
+migration review. See [the release notes](RELEASE-NOTES-v1.6.0.md#schema-migration)
+for both checksums and [the adoption contract](runtime/UPGRADE-CONTRACT.md#current-file-context-and-work-version-migration)
+for the migration details.
+
+After activation, owner Project and Route context reads use the selected
+machine's current management files. Verify the saved machine/path or configure
+it with `configure_project`, then read a representative instruction and
+knowledge index with `load_project`. An authorized standalone Management Root
+uses the same workflow to read current files.
 
 New private installations use `access_mode: owner`. During a guided upgrade, the
 installer can adopt owner mode for a positively identified existing private Root

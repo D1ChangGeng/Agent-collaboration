@@ -43,9 +43,9 @@ independent Review.
 
 ## Standard release installation
 
-Use the [v1.5.3 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.3)
+Use the [v1.6.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.6.0)
 and its `acs_bootstrap.py` asset to start verified installation.
-See the [release notes](docs/RELEASE-NOTES-v1.5.3.md) for capabilities and the
+See the [release notes](docs/RELEASE-NOTES-v1.6.0.md) for capabilities and the
 guided upgrade path.
 
 The Release Bootstrap uses an explicit Runtime destination: local Linux,
@@ -85,8 +85,8 @@ results; the Agent waits for completion and verifies actual MCP calls. The
 sequence and official documentation index.
 
 When you start a project, ask the setup Skill to initialize or adopt its
-Management Root. Project identity, Source registration and Root Agent startup
-follow the [project setup path](docs/GETTING-STARTED.md#start-a-project).
+Management Root. Project identity, current management location and Root Agent
+startup follow the [project setup path](docs/GETTING-STARTED.md#start-a-project).
 The installation report records machine/account binding, client hosts,
 version/commit/tree, actual access mode, service and transport health,
 native Harness configuration, visible tools, credential references and rollback
@@ -121,8 +121,8 @@ The [startup recovery guide](docs/runtime/STARTUP-RECOVERY.md) covers task
 migration and Docker/containerd diagnosis, including a reviewed repair plan,
 explicit authorization for shared services and a private backup.
 
-The v1.5 Runtime schema and MCP catalog transition uses an AI-guided upgrade
-with the verified v1.5.3 Bootstrap. The Agent preserves
+The Agent guides existing installations through the Runtime schema and MCP
+catalog upgrade using the verified v1.6.0 Bootstrap. It preserves
 identity, projects, configuration, keys, explicit revocation and rollback data,
 then verifies the actual mode and Receiver bindings. Reconnect Codex/OpenCode
 after activation. For ChatGPT, restart the configured Tunnel/MCP process,
@@ -178,18 +178,23 @@ owner authorization and request journaling. File service readiness is
 independent of a native Harness Session's busy state. See the
 [machine filesystem guide](docs/runtime/MACHINE-FILESYSTEM.md).
 
-Owner projects register the machine and directory holding current management
-documents, in a Git checkout or another authorized directory. `load_project`
-reads their current instructions and knowledge indexes through machine files;
-`configure_project` sets, replaces or clears that location and its document
-paths. Everyday file operations use the tools above.
+Owner Project and Route registration records the machine and directory holding
+current management documents. The Management Root can live in a Git checkout or
+an authorized standalone directory. `load_project` reads current instructions
+and knowledge indexes through the selected machine's file service.
+`configure_project` sets, replaces or clears the saved location and document
+paths. A single `load_project` call can select `machine_id` and
+`management_path` for that read. Everyday file operations use the tools above.
 
-Agents choose an available machine, native tool, Git or repository reader and
-record the source actually observed. Owner `WorkItem.source_baseline` can be
-omitted or null, and an eligible `revise_work` can select, change or clear it.
-Review and acceptance compare the Agent's reported commit/tree with the exact
-candidate and recorded Evidence, while preserving reviewer independence and
-authorized decisions.
+Agents choose the source version appropriate to each task through an available
+machine, native tool, Git or repository reader and record the source actually
+observed. Owner `WorkItem.source_baseline` can be omitted or null, and an eligible
+`revise_work` can select, change or clear it. Owner Attempts can report the
+execution's actual source version through authenticated receipts after execution.
+Review and acceptance record the Agent's inspected commit/tree and compare it
+with the exact candidate, execution receipts and recorded Evidence. Candidate
+integrity, Reviewer and Finalizer independence, trusted identity, request
+deduplication and explicit revocation continue to govern those decisions.
 
 Historical Source records remain available through explicit `source_id` and
 `revision` queries. Captured Source pagination retains `view_revision`.
@@ -216,8 +221,8 @@ flowchart TB
 
 Organization extent, Role and Profile have separate meanings. Existing Slots,
 WorkItems and replaceable Sessions provide the bindings. Independent Review
-checks candidate participants; acceptance checks current authority, exact Source,
-Evidence, Review and readbacks. The
+checks candidate participants; acceptance checks current authority, exact
+candidate source, Evidence, Review and readbacks. The
 [organization model proposal](docs/runtime/AGENT-ORGANIZATION-MODEL.md) defines
 terminology, compatibility and observable context fields.
 
@@ -326,5 +331,5 @@ The repository includes [contribution guidance](CONTRIBUTING.md),
 [security reporting](SECURITY.md), [change history](CHANGELOG.md) and a
 [Sustainable Use License 1.0](LICENSE). The license permits free public
 distribution under its stated use and redistribution terms. Release packages
-carry a source-bound manifest and SHA-256 digest list. Distribution v1.5.3,
-setup Skill v0.4.0 and Runtime package v0.1.0 are independently versioned.
+carry a source-bound manifest and SHA-256 digest list. Distribution v1.6.0,
+setup Skill v0.4.0 and Runtime package v0.2.0 are independently versioned.

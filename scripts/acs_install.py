@@ -318,6 +318,9 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
                 settings.credential_ref.kind == "file" and settings.credential_ref.name == str(credential_path)):
             from runtime.owner_upgrade import activate_owner_mode
             activate_owner_mode(config_path)
+            catalog = json.loads((ROOT / "docs/runtime/p2-mcp-tool-contract.json").read_text(encoding="utf-8"))
+            with configured_service(config_path) as (service, _settings):
+                ProjectService(service, catalog, profile="root_manager").initialize()
         return config_path
 
     catalog = json.loads((ROOT / "docs/runtime/p2-mcp-tool-contract.json").read_text(encoding="utf-8"))

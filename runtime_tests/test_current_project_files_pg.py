@@ -330,3 +330,18 @@ def test_legacy_machine_override_uses_target_current_directory(project,tmp_path)
     assert result["data"]["management_root"]["machine_id"]=="fixture-target"
     assert result["data"]["instructions"][0]["content"]=="SELECTED_MACHINE"
     assert result["data"]["instructions"][0]["resolved_path"]==str(target/"AGENTS.md")
+
+
+def test_owner_only_project_configuration_keeps_shared_profiles_unchanged(project):
+    from runtime.project_service import ProjectService
+    from runtime_tests.test_project_service import CATALOG
+    root_before=list(CATALOG["profiles"]["root_manager"])
+    operator_before=list(CATALOG["profiles"]["operator"])
+    assert "configure_project" not in project.projects.available_tools(project.credential)
+    f=owner(project)
+    assert "configure_project" in f.projects.available_tools(f.credential)
+    assert CATALOG["profiles"]["root_manager"]==root_before
+    assert CATALOG["profiles"]["operator"]==operator_before
+    f.authority.access_mode="shared"
+    shared=ProjectService(f.projects.service,CATALOG,profile="root_manager")
+    assert "configure_project" not in shared.available_tools(f.credential)

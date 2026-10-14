@@ -92,7 +92,10 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
         from runtime.filesystem_schema import ALL_TOOLS, definition
         self.filesystems = FilesystemGateway(service.authority)
         if service.authority.access_mode == "owner":
-            self.catalog = {**catalog, "tools": dict(catalog["tools"])}
+            self.catalog = {**catalog, "tools": dict(catalog["tools"]),
+                            "profiles": {name:list(tools) for name,tools in catalog["profiles"].items()}}
+            for selected in ("root_manager", "operator"):
+                self.catalog["profiles"][selected].append("configure_project")
             for name in ALL_TOOLS:
                 self.catalog["tools"][name] = definition(name)
         self.artifacts = getattr(service.authority, "_artifact_store", None)

@@ -13,13 +13,14 @@ You confirm required login, permissions, secret entry and connection consent.
 
 ## Agent launch request
 
-Use the [v1.5.3 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.3)
+Use the [v1.6.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.6.0)
 and its `acs_bootstrap.py` asset for this machine selection flow.
-The default Bootstrap version is `v1.5.3`. Existing installations use the verified
-v1.5.3 Bootstrap for an AI-guided upgrade through the v1.5 Runtime schema and
-MCP catalog transition. The Agent previews the transition, preserves identity and
-configuration, and verifies the activated access mode and connections. See the
-[release notes](RELEASE-NOTES-v1.5.3.md).
+The default Bootstrap version is `v1.6.0`. Existing installations use the verified
+v1.6.0 Bootstrap for a guided Runtime schema and MCP catalog upgrade.
+The Agent previews the known schema migration, preserves identity, configuration
+and automatic update policy, and verifies the activated access mode and
+connections. See the
+[release notes](RELEASE-NOTES-v1.6.0.md).
 
 For a fresh machine, use the standard Release Bootstrap shipped with that
 Release before project setup:
@@ -219,7 +220,7 @@ profiles supervise their processes and recover connections. Read back their
 actual health after startup. Owned local Skills refresh with the upgrade;
 Skills on separate client hosts are refreshed through client setup maintenance.
 
-Existing installations use the verified v1.5.3 Bootstrap for the schema/catalog
+Existing installations use the verified v1.6.0 Bootstrap for the schema/catalog
 transition. The Agent preserves project and Root/Route identity, configuration,
 credentials, keys, explicit revocation and rollback data. It verifies the actual
 mode and separately updated Receiver configuration. Reconnect Codex/OpenCode
@@ -238,11 +239,13 @@ fact remains unresolved. The preferred Management Root is inside the project
 source checkout; owner registration also supports other authorized directories.
 Existing Root/Route identities, project instructions and knowledge are preserved.
 
-Owner project registration records identity, Routes and current management file
-locations. `load_project` reads the configured instructions and knowledge indexes
-through the machine filesystem. Use `configure_project` to set or replace
-`management`, `instruction_paths` and `knowledge_index_paths` with the current
-Project revision; `management: null` clears the saved location. Inspect the
+Owner Project and Route registration records identity and current management
+file locations, including authorized standalone Management Roots. `load_project`
+reads configured instructions and knowledge indexes through the selected
+machine's current files. Use `configure_project` to set or replace `management`,
+`instruction_paths` and `knowledge_index_paths` with the current Project
+revision; `management: null` clears the saved location. A single `load_project`
+call can select `machine_id` and `management_path` for that read. Inspect the
 installed access mode and active tool schemas, then read back the Project
 revision, observed document paths and context completeness.
 
@@ -254,11 +257,13 @@ commit/tree and workspace state when those facts support the result.
 
 Owner `WorkItem.source_baseline` is optional. Omit it or use null when the
 Agent will choose the work version; use `revise_work` to select, change or clear
-it when the WorkItem is eligible for an intent revision. For independent Review
-and acceptance, the Agent observes the candidate and actively reports its
-commit/tree together with recorded Evidence. The acceptance checks retain exact
-candidate identity, Evidence integrity, reviewer independence and authorized
-decisions. See [Owner Runtime](runtime/OWNER-RUNTIME.md) for the product contract
+it when the WorkItem is eligible for an intent revision. Owner Attempts can
+report the actual execution source through authenticated receipts after
+execution. For independent Review and acceptance, the Agent observes the
+candidate and actively reports its commit/tree together with recorded Evidence.
+Acceptance checks retain exact candidate identity, Evidence integrity, Reviewer
+and Finalizer independence, trusted identity, request deduplication and explicit
+revocation. See [Owner Runtime](runtime/OWNER-RUNTIME.md) for the product contract
 and [Runtime adoption](runtime/UPGRADE-CONTRACT.md) for schema migration.
 
 Historical Source records can be inspected through `list_sources` and explicitly

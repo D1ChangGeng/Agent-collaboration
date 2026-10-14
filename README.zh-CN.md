@@ -77,16 +77,19 @@ TLS 固定校验、签名身份、owner 授权与请求日志。文件服务直�
 其就绪状态独立于原生 Harness Session 的忙闲状态。详见
 [机器文件工具指南](docs/runtime/MACHINE-FILESYSTEM.md)。
 
-owner 项目注册保存当前管理文档所在的机器与目录，管理目录可以位于 Git checkout
-或其他已授权位置。`load_project` 通过机器文件读取当前指令与知识索引；
-`configure_project` 设置、替换或清除该位置及其文档路径。日常文件操作使用上面的
-标准机器工具。
+owner Project 与 Route 注册保存当前管理文档所在的机器与目录。Management Root
+可以位于 Git checkout 或已授权的独立管理目录。`load_project` 通过选定机器的
+文件服务读取当前指令与知识索引；`configure_project` 设置、替换或清除保存的位置
+及文档路径。单次 `load_project` 可用 `machine_id` 和 `management_path` 选择
+本次读取位置。日常文件操作使用上面的标准机器工具。
 
-Agent 选择实际可用的机器、原生工具、Git 或仓库读取器，并记录实际观测的源码。
-owner `WorkItem.source_baseline` 可以省略或为 null；在允许修订工作意图时，
-`revise_work` 可以选择、改变或清除该工作版本。Review 和接受操作将 Agent 主动
-报告的 commit/tree 与精确候选及已记录 Evidence 核对，并保留 Reviewer 独立性
-和授权身份检查。
+Agent 根据具体工作选择源码版本，通过实际可用的机器、原生工具、Git 或仓库
+读取器记录实际观测。owner `WorkItem.source_baseline` 可以省略或为 null；在
+允许修订工作意图时，`revise_work` 可以选择、改变或清除该工作版本。owner Attempt
+可以在执行后通过已认证回执报告实际执行的源码版本。Review 和接受操作记录 Agent
+实际检查的 commit/tree，并与精确候选、执行回执及已记录 Evidence 核对。
+候选一致性、Reviewer 与 Finalizer 独立性、可信身份、请求去重和显式撤销继续约束
+这些决定。
 
 历史 Source 记录通过明确选择 `source_id` 和 `revision` 查询；捕获版本的分页
 沿用 `view_revision`。shared 保留既有 Source 接口与权限契约。
@@ -111,7 +114,7 @@ flowchart TB
 
 组织责任范围、Role 与 Profile 各有独立含义。现有 AgentSlot、WorkItem
 和可替换 Session 承载具体绑定。独立 Review 核对候选参与者身份；接受操作核对
-当前授权与精确 Source、Evidence、Review、回读证据。
+当前授权与精确候选源码、Evidence、Review、回读证据。
 [组织模型提案](docs/runtime/AGENT-ORGANIZATION-MODEL.md)说明术语、兼容关系和上下文表达。
 
 ## 架构
@@ -175,9 +178,9 @@ Root Agent 可以将一次功能改动交给 Engineer，在会话重启后继续
 
 ### 标准 Release 安装
 
-使用 [v1.5.3 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.5.3)
+使用 [v1.6.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.6.0)
 提供的 `acs_bootstrap.py` 入口，开始经过校验的安装流程。
-能力与升级路径见[发布说明](docs/RELEASE-NOTES-v1.5.3.md)。
+能力与升级路径见[发布说明](docs/RELEASE-NOTES-v1.6.0.md)。
 
 Release Bootstrap 使用明确的 Runtime 安装目标：本机 Linux、指定的远程 SSH
 目标，或指定的 WSL 发行版。它检查选定机器与账号，下载指定 GitHub Release，
@@ -205,8 +208,8 @@ ChatGPT 网页接入是明确的安装选项：现在启用（`enable`）、仅�
 自行完成；AI 等待确认后再实际验证 MCP 调用。
 [网页接入手册](docs/runtime/P2-PRIVATE-TUNNEL-PROFILE.md)提供完整步骤与官方文档索引。
 
-开始项目时，调用 setup Skill 初始化或接入 Management Root。项目身份、Source
-注册和 Root Agent 启动按[项目设置路径](docs/GETTING-STARTED.md#start-a-project)完成。
+开始项目时，调用 setup Skill 初始化或接入 Management Root。项目身份、当前
+管理位置和 Root Agent 启动按[项目设置路径](docs/GETTING-STARTED.md#start-a-project)完成。
 安装报告记录机器与账号绑定、客户端主机、版本和 commit/tree、实际访问模式、
 服务与连接健康状态、原生 Harness 配置、可见工具、凭据引用与回滚状态。
 
@@ -252,8 +255,8 @@ Windows 客户端使用 WSL 时，AI 通过 `scripts/acs_windows_startup.ps1`
 Core、SSH 和 Web 进程继续由既有监督机制管理。[启动恢复指南](docs/runtime/STARTUP-RECOVERY.md)说明既有任务迁移、
 Docker/containerd 诊断和修复流程；共享服务变化需要审阅计划、明确授权与私有备份。
 
-v1.5 Runtime schema 与 MCP 工具目录的迁移使用经过校验的 v1.5.3 Bootstrap
-进行 AI 引导升级。AI 保留身份、项目、配置、密钥、显式撤销与回滚数据，
+已有安装使用经过校验的 v1.6.0 Bootstrap，由 AI 引导完成 Runtime schema 与
+MCP 工具目录迁移。AI 保留身份、项目、配置、密钥、显式撤销与回滚数据，
 随后验证实际模式及 Receiver 绑定。激活后重新连接 Codex/OpenCode；ChatGPT
 需要重启所配置的 Tunnel/MCP 进程，在 Plugins 中对既有连接选择 **Refresh**，
 再开始新聊天。控制命令、验证与恢复步骤见[自动升级指南](docs/AUTOMATIC-UPDATES.md)。
@@ -268,4 +271,4 @@ v1.5 Runtime schema 与 MCP 工具目录的迁移使用经过校验的 v1.5.3 Bo
 仓库提供[贡献说明](CONTRIBUTING.md)、[安全报告方式](SECURITY.md)、
 [变更记录](CHANGELOG.md)与 [Sustainable Use License 1.0](LICENSE)。许可允许在其
 用途和再分发条款内免费公开分发。发行包附带源码绑定清单和 SHA-256 摘要。
-产品发行 v1.5.3、setup Skill v0.4.0 与 Runtime package v0.1.0 分别版本化。
+产品发行 v1.6.0、setup Skill v0.4.0 与 Runtime package v0.2.0 分别版本化。

@@ -275,8 +275,11 @@ their running version. A manual rollback records the rejected version in
 `held_version` for explicit review before automatic checks apply that version
 again.
 
-Existing installations with a changed MCP catalog require an AI-guided upgrade with the verified
-v1.5.3 Release Bootstrap before invoking the installed update controls.
+Existing installations use the verified
+[v1.6.0 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.6.0)
+for a guided Runtime schema and MCP catalog upgrade. Preserve the existing
+automatic update policy and verify the known schema migration before activation.
+See [the release notes](docs/RELEASE-NOTES-v1.6.0.md).
 
 ## ChatGPT web setup route
 
@@ -343,20 +346,24 @@ access fact when observations are incomplete or ambiguous.
 
 Owner registration records durable Project/Root identity, Routes and current
 management file locations. A Management Root may be nested in Git or stored in
-another authorized directory. `load_project` reads its configured instruction
-and knowledge index paths through the machine filesystem. Use
-`configure_project` with `project_id`, `client_request_id`, `expected_revision`
-and `changes` to set or replace `management`, `instruction_paths` and
-`knowledge_index_paths`; `management: null` clears the saved location.
-Read back the resulting revision and current context.
+an authorized standalone directory. `load_project` reads its configured
+instruction and knowledge index paths through the selected machine filesystem.
+Use `configure_project` with `project_id`, `client_request_id`,
+`expected_revision` and `changes` to set or replace `management`,
+`instruction_paths` and `knowledge_index_paths`; `management: null` clears the
+saved location. A single `load_project` call can select `machine_id` and
+`management_path` for that read. Read back the resulting revision,
+observed document paths and context completeness.
 
 Agents choose the source version for each WorkItem. Owner `source_baseline`
 may be omitted or null; `revise_work` can select, change or clear it when the
-WorkItem is eligible for an intent revision. Review and acceptance use the
-Agent's reported commit/tree and exact candidate Evidence. Existing Source
-records are available for explicit historical queries by `source_id` and
-`revision`. See [Owner Runtime](docs/runtime/OWNER-RUNTIME.md) for project
-registration, current context and acceptance, and
+WorkItem is eligible for an intent revision. Owner Attempts can report actual
+execution source through authenticated receipts after execution. Review and
+acceptance use the Agent's inspected commit/tree, exact candidate Evidence and
+execution receipts, with independent Reviewer and Finalizer authorization.
+Existing Source records are available for explicit historical queries by
+`source_id` and `revision`. See [Owner Runtime](docs/runtime/OWNER-RUNTIME.md)
+for project registration, current context and acceptance, and
 [the adoption contract](docs/runtime/UPGRADE-CONTRACT.md) for schema migration.
 
 For a management workspace, use the explicit command families:

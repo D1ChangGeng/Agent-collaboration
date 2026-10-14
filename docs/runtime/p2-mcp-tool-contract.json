@@ -1862,8 +1862,7 @@
       "stop_attempt",
       "read_source_file",
       "list_source_files",
-      "search_source_files",
-      "configure_project"
+      "search_source_files"
     ],
     "reviewer": [
       "read_profile",
@@ -1956,8 +1955,7 @@
       "read_profile",
       "list_projects",
       "list_connections",
-      "submit_command",
-      "configure_project"
+      "submit_command"
     ]
   },
   "agent_organization_model": {
