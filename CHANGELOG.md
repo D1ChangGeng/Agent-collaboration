@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented here.
 
+## 1.5.2 - 2026-10-14
+
+- Add a Windows owner login recovery task with preview, apply and check modes,
+  machine/account binding, backed-up task migration and a GUI background host
+  that propagates the WSL process exit code.
+- Add the stable launcher's `--maintain-startup` entry to verify the active
+  Release recovery helper before running owner maintenance.
+- Diagnose Docker's actual data root and containerd connection, report readable
+  existing providers as ready, and offer a digest-bound repair plan with
+  explicit shared-runtime authorization, service-unit backup and rollback.
+  Existing container data stays in place.
+- Distinguish provider backend repair from other owner startup failures and
+  retain independent Core, SSH and web recovery attempts.
+- Document the Windows task and shared backend recovery workflow. Observed
+  recovery includes PostgreSQL/Temporal health, SSH/Tunnel reconnection,
+  owner MCP discovery in Windows Codex and OpenCode, and web project/file
+  readback.
+
 ## 1.5.1 - 2026-10-13
 
 - Correct machine readiness and upgrade diagnostics to report trusted owner

@@ -101,6 +101,9 @@ Git, or Harness facts. Read only the reference needed for the current request.
    caller-side stdio descriptor with the client's MCP configuration mechanism.
    A Runtime host selected as a client receives the same explicit client setup.
    Keep credentials on the Runtime host and record configuration rollback data.
+   For a selected Windows client with a WSL Runtime, configure owner login
+   recovery through the Windows/WSL startup procedure below as part of machine
+   setup, using the machine/account binding already confirmed by the user.
 7. Verify services and actual MCP `tools/list`, `read_profile` and
    `list_projects` from each selected client. An empty project list is a valid
    initial machine installation. `load_project` is required after a project has
@@ -189,11 +192,51 @@ default; `--project-id` selects one context and `--deep` is diagnostic scope.
 
 Read [startup recovery](docs/runtime/STARTUP-RECOVERY.md) for reboot or disconnect
 repair. Reuse the recorded Runtime host/account and client entry. Verify owner
-service identity before restoring dependencies; keep private SSH/Web Tunnel
-supervision separate from local MCP readiness. Preserve existing credentials,
-configured access mode, durable registrations and signed Runtime facts. Test fault recovery with isolated ports, then
-read actual tools/profile through the configured entry. Machine boot settings
-require the selected host's administration and a rollback backup.
+service identity before restoring dependencies; inspect Core, private SSH and
+web Tunnel recovery separately. Preserve existing credentials, configured access
+mode, durable registrations and signed Runtime facts. Test fault recovery with
+isolated ports, then read actual tools/profile through the configured entry.
+Machine boot settings require the selected host's administration and a rollback
+backup.
+
+### Windows client with a WSL Runtime
+
+During installation or authorized startup maintenance, execute
+`scripts/acs_windows_startup.ps1` from the verified Release or its verified
+installed setup Skill payload on the selected Windows client, under the
+installing Windows account. Verify Windows x64, WSL, Task Scheduler PowerShell
+cmdlets and the installed 64-bit .NET Framework C# compiler before apply.
+Use the user-confirmed WSL distribution, observed Linux owner account, private installation root and
+full machine identity. Pass them as `-WslDistribution`, `-RuntimeUser`,
+`-LinuxInstallationRoot` and `-ExpectedMachineId`; obtain these values from
+the installation probe and receipt. Use Bootstrap's
+`client_connection.background_startup` script source, parameter binding and
+sequence when supplied. Run the default preview, execute
+`-Apply`, then read back `-Check`. An installation with `startup.enabled=false`
+returns `owner_disabled`; report that owner policy. Arrange this procedure as
+part of the selected machine setup and carry it through to actual verification.
+
+The task invokes a GUI background host and the stable launcher's
+`--maintain-startup` entry. Verify the registered principal, selected action,
+single-instance behavior, login trigger and failure retry. For a verified
+existing task, retain its task name and use `-AdoptExisting` with the reviewed
+`-LegacyEntrypoint`; the helper backs up the task definition and receipt before
+migration. Read back task state, Core dependencies, each selected transport and
+actual client MCP calls. Record task restart evidence and machine reboot
+evidence according to what was measured.
+
+Inspect the actual Docker service/init mechanism before configuring WSL boot.
+When startup reports `provider_backend_repair_required`, run the verified
+`scripts/acs_docker_backend.py --provider-config <private-provider-config>`
+to inspect the daemon's actual data root and preserved ACS store.
+A `ready` result completes backend diagnosis. Review a `planned` repair with
+the owner; `review_required` needs the listed configuration/workload issues
+resolved before a new plan. Obtain explicit authorization for the shared
+Docker/containerd changes, and apply only with `--shared-runtime-confirmed`,
+the current `--plan-digest`, a new absolute `--backup` directory and the
+selected host's OS administration. Verify existing provider containers and
+PostgreSQL/Temporal health afterward, then verify SSH, Tunnel and client MCP
+readback. Keep installation-specific values in the private receipt.
 
 ## Automatic upgrade maintenance
 
@@ -225,7 +268,7 @@ their running version. A manual rollback records the rejected version in
 again.
 
 Existing installations with a changed MCP catalog require an AI-guided upgrade with the verified
-v1.5.1 Release Bootstrap before invoking the installed update controls.
+v1.5.2 Release Bootstrap before invoking the installed update controls.
 
 ## ChatGPT web setup route
 
@@ -514,6 +557,6 @@ When setup is complete:
 4. Recommend committing the setup if appropriate.
 5. Explicitly state that normal collaboration now proceeds through `AGENTS.md` and `.agents/`, and that this skill should not be loaded again unless the collaboration setup itself needs maintenance.
 
-For WSL startup maintenance, verify the installed Docker init mechanism with an
-actual successful invocation, and configure an owner login recovery task using
-the verified helper `--maintain` entry. Read back services and Tunnel health.
+For Windows/WSL setup, complete the owner login recovery procedure above and
+include its binding, task state, service health and actual MCP readback in the
+installation report.
