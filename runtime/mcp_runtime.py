@@ -128,23 +128,38 @@ class McpRuntime:
 
     def _validate(self, name, arguments):
         schema = self.input_schema(name)
-        if (not isinstance(arguments, dict) or set(arguments) - set(schema["properties"])
-                or not set(schema["required"]) <= set(arguments)):
-            raise ValueError("arguments differ from the closed tool schema")
+        if not isinstance(arguments, dict):
+            raise InvalidToolArgument("$", "Pass the tool arguments as a JSON object.")
+        if set(arguments) - set(schema["properties"]):
+            raise InvalidToolArgument("$", "Remove arguments not listed in this tool's input schema.")
+        for field in schema["required"]:
+            if field not in arguments:
+                raise InvalidToolArgument(field, f"Provide the required {field} argument.")
         types = {"string": str, "integer": int, "array": list, "object": dict,
                  "boolean": bool, "null": type(None)}
         for field, value in arguments.items():
             expected = schema["properties"][field]["type"]
             expected = expected if isinstance(expected, list) else [expected]
             if type(value) not in [types[item] for item in expected]:
-                raise ValueError("argument type differs from the tool schema")
+                raise InvalidToolArgument(field, "Use the declared JSON type: " + " or ".join(expected) + ".")
             item_type = dict if field in {"members", "policies", "budgets", "evidence_dispositions"} else str
             if isinstance(value, list) and (len(value) > 100 or any(type(x) is not item_type for x in value)):
-                raise ValueError("tool list arguments require bounded text entries")
+                raise InvalidToolArgument(field, "Use a bounded array of " + ("objects." if item_type is dict else "strings."))
             if "enum" in schema["properties"][field] and value not in schema["properties"][field]["enum"]:
-                raise ValueError("argument value differs from the tool schema")
-        if len(json.dumps(arguments, allow_nan=False).encode()) > 65536:
-            raise ValueError("tool input exceeds the configured bound")
+                raise InvalidToolArgument(field, "Choose one of: " + json.dumps(schema["properties"][field]["enum"]) + ".")
+            definition = schema["properties"][field]
+            if type(value) is int:
+                if "minimum" in definition and value < definition["minimum"]:
+                    raise InvalidToolArgument(field, f"Use a value of at least {definition['minimum']}.")
+                if "maximum" in definition and value > definition["maximum"]:
+                    raise InvalidToolArgument(field, f"Use a value of at most {definition['maximum']}.")
+            if isinstance(value, list):
+                if "minItems" in definition and len(value) < definition["minItems"]:
+                    raise InvalidToolArgument(field, f"Provide at least {definition['minItems']} entries.")
+                if "maxItems" in definition and len(value) > definition["maxItems"]:
+                    raise InvalidToolArgument(field, f"Provide at most {definition['maxItems']} entries.")
+        if len(json.dumps(arguments, allow_nan=False, ensure_ascii=False).encode("utf-8")) > 65536:
+            raise InvalidToolArgument("$", "Reduce the tool input to the 65536-byte UTF-8 JSON limit.")
 
     def call(self, name, arguments, *, request_id=None):
         try:
@@ -197,8 +212,18 @@ class McpRuntime:
         except SourceError:
             result = self._problem("source_unavailable")
         except InvalidToolArgument as error:
-            result = self._problem("invalid_arguments")
-            result["data"].update(field=error.field, guidance=error.guidance)
+            # Detail is public schema guidance, available only to a caller who
+            # may discover this tool. Never echo supplied values or backend errors.
+            try:
+                visible = name in self.service.available_tools(credential)
+            except (PermissionError, AuthorizationDenied, IdentityRejected):
+                result = self._problem("authorization_denied")
+            except Exception:  # noqa: BLE001 - unavailable discovery never discloses private errors.
+                result = self._problem("service_unavailable", retryable=True)
+            else:
+                result = self._problem("invalid_arguments" if visible else "authorization_denied")
+                if visible:
+                    result["data"].update(field=error.field, guidance=error.guidance)
         except (ValueError, TypeError, KeyError, ValidationError):
             result = self._problem("invalid_arguments")
         except Exception:  # noqa: BLE001 - transport never exposes private backend errors

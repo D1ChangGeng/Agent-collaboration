@@ -1,0 +1,33 @@
+{
+  "schema_version": "acs-core-verification/1",
+  "date": "2026-11-01",
+  "product_patch": "2.0.2",
+  "source_base": "018ed5b5b819c9ef084f1c8f946ad2ccdc1b9081",
+  "requirements": ["R09", "R15", "R21", "R22", "R23", "R26", "R32", "R34"],
+  "input_utf8_pg": {"passed": 12, "failed": 0},
+  "related_pg": {"passed": 51, "skipped": 3, "failed": 0},
+  "local_components": {"passed": 215, "skipped": 1429, "failed": 0},
+  "windows_tooling": {"run": 257, "passed": 220, "skipped": 37, "failed": 0},
+  "real_ack_loss": {
+    "state": "passed",
+    "topology": "independent Windows Codex and WSL OpenCode",
+    "receiver_entry": "current source official callbacks and signed HTTP server",
+    "fault": "dispatch and readback TLS acknowledgements dropped after commit",
+    "core_delivery_state": "uncertain",
+    "receipt_high_water": "runtime_dispatched",
+    "delivery_attempts": 1,
+    "native_prompt_count": 1,
+    "sender_context_replaced": true,
+    "new_context_only_observed_original_handle": true,
+    "reply_wait_state": "satisfied",
+    "communication_messages": 2,
+    "explicit_reply_relations": 1,
+    "work_items_table_present": false,
+    "evaluator_dispatch_calls": 0,
+    "terminal_collection_or_projection_used": false,
+    "model_elapsed_seconds": 74.47
+  },
+  "production_data_used_as_reply_evidence": false,
+  "physical_host_reboot": "not_run_user_requested_skip",
+  "outside_qualification": ["all_harness_fault_windows", "shared_restricted_native_profiles", "opposite_physical_native_direction", "sustained_load_sla"]
+}

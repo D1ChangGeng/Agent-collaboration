@@ -63,6 +63,7 @@ jobs:
           runtime_tests/test_domain_evidence.py
           runtime_tests/test_recovery_postgres.py
           runtime_tests/test_communication.py
+          runtime_tests/test_communication_input_guidance.py
           runtime_tests/test_communication_content.py
           runtime_tests/test_communication_configuration.py
           runtime_tests/test_communication_restart.py
@@ -94,4 +95,4 @@ jobs:
       - name: Build Runtime wheel
         run: uv build --wheel
       - name: Assemble candidate distribution
-        run: python scripts/build_release.py --output dist/release --version 2.0.1
+        run: python scripts/build_release.py --output dist/release --version 2.0.2

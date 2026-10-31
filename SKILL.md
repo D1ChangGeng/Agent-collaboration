@@ -276,7 +276,7 @@ their running version. A manual rollback records the rejected version in
 again.
 
 Existing installations use the verified
-[v2.0.1 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.0.1)
+[v2.0.2 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.0.2)
 for a guided Runtime schema and MCP catalog upgrade. Preserve the existing
 automatic update policy and verify the known schema migration before activation.
 See [the release notes](docs/RELEASE-NOTES-v2.0.0.md).

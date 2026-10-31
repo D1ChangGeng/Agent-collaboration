@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented here.
 
+## 2.0.2 - 2026-11-01
+
+- Measure tool-input JSON in UTF-8 bytes so valid Chinese and emoji messages
+  within the 32 KiB content limit are accepted and retained unchanged.
+- Return corrective field/type/bound guidance for authorized tool callers;
+  preserve closed schemas, no-side-effect rejection and redacted failures.
+- Add PostgreSQL regression cases and an opt-in independent-model exercise
+  for lost signed transport acknowledgements and a replacement sender context.
+
 ## 2.0.1 - 2026-11-01
 
 - Retry failed WSL maintenance processes inside the Windows background host.

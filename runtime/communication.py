@@ -360,7 +360,7 @@ class CommunicationActions:
             parse_handle(args["to"], "client", project_id)
         content = args["content"]
         if not isinstance(content, str) or not content.strip() or len(content.encode()) > 32768:
-            raise ValueError("message content must be nonempty and bounded")
+            raise InvalidToolArgument("content", "Provide nonempty message text within the 32768-byte UTF-8 limit.")
         relations = args.get("reply_to", [])
         if (not isinstance(relations, list) or len(relations) > 32
                 or len(set(relations)) != len(relations)):

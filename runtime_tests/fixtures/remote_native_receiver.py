@@ -259,6 +259,7 @@ def main():
     )
     callbacks = server = worker = installed_process = None
     installed_launcher = None
+    lose_acks = False
     try:
         while True:
             request = receive()
@@ -273,6 +274,7 @@ def main():
                 )
             elif action == "configure":
                 installed_launcher = request.get("installed_launcher")
+                lose_acks = request.get("lose_dispatch_and_readback_acks", False)
                 for key in tuple(os.environ):
                     if key.startswith(("OPENCODE_", "XDG_", "ACS_RECEIVER_")):
                         del os.environ[key]
@@ -330,7 +332,7 @@ def main():
                         default_agent="acs-peer",
                         provider={
                             "acs-test": {
-                                "npm": "@ai-sdk/openai-compatible",
+                                "npm": "@ai-sdk/openai" if request.get("lose_dispatch_and_readback_acks") else "@ai-sdk/openai-compatible",
                                 "name": "Isolated approved Provider",
                                 "options": {
                                     "baseURL": "https://api.payapionline.top/v1",
@@ -492,6 +494,21 @@ def main():
                 worker = threading.Thread(
                     target=server.serve_forever, kwargs={"poll_interval": 0.05}
                 )
+                dropped_acks = []
+                if lose_acks:
+                    original_drop = server.drop_response
+
+                    def drop_committed_ack(purpose, drops=dropped_acks, fallback=original_drop):
+                        if purpose == "delivery.readback" or purpose == "delivery.dispatch" and purpose not in drops:
+                            if purpose not in drops:
+                                drops.append(purpose)
+                            return True
+                        return fallback(purpose)
+
+                    # Real TLS responses are closed after the official receiver
+                    # committed its result. The Native driver and B are unchanged.
+                    server.drop_response = drop_committed_ack
+                server.test_dropped_acks = dropped_acks
                 worker.start()
                 server.verify_presented_certificate()
                 emit(
@@ -536,6 +553,7 @@ def main():
                         "driver_requests": events,
                         "collector": hasattr(capacity, "collector"),
                         "event_subscription": capacity.driver._event_thread is not None,
+                        "dropped_ack_purposes": server.test_dropped_acks,
                     }
                 )
             elif action == "stop":
