@@ -12,14 +12,27 @@ from runtime.receiver_delivery import RemoteNodeEndpointAdapter, RemoteSenderDep
 
 
 class ConfiguredRemoteEndpoint:
-    def __init__(self, authority, settings):
+    def __init__(self, authority, settings, *, settings_provider=None):
         self.authority, self.settings = authority, settings
+        self._settings_provider = settings_provider
         self._lock = threading.RLock()
         self._bound = None
         self._fingerprint = None
 
+    def _refresh_settings(self):
+        if self._settings_provider is None:
+            return
+        current = self._settings_provider(self.settings.endpoint_id)
+        if current.endpoint_id != self.settings.endpoint_id:
+            raise ValueError("configured endpoint identity changed")
+        if current != self.settings:
+            self.settings = current
+            self._bound = None
+            self._fingerprint = None
+
     def _adapter(self):
         with self._lock:
+            self._refresh_settings()
             row = self.authority.receiver_transport.load_endpoint(self.settings.endpoint_id)["registration"]
             fingerprint = (row["endpoint_revision"], row["registration_sha256"])
             if self._bound is None or self._fingerprint != fingerprint:
@@ -32,6 +45,7 @@ class ConfiguredRemoteEndpoint:
             return self._bound
 
     def _prepare(self):
+        self._refresh_settings()
         if self.settings.prepare_argv:
             completed = subprocess.run(list(self.settings.prepare_argv), stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30, check=False)

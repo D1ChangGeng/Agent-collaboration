@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented here.
 
+## 2.0.3 - 2026-11-01
+
+- Refresh a long-lived sender's registered receiving settings from its trusted
+  configuration before resolving the cached adapter, including generation,
+  isolation reference and connection options.
+- Require reconnection for a changed subject, access mode, DSN, credential
+  reference or removed receiving endpoint; retain strict receiver fencing.
+
 ## 2.0.2 - 2026-11-01
 
 - Measure tool-input JSON in UTF-8 bytes so valid Chinese and emoji messages

@@ -1,0 +1,17 @@
+{
+  "schema_version": "acs-config-refresh-verification/1",
+  "date": "2026-11-01",
+  "product_patch": "2.0.3",
+  "source_base": "107ebe540fdd27990775e1d1868ef43379be7ef5",
+  "requirements": ["R08", "R15", "R22", "R24", "R26", "R32"],
+  "windows_component_and_file_checks": {"passed": 14, "failed": 0},
+  "linux_component_and_signed_pg_checks": {"passed": 17, "failed": 0},
+  "native_in_database_suite": "controlled_acknowledgement_callback",
+  "new_model_reply_claimed_by_component_suite": false,
+  "private_identity_rebinding_allowed": false,
+  "changed_registration_required_for_generation_refresh": false,
+  "status_read_prepares_or_invokes": false,
+  "strict_receiver_fencing_preserved": true,
+  "physical_host_reboot": "not_run_user_requested_skip",
+  "warm_mcp_generation_update": "separate_actual_deployment_check"
+}

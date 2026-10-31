@@ -229,8 +229,21 @@ def configured_service(path, *, delivery_endpoints=None, expected_settings=None)
         domain._communication_maintenance_mode = settings.delivery_maintenance
         if settings.remote_endpoints:
             from runtime.machine_connections import ConfiguredRemoteEndpoint
+
+            def current_endpoint(endpoint_id):
+                current = load_settings(path)
+                if (current.context != settings.context or current.access_mode != settings.access_mode
+                        or current.dsn_ref != settings.dsn_ref or current.credential_ref != settings.credential_ref
+                        or current.dsn_ref.resolve() != domain._dsn):
+                    raise ConfigurationError("trusted identity changed; reconnect this client")
+                matches = [item for item in current.remote_endpoints if item.endpoint_id == endpoint_id]
+                if len(matches) != 1:
+                    raise ConfigurationError("configured endpoint changed; reconnect this client")
+                return matches[0]
+
             for target in settings.remote_endpoints:
                 if target.endpoint_id in domain._delivery_endpoints:
                     raise ConfigurationError("duplicate configured execution endpoint")
-                domain._delivery_endpoints[target.endpoint_id] = ConfiguredRemoteEndpoint(domain, target)
+                domain._delivery_endpoints[target.endpoint_id] = ConfiguredRemoteEndpoint(
+                    domain, target, settings_provider=current_endpoint)
         yield SharedService(domain, LocalCredentialAuthenticator(context)), settings
