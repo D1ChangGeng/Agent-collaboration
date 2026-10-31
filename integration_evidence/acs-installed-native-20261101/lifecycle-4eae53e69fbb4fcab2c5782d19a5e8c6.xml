@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="9.201" timestamp="2026-11-01T03:28:05.721599+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_installed_native" name="test_installed_receiver_console_and_independent_reply[lifecycle]" time="5.377"><failure message="subprocess.CalledProcessError: Command '['wsl.exe', '-d', 'Ubuntu', '--', 'wslpath', '-a', '-u', 'D:\\Chatgpt\\Agent-collaboration\\.tmp\\installed-native-4eae53e69fbb4fcab2c5782d19a5e8c6\\test_installed_receiver_consol0\\source.tar']' returned non-zero exit status 1.">runtime_tests\test_communication_installed_native.py:26: in test_installed_receiver_console_and_independent_reply
+    exercise_receiver(comm, tmp_path, monkeypatch, sender_mode)
+runtime_tests\test_communication_remote_native.py:259: in test_physical_signed_receiver_and_independent_reply
+    mounted_archive = subprocess.check_output(
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\subprocess.py:472: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\subprocess.py:577: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['wsl.exe', '-d', 'Ubuntu', '--', 'wslpath', '-a', '-u', 'D:\\Chatgpt\\Agent-collaboration\\.tmp\\installed-native-4eae53e69fbb4fcab2c5782d19a5e8c6\\test_installed_receiver_consol0\\source.tar']' returned non-zero exit status 1.</failure></testcase></testsuite></testsuites>

@@ -263,3 +263,11 @@ Native ACK remained uncertain while B's explicit reply satisfied A's wait; there
 was one Native prompt, with no terminal collector. See [the signed Native
 evidence](../../integration_evidence/acs-remote-native-20261031/REPORT.md) for exact
 source bytes, limitations, retained failures and the Core 2 adoption fix.
+
+The [installed-entry evidence](../../integration_evidence/acs-installed-native-20261101/REPORT.md)
+also records actual `acs-receiver --config` startup and an independent
+Codex/OpenCode exchange on one Linux host. Default stdio maintenance performed
+one acknowledged Native dispatch; B sent its own explicit reply. Receiver exit
+left its owned process group empty and the installation manifest unchanged.
+That run does not qualify the separately failing Windows localhost-to-WSL
+test-database path or a Systemd deployment.

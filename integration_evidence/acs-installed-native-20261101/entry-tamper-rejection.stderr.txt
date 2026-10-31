@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/tmp/acs-receiver-install-e9503r3_/tamper-negative-42c91d467a364a7089007022dec3a748/bin/acs-receiver", line 6, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/acs-receiver-install-e9503r3_/tamper-negative-42c91d467a364a7089007022dec3a748/lib/python3.12/site-packages/runtime/receiver_entry.py", line 99, in main
+    install = verify_installed_distribution()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/acs-receiver-install-e9503r3_/tamper-negative-42c91d467a364a7089007022dec3a748/lib/python3.12/site-packages/runtime/receiver_install.py", line 111, in verify_installed_distribution
+    raise ValueError("receiver distribution file differs from RECORD")
+ValueError: receiver distribution file differs from RECORD

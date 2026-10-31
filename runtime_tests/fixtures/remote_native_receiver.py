@@ -7,18 +7,20 @@ channel is its independently authenticated ACS MCP instance.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import http.client
 import json
 import os
 import socket
 import sqlite3
+import subprocess
 import sys
 import threading
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -31,12 +33,19 @@ from nacl.signing import SigningKey
 
 from runtime.communication_tools import DESCRIPTIONS, adopt_catalog
 from runtime.opencode_http import listener_owner_pids
+from runtime.posix_process_supervisor import PosixProcessSupervisor
 from runtime.receiver_config import ReceiverRuntimeConfig
 from runtime.receiver_crypto import public_key, sign, tls_fingerprint
-from runtime.receiver_deployment import bind_process_config, dump_process_config, inspect_factory
+from runtime.receiver_deployment import (
+    FactoryBinding,
+    bind_process_config,
+    dump_process_config,
+    inspect_factory,
+)
 from runtime.receiver_entry import load_callbacks, load_process_config
 from runtime.receiver_models import EndpointBinding
-from runtime.remote_endpoint import ReceiverHTTPServer
+from runtime.remote_endpoint import ReceiverHTTPServer, RemoteNodeTransport
+from runtime.supervisor import _proc_birth
 
 
 def emit(value):
@@ -108,6 +117,96 @@ def ownership_snapshot(capacity):
     return {"process_proof": proof, "listener_owners": owners, "processes": processes}
 
 
+def installed_events(state):
+    path = state / "driver.sqlite"
+    if not path.is_file():
+        return []
+    with sqlite3.connect(path) as connection:
+        return [
+            (kind, json.loads(body))
+            for kind, body in connection.execute(
+                "SELECT kind,body FROM driver_events ORDER BY sequence"
+            )
+        ]
+
+
+def installed_health(state, port, fingerprint):
+    connection = http.client.HTTPSConnection(
+        "127.0.0.1", port, timeout=60, context=RemoteNodeTransport._context()
+    )
+    try:
+        connection.connect()
+        assert tls_fingerprint(connection.sock.getpeercert(binary_form=True)) == fingerprint
+        connection.request("GET", "/healthz")
+        response = connection.getresponse()
+        data = response.read(16385)
+        assert response.status == 200 and len(data) <= 16384
+        return json.loads(data)
+    finally:
+        connection.close()
+
+
+def installed_mcp_status(state):
+    """Test oracle reads only this installation's proven owned Native listener."""
+    events = installed_events(state)
+    started = next(body for kind, body in events if kind == "process_started")
+    pid, birth = started["pid"], started["birth_ref"]
+    endpoint = next(body["endpoint"] for kind, body in events if kind == "http_dispatch")
+    port = urlsplit(endpoint).port
+
+    def owned():
+        return (
+            _proc_birth(pid) == birth
+            and bool(listener_owner_pids(port))
+            and listener_owner_pids(port) <= set(PosixProcessSupervisor._members(pid))
+        )
+
+    assert owned(), "installed Native ownership changed before test authentication"
+    environment = Path(f"/proc/{pid}/environ").read_bytes()
+    password = next(
+        value.split(b"=", 1)[1]
+        for value in environment.split(b"\0")
+        if value.startswith(b"OPENCODE_SERVER_PASSWORD=")
+    )
+    authorization = "Basic " + base64.b64encode(b"opencode:" + password).decode()
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=60)
+    try:
+        connection.connect()
+        assert owned(), "installed Native ownership changed before test request"
+        connection.request(
+            "GET",
+            "/mcp?" + urlencode({"directory": str(state / "work")}),
+            headers={"Authorization": authorization, "Accept": "application/json"},
+        )
+        response = connection.getresponse()
+        data = response.read(65537)
+        assert response.status == 200 and len(data) <= 65536
+        return json.loads(data)
+    finally:
+        connection.close()
+
+
+def installed_observation(state, port, fingerprint):
+    started_at = time.monotonic()
+    native = installed_health(state, port, fingerprint)
+    events = installed_events(state)
+    requests = [body for kind, body in events if kind == "http_dispatch"]
+    with sqlite3.connect(state / "receiver.sqlite") as connection:
+        admissions = connection.execute(
+            "SELECT purpose,count(*) FROM receiver_requests GROUP BY purpose"
+        ).fetchall()
+    return {
+        "state": "observed",
+        "native": native,
+        "health_seconds": time.monotonic() - started_at,
+        "requests": admissions,
+        "driver_requests": requests,
+        "terminal_readbacks": sum(kind == "terminal_readback" for kind, _ in events),
+        "event_subscriptions": sum(body.get("path") == "/event" for body in requests),
+        "observation": "installed_console_health_and_actual_journals",
+    }
+
+
 def main():
     os.umask(0o077)
     state = ROOT / "state"
@@ -158,7 +257,8 @@ def main():
             "hostname": socket.gethostname(),
         }
     )
-    callbacks = server = worker = None
+    callbacks = server = worker = installed_process = None
+    installed_launcher = None
     try:
         while True:
             request = receive()
@@ -172,6 +272,7 @@ def main():
                     }
                 )
             elif action == "configure":
+                installed_launcher = request.get("installed_launcher")
                 for key in tuple(os.environ):
                     if key.startswith(("OPENCODE_", "XDG_", "ACS_RECEIVER_")):
                         del os.environ[key]
@@ -202,8 +303,8 @@ def main():
                 wrapper = state / "acs_b_stdio.py"
                 write_private(
                     wrapper,
-                    "import sys\nsys.path.insert(0,"
-                    + repr(str(ROOT))
+                    "import sys\nsys.dont_write_bytecode=True\nsys.path.insert(0,"
+                    + repr(request.get("installed_site", str(ROOT)))
                     + ")\n"
                     + "sys.stderr=open("
                     + repr(str(state / "mcp.stderr.txt"))
@@ -286,9 +387,27 @@ def main():
                     "node_journal": str(state / "node.sqlite"),
                     "runtime_id": binding.registration.runtime_id,
                 }
-                factory, _, _, _ = inspect_factory(
-                    "runtime_deployment.receiver_opencode:callbacks", settings=settings
-                )
+                if installed_launcher:
+                    settings_path = state / "factory-settings.json"
+                    write_private(settings_path, json.dumps(settings))
+                    bound = subprocess.run(
+                        [
+                            installed_launcher,
+                            "--factory-binding",
+                            "--factory-reference",
+                            "runtime_deployment.receiver_opencode:callbacks",
+                            "--factory-settings",
+                            str(settings_path),
+                        ],
+                        capture_output=True,
+                        check=True,
+                        timeout=30,
+                    )
+                    factory = FactoryBinding.model_validate_json(bound.stdout, strict=True)
+                else:
+                    factory, _, _, _ = inspect_factory(
+                        "runtime_deployment.receiver_opencode:callbacks", settings=settings
+                    )
                 process = bind_process_config(config, factory, node_key)
                 write_private(state / "process.json", dump_process_config(process))
                 emit(
@@ -302,6 +421,53 @@ def main():
                 )
             elif action == "start":
                 started_at = time.monotonic()
+                if installed_launcher:
+                    with (
+                        open(state / "receiver.stdout.txt", "wb") as output,
+                        open(state / "receiver.stderr.txt", "wb") as errors,
+                    ):
+                        installed_process = subprocess.Popen(
+                            [installed_launcher, "--config", str(state / "process.json")],
+                            cwd=state,
+                            env=dict(os.environ),
+                            stdout=output,
+                            stderr=errors,
+                        )
+                    while True:
+                        assert installed_process.poll() is None, (
+                            "installed Receiver exited; inspect its private stderr"
+                        )
+                        try:
+                            native = installed_health(
+                                state,
+                                listen_port,
+                                tls_fingerprint(cert.public_bytes(serialization.Encoding.DER)),
+                            )
+                            break
+                        except (OSError, http.client.HTTPException):
+                            assert time.monotonic() - started_at < 110, (
+                                "installed Receiver startup did not become ready"
+                            )
+                            time.sleep(0.1)
+                    mcp = (
+                        installed_mcp_status(state) if os.environ.get("ACS_B_PROVIDER_KEY") else {}
+                    )
+                    safe_mcp = json.dumps(mcp)
+                    for variable in ("ACS_B_PROVIDER_KEY", "ACS_B_CREDENTIAL"):
+                        if os.environ.get(variable):
+                            safe_mcp = safe_mcp.replace(os.environ[variable], "[redacted]")
+                    mcp = json.loads(safe_mcp)
+                    emit(
+                        {
+                            "state": "started",
+                            "native": native,
+                            "mcp": mcp,
+                            "startup_seconds": time.monotonic() - started_at,
+                            "receiver_entry": "installed_console_script",
+                            "receiver_pid": installed_process.pid,
+                        }
+                    )
+                    continue
                 process = load_process_config(state / "process.json")
                 callbacks = load_callbacks(process)
                 capacity = callbacks.native_invoke.__self__
@@ -337,6 +503,15 @@ def main():
                     }
                 )
             elif action == "observe":
+                if installed_launcher:
+                    emit(
+                        installed_observation(
+                            state,
+                            listen_port,
+                            tls_fingerprint(cert.public_bytes(serialization.Encoding.DER)),
+                        )
+                    )
+                    continue
                 capacity = callbacks.native_invoke.__self__
                 read_at = time.monotonic()
                 native = capacity.health()
@@ -372,7 +547,26 @@ def main():
             server.shutdown()
             server.server_close()
             worker.join(timeout=10)
-        if callbacks is not None:
+        if installed_process is not None:
+            events = installed_events(state)
+            started = next((body for kind, body in events if kind == "process_started"), None)
+            if installed_process.poll() is None:
+                installed_process.terminate()
+            receiver_exit = installed_process.wait(timeout=30)
+            remaining = PosixProcessSupervisor._members(started["pid"]) if started else []
+            stopped = {
+                "scope": "owned_process_group",
+                "subtree_containment": False,
+                "root_exited": _proc_birth(started["pid"]) != started["birth_ref"]
+                if started
+                else True,
+                "remaining_pids": remaining,
+                "receiver_exit_code": receiver_exit,
+                "observation": "actual_console_exit_and_proc_readback",
+            }
+            write_private(state / "stop-facts.json", json.dumps(stopped))
+            emit({"state": "stopped", "owned_process_stop": stopped})
+        elif callbacks is not None:
             capacity = callbacks.native_invoke.__self__
             owned = capacity.driver.owned
             ownership = ownership_snapshot(capacity) if owned is not None else None

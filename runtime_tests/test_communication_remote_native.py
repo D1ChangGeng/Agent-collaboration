@@ -111,6 +111,7 @@ def launch_codex(
             ["[[skills.config]]", "path=" + json.dumps(str(path.resolve())), "enabled=false"]
         )
     (home / "config.toml").write_text("\n".join(config) + "\n", encoding="utf-8")
+    (home / "config.toml").chmod(0o600)
     surface = tmp_path / "a-surface.json"
     surface.write_text(
         json.dumps(
@@ -138,6 +139,7 @@ def launch_codex(
         ),
         encoding="utf-8",
     )
+    surface.chmod(0o600)
     wrapper = tmp_path / "a-mcp.py"
     wrapper.write_text(
         "import sys\nsys.path.insert(0,"
@@ -219,18 +221,23 @@ def launch_codex(
 def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypatch, sender_mode):
     if sender_mode != "lifecycle" and os.getenv("ACS_REAL_REMOTE_MODEL_TEST") != "1":
         pytest.skip("actual approved Provider model requests are separately opt-in")
-    host = os.environ["ACS_REMOTE_SSH_HOST"]
+    local_wsl = os.getenv("ACS_NATIVE_LOCAL_WSL")
+    installed_launcher = os.getenv("ACS_INSTALLED_NATIVE_RECEIVER")
+    host = "wsl:" + local_wsl if local_wsl else os.environ["ACS_REMOTE_SSH_HOST"]
     remote_python = os.environ["ACS_REMOTE_PYTHON"]
     remote_binary = os.environ["ACS_REMOTE_OPENCODE"]
     assert host and not host.startswith("-")
     assert remote_python.startswith("/tmp/") and remote_binary.startswith("/")
     ssh = ["ssh", "-T", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10"]
+    control = (
+        (["bash", "-c"] if os.name == "posix" else ["wsl.exe", "-d", local_wsl, "--", "bash", "-c"])
+        if local_wsl
+        else [*ssh, host]
+    )
     remote_root = "/tmp/acs-remote-native-" + uuid.uuid4().hex
 
     def remote(text, timeout=45):
-        result = subprocess.run(
-            [*ssh, host, text], capture_output=True, timeout=timeout, check=False
-        )
+        result = subprocess.run([*control, text], capture_output=True, timeout=timeout, check=False)
         assert result.returncode == 0, result.stderr.decode(errors="replace")[-1500:]
         return result.stdout.decode().strip()
 
@@ -254,21 +261,38 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
             with path.open("rb") as source:
                 pack.addfile(info, source)
     remote("mkdir -m 700 " + shlex.quote(remote_root))
-    upload = subprocess.run(
-        ["scp", "-q", str(archive), host + ":" + remote_root + "/source.tar"],
-        capture_output=True,
-        timeout=60,
-        check=False,
-    )
-    assert upload.returncode == 0, upload.stderr
+    if local_wsl:
+        mounted_archive = (
+            str(archive)
+            if os.name == "posix"
+            else subprocess.check_output(
+                ["wsl.exe", "-d", local_wsl, "--", "wslpath", "-a", "-u", archive.as_posix()],
+                text=True,
+            ).strip()
+        )
+        remote(
+            "cp " + shlex.quote(mounted_archive) + " " + shlex.quote(remote_root + "/source.tar")
+        )
+    else:
+        upload = subprocess.run(
+            ["scp", "-q", str(archive), host + ":" + remote_root + "/source.tar"],
+            capture_output=True,
+            timeout=60,
+            check=False,
+        )
+        assert upload.returncode == 0, upload.stderr
     remote("tar -xf " + remote_root + "/source.tar -C " + remote_root)
     values = conninfo_to_dict(comm.dsn)
     assert values["host"] == "127.0.0.1" and values["dbname"] == "acs_communication_test"
-    remote_db_port = int(
-        remote(
-            "python3 -c "
-            + shlex.quote(
-                "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1])"
+    remote_db_port = (
+        int(values["port"])
+        if local_wsl
+        else int(
+            remote(
+                "python3 -c "
+                + shlex.quote(
+                    "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1])"
+                )
             )
         )
     )
@@ -284,7 +308,13 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         "ssh_host": host,
         "sender_mode": sender_mode,
         "receiver_entry": "current source load_process_config/load_callbacks/ReceiverHTTPServer; installed entry not measured",
+        "topology": ("local-linux" if os.name == "posix" else "windows-to-wsl-same-machine")
+        if local_wsl
+        else "physical-ssh-host",
     }
+    if installed_launcher:
+        facts["receiver_entry"] = "installed_console_script"
+        facts["installed_launcher"] = installed_launcher
 
     def read_responses():
         for line in actor.stdout:
@@ -305,8 +335,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         catalog_path = os.environ["ACS_REMOTE_BASE_CATALOG"]
         actor = subprocess.Popen(
             [
-                *ssh,
-                host,
+                *control,
                 "ACS_REMOTE_BASE_CATALOG="
                 + shlex.quote(catalog_path)
                 + " "
@@ -334,22 +363,25 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
             "remote ordinary communication contract differs"
         )
         facts.update(hostname=prepared["hostname"], source_files=manifest)
-        tunnel = subprocess.Popen(
-            [
-                *ssh,
-                "-o",
-                "ExitOnForwardFailure=yes",
-                "-N",
-                "-R",
-                f"127.0.0.1:{remote_db_port}:127.0.0.1:{values['port']}",
-                "-L",
-                f"127.0.0.1:{public_port}:127.0.0.1:{prepared['listen_port']}",
-                host,
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-        )
+        if local_wsl:
+            public_port = prepared["listen_port"]
+        else:
+            tunnel = subprocess.Popen(
+                [
+                    *ssh,
+                    "-o",
+                    "ExitOnForwardFailure=yes",
+                    "-N",
+                    "-R",
+                    f"127.0.0.1:{remote_db_port}:127.0.0.1:{values['port']}",
+                    "-L",
+                    f"127.0.0.1:{public_port}:127.0.0.1:{prepared['listen_port']}",
+                    host,
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
         manager = comm.clients["a"]
         # Native Owner receiver and its technical registration share the Owner
         # authority policy. A/B retain ordinary, distinct MCP credentials.
@@ -450,7 +482,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 revision=1,
                 locator_host="127.0.0.1",
                 locator_port=public_port,
-                route_class="tunnel",
+                route_class="loopback" if local_wsl else "tunnel",
                 policy_digest="c" * 64,
                 expires_at=expiry,
             ),
@@ -490,11 +522,19 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 "context": asdict(comm.clients["b"].service.context),
                 "provider_key": provider_key,
                 "label": label,
+                **(
+                    {
+                        "installed_launcher": installed_launcher,
+                        "installed_site": os.environ["ACS_INSTALLED_NATIVE_SITE"],
+                    }
+                    if installed_launcher
+                    else {}
+                ),
                 "binding": {
                     "registration": registration.model_dump(mode="json"),
                     "locator_host": "127.0.0.1",
                     "locator_port": public_port,
-                    "route_class": "tunnel",
+                    "route_class": "loopback" if local_wsl else "tunnel",
                     "node_key_id": node_key_id,
                     "node_public_key": prepared["node_public_key"],
                     "registration_signature": "0" * 128,
@@ -681,7 +721,10 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
             if row.get("method") == "POST" and "prompt_async" in row.get("path", "")
         ]
         assert len(prompts) == (0 if sender_mode == "lifecycle" else 1)
-        assert not observation["collector"] and not observation["event_subscription"]
+        if installed_launcher:
+            assert observation["terminal_readbacks"] == observation["event_subscriptions"] == 0
+        else:
+            assert not observation["collector"] and not observation["event_subscription"]
         with comm.authority._connect() as connection:
             counts = connection.execute(
                 "SELECT (SELECT count(*) FROM communication_messages),"

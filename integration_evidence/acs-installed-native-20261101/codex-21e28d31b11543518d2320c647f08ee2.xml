@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="54.626" timestamp="2026-11-01T03:36:26.418058+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_installed_native" name="test_installed_receiver_console_and_independent_reply[codex]" time="52.730"><failure message="psycopg.OperationalError: connection failed: connection to server at &quot;127.0.0.1&quot;, port 55439 failed: server closed the connection unexpectedly&#10;&#09;This probably means the server terminated abnormally&#10;&#09;before or while processing the request.">runtime_tests\test_communication_installed_native.py:26: in test_installed_receiver_console_and_independent_reply
+    exercise_receiver(comm, tmp_path, monkeypatch, sender_mode)
+runtime_tests\test_communication_remote_native.py:575: in test_physical_signed_receiver_and_independent_reply
+    comm.dispatcher.service.bind_endpoint(
+runtime\delivery.py:82: in bind_endpoint
+    description = endpoint.descriptor()
+                  ^^^^^^^^^^^^^^^^^^^^^
+runtime\machine_connections.py:75: in descriptor
+    return self._adapter().descriptor()
+           ^^^^^^^^^^^^^^^
+runtime\machine_connections.py:23: in _adapter
+    row = self.authority.receiver_transport.load_endpoint(self.settings.endpoint_id)["registration"]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\receiver_domain.py:293: in load_endpoint
+    with self.authority._connect() as connection, connection.cursor() as cursor:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\domain.py:182: in _connect
+    return psycopg.connect(self._dsn, options=options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\psycopg\connection.py:122: in connect
+    raise last_ex.with_traceback(None)
+E   psycopg.OperationalError: connection failed: connection to server at "127.0.0.1", port 55439 failed: server closed the connection unexpectedly
+E   	This probably means the server terminated abnormally
+E   	before or while processing the request.</failure></testcase></testsuite></testsuites>

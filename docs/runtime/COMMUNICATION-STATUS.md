@@ -15,6 +15,13 @@
 一条明确回复，评测器派发次数为零。配置阶段返回实际读回的同一 Session。
 该实验使用隔离 Authority、私有配置及已授权 Provider，不切换正式服务。
 
+已安装 console entry 也完成了独立模型主链：WSL 内 Codex 0.146.0 A 与
+OpenCode 1.18.34 B，通过真实 `acs-receiver --config`、默认 stdio 维护器和
+双方普通 MCP 收发。一次 Native 发起、两条消息、一条主动回复，ACK 确认送达。
+退出后 Native 自有进程组为空，整个安装清单仍一致且没有额外字节码。
+这是同一 Linux 主机的实际安装验证；Windows localhost→WSL 测试库路径曾
+两次断连，未由此取得该路径的资格，也不改写已有物理跨机方向证据。
+
 用法及采用命令见 [COMMUNICATION.md](COMMUNICATION.md)，机器可读接口见
 [工具目录](p2-mcp-tool-contract.json)。当前目录版本为 10，Message 为
 `acs-message/1`，Core/Project Schema 为 2。现有旧库需要显式采用；正常启动
@@ -30,7 +37,7 @@
 | 重连和进程中断 | 四个实际 MCP 进程、强制结束等待者、PG 原消息/回复、显式请求键重试 | Agent 由脚本驱动，不计双模型故障恢复验收 |
 | 忙时、异常、防重、上行通知和配置竞态 | 真实 PG/SQLite/HTTP，加明确标记的受控 Adapter 与并发时机 | 不据此宣称所有真实 Harness 故障窗口和模型消费均已验证 |
 | Shared 身份与签名接收授权 | 真实 PG 权限、Node 身份、发件人重验、撤销反例 | Shared OpenCode Native 不在本候选资格范围；Systemd 受限 Profile 未资格化 |
-| 安装候选 | wheel 独立安装、106 个源码文件逐字节匹配、46 表、普通工具收发；真实 Receiver provisioner 安装、入口校验及 OpenCode Factory 绑定 | 未启动该已安装接收服务完成模型主链，不是生产升级或公开发布验收 |
+| 安装候选 | wheel 独立安装、106 个源码文件逐字节匹配、46 表；真实 provisioner、console 启动、独立 Codex/OpenCode 回信及退出后完整性 | 同一 Linux Owner 实验；不是 Systemd 服务部署、生产升级或公开发布验收 |
 | 长正文和资源 | UTF-8 续读、独立回复字节预算、实际单模型续读、四个并发投递上限 | 未建立 p95、吞吐 SLA、大规模持续负载或模型成功率结论 |
 
 ## R01–R34 逐项源码核对
@@ -95,6 +102,9 @@
 - [核心交付复核](../../integration_evidence/acs-core-audit-20261101/REPORT.md)：
   当前公开说明、声明的 CI PostgreSQL 范围、工具链、隔离安装器以及干净
   checkout 测试输出/主机状态夹具修正；各次失败和复测分别保留。
+- [已安装服务主链](../../integration_evidence/acs-installed-native-20261101/REPORT.md)：
+  实际 console 启动、独立 Linux Codex/OpenCode、一次默认投递和主动回复，
+  退出后安装完整性；篡改拒绝反例与未通过的 Windows localhost 路径单独保留。
 
 各报告保留对应源清单、实际命令、版本、失败和证据层次；后来提交不追改
 早期实验的源版本，也不把全部历史目录合计为当前候选测试数。
@@ -102,9 +112,9 @@
 ## 仍未由这些证据证明的范围
 
 完整跨 Harness/权限/主机组合矩阵、Shared OpenCode/Systemd 受限 Native、反向
-物理 Native、真实模型的所有故障替换窗口、更大持续负载、生产安装切换与发布
-均未在本记录中宣称通过。当前候选的实际 Receiver 服务安装全流程仍需独立
-验证。正式生产清理、不可逆迁移、远端环境切换和公开发布遵守各自授权边界。
+物理 Native、Windows localhost→WSL 测试库路径、真实模型的所有故障替换窗口、
+更大持续负载、Systemd 服务部署、生产安装切换与发布均未在本记录中宣称通过。
+正式生产清理、不可逆迁移、远端环境切换和公开发布遵守各自授权边界。
 
 R01–R34 的代码机制已有对应定位，工程完成判断仍须结合所声明环境的运行证据。
 本记录不把支持范围之外的场景回填为通过，也不扩入长期 RSI 研究。

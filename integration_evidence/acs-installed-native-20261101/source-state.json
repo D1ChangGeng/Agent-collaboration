@@ -1,0 +1,69 @@
+{
+  "parent_commit": "ca3b3971b24c9f4c39f79bb58ea6499bb896c54b",
+  "branch": "codex/core-cleanup",
+  "runtime_source_changed": false,
+  "model_source_files_match": 108,
+  "tests": {
+    "codex-21e28d31b11543518d2320c647f08ee2.xml": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "codex-b3fb49e1247b442e9da9501a19d14957.xml": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lifecycle-3d7693a034bc4ae0add1f22cce77d315.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lifecycle-4eae53e69fbb4fcab2c5782d19a5e8c6.xml": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "linux-codex-266ab714a33c4558b541777d53dd033e.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "linux-codex-30f8878734d5411a8809befb0ba3c9a1.xml": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "optin-default.xml": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5
+    }
+  },
+  "qualified_scope": "actual installed console, local Linux Codex 0.146.0 / OpenCode 1.18.34 Owner",
+  "evaluator_dispatch_calls": 0,
+  "native_prompts": 1,
+  "messages": 2,
+  "explicit_replies": 1,
+  "delivery": "runtime_acknowledged",
+  "installation_unchanged_after_model": true,
+  "provider_key_absent_from_artifacts": true,
+  "model_private_reasoning_retained": false,
+  "windows_localhost_wsl_test_database": "not_qualified; two connection failures; cause unestablished",
+  "production_change": "none",
+  "push": "not_attempted",
+  "test_database_residual_schemas": [],
+  "remote_checkout": {
+    "branch": "codex/runtime-p2-execution",
+    "head": "e900773fc39d61559a128e7438337ca39d12c02c",
+    "working_tree": "clean"
+  },
+  "core_candidate": "verified_with_explicit_support_limits"
+}

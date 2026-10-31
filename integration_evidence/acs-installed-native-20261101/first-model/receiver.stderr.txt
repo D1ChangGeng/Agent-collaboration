@@ -1,0 +1,25 @@
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 41990)
+Traceback (most recent call last):
+  File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/http/server.py", line 436, in handle
+    self.handle_one_request()
+  File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/http/server.py", line 404, in handle_one_request
+    self.raw_requestline = self.rfile.readline(65537)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/socket.py", line 720, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/ssl.py", line 1251, in recv_into
+    return self.read(nbytes, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/ssl.py", line 1103, in read
+    return self._sslobj.read(len, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+----------------------------------------

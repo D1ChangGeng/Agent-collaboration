@@ -1,0 +1,12 @@
+{
+  "scope": "actual installed console integrity rejection before config/Native startup",
+  "tampered_copy": "/tmp/acs-receiver-install-e9503r3_/tamper-negative-42c91d467a364a7089007022dec3a748",
+  "target": "runtime_deployment/receiver_opencode.py",
+  "before_sha256": "99fa1e4ae219bf5f0cf580e71ba58a0fdc1960c16246df86281a091c968a7493",
+  "after_sha256": "e6c5d13bff4a536d01c1389e4ac42c4c7990be41ff0bf6c1212b0b7cd23a5504",
+  "entry_exit_code": 1,
+  "integrity_rejection_observed": true,
+  "primary_install_unchanged": true,
+  "model_requested": false,
+  "production_change": "none"
+}

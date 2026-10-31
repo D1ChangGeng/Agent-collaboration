@@ -1,0 +1,17 @@
+{
+  "event_kinds": {
+    "http_dispatch": 38,
+    "http_intent": 38,
+    "http_response": 37,
+    "message_readback_incomplete": 1,
+    "native_environment_observed": 1,
+    "process_dispatch": 1,
+    "process_intent": 1,
+    "process_started": 1,
+    "readiness_observation": 2
+  },
+  "stream_events": {},
+  "event_endpoint_records": 0,
+  "terminal_readbacks": 0,
+  "scope": "actual stopped installed Native Driver journal; no model reasoning"
+}

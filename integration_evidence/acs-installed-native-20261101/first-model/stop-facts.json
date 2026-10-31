@@ -1,0 +1,1 @@
+{"scope": "owned_process_group", "subtree_containment": false, "root_exited": true, "remaining_pids": [], "receiver_exit_code": 0, "observation": "actual_console_exit_and_proc_readback"}
