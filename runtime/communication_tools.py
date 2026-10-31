@@ -24,8 +24,9 @@ def schema(name):
     elif name == "read_message":
         required += ["handle"]
         properties.update({"handle": {"type": "string", "description": "A message_handle, response_handle or notification_handle returned by ACS."},
-            "max_inline_bytes": {"type": "integer"},
-                           "offset": {"type": "integer", "minimum": 0}})
+            "max_inline_bytes": {"type": "integer", "minimum": 1, "maximum": 65536, "default": 16384,
+                "description": "Byte budget for each original and embedded reply body. Follow returned read_message continuations for either body."},
+                           "offset": {"type": "integer", "minimum": 0, "default": 0}})
     elif name == "wait_for_response":
         required += ["handles"]
         properties.update({"handles": {"type": "array", "items": {"type": "string"}, "maxItems": 32},
@@ -106,7 +107,8 @@ DESCRIPTIONS = {
         "intentional identical sends use different IDs.",
     "read_message": "Read permitted original content, relationships and the first explicit Agent reply. "
         "Also accepts notification_handle to read an ACS system notification and its own Native delivery state. "
-        "Reading preserves Inbox and history. Continue content with next_offset. Native output is not a reply.",
+        "Reading preserves Inbox and history. The original and embedded first reply each obey max_inline_bytes; "
+        "follow returned read_message actions using that body's handle and next_offset. Native output is not a reply.",
     "check_inbox": "List messages addressed to your authenticated identity without consuming them. Read content "
         "with read_message; reply using send_message with from as to and message_handle in reply_to. "
         "notifications lists ACS system notices: pass notification_handle to read_message. "
@@ -115,7 +117,8 @@ DESCRIPTIONS = {
         "Stable cursors follow authority commit order, not UUID or sender clocks.",
     "wait_for_response": "Observe original sent message or response handles without sending or invoking again. "
         "Defaults to all and the actual recipient's first explicit reply. any returns when one has replied. "
-        "timeout_seconds bounds this observation only; repeat after reconnecting to obtain the same first reply.",
+        "timeout_seconds bounds this observation only; repeat after reconnecting to obtain the same first reply. "
+        "Large bodies remain bounded; use returned read_message continuations to read further without sending again.",
 }
 
 METADATA_DESCRIPTIONS = {
@@ -142,7 +145,7 @@ def adopt_catalog(catalog):
                          ["resources.read"] if name == "read_resource" else
                          ["activity.read"] if name == "list_activity" else ["message.read"],
                      input_schema={"schema_version": "acs-mcp-" + name.replace("_", "-") + "/" +
-                                       {"read_resource": "6", "list_activity": "2"}.get(name, "2"),
+                                       {"read_resource": "6", "list_activity": "2", "read_message": "3"}.get(name, "2"),
                                    "required": contract["required"],
                                    "optional": [key for key in contract["properties"] if key not in contract["required"]],
                                    "json_schema": contract})
@@ -174,12 +177,13 @@ def adopt_catalog(catalog):
         "response_observation": ["project_id", "satisfied", "pending", "observations"],
         "message_submission": ["project_id", "message_handle", "response_handle", "from", "to", "native_status"],
         "team_configuration": ["project_id", "configuration_state", "team_revision", "native_sessions"]})
-    result_types = {kind: result_types[kind] for kind in {tool["result_type"] for tool in tools.values()}}
-    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/8", "surface_revision": "acs-communication/1",
+    used_types = {tool["result_type"] for tool in tools.values()}
+    result_types = {kind: fields for kind, fields in result_types.items() if kind in used_types}
+    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/9", "surface_revision": "acs-communication/1",
             "defaults": defaults, "receipt_order": ["accepted_by_authority", "target_inbox_committed",
                 "runtime_dispatched", "runtime_acknowledged"], "tools": tools, "profiles": profiles,
             "advanced_tools": [], "compatibility_aliases": {}, "tool_groups": groups, "result_types": result_types,
-            "result_revision": "acs-communication-results/1",
+            "result_revision": "acs-communication-results/2",
             "agent_organization_model": {"schema_version": "acs-agent-organization/2",
                 "management_levels": ["client", "root", "route"], "ordinary_slot_is_management_level": False},
             "access_modes": {"owner": {"authorization": "trusted Client or bound Slot; live identity and project checks"},

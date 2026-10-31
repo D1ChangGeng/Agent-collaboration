@@ -1,0 +1,31 @@
+{
+  "evidence_class": "one actual Codex reader and scripted ordinary B, public ACS MCP",
+  "label": "content-tail-c975448c2aa4",
+  "reply_handle": "message:project-alpha:message-62f163627f2f4d65a4c672857b5866cf",
+  "body_bytes": 26097,
+  "read_calls": [
+    {
+      "project_id": "project-alpha",
+      "handle": "message:project-alpha:message-62f163627f2f4d65a4c672857b5866cf",
+      "max_inline_bytes": 16384
+    },
+    {
+      "project_id": "project-alpha",
+      "handle": "message:project-alpha:message-62f163627f2f4d65a4c672857b5866cf",
+      "max_inline_bytes": 16384
+    },
+    {
+      "project_id": "project-alpha",
+      "handle": "message:project-alpha:message-62f163627f2f4d65a4c672857b5866cf",
+      "max_inline_bytes": 16384,
+      "offset": 16384
+    },
+    {
+      "project_id": "project-alpha",
+      "handle": "message:project-alpha:message-62f163627f2f4d65a4c672857b5866cf",
+      "max_inline_bytes": 16384,
+      "offset": 16384
+    }
+  ],
+  "native_calls": 0
+}

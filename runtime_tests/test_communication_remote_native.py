@@ -83,7 +83,9 @@ def dispatch_committed(comm, sent):
         time.sleep(0.25)
 
 
-def launch_codex(comm, tmp_path, provider_key, endpoint_id, transport_seed):
+def launch_codex(
+    comm, tmp_path, provider_key, endpoint_id=None, transport_seed=None, *, prompt=None
+):
     binary = shutil.which("codex.exe") if os.name == "nt" else shutil.which("codex")
     assert binary, "an actual installed Codex CLI is required"
     home = tmp_path / "codex-a"
@@ -115,15 +117,21 @@ def launch_codex(comm, tmp_path, provider_key, endpoint_id, transport_seed):
             {
                 "access_mode": "owner",
                 "context": asdict(comm.clients["a"].service.context),
-                "remote_endpoints": [
+                **(
                     {
-                        "endpoint_id": endpoint_id,
-                        "authority_signing_key_ref": {
-                            "kind": "environment",
-                            "name": "ACS_A_TRANSPORT_SEED",
-                        },
+                        "remote_endpoints": [
+                            {
+                                "endpoint_id": endpoint_id,
+                                "authority_signing_key_ref": {
+                                    "kind": "environment",
+                                    "name": "ACS_A_TRANSPORT_SEED",
+                                },
+                            }
+                        ]
                     }
-                ],
+                    if endpoint_id
+                    else {"delivery_maintenance": "external"}
+                ),
                 "dsn_ref": {"kind": "environment", "name": "ACS_A_DSN"},
                 "credential_ref": {"kind": "environment", "name": "ACS_A_CREDENTIAL"},
             }
@@ -161,7 +169,7 @@ def launch_codex(comm, tmp_path, provider_key, endpoint_id, transport_seed):
         ACS_A_PROVIDER_KEY=provider_key,
         ACS_A_DSN=comm.dsn,
         ACS_A_CREDENTIAL=comm.clients["a"].credential_provider(),
-        ACS_A_TRANSPORT_SEED=transport_seed,
+        ACS_A_TRANSPORT_SEED=transport_seed or "",
     )
     declaration = (
         "mcp_servers={acs={command="
@@ -187,7 +195,8 @@ def launch_codex(comm, tmp_path, provider_key, endpoint_id, transport_seed):
             str(tmp_path),
             "-c",
             declaration,
-            (
+            prompt
+            or (
                 "You are ordinary Agent A in ACS project-alpha. Ask collaborator slot-b for the release label of this isolated "
                 "exercise using ACS. The normal send defaults can activate B. Wait for B's actual ACS reply and report the exact "
                 "label. Use ACS MCP tools; do not inspect or change files."

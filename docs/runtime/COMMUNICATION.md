@@ -26,9 +26,20 @@ After reconnecting, use the retained handle; do not resend the request to wait.
 
 Reading does not consume messages. `max_inline_bytes` and `offset` continue long
 content; offsets are byte positions on UTF-8 boundaries. List cursors are opaque.
+The byte budget applies separately to the requested body and its embedded first
+reply. Both retain their own handles and `next_offset`; returned `read_message`
+actions continue the relevant body. An inline reply that cannot fit even its
+first UTF-8 character remains a reference with `next_offset=0` and an explicit
+read action with sufficient space. Wait results preserve these continuations;
+a partial body never changes whether the first explicit reply exists.
 Use `next_cursor` for the next page and `resume_cursor` for later arrivals.
 Changing a history query's filters resets its cursor. Authority commit order is
 not an assertion about cross-machine clocks or Agent work order.
+
+This body presentation is catalog `acs-p2-mcp-tool-contract/9`, read input
+`acs-mcp-read-message/3` and result revision `acs-communication-results/2`.
+Stored Message packets, authors and reply relationships are unchanged. Existing
+clients must use a continuation when `next_offset` is non-null, including zero.
 
 ## Identity and permissions
 

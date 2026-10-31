@@ -1,5 +1,5 @@
 {
-  "schema_version": "acs-p2-mcp-tool-contract/8",
+  "schema_version": "acs-p2-mcp-tool-contract/9",
   "surface_revision": "acs-communication/1",
   "server": "agent-collaboration-runtime",
   "naming_convention": "concise_action_phrase",
@@ -477,8 +477,8 @@
     },
     "read_message": {
       "title": "Read Message",
-      "description": "Read permitted original content, relationships and the first explicit Agent reply. Also accepts notification_handle to read an ACS system notification and its own Native delivery state. Reading preserves Inbox and history. Continue content with next_offset. Native output is not a reply.",
-      "selection_guidance": "Read permitted original content, relationships and the first explicit Agent reply. Also accepts notification_handle to read an ACS system notification and its own Native delivery state. Reading preserves Inbox and history. Continue content with next_offset. Native output is not a reply.",
+      "description": "Read permitted original content, relationships and the first explicit Agent reply. Also accepts notification_handle to read an ACS system notification and its own Native delivery state. Reading preserves Inbox and history. The original and embedded first reply each obey max_inline_bytes; follow returned read_message actions using that body's handle and next_offset. Native output is not a reply.",
+      "selection_guidance": "Read permitted original content, relationships and the first explicit Agent reply. Also accepts notification_handle to read an ACS system notification and its own Native delivery state. Reading preserves Inbox and history. The original and embedded first reply each obey max_inline_bytes; follow returned read_message actions using that body's handle and next_offset. Native output is not a reply.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -486,7 +486,7 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-read-message/2",
+        "schema_version": "acs-mcp-read-message/3",
         "required": [
           "project_id",
           "handle"
@@ -511,11 +511,16 @@
               "description": "A message_handle, response_handle or notification_handle returned by ACS."
             },
             "max_inline_bytes": {
-              "type": "integer"
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65536,
+              "default": 16384,
+              "description": "Byte budget for each original and embedded reply body. Follow returned read_message continuations for either body."
             },
             "offset": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "default": 0
             }
           }
         }
@@ -1020,8 +1025,8 @@
     },
     "wait_for_response": {
       "title": "Wait For Response",
-      "description": "Observe original sent message or response handles without sending or invoking again. Defaults to all and the actual recipient's first explicit reply. any returns when one has replied. timeout_seconds bounds this observation only; repeat after reconnecting to obtain the same first reply.",
-      "selection_guidance": "Observe original sent message or response handles without sending or invoking again. Defaults to all and the actual recipient's first explicit reply. any returns when one has replied. timeout_seconds bounds this observation only; repeat after reconnecting to obtain the same first reply.",
+      "description": "Observe original sent message or response handles without sending or invoking again. Defaults to all and the actual recipient's first explicit reply. any returns when one has replied. timeout_seconds bounds this observation only; repeat after reconnecting to obtain the same first reply. Large bodies remain bounded; use returned read_message continuations to read further without sending again.",
+      "selection_guidance": "Observe original sent message or response handles without sending or invoking again. Defaults to all and the actual recipient's first explicit reply. any returns when one has replied. timeout_seconds bounds this observation only; repeat after reconnecting to obtain the same first reply. Large bodies remain bounded; use returned read_message continuations to read further without sending again.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -1463,7 +1468,7 @@
       "next_cursor"
     ]
   },
-  "result_revision": "acs-communication-results/1",
+  "result_revision": "acs-communication-results/2",
   "tool_groups": {
     "global": [
       "read_profile",

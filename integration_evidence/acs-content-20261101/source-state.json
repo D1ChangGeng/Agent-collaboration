@@ -1,0 +1,44 @@
+{
+  "parent_commit": "eba6f1172dd6f90b7165f118774c1a8a2fc0e9ac",
+  "branch": "codex/core-cleanup",
+  "model_scope": "one actual Codex reader plus scripted ordinary B; no Native",
+  "source_files_match": 109,
+  "body_bytes": 26097,
+  "tests": {
+    "boundaries.xml": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "final-regression.xml": {
+      "tests": 91,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2
+    },
+    "ci-components-linux-current.xml": {
+      "tests": 1610,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 723
+    },
+    "model-23bc3bd2b0c349998d3915261898372b.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "catalog": "acs-p2-mcp-tool-contract/9",
+  "result_revision": "acs-communication-results/2",
+  "wheel_sha256": "29abf0f09f1923152cfb146bd5bbaa0fdbf088ab84a4056aa459eb18ec9ad1dd",
+  "existing_readmes_preserved": {
+    "README.md": "9e1341285d25c806289c6a652c6912f7a6f2a629a8998a5a780318309565796c",
+    "README.zh-CN.md": "d8b1639e46a52eed9b4e6929d086556aba677f010e55f2ed09d3382887891a89"
+  },
+  "provider_key_absent_from_artifacts": true,
+  "push": "not_attempted",
+  "production_change": "none",
+  "full_objective": "active"
+}

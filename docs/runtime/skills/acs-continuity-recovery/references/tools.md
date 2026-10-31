@@ -9,6 +9,12 @@ Use the actual exposed tools; retain returned handles instead of constructing in
 
 Communication persistence and bounded technical recovery; model understanding and work outcomes are external.
 
+`read_message` bounds the original body and its embedded first reply separately.
+Use returned read actions to continue the relevant body's handle and byte offset.
+`next_offset=0` is a valid continuation; null means complete. A wait can already
+be satisfied while a long reply still has more content to read. Continuations
+retain normal participant and current Grant checks.
+
 `check_inbox` also returns ACS-authored communication notifications. Use their
 `notification_handle` with `read_message` to see the actual obstacle and the
 notification's own Native delivery state. These notices do not satisfy a reply

@@ -119,6 +119,30 @@ def communication_boundary(cursor, authority, command, packet, endpoint_id, revi
                                               "recipient": packet.recipient})
 
 
+def _page_message_content(data, maximum, offset=0, *, reference=False):
+    raw = data["content"].encode()
+    if offset > len(raw):
+        raise ValueError("content offset exceeds message")
+    try:
+        raw[:offset].decode()
+    except UnicodeDecodeError as error:
+        raise ValueError("content offset is not a UTF-8 boundary") from error
+    part = raw[offset:offset + maximum].decode(errors="ignore")
+    if not part and offset < len(raw) and not reference:
+        raise ValueError("content byte budget cannot fit the next UTF-8 character")
+    end = offset + len(part.encode())
+    data["content"] = part
+    data["next_offset"] = end if end < len(raw) else None
+    if data["next_offset"] is None:
+        return []
+    # A reference can remain readable even when this response's budget cannot
+    # fit its first code point. The next explicit read advertises enough space.
+    next_maximum = max(maximum, len(raw[end:].decode()[0].encode()))
+    return [{"rel": "next", "tool": "read_message", "arguments": {
+        "project_id": data["project_id"], "handle": data["message_handle"],
+        "max_inline_bytes": next_maximum, "offset": end}}]
+
+
 class CommunicationActions:
     def bind_notification_session(self, project_id, session_ref, connection_ref, credential):
         """Bind an explicitly subscribed transport to its authenticated owner."""
@@ -475,28 +499,10 @@ class CommunicationActions:
         offset = args.get("offset", 0)
         if type(maximum) is not int or not 1 <= maximum <= 65536 or type(offset) is not int or offset < 0:
             raise ValueError("invalid message content bounds")
-        raw = data["content"].encode()
-        if offset > len(raw):
-            raise ValueError("content offset exceeds message")
-        try:
-            raw[:offset].decode()
-        except UnicodeDecodeError as error:
-            raise ValueError("content offset is not a UTF-8 boundary") from error
-        part = raw[offset:offset + maximum]
-        # Continue on UTF-8 boundaries; a small requested chunk still makes progress.
-        while part:
-            try:
-                part.decode()
-                break
-            except UnicodeDecodeError:
-                part = part[:-1]
-        if not part and offset < len(raw):
-            raise ValueError("content byte budget cannot fit the next UTF-8 character")
-        data["content"] = part.decode()
-        end = offset + len(part)
-        data["next_offset"] = end if end < len(raw) else None
-        return "observed", data, ([{"rel": "next", "tool": "read_message", "arguments": {
-            **args, "offset": end}}] if data["next_offset"] is not None else [])
+        actions = _page_message_content(data, maximum, offset)
+        if data["reply"] is not None:
+            actions.extend(_page_message_content(data["reply"], maximum, reference=True))
+        return "observed", data, actions
 
     def _list_messages(self, authority, cursor, _project, _command, args, _credential):
         address = self._communication_address(cursor, args["project_id"])
@@ -617,8 +623,9 @@ class CommunicationActions:
                         cursor.execute("INSERT INTO communication_waits VALUES (%s,%s,%s,%s,%s,clock_timestamp()+interval '5 seconds') "
                                        "ON CONFLICT(tenant_id,project_id,waiter_id,request_id) DO UPDATE SET expires_at=EXCLUDED.expires_at",
                                        (self.context.tenant_id, args["project_id"], waiter_id, address, identifier))
-            observations = [self.execute("read_message", {"project_id": args["project_id"],
-                            "handle": reference}, credential)[1] for reference in references]
+            pages = [self.execute("read_message", {"project_id": args["project_id"],
+                     "handle": reference}, credential) for reference in references]
+            observations = [page[1] for page in pages]
             satisfied = []
             for reference, item in zip(references, observations, strict=True):
                 if item.get("historical"):
@@ -633,8 +640,9 @@ class CommunicationActions:
             if ready or (end is not None and time.monotonic() >= end):
                 if until == "response_received":
                     self._retain_wait_ingress(args, credential, observations)
+                continuations = {digest(action["arguments"]): action for page in pages for action in page[2]}
                 return "satisfied" if ready else "timeout", {"project_id": args["project_id"],
-                    "satisfied": satisfied, "pending": pending, "observations": observations}, []
+                    "satisfied": satisfied, "pending": pending, "observations": observations}, list(continuations.values())
             time.sleep(0.1 if end is None else min(0.1, max(0, end-time.monotonic())))
 
     def _retain_wait_ingress(self, args, credential, observations):
