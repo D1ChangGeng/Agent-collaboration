@@ -1,0 +1,91 @@
+{
+  "branch": "codex/core-cleanup",
+  "candidate_parent": "f0e9b9fc7bb9f85d1e2a05a0fc442c83280c219a",
+  "final_source_matches_model_runs": {
+    "native/ack-unknown": 108,
+    "cross/final": 110
+  },
+  "tests": {
+    "final.xml": {
+      "tests": 83,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2
+    },
+    "historical.xml": {
+      "tests": 138,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 75
+    },
+    "installer-final.xml": {
+      "tests": 27,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "native-factory.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "native-ack-unknown.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "cross-harness.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "backup-restore.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mcp-instructions.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "readmes_preserved": {
+    "README.md": "9e1341285d25c806289c6a652c6912f7a6f2a629a8998a5a780318309565796c",
+    "README.zh-CN.md": "d8b1639e46a52eed9b4e6929d086556aba677f010e55f2ed09d3382887891a89"
+  },
+  "historical_sql_moved_without_content_changes": {
+    "schema.sql": {
+      "original_working_bytes_sha256": "b5d1e8063c52e5d1ab5c7d286ec3fbd02661bf0ff535f6cf36f45c8e6156a6a2",
+      "git_lf_sha256": "b5d1e8063c52e5d1ab5c7d286ec3fbd02661bf0ff535f6cf36f45c8e6156a6a2"
+    },
+    "schema_1_9.sql": {
+      "original_working_bytes_sha256": "876f9f9fae5d44911fea808d39b5b1e03103f1bf6ce8d875970e1355aee89eda",
+      "git_lf_sha256": "61dc3acd13a9e5685c2889f091c40c7ffe09c8ad7b18062aa7af80eef617e780"
+    },
+    "schema_1_10.sql": {
+      "original_working_bytes_sha256": "260b7cf521528d7fcf075238ceb70361c5b38b93ac5bda2250bdb2e1daf930de",
+      "git_lf_sha256": "2d24d7144f8405e13743ef1fc0e185b09b99b9029c7dfcca6a3cc0e4fb12030c"
+    },
+    "schema_1_11.sql": {
+      "original_working_bytes_sha256": "f54e94ef7d32f74501dcdc4001849c4c1d7b0980b85e808191ee363a210c07e2",
+      "git_lf_sha256": "20c2f3ff45663f1615be02d46d537d497d49ce0a65e690bf9a95571ef30282af"
+    },
+    "schema_1_12.sql": {
+      "original_working_bytes_sha256": "f94e7f6318b352439471cd111532e44175a3eb03b80235dce644d871a3686928",
+      "git_lf_sha256": "3542bbbd4d86b7c079a32015f0cb19fa9c066a6ead20541ef5d5a27c5fb18f96"
+    },
+    "schema_1_13.sql": {
+      "original_working_bytes_sha256": "9e7661bba821c870108487e15c0f526940fc9f06370fde7876e4b301a31e7d10",
+      "git_lf_sha256": "2cbe056f8f2f6a05c55a36f587b4c2c2060ca284dae9cb819512e8be184e9cff"
+    }
+  },
+  "provider_key_absent_from_evidence": true,
+  "push": "not_attempted",
+  "deployment": "not_performed"
+}

@@ -302,7 +302,7 @@ def test_exact_1_9_to_1_11_migration_preserves_rows(isolated_dsn):
     assert hashlib.sha256(fixture.read_bytes()).hexdigest() == BASE_18_SHA256
     with psycopg.connect(isolated_dsn) as connection:
         connection.execute(fixture.read_bytes())
-        connection.execute((Path(__file__).parents[1] / "runtime/schema_1_9.sql").read_bytes())
+        connection.execute((Path(__file__).parents[1] / "runtime_tests/fixtures/legacy_schema_1_9.sql").read_bytes())
         connection.execute(
             "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
             "VALUES ('acs-p1-runtime','1.9',%s)", (BASE_19_SHA256,),
@@ -327,8 +327,8 @@ def test_exact_1_9_to_1_11_migration_preserves_rows(isolated_dsn):
     authority = DomainAuthority(isolated_dsn)
     authority.initialize()
     authority.initialize()
-    schema_bytes = ((Path(__file__).parents[1] / "runtime/schema.sql").read_text(encoding="utf-8") + "\n" +
-                    (Path(__file__).parents[1] / "runtime/schema_1_13.sql").read_text(encoding="utf-8")).encode()
+    schema_bytes = ((Path(__file__).parents[1] / "runtime_tests/fixtures/legacy_schema.sql").read_text(encoding="utf-8") + "\n" +
+                    (Path(__file__).parents[1] / "runtime_tests/fixtures/legacy_schema_1_13.sql").read_text(encoding="utf-8")).encode()
     assert query(authority, "SELECT schema_version,schema_checksum FROM runtime_schema_metadata") == [
         ("1.13", hashlib.sha256(schema_bytes).hexdigest())]
     assert query(authority, "SELECT status FROM scopes WHERE scope_id='migration-sentinel'") == [("active",)]
@@ -344,8 +344,8 @@ def test_exact_1_10_to_current_migration_preserves_binding(isolated_dsn):
     fixture = Path(__file__).with_name("fixtures") / "schema-1.8-a942.sql"
     with psycopg.connect(isolated_dsn) as connection:
         connection.execute(fixture.read_bytes())
-        connection.execute((root / "runtime/schema_1_9.sql").read_bytes())
-        connection.execute((root / "runtime/schema_1_10.sql").read_bytes())
+        connection.execute((root / "runtime_tests/fixtures/legacy_schema_1_9.sql").read_bytes())
+        connection.execute((root / "runtime_tests/fixtures/legacy_schema_1_10.sql").read_bytes())
         connection.execute(
             "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
             "VALUES ('acs-p1-runtime','1.10',%s)", (BASE_110_SHA256,),
@@ -378,7 +378,7 @@ def test_unknown_1_9_checksum_rejected_without_partial_schema(isolated_dsn):
     fixture = Path(__file__).with_name("fixtures") / "schema-1.8-a942.sql"
     with psycopg.connect(isolated_dsn) as connection:
         connection.execute(fixture.read_bytes())
-        connection.execute((Path(__file__).parents[1] / "runtime/schema_1_9.sql").read_bytes())
+        connection.execute((Path(__file__).parents[1] / "runtime_tests/fixtures/legacy_schema_1_9.sql").read_bytes())
         connection.execute(
             "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
             "VALUES ('acs-p1-runtime','1.9',%s)", ("f" * 64,),
@@ -396,8 +396,8 @@ def test_unknown_1_10_checksum_rejected_without_projection_columns(isolated_dsn)
     fixture = Path(__file__).with_name("fixtures") / "schema-1.8-a942.sql"
     with psycopg.connect(isolated_dsn) as connection:
         connection.execute(fixture.read_bytes())
-        connection.execute((root / "runtime/schema_1_9.sql").read_bytes())
-        connection.execute((root / "runtime/schema_1_10.sql").read_bytes())
+        connection.execute((root / "runtime_tests/fixtures/legacy_schema_1_9.sql").read_bytes())
+        connection.execute((root / "runtime_tests/fixtures/legacy_schema_1_10.sql").read_bytes())
         connection.execute(
             "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
             "VALUES ('acs-p1-runtime','1.10',%s)", ("f" * 64,),

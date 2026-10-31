@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from runtime.schema_upgrade import (
+from runtime_tests.fixtures.legacy_schema_upgrade import (
     FROM_SCHEMA_CHECKSUM,
     FROM_SCHEMA_VERSION,
     REQUIRED_BASE_TABLES,

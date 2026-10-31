@@ -25,7 +25,7 @@ from runtime.project_common import IDENTIFIER, canonical, digest, handle, page_r
 from runtime.project_management import ManagementActions
 from runtime.project_resources import ResourceActions
 from runtime.project_routes import RouteActions
-from runtime.project_schema_state import SCHEMAS, definition
+from runtime.project_schema_state import adopt_project_schema
 from runtime.source import SourceChangedDuringSnapshot
 from runtime.surfaces import SharedService
 
@@ -81,21 +81,7 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
     def initialize(self) -> None:
         """Explicit operator schema adoption; not invoked by a tool request."""
         with self.service.authority._connect() as connection:
-            connection.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
-                               ("acs-project-runtime-schema",))
-            for filename, name, label in SCHEMAS:
-                schema, checksum, equivalent = definition(filename)
-                # Only line-ending equivalents of this exact SQL are accepted.
-                # Existing Windows metadata is canonicalized by this explicit
-                # operator step; unknown SQL/version changes still refuse.
-                current = connection.execute("SELECT schema_version,schema_checksum FROM runtime_schema_metadata "
-                    "WHERE schema_name=%s FOR UPDATE", (name,)).fetchone()
-                if current and current not in equivalent:
-                    raise ValueError(f"{label} schema requires explicit migration")
-                connection.execute(schema)
-                connection.execute("INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
-                    "VALUES (%s,'1',%s) ON CONFLICT(schema_name) DO UPDATE SET schema_checksum=EXCLUDED.schema_checksum",
-                    (name, checksum))
+            adopt_project_schema(connection)
             from runtime.communication_archive import adopt_legacy_index
             adopt_legacy_index(connection.cursor(), self.context.tenant_id)
 

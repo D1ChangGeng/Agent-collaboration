@@ -192,14 +192,17 @@ def test_ordinary_codex_opencode_exchange_over_ssh(comm, tmp_path):
             "m.packet_json->>'activation' FROM communication_messages c JOIN delivery_messages m USING(tenant_id,message_id) "
             "ORDER BY c.sequence").fetchall()
         replies = connection.execute("SELECT request_id,reply_id FROM communication_replies").fetchall()
-        work_count = connection.execute("SELECT count(*) FROM work_items").fetchone()[0]
+        work_table_present = connection.execute("SELECT to_regclass('work_items')").fetchone()[0] is not None
+        assert not work_table_present
+        work_count = 0
     a_events = [json.loads(line) for line in (evidence / "a.jsonl").read_text().splitlines() if line.startswith("{")]
     b_events = [json.loads(line) for line in (evidence / "b.jsonl").read_text().splitlines() if line.startswith("{")]
     a_tools = [event["item"] for event in a_events if event.get("item", {}).get("type") == "mcp_tool_call"]
     b_tools = [event["part"] for event in b_events if event.get("type") == "tool_use"]
     facts = {"source_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "remote_root": remote_root, "ssh_host": host, "messages": messages, "reply_relationships": replies,
-        "work_count": work_count, "label": label, "actor_profiles": {"a": "engineer", "b": "engineer"},
+        "work_count": work_count, "work_table_present": work_table_present, "label": label,
+        "actor_profiles": {"a": "engineer", "b": "engineer"},
         "a_tools": [item["tool"] for item in a_tools], "b_tools": [item["tool"] for item in b_tools],
         "native_autoactivation": "not_tested", "transport": "public stdio MCP and loopback SSH reverse forwarding"}
     (evidence / "facts.json").write_text(json.dumps(facts, indent=2), encoding="utf-8")

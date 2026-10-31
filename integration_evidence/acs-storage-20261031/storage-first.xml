@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="6.047" timestamp="2026-10-31T22:03:50.855292+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_storage" name="test_fresh_default_never_creates_retired_tables_and_real_delivery_still_works" time="1.872" /><testcase classname="runtime_tests.test_communication_storage" name="test_explicit_known_legacy_adoption_preserves_every_stored_row_and_history" time="1.523"><failure message="AssertionError: assert {'accepted_st...202b945', ...} == {'accepted_st...202b945', ...}&#10;  &#10;  Omitting 80 identical items, use -vv to show&#10;  Differing items:&#10;  {'communication_archives': '21a75cbc0956605b7ef469fcb32a91d30ecb0543445e52930689f7da1cb92127'} != {'communication_archives': '4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945'}&#10;  Use -v to get more diff">project = namespace(authority=&lt;runtime_tests.fixtures.legacy_domain.DomainAuthority object at 0x000002A298173B60&gt;, driver=&lt;runti...ponent-credential-b4e0316072b849ba9ff64945c3ea8526', mcp=&lt;runtime.mcp_runtime.McpRuntime object at 0x000002A29817FE10&gt;)
+
+    def test_explicit_known_legacy_adoption_preserves_every_stored_row_and_history(project):
+        identity, packet = seed_legacy(project)
+        with psycopg.connect(project.dsn) as connection:
+            old_metadata(connection)
+            before = dataset(connection)
+            old_core = connection.execute("SELECT * FROM runtime_schema_metadata WHERE schema_name='acs-p1-runtime'").fetchone()
+        with pytest.raises(ProjectSchemaAdoptionRequired):
+            verify_project_schema(project.authority)
+        # Current production class, not the historical fixture's initialize method.
+        current = DomainAuthority(project.dsn, context=project.authority.context)
+        current.initialize()
+        project.projects.initialize()
+        assert verify_project_schema(current)
+        with psycopg.connect(project.dsn) as connection:
+&gt;           assert dataset(connection) == before
+E           AssertionError: assert {'accepted_st...202b945', ...} == {'accepted_st...202b945', ...}
+E             
+E             Omitting 80 identical items, use -vv to show
+E             Differing items:
+E             {'communication_archives': '21a75cbc0956605b7ef469fcb32a91d30ecb0543445e52930689f7da1cb92127'} != {'communication_archives': '4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945'}
+E             Use -v to get more diff
+
+runtime_tests\test_communication_storage.py:99: AssertionError</failure></testcase><testcase classname="runtime_tests.test_communication_storage" name="test_unknown_legacy_checksum_is_rejected_before_ddl_or_identity_changes" time="1.379" /><testcase classname="runtime_tests.test_communication_storage" name="test_missing_adoption_at_startup_is_read_only_and_unversioned_storage_is_not_guessed" time="1.044" /></testsuite></testsuites>

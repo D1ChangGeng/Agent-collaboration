@@ -120,8 +120,11 @@ outside both the normal message and system notification paths.
 
 ## Adoption and history
 
-`ProjectService.initialize()` explicitly adopts `communication_schema.sql` and
-the additive notice/archive schemas, each with a separate checksum record.
+New installation uses `communication_core_schema.sql` and Project schema 2,
+plus the communication and notice/archive indexes. It creates 46 tables and
+does not create the 36 retired task, result-projection or Watcher tables.
+`DomainAuthority.initialize()` and `ProjectService.initialize()` remain explicit
+operator steps; the latter can also adopt the known complete 1.13 baseline.
 Normal startup validates current communication storage and reports
 `project_schema_adoption_required` when adoption is missing; it never migrates
 a deployment. Existing message and notification records remain intact.
@@ -129,7 +132,7 @@ Schema identity uses canonical LF endings. Explicit adoption recognizes only
 the same SQL's known LF/CRLF forms, so a Windows checkout and a Linux checkout
 can share the Authority; other checksum or version differences still require
 an explicit migration.
-The additive schema retains existing records; it does not delete task tables,
+The additive adoption retains existing records; it does not delete task tables,
 guess old authors or manufacture reply relationships. Two delivery endpoint
 columns become nullable for an Authority Inbox without a Native location.
 
@@ -158,9 +161,14 @@ read during adoption but do not construct a task gateway. New installation
 Grants do not request the retired business permissions. The retired task Human
 Bridge console command is no longer installed.
 
-Mixed 1.13 schema storage and some unbound historical modules remain during
-transition. New-install storage pruning remains engineering work; production
-cleanup requires its current inventory and applicable authorization.
+Existing mixed 1.13 storage retains its old tables and original metadata record.
+The current core has its own `acs-communication-core/1` metadata. Known Project
+schema 1 is explicitly adopted to version 2. Unknown versions/checksums and
+unversioned existing storage refuse adoption. Missing authority ledgers or
+critical unique fencing indexes require actual recovery, rather than empty
+replacement. Retired DDL and its old migration helper live in test fixtures and
+are excluded from the Runtime wheel. Some unbound historical modules remain;
+production cleanup requires its current inventory and applicable authorization.
 An old binary is not a promised rollback
 after new messages have been written.
 
@@ -193,3 +201,10 @@ are retained in [the cross-Harness evidence](../../integration_evidence/acs-cros
 
 The default Domain cleanup, current-source Native and cross-Harness reruns,
 and actual installed wheel are recorded in [the kernel evidence](../../integration_evidence/acs-surface-retirement-20261031/REPORT.md).
+
+The 46-table storage and explicit adoption are recorded in [the storage evidence](../../integration_evidence/acs-storage-20261031/REPORT.md).
+Native context `acs-native-context/1` includes the actual Project and an optional
+reply/read action directed to ACS MCP. These arguments retain opaque ACS handles
+and leave reply content to the recipient. Native sub-agent messaging has its own
+address space. The MCP initialization instructions explain the same distinction
+for senders and clients using deferred tool discovery.

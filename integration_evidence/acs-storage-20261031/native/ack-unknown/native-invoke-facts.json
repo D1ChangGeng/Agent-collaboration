@@ -1,0 +1,45 @@
+{
+  "installed_version": "codex-cli 0.166.0-alpha.5.1",
+  "b_native_thread": "01a19233-6802-7c53-a875-cd35cf9e73f2",
+  "messages": [
+    [
+      "message-374f8e0532d24219b8626b56e81ac52a",
+      "collaborator:project-alpha:slot-a-real",
+      "collaborator:project-alpha:slot-b",
+      "What is the release label for this isolated exercise?",
+      "invoke"
+    ],
+    [
+      "message-5ea29dcbb21d4bfe9e3f4256ce1306a1",
+      "collaborator:project-alpha:slot-b",
+      "collaborator:project-alpha:slot-a-real",
+      "The release label is native-orchid-ddd7ceb64515.",
+      "invoke"
+    ]
+  ],
+  "reply_relationships": [
+    [
+      "message-374f8e0532d24219b8626b56e81ac52a",
+      "message-5ea29dcbb21d4bfe9e3f4256ce1306a1"
+    ]
+  ],
+  "native_turn_start_count": 1,
+  "work_count": 0,
+  "label": "native-orchid-ddd7ceb64515",
+  "activation": "production dispatcher and NativeDeliveryAdapter",
+  "fault_injection": "observation loss after actual Native response",
+  "source_manifest_sha256": "ce5396244ea2578f76bb6e55f0d365a92b766b8d8460a5f8e1394796f7f9060a",
+  "production_receiver_factory": true,
+  "work_table_present": false,
+  "personal_skill_readback": {
+    "discovered": 51,
+    "enabled": 0
+  },
+  "collector_created": false,
+  "authority_native_state": "uncertain",
+  "replay_states": [
+    "uncertain",
+    "uncertain"
+  ],
+  "post_retry_native_turn_start_count": 1
+}

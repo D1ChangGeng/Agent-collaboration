@@ -81,7 +81,11 @@ def read_archived_message(self, authority, cursor, _project, command, args, _cre
                         raise SourceReadbackError(
                             "response artifact is not canonical JSON"
                         ) from error
+        has_observations = False
         if authority.access_mode == "owner":
+            cursor.execute("SELECT to_regclass('native_response_observations')")
+            has_observations = cursor.fetchone()[0] is not None
+        if has_observations:
             cursor.execute("SELECT projection_id,attempt_id,dispatch_id,native_outcome,response_digest,observed_at "
                 "FROM native_response_observations WHERE tenant_id=%s AND message_id=%s "
                 "AND disposition='fenced_late' ORDER BY observed_at,projection_id",

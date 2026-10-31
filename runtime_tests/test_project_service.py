@@ -33,6 +33,8 @@ def deadline():
 
 @pytest.fixture
 def project(setup):
+    from runtime_tests.fixtures.legacy_storage import initialize_legacy_project_schema
+    initialize_legacy_project_schema(setup.authority)
     credential = "component-credential-" + uuid.uuid4().hex
     setup.authority.context = replace(setup.authority.context,
         credential_hash=hashlib.sha256(credential.encode()).hexdigest())

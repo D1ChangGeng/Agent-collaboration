@@ -77,6 +77,17 @@ def schema(name):
     return {"type": "object", "additionalProperties": False, "required": required, "properties": properties}
 
 
+SERVER_INSTRUCTIONS = (
+    "This MCP server is ACS, the project communication application. Its collaborator and Client handles address ACS contacts. "
+    "For ACS exchanges use this server's tools: list_collaborators to find contacts, send_message(project_id,to,content,reply_to) "
+    "to send or reply, wait_for_response to observe sent handles, and check_inbox/read_message to receive. "
+    "Select the tools from the configured ACS MCP server; discover them with Harness tool search when deferred. "
+    "Native sub-agent messaging uses its own agent paths and is a separate channel. "
+    "Keep project_id and returned opaque handles intact. Reading retains history; only the actual recipient's associated ACS message is a reply."
+    " Use list_projects and load_project for missing or stale context. Resource notifications are hints to read Inbox, not proof of model consumption."
+)
+
+
 DESCRIPTIONS = {
     "list_harnesses": "Read current registered receiving locations and observed Native Session state. "
         "Defaults to authorized project locations. unknown is not idle. This query never prepares, starts, "

@@ -4,6 +4,34 @@ Normal entry points validate storage without modifying it. Explicit operator
 adoption uses `ProjectService.initialize()` in the existing installer path.
 The additional archive schema has no dependency on a task lifecycle table.
 
+New installation creates 46 communication/identity/transport/context tables.
+It records `acs-communication-core/1` and Project schema 2. The normal entry
+points only validate this state; they never run a migration at startup.
+
+For the known complete 1.13 baseline, preview current metadata, present tables
+and the exact candidate SQL checksums with this read-only command:
+
+```powershell
+python scripts/acs_communication_adopt.py --dsn-env ACS_OPERATOR_DSN --schema public
+```
+
+The plan hash binds the Schema and candidate SQL. It does not treat ordinary
+message arrival as a schema change. The operator can apply the reviewed plan
+in one transaction:
+
+```powershell
+python scripts/acs_communication_adopt.py --dsn-env ACS_OPERATOR_DSN --schema public --apply --expected-plan-sha256 PLAN_SHA256
+```
+
+This preserves data and the old core metadata record, adds the current metadata,
+and adopts the known Project schema 1 definition to version 2. It does not
+bootstrap identities, start Native, index historical project associations or
+delete any table or record. The archive association tool below is a separate
+explicit action. Re-preview after a schema change before retrying an old plan.
+Unknown checksums/versions and unversioned data refuse adoption. A missing ledger
+or critical fencing index also refuses adoption; recreating an empty ledger is
+not a recovery of the old request identities or Native certainty.
+
 For an existing deployment, inventory its actual current database and source
 before selecting a cleanup. The following operator command is read-only by
 default. The named environment variable contains the DSN; its value is never a
@@ -35,8 +63,9 @@ worker keeps accepting new task traffic.
 
 Keep both data and technical recovery evidence until legitimate replay risk is
 resolved. Table-name similarity is insufficient to decide removal. The current
-default adapters no longer load task execution modules, while legacy database
-tables and Domain library code remain for the separately reviewed transition.
+default adapters no longer load task execution modules. Legacy database tables
+remain in existing databases; their DDL and mutation fixtures are excluded from
+the installed Runtime. Some unbound historical modules remain for further cleanup.
 This procedure grants no production cleanup or environment-switch authority.
 
 The isolated rehearsal uses real `pg_dump --snapshot` and `pg_restore` into a new,

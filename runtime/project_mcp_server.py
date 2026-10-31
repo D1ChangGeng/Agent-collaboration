@@ -22,6 +22,8 @@ from mcp_types import (
     ReadResourceResult,
 )
 
+from runtime.communication_tools import SERVER_INSTRUCTIONS
+
 INBOX = re.compile(r"acs://projects/([A-Za-z0-9][A-Za-z0-9._-]{0,127})/inbox\Z")
 
 
@@ -247,12 +249,7 @@ def create_project_server(runtime=None, *, runtime_provider=None):
         return ReadResourceResult.model_validate({"contents": [{"uri": str(params.uri),
             "mimeType": "application/json", "text": json.dumps(result[1], default=str)}]})
 
-    return _ProjectServer("agent-collaboration-runtime", version="0.1.0", lifespan=lifespan,
-        instructions="Use list_projects and load_project for missing or stale project context. "
-        "Every project-scoped action requires project_id. Find contacts with list_collaborators. "
-        "Use send_message for natural messages and replies; a reply names the original message in reply_to. "
-        "Use check_inbox, list_messages and read_message to continue after reconnecting. "
-        "Resource notifications are hints to read Inbox; they do not prove an Agent has read or replied.",
+    return _ProjectServer("agent-collaboration-runtime", version="0.1.0", instructions=SERVER_INSTRUCTIONS, lifespan=lifespan,
         on_list_tools=list_tools, on_call_tool=call_tool, on_list_resources=list_resources,
         on_read_resource=read_resource, on_subscribe_resource=subscribe, on_unsubscribe_resource=unsubscribe,
         on_subscriptions_listen=listen)

@@ -1,0 +1,2017 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="15" failures="21" skipped="0" tests="27" time="2.579" timestamp="2026-10-31T22:14:05.846223+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_atomic_activation_failure_preserves_authoritative_state" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpuidqf8jf\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_atomic_activation_failure_preserves_authoritative_state&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpuidqf8jf/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpuidqf8jf\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_atomic_activation_failure_preserves_authoritative_state" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpuidqf8jf'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpuidqf8jf'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD835120&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpuidqf8jf'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpuidqf8jf'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpuidqf8jf'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_communication_schema_and_adoption_changes_require_review" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpb5m8ngvk\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_communication_schema_and_adoption_changes_require_review&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpb5m8ngvk/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpb5m8ngvk\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_communication_schema_and_adoption_changes_require_review" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpb5m8ngvk'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpb5m8ngvk'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8376A0&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpb5m8ngvk'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpb5m8ngvk'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpb5m8ngvk'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_compatibility_guards_schema_provider_and_catalog" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw3xny70c\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_compatibility_guards_schema_provider_and_catalog&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpw3xny70c/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw3xny70c\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_compatibility_guards_schema_provider_and_catalog" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw3xny70c'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw3xny70c'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8371A0&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw3xny70c'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw3xny70c'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw3xny70c'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_concurrent_update_loser_has_no_provider_or_state_effect" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpy35az_y3\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_concurrent_update_loser_has_no_provider_or_state_effect&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpy35az_y3/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpy35az_y3\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_concurrent_update_loser_has_no_provider_or_state_effect" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpy35az_y3'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpy35az_y3'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E51C0&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpy35az_y3'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpy35az_y3'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpy35az_y3'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_cron_rejects_newline_before_any_mutation" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpj4ac7ekn\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_cron_rejects_newline_before_any_mutation&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpj4ac7ekn/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpj4ac7ekn\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_cron_rejects_newline_before_any_mutation" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpj4ac7ekn'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpj4ac7ekn'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E4400&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpj4ac7ekn'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpj4ac7ekn'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpj4ac7ekn'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_default_enabled_and_optout_persisted_by_install" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp7o09ssor\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_default_enabled_and_optout_persisted_by_install&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmp7o09ssor/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp7o09ssor\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_default_enabled_and_optout_persisted_by_install" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp7o09ssor'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp7o09ssor'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD834E00&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp7o09ssor'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp7o09ssor'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp7o09ssor'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_disabled_and_not_due_do_not_contact_provider" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmplj800aso\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_disabled_and_not_due_do_not_contact_provider&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmplj800aso/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmplj800aso\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_disabled_and_not_due_do_not_contact_provider" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmplj800aso'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmplj800aso'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E4900&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmplj800aso'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmplj800aso'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmplj800aso'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_helper_changes_restored_after_failed_runtime_readback" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpmm_czqw6\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_helper_changes_restored_after_failed_runtime_readback&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpmm_czqw6/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpmm_czqw6\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_helper_changes_restored_after_failed_runtime_readback" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpmm_czqw6'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpmm_czqw6'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E5260&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpmm_czqw6'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpmm_czqw6'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpmm_czqw6'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_latest_rejects_unpublished_or_nonstable_versions" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpli045zl1\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_latest_rejects_unpublished_or_nonstable_versions&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpli045zl1/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpli045zl1\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_latest_rejects_unpublished_or_nonstable_versions" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpli045zl1'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpli045zl1'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E5E40&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpli045zl1'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpli045zl1'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpli045zl1'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_legacy_state_normalization_remains_readable" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpclppy9pe\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_legacy_state_normalization_remains_readable&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpclppy9pe/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpclppy9pe\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_legacy_state_normalization_remains_readable" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpclppy9pe'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpclppy9pe'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E6480&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpclppy9pe'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpclppy9pe'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpclppy9pe'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_machine_drift_precedes_network_and_all_writes" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp52rmj3_z\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_machine_drift_precedes_network_and_all_writes&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmp52rmj3_z/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp52rmj3_z\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_machine_drift_precedes_network_and_all_writes" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp52rmj3_z'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp52rmj3_z'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E4720&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp52rmj3_z'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp52rmj3_z'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp52rmj3_z'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_no_downgrade_major_or_held_version_activation" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpeqkl6ha8\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_no_downgrade_major_or_held_version_activation&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpeqkl6ha8/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpeqkl6ha8\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_no_downgrade_major_or_held_version_activation" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpeqkl6ha8'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpeqkl6ha8'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E6160&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpeqkl6ha8'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpeqkl6ha8'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpeqkl6ha8'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_offline_failure_retains_activation_and_records_private_error_category" time="0.003"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_wh04yoo\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_offline_failure_retains_activation_and_records_private_error_category&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmp_wh04yoo/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_wh04yoo\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_offline_failure_retains_activation_and_records_private_error_category" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_wh04yoo'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_wh04yoo'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E67A0&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_wh04yoo'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_wh04yoo'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_wh04yoo'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_scheduler_units_owned_and_live_status_observed" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_b9q6wl9\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_scheduler_units_owned_and_live_status_observed&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmp_b9q6wl9/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_b9q6wl9\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_scheduler_units_owned_and_live_status_observed" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_b9q6wl9'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_b9q6wl9'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E71A0&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_b9q6wl9'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_b9q6wl9'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp_b9q6wl9'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_unattended_upgrade_reuses_bounded_install_choices" time="0.002"><failure message="PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp9xs1cvhc\\state.tmp'">self = &lt;test_automatic_updates.AutomaticUpdateTests testMethod=test_unattended_upgrade_reuses_bounded_install_choices&gt;
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.state = {"schema_version": bootstrap.SCHEMA, "version": "v1.3.0", "machine": MACHINE,
+                      "current": str(self.root / "versions/1.3.0"), "previous": "older",
+                      "harnesses": ["codex"], "runtime_only": True, "chatgpt_web": "later",
+                      "auto_update": {"enabled": True, "next_check": 0}}
+&gt;       bootstrap.write_state(self.root, self.state)
+
+tests\test_automatic_updates.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_bootstrap.py:390: in write_state
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmp9xs1cvhc/state.tmp')
+mode = 'w', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp9xs1cvhc\\state.tmp'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError</failure></testcase><testcase classname="tests.test_automatic_updates.AutomaticUpdateTests" name="test_unattended_upgrade_reuses_bounded_install_choices" time="0.000"><error message="failed on teardown with &quot;PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp9xs1cvhc'&quot;">path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp9xs1cvhc'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8D8CC0&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp9xs1cvhc'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp9xs1cvhc'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp9xs1cvhc'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</error></testcase><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_account_and_home_drift_from_plan_block_before_any_installation_write" time="0.002" /><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_existing_installation_on_other_machine_is_refused" time="0.002"><failure message="PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpk0li_kae'">self = &lt;test_machine_install.MachineInstallTests testMethod=test_existing_installation_on_other_machine_is_refused&gt;
+
+    def test_existing_installation_on_other_machine_is_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+&gt;           (target / "state.json").write_text(json.dumps({"machine": {**MACHINE, "machine_id": "d" * 64}}))
+
+tests\test_machine_install.py:170: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpk0li_kae/state.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpk0li_kae\\state.json'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpk0li_kae'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E6A20&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpk0li_kae'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+self = &lt;test_machine_install.MachineInstallTests testMethod=test_existing_installation_on_other_machine_is_refused&gt;
+
+    def test_existing_installation_on_other_machine_is_refused(self):
+&gt;       with tempfile.TemporaryDirectory() as directory:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_machine_install.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:952: in __exit__
+    self.cleanup()
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpk0li_kae'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpk0li_kae'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</failure></testcase><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_failed_runtime_readback_preserves_previous_active_version" time="0.001"><failure message="PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpobc8kf5j'">self = &lt;test_machine_install.MachineInstallTests testMethod=test_failed_runtime_readback_preserves_previous_active_version&gt;
+
+    def test_failed_runtime_readback_preserves_previous_active_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+&gt;           (target / "current").write_text("previous")
+
+tests\test_machine_install.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:555: in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:651: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpobc8kf5j/current')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpobc8kf5j\\current'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpobc8kf5j'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E4CC0&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpobc8kf5j'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+self = &lt;test_machine_install.MachineInstallTests testMethod=test_failed_runtime_readback_preserves_previous_active_version&gt;
+
+    def test_failed_runtime_readback_preserves_previous_active_version(self):
+&gt;       with tempfile.TemporaryDirectory() as directory:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_machine_install.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:952: in __exit__
+    self.cleanup()
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpobc8kf5j'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpobc8kf5j'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</failure></testcase><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_global_install_without_project_runs_runtime_and_binds_machine" time="0.006"><failure message="PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp1ozs1daw'">self = &lt;test_machine_install.MachineInstallTests testMethod=test_global_install_without_project_runs_runtime_and_binds_machine&gt;
+
+    def test_global_install_without_project_runs_runtime_and_binds_machine(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "install"
+            with (mock.patch.object(bootstrap, "install_root", return_value=target),
+                  mock.patch.object(bootstrap, "observe_machine", return_value=MACHINE),
+                  mock.patch.object(bootstrap, "release_metadata", return_value=METADATA),
+                  mock.patch.object(bootstrap, "fetch", side_effect=fake_fetch),
+                  mock.patch.object(bootstrap.subprocess, "run", return_value=runtime_result()) as execute):
+&gt;               receipt = install("v1.1.0", apply=True, project=None, project_id=None,
+                                            runtime_host="local", harnesses=["codex"])
+
+tests\test_machine_install.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_machine_install.py:33: in install
+    return bootstrap.install(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\acs_bootstrap.py:95: in guarded
+    root = ensure_install_root()
+           ^^^^^^^^^^^^^^^^^^^^^
+scripts\acs_bootstrap.py:305: in ensure_install_root
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmp1ozs1daw/install')
+mode = 448, parents = True, exist_ok = True
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+&gt;           os.mkdir(self, mode)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp1ozs1daw\\install'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:722: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp1ozs1daw'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8376A0&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp1ozs1daw'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+self = &lt;test_machine_install.MachineInstallTests testMethod=test_global_install_without_project_runs_runtime_and_binds_machine&gt;
+
+    def test_global_install_without_project_runs_runtime_and_binds_machine(self):
+&gt;       with tempfile.TemporaryDirectory() as directory:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_machine_install.py:96: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:952: in __exit__
+    self.cleanup()
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp1ozs1daw'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmp1ozs1daw'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</failure></testcase><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_legacy_runtime_only_release_is_refused_before_runtime_execution" time="0.009"><failure message="PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpd9k8lqub'">self = &lt;test_machine_install.MachineInstallTests testMethod=test_legacy_runtime_only_release_is_refused_before_runtime_execution&gt;
+
+    def test_legacy_runtime_only_release_is_refused_before_runtime_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            with (mock.patch.object(bootstrap, "install_root", return_value=target),
+                  mock.patch.object(bootstrap, "observe_machine", return_value=MACHINE),
+                  mock.patch.object(bootstrap, "release_metadata", return_value=METADATA),
+                  mock.patch.object(bootstrap, "fetch", side_effect=fake_fetch),
+                  mock.patch.object(bootstrap.subprocess, "run", side_effect=AssertionError("runtime")),
+                  self.assertRaisesRegex(ValueError, "updated Runtime installer")):
+&gt;               install("v1.1.0", apply=True, project=None, project_id=None,
+                                  runtime_host="local", runtime_only=True)
+
+tests\test_machine_install.py:231: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_machine_install.py:33: in install
+    return bootstrap.install(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\acs_bootstrap.py:98: in guarded
+    with installation_lock(root):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\contextlib.py:141: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+scripts\acs_bootstrap.py:57: in installation_lock
+    with path.open("a+b") as handle:
+         ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpd9k8lqub\\.installation.lock'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpd9k8lqub'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8E45E0&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpd9k8lqub'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+self = &lt;test_machine_install.MachineInstallTests testMethod=test_legacy_runtime_only_release_is_refused_before_runtime_execution&gt;
+
+    def test_legacy_runtime_only_release_is_refused_before_runtime_execution(self):
+&gt;       with tempfile.TemporaryDirectory() as directory:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_machine_install.py:223: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:952: in __exit__
+    self.cleanup()
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpd9k8lqub'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpd9k8lqub'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</failure></testcase><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_local_preview_and_identity_mismatch_do_not_create_state" time="0.001" /><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_remote_account_change_is_refused_before_installer_invocation" time="0.184"><failure message="AssertionError: 'account changed before installation' not found in 'Traceback (most recent call last):\n  File &quot;&lt;string&gt;&quot;, line 11, in &lt;module&gt;\n    path.write_bytes(source)\n    ~~~~~~~~~~~~~~~~^^^^^^^^\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py&quot;, line 641, in write_bytes\n    with self.open(mode=\'wb\') as f:\n         ~~~~~~~~~^^^^^^^^^^^\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_local.py&quot;, line 537, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: \'C:\\\\Users\\\\D26FO\\\\AppData\\\\Local\\\\Packages\\\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\\\AC\\\\Temp\\\\acs-bootstrap-4r3bogjn\\\\acs_bootstrap.py\'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\shutil.py&quot;, line 631, in _rmtree_unsafe\n    os.rmdir(path)\n    ~~~~~~~~^^^^^^\nPermissionError: [WinError 5] 拒绝访问。: \'C:\\\\Users\\\\D26FO\\\\AppData\\\\Local\\\\Packages\\\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\\\AC\\\\Temp\\\\acs-bootstrap-4r3bogjn\'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File &quot;&lt;string&gt;&quot;, line 9, in &lt;module&gt;\n    with tempfile.TemporaryDirectory(prefix=\'acs-bootstrap-\') as directory:\n         ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py&quot;, line 952, in __exit__\n    self.cleanup()\n    ~~~~~~~~~~~~^^\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py&quot;, line 956, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py&quot;, line 936, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\shutil.py&quot;, line 790, in rmtree\n    return _rmtree_unsafe(path, onexc)\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\shutil.py&quot;, line 635, in _rmtree_unsafe\n    onexc(os.rmdir, path, err)\n    ~~~~~^^^^^^^^^^^^^^^^^^^^^\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py&quot;, line 908, in onexc\n    _resetperms(path)\n    ~~~~~~~~~~~^^^^^^\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py&quot;, line 283, in _resetperms\n    _dont_follow_symlinks(_os.chmod, path, 0o700)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File &quot;C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py&quot;, line 272, in _dont_follow_symlinks\n    func(path, *args, follow_symlinks=False)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nPermissionError: [WinError 5] 拒绝访问。: \'C:\\\\Users\\\\D26FO\\\\AppData\\\\Local\\\\Packages\\\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\\\AC\\\\Temp\\\\acs-bootstrap-4r3bogjn\'\n'">self = &lt;test_machine_install.MachineInstallTests testMethod=test_remote_account_change_is_refused_before_installer_invocation&gt;
+
+    def test_remote_account_change_is_refused_before_installer_invocation(self):
+        source = ("def observe_machine(): return " + repr({**MACHINE, "account": "other"}) + "\n"
+                  "def machine_binding(m): return {k:m[k] for k in ('machine_id','account','user_home')}\n"
+                  "def install(*a, **k): raise RuntimeError('installer must not run')\n").encode()
+        request = {"bootstrap": base64.b64encode(source).decode("ascii"),
+                   "sha256": hashlib.sha256(source).hexdigest(),
+                   "machine_binding": bootstrap.machine_binding(MACHINE)}
+        result = subprocess.run([sys.executable, "-c", bootstrap.REMOTE_INSTALL],
+                                input=json.dumps(request), capture_output=True, text=True, check=False)
+        self.assertNotEqual(result.returncode, 0)
+&gt;       self.assertIn("account changed before installation", result.stderr)
+E       AssertionError: 'account changed before installation' not found in 'Traceback (most recent call last):\n  File "&lt;string&gt;", line 11, in &lt;module&gt;\n    path.write_bytes(source)\n    ~~~~~~~~~~~~~~~~^^^^^^^^\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py", line 641, in write_bytes\n    with self.open(mode=\'wb\') as f:\n         ~~~~~~~~~^^^^^^^^^^^\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_local.py", line 537, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: \'C:\\\\Users\\\\D26FO\\\\AppData\\\\Local\\\\Packages\\\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\\\AC\\\\Temp\\\\acs-bootstrap-4r3bogjn\\\\acs_bootstrap.py\'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\shutil.py", line 631, in _rmtree_unsafe\n    os.rmdir(path)\n    ~~~~~~~~^^^^^^\nPermissionError: [WinError 5] 拒绝访问。: \'C:\\\\Users\\\\D26FO\\\\AppData\\\\Local\\\\Packages\\\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\\\AC\\\\Temp\\\\acs-bootstrap-4r3bogjn\'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File "&lt;string&gt;", line 9, in &lt;module&gt;\n    with tempfile.TemporaryDirectory(prefix=\'acs-bootstrap-\') as directory:\n         ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py", line 952, in __exit__\n    self.cleanup()\n    ~~~~~~~~~~~~^^\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py", line 956, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py", line 936, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\shutil.py", line 790, in rmtree\n    return _rmtree_unsafe(path, onexc)\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\shutil.py", line 635, in _rmtree_unsafe\n    onexc(os.rmdir, path, err)\n    ~~~~~^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py", line 908, in onexc\n    _resetperms(path)\n    ~~~~~~~~~~~^^^^^^\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py", line 283, in _resetperms\n    _dont_follow_symlinks(_os.chmod, path, 0o700)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tempfile.py", line 272, in _dont_follow_symlinks\n    func(path, *args, follow_symlinks=False)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nPermissionError: [WinError 5] 拒绝访问。: \'C:\\\\Users\\\\D26FO\\\\AppData\\\\Local\\\\Packages\\\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\\\AC\\\\Temp\\\\acs-bootstrap-4r3bogjn\'\n'
+
+tests\test_machine_install.py:219: AssertionError</failure></testcase><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_remote_apply_pins_identity_and_returns_client_connection" time="0.001" /><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_remote_machine_choice_uses_only_selected_target_during_preview" time="0.001" /><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_runtime_only_skips_harness_installation_and_configuration" time="0.014"><failure message="PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw6qviv41'">self = &lt;test_machine_install.MachineInstallTests testMethod=test_runtime_only_skips_harness_installation_and_configuration&gt;
+
+    @unittest.skipIf(sys.version_info &lt; (3, 12), "Runtime installer requires Python 3.12+")
+    def test_runtime_only_skips_harness_installation_and_configuration(self):
+        scripts = str(ROOT / "scripts")
+        if scripts not in sys.path:
+            sys.path.insert(0, scripts)
+        import acs_install as installer
+    
+        readiness = {"source_backend": {"available": True},
+                     "tools": {name: {"available": True} for name in ("git", "uv", "docker")}}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            with (mock.patch.object(installer, "private_root", return_value=path),
+                  mock.patch.object(installer.Path, "home", return_value=path),
+                  mock.patch.object(installer, "observe_machine", return_value=MACHINE),
+                  mock.patch.object(installer, "inspect", return_value=readiness),
+                  mock.patch.object(installer, "run") as execute,
+                  mock.patch.object(installer, "local_provider_environment", return_value=(path / "providers", {
+                      "COMPOSE_PROJECT_NAME": "acs-isolated", "ACS_POSTGRES_PORT": "54330",
+                      "ACS_TEMPORAL_PORT": "7240"})),
+                  mock.patch.object(installer, "provider_readback", return_value=[]),
+                  mock.patch.object(installer, "initialize_local_authority", return_value=path / "runtime.json"),
+                  mock.patch.object(installer, "configure_harnesses", side_effect=AssertionError("client config"))):
+&gt;               receipt = installer.install(harnesses=["codex"], project=None, project_id=None,
+                                            apply=True, host_confirmed=True, runtime_only=True, chatgpt_web="skip")
+
+tests\test_machine_install.py:201: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\acs_install.py:558: in install
+    owner_file(machine_path, json.dumps(machine, indent=2) + "\n")
+scripts\acs_install.py:73: in owner_file
+    with path.open("x", encoding="utf-8") as stream:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/D26FO/AppData/Local/Packages/sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}/AC/Temp/tmpw6qviv41/install-machine.json')
+mode = 'x', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       PermissionError: [Errno 13] Permission denied: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw6qviv41\\install-machine.json'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw6qviv41'
+onexc = &lt;function TemporaryDirectory._rmtree.&lt;locals&gt;.onexc at 0x00000162FD8D96C0&gt;
+
+    def _rmtree_unsafe(path, onexc):
+        def onerror(err):
+            if not isinstance(err, FileNotFoundError):
+                onexc(os.scandir, err.filename, err)
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+        try:
+&gt;           os.rmdir(path)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw6qviv41'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:631: PermissionError
+
+During handling of the above exception, another exception occurred:
+
+self = &lt;test_machine_install.MachineInstallTests testMethod=test_runtime_only_skips_harness_installation_and_configuration&gt;
+
+    @unittest.skipIf(sys.version_info &lt; (3, 12), "Runtime installer requires Python 3.12+")
+    def test_runtime_only_skips_harness_installation_and_configuration(self):
+        scripts = str(ROOT / "scripts")
+        if scripts not in sys.path:
+            sys.path.insert(0, scripts)
+        import acs_install as installer
+    
+        readiness = {"source_backend": {"available": True},
+                     "tools": {name: {"available": True} for name in ("git", "uv", "docker")}}
+&gt;       with tempfile.TemporaryDirectory() as directory:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_machine_install.py:188: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:952: in __exit__
+    self.cleanup()
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:956: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:936: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:790: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\shutil.py:635: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:908: in onexc
+    _resetperms(path)
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+func = &lt;built-in function chmod&gt;
+path = 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw6qviv41'
+args = (448,)
+
+    def _dont_follow_symlinks(func, path, *args):
+        # Pass follow_symlinks=False, unless not supported on this platform.
+        if func in _os.supports_follow_symlinks:
+&gt;           func(path, *args, follow_symlinks=False)
+E           PermissionError: [WinError 5] 拒绝访问。: 'C:\\Users\\D26FO\\AppData\\Local\\Packages\\sandbox.{3bda7a61-422c-451a-bcf0-d8094b504c7c}\\AC\\Temp\\tmpw6qviv41'
+
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\tempfile.py:272: PermissionError</failure></testcase><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_unspecified_machine_needs_selection_and_apply_performs_no_io" time="0.001" /><testcase classname="tests.test_machine_install.MachineInstallTests" name="test_windows_local_runtime_and_unsafe_ssh_target_are_rejected" time="0.001" /></testsuite></testsuites>

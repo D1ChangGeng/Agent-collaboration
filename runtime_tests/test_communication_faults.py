@@ -65,9 +65,8 @@ def test_configured_manager_gets_one_system_invocation_without_agent_reply(comm)
     call(comm, "a", "configure_team", prepare_native=False, members=[{"agent_slot_id": "slot-b", "principal_ref": "agent:b"}])
     request = fail_b(comm)
     with psycopg.connect(comm.dsn) as connection:
-        connection.execute("ALTER TABLE work_items RENAME TO retired_work_items")
-        connection.execute("ALTER TABLE accepted_state_revisions RENAME TO retired_accepted_states")
-        connection.execute("ALTER TABLE collaboration_work_links RENAME TO retired_work_links")
+        assert connection.execute("SELECT to_regclass('work_items'),to_regclass('accepted_state_revisions'),"
+                                  "to_regclass('collaboration_work_links')").fetchone() == (None, None, None)
     with ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(lambda _index: queue_communication_notices(comm.authority), range(4)))
     queue_communication_notices(comm.authority)
@@ -290,7 +289,7 @@ def test_receiver_revocation_before_dispatch_stops_native_and_records_obstacle(c
 
 def test_explicit_schema_adoption_accepts_only_known_line_endings_and_preserves_messages(comm):
     request = send(comm, activation="message_only")["data"]
-    schemas = {"acs-project-runtime": "project_schema.sql", "acs-project-control": "project_control_schema.sql",
+    schemas = {"acs-communication-core": "communication_core_schema.sql", "acs-project-runtime": "project_schema.sql",
                "acs-communication": "communication_schema.sql", "acs-communication-notices": "communication_notice_schema.sql"}
     expected = {}
     with psycopg.connect(comm.dsn) as connection:

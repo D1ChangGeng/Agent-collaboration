@@ -76,6 +76,9 @@ def test_snapshot_restore_preserves_history_and_fences_possible_post_snapshot_na
             "VALUES (%s,'project-alpha','historical-route','local-scope','{}')", (comm.authority.tenant_id,))
     from runtime_tests.fixtures.legacy_domain import DomainAuthority as HistoricalFixture
     historical = HistoricalFixture(comm.dsn, context=comm.authority.context)
+    historical.initialize()
+    from runtime_tests.fixtures.legacy_storage import initialize_legacy_project_schema
+    initialize_legacy_project_schema(historical)
     historical.create_work_item(command(historical, "work_item.create", "historical-work"),
                                 "local-scope", "slot-b", "historical-source")
     with comm.authority._connect() as connection:

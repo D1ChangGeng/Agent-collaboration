@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-SCHEMA_PATH = Path(__file__).with_name("schema_1_9.sql")
+SCHEMA_PATH = Path(__file__).with_name("legacy_schema_1_9.sql")
 REQUIRED_BASE_TABLES = ("delivery_messages", "delivery_attempts", "delivery_receipts", "outbox")
 SCHEMA_NAME = "acs-p1-runtime"
 FROM_SCHEMA_VERSION = "1.8"

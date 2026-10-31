@@ -149,8 +149,7 @@ def test_public_work_free_a_b_loop(comm):
     history = call(f, "a", "list_messages")["data"]["items"]
     assert len(history) == 2
     with psycopg.connect(f.dsn) as connection:
-        assert connection.execute("SELECT count(*) FROM work_items").fetchone()[0] == 0
-        assert connection.execute("SELECT count(*) FROM accepted_state_revisions").fetchone()[0] == 0
+        assert connection.execute("SELECT to_regclass('work_items'),to_regclass('accepted_state_revisions')").fetchone() == (None, None)
 
 
 def rejected(f, caller, tool, code, **args):
@@ -617,9 +616,8 @@ def test_empty_optional_peer_filter_keeps_inbox_and_cursor_semantics(comm, tool)
 
 def test_normal_send_native_read_reply_wait_and_history_do_not_need_task_tables(comm):
     with psycopg.connect(comm.dsn) as connection:
-        connection.execute("ALTER TABLE work_items RENAME TO retired_work_items")
-        connection.execute("ALTER TABLE accepted_state_revisions RENAME TO retired_accepted_states")
-        connection.execute("ALTER TABLE collaboration_work_links RENAME TO retired_work_links")
+        assert connection.execute("SELECT to_regclass('work_items'),to_regclass('accepted_state_revisions'),"
+                                  "to_regclass('collaboration_work_links')").fetchone() == (None, None, None)
     request = send(comm)["data"]
     assert comm.dispatcher.dispatch({"tenant_id": comm.authority.tenant_id, "message_id": request["message_id"],
                                      "operation_id": request["operation_id"]})["status"] == "delivered"
@@ -668,8 +666,10 @@ def test_actual_stdio_mcp_processes_exchange_messages(comm, tmp_path):
                         ClientSession(*a_streams, read_timeout_seconds=20) as a,
                         stdio_client(parameters("b"), errlog=errors) as b_streams,
                         ClientSession(*b_streams, read_timeout_seconds=20) as b):
-                await a.initialize()
-                await b.initialize()
+                a_ready = await a.initialize()
+                b_ready = await b.initialize()
+                assert "ACS MCP server" in a_ready.instructions and "project_id" in a_ready.instructions
+                assert b_ready.instructions == a_ready.instructions
                 sent = await a.call_tool("send_message", {"project_id": "project-alpha", "to": "collaborator:project-alpha:slot-b",
                                                           "content": "Can you read this through MCP?", "activation": "message_only"})
                 assert not sent.is_error, sent
@@ -824,7 +824,9 @@ def test_real_independent_codex_agents_use_normal_mcp(comm, tmp_path):
             rows = connection.execute("SELECT c.message_id,c.sender,c.recipient,m.packet_json->>'content' FROM "
                 "communication_messages c JOIN delivery_messages m USING(tenant_id,message_id) ORDER BY c.sequence").fetchall()
             replies = connection.execute("SELECT request_id,reply_id FROM communication_replies").fetchall()
-            work_count = connection.execute("SELECT count(*) FROM work_items").fetchone()[0]
+            work_table_present = connection.execute("SELECT to_regclass('work_items')").fetchone()[0] is not None
+            assert not work_table_present
+            work_count = 0
         (evidence / "real-agent-facts.json").write_text(json.dumps({"messages": rows, "replies": replies,
             "work_count": work_count, "label": label, "transport": "real stdio MCP", "native_autoactivation": "not_tested",
             "actor_profiles": {"a": "engineer", "b": "engineer"}, "host_approval": "test-only send_message preauthorized"}, indent=2))

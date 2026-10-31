@@ -1,0 +1,24 @@
+[
+  {
+    "emittedAtMs": 1793452780597,
+    "method": "mcpServer/startupStatus/updated",
+    "params": {
+      "error": null,
+      "failureReason": null,
+      "name": "acs",
+      "status": "starting",
+      "threadId": "01a1921d-a50b-7483-99f1-ba2b32bf2bd3"
+    }
+  },
+  {
+    "emittedAtMs": 1793452780597,
+    "method": "mcpServer/startupStatus/updated",
+    "params": {
+      "error": null,
+      "failureReason": null,
+      "name": "acs",
+      "status": "ready",
+      "threadId": "01a1921d-a50b-7483-99f1-ba2b32bf2bd3"
+    }
+  }
+]

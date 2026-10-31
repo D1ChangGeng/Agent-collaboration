@@ -90,7 +90,7 @@ def test_operator_dispatches_current_message_without_task_audit_fields(comm):
     assert len(comm.drivers["b"].calls) == 1
     with psycopg.connect(comm.dsn) as connection:
         assert connection.execute("SELECT related_work_item_id FROM domain_events WHERE to_state='delivery.dispatch.authorized'").fetchone() == (None,)
-        assert connection.execute("SELECT count(*) FROM work_items").fetchone()[0] == 0
+        assert connection.execute("SELECT to_regclass('work_items')").fetchone()[0] is None
 
 
 def test_operator_scan_and_dispatch_keep_legacy_tasks_read_only(project):

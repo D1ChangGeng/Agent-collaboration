@@ -436,7 +436,9 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
             messages=connection.execute("SELECT c.message_id,c.sender,c.recipient,m.packet_json->>'content',m.packet_json->>'activation' "
                 "FROM communication_messages c JOIN delivery_messages m USING(tenant_id,message_id) ORDER BY c.sequence").fetchall()
             relations=connection.execute("SELECT request_id,reply_id FROM communication_replies").fetchall()
-            work_count=connection.execute("SELECT count(*) FROM work_items").fetchone()[0]
+            work_table_present = connection.execute("SELECT to_regclass('work_items')").fetchone()[0] is not None
+            assert not work_table_present
+            work_count = 0
         with driver.journal._connect() as connection:
             turns=connection.execute("SELECT body FROM driver_events WHERE kind='rpc_dispatch'").fetchall()
         native_turns=[json.loads(row[0]) for row in turns if json.loads(row[0]).get("method")=="turn/start"]
@@ -445,6 +447,7 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
             "fault_injection":"observation loss after actual Native response" if lose_ack else None,
             "source_manifest_sha256":file_digest(evidence/"source-files.json"),
             "production_receiver_factory":use_factory,
+            "work_table_present": work_table_present,
             "personal_skill_readback": {"discovered": len(personal_skills), "enabled": 0},
             "collector_created":hasattr(capacity,"collector") if capacity else False}
         assert all(file_digest(ROOT/name)==hashed for name,hashed in source_manifest.items()), "Source changed during live acceptance"

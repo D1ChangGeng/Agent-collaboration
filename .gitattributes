@@ -9,3 +9,6 @@ integration_evidence/**/*.xml -whitespace
 # Preserve hashes of these raw Windows/Linux run artifacts across checkouts.
 integration_evidence/acs-surface-retirement-20261031/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
 integration_evidence/acs-surface-retirement-20261031/**/*.xml -whitespace
+
+integration_evidence/acs-storage-20261031/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-storage-20261031/**/*.xml -whitespace

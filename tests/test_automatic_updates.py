@@ -120,6 +120,16 @@ class AutomaticUpdateTests(unittest.TestCase):
             self.assertFalse(updater.compatible(old, altered))
         self.assertFalse(updater.compatible(old, {"files": files}))
 
+    def test_communication_schema_and_adoption_changes_require_review(self):
+        for name in ("runtime/communication_core_schema.sql", "runtime/communication_storage.py",
+                     "runtime/project_schema_state.py"):
+            with self.subTest(name=name):
+                files = {item: {"sha256": "same"} for item in (
+                    "docker-compose.acs-local.yml", "docs/runtime/p2-mcp-tool-contract.json", "LICENSE", name)}
+                candidate = {"files": {**files, name: {"sha256": "changed"}},
+                             "auto_update": {"compatibility": updater.COMPATIBILITY}}
+                self.assertFalse(updater.compatible({"files": files}, candidate))
+
     def test_atomic_activation_failure_preserves_authoritative_state(self):
         before = (self.root / "state.json").read_bytes()
         (self.root / "current").write_text("old mirror")

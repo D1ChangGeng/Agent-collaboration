@@ -6,8 +6,7 @@ from collections.abc import Mapping
 from contextlib import contextmanager, nullcontext
 from copy import copy
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 import psycopg
 
@@ -15,7 +14,6 @@ from runtime.communication_permissions import expanded_permissions
 from runtime.errors import (
     AuthorizationDenied,
     IdempotencyConflict,
-    SchemaAdoptionError,
 )
 from runtime.migrations import LegacyCommandRecord, classify_replay
 from runtime.models import (
@@ -28,37 +26,8 @@ from runtime.models import (
 class DomainAuthority:
     """Authenticated communication, source access and technical registration."""
 
-    SCHEMA_NAME = "acs-p1-runtime"
-    SCHEMA_VERSION = "1.13"
-
-    _KNOWN_SCHEMA_MIGRATIONS: ClassVar[set[tuple[str, str]]] = {
-        ("1.12", "b5d1e8063c52e5d1ab5c7d286ec3fbd02661bf0ff535f6cf36f45c8e6156a6a2"),
-        ("1.11", "e840b74d16389bd9b07df1aee061e696955e78a0397dd8649571b04193c49b9d"),
-        ("1.10", "3220ec5379b4effbbfe4fb293684881c0e14cd03d681fda8b98aacd6185c162d"),
-        ("1.9", "7eec78fd9d54b81d20724327e13f3a2237f95a9d5a2bc35f7799ebd3d30b5b9b"),
-        ("1.8", "b8554614d9923ae43a653371c4445c33fdfe189c219b3376f29e23c476ee7614"),
-        ("1.7", "a3eb11f7afdccfedab5e7f7c41c861f3b9d8f4853460cdd948b8fc77e23d8132"),
-        ("1.6", "89400be6a5c44f419ef73fe6661f907c858c11a397407662270fe0a79e169c73"),
-        ("1.5", "c5faeecc4a9a6b152eb288f8f5d6cf3a1b4492d464f10d931535d3f737421fee"),
-        ("1.4", "8f12aa29f385194b436f930422d5dafebc432d15bdf1a4bafe94294d8f744deb"),
-        ("1.3", "0e3600dc7ed3b7fac727670f5c8fec0b00c6e100063e63a3f149661631dccea4"),
-        (
-            "1.0",
-            "415c76f2778e1b1b33aa2533f14140511cb7c00bd0ebbd47ff8fb3a007578a87",
-        ),
-        (
-            "1.1",
-            "ea0097e39fb023c5130cb924d0faf34429f2f6968056b00a72042af1d78cdd92",
-        ),
-        (
-            "1.2",
-            "95e952142fc3d55d4eda3211852dee823e48aad6d793890716dc2365d2cbdd84",
-        ),
-        (
-            "1.2",
-            "312465f388be994fd1a2b308bd7f1c6e7c8354be5dfd54792fcb2be20ef13339",
-        ),
-    }
+    SCHEMA_NAME = "acs-communication-core"
+    SCHEMA_VERSION = "1"
 
     def __init__(
         self,
@@ -238,46 +207,10 @@ class DomainAuthority:
 
 
     def initialize(self) -> None:
-        schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
-        schema += "\n" + Path(__file__).with_name("schema_1_13.sql").read_text(encoding="utf-8")
-        checksum = hashlib.sha256(schema.encode("utf-8")).hexdigest()
+        from runtime.communication_storage import adopt_core
 
         with self._connect() as connection, connection.cursor() as cursor:
-            cursor.execute(schema.encode("utf-8"))
-            cursor.execute(
-                "SELECT schema_version,schema_checksum "
-                "FROM runtime_schema_metadata "
-                "WHERE schema_name=%s FOR UPDATE",
-                (self.SCHEMA_NAME,),
-            )
-            metadata = cursor.fetchone()
-
-            if metadata is None:
-                cursor.execute(
-                    "INSERT INTO runtime_schema_metadata"
-                    "(schema_name,schema_version,schema_checksum) "
-                    "VALUES (%s,%s,%s)",
-                    (self.SCHEMA_NAME, self.SCHEMA_VERSION, checksum),
-                )
-            elif (
-                str(metadata[0]) == self.SCHEMA_VERSION
-                and str(metadata[1]) == checksum
-            ):
-                pass
-            elif (str(metadata[0]), str(metadata[1])) in self._KNOWN_SCHEMA_MIGRATIONS:
-                cursor.execute(
-                    "UPDATE runtime_schema_metadata "
-                    "SET schema_version=%s,schema_checksum=%s,adopted_at=now() "
-                    "WHERE schema_name=%s",
-                    (self.SCHEMA_VERSION, checksum, self.SCHEMA_NAME),
-                )
-            else:
-                connection.rollback()
-                raise SchemaAdoptionError(
-                    self.SCHEMA_NAME,
-                    checksum,
-                    str(metadata[1]),
-                )
+            adopt_core(connection)
 
             # Bootstrap only the explicit local profile. A caller-supplied context
             # is authentication input, never an authority-incarnation command.
