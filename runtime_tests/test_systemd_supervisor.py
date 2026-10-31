@@ -38,10 +38,20 @@ def wait_for(predicate, timeout=5):
     raise AssertionError("condition did not become true")
 
 
-@pytest.fixture
-def supervisor():
+def require_systemd_service_profile():
     if not sys.platform.startswith("linux") or os.geteuid() == 0:
         pytest.skip("real systemd --user test requires a non-root Linux user")
+    # Independently probe the actual Service interface. An available user bus
+    # does not imply support for this supervisor's required ExitType policy.
+    probe = subprocess.run(["/usr/bin/systemctl", "--user", "show", "dbus.service", "--property=ExitType", "--value"],
+                           capture_output=True, text=True, timeout=10, check=False)
+    if probe.returncode != 0 or probe.stdout.strip() not in {"main", "cgroup"}:
+        pytest.skip("required systemd --user Service ExitType policy is unavailable")
+
+
+@pytest.fixture
+def supervisor():
+    require_systemd_service_profile()
     value = SystemdUserSupervisor(
         tasks_max=16, memory_max=134_217_728, cpu_quota_percent=50, termination_timeout=5
     )
@@ -210,8 +220,7 @@ def test_environment_file_escaping_round_trips_without_residue(supervisor):
 
 
 def test_owner_private_per_run_environment_directory_and_symlink_rejection():
-    if not sys.platform.startswith("linux") or os.geteuid() == 0:
-        pytest.skip("non-root Linux user manager is required")
+    require_systemd_service_profile()
     base = Path(f"/run/user/{os.geteuid()}/acs-p1-codex")
     base.mkdir(mode=0o700, exist_ok=True)
     run_root = base / ("p1-run-" + uuid.uuid4().hex)

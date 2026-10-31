@@ -174,7 +174,7 @@ class ReceiverReceipt(FrozenModel):
     boot_incarnation: str
     scope_id: str
     agent_slot_id: str
-    accepted_revision: int
+    accepted_revision: int | None = Field(ge=0, strict=True)
     accepted_state_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
     envelope_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
     selection_digest: str = Field(pattern=r"^[a-f0-9]{64}$")

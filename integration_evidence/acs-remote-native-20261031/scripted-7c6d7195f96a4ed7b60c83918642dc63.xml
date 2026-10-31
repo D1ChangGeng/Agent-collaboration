@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="39.310" timestamp="2026-11-01T01:17:21.154621+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_remote_native" name="test_physical_signed_receiver_and_independent_reply[scripted]" time="38.483"><failure message="AssertionError: {'acs': {'error': 'MCP error -32000: Connection closed', 'status': 'failed'}}&#10;assert 'failed' == 'connected'&#10;  &#10;  - connected&#10;  + failed">runtime_tests\test_communication_remote_native.py:497: in test_physical_signed_receiver_and_independent_reply
+    assert started["mcp"].get("acs", {}).get("status") == "connected", started["mcp"]
+E   AssertionError: {'acs': {'error': 'MCP error -32000: Connection closed', 'status': 'failed'}}
+E   assert 'failed' == 'connected'
+E     
+E     - connected
+E     + failed</failure></testcase></testsuite></testsuites>

@@ -27,7 +27,7 @@ class DomainAuthority:
     """Authenticated communication, source access and technical registration."""
 
     SCHEMA_NAME = "acs-communication-core"
-    SCHEMA_VERSION = "1"
+    SCHEMA_VERSION = "2"
 
     def __init__(
         self,

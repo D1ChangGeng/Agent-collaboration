@@ -5,7 +5,7 @@ adoption uses `ProjectService.initialize()` in the existing installer path.
 The additional archive schema has no dependency on a task lifecycle table.
 
 New installation creates 46 communication/identity/transport/context tables.
-It records `acs-communication-core/1` and Project schema 2. The normal entry
+It records `acs-communication-core/2` and Project schema 2. The normal entry
 points only validate this state; they never run a migration at startup.
 
 For the known complete 1.13 baseline, preview current metadata, present tables
@@ -31,6 +31,11 @@ explicit action. Re-preview after a schema change before retrying an old plan.
 Unknown checksums/versions and unversioned data refuse adoption. A missing ledger
 or critical fencing index also refuses adoption; recreating an empty ledger is
 not a recovery of the old request identities or Native certainty.
+
+The same preview/apply procedure supports the exact known Core 1 definition.
+Core 2 relaxes only the signed-admission task revision column so natural
+messages retain a null revision. It preserves the old signed JSON and numeric
+revisions of historical admissions. Unknown Core 1 checksums are not adopted.
 
 For an existing deployment, inventory its actual current database and source
 before selecting a cleanup. The following operator command is read-only by

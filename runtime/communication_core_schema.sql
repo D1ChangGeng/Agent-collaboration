@@ -367,7 +367,7 @@ CREATE TABLE IF NOT EXISTS delivery_transport_admissions (
     admitted_boot_incarnation TEXT NOT NULL,
     scope_id TEXT NOT NULL,
     agent_slot_id TEXT NOT NULL,
-    accepted_revision BIGINT NOT NULL CHECK(accepted_revision >= 0),
+    accepted_revision BIGINT CHECK(accepted_revision >= 0),
     accepted_state_digest TEXT NOT NULL CHECK(accepted_state_digest ~ '^[a-f0-9]{64}$'),
     envelope_digest TEXT NOT NULL CHECK(envelope_digest ~ '^[a-f0-9]{64}$'),
     selection_digest TEXT NOT NULL CHECK(selection_digest ~ '^[a-f0-9]{64}$'),
@@ -499,6 +499,8 @@ ALTER TABLE authority_transport_keys ALTER COLUMN expires_at DROP NOT NULL;
 ALTER TABLE delivery_endpoint_registrations ALTER COLUMN proof_ref DROP NOT NULL;
 
 ALTER TABLE delivery_transport_admissions ALTER COLUMN deadline DROP NOT NULL;
+
+ALTER TABLE delivery_transport_admissions ALTER COLUMN accepted_revision DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS owner_node_commands (
     tenant_id TEXT NOT NULL, command_id TEXT NOT NULL, node_id TEXT NOT NULL,

@@ -1,0 +1,78 @@
+{
+  "parent_commit": "4fa2d4b6cac81d8eda6b121bfdd6eed2d81bd4f2",
+  "branch": "codex/core-cleanup",
+  "models": {
+    "single-model": {
+      "source_files": 108,
+      "prompt_async_count": 1,
+      "authority_counts": [
+        2,
+        1,
+        null
+      ],
+      "native_dispatch_state": "uncertain",
+      "model_exchange_wall_seconds": 95.77371229999699,
+      "owned_process_stop": true
+    },
+    "dual-model": {
+      "source_files": 108,
+      "prompt_async_count": 1,
+      "authority_counts": [
+        2,
+        1,
+        null
+      ],
+      "native_dispatch_state": "uncertain",
+      "model_exchange_wall_seconds": 136.1648907000017,
+      "owned_process_stop": true
+    }
+  },
+  "tests": {
+    "core-v2.xml": {
+      "tests": 137,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 120
+    },
+    "final-protocol.xml": {
+      "tests": 145,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "health-regression.xml": {
+      "tests": 14,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 3
+    },
+    "scripted-a509ceefbaf04732b8860d8e945a9bcb.xml": {
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "codex-d2fdce1d554b48bd92b9a18125315d78.xml": {
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "ci-components-linux-current.xml": {
+      "tests": 1596,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 709
+    }
+  },
+  "wheel_sha256": "59a148cbca8903c6f8da1f16887bc3c4fb2b052c40fc86b6eb3597142cdbbf5a",
+  "installed_source_files": 106,
+  "existing_readmes_preserved": {
+    "README.md": "9e1341285d25c806289c6a652c6912f7a6f2a629a8998a5a780318309565796c",
+    "README.zh-CN.md": "d8b1639e46a52eed9b4e6929d086556aba677f010e55f2ed09d3382887891a89"
+  },
+  "provider_key_absent_from_artifacts": true,
+  "push": "not_attempted",
+  "production_change": "none",
+  "full_objective": "active"
+}

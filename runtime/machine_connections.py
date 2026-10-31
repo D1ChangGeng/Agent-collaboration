@@ -7,6 +7,7 @@ import time
 
 from nacl.signing import SigningKey
 
+from runtime.delivery_node import DeliveryTransportError
 from runtime.receiver_delivery import RemoteNodeEndpointAdapter, RemoteSenderDeployment
 
 
@@ -25,7 +26,8 @@ class ConfiguredRemoteEndpoint:
                 private = self.settings.authority_signing_key_ref.resolve()
                 deployment = RemoteSenderDeployment(SigningKey(bytes.fromhex(private)), row["boot_incarnation"],
                     self.settings.journal_generation, self.settings.old_boot_isolation_ref)
-                self._bound = RemoteNodeEndpointAdapter(self.authority, self.settings.endpoint_id, deployment)
+                self._bound = RemoteNodeEndpointAdapter(self.authority, self.settings.endpoint_id, deployment,
+                    timeout=self.settings.request_timeout_seconds)
                 self._fingerprint = fingerprint
             return self._bound
 
@@ -74,7 +76,7 @@ class ConfiguredRemoteEndpoint:
 
     def deliver(self, *args, **kwargs):
         if self.prepare_runtime()["state"] == "offline":
-            raise RuntimeError("configured machine is offline")
+            raise DeliveryTransportError("configured_machine_offline")
         return self._adapter().deliver(*args, **kwargs)
 
     def filesystem(self, context, operation, arguments):

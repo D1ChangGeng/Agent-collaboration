@@ -296,6 +296,11 @@ class RemoteNodeEndpointAdapter:
 
     @staticmethod
     def _projection(receipts, status):
+        # A Receiver can observe a still-running Native call after the sender's
+        # HTTP timeout. These are receipt stages, not Delivery terminal states.
+        # Preserve their signed evidence while fencing any new Native call.
+        if status in {"prepared", "runtime_dispatched", "readback", "readiness"}:
+            status = "uncertain"
         projected = []
         for signed in receipts:
             receipt = signed.receipt

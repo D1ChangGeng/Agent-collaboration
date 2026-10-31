@@ -7,7 +7,7 @@ from pathlib import Path
 from runtime.errors import SchemaAdoptionError
 
 CORE_NAME = "acs-communication-core"
-CORE_VERSION = "1"
+CORE_VERSION = "2"
 CORE_FILE = "communication_core_schema.sql"
 CORE_RELATIONS = (
     "runtime_schema_metadata", "command_dedup", "authority_instances", "scopes", "agent_slots", "grants",
@@ -32,6 +32,13 @@ CRITICAL_INDEXES = (
 LEGACY_CORE = {
     ("1.13", "2d8672c71b4cb3a4f7e9f0fc829261c5b6d57f97777c445f79d85b493b0fa259"),
     ("1.13", "faf4b7edd70228be14d77cf9d176077fc349746fad2d4b6436eab6490e9762fe"),
+}
+# The released candidate's communication core, before task-free signed
+# admissions could retain their absent task revision. Adoption only relaxes
+# that column; stored packets, signatures and fences remain unchanged.
+PREVIOUS_CORE = {
+    ("1", "42d78b9fdae5b9b98b62e594b94a4a2e71e39fffc29e3b357de85a5b56e721cf"),
+    ("1", "6b97364357ed259e515eb22ee59bfa26ec62ed00237666ba174c3a72197163be"),
 }
 
 
@@ -63,6 +70,14 @@ def _require_fences(connection, checksum):
         raise SchemaAdoptionError(CORE_NAME, checksum, "missing_or_invalid_fence:" + problem[0])
 
 
+def _require_admission_shape(connection, checksum):
+    column = connection.execute("SELECT attnotnull,atttypid='int8'::regtype FROM pg_attribute "
+        "WHERE attrelid=to_regclass('delivery_transport_admissions') AND attname='accepted_revision' "
+        "AND attnum>0 AND NOT attisdropped").fetchone()
+    if column != (False, True):
+        raise SchemaAdoptionError(CORE_NAME, checksum, "task_revision_column_requires_adoption")
+
+
 def adopt_core(connection):
     """Operator transaction only. Preserve old rows, identities and schema record."""
     definition, checksum, equivalent = schema_definition(CORE_FILE, CORE_VERSION)
@@ -70,7 +85,7 @@ def adopt_core(connection):
     has_metadata = connection.execute("SELECT to_regclass('runtime_schema_metadata')").fetchone()[0] is not None
     current = _metadata(connection, CORE_NAME) if has_metadata else None
     if current is not None:
-        if current not in equivalent:
+        if current not in equivalent | PREVIOUS_CORE:
             raise SchemaAdoptionError(CORE_NAME, checksum, str(current))
         missing = missing_relation(connection, CORE_RELATIONS)
         if missing is not None:
@@ -92,8 +107,10 @@ def adopt_core(connection):
                 raise SchemaAdoptionError(CORE_NAME, checksum, "unversioned_existing_storage")
     connection.execute(definition)
     _require_fences(connection, checksum)
+    _require_admission_shape(connection, checksum)
     connection.execute("INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
-        "VALUES (%s,%s,%s) ON CONFLICT(schema_name) DO UPDATE SET schema_checksum=EXCLUDED.schema_checksum",
+        "VALUES (%s,%s,%s) ON CONFLICT(schema_name) DO UPDATE SET "
+        "schema_version=EXCLUDED.schema_version,schema_checksum=EXCLUDED.schema_checksum",
         (CORE_NAME, CORE_VERSION, checksum))
 
 
@@ -107,3 +124,4 @@ def verify_core(connection):
     if missing is not None:
         raise SchemaAdoptionError(CORE_NAME, checksum, "missing_relation:" + missing[0])
     _require_fences(connection, checksum)
+    _require_admission_shape(connection, checksum)

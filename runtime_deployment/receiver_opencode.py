@@ -7,12 +7,13 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from runtime.codex_driver import DriverJournal, file_digest
-from runtime.connection_clock import ConnectionClock
+from runtime.codex_driver import DriverJournal, DriverRejected, OutcomeUncertain, file_digest
+from runtime.connection_clock import ClockUnavailable, ConnectionClock
 from runtime.domain import DomainAuthority
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.node import NodeJournal
 from runtime.opencode_driver import OpenCodeLaunchProfile, OpenCodeNativeDriver
+from runtime.opencode_http import HttpRejected
 from runtime.posix_process_supervisor import PosixProcessSupervisor
 from runtime.receiver_config import receiver_clock_identity
 from runtime.receiver_delivery import ReceiverNativeDeliveryBridge
@@ -121,7 +122,11 @@ class OpenCodeReceiverCapacity(NativeReceiverAuthority):
         operation = self._lifecycle_operation("spawn")
         with self.authority._connect() as connection, connection.cursor() as cursor:
             self.authority.enrollment._active_runtime(cursor, self.binding.runtime_id)
-        view = self.driver.inspect(operation)
+        try:
+            view = self.driver.inspect(operation)
+        except (ClockUnavailable, DriverRejected, HttpRejected, OutcomeUncertain, OSError):
+            return {"state": "unknown", "harness": "opencode", "version": self.driver.profile.version,
+                    "session_ref": None, "observation": "native_readback_unavailable"}
         status = view.get("status", {}).get("type")
         return {"state": "idle" if status == "idle" else "busy" if status in {"busy", "retry"} else "unknown",
             "harness": "opencode", "version": self.driver.profile.version, "session_ref": self.driver.session_id,

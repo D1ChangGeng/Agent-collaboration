@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="24.828" timestamp="2026-11-01T01:12:04.373534+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_remote_native" name="test_physical_signed_receiver_and_independent_reply[scripted]" time="23.994"><failure message="AssertionError: remote controller exited; see stderr&#10;assert 'controller_exited' != 'controller_exited'&#10; +  where 'controller_exited' = &lt;built-in method get of dict object at 0x0000019B051A8A40&gt;('state')&#10; +    where &lt;built-in method get of dict object at 0x0000019B051A8A40&gt; = {'state': 'controller_exited'}.get">runtime_tests\test_communication_remote_native.py:495: in test_physical_signed_receiver_and_independent_reply
+    assert started["native"]["session_ref"].startswith("ses_")
+           ^^^^^^^^^^^^^^^^^
+E   KeyError: 'native'
+
+During handling of the above exception, another exception occurred:
+runtime_tests\test_communication_remote_native.py:654: in test_physical_signed_receiver_and_independent_reply
+    facts["stop"] = rpc({"action": "stop"}, timeout=30)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_communication_remote_native.py:263: in rpc
+    assert result.get("state") != "controller_exited", "remote controller exited; see stderr"
+E   AssertionError: remote controller exited; see stderr
+E   assert 'controller_exited' != 'controller_exited'
+E    +  where 'controller_exited' = &lt;built-in method get of dict object at 0x0000019B051A8A40&gt;('state')
+E    +    where &lt;built-in method get of dict object at 0x0000019B051A8A40&gt; = {'state': 'controller_exited'}.get</failure></testcase></testsuite></testsuites>

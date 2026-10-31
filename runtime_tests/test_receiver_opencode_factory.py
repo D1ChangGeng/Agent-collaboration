@@ -124,6 +124,7 @@ def enrolled_opencode_config(comm,tmp_path):
 
 
 def test_factory_binds_real_enrollment_and_inherited_selection_with_a_labeled_native_fixture(comm,tmp_path,monkeypatch):
+    from runtime.connection_clock import ClockUncertain
     from runtime.errors import AcceptanceGuardFailed
     from runtime.opencode_driver import OpenCodeNativeDriver
     config,supplied,observer=enrolled_opencode_config(comm,tmp_path)
@@ -138,6 +139,8 @@ def test_factory_binds_real_enrollment_and_inherited_selection_with_a_labeled_na
             return self._receipt("runtime_acknowledged",native_ack_type="fixture")
         def inspect(self,operation):
             self._auth(operation)
+            if getattr(self,"uncertain",False):
+                raise ClockUncertain("controlled uncertain Authority sample")
             return self._receipt("context_observed",status={"type":"idle"},messages=[])
     monkeypatch.setattr("runtime_deployment.receiver_opencode.OpenCodeNativeDriver",NativeFixture)
     capacity=OpenCodeReceiverCapacity(config,"c"*64,supplied)
@@ -146,6 +149,10 @@ def test_factory_binds_real_enrollment_and_inherited_selection_with_a_labeled_na
         assert capacity.driver.profile.agent is None and capacity.driver.profile.model_id is None
         assert capacity.health()["session_ref"]=="ses_fixture_only"
         assert not hasattr(capacity,"collector")
+        capacity.driver.uncertain=True
+        uncertain=capacity.health()
+        assert uncertain["state"]=="unknown" and uncertain["session_ref"] is None
+        assert uncertain["observation"]=="native_readback_unavailable"
         with comm.authority._connect() as connection:
             connection.execute("UPDATE enrolled_runtimes SET status='retired' WHERE runtime_id='runtime'")
         with pytest.raises(AcceptanceGuardFailed,match="enrollment"):

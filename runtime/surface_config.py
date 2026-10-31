@@ -94,6 +94,7 @@ class RemoteEndpointSettings(ConfigModel):
     endpoint_id: str = Field(min_length=1, max_length=256)
     authority_signing_key_ref: PrivateReference
     journal_generation: int = Field(default=1, ge=1)
+    request_timeout_seconds: int = Field(default=30, ge=1, le=120, strict=True)
     old_boot_isolation_ref: str | None = None
     prepare_argv: tuple[str, ...] = Field(default=(), max_length=64)
 

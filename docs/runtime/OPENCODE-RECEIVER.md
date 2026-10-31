@@ -44,6 +44,18 @@ Dispatch records its stable native message ID before the request and distinguish
 HTTP scheduling from exact message readback. Unknown outcomes do not redispatch.
 Replies still require the recipient's own ACS MCP `send_message` call.
 
+The sender's private `remote_endpoints` settings accept
+`request_timeout_seconds` (integer 1–120, default 30). This bounds each pinned
+TLS request, including health readback that may require several remote Authority
+checks. It is separate from a message deadline or reply wait. A transport timeout
+retains an uncertain dispatch and its existing identity; it does not authorize
+another Native prompt. Status reads still perform observation only.
+
+A reachable receiver whose current Native readback cannot be verified reports
+`unknown`, with no confirmed Session reference. This includes an uncertain
+Authority clock sample; it does not mean the Node is offline. Enrollment,
+ownership, clock and message authorization checks still guard actual invocation.
+
 Windows uses its owned Job. Owner Linux uses a verified owned process group;
 this does not claim subtree containment. Termination verifies the issued process
 handle, birth and remaining group members. Service supervision and recovery must
@@ -53,3 +65,9 @@ The current local Linux/WSL preparation and model evidence is recorded separatel
 from any physical remote-host or Shared qualification. Temporary test environments
 do not modify the selected account's normal configuration or switch a deployed
 service. See the phase evidence for the exact supported runs and limitations.
+
+The [physical cross-machine evidence](../../integration_evidence/acs-remote-native-20261031/REPORT.md)
+records Windows Codex A using this Owner receiver on 1302-1. The measured
+direction, source-mode entry, ordinary MCP identities, uncertain ACK and
+successful explicit reply have distinct evidence; other deployment profiles
+retain their own qualification requirements.

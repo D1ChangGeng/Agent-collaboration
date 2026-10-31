@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="82.114" timestamp="2026-11-01T00:50:44.325241+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_remote_native" name="test_physical_signed_receiver_and_independent_reply[scripted]" time="80.795"><failure message="AssertionError: {'data': {'code': 'endpoint_binding_missing', 'retryable': False}, 'follow_ups': [], 'metadata': {'evidence_class': 'authority_rejected'}, 'ok': False, ...}&#10;assert False">runtime_tests\test_communication_remote_native.py:256: in test_physical_signed_receiver_and_independent_reply
+    sent = call(comm,"a","send_message",to="collaborator:project-alpha:slot-b",
+runtime_tests\test_communication.py:128: in call
+    assert result["ok"], result
+E   AssertionError: {'data': {'code': 'endpoint_binding_missing', 'retryable': False}, 'follow_ups': [], 'metadata': {'evidence_class': 'authority_rejected'}, 'ok': False, ...}
+E   assert False</failure></testcase></testsuite></testsuites>

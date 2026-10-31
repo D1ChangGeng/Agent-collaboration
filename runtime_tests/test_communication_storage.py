@@ -12,7 +12,7 @@ import psycopg
 import pytest
 from psycopg import sql
 
-from runtime.communication_storage import CORE_NAME, adopt_core
+from runtime.communication_storage import CORE_NAME, PREVIOUS_CORE, adopt_core
 from runtime.domain import DomainAuthority
 from runtime.errors import SchemaAdoptionError
 from runtime.project_schema_state import ProjectSchemaAdoptionRequired, verify_project_schema
@@ -63,7 +63,7 @@ def test_fresh_default_never_creates_retired_tables_and_real_delivery_still_work
         tables = {row[0] for row in connection.execute("SELECT tablename FROM pg_tables WHERE schemaname=current_schema()")}
         assert not tables.intersection(RETIRED)
         assert {"delivery_attempts", "delivery_receipts", "command_dedup", "inbox_messages", "enrolled_runtimes"} <= tables
-        assert connection.execute("SELECT schema_version FROM runtime_schema_metadata WHERE schema_name=%s", (CORE_NAME,)).fetchone() == ("1",)
+        assert connection.execute("SELECT schema_version FROM runtime_schema_metadata WHERE schema_name=%s", (CORE_NAME,)).fetchone() == ("2",)
         assert connection.execute("SELECT schema_version FROM runtime_schema_metadata WHERE schema_name='acs-project-runtime'").fetchone() == ("2",)
         assert connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-p1-runtime'").fetchone() is None
     request = send(comm)["data"]
@@ -187,3 +187,46 @@ def test_missing_native_fence_blocks_startup_and_is_not_silently_repaired(comm):
     with psycopg.connect(comm.dsn) as connection:
         assert connection.execute("SELECT to_regclass('delivery_attempts_one_open')").fetchone()[0] is None
         assert dataset(connection) == before
+
+
+@pytest.mark.parametrize("line_ending", ["lf", "crlf"])
+def test_core_v1_adoption_relaxes_only_the_retired_task_revision_and_preserves_rows(comm, line_ending):
+    # Core 2 changes only the task-revision null constraint in this exact
+    # historical DDL. Reconstruct that prior constraint on the populated store.
+    request = send(comm, activation="message_only")["data"]
+    frozen = (Path(__file__).with_name("fixtures") / "communication_core_v1.sql").read_bytes().replace(b"\r\n", b"\n")
+    checksum = hashlib.sha256(frozen if line_ending == "lf" else frozen.replace(b"\n", b"\r\n")).hexdigest()
+    assert ("1", checksum) in PREVIOUS_CORE
+    with psycopg.connect(comm.dsn) as connection:
+        connection.execute("ALTER TABLE delivery_transport_admissions ALTER COLUMN accepted_revision SET NOT NULL")
+        connection.execute("UPDATE runtime_schema_metadata SET schema_version='1',schema_checksum=%s WHERE schema_name=%s",
+                           (checksum, CORE_NAME))
+        before = dataset(connection)
+    with pytest.raises(ProjectSchemaAdoptionRequired):
+        verify_project_schema(comm.authority)
+    with psycopg.connect(comm.dsn) as connection:
+        assert connection.execute("SELECT attnotnull FROM pg_attribute WHERE attrelid='delivery_transport_admissions'::regclass "
+                                  "AND attname='accepted_revision'").fetchone() == (True,)
+        adopt_core(connection)
+        assert dataset(connection) == before
+        assert connection.execute("SELECT schema_version FROM runtime_schema_metadata WHERE schema_name=%s", (CORE_NAME,)).fetchone() == ("2",)
+        assert connection.execute("SELECT attnotnull FROM pg_attribute WHERE attrelid='delivery_transport_admissions'::regclass "
+                                  "AND attname='accepted_revision'").fetchone() == (False,)
+        adopt_core(connection)
+        assert dataset(connection) == before
+    assert verify_project_schema(comm.authority)
+    assert call(comm, "b", "read_message", handle=request["message_handle"])["data"]["content"]
+
+
+def test_unknown_core_v1_checksum_cannot_relax_constraints_or_change_records(comm):
+    with psycopg.connect(comm.dsn) as connection:
+        connection.execute("ALTER TABLE delivery_transport_admissions ALTER COLUMN accepted_revision SET NOT NULL")
+        connection.execute("UPDATE runtime_schema_metadata SET schema_version='1',schema_checksum=%s WHERE schema_name=%s",
+                           ("0" * 64, CORE_NAME))
+        before = dataset(connection)
+    with psycopg.connect(comm.dsn) as connection, pytest.raises(SchemaAdoptionError):
+        adopt_core(connection)
+    with psycopg.connect(comm.dsn) as connection:
+        assert dataset(connection) == before
+        assert connection.execute("SELECT attnotnull FROM pg_attribute WHERE attrelid='delivery_transport_admissions'::regclass "
+                                  "AND attname='accepted_revision'").fetchone() == (True,)

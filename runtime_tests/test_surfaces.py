@@ -180,10 +180,10 @@ def test_mcp_rejects_unknown_tool_and_does_not_echo_credential_as_invalid_input(
 
 def test_recursive_json_is_native_bounded_and_keeps_legacy_array_hashes():
     nested = {"request": {"artifacts": [{"sha256": "a" * 64}], "enabled": True}}
-    value = SurfaceCommand.model_validate(request(payload=nested))
+    value = SurfaceCommand.model_validate(request("message.read", target="message-1", target_kind="message", payload=nested))
     context = AuthenticatedContext("t", "a", "i", "p", "g")
     assert value.to_domain(context).payload == nested
-    legacy = SurfaceCommand.model_validate(request(payload={"refs": ("a", "b")}))
+    legacy = SurfaceCommand.model_validate(request("message.read", target="message-1", target_kind="message", payload={"refs": ("a", "b")}))
     assert legacy.payload["refs"] == ["a", "b"]
     old = legacy.to_domain(context)
     assert old.canonical_hash() == CommandEnvelope.model_validate_json(old.model_dump_json()).canonical_hash()
@@ -204,8 +204,9 @@ def test_enrollment_proof_is_outside_business_envelope_payload():
     first = SurfaceCommand.model_validate(base).to_domain(context)
     complete = base | {"payload": base["payload"] | {"proof": {"challenge_id": "c", "signature": "a" * 128}}}
     assert first == SurfaceCommand.model_validate(complete).to_domain(context)
-    assert {"evidence.record", "execution.record", "review.assign", "review.record", "effect.register", "effect.reconcile",
-            "node.enroll", "node.rotate", "node.revoke", "node.challenge", "runtime.register", "attempt.register"} <= set(PAYLOADS)
+    assert {"node.enroll", "node.rotate", "node.revoke", "node.challenge", "runtime.register"} <= set(PAYLOADS)
+    assert not {"work_item.create", "evidence.record", "execution.record", "review.assign", "review.record",
+                "effect.register", "effect.reconcile", "attempt.register"}.intersection(PAYLOADS)
 
 
 def test_non_loopback_listener_configuration_fails_closed(tmp_path):

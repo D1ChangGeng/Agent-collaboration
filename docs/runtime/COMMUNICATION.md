@@ -169,7 +169,7 @@ Grants do not request the retired business permissions. The retired task Human
 Bridge console command is no longer installed.
 
 Existing mixed 1.13 storage retains its old tables and original metadata record.
-The current core has its own `acs-communication-core/1` metadata. Known Project
+The current core has its own `acs-communication-core/2` metadata. Known Project
 schema 1 is explicitly adopted to version 2. Unknown versions/checksums and
 unversioned existing storage refuse adoption. Missing authority ledgers or
 critical unique fencing indexes require actual recovery, rather than empty
@@ -178,6 +178,12 @@ are excluded from the Runtime wheel. Some unbound historical modules remain;
 production cleanup requires its current inventory and applicable authorization.
 An old binary is not a promised rollback
 after new messages have been written.
+
+Core schema 2 allows an absent task revision in signed transport admissions and
+receipts for natural messages. Explicit adoption recognizes the exact known
+Core 1 LF/CRLF checksums, relaxes that column and retains existing signed records
+unchanged. Startup requires adoption and performs no DDL. An unknown checksum
+or a missing delivery fence still requires separate recovery.
 
 ## Verification and supported claims
 
@@ -215,3 +221,11 @@ reply/read action directed to ACS MCP. These arguments retain opaque ACS handles
 and leave reply content to the recipient. Native sub-agent messaging has its own
 address space. The MCP initialization instructions explain the same distinction
 for senders and clients using deferred tool discovery.
+
+Windows Codex A and an Owner OpenCode receiver on 1302-1 have also completed a
+physical cross-machine Native exchange through pinned TLS and signed Receiver
+admissions. Both independent models used their own ordinary ACS MCP tools. The
+Native ACK remained uncertain while B's explicit reply satisfied A's wait; there
+was one Native prompt, with no terminal collector. See [the signed Native
+evidence](../../integration_evidence/acs-remote-native-20261031/REPORT.md) for exact
+source bytes, limitations, retained failures and the Core 2 adoption fix.
