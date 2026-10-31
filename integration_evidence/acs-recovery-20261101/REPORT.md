@@ -129,11 +129,16 @@ Windows startup check also passed.
 
 ## Remaining qualification
 
-The remote host was not rebooted. Noninteractive sudo required authentication.
-A subsequent user-requested occupancy audit found other accounts with active
-compute workloads, so whole-host reboot is held until an agreed idle window
-and an authenticated administrator action. User/account details stay private.
-The report does not equate service recovery with whole-host reboot.
+The remote host was not rebooted. Noninteractive sudo required authentication,
+and a user-requested occupancy audit found other accounts with active compute
+workloads. The user then requested skipping this host reboot for the present
+delivery. Shared recovery logic is covered by the WSL distribution restart;
+the remote node's own process recovery, service restart, enabled unit and
+lingering-user configuration were separately checked. This supports the
+software delivery without claiming the remote host's complete boot path was
+tested. Whole-host reboot remains not run and is no longer a release blocker.
+Any future physical reboot requires an agreed idle window and authenticated
+administrator action. User/account details stay private.
 
 All Shared/restricted Native profiles, all host/Harness directions, Windows
 login/reboot and sustained high load remain outside this qualification.
