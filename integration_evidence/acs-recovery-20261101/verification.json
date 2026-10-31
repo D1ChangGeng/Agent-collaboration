@@ -69,9 +69,12 @@
     "windows_to_wsl_test_postgres_readonly_connections": 5
   },
   "remote_host_reboot": {
-    "state": "deferred_active_shared_workloads",
+    "state": "not_run_user_requested_skip_for_this_delivery",
     "actual_host_reboot_performed": false,
-    "authenticated_administrator_action_required": true
+    "blocks_this_delivery": false,
+    "shared_logic_recovery_and_node_service_checks_used_for_delivery": true,
+    "whole_host_boot_path_claimed_verified": false,
+    "future_reboot_requires_idle_window_and_administrator_authentication": true
   },
   "outside_qualified_scope": [
     "all_shared_restricted_native_profiles",
