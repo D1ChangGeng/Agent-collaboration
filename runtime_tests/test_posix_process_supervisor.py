@@ -18,6 +18,8 @@ def test_owned_process_group_is_stopped_without_touching_other_processes(tmp_pat
     try:
         view = supervisor.inspect(own)
         assert view["scope"] == "owned_process_group" and view["subtree_containment"] is False
+        assert view["root_pid"] == own.process.pid and not view["root_exited"]
+        assert own.process.pid in view["remaining_pids"] == view["members"]
         assert supervisor.terminate_tree(own)["stopped"]
         assert supervisor.inspect(other)["alive"]
     finally:

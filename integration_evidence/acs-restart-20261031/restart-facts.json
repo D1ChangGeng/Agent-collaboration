@@ -1,0 +1,8 @@
+{
+  "request": "message:project-alpha:message-919d718618cf4e48865eb4b696fbf3ba",
+  "reply": "message:project-alpha:message-ab61b8a77d7e49ceb27592b3757436b3",
+  "killed_process_exit": 1,
+  "orphan_waiter": "d657d443da554a43bc7ff6cc05264f4c",
+  "mcp_processes": 4,
+  "model_requested": false
+}

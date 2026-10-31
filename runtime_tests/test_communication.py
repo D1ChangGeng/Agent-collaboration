@@ -245,6 +245,7 @@ def test_retry_uses_original_operation_and_conflict_preserves_content(comm):
     with ThreadPoolExecutor(max_workers=3) as pool:
         results = list(pool.map(lambda _: send(comm, activation="message_only", client_request_id=request_id), range(3)))
     assert len({result["data"]["message_id"] for result in results}) == 1
+    assert sum(not result["data"]["duplicate"] for result in results) == 1
     rejected(comm, "a", "send_message", "idempotency_conflict", client_request_id=request_id,
              to="collaborator:project-alpha:slot-b", content="changed", activation="message_only")
     send(comm, activation="message_only")  # An intentional identical message remains distinct.

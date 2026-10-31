@@ -95,6 +95,13 @@ same reply through its Tool Result without a duplicate Native turn. Inbox remain
 available if that result channel disappears. Notifications are wake hints, not
 proof of model consumption.
 
+An abruptly stopped MCP waiter can leave its short observation lease behind.
+Replies remain in the authoritative Inbox even when that result channel is gone;
+a new authenticated MCP process can read or wait for the same first reply.
+Default maintenance reclaims expired wait leases in bounded batches, preserving
+messages, relationships and delivery fences. Explicit send retries across a new
+connection keep their original message/operation and report `duplicate=true`.
+
 The configuring manager becomes a collaborator's direct communication manager.
 Partial configuration preserves that relationship; configuration and contact
 readback show the actual `manager_handle`. A trusted configuring Client can be

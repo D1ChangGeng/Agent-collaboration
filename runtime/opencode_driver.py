@@ -505,6 +505,11 @@ class OpenCodeNativeDriver:
 
     def _start_events(self, operation):
         self._stop_events()
+        if self.profile.execution_mode == "native":
+            # Owner communication uses bounded session/message readback at the
+            # dispatch boundary. It does not subscribe to execution events.
+            self._event_state = "not_required"
+            return
         self._event_stop = threading.Event()
         stop = self._event_stop
         settled = threading.Event()

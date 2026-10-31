@@ -317,6 +317,17 @@ def test_spawn_uses_actual_http_identity_profile_and_denies(native):
     assert prompts(native.peer) == []
 
 
+def test_owner_native_session_has_no_background_execution_event_subscription(native):
+    native.driver.profile = replace(native.driver.profile, execution_mode="native")
+    native.driver.spawn(operation("owner-native-spawn"))
+    native.driver.inspect(operation("owner-native-read"))
+    assert native.driver._event_thread is None
+    assert native.driver._event_state == "not_required"
+    with native.driver.journal._connect() as connection:
+        requests = [json.loads(row[0]) for row in connection.execute("SELECT body FROM driver_events WHERE kind='http_intent'")]
+    assert not any(request.get("path") == "/event" for request in requests)
+
+
 def test_owned_idle_session_replacement_is_read_back_before_prompt(native):
     driver = native.driver
     driver.spawn(operation("spawn"))

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="10.138" timestamp="2026-10-31T22:52:03.812867+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_restart" name="test_abrupt_waiter_loss_and_new_mcp_sessions_keep_the_original_reply" time="8.601"><failure message="AssertionError('assert (not False and False)\n +  where False = CallToolResult(meta=None, content=[TextContent(type=\'text\', text=\'{&quot;schema_version&quot;: &quot;acs-mcp-result/3&quot;, &quot;result_type&quot;...imezone\': \'UTC\', \'display\': \'2026-10-31T13:52:12.168514+00:00\', \'fold\': 0}}}}}, is_error=False, result_type=\'complete\').is_error') [single exception in ExceptionGroup]">+ Exception Group Traceback (most recent call last):
+  |   File "D:\Chatgpt\Agent-collaboration\runtime_tests\test_communication_restart.py", line 110, in test_abrupt_waiter_loss_and_new_mcp_sessions_keep_the_original_reply
+  |     facts = asyncio.run(exercise())
+  |   File "C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 196, in run
+  |     return runner.run(main)
+  |            ~~~~~~~~~~^^^^^^
+  |   File "C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 119, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 726, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "D:\Chatgpt\Agent-collaboration\runtime_tests\test_communication_restart.py", line 45, in exercise
+  |     async with (stdio_client(parameters("b"), errlog=errors) as b_streams,
+  |                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "D:\Chatgpt\Agent-collaboration\.venv\Lib\site-packages\mcp\client\stdio.py", line 200, in stdio_client
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "D:\Chatgpt\Agent-collaboration\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 847, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "D:\Chatgpt\Agent-collaboration\.venv\Lib\site-packages\mcp\client\stdio.py", line 204, in stdio_client
+    |     yield read_stream, write_stream
+    |   File "D:\Chatgpt\Agent-collaboration\runtime_tests\test_communication_restart.py", line 46, in exercise
+    |     ClientSession(*b_streams, read_timeout_seconds=20) as b):
+    |     ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "D:\Chatgpt\Agent-collaboration\.venv\Lib\site-packages\mcp\client\session.py", line 514, in __aexit__
+    |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "D:\Chatgpt\Agent-collaboration\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 847, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Exception Group Traceback (most recent call last):
+      |   File "D:\Chatgpt\Agent-collaboration\runtime_tests\test_communication_restart.py", line 101, in exercise
+      |     async with (stdio_client(parameters("b"), errlog=errors) as retry_streams,
+      |                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      |   File "C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+      |     await self.gen.athrow(value)
+      |   File "D:\Chatgpt\Agent-collaboration\.venv\Lib\site-packages\mcp\client\stdio.py", line 200, in stdio_client
+      |     async with anyio.create_task_group() as tg:
+      |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+      |   File "D:\Chatgpt\Agent-collaboration\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 847, in __aexit__
+      |     raise BaseExceptionGroup(
+      |         "unhandled errors in a TaskGroup", self._exceptions
+      |     ) from None
+      | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+      +-+---------------- 1 ----------------
+        | Exception Group Traceback (most recent call last):
+        |   File "D:\Chatgpt\Agent-collaboration\.venv\Lib\site-packages\mcp\client\stdio.py", line 204, in stdio_client
+        |     yield read_stream, write_stream
+        |   File "D:\Chatgpt\Agent-collaboration\runtime_tests\test_communication_restart.py", line 102, in exercise
+        |     ClientSession(*retry_streams, read_timeout_seconds=20) as retry):
+        |     ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        |   File "D:\Chatgpt\Agent-collaboration\.venv\Lib\site-packages\mcp\client\session.py", line 514, in __aexit__
+        |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+        |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        |   File "D:\Chatgpt\Agent-collaboration\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 847, in __aexit__
+        |     raise BaseExceptionGroup(
+        |         "unhandled errors in a TaskGroup", self._exceptions
+        |     ) from None
+        | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+        +-+---------------- 1 ----------------
+          | Traceback (most recent call last):
+          |   File "D:\Chatgpt\Agent-collaboration\runtime_tests\test_communication_restart.py", line 105, in exercise
+          |     assert not repeated.is_error and repeated.structured_content["data"]["duplicate"]
+          | AssertionError: assert (not False and False)
+          |  +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{"schema_version": "acs-mcp-result/3", "result_type"...imezone': 'UTC', 'display': '2026-10-31T13:52:12.168514+00:00', 'fold': 0}}}}}, is_error=False, result_type='complete').is_error
+          +------------------------------------</failure></testcase><testcase classname="runtime_tests.test_communication_restart" name="test_wait_cleanup_is_bounded_and_preserves_live_leases_and_messages" time="0.818" /></testsuite></testsuites>

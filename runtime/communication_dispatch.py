@@ -10,6 +10,19 @@ from runtime.delivery import DeliveryDispatcher, DeliveryService
 log = logging.getLogger(__name__)
 
 
+def prune_expired_waits(authority, *, limit=64):
+    """Release expired observation leases, never messages or delivery fences."""
+    if type(limit) is not int or not 1 <= limit <= 256:
+        raise ValueError("invalid wait cleanup bound")
+    with authority._connect() as connection:
+        return connection.execute("WITH expired AS (SELECT tenant_id,project_id,waiter_id,request_id "
+            "FROM communication_waits WHERE tenant_id=%s AND expires_at<=clock_timestamp() "
+            "ORDER BY expires_at LIMIT %s FOR UPDATE SKIP LOCKED) "
+            "DELETE FROM communication_waits w USING expired e WHERE "
+            "(w.tenant_id,w.project_id,w.waiter_id,w.request_id)=(e.tenant_id,e.project_id,e.waiter_id,e.request_id)",
+            (authority.tenant_id, limit)).rowcount
+
+
 async def maintain_communication_deliveries(service):
     authority = service.authority
     if getattr(authority, "_communication_maintenance_mode", "auto") == "external":
@@ -21,6 +34,7 @@ async def maintain_communication_deliveries(service):
     try:
         while True:
             try:
+                await asyncio.to_thread(prune_expired_waits, authority)
                 # Filter at the authority so this worker never resumes task-era
                 # operations or starts an execution-result collector.
                 def pending():

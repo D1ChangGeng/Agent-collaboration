@@ -506,6 +506,10 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
                     raise IdempotencyConflict(request_id)
             result = (tuple(prior[1]) if prior else
                       getattr(self, "_" + name)(bound, cursor, project, command, args, credential))
+            if prior and name == "send_message":
+                # Preserve the committed operation and its stored response, but
+                # distinguish a retry from a newly accepted submission.
+                result = (result[0], {**result[1], "duplicate": True}, result[2])
             # Recheck after potentially expensive reads/commands, before commit.
             self._authorize(bound, cursor, project_id, name, args)
             if request_id and prior is None:
