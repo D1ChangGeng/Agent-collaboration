@@ -1,0 +1,182 @@
+{
+  "implementation_commit": "3908b1fc7bf7459dadc36b65534f3d15ee1d5bf1",
+  "base_commit": "75417fdd01d0cff0d0fe604d5614c3430b76fc29",
+  "branch": "codex/core-cleanup",
+  "push": "not_requested_not_performed",
+  "remote_environment_switch": false,
+  "production_migration": false,
+  "goal_status": "active",
+  "candidate": "D:\\Chatgpt\\Agent-collaboration\\dist\\candidates\\acs-communication-3908b1f",
+  "wheel_sha256": "2bf5fac3996d44ed5fb43e133f826687caa385053dde1b03bd9b9c3a1b75b126",
+  "runtime_files": 111,
+  "native_runs": {
+    "invoke-458e6afe6dc9": {
+      "manifest_sha256": "c9de677ec5b4addd97f37900912525d38b2333908bb6b3bffe106a442db8a823",
+      "nonsemantic_differences": [
+        {
+          "file": "runtime/project_archive.py",
+          "change": "EOF whitespace only; AST identical"
+        },
+        {
+          "file": "runtime/project_service.py",
+          "change": "EOF whitespace only; AST identical"
+        }
+      ],
+      "facts": {
+        "installed_version": "codex-cli 0.166.0-alpha.5.1",
+        "b_native_thread": "01a191be-bf44-7210-be3f-637f7892dae2",
+        "messages": [
+          [
+            "message-b80a59429fb3450a94ee95901a7de676",
+            "collaborator:project-alpha:slot-a-real",
+            "collaborator:project-alpha:slot-b",
+            "Please provide the release label for this isolated exercise. Reply with the exact label only.",
+            "invoke"
+          ],
+          [
+            "message-3afc9e09752a4b4dad5aa3876b24e72a",
+            "collaborator:project-alpha:slot-b",
+            "collaborator:project-alpha:slot-a-real",
+            "native-orchid-e5db5a1d96d0",
+            "invoke"
+          ]
+        ],
+        "reply_relationships": [
+          [
+            "message-b80a59429fb3450a94ee95901a7de676",
+            "message-3afc9e09752a4b4dad5aa3876b24e72a"
+          ]
+        ],
+        "native_turn_start_count": 1,
+        "work_count": 0,
+        "label": "native-orchid-e5db5a1d96d0",
+        "activation": "production dispatcher and NativeDeliveryAdapter",
+        "fault_injection": null,
+        "source_manifest_sha256": "c9de677ec5b4addd97f37900912525d38b2333908bb6b3bffe106a442db8a823",
+        "production_receiver_factory": true,
+        "collector_created": false
+      }
+    },
+    "invoke-661f14220608": {
+      "manifest_sha256": "c9de677ec5b4addd97f37900912525d38b2333908bb6b3bffe106a442db8a823",
+      "nonsemantic_differences": [
+        {
+          "file": "runtime/project_archive.py",
+          "change": "EOF whitespace only; AST identical"
+        },
+        {
+          "file": "runtime/project_service.py",
+          "change": "EOF whitespace only; AST identical"
+        }
+      ],
+      "facts": {
+        "installed_version": "codex-cli 0.166.0-alpha.5.1",
+        "b_native_thread": "01a191c8-8fde-7841-8b18-c2ed76d6ce10",
+        "messages": [
+          [
+            "message-fb872806bc194c04b1a93911922f3c5c",
+            "collaborator:project-alpha:slot-a-real",
+            "collaborator:project-alpha:slot-b",
+            "What is the release label for this isolated exercise? Please reply with the exact label.",
+            "invoke"
+          ],
+          [
+            "message-e48d064ee6804f74af1d024153555b30",
+            "collaborator:project-alpha:slot-b",
+            "collaborator:project-alpha:slot-a-real",
+            "native-orchid-ccac114c66f9",
+            "invoke"
+          ]
+        ],
+        "reply_relationships": [
+          [
+            "message-fb872806bc194c04b1a93911922f3c5c",
+            "message-e48d064ee6804f74af1d024153555b30"
+          ]
+        ],
+        "native_turn_start_count": 1,
+        "work_count": 0,
+        "label": "native-orchid-ccac114c66f9",
+        "activation": "production dispatcher and NativeDeliveryAdapter",
+        "fault_injection": "observation loss after actual Native response",
+        "source_manifest_sha256": "c9de677ec5b4addd97f37900912525d38b2333908bb6b3bffe106a442db8a823",
+        "production_receiver_factory": true,
+        "collector_created": false,
+        "authority_native_state": "uncertain",
+        "replay_states": [
+          "uncertain",
+          "uncertain"
+        ],
+        "post_retry_native_turn_start_count": 1
+      }
+    }
+  },
+  "reports": {
+    "integration-final.xml": {
+      "tests": "103",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "2",
+      "time": "123.410"
+    },
+    "runtime-final.xml": {
+      "tests": "171",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "6",
+      "time": "116.544"
+    },
+    "factory-lifecycle.xml": {
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "3.624"
+    },
+    "factory-agent-loop.xml": {
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "55.111"
+    },
+    "factory-ack-unknown.xml": {
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "107.833"
+    },
+    "backup-restore.xml": {
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "6.579"
+    },
+    "components-linux-git-fixture.xml": {
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.464"
+    },
+    "enrollment-linux-identified.xml": {
+      "tests": "33",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "39.331"
+    },
+    "components-linux-final.xml": {
+      "tests": "1527",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "652",
+      "time": "123.054"
+    }
+  },
+  "source_normalization": "Only documented EOF whitespace changes after Native runs; ASTs identical",
+  "physical_legacy_domain_and_schema_retained": true,
+  "systemd_profile_status": "unqualified_on_this_WSL: required systemctl identity/policy fields missing; no weakened checks"
+}

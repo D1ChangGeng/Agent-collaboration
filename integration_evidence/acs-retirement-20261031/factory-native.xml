@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.649" timestamp="2026-10-31T20:30:45.083085+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_receiver" name="test_actual_factory_preparation_uses_live_node_identity_without_task_collector" time="1.764"><failure message="ValueError: label must be an explicit operation label of at most 96 characters">runtime_tests\test_communication_receiver.py:184: in test_actual_factory_preparation_uses_live_node_identity_without_task_collector
+    capacity = enrolled_native_factory(comm, tmp_path, monkeypatch, home)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_communication_receiver.py:176: in enrolled_native_factory
+    return CodexReceiverCapacity(config, policy, settings)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_deployment\receiver_codex.py:271: in __init__
+    self.driver.spawn(self._lifecycle_operation("spawn"))
+runtime\codex_driver.py:716: in spawn
+    return self._run(operation, "spawn", {"profile": self.profile.binding()}, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:547: in _run
+    result = function()
+             ^^^^^^^^^^
+runtime\codex_driver.py:667: in perform
+    self.owned = self.supervisor.launch(
+runtime\supervisor.py:222: in launch
+    args = _validate_launch(argv, env, label)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\supervisor.py:60: in _validate_launch
+    raise ValueError("label must be an explicit operation label of at most 96 characters")
+E   ValueError: label must be an explicit operation label of at most 96 characters</failure></testcase></testsuite></testsuites>

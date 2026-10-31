@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.984" timestamp="2026-10-31T20:30:04.278459+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_receiver" name="test_actual_factory_preparation_uses_live_node_identity_without_task_collector" time="1.111"><failure message="runtime.errors.AuthorizationDenied: authorization denied for agent:engineer with grant:b">runtime_tests\test_communication_receiver.py:184: in test_actual_factory_preparation_uses_live_node_identity_without_task_collector
+    capacity = enrolled_native_factory(comm, tmp_path, monkeypatch, home)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_communication_receiver.py:154: in enrolled_native_factory
+    f.authority.enroll_node(enrollment_command(f.authority, "node.enroll", "node", "factory-node"),
+runtime\domain.py:211: in enroll_node
+    return self.enrollment.enroll_node(command, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\enrollment.py:253: in enroll_node
+    observer, observer_expiry = self._grant(cursor, request.observer_grant_ref, request.scope_id,
+runtime\enrollment.py:117: in _grant
+    raise AuthorizationDenied(ctx.principal_ref, grant_ref)
+E   runtime.errors.AuthorizationDenied: authorization denied for agent:engineer with grant:b</failure></testcase></testsuite></testsuites>

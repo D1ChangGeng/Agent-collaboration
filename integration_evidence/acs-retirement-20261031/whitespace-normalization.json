@@ -1,0 +1,27 @@
+{
+  "runtime/project_service.py": {
+    "before_sha256": "9f8acc2aa8b18df7ea5b44fe9090a0f1d95d4953f3c09f704cfd2f202a1c3809",
+    "after_sha256": "0259a73053ebed358e8d93e24056068024962a8aff659532e5692abce86b7429",
+    "change": "trailing blank lines only; AST identical"
+  },
+  "runtime_tests/test_receiver_codex_factory.py": {
+    "before_sha256": "015d4719cc15d5074be77e8895670f152b1522acdd2b43e336ab388768926cdd",
+    "after_sha256": "396c9a636dc24a81745813909603012e37458338fb297df4ad2baba6841ccf48",
+    "change": "trailing blank lines only; AST identical"
+  },
+  "runtime/project_archive.py": {
+    "before_sha256": "e1b26f5b530c02fe44aa792174cdf0524bf581eac61ba931ba96e9c449c4a4e9",
+    "after_sha256": "949da76dbe1f4509d724de240275ef0104b6c0984498828e6f24a1ab6e700336",
+    "change": "trailing blank lines only; AST identical"
+  },
+  "runtime_tests/fixtures/legacy_receiver_projection.py": {
+    "before_sha256": "8d5fcc9eb817f88c5c39e03abfac60fcdd4370852409430c30ff9540f520702b",
+    "after_sha256": "47a4d89b9a81a539a83595eb864cfff5b9d521fe1680c1e22d5c99018ebca506",
+    "change": "trailing blank lines only; AST identical"
+  },
+  "runtime_tests/fixtures/legacy_team_models.py": {
+    "before_sha256": "f6ed9e5a003b0700fb364e570e237701b476f00fd5754bb710d419d526cbdcd5",
+    "after_sha256": "26ec624bee558c78020db155f028e8c6b974d7e034c35703a8c3d98d9b1a72a0",
+    "change": "trailing blank lines only; AST identical"
+  }
+}
