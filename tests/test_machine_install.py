@@ -62,6 +62,14 @@ def runtime_result(state="authorized"):
 
 
 class MachineInstallTests(unittest.TestCase):
+    def setUp(self):
+        # A preview must not read the developer's actual installation state.
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        root = mock.patch.object(bootstrap, "install_root", return_value=Path(directory.name) / "install")
+        root.start()
+        self.addCleanup(root.stop)
+
     def test_unspecified_machine_needs_selection_and_apply_performs_no_io(self):
         with (mock.patch.object(bootstrap, "release_metadata", side_effect=AssertionError("network")),
               mock.patch.object(bootstrap, "ensure_install_root", side_effect=AssertionError("write"))):

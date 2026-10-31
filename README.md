@@ -1,15 +1,21 @@
 <div align="center">
   <img src="assets/acs-mark.svg" width="108" alt="Agent Collaboration System mark" />
   <h1>Agent Collaboration System</h1>
-  <p>Durable project coordination for AI agents across sessions, machines and Harnesses.</p>
+  <p>Durable communication for AI agents across sessions, machines and Harnesses.</p>
   <p><a href="README.zh-CN.md">简体中文</a> · <a href="docs/GETTING-STARTED.md">Get started</a> · <a href="docs/runtime/UPGRADE-CONTRACT.md">Runtime architecture</a></p>
 </div>
 
-ACS gives a project a stable **Management Root** and **Routes** for long-lived
-development work. A Root Agent can organize teams and WorkItems, send messages,
-recover responses from Inbox, inspect exact source evidence and request Review.
-Codex and OpenCode act as external Agents; ACS persists identity, authorization,
-delivery and recovery state in a shared Runtime.
+ACS connects independent Agents through stable contacts, natural messages,
+explicit replies and a durable Inbox. A project keeps its **Management Root**
+and **Routes**; Codex and OpenCode decide how to perform and review work.
+ACS authenticates participants, preserves communication and starts a permitted
+Native request when requested.
+
+The current source contains an unreleased communication-core candidate. See the
+[communication contract](docs/runtime/COMMUNICATION.md) for tools and adoption,
+and the [implementation and support record](docs/runtime/COMMUNICATION-STATUS.md)
+for measured environments and limitations. The v1.4.0 installation instructions
+below describe that published Release; they do not install this candidate.
 
 ## Start with an AI assistant
 
@@ -38,8 +44,8 @@ Then ask:
 The [getting started guide](docs/GETTING-STARTED.md) starts with Runtime host
 selection and client connection verification. Once the machine installation is
 ready, the [setup Skill](SKILL.md) can create or adopt a project's Management
-Root and lead into Route/Team setup, WorkItem delivery, Inbox recovery and
-independent Review.
+Root and lead into Route/Team setup. On the current communication core, use
+ordinary messages to delegate work and recover replies from Inbox.
 
 ## Standard release installation
 
@@ -113,16 +119,16 @@ recovery.
 | Need | ACS capability |
 | --- | --- |
 | Organize a project | Stable Project and Management Root identity, Route registry and scoped project context |
-| Build a team | AgentSlots, roles, Grants, Policies and budgets through `configure_team` |
-| Delegate work | WorkItems, durable messages, handoff acknowledgement and response handles |
-| Continue later | Condition waits, optional caller timeouts, notifications, Inbox reads and Session replacement recovery |
-| Trust the result | Exact Git SourceBinding, Evidence, independent Review and accepted state |
+| Build a team | Stable AgentSlots, roles, scoped Grants and actual receiver preparation through `configure_team` |
+| Delegate work | Natural `send_message` content, explicit reply relationships and durable handles |
+| Continue later | Reply waits, optional observation timeouts, Inbox history and Session replacement recovery |
+| Inspect source | Authorized SourceBinding and machine-file reads; Agents assess work and review evidence |
 | Connect clients | Profile-filtered MCP tools for Codex, OpenCode and a single-owner private ChatGPT Tunnel |
 
 The Runtime tool catalog is [machine-readable](docs/runtime/p2-mcp-tool-contract.json).
 Knowledge Skills under [docs/runtime/skills](docs/runtime/skills/README.md)
-explain the project, collaboration, continuity, source, policy and Review
-models as an Agent needs them.
+explain project identity, communication, continuity, source access and policy
+as an Agent needs them.
 
 ## Agent organization
 
@@ -140,11 +146,12 @@ flowchart TB
     D --> F[Task Agent: Finalizer]
 ```
 
-Organization extent, Role, Profile and Grant have separate meanings. Existing
-Slots, WorkItems and replaceable Sessions provide the bindings. Independent
-Review checks candidate participants; acceptance checks its Grant and exact
-Source, Evidence, Review and readbacks. The [organization model proposal](docs/runtime/AGENT-ORGANIZATION-MODEL.md)
-defines terminology, compatibility and observable context fields.
+Organization extent, Role, Profile and Grant have separate meanings. Stable
+Slots retain authorship when replaceable Native Sessions change. Agents can
+ask a reviewer to inspect a particular commit and send findings using ordinary
+messages. The [organization model proposal](docs/runtime/AGENT-ORGANIZATION-MODEL.md)
+retains its historical design scope; the current tool contract defines runtime
+behavior.
 
 ## Architecture
 
@@ -156,18 +163,18 @@ flowchart LR
     T --> M[Local ACS MCP]
     H --> M
     M --> D[Authenticated Domain service]
-    D --> P[(PostgreSQL<br/>Project, WorkItem, Grant, Inbox)]
+    D --> P[(PostgreSQL<br/>Project, Grant, Message, Inbox)]
     D --> O[Delivery and recovery]
     O --> N[Machine Node and Harness Driver]
-    O --> Q[Temporal operations]
     N --> H
-    D --> S[Source and artifact providers]
+    D --> S[Authorized source and machine files]
 ```
 
-External Agents choose goals, delegation and Review decisions. The Domain
-checks identity, project scope, Grant and revision before committing state.
-Node and Driver integrations observe actual Harness sessions and execution.
-Git commits and trees remain the source of truth for repository content.
+External Agents choose goals, delegation and review decisions. The Domain
+checks identity, project scope and current authorization before committing
+messages. The default MCP entries maintain pending delivery with bounded
+concurrency. Node and Driver integrations prepare real Sessions and report
+Native admission. Git commits and trees identify repository content.
 
 ## A collaboration cycle
 
@@ -175,25 +182,21 @@ Git commits and trees remain the source of truth for repository content.
 sequenceDiagram
     participant R as Root Agent
     participant C as ACS Runtime
-    participant E as Task Agent [Engineer]
-    participant V as Task Agent [Reviewer]
-    R->>C: Create Route, Team and WorkItem
-    R->>C: Send message or hand off work
+    participant E as Engineer
+    R->>C: Configure collaborator and receiver
+    R->>C: send_message(to=Engineer, content=goal)
     C->>E: Commit to Inbox and dispatch when eligible
-    E->>C: Respond with source and evidence
-    C-->>R: Receipt, response handle and notification
-    R->>C: Wait or recover from Inbox
-    R->>C: Request independent Review
-    C->>V: Present exact candidate and evidence
-    V->>C: Record Review decision
-    C-->>R: Read back result and unresolved items
+    E->>C: send_message(to=Root, reply_to=original, content=reply)
+    C-->>R: Explicit reply through wait or Inbox
+    R->>C: Read original message and history
 ```
 
-For example, a Root Agent can ask an Engineer to change one feature, keep the
-WorkItem and message handle across a Session restart, inspect the output commit
-and test evidence, and route that candidate to a Reviewer. The
-[engineering evidence index](docs/runtime/P2-EXECUTION-STATUS.md) records the
-exact scope of measured cross-machine, cross-Harness and MCP behavior.
+For example, a Root Agent sends an Engineer a goal and repository location,
+retains the returned message handle across a Session restart, then reads the
+Engineer's associated reply. The Engineer supplies its own commit and test
+evidence. The [communication support record](docs/runtime/COMMUNICATION-STATUS.md)
+links current implementation and actual cross-machine runs; older Gate records
+retain the versions and capabilities they measured.
 
 ## Install and connect
 

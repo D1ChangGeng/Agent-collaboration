@@ -687,7 +687,7 @@ def test_actual_stdio_mcp_processes_exchange_messages(comm, tmp_path):
                 assert request in resource.contents[0].text
                 facts = {"request": request, "reply": reply.structured_content["data"]["message_handle"],
                          "transport": "two real stdio MCP processes", "model_evidence": False}
-                (ROOT / "integration_evidence/acs-communication-20261031/stdio-mcp.json").write_text(json.dumps(facts, indent=2))
+                (tmp_path / "stdio-mcp.json").write_text(json.dumps(facts, indent=2))
     asyncio.run(exercise())
 
 

@@ -1,0 +1,9 @@
+{
+  "source_root": "/tmp/acs-machine-fixture-dxa24v7o",
+  "exit_code": 0,
+  "elapsed_seconds": 11.026661536001484,
+  "change": "test-only install_root isolation",
+  "test_before_sha256": "8c9b13dd9432e15d2cf9f5421052e9d6b7cd521b5abc1f50b447beba6fa569c3",
+  "test_after_sha256": "87173dfd8ccbd32f16032b1010797064f4a2c116598431adf5c8524469499cba",
+  "production_installer_changed": false
+}

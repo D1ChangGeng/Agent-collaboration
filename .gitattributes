@@ -30,3 +30,7 @@ integration_evidence/acs-content-20261101/**/*.xml -whitespace
 
 integration_evidence/acs-configuration-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
 integration_evidence/acs-configuration-20261101/**/*.xml -whitespace
+
+integration_evidence/acs-core-audit-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-core-audit-20261101/**/*.xml -whitespace
+integration_evidence/acs-core-audit-20261101/**/*.txt -whitespace

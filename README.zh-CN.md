@@ -1,14 +1,18 @@
 <div align="center">
   <img src="assets/acs-mark.svg" width="108" alt="Agent Collaboration System 标识" />
   <h1>Agent Collaboration System</h1>
-  <p>为跨会话、跨机器、跨 Harness 的 AI 协作提供持久项目管理能力。</p>
+  <p>为跨会话、跨机器、跨 Harness 的 AI Agent 提供持久通信。</p>
   <p><a href="README.md">English</a> · <a href="docs/GETTING-STARTED.md">开始使用</a> · <a href="docs/runtime/UPGRADE-CONTRACT.md">运行架构</a></p>
 </div>
 
-ACS 在项目中建立稳定的 **Management Root** 和 **Route**。Root Agent 可以配置
-Team、管理 WorkItem、投递消息、从 Inbox 恢复响应、核对源码证据并发起独立
-Review。Codex 和 OpenCode 是外部 Agent；ACS Runtime 保存身份、授权、投递和
-恢复状态。
+ACS 通过稳定联系人、自然消息、主动关联回复和持久 Inbox 连接独立 Agent。
+项目保有 **Management Root** 和 **Route**；Codex、OpenCode 自主安排工作与
+评审。ACS 验证参与者身份、保留通信，并按请求发起受权 Native 输入。
+
+当前源码包含尚未发布的通信核心候选。工具及采用方式见
+[通信合同](docs/runtime/COMMUNICATION.md)，实际环境和限制见
+[实现与支持记录](docs/runtime/COMMUNICATION-STATUS.md)。下文 v1.4.0 安装说明
+对应已发布版本，不会安装本候选。
 
 ## 把仓库链接交给 AI
 
@@ -31,22 +35,22 @@ https://github.com/D1ChangGeng/Agent-collaboration
 
 [首次使用指南](docs/GETTING-STARTED.md)从 Runtime 主机选择和客户端连接验证
 开始。机器安装就绪后，可以调用 [setup Skill](SKILL.md)创建或接入项目
-Management Root，随后使用 Route/Team、WorkItem 投递、Inbox 恢复和独立 Review。
+Management Root。当前通信核心通过普通消息委任工作，并从 Inbox 接续回复。
 
 ## 协作能力
 
 | 需求 | ACS 能力 |
 | --- | --- |
 | 管理项目 | 稳定的 Project、Management Root、Route 与项目上下文 |
-| 配置团队 | AgentSlot、角色、Grant、Policy 和预算 |
-| 交付工作 | WorkItem、持久消息、Handoff 确认与响应句柄 |
-| 异步继续 | 条件等待、可选调用方超时、通知、Inbox 和 Session 替换恢复 |
-| 审查结果 | Git SourceBinding、Evidence、独立 Review 和接受状态 |
+| 配置团队 | 稳定 AgentSlot、角色、范围授权和真实接收端准备 |
+| 委任工作 | 自然 send_message、明确回复关系与持久句柄 |
+| 异步继续 | 回复等待、可选观察期限、Inbox 历史和 Session 替换恢复 |
+| 核对源码 | 受权 SourceBinding 与机器文件读取；Agent 判断工作和评审证据 |
 | 连接客户端 | 面向 Codex、OpenCode 与个人 ChatGPT Tunnel 的 MCP 工具 |
 
 [MCP 工具目录](docs/runtime/p2-mcp-tool-contract.json)给出机器可读接口；
 [Runtime Skills](docs/runtime/skills/README.md)提供项目、协作、连续性、源码、
-授权和 Review 的按需知识。
+授权的按需知识。
 
 ## Agent 组织模型
 
@@ -63,10 +67,10 @@ flowchart TB
     D --> F[Task Agent：Finalizer]
 ```
 
-组织责任范围、Role、Profile 与 Grant 各有独立含义。现有 AgentSlot、WorkItem
-和可替换 Session 承载具体绑定。独立 Review 核对候选参与者身份；接受操作核对
-授权与精确 Source、Evidence、Review、回读证据。
-[组织模型提案](docs/runtime/AGENT-ORGANIZATION-MODEL.md)说明术语、兼容关系和上下文表达。
+组织责任范围、Role、Profile 与 Grant 各有独立含义。稳定 Slot 在 Native Session
+替换后保留作者身份。Agent 可以通过普通消息请 Reviewer 核查具体 commit 并回报。
+[组织模型提案](docs/runtime/AGENT-ORGANIZATION-MODEL.md)保留其历史设计范围，
+实际运行以当前工具合同为准。
 
 ## 架构
 
@@ -78,17 +82,16 @@ flowchart LR
     T --> M[本地 ACS MCP]
     H --> M
     M --> D[认证后的 Domain 服务]
-    D --> P[(PostgreSQL<br/>项目、任务、授权、Inbox)]
+    D --> P[(PostgreSQL<br/>项目、授权、消息、Inbox)]
     D --> O[投递与恢复]
     O --> N[Machine Node 和 Harness Driver]
-    O --> Q[Temporal 操作]
     N --> H
-    D --> S[源码和产物提供方]
+    D --> S[受权源码与机器文件]
 ```
 
-外部 Agent 负责目标、委派与 Review 决策；Domain 在写入前核对身份、项目范围、
-Grant 和修订号。Node 与 Driver 观察真实 Harness 会话与执行，Git commit/tree
-界定源码状态。
+外部 Agent 负责目标、委派与评审决策；Domain 在写入前核对身份、项目范围和
+当前授权。默认 MCP 入口以有界并发维护待投递消息。Node 与 Driver 准备真实
+Session、报告 Native 接纳事实；Git commit/tree 界定源码状态。
 
 ## 一个完整协作流程
 
@@ -96,24 +99,19 @@ Grant 和修订号。Node 与 Driver 观察真实 Harness 会话与执行，Git 
 sequenceDiagram
     participant R as Root Agent
     participant C as ACS Runtime
-    participant E as Task Agent [Engineer]
-    participant V as Task Agent [Reviewer]
-    R->>C: 建立 Route、Team、WorkItem
-    R->>C: 投递消息或 Handoff
+    participant E as Engineer
+    R->>C: 配置联系人与接收端
+    R->>C: send_message：目标与自然正文
     C->>E: 写入 Inbox 并在合适时投递
-    E->>C: 返回源码与证据
-    C-->>R: 回执、响应句柄和通知
-    R->>C: 等待或从 Inbox 恢复
-    R->>C: 请求独立 Review
-    C->>V: 提交精确候选与证据
-    V->>C: 记录 Review 结论
-    C-->>R: 回读结果与未解决项
+    E->>C: send_message：向原作者主动关联回信
+    C-->>R: 从等待结果或 Inbox 取得真实回复
+    R->>C: 读取原文及历史
 ```
 
-例如，Root Agent 可以将一次功能改动交给 Engineer，在会话重启后继续追踪同一
-WorkItem 与消息句柄，再核对输出 commit、测试证据并送交 Reviewer。
-[工程证据索引](docs/runtime/P2-EXECUTION-STATUS.md)记录已测量的跨机器、
-跨 Harness 与 MCP 结果的精确范围。
+例如，Root Agent 给 Engineer 发送目标和仓库位置，会话重启后仍用原消息句柄
+读取其主动关联回复，由 Engineer 提供自己的 commit 与测试材料。
+[通信支持记录](docs/runtime/COMMUNICATION-STATUS.md)连接当前实现和真实跨机运行；
+旧 Gate 记录保留当时测量的版本与范围。
 
 ## 安装与接入
 

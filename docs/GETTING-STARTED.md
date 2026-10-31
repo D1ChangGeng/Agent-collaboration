@@ -1,5 +1,11 @@
 # Get started with Agent Collaboration System
 
+The current source has an unreleased communication-core candidate. Its
+[contract](runtime/COMMUNICATION.md) and [support record](runtime/COMMUNICATION-STATUS.md)
+define the current tools, explicit adoption and measured environments. The
+v1.4.0 Bootstrap instructions below install that published Release; installing
+it does not switch an existing service to the candidate.
+
 Give the [repository link](https://github.com/D1ChangGeng/Agent-collaboration)
 to a local Codex or OpenCode session and ask it to guide the installation.
 The Agent inspects your operating system, active Harness and existing ACS
@@ -190,12 +196,14 @@ Management Root as its working directory. The Root Agent reads its `AGENTS.md`,
 project identity and Route registry. Tell it the collaboration goal and ask it
 to create the first Route and Team.
 
-For a first collaborative task, ask the Root Agent to create a WorkItem, hand
-the work to an authorized AgentSlot, inspect the message receipts, wait for a
-response or recover it from Inbox, then request an independent Review of the
-resulting evidence. The Agent should report exact source commit and tree,
-delivery state, reviewer identity, unresolved items and the next authorized
-action before accepting work.
+On the current communication core, start with `list_collaborators(project_id)`
+and use the returned contact in `send_message(project_id, to, content)`.
+The recipient replies with the same tool, addressed to the original sender,
+with the original message handle in `reply_to`. Use `wait_for_response` or Inbox
+to continue after reconnecting. The default is invoke plus async; `message_only`
+stores the message without waking the recipient. Agents exchange source commits
+and review findings as natural content. See the [communication contract](runtime/COMMUNICATION.md)
+for permissions, long-message continuation and committed-versus-observed results.
 
 ## ChatGPT web connection
 

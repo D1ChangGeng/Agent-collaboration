@@ -1,0 +1,32 @@
+Validation failed:
+- missing VERSION
+- missing references/OPERATING-GUIDE.md
+- missing references/CAPABILITY-MATRIX.md
+- missing references/SCENARIO-MATRIX.md
+- missing references/DESIGN.md
+- missing references/HARNESS-COMPATIBILITY.md
+- missing references/UPGRADE-POLICY.md
+- missing assets/scaffold/AGENTS_BLOCK.md
+- missing assets/scaffold/CLAUDE_BLOCK.md
+- missing assets/scaffold/.agents/protocol/CAPABILITIES.md
+- missing assets/scaffold/.agents/protocol/RELAY.md
+- missing assets/scaffold/.agents/protocol/GIT-SYNC.md
+- missing assets/scaffold/.agents/protocol/KNOWLEDGE.md
+- missing assets/scaffold/workspace/AGENTS_BLOCK.md
+- missing assets/scaffold/workspace/SOURCE_CHECKOUT_BLOCK.md
+- missing assets/scaffold/workspace/GITIGNORE_BLOCK.txt
+- missing assets/scaffold/workspace/ROUTE_AGENTS.md
+- missing assets/scaffold/workspace/.agents/README.md
+- missing assets/scaffold/workspace/.agents/config.yaml
+- missing assets/scaffold/workspace/.agents/settings.yaml
+- missing assets/scaffold/workspace/.agents/protocol/CAPABILITIES.md
+- missing assets/scaffold/workspace/.agents/protocol/RELAY.md
+- missing assets/scaffold/workspace/.agents/protocol/GIT-SYNC.md
+- missing assets/scaffold/workspace/.agents/protocol/KNOWLEDGE.md
+- missing assets/scaffold/workspace/.agents/protocol/SOURCE-STATE.md
+- missing assets/scaffold/workspace/.agents/coordination/ROOT.md
+- missing assets/scaffold/workspace/.agents/coordination/ROOT-BASELINE.md
+- missing assets/scaffold/workspace/.agents/coordination/PROJECT.md
+- missing assets/scaffold/workspace/.agents/state/source-state.yaml
+- [Errno 2] No such file or directory: '/tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/VERSION'
+- scaffold version check failed: [Errno 2] No such file or directory: '/tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/VERSION'
