@@ -64,6 +64,7 @@ jobs:
           runtime_tests/test_communication.py
           runtime_tests/test_communication_adapters.py
           runtime_tests/test_communication_faults.py
+          runtime_tests/test_communication_maintenance.py
           runtime_tests/test_communication_archive.py
           runtime_tests/test_communication_retirement.py
           runtime_tests/test_communication_storage.py

@@ -83,7 +83,7 @@ def dispatch_committed(comm, sent):
         time.sleep(0.25)
 
 
-def launch_codex(comm, tmp_path, provider_key):
+def launch_codex(comm, tmp_path, provider_key, endpoint_id, transport_seed):
     binary = shutil.which("codex.exe") if os.name == "nt" else shutil.which("codex")
     assert binary, "an actual installed Codex CLI is required"
     home = tmp_path / "codex-a"
@@ -115,7 +115,15 @@ def launch_codex(comm, tmp_path, provider_key):
             {
                 "access_mode": "owner",
                 "context": asdict(comm.clients["a"].service.context),
-                "delivery_maintenance": "external",
+                "remote_endpoints": [
+                    {
+                        "endpoint_id": endpoint_id,
+                        "authority_signing_key_ref": {
+                            "kind": "environment",
+                            "name": "ACS_A_TRANSPORT_SEED",
+                        },
+                    }
+                ],
                 "dsn_ref": {"kind": "environment", "name": "ACS_A_DSN"},
                 "credential_ref": {"kind": "environment", "name": "ACS_A_CREDENTIAL"},
             }
@@ -153,6 +161,7 @@ def launch_codex(comm, tmp_path, provider_key):
         ACS_A_PROVIDER_KEY=provider_key,
         ACS_A_DSN=comm.dsn,
         ACS_A_CREDENTIAL=comm.clients["a"].credential_provider(),
+        ACS_A_TRANSPORT_SEED=transport_seed,
     )
     declaration = (
         "mcp_servers={acs={command="
@@ -160,7 +169,7 @@ def launch_codex(comm, tmp_path, provider_key):
         + ",args=["
         + json.dumps(str(wrapper))
         + "],"
-        'env_vars=["ACS_A_DSN","ACS_A_CREDENTIAL"],required=true,startup_timeout_sec=30,tool_timeout_sec=360,'
+        'env_vars=["ACS_A_DSN","ACS_A_CREDENTIAL","ACS_A_TRANSPORT_SEED"],required=true,startup_timeout_sec=30,tool_timeout_sec=360,'
         'tools={send_message={approval_mode="approve"}}}}'
     )
     out = (tmp_path / "a.jsonl").open("w", encoding="utf-8")
@@ -592,7 +601,9 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                     assert dispatched["status"] in {"delivered", "uncertain"}, dispatched
                     response = waiting.result(timeout=310)
             else:
-                a, a_outputs = launch_codex(comm, tmp_path, provider_key)
+                a, a_outputs = launch_codex(
+                    comm, tmp_path, provider_key, endpoint_id, authority_key.encode().hex()
+                )
                 outputs.extend(a_outputs)
                 deadline = time.monotonic() + 150
                 while True:
@@ -612,9 +623,28 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                     "operation_id": row[1],
                     "message_handle": "message:project-alpha:" + row[0],
                 }
-                dispatched = dispatch_committed(comm, sent)
-                assert dispatched["status"] in {"delivered", "uncertain"}, dispatched
-                assert a.wait(timeout=250) == 0
+                # The actual stdio MCP entry owns default maintenance. The
+                # evaluator only observes this committed operation and never
+                # calls dispatch/recovery or forwards an input to B.
+                assert a.wait(timeout=360) == 0
+                observed_end = time.monotonic() + 60
+                while True:
+                    with comm.authority._connect() as connection:
+                        state = connection.execute(
+                            "SELECT state,receipt_high_water,attempts FROM delivery_messages WHERE message_id=%s",
+                            (sent["message_id"],),
+                        ).fetchone()
+                    if state[0] in {"delivered", "uncertain"}:
+                        break
+                    assert time.monotonic() < observed_end, state
+                    time.sleep(0.2)
+                dispatched = {
+                    "status": state[0],
+                    "receipt_high_water": state[1],
+                    "attempts": state[2],
+                    "source": "default_stdio_maintenance",
+                }
+                facts["evaluator_dispatch_calls"] = 0
                 assert label in (tmp_path / "a.jsonl").read_text(encoding="utf-8")
                 response = call(
                     comm,

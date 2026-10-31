@@ -95,6 +95,17 @@ same reply through its Tool Result without a duplicate Native turn. Inbox remain
 available if that result channel disappears. Notifications are wake hints, not
 proof of model consumption.
 
+Each default entry keeps at most four transport operations in flight. Pending
+selection follows due time and original creation order; an independent peer can progress
+while another target waits for an ACK. Adapter failures are isolated to their
+committed operation, with the existing retry delay and Native dispatch marker
+retained. The per-Slot dispatch fence still serializes Native admission.
+An observed, persisted Native ACK can complete delivery after an outer Adapter
+result fails; it never substitutes for the recipient's explicit Agent reply.
+The [default-entry evidence](../../integration_evidence/acs-maintenance-20261101/REPORT.md)
+records a real Codex/OpenCode exchange where the stdio entry maintained delivery
+and the evaluator made no dispatch or recovery calls.
+
 An abruptly stopped MCP waiter can leave its short observation lease behind.
 Replies remain in the authoritative Inbox even when that result channel is gone;
 a new authenticated MCP process can read or wait for the same first reply.

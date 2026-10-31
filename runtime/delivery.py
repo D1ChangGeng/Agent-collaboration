@@ -1009,8 +1009,7 @@ class DeliveryDispatcher:
                             final_cursor, row, status,
                             "native_outcome_uncertain" if status == "uncertain" else None,
                         )
-                except (DeliveryRejected, AuthorizationDenied, DeliveryBoundaryRejected,
-                        OperationIdentityConflict, DeliveryTransportError) as error:
+                except Exception as error:  # noqa: BLE001 - classify every Adapter outcome against the durable Native marker.
                     if (isinstance(error, InvocationPreCallRejected) and not isinstance(error, InvocationDeferred)
                             and self.service.endpoint_resolver is not None):
                         try:
@@ -1043,7 +1042,10 @@ class DeliveryDispatcher:
                                 readback = endpoint.inspect_delivery(row["operation_id"], "uncertain")
                                 if any(receipt["layer"] in ("runtime_acknowledged", "response_received")
                                        for receipt in readback["receipts"]):
-                                    return self._failure(fail_cursor, row, error)
+                                    self._project(fail_cursor, row, readback)
+                                    self._finish(fail_cursor, row, "delivered")
+                                    return {"status": "delivered", "message_id": row["message_id"],
+                                            "attempts": row["attempts"]}
                             self._finish(fail_cursor, row, "uncertain", "post_dispatch_result_uncertain")
                             return {"status": "uncertain", "message_id": row["message_id"],
                                     "attempts": row["attempts"]}

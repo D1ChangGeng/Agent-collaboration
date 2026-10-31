@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.582" timestamp="2026-11-01T02:12:20.026413+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_maintenance" name="test_confirmed_native_ack_survives_an_unclassified_adapter_result" time="1.938"><failure message="AssertionError: {'attempts': 1, 'message_id': 'message-b10139b123844659b8ebe8cef69fb978', 'retry_after_seconds': 1, 'status': 'retry_wait'}&#10;assert 'retry_wait' == 'delivered'&#10;  &#10;  - delivered&#10;  + retry_wait">runtime_tests\test_communication_maintenance.py:206: in test_confirmed_native_ack_survives_an_unclassified_adapter_result
+    assert result["status"] == "delivered", result
+E   AssertionError: {'attempts': 1, 'message_id': 'message-b10139b123844659b8ebe8cef69fb978', 'retry_after_seconds': 1, 'status': 'retry_wait'}
+E   assert 'retry_wait' == 'delivered'
+E     
+E     - delivered
+E     + retry_wait</failure></testcase></testsuite></testsuites>

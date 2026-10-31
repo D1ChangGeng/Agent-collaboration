@@ -21,3 +21,6 @@ integration_evidence/acs-opencode-receiver-20261031/**/*.xml -whitespace
 
 integration_evidence/acs-remote-native-20261031/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
 integration_evidence/acs-remote-native-20261031/**/*.xml -whitespace
+
+integration_evidence/acs-maintenance-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-maintenance-20261101/**/*.xml -whitespace

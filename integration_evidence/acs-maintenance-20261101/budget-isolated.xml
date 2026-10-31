@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="17.498" timestamp="2026-11-01T02:10:10.752441+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_maintenance" name="test_unclassified_pre_native_failure_uses_the_existing_attempt_budget" time="16.123"><failure message="AssertionError: independent pending message did not progress">runtime_tests\test_communication_maintenance.py:169: in test_unclassified_pre_native_failure_uses_the_existing_attempt_budget
+    asyncio.run(run())
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py:726: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+runtime_tests\test_communication_maintenance.py:165: in run
+    await eventually(exhausted, seconds=7)
+runtime_tests\test_communication_maintenance.py:27: in eventually
+    raise AssertionError("independent pending message did not progress")
+E   AssertionError: independent pending message did not progress</failure></testcase></testsuite></testsuites>

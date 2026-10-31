@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="16.445" timestamp="2026-11-01T01:59:20.151540+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_maintenance" name="test_adapter_exception_on_first_page_cannot_starve_a_later_peer" time="9.464"><failure message="AssertionError: independent pending message did not progress">runtime_tests\test_communication_maintenance.py:44: in test_adapter_exception_on_first_page_cannot_starve_a_later_peer
+    asyncio.run(run())
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py:726: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+runtime_tests\test_communication_maintenance.py:41: in run
+    await eventually(lambda: bool(comm.drivers["c"].calls), seconds=5)
+runtime_tests\test_communication_maintenance.py:22: in eventually
+    raise AssertionError("independent pending message did not progress")
+E   AssertionError: independent pending message did not progress</failure></testcase><testcase classname="runtime_tests.test_communication_maintenance" name="test_held_native_ack_cannot_delay_an_independent_peer" time="5.942"><failure message="AssertionError: independent pending message did not progress">runtime_tests\test_communication_maintenance.py:79: in test_held_native_ack_cannot_delay_an_independent_peer
+    asyncio.run(run())
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py:726: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+runtime_tests\test_communication_maintenance.py:73: in run
+    await eventually(lambda: bool(comm.drivers["c"].calls), seconds=2)
+runtime_tests\test_communication_maintenance.py:22: in eventually
+    raise AssertionError("independent pending message did not progress")
+E   AssertionError: independent pending message did not progress</failure></testcase></testsuite></testsuites>
