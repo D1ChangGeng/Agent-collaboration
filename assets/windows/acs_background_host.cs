@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 internal static class AcsBackgroundHost
 {
@@ -52,6 +53,28 @@ internal static class AcsBackgroundHost
             start.RedirectStandardInput = true;
             start.RedirectStandardOutput = true;
             start.RedirectStandardError = true;
+            return RunWithRetry(delegate { return RunOnce(start); },
+                delegate { Thread.Sleep(TimeSpan.FromSeconds(30)); });
+        }
+        catch { return 70; }
+    }
+
+    private static int RunWithRetry(Func<int> run, Action delay)
+    {
+        // Scheduler success/failure classification differs between Windows
+        // installations. Keep the owner task alive across failed WSL launches.
+        // A successful exit includes the owner's explicit startup disable.
+        while (true)
+        {
+            if (run() == 0) return 0;
+            delay();
+        }
+    }
+
+    private static int RunOnce(ProcessStartInfo start)
+    {
+        try
+        {
             using (Process process = new Process())
             {
                 process.StartInfo = start;
