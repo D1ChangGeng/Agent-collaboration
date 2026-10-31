@@ -1,0 +1,73 @@
+{
+  "schema_version": "acs-recovery-verification/1",
+  "date": "2026-11-01",
+  "release": "v2.0.1",
+  "source_commit": "99124215300fd69de3ce7e088ca4dd1c19e65c0a",
+  "source_tree": "8489200e1071710d1147fc24d68422f646f072f7",
+  "both_selected_installations_upgraded": true,
+  "published_product_assets_downloaded_and_byte_verified": 5,
+  "windows_maintainer_crash": {
+    "before_fix": "not_automatically_restarted",
+    "after_fix": "automatically_restarted",
+    "original_unique_task_preserved": true
+  },
+  "remote_receiver_crash": {
+    "state": "automatically_restarted",
+    "systemd_restart_increment": 1,
+    "new_native_session_observed": true,
+    "tls_pin_matched": true
+  },
+  "wsl_distribution_cold_restart": {
+    "state": "passed",
+    "termination_followed_by_no_running_distributions": true,
+    "manual_distribution_start_issued": false,
+    "automatic_background_host_recovery": true,
+    "distribution_pid1_start_identity_changed": true,
+    "shared_kernel_boot_id_changed": false,
+    "production_postgres_and_temporal_healthy": true,
+    "original_business_containers_resumed": true,
+    "existing_windows_mcp_descriptor_reconnected": true,
+    "project_count": 7
+  },
+  "verified_new_real_model_exchanges": {
+    "windows_codex_to_native_codex": 2,
+    "linux_opencode_to_native_codex": 4,
+    "windows_codex_to_physical_opencode_message_only": 2,
+    "post_wsl_restart_exchanges": 2,
+    "one_explicit_matching_author_reply_per_request": true,
+    "one_native_attempt_per_invoke_request": true,
+    "zero_native_attempts_for_message_only_requests": true,
+    "native_output_projection_used": false,
+    "final_direct_send_and_wait_state": "satisfied",
+    "global_provider_model_plugin_configuration_preserved": true
+  },
+  "pre_patch_records_preserved": {
+    "sealed_packets": 29,
+    "command_dedup_rows": 2528,
+    "grants": 20,
+    "projects": 7,
+    "communication_messages": 15,
+    "reply_links": 7,
+    "dsn_credential_caller_context_and_startup_identity": "preserved"
+  },
+  "tests": {
+    "windows_tooling": {"run": 257, "passed": 220, "skipped": 37, "failed": 0},
+    "native_windows_recovery": {"passed": 5, "failed": 0},
+    "linux_startup_and_handoff": {"passed": 19, "failed": 0},
+    "candidate_ci_runs": [41243017193, 41242975516],
+    "candidate_ci_state": "success",
+    "windows_to_wsl_test_postgres_readonly_connections": 5
+  },
+  "remote_host_reboot": {
+    "state": "deferred_active_shared_workloads",
+    "actual_host_reboot_performed": false,
+    "authenticated_administrator_action_required": true
+  },
+  "outside_qualified_scope": [
+    "all_shared_restricted_native_profiles",
+    "all_host_harness_directions",
+    "windows_login_and_host_reboot",
+    "sustained_high_load",
+    "permanent_resolution_of_previous_intermittent_windows_postgres_forwarding"
+  ]
+}
