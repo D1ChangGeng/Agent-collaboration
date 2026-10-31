@@ -9,6 +9,7 @@ from pathlib import Path
 import anyio
 
 from runtime.mcp_runtime import McpRuntime
+from runtime.project_schema_state import ProjectSchemaAdoptionRequired, verify_project_schema
 from runtime.project_service import ProjectService
 from runtime.project_source import ProjectSources
 from runtime.surface_config import configured_service
@@ -54,6 +55,7 @@ def main(argv=None, *, delivery_endpoints=None):
             # Schema and project adoption are explicit operator steps. Starting
             # a client cannot provision identities, grants, or database tables.
             service.authenticate(settings.credential())
+            verify_project_schema(service.authority)
             if args.transport == "stdio":
                 if args.http_config or not args.profile:
                     raise ValueError("stdio requires a Profile and no HTTP configuration")
@@ -76,6 +78,9 @@ def main(argv=None, *, delivery_endpoints=None):
                 uvicorn.run(app, host=settings.host, port=settings.port,
                             access_log=False, log_level="error", proxy_headers=False)
         return 0
+    except ProjectSchemaAdoptionRequired:
+        print('{"error":"project_schema_adoption_required"}', file=sys.stderr)
+        return 2
     except Exception:  # noqa: BLE001 - never expose credentials or backend configuration
         print('{"error":"project_runtime_unavailable"}', file=sys.stderr)
         return 2

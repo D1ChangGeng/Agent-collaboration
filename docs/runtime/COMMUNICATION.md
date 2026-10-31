@@ -53,6 +53,13 @@ Native Session are separate results. Only a real bound Adapter may supply a
 Session ID. An absent provider is reported as unavailable. `list_harnesses` is
 read-only and never prepares, spawns, resumes or invokes a receiver.
 
+Node observers can register a communication Runtime without task Attempt or
+execution-result permissions. The production Codex receiver derives its own
+identity from the enrolled Node, rechecks that enrollment, and separately checks
+the committed sender. An unbound Client origin is recovered from the sealed
+packet and stored Client registration. Preparation needs no result collector
+or artifact directory. Retired task packets cannot start a new Native turn.
+
 Local Native capacity supplies Node-authorized lifecycle configuration and readback
 callbacks. Core does not invent a Driver operation identity to start or inspect
 that Node. Without a verified callback, an existing binding is reported as an
@@ -114,11 +121,10 @@ outside both the normal message and system notification paths.
 ## Adoption and history
 
 `ProjectService.initialize()` explicitly adopts `communication_schema.sql` and
-the additive `communication_notice_schema.sql`, each with a separate checksum
-record. Normal server startup does not migrate a deployment. An existing
-communication deployment requires explicit operator adoption of the new notice
-tables before running this version; its existing communication checksum and
-message/notification records are preserved.
+the additive notice/archive schemas, each with a separate checksum record.
+Normal startup validates current communication storage and reports
+`project_schema_adoption_required` when adoption is missing; it never migrates
+a deployment. Existing message and notification records remain intact.
 Schema identity uses canonical LF endings. Explicit adoption recognizes only
 the same SQL's known LF/CRLF forms, so a Windows checkout and a Linux checkout
 can share the Authority; other checksum or version differences still require
@@ -128,9 +134,19 @@ guess old authors or manufacture reply relationships. Two delivery endpoint
 columns become nullable for an Authority Inbox without a Native location.
 
 Task mutation tools are removed from the normal catalog; old generic command
-surfaces reject task and result-projection mutations. Historical original packets
-and stored Native artifacts retain their original meaning. Old Native output is
-never relabeled as an Agent's explicit reply. Mixed schema storage and historical
+surfaces reject task and result-projection mutations. Default project adapters
+no longer load task/Review/Watcher execution modules. Current `read_resource`
+reads Project, Route, captured source and communication records; `list_activity`
+uses current project configuration and actual message participants.
+
+Explicit archive adoption indexes only stored historical project associations,
+original principal references and recipient Slots in `communication_archives`.
+Missing sender Slot or recipient principal stays unknown. Original packets and
+stored Native artifacts keep their original meaning and their own permission
+checks. Historical reads do not consume or update records, and old Native output
+does not satisfy a current reply wait. Current reads use the archive index after
+old task tables are retired. See [the operator procedure](COMMUNICATION-ADOPTION.md).
+Mixed schema storage and historical
 Domain library code remain during transition; production data cleanup needs its
 own current inventory and authorization. An old binary is not a promised rollback
 after new messages have been written.
@@ -143,3 +159,8 @@ model contexts were exercised. The first real model run used two ordinary Slots
 on 1302-1 and `message_only`; it does not certify Native autoactivation or a
 cross-Harness matrix. See the implementation report for exact source bytes,
 commands, negative cases, retained failures and outstanding checks.
+
+The production Windows Codex receiver factory has also been exercised with
+actual Node/Runtime enrollment, independent A/B contexts, automatic Native
+activation and B's own MCP reply. This qualifies that local tested setup; it does
+not certify a physical cross-machine or OpenCode model matrix.

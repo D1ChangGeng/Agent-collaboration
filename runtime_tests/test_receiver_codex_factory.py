@@ -4,22 +4,25 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from datetime import UTC, datetime, timedelta
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from runtime.delivery_models import DeliveryEnvelope, DeliveryPacket
-from runtime.delivery_node import invocation_for
 from runtime.receiver_deployment import inspect_factory
-from runtime.response_collector import NativeResponseCollector
 from runtime_deployment.receiver_codex import (
     SCHEMA,
     CodexReceiverCapacity,
     CodexReceiverRejected,
     validate_settings,
 )
+
+
+@contextmanager
+def _registered_node_connection():
+    yield SimpleNamespace(execute=lambda *_args, **_kwargs: SimpleNamespace(
+        fetchone=lambda: ("registered-observer", "registered-observer-grant")))
 
 
 def settings(tmp_path: Path):
@@ -110,7 +113,7 @@ def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_p
 
     monkeypatch.setattr(
         "runtime_deployment.receiver_codex.DomainAuthority",
-        lambda dsn: type("Authority", (), {"_dsn": dsn})(),
+        lambda dsn: SimpleNamespace(_dsn=dsn, _connect=lambda: _registered_node_connection()),
     )
     monkeypatch.setenv("ACS_RECEIVER_DSN", "postgresql://redacted")
     # Stop immediately after the profile is constructed; the remaining
@@ -129,6 +132,7 @@ def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_p
             "config_sha256": "policy", "runtime_id": "runtime",
             "node_id": "node", "boot_incarnation": "boot", "agent_slot_id": "slot",
             "node_binding_revision": 1, "machine_id": "machine", "scope_id": "scope",
+            "tenant_id": "tenant", "authority_id": "authority", "authority_incarnation": "incarnation",
         })()
     })(), "ledger_path": str(Path(value["node_journal"]).with_name("receiver.sqlite"))})()
     with pytest.raises(StopConstruction):
@@ -176,7 +180,9 @@ def test_codex_receiver_native_domain_recheck_uses_same_clock_skew():
     capacity = object.__new__(CodexReceiverCapacity)
     capacity.config = SimpleNamespace(clock_skew_seconds=5)
     capacity.authority = Authority()
-    values = [object(), object(), "runtime.invoke", "scope"]
+    values = [SimpleNamespace(tenant_id="tenant", authority_id="authority", authority_incarnation="incarnation",
+                              principal_ref="sender", grant_ref="sender-grant"), object(), "runtime.invoke", "scope",
+              SimpleNamespace(schema_version="acs-message/1", sender="collaborator:project:sender")]
     capacity._authorize_domain_command(*values)
     assert observed == {
         "command": values[0],
@@ -208,88 +214,3 @@ def test_factory_binding_digest_includes_settings(tmp_path):
     ).hexdigest() != hashlib.sha256(
         json.dumps(second.model_dump(mode="json"), sort_keys=True).encode()
     ).hexdigest()
-
-
-def test_projection_identity_adopts_only_a_newer_recovery_binding():
-    envelope = DeliveryEnvelope(
-        tenant_id="tenant", authority_id="authority", authority_incarnation="incarnation",
-        principal_ref="sender", grant_ref="grant", message_id="message",
-        command_id="command", operation_id="operation", endpoint_id="endpoint",
-        binding_revision=1, machine_id="machine", node_id="node",
-        boot_incarnation="boot-1", accepted_state_digest="a" * 64,
-        packet=DeliveryPacket(
-            work_item_id="work", target_scope_id="scope", target_agent_slot_id="slot",
-            accepted_revision=0, goal="Recover projection", accepted_state_summary="fixture",
-            request="observe current binding", source_baseline="fixture",
-            expected_response="done", activation="invoke",
-            deadline=datetime.now(UTC) + timedelta(minutes=1),
-        ),
-    )
-    recorded = invocation_for(envelope, "attempt")
-    old = NativeResponseCollector.dispatch_identity(recorded)
-    current = old.__class__(
-        **{**old.__dict__, "binding_revision": 2, "boot_incarnation": "boot-2"}
-    )
-    recovery = SimpleNamespace(admission=SimpleNamespace(
-        purpose="delivery.recover", tenant_id=old.tenant_id,
-        message_id=old.message_id, operation_id=old.operation_id,
-        attempt_id=old.attempt_id, dispatch_id=old.dispatch_id,
-        endpoint_id=old.endpoint_id, endpoint_revision=2,
-        runtime_id="runtime-2", runtime_revision=1,
-        machine_id=old.machine_id, node_id=old.node_id,
-        boot_incarnation="boot-2", scope_id="scope", agent_slot_id="slot",
-    ))
-    endpoint = (
-        old.endpoint_id, 2, "runtime-2", 1, old.machine_id, old.node_id,
-        "boot-2", "scope", "slot",
-    )
-    assert CodexReceiverCapacity._current_dispatch_identity(
-        recorded, current, endpoint, recovery,
-    ) == current
-    ordinary_dispatch = SimpleNamespace(admission=SimpleNamespace(
-        purpose="delivery.dispatch", tenant_id=old.tenant_id,
-        message_id=old.message_id, operation_id=old.operation_id,
-        attempt_id=old.attempt_id, dispatch_id=old.dispatch_id,
-        endpoint_id=old.endpoint_id, endpoint_revision=1,
-        runtime_id="runtime-1", runtime_revision=1,
-        machine_id=old.machine_id, node_id=old.node_id,
-        boot_incarnation=old.boot_incarnation,
-        scope_id="scope", agent_slot_id="slot",
-    ))
-    assert CodexReceiverCapacity._current_dispatch_identity(
-        recorded, old,
-        (old.endpoint_id, 1, "runtime-1", 1, old.machine_id, old.node_id,
-         old.boot_incarnation, "scope", "slot"),
-        ordinary_dispatch,
-    ) == old
-    with pytest.raises(CodexReceiverRejected, match="binding differs"):
-        CodexReceiverCapacity._current_dispatch_identity(
-            recorded, old.__class__(**{**old.__dict__, "node_id": "changed"}),
-            (old.endpoint_id, 1, "runtime-1", 1, old.machine_id, old.node_id,
-             old.boot_incarnation, "scope", "slot"),
-            SimpleNamespace(admission=SimpleNamespace(
-                purpose="delivery.dispatch", tenant_id=old.tenant_id,
-                message_id=old.message_id, operation_id=old.operation_id,
-                attempt_id=old.attempt_id, dispatch_id=old.dispatch_id,
-                endpoint_id=old.endpoint_id, endpoint_revision=1,
-                runtime_id="runtime-1", runtime_revision=1,
-                machine_id=old.machine_id, node_id=old.node_id,
-                boot_incarnation=old.boot_incarnation,
-                scope_id="scope", agent_slot_id="slot",
-            )),
-        )
-    for field in ("endpoint_id", "machine_id", "node_id", "boot_incarnation"):
-        changed = old.__class__(**{
-            **current.__dict__, field: "changed",
-        })
-        with pytest.raises(CodexReceiverRejected):
-            CodexReceiverCapacity._current_dispatch_identity(
-                recorded, changed, endpoint, recovery,
-            )
-    with pytest.raises(CodexReceiverRejected, match="dispatch revision differs"):
-        CodexReceiverCapacity._current_dispatch_identity(
-            recorded, current, endpoint,
-            SimpleNamespace(admission=SimpleNamespace(**{
-                **recovery.admission.__dict__, "purpose": "delivery.dispatch",
-            })),
-        )

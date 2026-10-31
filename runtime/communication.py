@@ -70,8 +70,10 @@ def communication_boundary(cursor, authority, command, packet, endpoint_id, revi
                    "(SELECT 1 FROM " + CONTACTS + " m JOIN grants g ON g.grant_ref=m.grant_ref "
                    "WHERE m.tenant_id=s.tenant_id AND m.project_id=%s AND m.agent_slot_id=s.agent_slot_id "
                    "AND g.tenant_id=m.tenant_id AND g.principal_ref=m.principal_ref "
-                   "AND (%s OR (g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at>clock_timestamp()))))",
-                   (command.tenant_id, target, packet.target_scope_id, packet.project_id, packet.activation == "message_only"))
+                   "AND (%s OR (g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at>clock_timestamp()) "
+                   "AND g.authority_id=%s AND g.authority_incarnation=%s)))",
+                   (command.tenant_id, target, packet.target_scope_id, packet.project_id, packet.activation == "message_only",
+                    command.authority_id, command.authority_incarnation))
     if cursor.fetchone() is None:
         raise DeliveryRejected("target_slot_unavailable")
     cursor.execute("SELECT policy FROM scopes WHERE tenant_id=%s AND scope_id=%s AND status='active'",
@@ -118,6 +120,47 @@ def communication_boundary(cursor, authority, command, packet, endpoint_id, revi
 
 
 class CommunicationActions:
+    def bind_notification_session(self, project_id, session_ref, connection_ref, credential):
+        """Bind an explicitly subscribed transport to its authenticated owner."""
+        self.service.authenticate(credential)
+        with (self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor):
+            self._authorize(authority, cursor, project_id, "check_inbox", {"project_id": project_id})
+            cursor.execute("SELECT state,revision,connection_ref FROM collaboration_notification_sessions WHERE tenant_id=%s "
+                           "AND project_id=%s AND owner_ref=%s AND session_ref=%s FOR UPDATE",
+                           (self.context.tenant_id, project_id, self.context.principal_ref, session_ref))
+            prior = cursor.fetchone()
+            if prior and prior[0] == "retired":
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+            if prior and prior[2] == connection_ref:
+                cursor.execute("UPDATE collaboration_notification_sessions SET expires_at="
+                               "CASE WHEN %s THEN NULL ELSE clock_timestamp()+interval '300 seconds' END WHERE tenant_id=%s "
+                               "AND project_id=%s AND owner_ref=%s AND session_ref=%s",
+                               (authority.access_mode == "owner", self.context.tenant_id, project_id, self.context.principal_ref, session_ref))
+                return prior[1]
+            cursor.execute("SELECT COALESCE(MAX(revision),0) FROM collaboration_notification_sessions "
+                           "WHERE tenant_id=%s AND project_id=%s AND owner_ref=%s",
+                           (self.context.tenant_id, project_id, self.context.principal_ref))
+            revision = cursor.fetchone()[0] + 1
+            cursor.execute("UPDATE collaboration_notification_sessions SET state='retired' WHERE tenant_id=%s "
+                           "AND project_id=%s AND owner_ref=%s AND session_ref<>%s AND state='active'",
+                           (self.context.tenant_id, project_id, self.context.principal_ref, session_ref))
+            cursor.execute("INSERT INTO collaboration_notification_sessions(tenant_id,project_id,owner_ref,"
+                           "session_ref,connection_ref,revision,state,expires_at) "
+                           "VALUES (%s,%s,%s,%s,%s,%s,'active',CASE WHEN %s THEN NULL ELSE clock_timestamp()+interval '300 seconds' END) "
+                           "ON CONFLICT(tenant_id,project_id,owner_ref,session_ref) DO UPDATE "
+                           "SET connection_ref=EXCLUDED.connection_ref,revision=EXCLUDED.revision,"
+                           "expires_at=EXCLUDED.expires_at",
+                           (self.context.tenant_id, project_id, self.context.principal_ref,
+                            session_ref, connection_ref, revision, authority.access_mode == "owner"))
+        return revision
+
+    @staticmethod
+    def _validate_send_observation(args):
+        timeout = args.get("wait_timeout_seconds")
+        if ((timeout is not None and (type(timeout) is not int or not 0 <= timeout <= 2**53-1))
+                or args.get("response_mode", "async") not in {"async", "sync"}):
+            raise InvalidToolArgument("wait_timeout_seconds", "Choose an optional nonnegative observation timeout and async or sync response_mode.")
+
     def _list_harnesses(self, authority, cursor, project, command, args, _credential):
         from runtime.codex_driver import AuthorizedOperation
         from runtime.native_delivery import NativeDeliveryAdapter
@@ -192,7 +235,7 @@ class CommunicationActions:
         scope = (self._scope(cursor, self.context.tenant_id, args["project_id"], args["scope_handle"])
                  if args.get("scope_handle") else None)
         cursor.execute("SELECT DISTINCT s.agent_slot_id,m.principal_ref,m.profile,s.scope_id,s.status,"
-                       "g.revoked_at,g.expires_at,tm.role,t.definition,cs.manager_address FROM " + CONTACTS + " m "
+                       "g.revoked_at,g.expires_at,tm.role,t.definition,cs.manager_address,g.authority_id,g.authority_incarnation FROM " + CONTACTS + " m "
                        "JOIN agent_slots s USING(agent_slot_id) JOIN grants g ON g.grant_ref=m.grant_ref "
                        "LEFT JOIN collaboration_team_members tm ON tm.tenant_id=m.tenant_id AND tm.project_id=m.project_id "
                        "AND tm.agent_slot_id=m.agent_slot_id LEFT JOIN collaboration_teams t "
@@ -203,9 +246,10 @@ class CommunicationActions:
                        "AND (%s::text[] IS NULL OR s.scope_id=ANY(%s)) AND (%s::text IS NULL OR s.scope_id=%s) "
                        "ORDER BY s.agent_slot_id", (self.context.tenant_id, args["project_id"], scopes, scopes, scope, scope))
         items = []
-        for slot, principal, profile, scope_id, state, revoked, expiry, role, definition, manager in cursor.fetchall():
+        for slot, principal, profile, scope_id, state, revoked, expiry, role, definition, manager, issuer, incarnation in cursor.fetchall():
             declared = next((entry for entry in (definition or {}).get("members", []) if entry["agent_slot_id"] == slot), {})
-            state = "active" if state == "active" and revoked is None and (authority.access_mode == "owner" or
+            state = "active" if state == "active" and revoked is None and (issuer, incarnation) == (
+                self.context.authority_id, self.context.authority_incarnation) and (authority.access_mode == "owner" or
                 expiry is not None and expiry > authority.canonical_now(cursor)) else "inactive"
             name = declared.get("display_name") or slot
             if (args.get("roles") and role not in args["roles"] or args.get("states") and state not in args["states"]
@@ -402,16 +446,20 @@ class CommunicationActions:
                         "receipt_high_water": notice[4], "error_code": notice[6], "model_consumption": "unconfirmed"},
                     "meaning": "Communication obstacle; no Agent reply or work outcome inferred."}, []
         if kind not in {"message", "response"}:
-            return self._legacy_read_message(authority, cursor, project, command, args, credential)
+            raise InvalidToolArgument("handle", "Use a message, response or current ACS communication notification handle.")
         message_id = parse_handle(args["handle"], kind, args["project_id"])
         cursor.execute("SELECT 1 FROM communication_messages WHERE tenant_id=%s AND project_id=%s AND message_id=%s",
                        (self.context.tenant_id, args["project_id"], message_id))
         if cursor.fetchone() is None:
-            cursor.execute("SELECT 1 FROM delivery_messages WHERE tenant_id=%s AND message_id=%s "
-                           "AND packet_json->>'schema_version'='acs-notice/1'", (self.context.tenant_id, message_id))
-            if cursor.fetchone():
-                raise NotFound("message", message_id)  # System notifications use their own recipient-bound handles.
-            archived = self._legacy_read_message(authority, cursor, project, command, {**args, "consume": False}, credential)
+            cursor.execute("SELECT packet_json->>'schema_version',packet_json->>'project_id' FROM delivery_messages "
+                           "WHERE tenant_id=%s AND message_id=%s", (self.context.tenant_id, message_id))
+            packet = cursor.fetchone()
+            if packet is None or packet[0] == "acs-notice/1" or (packet[1] is not None and packet[1] != args["project_id"]):
+                raise NotFound("message", message_id)
+            if packet[0] != "acs-delivery/1":
+                raise DeliveryRejected("message_history_unavailable")
+            from runtime.project_archive import read_archived_message
+            archived = read_archived_message(self, authority, cursor, project, command, args, credential)
             return archived[0], {**archived[1], "historical": True, "content_format": "legacy_delivery_packet",
                 "reply_semantics": "native_output_is_not_an_explicit_reply"}, archived[2]
         row = self._communication_row(authority, cursor, args, message_id)
@@ -541,14 +589,26 @@ class CommunicationActions:
             # Register before reading. The send transaction and this registration
             # share the project lock, closing the commit/subscribe race.
             with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
-                self._authorize(authority, cursor, args["project_id"], "wait_for_response", args)
+                bound, _project, command = self._authorize(authority, cursor, args["project_id"], "wait_for_response", args)
                 self._communication_lock(cursor, self.context.tenant_id, args["project_id"])
                 for reference in references:
                     kind = reference.split(":", 1)[0]
                     if kind not in {"message", "response"}:
                         raise ValueError("wait requires message or response references")
                     identifier = parse_handle(reference, kind, args["project_id"])
-                    original = self._communication_row(authority, cursor, args, identifier)
+                    try:
+                        original = self._communication_row(authority, cursor, args, identifier)
+                    except NotFound:
+                        cursor.execute("SELECT m.packet_json->>'target_scope_id' FROM communication_archives a "
+                            "JOIN delivery_messages m USING(tenant_id,message_id) WHERE a.tenant_id=%s "
+                            "AND a.project_id=%s AND a.message_id=%s AND a.source_hash=m.canonical_hash",
+                            (self.context.tenant_id, args["project_id"], identifier))
+                        archived = cursor.fetchone()
+                        if archived is None:
+                            raise
+                        bound._authorize(command.model_copy(update={"command_type": "message.read", "target_kind": "message", "target_id": identifier}),
+                                         cursor, "message.read", archived[0])
+                        raise InvalidToolArgument("handles", "Historical packets and Native results are read-only records. Use read_message; reply waiting applies to current natural messages.") from None
                     if original[0] != address:
                         raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
                     if until == "response_received":
@@ -559,6 +619,8 @@ class CommunicationActions:
                             "handle": reference}, credential)[1] for reference in references]
             satisfied = []
             for reference, item in zip(references, observations, strict=True):
+                if item.get("historical"):
+                    raise InvalidToolArgument("handles", "Historical packets and Native results are read-only records. Use read_message; reply waiting applies to current natural messages.")
                 if item["from"] != address:
                     raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
                 reached = item["reply"] is not None if until == "response_received" else self._has_receipt(item, until)

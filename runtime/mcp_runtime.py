@@ -88,18 +88,8 @@ class McpRuntime:
             properties[field] = {"type": kind}
             if field in ARRAYS:
                 if field in {"members", "policies", "budgets", "evidence_dispositions"}:
-                    from runtime.project_management import TeamBudget, TeamMember, TeamPolicy
-                    from runtime.project_work import EvidenceDisposition
-                    item_schema = {"members": TeamMember, "policies": TeamPolicy,
-                                   "budgets": TeamBudget, "evidence_dispositions": EvidenceDisposition}[field].model_json_schema()
-                    if field == "members" and not owner:
-                        item_schema["required"] = list(dict.fromkeys([*item_schema.get("required", []),
-                            "profile", "grant_ref", "permissions", "expires_at", "budget_ref"]))
-                        item_schema["properties"]["permissions"]["minItems"] = 1
-                    definitions.update(item_schema.pop("$defs", {}))
-                    properties[field]["items"] = item_schema
-                else:
-                    properties[field]["items"] = {"type": "string"}
+                    raise ValueError("legacy task input schemas are not supported")
+                properties[field]["items"] = {"type": "string"}
             if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"} or (owner and field in {"deadline", "source_id", "source_root", "revision"}):
                 properties[field]["type"] = [kind, "null"]
             if field == "decision" and name in {"submit_review", "accept_work"}:

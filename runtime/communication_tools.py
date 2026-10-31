@@ -56,6 +56,17 @@ def schema(name):
                            "roles": {"type": "array", "items": {"type": "string"}},
                            "states": {"type": "array", "items": {"type": "string"}},
                            "cursor": {"type": ["string", "null"]}, "limit": {"type": "integer"}})
+    elif name == "read_resource":
+        required += ["handle"]
+        properties.update({"handle": {"type": "string", "description": "A Project, Route, source Artifact or communication handle returned by ACS."},
+            "view": {"type": "string", "enum": ["summary", "detail", "content"], "default": "summary"},
+            "at_revision": {"type": "integer", "minimum": 0},
+            "content_mode": {"type": "string", "enum": ["inline", "reference"], "default": "reference"},
+            "max_inline_bytes": {"type": "integer", "minimum": 1, "maximum": 65536}})
+    elif name == "list_activity":
+        properties.update({"target_handle": {"type": "string"},
+            "event_kinds": {"type": "array", "items": {"type": "string"}},
+            "cursor": {"type": ["string", "null"]}, "limit": {"type": "integer", "minimum": 1, "maximum": 100}})
     else:
         properties.update({"cursor": {"type": ["string", "null"]}, "limit": {"type": "integer", "minimum": 1, "maximum": 100},
                            "with": {"type": "string", "description": "Filter by a peer's collaborator_handle or Client address; use read_message for notification handles."}})
@@ -96,11 +107,18 @@ DESCRIPTIONS = {
         "timeout_seconds bounds this observation only; repeat after reconnecting to obtain the same first reply.",
 }
 
+METADATA_DESCRIPTIONS = {
+    "read_resource": "Read current Project or Route metadata and captured source Artifacts at a requested revision. "
+        "Communication handles use the same permission checks as read_message. Message history is available through list_messages.",
+    "list_activity": "List bounded Project/Route/configuration events and communication events visible to your identity. "
+        "Private message activity is limited to its actual participants. Use next_cursor for continuation.",
+}
+
 
 def adopt_catalog(catalog):
     tools = {name: value for name, value in catalog["tools"].items()
              if name not in TASK_TOOLS | LEGACY_CONTINUATION_TOOLS | DEFERRED_TOOLS}
-    for name, description in DESCRIPTIONS.items():
+    for name, description in {**DESCRIPTIONS, **METADATA_DESCRIPTIONS}.items():
         value = dict(tools.get(name, tools["check_inbox"]))
         contract = schema(name)
         value.update(title=name.replace("_", " ").title(), description=description,
@@ -109,14 +127,23 @@ def adopt_catalog(catalog):
                      security_scopes=["runtime.read"] if name == "list_harnesses" else
                          ["collaborators.manage", "grants.manage"] if name == "configure_team" else
                          ["collaborators.read"] if name == "list_collaborators" else
-                         ["message.send"] if name == "send_message" else ["message.read"],
-                     input_schema={"schema_version": "acs-mcp-" + name.replace("_", "-") + "/2",
+                         ["message.send"] if name == "send_message" else
+                         ["resources.read"] if name == "read_resource" else
+                         ["activity.read"] if name == "list_activity" else ["message.read"],
+                     input_schema={"schema_version": "acs-mcp-" + name.replace("_", "-") + "/" +
+                                       {"read_resource": "6", "list_activity": "2"}.get(name, "2"),
                                    "required": contract["required"],
                                    "optional": [key for key in contract["properties"] if key not in contract["required"]],
                                    "json_schema": contract})
         value["annotations"] = {**value["annotations"], "readOnlyHint": name not in {"send_message", "configure_team"},
                                 "destructiveHint": False}
         tools[name] = value
+    for name, text in {
+        "load_project": "Load authorized Project identity, instructions, Routes, knowledge and SourceBindings. "
+            "Use the returned source observations and available readers to inspect actual files; communication history uses list_messages.",
+        "list_routes": "List registered development Routes with lifecycle, Scope, goal and source-state hints."
+    }.items():
+        tools[name] = {**tools[name], "description": text, "selection_guidance": text}
     profiles = {name: list(dict.fromkeys([*(tool for tool in items if tool in tools),
                                         *(tool for tool in DESCRIPTIONS if tool != "configure_team")]))
                 for name, items in catalog["profiles"].items()}
@@ -129,13 +156,15 @@ def adopt_catalog(catalog):
     groups.setdefault("communication", []).extend(tool for tool in tools if tool not in grouped)
     groups = {name: items for name, items in groups.items() if items}
     result_types = dict(catalog.get("result_types", {}))
+    result_types["project_context"] = [field for field in result_types["project_context"] if field != "active_work_summary"]
+    result_types["resource_snapshot"] = ["project_id", "handle"]
     result_types.update({"message_list": ["project_id", "items", "next_cursor", "resume_cursor"],
         "message_snapshot": ["project_id", "message_handle", "content", "reply_to", "reply", "next_offset"],
         "response_observation": ["project_id", "satisfied", "pending", "observations"],
         "message_submission": ["project_id", "message_handle", "response_handle", "from", "to", "native_status"],
         "team_configuration": ["project_id", "configuration_state", "team_revision", "native_sessions"]})
     result_types = {kind: result_types[kind] for kind in {tool["result_type"] for tool in tools.values()}}
-    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/7", "surface_revision": "acs-communication/1",
+    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/8", "surface_revision": "acs-communication/1",
             "defaults": defaults, "receipt_order": ["accepted_by_authority", "target_inbox_committed",
                 "runtime_dispatched", "runtime_acknowledged"], "tools": tools, "profiles": profiles,
             "advanced_tools": [], "compatibility_aliases": {}, "tool_groups": groups, "result_types": result_types,

@@ -1,21 +1,17 @@
 """Production Codex receiver factory for one supervised native capacity."""
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
 import os
 import re
 import subprocess
-import threading
 import uuid
 from copy import copy
-from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
-from runtime.artifacts import LocalArtifactStore, WindowsArtifactStore
 from runtime.auth import AuthenticatedContext
 from runtime.codex_driver import (
     AuthorizedOperation,
@@ -24,8 +20,10 @@ from runtime.codex_driver import (
     DriverJournal,
     LaunchProfile,
 )
+from runtime.communication_permissions import committed_delivery_context
 from runtime.connection_clock import ConnectionClock
 from runtime.delivery_models import InvocationRequest
+from runtime.delivery_node import InvocationPreCallRejected
 from runtime.domain import DomainAuthority
 from runtime.lifetimes import earliest
 from runtime.models import CommandEnvelope
@@ -35,11 +33,6 @@ from runtime.posix_process_supervisor import PosixProcessSupervisor
 from runtime.receiver_config import receiver_clock_identity
 from runtime.receiver_delivery import ReceiverNativeDeliveryBridge
 from runtime.receiver_entry import DeploymentCallbacks
-from runtime.recovery import AuthoritySnapshot, PostgresDelayedResponseAuthority
-from runtime.response_collector import (
-    NativeResponseCollector,
-    artifact_response_store,
-)
 from runtime.supervisor import WindowsJobSupervisor
 from runtime.systemd_supervisor import SystemdUserSupervisor
 
@@ -54,6 +47,7 @@ FIELDS = {
     "close_operation_id", "close_command_id", "close_message_id",
     "artifact_root", "collector_max_reads", "collector_interval_seconds",
 }
+RETIRED_FIELDS = {"artifact_root", "collector_max_reads", "collector_interval_seconds"}
 
 
 class CodexReceiverRejected(RuntimeError):
@@ -77,7 +71,7 @@ def _absolute(settings: dict[str, Any], name: str) -> str:
 def native_settings(settings):
     """Resolve the selected environment at preparation time; digests are observations."""
     required = {"schema_version", "binding_id", "capacity_attempt_id", "executable", "cwd", "codex_home",
-                "driver_journal", "node_journal", "runtime_id", "artifact_root"}
+                "driver_journal", "node_journal", "runtime_id"}
     if not isinstance(settings, dict) or not required <= set(settings) or set(settings)-FIELDS:
         raise CodexReceiverRejected("native receiver environment is incomplete")
     current = dict(settings)
@@ -89,8 +83,6 @@ def native_settings(settings):
     current.setdefault("model", None)
     current.setdefault("source_commit", "unknown")
     current.setdefault("source_tree", "unknown")
-    current.setdefault("collector_max_reads", 120)
-    current.setdefault("collector_interval_seconds", 1.0)
     for prefix in ("spawn", "close"):
         for kind in ("operation", "command", "message"):
             current.setdefault(prefix+"_"+kind+"_id", f"native-{prefix}-{kind}:{current['runtime_id']}")
@@ -107,16 +99,17 @@ def native_settings(settings):
 def validate_settings(settings: object, *, execution_mode="restricted") -> dict[str, str]:
     if execution_mode == "native":
         settings = native_settings(settings)
-    if not isinstance(settings, dict) or set(settings) != FIELDS:
+    if not isinstance(settings, dict) or not FIELDS-RETIRED_FIELDS <= set(settings) or set(settings)-FIELDS:
         raise CodexReceiverRejected("Codex receiver factory settings differ")
     if settings.get("schema_version") != SCHEMA:
         raise CodexReceiverRejected("Codex receiver factory schema differs")
     for name in (
         "executable", "protocol_schema", "cwd", "codex_home", "driver_journal",
         "node_journal", "systemd_environment_dir",
-        "artifact_root",
     ):
         _absolute(settings, name)
+    if "artifact_root" in settings:
+        _absolute(settings, "artifact_root")
     for name in (
         "binding_id", "capacity_attempt_id", "permission_profile", "runtime_id",
         "source_commit", "source_tree",
@@ -157,10 +150,10 @@ def validate_settings(settings: object, *, execution_mode="restricted") -> dict[
     if execution_mode == "restricted" and os.name == "nt" and Path(settings["systemd_environment_dir"]).name != "windows-job":
         raise CodexReceiverRejected("Codex receiver Windows Job directory differs")
     if (
-        type(settings.get("collector_max_reads")) is not int
-        or not 1 <= settings["collector_max_reads"] <= 120
-        or type(settings.get("collector_interval_seconds")) not in {int, float}
-        or not 0.1 <= settings["collector_interval_seconds"] <= 30
+        type(settings.get("collector_max_reads", 120)) is not int
+        or not 1 <= settings.get("collector_max_reads", 120) <= 120
+        or type(settings.get("collector_interval_seconds", 1.0)) not in {int, float}
+        or not 0.1 <= settings.get("collector_interval_seconds", 1.0) <= 30
     ):
         raise CodexReceiverRejected("Codex receiver collector budget is invalid")
     return dict(settings)
@@ -186,18 +179,18 @@ class CodexReceiverCapacity:
             or registration.runtime_id != self.settings["runtime_id"]
         ):
             raise CodexReceiverRejected("Codex receiver deployment binding changed")
+        with self.authority._connect() as connection:
+            actor = connection.execute(
+                "SELECT observer_ref,observer_grant_ref FROM enrolled_nodes WHERE tenant_id=%s "
+                "AND node_id=%s AND authority_id=%s AND authority_incarnation=%s AND status='active'",
+                (registration.tenant_id, registration.node_id, registration.authority_id,
+                 registration.authority_incarnation),
+            ).fetchone()
+        if actor is None:
+            raise CodexReceiverRejected("configured Node identity is unavailable")
+        self.authority.context = AuthenticatedContext(registration.tenant_id, registration.authority_id,
+            registration.authority_incarnation, actor[0], actor[1])
         if getattr(config, "access_mode", "shared") == "owner":
-            with self.authority._connect() as connection:
-                actor = connection.execute(
-                    "SELECT observer_ref,observer_grant_ref FROM enrolled_nodes WHERE tenant_id=%s "
-                    "AND node_id=%s AND authority_id=%s AND authority_incarnation=%s AND status='active'",
-                    (registration.tenant_id, registration.node_id, registration.authority_id,
-                     registration.authority_incarnation),
-                ).fetchone()
-            if actor is None:
-                raise CodexReceiverRejected("configured Node identity is unavailable")
-            self.authority.context = AuthenticatedContext(registration.tenant_id, registration.authority_id,
-                registration.authority_incarnation, actor[0], actor[1])
             self.authority.owner_identity_ref = actor[1]
         self.binding = BindingIdentity(
             registration.node_id, registration.boot_incarnation, registration.runtime_id,
@@ -266,29 +259,14 @@ class CodexReceiverCapacity:
         )
         self.adapter = NativeDeliveryAdapter(
             self.driver, authorize_invocation=self._authorize_invocation,
-            authorize_observation=self._authorize_observation if getattr(config, "access_mode", "shared") == "owner" else None, clock=self.clock,
+            clock=self.clock,
             configure_runtime=self._prepare_runtime, inspect_runtime=self.health,
         )
         self.bridge = ReceiverNativeDeliveryBridge(
             config.ledger_path, self.adapter,
             read_domain_marker=self.authority.receiver_transport.dispatch_marker_current,
         )
-        store_type = WindowsArtifactStore if os.name == "nt" else LocalArtifactStore
-        self.artifact_store = store_type(
-            self.settings["artifact_root"], scope_id=registration.scope_id,
-        )
-        self.projector = PostgresDelayedResponseAuthority(
-            self.authority._dsn, self._projection_snapshot,
-        )
-        self.collector = NativeResponseCollector(
-            self.adapter, self.node.response_outbox(),
-            artifact_response_store(self.artifact_store), self.projector.project,
-        )
-        self._collector_threads: dict[str, threading.Thread] = {}
-        self._collector_errors: dict[str, str] = {}
-        self._collector_lock = threading.Lock()
         self._closed = False
-        self._collector_stop = threading.Event()
         try:
             self.driver.spawn(self._lifecycle_operation("spawn"))
         except BaseException:
@@ -332,8 +310,7 @@ class CodexReceiverCapacity:
         )
 
     def _domain_invocation(self, operation: AuthorizedOperation) -> InvocationRequest:
-        observation = operation.operation_id.startswith("delivery-observation:") and getattr(self.config, "access_mode", "shared") == "owner"
-        prefix = "delivery-observation:" if observation else "delivery-invocation:"
+        prefix = "delivery-invocation:"
         if not operation.operation_id.startswith(prefix):
             raise CodexReceiverRejected("Codex Driver operation is outside a Delivery Attempt")
         attempt_id = operation.operation_id.removeprefix(prefix)
@@ -348,25 +325,24 @@ class CodexReceiverCapacity:
                 raise CodexReceiverRejected("Codex Driver Attempt is unavailable")
             invocation = InvocationRequest.model_validate_json(json.dumps(row[0]), strict=True)
             command = CommandEnvelope.model_validate_json(json.dumps(row[1], default=str), strict=True)
+            if invocation.envelope.packet.schema_version == "acs-delivery/1":
+                raise InvocationPreCallRejected("legacy_task_invocation_retired")
             self._authorize_domain_command(
-                command.model_copy(update={"deadline": None}) if observation else command,
-                connection.cursor(),
-                "message.read" if observation else "runtime.invoke",
-                invocation.envelope.packet.target_scope_id,
+                command, connection.cursor(), "runtime.invoke",
+                invocation.envelope.packet.target_scope_id, invocation.envelope.packet,
             )
         if (
             (invocation.invocation_id, invocation.command_id, invocation.message_id)
-            != (operation.operation_id.replace("delivery-observation:", "delivery-invocation:", 1), operation.command_id, operation.message_id)
-            or not observation and row[2] is not None and (operation.deadline is None or operation.deadline > row[2])
+            != (operation.operation_id, operation.command_id, operation.message_id)
+            or operation.grant_ref != command.grant_ref
+            or row[2] is not None and (operation.deadline is None or operation.deadline > row[2])
         ):
             raise CodexReceiverRejected("Codex Driver operation lineage changed")
         return invocation
 
-    def _authorize_domain_command(self, command, cursor, permission, scope_id) -> None:
-        actor = self.authority
-        if getattr(actor, "access_mode", "shared") == "owner":
-            actor = copy(actor)
-            actor.context = replace(actor.context, principal_ref=command.principal_ref, grant_ref=command.grant_ref)
+    def _authorize_domain_command(self, command, cursor, permission, scope_id, packet) -> None:
+        actor = copy(self.authority)
+        actor.context = committed_delivery_context(cursor, command, packet)
         actor._authorize(
             command,
             cursor,
@@ -376,11 +352,15 @@ class CodexReceiverCapacity:
         )
 
     def _current(self, operation: AuthorizedOperation, observed: BindingIdentity) -> None:
-        if observed != self.binding or (self.authority.access_mode != "owner" and operation.grant_ref != self.authority.context.grant_ref):
+        if observed != self.binding:
             raise CodexReceiverRejected("Codex receiver Driver binding changed")
+        with self.authority._connect() as connection, connection.cursor() as cursor:
+            self.authority.enrollment._active_runtime(cursor, self.binding.runtime_id)
         if operation.operation_id in {
             self.settings["spawn_operation_id"], self.settings["close_operation_id"],
         }:
+            if operation.grant_ref != self.authority.context.grant_ref:
+                raise CodexReceiverRejected("Codex receiver lifecycle identity changed")
             return
         self._domain_invocation(operation)
 
@@ -394,186 +374,8 @@ class CodexReceiverCapacity:
         self._domain_invocation(operation)
         return operation
 
-    def _authorize_observation(self, invocation, observed):
-        if observed != self.binding:
-            raise CodexReceiverRejected("Codex receiver observation binding changed")
-        operation = AuthorizedOperation("delivery-observation:" + invocation.attempt_id,
-            invocation.command_id, invocation.message_id, invocation.envelope.grant_ref, None)
-        self._domain_invocation(operation)
-        return operation
 
-    @staticmethod
-    def _current_dispatch_identity(recorded, native, endpoint, dispatch):
-        committed = NativeResponseCollector.dispatch_identity(recorded)
-        if dispatch is None:
-            raise CodexReceiverRejected("current receiver dispatch authority is absent")
-        admission = dispatch.admission
-        if (
-            admission.purpose not in {"delivery.dispatch", "delivery.recover"}
-            or (admission.tenant_id, admission.message_id, admission.operation_id,
-                admission.attempt_id, admission.dispatch_id)
-            != (committed.tenant_id, committed.message_id, committed.operation_id,
-                committed.attempt_id, committed.dispatch_id)
-            or (admission.endpoint_id, admission.endpoint_revision,
-                admission.runtime_id, admission.runtime_revision,
-                admission.machine_id, admission.node_id, admission.boot_incarnation,
-                admission.scope_id, admission.agent_slot_id)
-            != endpoint
-            or admission.endpoint_id != committed.endpoint_id
-            or (admission.machine_id, admission.node_id,
-                admission.scope_id, admission.agent_slot_id)
-            != (committed.machine_id, committed.node_id,
-                recorded.envelope.packet.target_scope_id,
-                recorded.envelope.packet.target_agent_slot_id)
-        ):
-            raise CodexReceiverRejected("current receiver dispatch authority differs")
-        if admission.purpose == "delivery.recover":
-            if admission.endpoint_revision <= committed.binding_revision:
-                raise CodexReceiverRejected("current receiver recovery revision differs")
-            committed = committed.__class__(
-                tenant_id=committed.tenant_id,
-                message_id=committed.message_id,
-                operation_id=committed.operation_id,
-                invocation_id=committed.invocation_id,
-                attempt_id=committed.attempt_id,
-                dispatch_id=committed.dispatch_id,
-                endpoint_id=admission.endpoint_id,
-                binding_revision=admission.endpoint_revision,
-                machine_id=admission.machine_id,
-                node_id=admission.node_id,
-                boot_incarnation=admission.boot_incarnation,
-                accepted_revision=committed.accepted_revision,
-                accepted_state_digest=committed.accepted_state_digest,
-            )
-        elif admission.endpoint_revision != committed.binding_revision:
-            raise CodexReceiverRejected("current receiver dispatch revision differs")
-        if committed != native:
-            raise CodexReceiverRejected("current receiver projection binding differs")
-        return committed
 
-    def _projection_snapshot(self, cursor, observation) -> AuthoritySnapshot:
-        native = observation.identity
-        message = cursor.execute(
-            "SELECT packet_json,envelope_json,deadline,policy_hash,accepted_state_digest "
-            "FROM delivery_messages WHERE tenant_id=%s AND message_id=%s FOR UPDATE",
-            (native.tenant_id, native.message_id),
-        ).fetchone()
-        attempt = cursor.execute(
-            "SELECT invocation_json,attempt_id,status FROM delivery_attempts "
-            "WHERE tenant_id=%s AND message_id=%s ORDER BY ordinal DESC LIMIT 1 FOR UPDATE",
-            (native.tenant_id, native.message_id),
-        ).fetchone()
-        if message is None or attempt is None or not isinstance(attempt[0], dict):
-            raise CodexReceiverRejected("current receiver projection identity is absent")
-        recorded = InvocationRequest.model_validate_json(json.dumps(attempt[0]), strict=True)
-        endpoint = cursor.execute(
-            "SELECT endpoint_id,endpoint_revision,runtime_id,runtime_revision,"
-            "machine_id,node_id,boot_incarnation,scope_id,agent_slot_id "
-            "FROM delivery_endpoint_registrations WHERE tenant_id=%s AND endpoint_id=%s "
-            "AND status='active' FOR UPDATE",
-            (native.tenant_id, recorded.envelope.endpoint_id),
-        ).fetchone()
-        if endpoint is None:
-            raise CodexReceiverRejected("current receiver endpoint is absent")
-        dispatch = self.authority.receiver_transport.dispatch_admission(
-            recorded.operation_id
-        )
-        committed = self._current_dispatch_identity(
-            recorded, native, endpoint, dispatch,
-        )
-        envelope = message[1]
-        grant = cursor.execute(
-            "SELECT revoked_at,expires_at,principal_ref,authority_id,authority_incarnation "
-            "FROM grants WHERE grant_ref=%s AND tenant_id=%s FOR UPDATE",
-            (envelope["grant_ref"], native.tenant_id),
-        ).fetchone()
-        work = cursor.execute(
-            "SELECT state,execution_status FROM work_items WHERE work_item_id=%s "
-            "AND tenant_id=%s FOR UPDATE",
-            (message[0]["work_item_id"], native.tenant_id),
-        ).fetchone()
-        authorized = bool(
-            grant and grant[0] is None and (self.authority.access_mode == "owner" or grant[1] > self.authority.canonical_now(cursor))
-            and grant[2] == envelope["principal_ref"]
-            and (grant[3], grant[4]) == (
-                self.authority.context.authority_id,
-                self.authority.context.authority_incarnation,
-            )
-        )
-        producer = False
-        try:
-            self.adapter._check_binding()
-            producer = (
-                self.node.node_id == native.node_id
-                and self.node.boot_incarnation == native.boot_incarnation
-                and self.authority.receiver_transport.dispatch_marker_current(recorded)
-                and self.driver.journal.read(native.invocation_id)["state"] == "acknowledged"
-            )
-        except (RuntimeError, ValueError, TypeError, KeyError):
-            producer = False
-        return AuthoritySnapshot(
-            committed_identity=committed, producer_authenticated=producer,
-            current_authority_valid=authorized,
-            task_valid=bool(work and work[0] == "candidate"
-                            and work[1] not in {"blocked", "failed", "cancelled"}),
-            current_attempt_id=attempt[1],
-            current_accepted_revision=message[0]["accepted_revision"],
-            current_accepted_state_digest=message[4], deadline=message[2],
-            principal_ref=envelope["principal_ref"], grant_ref=envelope["grant_ref"],
-            policy_version="receiver-codex:" + message[3],
-        )
-
-    def read_response_artifact(self, admission, body):
-        # Read only the terminal artifact correlated to this committed dispatch.
-        with self.node._connect() as connection:
-            row = connection.execute("SELECT payload_json FROM native_response_observations "
-                "WHERE tenant_id=? AND invocation_id=?", (admission.tenant_id, "delivery-invocation:" + admission.attempt_id)).fetchone()
-        if row is None:
-            raise CodexReceiverRejected("terminal response artifact is unavailable")
-        observation = json.loads(row[0])
-        identity = observation["identity"]
-        if (observation["response_digest"] != body.response_digest
-                or any(identity.get(name) != getattr(admission, name) for name in
-                       ("message_id", "operation_id", "attempt_id", "dispatch_id", "endpoint_id", "machine_id", "node_id", "boot_incarnation"))
-                or admission.scope_id != self.artifact_store.scope_id):
-            raise CodexReceiverRejected("response artifact does not belong to this dispatch")
-        reference = self.artifact_store.reference_for_digest(body.response_digest,
-            kind="readback", media_type="application/json")
-        data = self.artifact_store.read(reference)
-        if hashlib.sha256(data).hexdigest() != body.response_digest or body.offset > len(data):
-            raise CodexReceiverRejected("response artifact bytes or offset differ")
-        return {"sha256":body.response_digest, "offset":body.offset, "size_bytes":len(data),
-                "data_base64":base64.b64encode(data[body.offset:body.offset+body.max_bytes]).decode("ascii")}
-
-    def _collect(self, invocation: InvocationRequest) -> None:
-        try:
-            reads = 0
-            while not self._collector_stop.is_set() and (getattr(self.config, "access_mode", "shared") == "owner" or
-                    reads < self.settings["collector_max_reads"]):
-                reads += 1
-                try:
-                    self.collector.collect_and_project(invocation)
-                    return
-                except Exception as error:  # noqa: BLE001 -- bounded readback; never reinvokes
-                    last = type(error).__name__
-                    self._collector_stop.wait(self.settings["collector_interval_seconds"])
-            with self._collector_lock:
-                self._collector_errors[invocation.invocation_id] = last
-        except BaseException as error:  # noqa: BLE001 -- preserve cleanup uncertainty
-            with self._collector_lock:
-                self._collector_errors[invocation.invocation_id] = type(error).__name__
-
-    def _start_collector(self, invocation: InvocationRequest) -> None:
-        with self._collector_lock:
-            existing = self._collector_threads.get(invocation.invocation_id)
-            if existing is not None:
-                return
-            thread = threading.Thread(
-                target=self._collect, args=(invocation,),
-                name="acs-receiver-codex-collector", daemon=True,
-            )
-            self._collector_threads[invocation.invocation_id] = thread
-            thread.start()
 
     def authorize_current(self, admission) -> bool:
         return self.authority.receiver_transport.current_authority(
@@ -583,9 +385,9 @@ class CodexReceiverCapacity:
 
     def native_invoke(self, admission):
         invocation = self.bridge._invocation(admission)
-        result = self.bridge(admission)
         if invocation.envelope.packet.schema_version == "acs-delivery/1":
-            self._start_collector(invocation)
+            raise InvocationPreCallRejected("legacy_task_invocation_retired")
+        result = self.bridge(admission)
         return result
 
     def readiness(self, admission):
@@ -595,18 +397,12 @@ class CodexReceiverCapacity:
         if self._closed:
             return
         self._closed = True
-        self._collector_stop.set()
         try:
-            for thread in tuple(self._collector_threads.values()):
-                thread.join(timeout=30)
-            if any(thread.is_alive() for thread in self._collector_threads.values()):
-                raise CodexReceiverRejected("Codex receiver collector remains live")
             if self.driver.owned is not None and self.driver.owned.process.poll() is None:
                 self.driver.terminate(self._lifecycle_operation("close"))
             self.driver.detach_transport()
         finally:
             self.supervisor.close()
-        self.artifact_store.close()
 
 def callbacks(config, deployment_policy_sha256, settings):
     capacity = CodexReceiverCapacity(config, deployment_policy_sha256, settings)

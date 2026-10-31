@@ -618,6 +618,7 @@ def test_legacy_packet_is_read_only_and_never_becomes_a_new_reply(project):
         connection.execute("INSERT INTO collaboration_work_links VALUES (%s,'project-alpha','work','existing-route','{}')",
                            (project.authority.tenant_id,))
     identity, _command, packet, _result = legacy_send(project)
+    project.projects.initialize()  # Explicit adoption of stored historical associations.
     reply = project.mcp.call("read_message", {"project_id": "project-alpha", "handle": "message:project-alpha:" + identity["message_id"]})
     assert not reply["isError"], reply
     data = reply["structuredContent"]["data"]

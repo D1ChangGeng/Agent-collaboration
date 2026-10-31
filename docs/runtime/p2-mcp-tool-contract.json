@@ -1,5 +1,5 @@
 {
-  "schema_version": "acs-p2-mcp-tool-contract/7",
+  "schema_version": "acs-p2-mcp-tool-contract/8",
   "surface_revision": "acs-communication/1",
   "server": "agent-collaboration-runtime",
   "naming_convention": "concise_action_phrase",
@@ -114,8 +114,8 @@
     },
     "load_project": {
       "title": "Load project context",
-      "description": "Load Root identity, instructions, Routes, knowledge, SourceBindings and active work with exact context and workspace revisions. Roles describe responsibilities; the authenticated actor and installed access mode establish the current context. Source guidance recommends the latest primary worktree and lets the Agent choose an available native, filesystem or repository reader.",
-      "selection_guidance": "Use before project-scoped management, analysis, review or finalization when context is absent or stale.",
+      "description": "Load authorized Project identity, instructions, Routes, knowledge and SourceBindings. Use the returned source observations and available readers to inspect actual files; communication history uses list_messages.",
+      "selection_guidance": "Load authorized Project identity, instructions, Routes, knowledge and SourceBindings. Use the returned source observations and available readers to inspect actual files; communication history uses list_messages.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -153,8 +153,8 @@
     },
     "list_routes": {
       "title": "List project routes",
-      "description": "List registered development Routes with lifecycle, Scope, goal, source-state and active-work summaries.",
-      "selection_guidance": "Use to discover existing development lines.",
+      "description": "List registered development Routes with lifecycle, Scope, goal and source-state hints.",
+      "selection_guidance": "List registered development Routes with lifecycle, Scope, goal and source-state hints.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -346,9 +346,9 @@
       ]
     },
     "list_activity": {
-      "title": "List project activity",
-      "description": "List bounded Domain events with actor lineage, revisions and evidence class.",
-      "selection_guidance": "Use for status, recovery, audit and continuity.",
+      "title": "List Activity",
+      "description": "List bounded Project/Route/configuration events and communication events visible to your identity. Private message activity is limited to its actual participants. Use next_cursor for continuation.",
+      "selection_guidance": "List bounded Project/Route/configuration events and communication events visible to your identity. Private message activity is limited to its actual participants. Use next_cursor for continuation.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -356,20 +356,47 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-list-activity/1",
+        "schema_version": "acs-mcp-list-activity/2",
         "required": [
           "project_id"
         ],
         "optional": [
           "target_handle",
           "event_kinds",
-          "after_revision",
           "cursor",
           "limit"
         ],
-        "defaults": {
-          "cursor": null,
-          "limit": 50
+        "json_schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project_id"
+          ],
+          "properties": {
+            "project_id": {
+              "type": "string"
+            },
+            "target_handle": {
+              "type": "string"
+            },
+            "event_kinds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cursor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
         }
       },
       "result_type": "activity_page",
@@ -378,9 +405,9 @@
       ]
     },
     "read_resource": {
-      "title": "Read collaboration resource",
-      "description": "Read a known Project, Route, WorkItem, Handoff, Evidence, Artifact or AcceptedState at its requested revision. Inbox consumption is performed through read_message.",
-      "selection_guidance": "Use after a list or result supplies a stable handle.",
+      "title": "Read Resource",
+      "description": "Read current Project or Route metadata and captured source Artifacts at a requested revision. Communication handles use the same permission checks as read_message. Message history is available through list_messages.",
+      "selection_guidance": "Read current Project or Route metadata and captured source Artifacts at a requested revision. Communication handles use the same permission checks as read_message. Message history is available through list_messages.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -388,7 +415,7 @@
         "openWorldHint": false
       },
       "input_schema": {
-        "schema_version": "acs-mcp-read-resource/5",
+        "schema_version": "acs-mcp-read-resource/6",
         "required": [
           "project_id",
           "handle"
@@ -396,29 +423,51 @@
         "optional": [
           "view",
           "at_revision",
-          "include",
-          "cursor",
-          "limit",
           "content_mode",
           "max_inline_bytes"
         ],
-        "views": [
-          "summary",
-          "detail",
-          "content",
-          "history",
-          "evidence"
-        ],
-        "content_modes": [
-          "inline",
-          "reference"
-        ],
-        "defaults": {
-          "view": "summary",
-          "cursor": null,
-          "limit": 50,
-          "content_mode": "reference",
-          "max_inline_bytes": 16384
+        "json_schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project_id",
+            "handle"
+          ],
+          "properties": {
+            "project_id": {
+              "type": "string"
+            },
+            "handle": {
+              "type": "string",
+              "description": "A Project, Route, source Artifact or communication handle returned by ACS."
+            },
+            "view": {
+              "type": "string",
+              "enum": [
+                "summary",
+                "detail",
+                "content"
+              ],
+              "default": "summary"
+            },
+            "at_revision": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "content_mode": {
+              "type": "string",
+              "enum": [
+                "inline",
+                "reference"
+              ],
+              "default": "reference"
+            },
+            "max_inline_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65536
+            }
+          }
         }
       },
       "result_type": "resource_snapshot",
@@ -1276,119 +1325,11 @@
     ]
   },
   "result_types": {
-    "message_submission": [
+    "response_observation": [
       "project_id",
-      "message_handle",
-      "response_handle",
-      "from",
-      "to",
-      "native_status"
-    ],
-    "source_snapshot": [
-      "source",
-      "repository",
-      "branch",
-      "commit",
-      "tree",
-      "worktree",
-      "push_state",
-      "receiver_sync"
-    ],
-    "harness_capacity_page": [
-      "items",
-      "next_cursor"
-    ],
-    "file_page": [
-      "source",
-      "path",
-      "items",
-      "next_cursor"
-    ],
-    "diff_snapshot": [
-      "source",
-      "base_revision",
-      "target_revision",
-      "changed_paths",
-      "content"
-    ],
-    "route_page": [
-      "items",
-      "next_cursor"
-    ],
-    "file_snapshot": [
-      "source",
-      "path",
-      "revision",
-      "content",
-      "sha256",
-      "media_type"
-    ],
-    "activity_page": [
-      "items",
-      "next_cursor"
-    ],
-    "project_context": [
-      "project",
-      "management_root",
-      "instructions",
-      "routes",
-      "knowledge_indexes",
-      "source_bindings",
-      "active_work_summary",
-      "policies",
-      "context_completeness",
-      "missing_context"
-    ],
-    "connection_page": [
-      "items",
-      "next_cursor"
-    ],
-    "project_page": [
-      "items",
-      "next_cursor"
-    ],
-    "route_receipt": [
-      "operation",
-      "route_handle",
-      "route_revision"
-    ],
-    "team_configuration": [
-      "project_id",
-      "configuration_state",
-      "team_revision",
-      "native_sessions"
-    ],
-    "source_mutation_receipt": [
-      "operation",
-      "source",
-      "before_revision",
-      "after_revision",
-      "readback"
-    ],
-    "message_snapshot": [
-      "project_id",
-      "message_handle",
-      "content",
-      "reply_to",
-      "reply",
-      "next_offset"
-    ],
-    "inbox_page": [
-      "items",
-      "next_cursor"
-    ],
-    "resource_snapshot": [
-      "resource",
-      "view",
-      "data",
-      "relations",
-      "available_views",
-      "next_cursor",
-      "unresolved_items"
-    ],
-    "source_page": [
-      "items",
-      "next_cursor"
+      "satisfied",
+      "pending",
+      "observations"
     ],
     "message_list": [
       "project_id",
@@ -1403,17 +1344,119 @@
       "oauth_scopes",
       "connections"
     ],
+    "message_snapshot": [
+      "project_id",
+      "message_handle",
+      "content",
+      "reply_to",
+      "reply",
+      "next_offset"
+    ],
+    "team_configuration": [
+      "project_id",
+      "configuration_state",
+      "team_revision",
+      "native_sessions"
+    ],
+    "connection_page": [
+      "items",
+      "next_cursor"
+    ],
+    "file_snapshot": [
+      "source",
+      "path",
+      "revision",
+      "content",
+      "sha256",
+      "media_type"
+    ],
+    "source_mutation_receipt": [
+      "operation",
+      "source",
+      "before_revision",
+      "after_revision",
+      "readback"
+    ],
+    "harness_capacity_page": [
+      "items",
+      "next_cursor"
+    ],
+    "route_page": [
+      "items",
+      "next_cursor"
+    ],
+    "source_snapshot": [
+      "source",
+      "repository",
+      "branch",
+      "commit",
+      "tree",
+      "worktree",
+      "push_state",
+      "receiver_sync"
+    ],
+    "inbox_page": [
+      "items",
+      "next_cursor"
+    ],
+    "diff_snapshot": [
+      "source",
+      "base_revision",
+      "target_revision",
+      "changed_paths",
+      "content"
+    ],
+    "activity_page": [
+      "items",
+      "next_cursor"
+    ],
+    "project_page": [
+      "items",
+      "next_cursor"
+    ],
+    "file_page": [
+      "source",
+      "path",
+      "items",
+      "next_cursor"
+    ],
+    "route_receipt": [
+      "operation",
+      "route_handle",
+      "route_revision"
+    ],
+    "resource_snapshot": [
+      "project_id",
+      "handle"
+    ],
+    "message_submission": [
+      "project_id",
+      "message_handle",
+      "response_handle",
+      "from",
+      "to",
+      "native_status"
+    ],
+    "project_context": [
+      "project",
+      "management_root",
+      "instructions",
+      "routes",
+      "knowledge_indexes",
+      "source_bindings",
+      "policies",
+      "context_completeness",
+      "missing_context"
+    ],
     "search_page": [
       "source",
       "query",
       "items",
       "next_cursor"
     ],
-    "response_observation": [
-      "project_id",
-      "satisfied",
-      "pending",
-      "observations"
+    "source_page": [
+      "items",
+      "next_cursor"
     ],
     "collaborator_page": [
       "items",

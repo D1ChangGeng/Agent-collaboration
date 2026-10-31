@@ -654,18 +654,21 @@ class CodexAppServerDriver:
                             hashlib.sha256(json.dumps(self.profile.startup_overrides).encode()).hexdigest() + ">", "app-server"]
                             if self.profile.startup_overrides else argv)
             env = dict(self.profile.environment, CODEX_HOME=self.profile.codex_home)
+            process_label = "acs-codex-" + hashlib.sha256(
+                (self.binding_id + "\0" + operation.operation_id).encode()).hexdigest()
             self.journal.event(
                 operation.operation_id,
                 "process_intent",
-                {"argv": journal_argv, "profile": self.profile.binding()},
+                {"argv": journal_argv, "profile": self.profile.binding(), "process_label": process_label},
             )
             self.check_current(operation, self.identity)
             operation.validate(self.clock)
             self.journal.event(operation.operation_id, "process_dispatch",
-                               {"argv": journal_argv, "profile": self.profile.binding(), "binding": asdict(self.identity)})
+                               {"argv": journal_argv, "profile": self.profile.binding(), "binding": asdict(self.identity),
+                                "process_label": process_label})
             if self.supervisor is not None:
                 self.owned = self.supervisor.launch(
-                    argv, cwd=self.profile.cwd, env=env, label=operation.operation_id
+                    argv, cwd=self.profile.cwd, env=env, label=process_label
                 )
             else:
                 process = subprocess.Popen(

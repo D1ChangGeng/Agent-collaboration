@@ -79,10 +79,10 @@ class P2McpToolContractTests(unittest.TestCase):
         self.assertNotIn("consume", resource["input_schema"]["optional"])
         self.assertNotIn("consume", message["input_schema"]["optional"])
         self.assertFalse(self.catalog["defaults"]["read_consumes"])
-        self.assertTrue(
-            {"summary", "detail", "content", "history", "evidence"}
-            <= set(resource["input_schema"]["views"])
-        )
+        self.assertEqual(resource["input_schema"]["json_schema"]["properties"]["view"]["enum"],
+                         ["summary", "detail", "content"])
+        self.assertNotIn("WorkItem", resource["description"])
+        self.assertNotIn("active work", self.catalog["tools"]["load_project"]["description"])
 
     def test_send_wait_and_subscription_defaults_are_explicit(self):
         defaults = self.catalog["defaults"]

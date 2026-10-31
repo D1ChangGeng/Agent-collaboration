@@ -261,6 +261,8 @@ def create_http_app(service, catalog, settings, *, sources=None, host="127.0.0.1
     async def lifespan(application):
         try:
             from runtime.communication_dispatch import maintain_communication_deliveries
+            from runtime.project_schema_state import verify_project_schema
+            await anyio.to_thread.run_sync(verify_project_schema, service.authority)
             async with anyio.create_task_group() as tasks:
                 tasks.start_soon(maintain_communication_deliveries, service)
                 try:

@@ -251,7 +251,7 @@ class EnrollmentAuthority:
                 raise RevisionConflict(command.target_id, command.expected_revision, 0)
             self._slot(cursor, request.scope_id, request.agent_slot_id)
             observer, observer_expiry = self._grant(cursor, request.observer_grant_ref, request.scope_id,
-                                                  ("runtime.register", "attempt.register", "execution.record"))
+                                                  ("runtime.register",))
             _, operator_expiry = self._grant(cursor, command.grant_ref, request.scope_id, ("enrollment.manage",))
             expires = None if self.authority.access_mode == "owner" else self._time(request.expires_at)
             if self.authority.access_mode != "owner" and not self._now(cursor) < expires <= observer_expiry:

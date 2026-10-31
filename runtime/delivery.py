@@ -30,7 +30,7 @@ from runtime.delivery_node import (
 )
 from runtime.errors import AuthorizationDenied, RevisionConflict
 from runtime.lifetimes import earliest, expired
-from runtime.models import AuthenticatedContext, CommandEnvelope, CommandResult
+from runtime.models import CommandEnvelope, CommandResult
 from runtime.node import RECEIPT_LAYERS, OperationIdentityConflict
 from runtime.team_policy import enforce_team_delivery
 
@@ -485,8 +485,8 @@ class DeliveryDispatcher:
             "authority_id", "authority_incarnation", "principal_ref", "grant_ref",
         )):
             raise DeliveryRejected("durable_authorization_reference_mismatch")
-        ctx = AuthenticatedContext(command.tenant_id, command.authority_id, command.authority_incarnation,
-                                   command.principal_ref, command.grant_ref)
+        from runtime.communication_permissions import committed_delivery_context
+        ctx = committed_delivery_context(cursor, command, envelope.packet)
         # Only the trusted committed ledger creates this recovery context.
         authority = copy(self.service.authority)
         authority.context = ctx

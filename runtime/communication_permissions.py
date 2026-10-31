@@ -1,6 +1,26 @@
 """Profile inheritance expands role eligibility, never an operational Grant."""
 from __future__ import annotations
 
+from runtime.errors import AuthorizationDenied
+from runtime.models import AuthenticatedContext
+
+
+def committed_delivery_context(cursor, command, packet):
+    """Recover identity only after the caller verifies the committed envelope.
+
+    A registered Client origin is durable authority evidence. The packet body
+    and an arbitrary principal string cannot grant the Client capability.
+    """
+    client = packet.schema_version == "acs-message/1" and packet.sender.startswith("client:")
+    if client:
+        cursor.execute("SELECT 1 FROM communication_clients WHERE tenant_id=%s AND project_id=%s "
+                       "AND address=%s AND principal_ref=%s", (command.tenant_id, packet.project_id,
+                            packet.sender, command.principal_ref))
+        if cursor.fetchone() is None:
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+    return AuthenticatedContext(command.tenant_id, command.authority_id, command.authority_incarnation,
+                                command.principal_ref, command.grant_ref, trusted_client=client)
+
 
 def expanded_permissions(permissions):
     result = set(permissions or ())

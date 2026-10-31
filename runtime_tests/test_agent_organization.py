@@ -8,7 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from runtime.agent_organization import organization_model, organization_projection
-from runtime.project_management import TeamMember
+from runtime_tests.fixtures.legacy_team_models import TeamMember
 from runtime_tests.test_project_management import managed as managed_fixture
 from runtime_tests.test_project_management import team_args, worker_client
 from runtime_tests.test_project_service import ok, scalar

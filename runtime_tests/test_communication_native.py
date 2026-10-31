@@ -177,7 +177,7 @@ def test_actual_codex_session_setup_and_idle_observation_without_model(tmp_path)
 
 @pytest.mark.skipif(os.getenv("ACS_REAL_AGENT_TEST") != "1", reason="actual Native-triggered A/B experiment is opt-in")
 @pytest.mark.parametrize("scenario", ["reply", "notice"])
-def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm, tmp_path, scenario):
+def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm, tmp_path, monkeypatch, scenario):
     """The production dispatcher/Native Adapter starts B's first model turn.
 
     The reply case uses ordinary A/B contexts; the notice case uses an ordinary
@@ -196,6 +196,7 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
     manager_client = comm.clients["a"]
     prepare_ordinary_agents(comm, tmp_path)
     system_notice = scenario == "notice"
+    use_factory = os.getenv("ACS_NATIVE_FACTORY_TEST") == "1"
     if system_notice:
         from runtime.auth import LocalCredentialAuthenticator
         from runtime.delivery_node import InvocationPreCallRejected
@@ -227,7 +228,7 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
     source_files = [path for directory in (ROOT/"runtime", ROOT/"runtime_deployment")
                     for path in directory.glob("*") if path.suffix in {".py", ".sql"}]
     source_files += [ROOT/"docs/runtime/p2-mcp-tool-contract.json", Path(__file__),
-                     ROOT/"runtime_tests/test_communication.py"]
+                     ROOT/"runtime_tests/test_communication.py", ROOT/"runtime_tests/test_communication_receiver.py"]
     source_manifest = {str(path.relative_to(ROOT)).replace("\\", "/"): file_digest(path) for path in source_files}
     (evidence/"source-files.json").write_text(json.dumps(source_manifest,indent=2),encoding="utf-8")
     (evidence_root/"latest-invoke.json").write_text(json.dumps({"directory":str(evidence)}),encoding="utf-8")
@@ -319,14 +320,26 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
     profile = LaunchProfile(binary,file_digest(binary),version.removeprefix("codex-cli "),str(schema_file),file_digest(schema_file),
         str(tmp_path),str(b_home),file_digest(config),":read-only",{k:v for k,v in b_environment.items() if k!="CODEX_HOME"},
         execution_mode="native",startup_overrides=tuple(b_overrides))
-    driver = CodexAppServerDriver("native-real-b-"+uuid.uuid4().hex,profile,DriverJournal(tmp_path/"real-b-driver.sqlite"),
-        identity=binding,check_current=validate_current,supervisor=supervisor,rpc_timeout=30)
+    capacity = None
+    if use_factory:
+        from runtime_tests.test_communication_receiver import enrolled_native_factory
+        supervisor.close()
+        overlays = [value for value in b_overrides if value.startswith(("mcp_servers=", "developer_instructions="))]
+        config.write_text("\n".join(overlays)+"\n"+config.read_text(encoding="utf-8"),encoding="utf-8")
+        for name in ("ACS_NATIVE_TEST_DSN", "ACS_NATIVE_TEST_CREDENTIAL"):
+            monkeypatch.setenv(name, b_environment[name])
+        capacity = enrolled_native_factory(comm, tmp_path, monkeypatch, b_home)
+        driver, supervisor, binding = capacity.driver, capacity.supervisor, capacity.binding
+    else:
+        driver = CodexAppServerDriver("native-real-b-"+uuid.uuid4().hex,profile,DriverJournal(tmp_path/"real-b-driver.sqlite"),
+            identity=binding,check_current=validate_current,supervisor=supervisor,rpc_timeout=30)
     def lifecycle_operation(name):
         return AuthorizedOperation("native-b-session-"+name,"native-b-setup-command","native-b-setup",
                                    comm.authority.context.grant_ref,datetime.now(UTC)+timedelta(minutes=6))
     process = None
     try:
-        driver.spawn(lifecycle_operation("setup"))
+        if not use_factory:
+            driver.spawn(lifecycle_operation("setup"))
         assert driver.thread_id
         lose_ack=os.getenv("ACS_NATIVE_ACK_LOSS")=="1"
         if lose_ack:
@@ -343,13 +356,18 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
                                              invocation.envelope.grant_ref,invocation.envelope.packet.deadline)
             validate_current(operation,observed)
             return operation
-        adapter = NativeDeliveryAdapter(driver,authorize_invocation=authorize_invocation)
-        node = NodeJournal(tmp_path/"real-b-node.sqlite",node_id=binding.node_id,boot_incarnation=binding.node_boot_id)
+        adapter = capacity.adapter if use_factory else NativeDeliveryAdapter(driver,authorize_invocation=authorize_invocation)
+        node = capacity.node if use_factory else NodeJournal(tmp_path/"real-b-node.sqlite",node_id=binding.node_id,boot_incarnation=binding.node_boot_id)
         endpoint = LocalNodeEndpoint(node,"local-scope","slot-b",adapter)
-        comm.dispatcher.service.endpoints["endpoint-b"] = endpoint
+        selected_endpoint = "factory-b" if use_factory else "endpoint-b"
+        comm.dispatcher.service.endpoints[selected_endpoint] = endpoint
         comm.authority._delivery_endpoints = comm.dispatcher.service.endpoints
-        comm.dispatcher.service.bind_endpoint(command(comm.authority,"message.bind","endpoint-b",revision=1),
+        comm.dispatcher.service.bind_endpoint(command(comm.authority,"message.bind",selected_endpoint,revision=0 if use_factory else 1),
             EndpointBindingRequest(scope_id="local-scope",agent_slot_id="slot-b",expires_at=datetime.now(UTC)+timedelta(hours=1)))
+        if use_factory:
+            comm.clients["factory-manager"] = manager_client
+            call(comm,"factory-manager","configure_team",prepare_native=False,
+                 members=[{"agent_slot_id":"slot-b","principal_ref":"agent:b","endpoint_id":selected_endpoint}])
         a_environment, a_overrides = actor_configuration("a")
         a_environment["CODEX_HOME"] = str(a_home)
         arguments=[binary,"exec","--ephemeral","--json","--skip-git-repo-check","--sandbox","read-only","-C",str(tmp_path)]
@@ -415,7 +433,9 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
         facts={"installed_version":version,"b_native_thread":driver.thread_id,"messages":messages,"reply_relationships":relations,
             "native_turn_start_count":len(native_turns),"work_count":work_count,"label":label,"activation":"production dispatcher and NativeDeliveryAdapter",
             "fault_injection":"observation loss after actual Native response" if lose_ack else None,
-            "source_manifest_sha256":file_digest(evidence/"source-files.json")}
+            "source_manifest_sha256":file_digest(evidence/"source-files.json"),
+            "production_receiver_factory":use_factory,
+            "collector_created":hasattr(capacity,"collector") if capacity else False}
         assert all(file_digest(ROOT/name)==hashed for name,hashed in source_manifest.items()), "Source changed during live acceptance"
         (evidence/"native-invoke-facts.json").write_text(json.dumps(facts,indent=2),encoding="utf-8")
         assert messages[0][4]=="invoke" and len(native_turns)==1 and work_count==0
@@ -456,6 +476,8 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
         if process is not None and process.poll() is None:
             process.terminate()
             process.wait(timeout=10)
-        if driver.owned is not None:
+        if capacity is not None:
+            capacity.close()
+        elif driver.owned is not None:
             supervisor.terminate_tree(driver.owned)
         driver.detach_transport()

@@ -234,7 +234,10 @@ def test_production_domain_rechecks_use_canonical_authority_without_skew():
         _authorize=lambda *args, **kwargs: seen.append(kwargs),
         receiver_transport=SimpleNamespace(current_authority=lambda *args, **kwargs: seen.append(kwargs) or True),
     )
-    capacity._authorize_domain_command(object(), object(), "runtime.invoke", "scope")
+    command = SimpleNamespace(tenant_id="tenant", authority_id="authority", authority_incarnation="incarnation",
+                              principal_ref="sender", grant_ref="sender-grant")
+    packet = SimpleNamespace(schema_version="acs-message/1", sender="collaborator:project:sender")
+    capacity._authorize_domain_command(command, object(), "runtime.invoke", "scope", packet)
     assert capacity.authorize_current(object())
     assert seen == [{"clock_skew_seconds": 0}, {"clock_skew_seconds": 0}]
 

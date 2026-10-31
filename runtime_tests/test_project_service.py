@@ -19,7 +19,8 @@ import pytest
 from runtime.auth import LocalCredentialAuthenticator
 from runtime.mcp_runtime import McpRuntime
 from runtime.models import CommandEnvelope
-from runtime.project_service import ProjectService, parse_handle
+from runtime.project_common import parse_handle
+from runtime.project_service import ProjectService
 from runtime.surfaces import SharedService
 
 ROOT = Path(__file__).resolve().parents[1]

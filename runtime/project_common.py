@@ -31,3 +31,14 @@ def parse_handle(value: str, kind: str, project_id: str) -> str:
             or not identity.fullmatch(fields[2])):
         raise ValueError("project handle mismatch")
     return fields[2]
+
+
+def page_result(project_id, rows, args, identity):
+    """Bounded metadata pagination, independent of any business domain."""
+    limit = args.get("limit", 50)
+    if type(limit) is not int or not 1 <= limit <= 100:
+        raise ValueError("invalid page size")
+    rows = sorted(rows, key=lambda row: row[identity])
+    rows = [row for row in rows if not args.get("cursor") or row[identity] > args["cursor"]]
+    return "observed", {"project_id": project_id, "items": rows[:limit],
+                        "next_cursor": rows[limit-1][identity] if len(rows) > limit else None}, []
