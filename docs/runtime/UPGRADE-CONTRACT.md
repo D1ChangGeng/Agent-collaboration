@@ -1,5 +1,14 @@
 # Collaboration Runtime adoption contract
 
+The current communication change follows the user-authorized
+[development package v2.33](../../RFC_TEMP_SOURCE/ACS_Development_Package_v2.33/CODEX_START.md)
+and [implemented communication contract](COMMUNICATION.md). Normal Agent
+communication, explicit replies and system notices are independent of WorkItem
+and Native terminal results. Earlier Gate records below retain their historical
+scope; their task and result-projection mechanisms do not define the new normal
+communication path. Current engineering evidence is recorded separately from
+formal release acceptance.
+
 Status: accepted architecture and implementation authorization; Runtime support
 is determined by the named Gate records. Contract revision: 2026-10-12.2.
 The original adoption baseline is 2026-09-25.1; recorded Gates retain the exact

@@ -10,7 +10,9 @@ from pathlib import Path
 from runtime_tests.mcp_component_fixture import McpHttpServer, McpRuntime
 
 ROOT = Path(__file__).parents[1]
-CATALOG = ROOT / "docs/runtime/p2-mcp-tool-contract.json"
+# This SQLite simulator is retained as historical v6 fixture coverage. Current
+# communication acceptance uses test_communication with real PostgreSQL/MCP.
+CATALOG = ROOT / "runtime_tests/fixtures/legacy-mcp-tool-contract-6.json"
 SKILLS = ROOT / "docs/runtime/p2-skill-contract.json"
 
 

@@ -267,6 +267,7 @@ class CodexReceiverCapacity:
         self.adapter = NativeDeliveryAdapter(
             self.driver, authorize_invocation=self._authorize_invocation,
             authorize_observation=self._authorize_observation if getattr(config, "access_mode", "shared") == "owner" else None, clock=self.clock,
+            configure_runtime=self._prepare_runtime, inspect_runtime=self.health,
         )
         self.bridge = ReceiverNativeDeliveryBridge(
             config.ledger_path, self.adapter,
@@ -311,7 +312,13 @@ class CodexReceiverCapacity:
             view = self.driver._inspect(operation)
         state = view.get("thread", {}).get("status", {}).get("type")
         return {"state": "idle" if state == "idle" else "busy" if state in {"active", "running"} else "unknown",
-                "harness": "codex", "version": self.driver.profile.version}
+                "harness": "codex", "version": self.driver.profile.version,
+                "session_ref": self.driver.thread_id, "observation": "native_driver_readback"}
+
+    def _prepare_runtime(self):
+        if self.driver.thread_id is None:
+            self.driver.spawn(self._lifecycle_operation("spawn"))
+        return self.health()
 
     def _lifecycle_operation(self, action: str) -> AuthorizedOperation:
         prefix = "spawn" if action == "spawn" else "close"
@@ -577,7 +584,8 @@ class CodexReceiverCapacity:
     def native_invoke(self, admission):
         invocation = self.bridge._invocation(admission)
         result = self.bridge(admission)
-        self._start_collector(invocation)
+        if invocation.envelope.packet.schema_version == "acs-delivery/1":
+            self._start_collector(invocation)
         return result
 
     def readiness(self, admission):

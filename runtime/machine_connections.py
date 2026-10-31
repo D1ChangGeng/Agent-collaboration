@@ -38,6 +38,15 @@ class ConfiguredRemoteEndpoint:
             self._bound = None
 
     def inspect_runtime(self):
+        """Observe only: a status query cannot prepare a service or native turn."""
+        with self._lock:
+            try:
+                return self._adapter().transport.inspect_runtime()
+            except (OSError, ValueError, RuntimeError):
+                return {"state": "offline", "harness": "unknown", "version": "unknown"}
+
+    def prepare_runtime(self):
+        """Explicitly prepare a configured receiver before authorized delivery."""
         with self._lock:
             try:
                 observed = self._adapter().transport.inspect_runtime()
@@ -64,7 +73,7 @@ class ConfiguredRemoteEndpoint:
         return self._adapter().descriptor()
 
     def deliver(self, *args, **kwargs):
-        if self.inspect_runtime()["state"] == "offline":
+        if self.prepare_runtime()["state"] == "offline":
             raise RuntimeError("configured machine is offline")
         return self._adapter().deliver(*args, **kwargs)
 

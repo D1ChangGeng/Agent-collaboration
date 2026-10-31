@@ -1,39 +1,11 @@
-# Runtime tool map
+# acs-runtime-model: tools
 
-- filesystem_context reports actual file machine/account/home/platform/cwd and
-  connected machine choices.
-- select_filesystem changes this MCP instance's selected file machine/directory.
-- Owner read_file, list_directory, glob and grep read current account files;
-  write_file, edit_file and apply_patch change them.
-- File tool machine_id/cwd overrides apply to that call. Pagination retains
-  the original machine, directory, path and query.
-- list_connections reads registered Node, Tunnel, provider and Endpoint paths.
-- list_harnesses reads registered capacity and observed Harness or Session facts.
-- list_collaborators shows Slot, Session and Harness bindings.
-- stop_attempt requests Attempt-level control and records native cancellation
-  or verified owned-process termination with remaining effect state.
-- read_resource reads Attempt, Lease, Effect or capability handles exposed by
-  the active service.
-- submit_command exposes complete Domain commands for the admitted advanced
-  client surface.
+Use the actual exposed tools; retain returned handles instead of constructing internal routing identities.
 
-In owner mode a discovery result can report continuous binding lifetime and a
-runtime state that has not yet been observed. Native execution proceeds after
-actual readiness inspection, reconnection and preparation. Shared mode retains its
-configured Grant, Profile, capability and expiry checks.
+- `list_connections`
+- `list_harnesses`
+- `configure_team`
 
-Attached native Session controls depend on the exact installed API. A
-Session-level acknowledgement and an owned-process termination proof support
-their respective controls. Keep their identities and receipts with the
-Attempt.
+Native receiving capacity and one authorized initiation, separate from message authorship and Agent reasoning.
 
-Native Codex uses the selected approval_policy. Interactive native requests
-depend on an actual server_request_handler passed to JsonRpcClient. The standard
-headless Receiver factory uses the transport's explicit -32601 response.
-Read the installed client/handler capability and native request/response facts
-when deciding whether an interactive operation can proceed.
-
-Receiver mode is bound to its signed process deployment and Endpoint digest.
-Surface/database owner adoption preserves identity; Receiver owner/native
-activation additionally commits the Node-signed replacement registration,
-restarts the matching process config and reads back actual mode and Session.
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-tools.md); it is not the current communication contract.

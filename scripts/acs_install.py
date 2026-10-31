@@ -343,7 +343,7 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
     secret = secrets.token_urlsafe(48)
     context = AuthenticatedContext("local-tenant", "acs-p1-authority", "local-1",
                                    "agent:root", "grant:root",
-                                   hashlib.sha256(secret.encode()).hexdigest())
+                                   hashlib.sha256(secret.encode()).hexdigest(), trusted_client=True)
     dsn = ("postgresql://acs:" + quote(environment["ACS_POSTGRES_PASSWORD"], safe="")
            + "@127.0.0.1:" + environment["ACS_POSTGRES_PORT"] + "/acs")
     authority = DomainAuthority(dsn, context=context, access_mode="owner")
@@ -362,7 +362,7 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
         "tenant_id": context.tenant_id, "authority_id": context.authority_id,
         "authority_incarnation": context.authority_incarnation,
         "principal_ref": context.principal_ref, "grant_ref": context.grant_ref,
-        "credential_hash": context.credential_hash},
+        "credential_hash": context.credential_hash, "trusted_client": True},
         "dsn_ref": {"kind": "file", "name": str(dsn_path)},
         "credential_ref": {"kind": "file", "name": str(credential_path)}}
     owner_file(config_path, json.dumps(surface, indent=2) + "\n")

@@ -29,9 +29,12 @@ from runtime.project_http import (
     TokenAuthorization,
     create_http_app,
 )
-from runtime_tests.test_project_continuation import complete_response
-from runtime_tests.test_project_service import CATALOG, ok, send_args, work_args
+from runtime_tests.test_communication import comm as comm_fixture
+from runtime_tests.test_communication import send
+from runtime_tests.test_project_service import CATALOG
 from runtime_tests.test_project_service import project as project_fixture
+
+comm = comm_fixture
 
 
 @pytest.fixture
@@ -220,13 +223,15 @@ def test_http_sdk_filters_scopes_isolates_identity_and_rechecks_grant(project, m
                     ClientSession(*streams, read_timeout_seconds=10) as client):
             await client.initialize()
             tools = await client.list_tools()
-            assert "create_work" in {t.name for t in tools.tools}
+            assert "send_message" in {t.name for t in tools.tools}
+            assert "create_work" not in {t.name for t in tools.tools}
             result = await client.call_tool("list_projects", {})
             assert result.structured_content["data"]["items"][0]["project_id"] == "project-alpha"
             http.headers["Authorization"] = "Bearer reader-token"
             tools = await client.list_tools()
-            assert "create_work" not in {t.name for t in tools.tools}
-            denied = await client.call_tool("create_work", work_args())
+            assert "send_message" not in {t.name for t in tools.tools}
+            denied = await client.call_tool("send_message", {"project_id": "project-alpha",
+                "to": "collaborator:project-alpha:local-slot", "content": "Reader token cannot send", "activation": "message_only"})
             assert denied.is_error and denied.structured_content["data"]["code"] == "authorization_denied"
             # The exact same MCP Session cannot be borrowed by another OAuth subject.
             assert session_ids
@@ -247,10 +252,8 @@ def test_http_sdk_filters_scopes_isolates_identity_and_rechecks_grant(project, m
 
 
 @pytest.mark.parametrize("loss", ["token_revoked", "token_expired", "grant_revoked"])
-def test_http_subscription_stops_after_auth_loss_and_reconnect_recovers(project, monkeypatch, loss):
-    f = project
-    ok(f, "create_work", work_args())
-    sent = ok(f, "send_message", send_args())["data"]
+def test_http_subscription_stops_after_auth_loss_and_reconnect_recovers(comm, monkeypatch, loss):
+    f = comm
     config = settings(monkeypatch, f.authority.context)
     issuer = IssuerFixture({"alice-token": claims(), "replacement-token": claims()})
     uri = "acs://projects/project-alpha/inbox"
@@ -274,7 +277,7 @@ def test_http_subscription_stops_after_auth_loss_and_reconnect_recovers(project,
             else:
                 issuer.tokens["alice-token"]["active"] = False
             await asyncio.sleep(1.5)
-            await asyncio.to_thread(complete_response, f, sent["message_id"])
+            sent = (await asyncio.to_thread(send, f, "b", "a", "New message during observation loss", activation="message_only"))["data"]
             await asyncio.sleep(1)
             assert messages == []
             # Renew OAuth authorization and the existing Domain grant explicitly.
@@ -288,16 +291,14 @@ def test_http_subscription_stops_after_auth_loss_and_reconnect_recovers(project,
             await client.subscribe_resource(uri)
             await asyncio.wait_for(wake.wait(), timeout=5)
             result = await client.read_resource(uri)
-            assert json.loads(result.contents[0].text)["items"][0]["response_handle"] == sent["response_handle"]
+            assert json.loads(result.contents[0].text)["items"][0]["message_handle"] == sent["message_handle"]
             assert messages == [uri]
-    with listener(f.projects.service, config, issuer) as (url, _server):
+    with listener(f.clients["a"].service.service, config, issuer) as (url, _server):
         asyncio.run(exercise(url))
 
 
-def test_modern_http_listen_delivers_live_notification(project, monkeypatch):
-    f = project
-    ok(f, "create_work", work_args())
-    sent = ok(f, "send_message", send_args())["data"]
+def test_modern_http_listen_delivers_live_notification(comm, monkeypatch):
+    f = comm
     config = settings(monkeypatch, f.authority.context)
     issuer = IssuerFixture({"alice-token": claims()})
     uri = "acs://projects/project-alpha/inbox"
@@ -307,10 +308,10 @@ def test_modern_http_listen_delivers_live_notification(project, monkeypatch):
                            read_timeout_seconds=10, cache=None) as client,
                     client.listen(resource_subscriptions=[uri]) as subscription):
             assert subscription.honored.resource_subscriptions == [uri]
-            await asyncio.to_thread(complete_response, f, sent["message_id"])
+            sent = (await asyncio.to_thread(send, f, "b", "a", "New message after subscription", activation="message_only"))["data"]
             event = await asyncio.wait_for(anext(subscription), timeout=5)
             assert event.uri == uri
             result = await client.read_resource(uri)
-            assert json.loads(result.contents[0].text)["items"][0]["response_handle"] == sent["response_handle"]
-    with listener(f.projects.service, config, issuer) as (url, _server):
+            assert json.loads(result.contents[0].text)["items"][0]["message_handle"] == sent["message_handle"]
+    with listener(f.clients["a"].service.service, config, issuer) as (url, _server):
         asyncio.run(exercise(url))

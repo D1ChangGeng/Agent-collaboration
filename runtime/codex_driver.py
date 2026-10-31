@@ -151,8 +151,19 @@ class LaunchProfile:
     environment: dict[str, str]
     model: str | None = None
     execution_mode: str = "restricted"
+    startup_overrides: tuple[str, ...] = ()
 
     def validate(self):
+        if len(self.startup_overrides) > 32:
+            raise DriverRejected("too many trusted Native configuration overrides")
+        for value in self.startup_overrides:
+            if not isinstance(value, str) or len(value.encode()) > 16384 or "\0" in value:
+                raise DriverRejected("Native configuration override is invalid")
+            try:
+                if not tomllib.loads(value):
+                    raise ValueError("empty configuration")
+            except (ValueError, TypeError) as error:
+                raise DriverRejected("Native configuration override must be valid TOML") from error
         if self.execution_mode not in {"native", "restricted"}:
             raise DriverRejected("unsupported execution environment")
         if self.execution_mode == "restricted" and self.version not in {
@@ -190,7 +201,10 @@ class LaunchProfile:
 
     def binding(self):
         # Do not serialize environment values or configuration contents.
-        return {k: v for k, v in asdict(self).items() if k != "environment"}
+        value = {k: v for k, v in asdict(self).items() if k not in {"environment", "startup_overrides"}}
+        if self.startup_overrides:
+            value["startup_overrides_sha256"] = hashlib.sha256(json.dumps(self.startup_overrides).encode()).hexdigest()
+        return value
 
 
 @dataclass
@@ -631,19 +645,24 @@ class CodexAppServerDriver:
             self.profile.validate()
             self.check_current(operation, self.identity)
             argv = [self.profile.executable]
+            for override in self.profile.startup_overrides:
+                argv.extend(["-c", override])
             if self.profile.execution_mode == "restricted":
                 argv.extend(["--disable", "multi_agent", "--disable", "multi_agent_v2"])
             argv.append("app-server")
+            journal_argv = ([self.profile.executable, "<trusted startup overrides sha256:" +
+                            hashlib.sha256(json.dumps(self.profile.startup_overrides).encode()).hexdigest() + ">", "app-server"]
+                            if self.profile.startup_overrides else argv)
             env = dict(self.profile.environment, CODEX_HOME=self.profile.codex_home)
             self.journal.event(
                 operation.operation_id,
                 "process_intent",
-                {"argv": argv, "profile": self.profile.binding()},
+                {"argv": journal_argv, "profile": self.profile.binding()},
             )
             self.check_current(operation, self.identity)
             operation.validate(self.clock)
             self.journal.event(operation.operation_id, "process_dispatch",
-                               {"argv": argv, "profile": self.profile.binding(), "binding": asdict(self.identity)})
+                               {"argv": journal_argv, "profile": self.profile.binding(), "binding": asdict(self.identity)})
             if self.supervisor is not None:
                 self.owned = self.supervisor.launch(
                     argv, cwd=self.profile.cwd, env=env, label=operation.operation_id

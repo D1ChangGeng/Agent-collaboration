@@ -1,6 +1,6 @@
 {
   "schema_version": "acs-p2-skill-contract/2",
-  "surface_revision": "acs-p2-mcp-workflow/6",
+  "surface_revision": "acs-communication/1",
   "model": "metadata-first knowledge modules with lazy references",
   "setup_exception": "agent-collaboration-setup uses guarded procedures for installation and migration",
   "presentation": {
@@ -44,13 +44,12 @@
     },
     "acs-project-context": {
       "kind": "knowledge_module",
-      "domain": "Project, Root, Route, Scope and context identity",
+      "domain": "Project identity and authorized contact scope; Native capacity and source files retain their own authorities.",
       "signals": [
-        "project_id",
-        "Root Agent",
-        "Route boundary",
-        "ProjectContextPack",
-        "multi-project"
+        "list projects",
+        "load project",
+        "list routes",
+        "list collaborators"
       ],
       "references": [
         "references/model.md",
@@ -62,20 +61,18 @@
         "acs-policy-governance",
         "acs-web-collaboration"
       ],
-      "description": "Project, Collaboration Root, Route, Scope, project_id, ProjectContextPack, multi-project, and Root Agent knowledge for ACS. Use when reasoning about project identity, context loading, Route boundaries, local versus web entry, or portfolio-wide state.",
+      "description": "Project, Root, Route and trusted caller context for ACS communication. Use when choosing a project, resolving contact visibility or continuing in another session.",
       "spec": "skills/acs-project-context/SKILL.md"
     },
     "acs-collaboration-model": {
       "kind": "knowledge_module",
-      "domain": "team, WorkItem, delegation, handoff and Message semantics",
+      "domain": "Communication among autonomous Agents. Their planning, engineering review and work acceptance remain external.",
       "signals": [
-        "AgentSlot",
-        "Role",
+        "list collaborators",
         "configure team",
-        "WorkItem",
-        "delegate",
-        "handoff",
-        "Message"
+        "send message",
+        "read message",
+        "list messages"
       ],
       "references": [
         "references/model.md",
@@ -87,21 +84,16 @@
         "acs-continuity-recovery",
         "acs-runtime-model"
       ],
-      "description": "AgentSlot, Role, team, WorkItem, delegation, handoff, Message, response, dependency, and collaboration-state knowledge for ACS. Use when designing or reasoning about who works on what and how responsibilities and results move.",
+      "description": "Stable AgentSlot contacts, natural messages, explicit replies and scoped team configuration in ACS. Use when contacting, configuring or handing context to another Agent.",
       "spec": "skills/acs-collaboration-model/SKILL.md"
     },
     "acs-runtime-model": {
       "kind": "knowledge_module",
-      "domain": "execution capacity, lifecycle, fencing and effects",
+      "domain": "Native receiving capacity and one authorized initiation, separate from message authorship and Agent reasoning.",
       "signals": [
-        "Machine",
-        "Node",
-        "Harness",
-        "Driver",
-        "Session",
-        "Attempt",
-        "Lease",
-        "Effect"
+        "list connections",
+        "list harnesses",
+        "configure team"
       ],
       "references": [
         "references/model.md",
@@ -113,22 +105,17 @@
         "acs-continuity-recovery",
         "acs-policy-governance"
       ],
-      "description": "Machine, Node, Runtime, Harness, Driver, Session, Endpoint, Attempt, Lease, Resource, capability, and Effect knowledge for ACS. Use when reasoning about execution placement, lifecycle, capabilities, fencing, or protected external effects.",
+      "description": "Actual Node, endpoint and Native Session bindings for ACS. Use when selecting receiving capacity, checking readiness or distinguishing configuration from real Native contact.",
       "spec": "skills/acs-runtime-model/SKILL.md"
     },
     "acs-continuity-recovery": {
       "kind": "knowledge_module",
-      "domain": "delivery, responses, subscriptions, wake and recovery",
+      "domain": "Communication persistence and bounded technical recovery; model understanding and work outcomes are external.",
       "signals": [
-        "Inbox",
-        "Outbox",
-        "receipt",
-        "wait",
-        "notification",
-        "retry",
-        "ACK loss",
-        "Session replacement",
-        "Human Bridge"
+        "check inbox",
+        "list messages",
+        "read message",
+        "wait for response"
       ],
       "references": [
         "references/model.md",
@@ -140,22 +127,17 @@
         "acs-runtime-model",
         "acs-source-evidence"
       ],
-      "description": "Inbox, Outbox, delivery receipts, response tracking, subscriptions, waiting, wake, retry, deduplication, Session replacement, Human Bridge, and recovery knowledge for ACS. Use when collaboration is asynchronous, interrupted, duplicated, delayed, or uncertain.",
+      "description": "Durable ACS Inbox/history, exact reply waiting and request identity across disconnects. Use when waiting, resuming communication or handling uncertain delivery.",
       "spec": "skills/acs-continuity-recovery/SKILL.md"
     },
     "acs-source-evidence": {
       "kind": "knowledge_module",
-      "domain": "source identity, synchronization, Artifact and Evidence",
+      "domain": "Source provenance and actual file access. ACS messages carry references, not repository synchronization.",
       "signals": [
-        "SourceBinding",
-        "branch",
-        "commit",
-        "tree",
-        "worktree",
-        "push",
-        "diff",
-        "Artifact",
-        "Evidence"
+        "list sources",
+        "read source",
+        "read diff",
+        "read file"
       ],
       "references": [
         "references/model.md",
@@ -167,20 +149,17 @@
         "acs-review-acceptance",
         "acs-runtime-model"
       ],
-      "description": "SourceBinding, repository, filesystem, Git, branch, commit, tree, worktree, push, synchronization, Artifact, Evidence, digest, and readback knowledge for ACS. Use for source-aware management, review, handoff, acceptance, or web file access.",
+      "description": "Actual machine files, repository readers and source provenance for ACS communication. Use when sharing paths, choosing an authorized reader or verifying the bytes actually inspected.",
       "spec": "skills/acs-source-evidence/SKILL.md"
     },
     "acs-review-acceptance": {
       "kind": "knowledge_module",
-      "domain": "Review, findings, finalization and accepted state",
+      "domain": "Engineering judgment outside ACS. The bridge transmits messages and authorized source references without a Review lifecycle.",
       "signals": [
-        "Review",
-        "reviewer independence",
-        "candidate",
-        "findings",
-        "finalization",
-        "acceptance",
-        "release readiness"
+        "send message",
+        "read message",
+        "read source",
+        "read diff"
       ],
       "references": [
         "references/model.md",
@@ -192,22 +171,16 @@
         "acs-policy-governance",
         "acs-collaboration-model"
       ],
-      "description": "Review, reviewer independence, candidate, findings, evidence sufficiency, integrated baseline, finalization, acceptance, publication, and product-owner boundary knowledge for ACS. Use when evaluating or accepting architecture, engineering, evidence, or release results.",
+      "description": "External engineering review and acceptance using ACS communication and source evidence. Use when coordinating an independent review or reporting findings; decisions remain with external Agents.",
       "spec": "skills/acs-review-acceptance/SKILL.md"
     },
     "acs-policy-governance": {
       "kind": "knowledge_module",
-      "domain": "authorization, Policy, Profile, budget and data boundaries",
+      "domain": "Authentication and authority. Message text and a supplied reference cannot grant permission.",
       "signals": [
-        "Grant",
-        "Policy",
-        "Role",
-        "Profile",
-        "OAuth scope",
-        "budget",
-        "revocation",
-        "approval",
-        "tenant isolation"
+        "read profile",
+        "configure team",
+        "list collaborators"
       ],
       "references": [
         "references/model.md",
@@ -220,20 +193,17 @@
         "acs-review-acceptance",
         "acs-web-collaboration"
       ],
-      "description": "Tenant, Project isolation, authenticated subject, Grant, Policy, Role, Profile, budget, OAuth scope, approval, revocation, data boundary, secret reference, and audit knowledge for ACS. Use when deciding who may read, change, execute, review, or accept.",
+      "description": "Trusted Client and Slot caller bindings, project-scoped Grants and ACS management boundaries. Use when reasoning about who can contact, read or configure whom.",
       "spec": "skills/acs-policy-governance/SKILL.md"
     },
     "acs-web-collaboration": {
       "kind": "knowledge_module",
-      "domain": "remote MCP, web context and Source access",
+      "domain": "Remote MCP entry, authentication and actual available receiving capabilities.",
       "signals": [
-        "ChatGPT web",
-        "SaaS Agent",
-        "remote MCP",
-        "OAuth",
-        "Tunnel",
-        "ProjectContextPack",
-        "GitHub MCP"
+        "list projects",
+        "load project",
+        "check inbox",
+        "read message"
       ],
       "references": [
         "references/model.md",
@@ -245,7 +215,7 @@
         "acs-policy-governance",
         "acs-source-evidence"
       ],
-      "description": "Remote MCP, web SaaS Agent, ProjectContextPack, OAuth, HTTPS, secure Tunnel, plugin, filesystem SourceBinding, GitHub MCP coordination, and web Session capability knowledge for ACS. Use when a browser-based Agent manages or reviews ACS projects.",
+      "description": "ACS communication through authenticated remote MCP and real project context. Use for web-hosted Agent access, reconnecting and distinguishing server files from client-local files.",
       "spec": "skills/acs-web-collaboration/SKILL.md"
     }
   },

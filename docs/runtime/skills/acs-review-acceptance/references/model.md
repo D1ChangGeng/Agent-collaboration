@@ -1,27 +1,9 @@
-# Review and acceptance model
+# acs-review-acceptance: model
 
-Review request identifies type, exact candidate, source baseline, workspace
-view when applicable, criteria, required Evidence and reviewer assignment.
-Review result records decision, findings, evidence references, source readback
-and unresolved items.
+Engineering judgment outside ACS. The bridge transmits messages and authorized source references without a Review lifecycle.
 
-Architecture Review evaluates boundaries, invariants and change impact.
-Engineering Review evaluates correctness, regression and operability. Evidence
-Review evaluates claim support and its measured scope. Finalization Review
-evaluates the integrated candidate and acceptance prerequisites.
+- Describe the candidate, findings and evidence in natural content and external repository files.
+- The reviewer independently checks actual source and reports through send_message. ACS does not decide whether work is acceptable.
+- A clarification or progress message may satisfy a communication wait; that is not acceptance or business completion.
 
-The adopted acceptance profile verifies candidate-specific reviewer identity
-and independence. Root and Route describe responsibility extent; Engineer,
-Reviewer, Specialist and Finalizer describe duties. Team metadata guides
-assignment, while the actual candidate and reviewer records establish
-independence.
-
-Artifact hashes and deterministic storage preserve candidate identity.
-AcceptedStateRevision is immutable and records parent revision, accepted_by,
-candidate, source, Evidence, Review, effects, readback and applicable Policy.
-
-Owner admission uses continuous trusted identity, active objects, explicit
-revocation, deduplication and revisions. Shared mode adds its configured
-Grant and Policy checks. Completed execution and Review facts preserve their
-original provenance after a prior Grant's natural expiry. A current claim about
-source or readiness requires current evidence.
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-model.md); it is not the current communication contract.

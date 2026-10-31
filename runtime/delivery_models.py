@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
 
 
 class DeliveryModel(BaseModel):
@@ -54,6 +54,65 @@ class DeliveryPacket(DeliveryModel):
         return values
 
 
+class MessagePacket(DeliveryModel):
+    """An authenticated natural message, independent of the retired work domain."""
+
+    schema_version: Literal["acs-message/1"] = "acs-message/1"
+    project_id: str = Field(min_length=1, max_length=128)
+    sender: str = Field(min_length=1, max_length=512)
+    recipient: str = Field(min_length=1, max_length=512)
+    content: str = Field(min_length=1, max_length=32768)
+    reply_to: tuple[str, ...] = Field(default=(), max_length=32)
+    response_mode: Literal["async", "sync"] = "async"
+    target_scope_id: str = Field(min_length=1, max_length=256)
+    target_agent_slot_id: str | None = Field(default=None, min_length=1, max_length=256)
+    activation: Literal["message_only", "invoke"] = "invoke"
+    delivery_policy: Literal["queue_until_idle"] = "queue_until_idle"
+    deadline: datetime | None = None
+    maximum_attempts: int = Field(default=3, ge=1, le=8, strict=True)
+    retry_delay_seconds: int = Field(default=1, ge=1, le=30, strict=True)
+
+    @field_validator("content")
+    @classmethod
+    def nonempty(cls, value):
+        if not value.strip():
+            raise ValueError("message content must not be blank")
+        return value
+
+    @field_validator("deadline")
+    @classmethod
+    def aware_deadline(cls, value):
+        return DeliveryPacket.timezone_required(value)
+
+
+class NoticePacket(DeliveryModel):
+    """Internal ACS notification; never indexed as an Agent message or reply."""
+
+    schema_version: Literal["acs-notice/1"] = "acs-notice/1"
+    project_id: str = Field(min_length=1, max_length=128)
+    sender: Literal["acs"] = "acs"
+    recipient: str = Field(min_length=1, max_length=512)
+    content: str = Field(min_length=1, max_length=8192)
+    origin_message_id: str = Field(min_length=1, max_length=256)
+    notification_sequence: int = Field(ge=1, strict=True)
+    target_scope_id: str = Field(min_length=1, max_length=256)
+    target_agent_slot_id: str = Field(min_length=1, max_length=256)
+    activation: Literal["invoke"] = "invoke"
+    delivery_policy: Literal["queue_until_idle"] = "queue_until_idle"
+    deadline: datetime | None = None
+    maximum_attempts: int = Field(default=3, ge=1, le=8, strict=True)
+    retry_delay_seconds: int = Field(default=1, ge=1, le=30, strict=True)
+
+    @field_validator("deadline")
+    @classmethod
+    def aware_deadline(cls, value):
+        return DeliveryPacket.timezone_required(value)
+
+
+Packet = Annotated[DeliveryPacket | MessagePacket | NoticePacket, Field(discriminator="schema_version")]
+PACKET = TypeAdapter(Packet)
+
+
 class EndpointBindingRequest(DeliveryModel):
     scope_id: str = Field(min_length=1, max_length=256)
     agent_slot_id: str = Field(min_length=1, max_length=256)
@@ -100,13 +159,13 @@ class DeliveryEnvelope(DeliveryModel):
     message_id: str
     command_id: str
     operation_id: str
-    endpoint_id: str
-    binding_revision: int
-    machine_id: str
-    node_id: str
-    boot_incarnation: str
+    endpoint_id: str | None
+    binding_revision: int | None
+    machine_id: str | None
+    node_id: str | None
+    boot_incarnation: str | None
     accepted_state_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
-    packet: DeliveryPacket
+    packet: Packet
 
 
 class InvocationRequest(DeliveryModel):
@@ -123,7 +182,7 @@ class InvocationRequest(DeliveryModel):
     envelope_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     logical_payload_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     selection_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
-    accepted_revision: int = Field(ge=0, strict=True)
+    accepted_revision: int | None = Field(default=None, ge=0, strict=True)
     accepted_state_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     envelope: DeliveryEnvelope
 

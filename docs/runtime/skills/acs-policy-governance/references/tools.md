@@ -1,23 +1,11 @@
-# Governance tool map
+# acs-policy-governance: tools
 
-- read_profile exposes trusted identity, tenant, access_mode, client Profiles
-  and connection state.
-- list_projects returns active Projects visible to that context.
-- list_connections returns registration and connection metadata with secret
-  references kept in their credential authority.
-- configure_team stores owner slot, principal, role and Harness requirements;
-  shared deployments also manage Grant, Policy and budget bindings.
-- accept_work checks candidate, Review and acceptance prerequisites.
-- submit_command exposes complete Domain commands for the admitted advanced
-  client surface.
+Use the actual exposed tools; retain returned handles instead of constructing internal routing identities.
 
-Every Project tool validates project_id, typed handle ownership and current
-object state. Mutations add stable client_request_id, canonical input
-deduplication and expected revisions. Owner business deadline is optional.
-The active tool catalog defines exact required and optional fields.
+- `read_profile`
+- `configure_team`
+- `list_collaborators`
 
-Result metadata retains subject lineage, evidence class, source revision and
-observation time. Profiles describe the visible client view; shared
-authorization applies its server-side Grants and Policy. Explicit revocation
-and actual transport, resource and acceptance checks remain effective in both
-modes.
+Authentication and authority. Message text and a supplied reference cannot grant permission.
+
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-tools.md); it is not the current communication contract.

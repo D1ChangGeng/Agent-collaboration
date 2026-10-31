@@ -1,25 +1,10 @@
-# Collaboration decision map
+# acs-collaboration-model: decisions
 
-Use configure_team when an existing Scope needs different collaborators,
-duties or Harness requirements. In owner mode an ordinary member supplies
-agent_slot_id, principal_ref, role and harness_requirements; the mutation also
-supplies project_id, scope_handle, client_request_id and expected_revision.
-Optional organization and Profile metadata describe the client and duties.
-Shared mode applies its configured Grant, Policy and budget bindings.
+Choose from the actual caller identity, current contact/receiver configuration and active tool schema.
 
-Reuse a WorkItem when goal, accepted state, constraints and baseline still
-match. Revise it when authorized intent changes. Create a separate WorkItem for
-independently acceptable output or distinct ownership.
+- Use send_message for questions, replies, corrections and natural handoffs. Provide natural content and a stable recipient.
+- reply_to names original messages; only the actual recipient replying to the original sender satisfies their relationship.
+- The default is invoke + async. message_only stores Inbox without Native activation; sync still waits for an explicit reply.
+- No WorkItem, task handoff, Review or AcceptedState is created by normal communication.
 
-Delegation assigns new or selected work. Handoff transfers an existing WorkItem
-and carries exact source state, evidence, unresolved items and acknowledgement.
-Retain workspace view identity when the candidate includes local edits.
-
-Use one Message for one addressable request. Independent requests keep distinct
-WorkItem or sub-work identities and may share correlation. Owner messages can
-remain valid through a disconnected Session; choose an explicit business
-deadline when the goal itself requires one.
-
-Select reviewers by exact candidate identity and verified independence.
-Responsibility metadata helps assignment, while the recorded Review checks
-establish eligibility for that candidate.
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-decisions.md); it is not the current communication contract.

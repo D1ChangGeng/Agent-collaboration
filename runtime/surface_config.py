@@ -60,6 +60,8 @@ class RoleContext(ConfigModel):
     principal_ref: str = Field(min_length=1, max_length=256)
     grant_ref: str = Field(min_length=1, max_length=256)
     credential_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    agent_slot_id: str | None = Field(default=None, min_length=1, max_length=256)
+    trusted_client: bool = False
 
 
 class ArtifactSettings(ConfigModel):
@@ -137,6 +139,7 @@ class SurfaceSettings(ConfigModel):
     remote_endpoints: tuple[RemoteEndpointSettings, ...] = Field(default=(), max_length=64)
     filesystem: FilesystemSettings = Field(default_factory=FilesystemSettings)
     temporal_endpoint: str | None = None
+    delivery_maintenance: Literal["auto", "external"] = "auto"
     presentation_timezone: str = "UTC"
 
     @field_validator("presentation_timezone")
@@ -221,6 +224,7 @@ def configured_service(path, *, delivery_endpoints=None, expected_settings=None)
                                  delivery_endpoints=delivery_endpoints,
                                  node_response_reader=trusted_local_node_response_reader(delivery_endpoints))
         domain._filesystem_settings = settings.filesystem
+        domain._communication_maintenance_mode = settings.delivery_maintenance
         if settings.remote_endpoints:
             from runtime.machine_connections import ConfiguredRemoteEndpoint
             for target in settings.remote_endpoints:

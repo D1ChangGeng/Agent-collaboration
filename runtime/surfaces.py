@@ -363,6 +363,14 @@ class SharedService:
 
     def command(self, request: SurfaceCommand, credential: str | None = None):
         self.authenticate(credential)
+        if request.command_type.startswith(("work_item.", "review.", "evidence.", "execution.", "recovery.incident.",
+                "recovery.human.", "recovery.automatic.", "recovery.manual.", "harness_session.")) and request.command_type not in {
+                    "work_item.read", "harness_session.read", "recovery.incident.status"}:
+            raise ValueError("task and execution-result commands are retired; use the project communication tools")
+        if request.command_type in {"delivery.project_native_response", "delivery.response.consume"}:
+            raise ValueError("native output is historical evidence, not an Agent reply")
+        if request.command_type == "message.send":
+            raise ValueError("use project send_message; legacy task packets are read-only")
         request = SurfaceCommand.model_validate_json(request.model_dump_json(), strict=True)
         if credential and credential in request.model_dump_json():
             raise ValueError("credentials are not command input")

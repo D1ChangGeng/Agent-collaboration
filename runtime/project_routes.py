@@ -222,6 +222,12 @@ class RouteActions:
                                "WHERE l.tenant_id=%s AND l.project_id=%s AND a.attempt_id=%s", parameters)
             elif kind in {"message", "response"}:
                 cursor.execute("SELECT m.packet_json->>'target_scope_id' FROM delivery_messages m "
+                               "JOIN communication_messages c USING(tenant_id,message_id) "
+                               "WHERE c.tenant_id=%s AND c.project_id=%s AND c.message_id=%s", parameters)
+                natural = cursor.fetchone()
+                if natural is not None:
+                    return natural[0]
+                cursor.execute("SELECT m.packet_json->>'target_scope_id' FROM delivery_messages m "
                                "JOIN collaboration_work_links l ON l.tenant_id=m.tenant_id AND l.work_item_id=m.packet_json->>'work_item_id' "
                                "WHERE l.tenant_id=%s AND l.project_id=%s AND m.message_id=%s", parameters)
             elif kind == "handoff":
@@ -258,17 +264,7 @@ class RouteActions:
         if authority.access_mode == "owner":
             scope = scope or project[0]
             self._scope(cursor, self.context.tenant_id, project_id, handle("scope", project_id, scope))
-            grant, slot = project[4], project[5]
-            if scope != project[0]:
-                cursor.execute("SELECT g.grant_ref,g.agent_slot_id FROM collaboration_route_grants g "
-                    "JOIN collaboration_routes r USING(tenant_id,project_id,route_id) "
-                    "WHERE g.tenant_id=%s AND g.project_id=%s AND r.scope_id=%s "
-                    "ORDER BY (g.principal_ref=%s AND g.profile=%s) DESC,g.principal_ref,g.profile LIMIT 1",
-                    (self.context.tenant_id, project_id, scope, self.context.principal_ref, self.profile))
-                mapped = cursor.fetchone()
-                if mapped is None:
-                    raise NotFound("route_actor", scope)
-                grant, slot = mapped
+            grant, slot = self.context.grant_ref, self.context.agent_slot_id or project[5]
             bound = copy(authority)
             bound.context = replace(authority.context, grant_ref=grant)
             command = self._command(bound, "project." + args["_tool_name"],
@@ -302,9 +298,8 @@ class RouteActions:
             bound._authorize(command, cursor, permission, scope)
         return bound, (*project[:4], grant, slot), command
 
-    @staticmethod
-    def _visible_scopes(authority, cursor, project):
-        if authority.access_mode == "owner":
+    def _visible_scopes(self, authority, cursor, project):
+        if authority.access_mode == "owner" and (self.context.trusted_client or self.profile == "root_manager"):
             return None
         cursor.execute("SELECT scope_id FROM grants WHERE grant_ref=%s", (authority.context.grant_ref,))
         scope = cursor.fetchone()[0]

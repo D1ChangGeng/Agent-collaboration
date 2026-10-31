@@ -21,13 +21,14 @@ from runtime.errors import (
     BusinessDeadlineExpired,
     IdempotencyConflict,
     IdentityRejected,
+    InvalidToolArgument,
     InvalidTransition,
     NotFound,
     RevisionConflict,
 )
+from runtime.machine_filesystem import FilesystemError
 from runtime.project_service import ProjectService
 from runtime.source import SourceError
-from runtime.machine_filesystem import FilesystemError
 
 ARRAYS = frozenset({
     "handles", "constraints", "required_evidence", "include", "states", "kinds",
@@ -52,6 +53,9 @@ class McpRuntime:
         self.presentation_timezone = presentation_timezone
 
     def input_schema(self, name: str) -> dict[str, Any]:
+        from runtime.communication_tools import DESCRIPTIONS, schema
+        if name in DESCRIPTIONS or name == "configure_team":
+            return schema(name)
         from runtime.filesystem_schema import ALL_TOOLS, input_schema
         owner = getattr(getattr(getattr(self.service, "service", None), "authority", None), "access_mode", "shared") == "owner"
         if owner and name in ALL_TOOLS:
@@ -145,10 +149,12 @@ class McpRuntime:
             item_type = dict if field in {"members", "policies", "budgets", "evidence_dispositions"} else str
             if isinstance(value, list) and (len(value) > 100 or any(type(x) is not item_type for x in value)):
                 raise ValueError("tool list arguments require bounded text entries")
+            if "enum" in schema["properties"][field] and value not in schema["properties"][field]["enum"]:
+                raise ValueError("argument value differs from the tool schema")
         if len(json.dumps(arguments, allow_nan=False).encode()) > 65536:
             raise ValueError("tool input exceeds the configured bound")
 
-    def call(self, name, arguments):
+    def call(self, name, arguments, *, request_id=None):
         try:
             credential = self.credential_provider()
             self.service.service.authenticate(credential)
@@ -159,6 +165,9 @@ class McpRuntime:
             if name not in self.service.IMPLEMENTED:
                 raise ValueError("tool is not implemented")
             self._validate(name, arguments)
+            if name in {"send_message", "configure_team"} and not arguments.get("client_request_id"):
+                import uuid
+                arguments = {**arguments, "client_request_id": request_id or uuid.uuid4().hex}
             state, data, follow_ups = self.service.execute(name, arguments, credential)
             result = {"schema_version": "acs-mcp-result/3",
                       "result_type": self.service.catalog["tools"][name]["result_type"],
@@ -195,6 +204,9 @@ class McpRuntime:
             result = self._problem("guard_rejected")
         except SourceError:
             result = self._problem("source_unavailable")
+        except InvalidToolArgument as error:
+            result = self._problem("invalid_arguments")
+            result["data"].update(field=error.field, guidance=error.guidance)
         except (ValueError, TypeError, KeyError, ValidationError):
             result = self._problem("invalid_arguments")
         except Exception:  # noqa: BLE001 - transport never exposes private backend errors

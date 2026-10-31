@@ -16,6 +16,7 @@ from copy import copy
 from dataclasses import replace
 from urllib.parse import urlsplit
 
+import anyio
 import httpx
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken
@@ -46,6 +47,8 @@ class OAuthBinding(ConfigModel):
     principal_ref: str = Field(min_length=1, max_length=256)
     grant_ref: str = Field(min_length=1, max_length=256)
     profile: str = Field(min_length=1, max_length=128)
+    agent_slot_id: str | None = Field(default=None, min_length=1, max_length=256)
+    trusted_client: bool = False
 
 
 class ProjectHttpSettings(ConfigModel):
@@ -233,7 +236,8 @@ def create_http_app(service, catalog, settings, *, sources=None, host="127.0.0.1
             raise PermissionError("OAuth identity is not admitted")
         authority = copy(service.authority)
         authority.context = replace(authority.context, principal_ref=binding.principal_ref,
-            grant_ref=binding.grant_ref, credential_hash=hashlib.sha256(access.token.encode()).hexdigest())
+            grant_ref=binding.grant_ref, credential_hash=hashlib.sha256(access.token.encode()).hexdigest(),
+            agent_slot_id=binding.agent_slot_id, trusted_client=binding.trusted_client)
         authorization = TokenAuthorization(access, authority.context, verifier)
         shared = SharedService(authority, authorization)
         projects = OAuthProjectService(shared, catalog, profile=binding.profile, sources=sources,
@@ -256,8 +260,14 @@ def create_http_app(service, catalog, settings, *, sources=None, host="127.0.0.1
     @asynccontextmanager
     async def lifespan(application):
         try:
-            async with original_lifespan(application) as state:
-                yield state
+            from runtime.communication_dispatch import maintain_communication_deliveries
+            async with anyio.create_task_group() as tasks:
+                tasks.start_soon(maintain_communication_deliveries, service)
+                try:
+                    async with original_lifespan(application) as state:
+                        yield state
+                finally:
+                    tasks.cancel_scope.cancel()
         finally:
             if owns_client:
                 await client.aclose()

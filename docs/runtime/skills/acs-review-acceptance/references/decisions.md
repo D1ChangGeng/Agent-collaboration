@@ -1,25 +1,9 @@
-# Review and acceptance decision map
+# acs-review-acceptance: decisions
 
-Use a new Review when the candidate or relevant baseline changes. Identify
-exact source bytes using the commit snapshot or workspace view revision.
-Verify reviewer assignment and independence for that candidate under the
-adopted acceptance profile.
+Choose from the actual caller identity, current contact/receiver configuration and active tool schema.
 
-A finding records severity, affected resource, evidence, consequence and
-required action. A decision is bounded by its sampling, environment, source
-and measured capability. Preserve those bounds when reusing historical
-evidence.
+- Describe the candidate, findings and evidence in natural content and external repository files.
+- The reviewer independently checks actual source and reports through send_message. ACS does not decide whether work is acceptable.
+- A clarification or progress message may satisfy a communication wait; that is not acceptance or business completion.
 
-Acceptance evaluates the integrated baseline, required Reviews and tests,
-candidate integrity, protected effects, publication readback and unresolved
-items. Record product-owner input separately where the acceptance contract
-requires it.
-
-Owner mode keeps these candidate and integrity checks. Natural expiry of a
-historical Grant leaves recorded execution and Review facts intact. Explicit
-revocation changes eligibility for new actions; shared mode additionally
-checks current Grant, Policy and budget conditions.
-
-A hash verifies exact bytes. Promote a deployment, native Harness or
-cross-machine capability only with evidence from that actual scenario and
-configuration.
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-decisions.md); it is not the current communication contract.

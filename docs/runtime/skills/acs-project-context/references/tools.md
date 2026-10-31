@@ -1,21 +1,12 @@
-# Project context tool map
+# acs-project-context: tools
 
-- read_profile returns trusted identity, tenant, access mode, client Profiles
-  and connection state.
-- list_projects discovers active Project IDs and Root handles visible to that
-  authenticated context.
-- load_project returns ProjectContextPack for root_management,
-  route_management, reviewer or finalizer views.
-- list_routes and list_work discover stable handles and current revisions.
-- list_activity reads recorded event lineage.
-- read_resource reads a known typed handle; the active schema determines
-  supported revision selection.
+Use the actual exposed tools; retain returned handles instead of constructing internal routing identities.
 
-Use list operations for discovery and read_resource for detail. Project
-follow-ups carry project_id. Context-dependent mutations use the applicable
-expected revisions from these reads and a stable client_request_id.
+- `list_projects`
+- `load_project`
+- `list_routes`
+- `list_collaborators`
 
-Context packs report completeness and source identity. In owner mode, a
-current workspace view can include admitted tracked changes and untracked
-files. Keep its view revision alongside the repository commit and tree; a
-named fixed revision preserves the source used by an existing candidate.
+Project identity and authorized contact scope; Native capacity and source files retain their own authorities.
+
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-tools.md); it is not the current communication contract.

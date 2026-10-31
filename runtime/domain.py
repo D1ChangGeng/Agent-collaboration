@@ -12,6 +12,7 @@ from typing import Any, ClassVar
 
 import psycopg
 
+from runtime.communication_permissions import expanded_permissions
 from runtime.errors import (
     AcceptanceGuardFailed,
     AuthorizationDenied,
@@ -431,11 +432,11 @@ class DomainAuthority:
         clock_skew = timedelta(seconds=clock_skew_seconds)
         current = self.context
 
+        natural_message = command.command_type == "message.send" and command.payload.get("schema_version") in {"acs-message/1", "acs-notice/1"}
         if (
             command.issued_at.tzinfo is None
-            or command.deadline is None
-            or command.deadline.tzinfo is None
-            or command.deadline <= now
+            or (command.deadline is None and not natural_message)
+            or (command.deadline is not None and (command.deadline.tzinfo is None or command.deadline <= now))
             or command.issued_at > now + clock_skew
         ):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
@@ -489,13 +490,18 @@ class DomainAuthority:
         row = cursor.fetchone()
 
         now = self.canonical_now(cursor)
+        scope_allowed = row is not None and (scope_id is None or str(row[0]) == str(scope_id))
+        if (not scope_allowed and row is not None and natural_message
+                and permission in {"message.send", "message.read", "runtime.invoke"}):
+            from runtime.communication_permissions import permits_project_message_scope
+            scope_allowed = permits_project_message_scope(cursor,current,command,row[0],scope_id)
         if (
             row is None
-            or command.deadline <= now
+            or (command.deadline is not None and command.deadline <= now)
             or command.issued_at > now + clock_skew
             or row[2] <= now
-            or permission not in tuple(row[1] or ())
-            or (scope_id is not None and str(row[0]) != str(scope_id))
+            or permission not in expanded_permissions(row[1])
+            or not scope_allowed
         ):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
 
@@ -561,14 +567,14 @@ class DomainAuthority:
         now = self.canonical_now(cursor)
         parent = None
         for row in chain:
-            if (row[3] != command.tenant_id or permission not in tuple(row[4] or ())
+            if (row[3] != command.tenant_id or permission not in expanded_permissions(row[4])
                     or row[5] <= now or row[6] is not None or row[9] != "active"
                     or (row[7], row[8]) != (command.authority_id, command.authority_incarnation)):
                 raise AuthorizationDenied(command.principal_ref, command.grant_ref)
             if parent is not None:
                 policy_digest = hashlib.sha256(json.dumps(parent[10], sort_keys=True,
                     separators=(",", ":")).encode()).hexdigest()
-                if (row[11] != policy_digest or not set(row[4] or ()) <= set(parent[4] or ())
+                if (row[11] != policy_digest or not set(row[4] or ()) <= expanded_permissions(parent[4])
                         or row[5] > parent[5]):
                     raise AuthorizationDenied(command.principal_ref, command.grant_ref)
             parent = row

@@ -32,9 +32,9 @@ from runtime.receiver_models import (
     EndpointRegistration,
     PrepareBody,
     ReadbackBody,
-    ResponseReadbackBody,
     ReadinessBody,
     RecoveryBody,
+    ResponseReadbackBody,
 )
 from runtime.remote_endpoint import RemoteNodeTransport, RemoteTransportRejected
 from runtime.sender import AdmissionFactory, DeliveryIdentity
@@ -156,6 +156,8 @@ class ReceiverNativeDeliveryBridge:
         if self.response_collector is None:
             raise RuntimeError("receiver response collector is unavailable")
         invocation = self._invocation(admission)
+        if invocation.envelope.packet.schema_version != "acs-delivery/1":
+            raise ValueError("natural_messages_use_explicit_replies")
         result = self.response_collector.collect_and_project(invocation)
         return {
             "projection_id": result.projection_id,

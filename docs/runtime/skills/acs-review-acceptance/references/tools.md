@@ -1,19 +1,12 @@
-# Review and acceptance tool map
+# acs-review-acceptance: tools
 
-- list_reviews discovers assignments and completed decisions.
-- request_review creates a candidate and source-bound Review assignment.
-- submit_review records the structured decision, findings and supporting facts.
-- list_evidence and read_resource inspect exact supporting records.
-- read_source and read_diff establish the committed or workspace candidate
-  actually inspected.
-- accept_work commits AcceptedStateRevision after the applicable prerequisites.
+Use the actual exposed tools; retain returned handles instead of constructing internal routing identities.
 
-Owner invocation checks authenticated identity, active objects, explicit
-revocation, stable request identity and expected revisions. The acceptance
-profile still checks exact candidate, source, reviewer independence, evidence,
-integrated results and protected-effect readback. Shared deployments apply
-their Grant and Policy admission as well.
+- `send_message`
+- `read_message`
+- `read_source`
+- `read_diff`
 
-Completed Artifact and Review records retain their original digests and
-provenance. Read their exact identities; refresh evidence when evaluating a
-claim about the current source or running system.
+Engineering judgment outside ACS. The bridge transmits messages and authorized source references without a Review lifecycle.
+
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-tools.md); it is not the current communication contract.

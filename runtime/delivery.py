@@ -16,6 +16,8 @@ from runtime.delivery_models import (
     EndpointResolution,
     EndpointResolutionRequest,
     InvocationRequest,
+    MessagePacket,
+    NoticePacket,
 )
 from runtime.delivery_node import (
     DeliveryBoundaryRejected,
@@ -66,8 +68,10 @@ class DeliveryService:
         cursor.execute(
             "INSERT INTO domain_events(tenant_id,work_item_id,target_kind,target_id,related_work_item_id,"
             "to_state,initiated_by,lineage_mode,command_id,resulting_revision,evidence_refs,command_hash_version,canonical_hash) "
-            "VALUES (%s,NULL,'message',%s,%s,%s,%s,'external_command',%s,%s,'[]','v2',%s)",
-            (command.tenant_id, command.target_id, work_item_id, state, command.principal_ref,
+            "VALUES (%s,NULL,'message',%s,%s,%s,%s,%s,%s,%s,'[]','v2',%s)",
+            (command.tenant_id, command.target_id, work_item_id, state,
+             "acs" if command.payload.get("schema_version") == "acs-notice/1" else command.principal_ref,
+             "system_notification" if command.payload.get("schema_version") == "acs-notice/1" else "external_command",
              command.command_id, result.revision, hashed),
         )
 
@@ -126,6 +130,11 @@ class DeliveryService:
         return result
 
     def _boundary(self, cursor, authority, command, packet, endpoint_id, revision, *, recovery=False):
+        from runtime.communication import communication_boundary
+        from runtime.delivery_models import MessagePacket
+        if isinstance(packet, (MessagePacket, NoticePacket)):
+            return communication_boundary(cursor, authority, command, packet, endpoint_id, revision,
+                                          recovery=recovery)
         if expired(earliest(command.deadline, packet.deadline), self._now(cursor)):
             raise DeliveryRejected("deadline_expired", "expired")
         authority._authorize(command, cursor, "message.send", packet.target_scope_id)
@@ -202,19 +211,23 @@ class DeliveryService:
     ):
         if command.command_type != "message.send" or command.target_kind != "message":
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
-        packet = DeliveryPacket.model_validate_json(packet.model_dump_json(), strict=True)
+        from runtime.delivery_models import PACKET
+        packet = PACKET.validate_json(packet.model_dump_json(), strict=True)
+        if isinstance(packet, NoticePacket) and not getattr(self.authority, "_communication_notice", False):
+            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         if ((packet.deadline is not None and command.deadline is not None
              and packet.deadline > command.deadline)
                 or len(packet.model_dump_json().encode()) > 65536):
             raise DeliveryRejected("packet_bound_exceeded")
-        if not endpoint_id or type(binding_revision) is not int or binding_revision < 1:
+        direct_inbox = isinstance(packet, MessagePacket) and (packet.recipient.startswith("client:") or packet.activation == "message_only")
+        if not direct_inbox and (not endpoint_id or type(binding_revision) is not int or binding_revision < 1):
             raise DeliveryRejected("invalid_endpoint_selection")
         extra = {"packet": packet.model_dump(mode="json"), "endpoint_id": endpoint_id, "binding_revision": binding_revision}
         result = CommandResult(command_id=command.command_id, operation_id=operation_id or f"op-{uuid.uuid4()}",
                                target_id=command.target_id, revision=command.expected_revision, state="message_queued")
         with self.authority._connect() as connection, connection.cursor() as cursor:
             self.authority._authorize(command, cursor, "message.send", packet.target_scope_id)
-            if packet.activation == "invoke":
+            if packet.activation == "invoke" and not direct_inbox:
                 self.authority._authorize(command, cursor, "runtime.invoke", packet.target_scope_id)
             duplicate, hashed = self.authority._dedup(cursor, command, result, extra)
             if duplicate:
@@ -245,7 +258,7 @@ class DeliveryService:
             )
             if cursor.rowcount != 1:
                 raise DeliveryRejected("deadline_expired", "expired")
-            self._event(cursor, command, result, hashed, "message.queued", packet.work_item_id)
+            self._event(cursor, command, result, hashed, "message.queued", getattr(packet, "work_item_id", None))
             cursor.execute("INSERT INTO outbox(tenant_id,message_id,operation_id,topic,payload) VALUES (%s,%s,%s,'message.delivery',%s)",
                            (command.tenant_id, command.target_id, result.operation_id,
                             json.dumps({"tenant_id": command.tenant_id, "message_id": command.target_id, "operation_id": result.operation_id})))
@@ -257,9 +270,16 @@ class DeliveryService:
                  json.dumps({"receipt_id": receipt_id, "operation_id": result.operation_id,
                              "command_id": command.command_id, "canonical_hash": hashed,
                              "envelope_hash": digest(envelope.model_dump(mode="json")),
-                             "accepted_revision": packet.accepted_revision,
+                             "accepted_revision": getattr(packet, "accepted_revision", None),
                              "accepted_state_digest": accepted_state_digest})),
             )
+            if direct_inbox:
+                cursor.execute("UPDATE delivery_messages SET state='delivered',receipt_high_water='target_inbox_committed' "
+                               "WHERE tenant_id=%s AND message_id=%s", (command.tenant_id, command.target_id))
+                cursor.execute("INSERT INTO delivery_receipts(tenant_id,message_id,receipt_id,layer,evidence_json) "
+                               "VALUES (%s,%s,%s,'target_inbox_committed',%s)",
+                               (command.tenant_id, command.target_id, f"delivery:{command.target_id}:target_inbox_committed",
+                                json.dumps({"source": "authority_inbox", "model_consumption": "unconfirmed"})))
         return result  # accepted_by_authority becomes visible only after this commit.
 
     def inspect(self, command, message_id):
@@ -271,7 +291,27 @@ class DeliveryService:
             row = cursor.fetchone()
             if row is None:
                 raise DeliveryRejected("message_missing")
-            self.authority._authorize(command, cursor, "message.read", row[0]["packet_json"]["target_scope_id"])
+            packet=row[0]["packet_json"]
+            natural=packet.get("schema_version") in {"acs-message/1", "acs-notice/1"}
+            self.authority._authorize(command,cursor,"message.read",None if natural else packet["target_scope_id"])
+            if natural:
+                from runtime.communication import CONTACTS
+                from runtime.project_common import handle
+                context=self.authority.context
+                if context.trusted_client:
+                    address=handle("client",packet["project_id"],digest([context.authority_id,context.principal_ref]))
+                else:
+                    cursor.execute("SELECT DISTINCT c.agent_slot_id FROM "+CONTACTS+" c JOIN agent_slots s USING(agent_slot_id) "
+                        "WHERE c.tenant_id=%s AND c.project_id=%s AND c.principal_ref=%s AND c.grant_ref=%s "
+                        "AND s.status='active' AND (%s::text IS NULL OR c.agent_slot_id=%s)",
+                        (context.tenant_id,packet["project_id"],context.principal_ref,context.grant_ref,
+                         context.agent_slot_id,context.agent_slot_id))
+                    slots=cursor.fetchall()
+                    if len(slots)!=1:
+                        raise AuthorizationDenied(context.principal_ref,context.grant_ref)
+                    address=handle("collaborator",packet["project_id"],slots[0][0])
+                if address not in {packet["sender"],packet["recipient"]}:
+                    raise AuthorizationDenied(context.principal_ref,context.grant_ref)
             cursor.execute("SELECT layer,evidence_json FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s ORDER BY observed_at",
                            (command.tenant_id, message_id))
             return {"message": row[0], "receipts": cursor.fetchall()}
@@ -324,7 +364,8 @@ class DeliveryDispatcher:
         elif isinstance(error, (DeliveryBoundaryRejected, OperationIdentityConflict)):
             status, code = "blocked", "node_boundary_rejected"
         else:
-            status = "budget_exhausted" if self.service.authority.access_mode != "owner" and row["attempts"] >= row["maximum_attempts"] else "retry_wait"
+            bounded = self.service.authority.access_mode != "owner" or row["packet_json"].get("schema_version") != "acs-delivery/1"
+            status = "budget_exhausted" if bounded and row["attempts"] >= row["maximum_attempts"] else "retry_wait"
             code = "transport_ack_unavailable"
         self._finish(cursor, row, status, code)
         return {"status": status, "message_id": row["message_id"], "attempts": row["attempts"],
@@ -405,7 +446,7 @@ class DeliveryDispatcher:
         accepted_receipt = cursor.fetchone()
         expected_workflow = f"acs-delivery/{message['operation_id']}"
         expected_event = (
-            "message", message["message_id"], message["packet_json"]["work_item_id"],
+            "message", message["message_id"], message["packet_json"].get("work_item_id"),
             "message.queued", message["command_id"], message["command_json"]["expected_revision"],
             message["canonical_hash"],
         )
@@ -449,6 +490,7 @@ class DeliveryDispatcher:
         # Only the trusted committed ledger creates this recovery context.
         authority = copy(self.service.authority)
         authority.context = ctx
+        authority._communication_recovery = True
         authority._transaction_connection = None
         binding, policy_hash, accepted_state_digest = self.service._boundary(
             cursor, authority, command, envelope.packet,
@@ -691,6 +733,8 @@ class DeliveryDispatcher:
                 def mark_original(stored, proof):
                     with self.service.authority._connect() as mark_connection, mark_connection.cursor() as mark_cursor:
                         current = self._load(mark_cursor, identity)
+                        if current["packet_json"].get("schema_version") == "acs-message/1" and current["state"] == "delivered":
+                            raise InvocationPreCallRejected("message_already_routed_to_inbox")
                         current_attempt = self._load_attempt(mark_cursor, current)
                         checked, checked_endpoint, checked_invocation = self._recovery_endpoint(
                             mark_cursor, current, current_attempt,
@@ -782,6 +826,8 @@ class DeliveryDispatcher:
         cursor.execute("UPDATE delivery_attempts SET status=%s,error_code=%s,finished_at=clock_timestamp() "
                        "WHERE tenant_id=%s AND message_id=%s AND ordinal=%s AND finished_at IS NULL",
                        (state, code, row["tenant_id"], row["message_id"], row["attempts"]))
+        from runtime.communication_faults import record_obstacle
+        record_obstacle(cursor, row, state, code)
 
     @staticmethod
     def _project(cursor, row, observation):
@@ -856,7 +902,7 @@ class DeliveryDispatcher:
                                 "attempts": row["attempts"]}
                     reuse_prepared = bool(open_attempt and open_attempt[0] == "prepared")
                     if not reuse_prepared:
-                        if self.service.authority.access_mode != "owner" and row["attempts"] >= row["maximum_attempts"]:
+                        if (self.service.authority.access_mode != "owner" or row["packet_json"].get("schema_version") != "acs-delivery/1") and row["attempts"] >= row["maximum_attempts"]:
                             self._finish(
                                 cursor,
                                 row,
@@ -1051,6 +1097,8 @@ class DeliveryDispatcher:
                             raise
                     with self.service.authority._connect() as fail_connection, fail_connection.cursor() as fail_cursor:
                         row = self._load(fail_cursor, identity)
+                        if row["packet_json"].get("schema_version") == "acs-message/1" and row["state"] == "delivered":
+                            return {"status": "delivered", "message_id": row["message_id"], "attempts": row["attempts"]}
                         fail_cursor.execute(
                             "SELECT 1 FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s "
                             "AND layer='runtime_dispatched'",

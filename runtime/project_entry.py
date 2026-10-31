@@ -18,11 +18,11 @@ from runtime.surface_entry import SafeArguments
 async def serve_stdio(server, service=None, settings=None):
     from mcp.server.stdio import stdio_server
 
-    from runtime.owner_dispatch import maintain_owner_deliveries
+    from runtime.communication_dispatch import maintain_communication_deliveries
 
     async with anyio.create_task_group() as tasks:
-        if service is not None and settings is not None and service.authority.access_mode == "owner":
-            tasks.start_soon(maintain_owner_deliveries, service, settings)
+        if service is not None:
+            tasks.start_soon(maintain_communication_deliveries, service)
         try:
             async with stdio_server() as (read, write):
                 await server.run(read, write, server.create_initialization_options())
