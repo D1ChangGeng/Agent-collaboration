@@ -507,7 +507,9 @@ class CommunicationActions:
         direction = args.get("direction", "both")
         if direction not in {"both", "incoming", "outgoing"}:
             raise ValueError("invalid message direction")
-        peer = args.get("with")
+        # Optional filters are often emitted as empty strings by Harness tool
+        # adapters. Keep their meaning and cursor identity equal to omission.
+        peer = args.get("with") or None
         if peer:
             try:
                 parse_handle(peer, "client" if peer.startswith("client:") else "collaborator", args["project_id"])

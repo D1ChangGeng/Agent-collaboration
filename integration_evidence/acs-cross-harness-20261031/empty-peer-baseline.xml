@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="2.881" timestamp="2026-10-31T21:22:47.233272+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication" name="test_empty_optional_peer_filter_keeps_inbox_and_cursor_semantics[check_inbox]" time="1.309"><failure message="AssertionError: assert {'cursor_rese...r': None, ...} == {'cursor_rese...r': None, ...}&#10;  &#10;  Omitting 4 identical items, use -vv to show&#10;  Differing items:&#10;  {'resume_cursor': 'eyJhZnRlciI6IDAsICJxdWVyeSI6ICJiZmM3N2Y4N2NkZjk0MmNjZmZjYzcwNmExZTRlNWQxMmMwY2YxZmQ3YjZmYTg2ODRhODVjMWJiYmNlNGRiYTNhIn0'} != {'resume_cursor': 'eyJhZnRlciI6IDEsICJxdWVyeSI6ICJlZjZjZjQwMGVjODM3OGU5OWM3M2NmM2JkNGNkYzFlYTU1ZjVlZjU0M2EyOWQ5ZDVjMWM3NGFjZWU5YWFkY2NhIn0'}&#10;  {'next_cursor': None} != {'next_cursor': 'eyJhZnRlciI6IDEsICJxdWVyeSI6ICJlZjZjZjQwMGVjODM3OGU5OWM3M2NmM2JkNGNkYzFlYTU1ZjVlZjU0M2EyOWQ5ZDVjMWM3NGFjZWU5YWFkY2NhIn0'}&#10;  {'items': []} != {'items': [{'from': 'collaborator:project-alpha:local...&#10;  &#10;  ...Full output truncated (2 lines hidden), use '-vv' to show">comm = namespace(clients={'a': &lt;runtime.mcp_runtime.McpRuntime object at 0x000001D38BFA96A0&gt;, 'b': &lt;runtime.mcp_runtime.McpRu...iveryDispatcher object at 0x000001D38BE53A80&gt;, authority=&lt;runtime.domain.DomainAuthority object at 0x000001D38BFA8440&gt;)
+tool = 'check_inbox'
+
+    @pytest.mark.parametrize("tool", ["check_inbox", "list_messages"])
+    def test_empty_optional_peer_filter_keeps_inbox_and_cursor_semantics(comm, tool):
+        """A real OpenCode caller supplies optional string fields as empty strings."""
+        first = send(comm, "a", "b", "A's actual request", activation="message_only")["data"]
+        second = send(comm, "c", "b", "C's separate request", activation="message_only")["data"]
+        ordinary = call(comm, "b", tool, limit=1)["data"]
+        blank = call(comm, "b", tool, limit=1, **{"with": "", "cursor": None})["data"]
+&gt;       assert blank == ordinary
+E       AssertionError: assert {'cursor_rese...r': None, ...} == {'cursor_rese...r': None, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Differing items:
+E         {'resume_cursor': 'eyJhZnRlciI6IDAsICJxdWVyeSI6ICJiZmM3N2Y4N2NkZjk0MmNjZmZjYzcwNmExZTRlNWQxMmMwY2YxZmQ3YjZmYTg2ODRhODVjMWJiYmNlNGRiYTNhIn0'} != {'resume_cursor': 'eyJhZnRlciI6IDEsICJxdWVyeSI6ICJlZjZjZjQwMGVjODM3OGU5OWM3M2NmM2JkNGNkYzFlYTU1ZjVlZjU0M2EyOWQ5ZDVjMWM3NGFjZWU5YWFkY2NhIn0'}
+E         {'next_cursor': None} != {'next_cursor': 'eyJhZnRlciI6IDEsICJxdWVyeSI6ICJlZjZjZjQwMGVjODM3OGU5OWM3M2NmM2JkNGNkYzFlYTU1ZjVlZjU0M2EyOWQ5ZDVjMWM3NGFjZWU5YWFkY2NhIn0'}
+E         {'items': []} != {'items': [{'from': 'collaborator:project-alpha:local...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+runtime_tests\test_communication.py:608: AssertionError</failure></testcase><testcase classname="runtime_tests.test_communication" name="test_empty_optional_peer_filter_keeps_inbox_and_cursor_semantics[list_messages]" time="1.304"><failure message="AssertionError: assert {'cursor_rese...t-alpha', ...} == {'cursor_rese...t-alpha', ...}&#10;  &#10;  Omitting 2 identical items, use -vv to show&#10;  Differing items:&#10;  {'resume_cursor': 'eyJhZnRlciI6IDAsICJxdWVyeSI6ICJjZjYxYWJmYzEwMTlmMTA1ZGI1Y2ZkMTE2MTY4NTg4NTQyZTE5ZmM0MzZlMjY1Njk3OTZjMGM3NmE0MzViOTE5In0'} != {'resume_cursor': 'eyJhZnRlciI6IDEsICJxdWVyeSI6ICIyNmI0NTU0ZDExNTQ0Nzk0OTYyMDkyNzJhM2ZhMmU2NTM1MWJlOWU5ZmFhZjljYjJjNDgzYjU1YmRhNDM0NWNjIn0'}&#10;  {'next_cursor': None} != {'next_cursor': 'eyJhZnRlciI6IDEsICJxdWVyeSI6ICIyNmI0NTU0ZDExNTQ0Nzk0OTYyMDkyNzJhM2ZhMmU2NTM1MWJlOWU5ZmFhZjljYjJjNDgzYjU1YmRhNDM0NWNjIn0'}&#10;  {'items': []} != {'items': [{'from': 'collaborator:project-alpha:local...&#10;  &#10;  ...Full output truncated (2 lines hidden), use '-vv' to show">comm = namespace(clients={'a': &lt;runtime.mcp_runtime.McpRuntime object at 0x000001D38C4A0640&gt;, 'b': &lt;runtime.mcp_runtime.McpRu...iveryDispatcher object at 0x000001D38BF95AE0&gt;, authority=&lt;runtime.domain.DomainAuthority object at 0x000001D38BF958C0&gt;)
+tool = 'list_messages'
+
+    @pytest.mark.parametrize("tool", ["check_inbox", "list_messages"])
+    def test_empty_optional_peer_filter_keeps_inbox_and_cursor_semantics(comm, tool):
+        """A real OpenCode caller supplies optional string fields as empty strings."""
+        first = send(comm, "a", "b", "A's actual request", activation="message_only")["data"]
+        second = send(comm, "c", "b", "C's separate request", activation="message_only")["data"]
+        ordinary = call(comm, "b", tool, limit=1)["data"]
+        blank = call(comm, "b", tool, limit=1, **{"with": "", "cursor": None})["data"]
+&gt;       assert blank == ordinary
+E       AssertionError: assert {'cursor_rese...t-alpha', ...} == {'cursor_rese...t-alpha', ...}
+E         
+E         Omitting 2 identical items, use -vv to show
+E         Differing items:
+E         {'resume_cursor': 'eyJhZnRlciI6IDAsICJxdWVyeSI6ICJjZjYxYWJmYzEwMTlmMTA1ZGI1Y2ZkMTE2MTY4NTg4NTQyZTE5ZmM0MzZlMjY1Njk3OTZjMGM3NmE0MzViOTE5In0'} != {'resume_cursor': 'eyJhZnRlciI6IDEsICJxdWVyeSI6ICIyNmI0NTU0ZDExNTQ0Nzk0OTYyMDkyNzJhM2ZhMmU2NTM1MWJlOWU5ZmFhZjljYjJjNDgzYjU1YmRhNDM0NWNjIn0'}
+E         {'next_cursor': None} != {'next_cursor': 'eyJhZnRlciI6IDEsICJxdWVyeSI6ICIyNmI0NTU0ZDExNTQ0Nzk0OTYyMDkyNzJhM2ZhMmU2NTM1MWJlOWU5ZmFhZjljYjJjNDgzYjU1YmRhNDM0NWNjIn0'}
+E         {'items': []} != {'items': [{'from': 'collaborator:project-alpha:local...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+runtime_tests\test_communication.py:608: AssertionError</failure></testcase></testsuite></testsuites>

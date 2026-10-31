@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="2" failures="0" skipped="0" tests="2" time="0.527" timestamp="2026-10-31T21:22:38.552470+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication" name="test_empty_optional_peer_filter_keeps_inbox_and_cursor_semantics[check_inbox]" time="0.008"><error message="failed on setup with &quot;psycopg.OperationalError: connection failed: connection to server at &quot;127.0.0.1&quot;, port 55439 failed: Permission denied (0x0000271D/10013)&#10;&#09;Is the server running on that host and accepting TCP/IP connections?&quot;">tmp_path = WindowsPath('D:/Chatgpt/Agent-collaboration/.tmp/empty-peer-first/test_empty_optional_peer_filte0')
+
+    @pytest.fixture
+    def comm(tmp_path):
+        base = os.environ.get("ACS_COMMUNICATION_TEST_DSN")
+        if not base:
+            pytest.skip("isolated PostgreSQL unavailable: ACS_COMMUNICATION_TEST_DSN is missing")
+        # This suite must never inherit a deployment DSN accidentally.
+        from psycopg.conninfo import conninfo_to_dict
+        assert conninfo_to_dict(base)["dbname"] == "acs_communication_test"
+        schema = "comm_test_" + uuid.uuid4().hex
+&gt;       with psycopg.connect(base, autocommit=True) as connection:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+runtime_tests\test_communication.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = &lt;class 'psycopg.Connection'&gt;
+conninfo = 'user=acs_test password=acs_local_test dbname=acs_communication_test host=127.0.0.1 port=55439 hostaddr=127.0.0.1'
+autocommit = True, prepare_threshold = 5, context = None, row_factory = None
+cursor_factory = None, kwargs = {}
+params = {'dbname': 'acs_communication_test', 'host': '127.0.0.1', 'password': 'acs_local_test', 'port': '55439', ...}
+timeout = 130
+
+    @classmethod
+    def connect(
+        cls,
+        conninfo: str = "",
+        *,
+        autocommit: bool = False,
+        prepare_threshold: int | None = 5,
+        context: AdaptContext | None = None,
+        row_factory: RowFactory[Row] | None = None,
+        cursor_factory: type[Cursor[Row]] | None = None,
+        **kwargs: ConnParam,
+    ) -&gt; Self:
+        """
+        Connect to a database server and return a new `Connection` instance.
+        """
+    
+        params = cls._get_connection_params(conninfo, **kwargs)
+        timeout = timeout_from_conninfo(params)
+        rv = None
+        attempts = conninfo_attempts(params)
+        conn_errors: list[tuple[e.Error, str]] = []
+        for attempt in attempts:
+            tdescr = (attempt.get("host"), attempt.get("port"), attempt.get("hostaddr"))
+            descr = "host: %r, port: %r, hostaddr: %r" % tdescr
+            logger.debug("connection attempt: %s", descr)
+            try:
+                conninfo = make_conninfo("", **attempt)
+                gen = cls._connect_gen(conninfo, timeout=timeout)
+                rv = waiting.wait_conn(gen, interval=_WAIT_INTERVAL)
+            except e.Error as ex:
+                logger.debug("connection failed: %s: %s", descr, str(ex))
+                conn_errors.append((ex, descr))
+            except e._NO_TRACEBACK as ex:
+                raise ex.with_traceback(None)
+            else:
+                logger.debug("connection succeeded: %s", descr)
+                break
+    
+        if not rv:
+            last_ex = conn_errors[-1][0]
+            if len(conn_errors) == 1:
+&gt;               raise last_ex.with_traceback(None)
+E               psycopg.OperationalError: connection failed: connection to server at "127.0.0.1", port 55439 failed: Permission denied (0x0000271D/10013)
+E               	Is the server running on that host and accepting TCP/IP connections?
+
+.venv\Lib\site-packages\psycopg\connection.py:122: OperationalError</error></testcase><testcase classname="runtime_tests.test_communication" name="test_empty_optional_peer_filter_keeps_inbox_and_cursor_semantics[list_messages]" time="0.004"><error message="failed on setup with &quot;psycopg.OperationalError: connection failed: connection to server at &quot;127.0.0.1&quot;, port 55439 failed: Permission denied (0x0000271D/10013)&#10;&#09;Is the server running on that host and accepting TCP/IP connections?&quot;">tmp_path = WindowsPath('D:/Chatgpt/Agent-collaboration/.tmp/empty-peer-first/test_empty_optional_peer_filte1')
+
+    @pytest.fixture
+    def comm(tmp_path):
+        base = os.environ.get("ACS_COMMUNICATION_TEST_DSN")
+        if not base:
+            pytest.skip("isolated PostgreSQL unavailable: ACS_COMMUNICATION_TEST_DSN is missing")
+        # This suite must never inherit a deployment DSN accidentally.
+        from psycopg.conninfo import conninfo_to_dict
+        assert conninfo_to_dict(base)["dbname"] == "acs_communication_test"
+        schema = "comm_test_" + uuid.uuid4().hex
+&gt;       with psycopg.connect(base, autocommit=True) as connection:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+runtime_tests\test_communication.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = &lt;class 'psycopg.Connection'&gt;
+conninfo = 'user=acs_test password=acs_local_test dbname=acs_communication_test host=127.0.0.1 port=55439 hostaddr=127.0.0.1'
+autocommit = True, prepare_threshold = 5, context = None, row_factory = None
+cursor_factory = None, kwargs = {}
+params = {'dbname': 'acs_communication_test', 'host': '127.0.0.1', 'password': 'acs_local_test', 'port': '55439', ...}
+timeout = 130
+
+    @classmethod
+    def connect(
+        cls,
+        conninfo: str = "",
+        *,
+        autocommit: bool = False,
+        prepare_threshold: int | None = 5,
+        context: AdaptContext | None = None,
+        row_factory: RowFactory[Row] | None = None,
+        cursor_factory: type[Cursor[Row]] | None = None,
+        **kwargs: ConnParam,
+    ) -&gt; Self:
+        """
+        Connect to a database server and return a new `Connection` instance.
+        """
+    
+        params = cls._get_connection_params(conninfo, **kwargs)
+        timeout = timeout_from_conninfo(params)
+        rv = None
+        attempts = conninfo_attempts(params)
+        conn_errors: list[tuple[e.Error, str]] = []
+        for attempt in attempts:
+            tdescr = (attempt.get("host"), attempt.get("port"), attempt.get("hostaddr"))
+            descr = "host: %r, port: %r, hostaddr: %r" % tdescr
+            logger.debug("connection attempt: %s", descr)
+            try:
+                conninfo = make_conninfo("", **attempt)
+                gen = cls._connect_gen(conninfo, timeout=timeout)
+                rv = waiting.wait_conn(gen, interval=_WAIT_INTERVAL)
+            except e.Error as ex:
+                logger.debug("connection failed: %s: %s", descr, str(ex))
+                conn_errors.append((ex, descr))
+            except e._NO_TRACEBACK as ex:
+                raise ex.with_traceback(None)
+            else:
+                logger.debug("connection succeeded: %s", descr)
+                break
+    
+        if not rv:
+            last_ex = conn_errors[-1][0]
+            if len(conn_errors) == 1:
+&gt;               raise last_ex.with_traceback(None)
+E               psycopg.OperationalError: connection failed: connection to server at "127.0.0.1", port 55439 failed: Permission denied (0x0000271D/10013)
+E               	Is the server running on that host and accepting TCP/IP connections?
+
+.venv\Lib\site-packages\psycopg\connection.py:122: OperationalError</error></testcase></testsuite></testsuites>

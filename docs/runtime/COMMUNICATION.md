@@ -160,7 +160,20 @@ on 1302-1 and `message_only`; it does not certify Native autoactivation or a
 cross-Harness matrix. See the implementation report for exact source bytes,
 commands, negative cases, retained failures and outstanding checks.
 
+An optional `with` peer filter may be omitted or supplied as an empty string;
+both select the same unfiltered view and use the same continuation cursors.
+A nonempty value must be an actual collaborator or Client address. This matters
+for Harness adapters that populate optional string fields automatically.
+
 The production Windows Codex receiver factory has also been exercised with
 actual Node/Runtime enrollment, independent A/B contexts, automatic Native
 activation and B's own MCP reply. This qualifies that local tested setup; it does
-not certify a physical cross-machine or OpenCode model matrix.
+not certify a physical cross-machine Native activation matrix.
+
+Windows Codex and Linux OpenCode on 1302-1 have now exchanged a natural request
+and an explicitly associated reply through their own ordinary authenticated ACS
+MCP tools. This uses `message_only`, a shared isolated Authority and a loopback
+SSH database forward. It qualifies that communication direction, not signed
+cross-machine Native delivery or OpenCode receiver autoactivation. The first
+failure exposed the empty-filter bug; original failed and corrected model runs
+are retained in [the cross-Harness evidence](../../integration_evidence/acs-cross-harness-20261031/REPORT.md).

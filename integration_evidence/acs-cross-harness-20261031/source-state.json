@@ -1,0 +1,10 @@
+{
+  "candidate_parent": "7143ef20c5cde4e12a77ee04f63e75813597e18e",
+  "codex_version": "codex-cli 0.166.0-alpha.5.1",
+  "source_matches_measured_candidate": true,
+  "provider_credential_absent_from_evidence": true,
+  "README.md": "9e1341285d25c806289c6a652c6912f7a6f2a629a8998a5a780318309565796c",
+  "README.zh-CN.md": "d8b1639e46a52eed9b4e6929d086556aba677f010e55f2ed09d3382887891a89",
+  "push": "not_attempted",
+  "deployment": "not_performed"
+}

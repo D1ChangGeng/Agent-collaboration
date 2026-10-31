@@ -598,6 +598,23 @@ def test_query_filter_change_restarts_pagination(comm):
     assert [item["preview"] for item in result["items"]] == ["first"]
 
 
+@pytest.mark.parametrize("tool", ["check_inbox", "list_messages"])
+def test_empty_optional_peer_filter_keeps_inbox_and_cursor_semantics(comm, tool):
+    """A real OpenCode caller supplies optional string fields as empty strings."""
+    first = send(comm, "a", "b", "A's actual request", activation="message_only")["data"]
+    second = send(comm, "c", "b", "C's separate request", activation="message_only")["data"]
+    ordinary = call(comm, "b", tool, limit=1)["data"]
+    blank = call(comm, "b", tool, limit=1, **{"with": "", "cursor": None})["data"]
+    assert blank == ordinary
+    assert blank["items"][0]["message_handle"] == first["message_handle"]
+    continued = call(comm, "b", tool, cursor=ordinary["next_cursor"], **{"with": ""})["data"]
+    assert not continued["cursor_reset"]
+    assert [item["message_handle"] for item in continued["items"]] == [second["message_handle"]]
+    narrowed = call(comm, "b", tool, **{"with": "collaborator:project-alpha:local-slot"})["data"]
+    assert [item["message_handle"] for item in narrowed["items"]] == [first["message_handle"]]
+    rejected(comm, "b", tool, "invalid_arguments", **{"with": " "})
+
+
 def test_normal_send_native_read_reply_wait_and_history_do_not_need_task_tables(comm):
     with psycopg.connect(comm.dsn) as connection:
         connection.execute("ALTER TABLE work_items RENAME TO retired_work_items")
