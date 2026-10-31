@@ -25,6 +25,15 @@ function Quote-NativeArgument([string]$Value) {
 function Join-NativeArguments([string[]]$Values) {
     return (@($Values | ForEach-Object { Quote-NativeArgument $_ }) -join ' ')
 }
+function Resolve-StartupTaskName([string]$RequestedName, [string]$BindingHash, $Owned) {
+    if ($Owned) {
+        if ($RequestedName -and $RequestedName -ne $Owned.Task) { throw 'Existing startup task name differs.' }
+        $RequestedName = $Owned.Task
+    }
+    if (-not $RequestedName) { $RequestedName = 'ACS-WSL-' + $BindingHash.Substring(0,12) + '-Startup-Recovery' }
+    if ($RequestedName -notmatch '^ACS-[a-zA-Z0-9_.-]+-Startup-Recovery$') { throw 'Use an ACS owner startup task name.' }
+    return $RequestedName
+}
 function Invoke-WslReadback([string[]]$Arguments) {
     $info = New-Object System.Diagnostics.ProcessStartInfo
     $info.FileName = $wslExe
@@ -112,8 +121,6 @@ $binding = [ordered]@{WindowsOwner=$sid;Distribution=$WslDistribution;RuntimeUse
 $bindingText = $binding | ConvertTo-Json -Compress
 $sha = [Security.Cryptography.SHA256]::Create()
 try { $bindingHash = ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($bindingText)))).Replace('-','').ToLowerInvariant() } finally { $sha.Dispose() }
-if (-not $TaskName) { $TaskName = 'ACS-WSL-' + $bindingHash.Substring(0,12) + '-Startup-Recovery' }
-if ($TaskName -notmatch '^ACS-[a-zA-Z0-9_.-]+-Startup-Recovery$') { throw 'Use an ACS owner startup task name.' }
 $base = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.agent-collaboration\startup'
 $destination = Join-Path $base $bindingHash.Substring(0,16)
 $marker = Join-Path $destination 'installation-receipt.json'
@@ -122,6 +129,7 @@ if (Test-Path -LiteralPath $marker) {
     $owned = Get-Content -LiteralPath $marker -Raw | ConvertFrom-Json
     if ($owned.Schema -ne 'acs-windows-startup/1' -or $owned.BindingHash -ne $bindingHash) { throw 'Existing startup ownership differs.' }
 }
+$TaskName = Resolve-StartupTaskName -RequestedName $TaskName -BindingHash $bindingHash -Owned $owned
 $existing = Get-ScheduledTask -TaskName $TaskName -TaskPath '\' -ErrorAction SilentlyContinue
 $launcher = $LinuxInstallationRoot + '/acs_launcher.py'
 $linuxArguments = @('--distribution',$WslDistribution,'--user',$RuntimeUser,'--exec','/usr/bin/python3',$launcher,'--installation-root',$LinuxInstallationRoot,'--maintain-startup')
@@ -160,7 +168,7 @@ if (-not $Apply) {
     [pscustomobject]@{Schema='acs-windows-startup/1';State='planned';Task=$TaskName;Binding=$binding;GUIHost=$binary;ExistingTask=[bool]$existing;Version=$machine.version} | ConvertTo-Json -Depth 4
     exit 0
 }
-if ($owned -and $owned.SourceSHA256 -eq $sourceHash -and $existing -and $existing.State -eq 'Running' -and $existing.Actions.Execute -eq $binary -and $existing.Actions.Arguments -eq $backgroundArguments) {
+if ($owned -and $owned.SourceSHA256 -eq $sourceHash -and $existing -and $existing.State -eq 'Running' -and $existing.Actions.Execute -eq $binary -and $existing.Actions.Arguments -eq $backgroundArguments -and $existing.Settings.StartWhenAvailable -and $existing.Settings.RestartCount -eq 999 -and $existing.Settings.RestartInterval -eq 'PT1M' -and $existing.Settings.Hidden) {
     $owned | ConvertTo-Json -Depth 4
     exit 0
 }
@@ -195,6 +203,9 @@ $action = New-ScheduledTaskAction -Execute $binary -Argument $backgroundArgument
 try {
     if ($existing) {
         $existing.Settings.Hidden = $true
+        $existing.Settings.StartWhenAvailable = $true
+        $existing.Settings.RestartCount = 999
+        $existing.Settings.RestartInterval = 'PT1M'
         Set-ScheduledTask -TaskName $TaskName -TaskPath '\' -Action $action -Settings $existing.Settings | Out-Null
         Stop-ScheduledTask -TaskName $TaskName -TaskPath '\'
         Stop-OwnedMaintainer

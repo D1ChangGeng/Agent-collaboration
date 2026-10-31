@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented here.
 
+## 2.0.1 - 2026-11-01
+
+- Retry failed WSL maintenance processes inside the Windows background host.
+  The owner task stays active during transient child failures and stops when
+  maintenance exits successfully, including an explicit startup disable.
+- Preserve an existing owner startup task's recorded name during upgrades,
+  and repair its managed availability and retry settings.
+- Add native Windows .NET and PowerShell regression checks for retry and task
+  identity. See `docs/RELEASE-NOTES-v2.0.1.md` for upgrade and evidence scope.
+
 ## 2.0.0 - 2026-11-01
 
 - Replace the normal task lifecycle with natural messages, explicit recipient

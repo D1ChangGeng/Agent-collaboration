@@ -19,9 +19,9 @@ You confirm required login, permissions, secret entry and connection consent.
 
 ## Agent launch request
 
-Use the [v2.0.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.0.0)
+Use the [v2.0.1 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.0.1)
 and its `acs_bootstrap.py` asset for the machine selection flow described here.
-The default Bootstrap version is `v2.0.0`. Existing v1.2.0 installations use the
+The default Bootstrap version is `v2.0.1`. Existing v1.2.0 installations use the
 verified v2.0.0 Bootstrap for their first guided upgrade; afterward the installed
 updater provides the automatic upgrade controls. See the
 [release notes](RELEASE-NOTES-v2.0.0.md).

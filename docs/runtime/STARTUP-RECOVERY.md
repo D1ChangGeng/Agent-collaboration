@@ -118,8 +118,9 @@ Keep the receipt and backup references in private installation storage.
 The task action uses the GUI-subsystem
 [background host](../../assets/windows/acs_background_host.cs), which launches
 the system WSL executable with `UseShellExecute=false` and
-`CreateNoWindow=true`, waits for the process and propagates its exit code to
-Task Scheduler. The task calls:
+`CreateNoWindow=true` and waits for the process. A failed WSL child is retried
+after 30 seconds while the task remains running. A successful child exit ends
+the host, including when the owner disables startup. The task calls:
 
 ~~~text
 /usr/bin/python3 <installation-root>/acs_launcher.py --installation-root <installation-root> --maintain-startup
