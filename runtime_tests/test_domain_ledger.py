@@ -15,7 +15,6 @@ psycopg = pytest.importorskip("psycopg")
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from runtime.domain import DomainAuthority
 from runtime.errors import (
     AuthorizationDenied,
     IdempotencyConflict,
@@ -24,6 +23,7 @@ from runtime.errors import (
 )
 from runtime.migrations import FOUNDATION_HASH_VERSION, HARDENED_HASH_VERSION, legacy_command_hash
 from runtime.models import CommandEnvelope, CommandResult, TransitionRequest, WorkItemState
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 
 
 @pytest.fixture

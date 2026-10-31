@@ -252,6 +252,11 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
                 value = selected_config["model_providers"][selected_provider].get(key)
                 if value is not None:
                     values.append(key+"="+(str(value).lower() if isinstance(value,bool) else json.dumps(value)))
+        # Personal skills are discovered outside CODEX_HOME. Keep the model
+        # experiment on its declared tool surface, using the supported per-skill
+        # switch in this test home only. Installed skills/defaults stay intact.
+        for path in sorted((Path.home()/".agents/skills").glob("*/SKILL.md")):
+            values.extend(["[[skills.config]]", "path="+json.dumps(str(path.resolve())), "enabled=false"])
         path = directory / "config.toml"
         path.write_text("\n".join(values)+"\n",encoding="utf-8")
         path.chmod(0o600)
@@ -341,6 +346,11 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
         if not use_factory:
             driver.spawn(lifecycle_operation("setup"))
         assert driver.thread_id
+        skills = driver.client.request("skills/list", {"cwds": [str(tmp_path)], "forceReload": True})
+        personal_root = (Path.home()/".agents/skills").resolve()
+        personal_skills = [skill for group in skills.get("data", []) for skill in group.get("skills", [])
+                           if Path(skill["path"]).resolve().is_relative_to(personal_root)]
+        assert not any(skill["enabled"] for skill in personal_skills), "personal skill isolation was not adopted"
         lose_ack=os.getenv("ACS_NATIVE_ACK_LOSS")=="1"
         if lose_ack:
             from runtime.codex_driver import OutcomeUncertain
@@ -435,6 +445,7 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
             "fault_injection":"observation loss after actual Native response" if lose_ack else None,
             "source_manifest_sha256":file_digest(evidence/"source-files.json"),
             "production_receiver_factory":use_factory,
+            "personal_skill_readback": {"discovered": len(personal_skills), "enabled": 0},
             "collector_created":hasattr(capacity,"collector") if capacity else False}
         assert all(file_digest(ROOT/name)==hashed for name,hashed in source_manifest.items()), "Source changed during live acceptance"
         (evidence/"native-invoke-facts.json").write_text(json.dumps(facts,indent=2),encoding="utf-8")

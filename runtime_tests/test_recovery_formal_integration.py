@@ -16,7 +16,6 @@ from runtime import recovery_service as recovery_service_module
 from runtime.delivery import digest
 from runtime.delivery_models import DeliveryEnvelope, DeliveryPacket
 from runtime.delivery_node import invocation_for
-from runtime.domain import DomainAuthority
 from runtime.errors import AuthorizationDenied, IdempotencyConflict
 from runtime.harness_sessions import BindingChange
 from runtime.human_bridge_dispatch import (
@@ -43,6 +42,7 @@ from runtime.recovery_models import (
 )
 from runtime.recovery_service import RecoveryService
 from runtime.surfaces import SurfaceCommand
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 from runtime_tests.test_domain_ledger import isolated_dsn as isolated_dsn  # noqa: PLC0414
 
 DIGEST = "a" * 64

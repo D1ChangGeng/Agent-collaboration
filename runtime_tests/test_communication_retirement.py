@@ -36,12 +36,22 @@ def test_current_service_has_no_task_mutators_or_eager_archive_runtime():
     probe = """
 import json,sys
 from runtime.project_service import ProjectService
+from runtime.domain import DomainAuthority
+from runtime.enrollment import EnrollmentAuthority
+domain_retired=['create_work_item','transition_work_item','record_evidence','record_review','assign_reviewer',
+                'get_work_item','register_attempt','record_execution_receipt','harness_sessions','leases',
+                'register_effect','reconcile_effect']
+assert not any(hasattr(DomainAuthority,name) for name in domain_retired)
+assert not any(hasattr(EnrollmentAuthority,name) for name in ['register_attempt','current_attempt_binding',
+                'authorize_execution_receipt','validate_new_execution_receipt','seal_execution_receipt',
+                'verify_receipt_provenance'])
 retired=['_create_work','_revise_work','_cancel_work','_handoff_work','_acknowledge_handoff',
          '_withdraw_handoff','_request_review','_submit_review','_accept_work','_stop_attempt_external',
          '_watch_changes','_set_notification']
 assert not any(hasattr(ProjectService,name) for name in retired)
 assert not any(name in sys.modules for name in ['runtime.project_work','runtime.project_inbox',
-                'runtime.project_continuation','runtime.project_archive'])
+                'runtime.project_continuation','runtime.project_archive','runtime.recovery_service',
+                'runtime.harness_sessions','runtime.lease_authority','runtime.effect_domain','runtime.team_policy'])
 print(json.dumps({'retired_mutators':len(retired),'archive_loaded':False}))
 """
     result = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True, check=True, timeout=20)

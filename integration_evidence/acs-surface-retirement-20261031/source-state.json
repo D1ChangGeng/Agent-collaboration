@@ -1,0 +1,48 @@
+{
+  "branch": "codex/core-cleanup",
+  "candidate_parent": "9921e6e466e5b17ab8cfc204acdd21da928e8c37",
+  "measured_source_files_match_current": {
+    "native/factory-final": 114,
+    "cross/final": 116
+  },
+  "tests": {
+    "current-final.xml": {
+      "tests": 73,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2
+    },
+    "historical-final.xml": {
+      "tests": 134,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 75
+    },
+    "native-factory-final.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "cross-harness-final.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "backup-restore.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "existing_readmes_preserved": {
+    "README.md": "9e1341285d25c806289c6a652c6912f7a6f2a629a8998a5a780318309565796c",
+    "README.zh-CN.md": "d8b1639e46a52eed9b4e6929d086556aba677f010e55f2ed09d3382887891a89"
+  },
+  "old_backup_evidence_exact_bytes_preserved": true,
+  "provider_secret_absent_from_retained_evidence": true,
+  "push": "not_attempted",
+  "deployment": "not_performed"
+}

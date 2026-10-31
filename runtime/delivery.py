@@ -11,7 +11,6 @@ import psycopg
 from runtime.delivery_models import (
     TERMINAL_STATES,
     DeliveryEnvelope,
-    DeliveryPacket,
     EndpointBindingRequest,
     EndpointResolution,
     EndpointResolutionRequest,
@@ -29,10 +28,8 @@ from runtime.delivery_node import (
     logical_payload,
 )
 from runtime.errors import AuthorizationDenied, RevisionConflict
-from runtime.lifetimes import earliest, expired
 from runtime.models import CommandEnvelope, CommandResult
 from runtime.node import RECEIPT_LAYERS, OperationIdentityConflict
-from runtime.team_policy import enforce_team_delivery
 
 
 def digest(value):
@@ -131,79 +128,14 @@ class DeliveryService:
 
     def _boundary(self, cursor, authority, command, packet, endpoint_id, revision, *, recovery=False):
         from runtime.communication import communication_boundary
-        from runtime.delivery_models import MessagePacket
-        if isinstance(packet, (MessagePacket, NoticePacket)):
-            return communication_boundary(cursor, authority, command, packet, endpoint_id, revision,
-                                          recovery=recovery)
-        if expired(earliest(command.deadline, packet.deadline), self._now(cursor)):
-            raise DeliveryRejected("deadline_expired", "expired")
-        authority._authorize(command, cursor, "message.send", packet.target_scope_id)
-        if packet.activation == "invoke":
-            authority._authorize(command, cursor, "runtime.invoke", packet.target_scope_id)
-        cursor.execute(
-            "SELECT w.scope_id,w.revision,w.source_baseline,s.policy FROM work_items w "
-            "JOIN scopes s ON s.scope_id=w.scope_id AND s.tenant_id=w.tenant_id "
-            "WHERE w.tenant_id=%s AND w.work_item_id=%s AND s.status='active' FOR UPDATE OF w,s",
-            (command.tenant_id, packet.work_item_id),
-        )
-        work = cursor.fetchone()
-        if work is None or work[:3] != (packet.target_scope_id, command.expected_revision, packet.source_baseline):
-            raise DeliveryRejected("work_item_precondition_changed")
-        # A Root assignment is distinct from the receiving Agent's acceptance.
-        # Only its own durable acknowledgement request may cross this boundary.
-        cursor.execute("SELECT to_regclass('collaboration_handoffs')")
-        if cursor.fetchone()[0] is not None:
-            cursor.execute("SELECT state,message_id FROM collaboration_handoffs "
-                           "WHERE tenant_id=%s AND work_item_id=%s "
-                           "ORDER BY assigned_work_revision DESC LIMIT 1",
-                           (command.tenant_id, packet.work_item_id))
-            handoff = cursor.fetchone()
-            if handoff and handoff[0] in {"pending", "rejected", "withdrawn"} and handoff[1] != command.target_id:
-                raise DeliveryRejected("handoff_acknowledgement_required")
-        # Context ownership is independent of the receiving long-lived AgentSlot.
-        # Cross-Scope delivery needs a separate explicit relationship policy;
-        # this initial profile accepts only a target in the WorkItem's Scope.
-        cursor.execute("SELECT 1 FROM agent_slots WHERE tenant_id=%s AND scope_id=%s AND agent_slot_id=%s "
-                       "AND status='active' FOR UPDATE",
-                       (command.tenant_id, packet.target_scope_id, packet.target_agent_slot_id))
-        if cursor.fetchone() is None:
-            raise DeliveryRejected("target_slot_unavailable")
-        cursor.execute("SELECT to_jsonb(a) FROM accepted_state_revisions a WHERE tenant_id=%s AND work_item_id=%s "
-                       "AND readiness_snapshot=FALSE ORDER BY revision DESC LIMIT 1 FOR UPDATE",
-                       (command.tenant_id, packet.work_item_id))
-        accepted = cursor.fetchone()
-        accepted_state = accepted[0] if accepted else {
-            "tenant_id": command.tenant_id,
-            "work_item_id": packet.work_item_id,
-            "revision": 0,
-            "state": "genesis",
-        }
-        if accepted_state["revision"] != packet.accepted_revision:
-            raise DeliveryRejected("accepted_revision_changed")
-        cursor.execute("SELECT to_jsonb(e) FROM delivery_endpoints e WHERE tenant_id=%s AND endpoint_id=%s FOR UPDATE",
-                       (command.tenant_id, endpoint_id))
-        found = cursor.fetchone()
-        if not found:
-            raise DeliveryRejected("endpoint_binding_missing")
-        binding = found[0]
-        if ((binding["revision"] < revision if recovery else binding["revision"] != revision) or binding["status"] != "active"
-                or binding["scope_id"] != packet.target_scope_id or binding["agent_slot_id"] != packet.target_agent_slot_id):
-            raise DeliveryRejected("endpoint_binding_changed")
-        if (authority.access_mode != "owner"
-                and datetime.fromisoformat(binding["expires_at"]) <= self._now(cursor)):
-            raise DeliveryRejected("endpoint_binding_expired", "expired")
-        if packet.activation == "invoke" and not binding["supports_invoke"] and not recovery:
-            raise DeliveryRejected("invoke_endpoint_unavailable")
-        authority._authorize(command, cursor, "message.send", packet.target_scope_id)
-        if packet.activation == "invoke":
-            authority._authorize(command, cursor, "runtime.invoke", packet.target_scope_id)
-        enforce_team_delivery(cursor, command, packet, work[3], recovery=recovery, access_mode=authority.access_mode)
-        return binding, digest(work[3]), digest(accepted_state)
+        if not isinstance(packet, (MessagePacket, NoticePacket)):
+            raise DeliveryRejected("historical_delivery_read_only")
+        return communication_boundary(cursor, authority, command, packet, endpoint_id, revision, recovery=recovery)
 
     def send_message(
         self,
         command: CommandEnvelope,
-        packet: DeliveryPacket,
+        packet: MessagePacket | NoticePacket,
         *,
         endpoint_id: str,
         binding_revision: int,
@@ -213,6 +145,8 @@ class DeliveryService:
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         from runtime.delivery_models import PACKET
         packet = PACKET.validate_json(packet.model_dump_json(), strict=True)
+        if not isinstance(packet, (MessagePacket, NoticePacket)):
+            raise DeliveryRejected("historical_delivery_read_only")
         if isinstance(packet, NoticePacket) and not getattr(self.authority, "_communication_notice", False):
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         if ((packet.deadline is not None and command.deadline is not None

@@ -5,3 +5,7 @@ runtime_tests/p1_codex_stdio_fixture.py text eol=lf
 
 # Generated test evidence preserves verbatim traceback whitespace.
 integration_evidence/**/*.xml -whitespace
+
+# Preserve hashes of these raw Windows/Linux run artifacts across checkouts.
+integration_evidence/acs-surface-retirement-20261031/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-surface-retirement-20261031/**/*.xml -whitespace

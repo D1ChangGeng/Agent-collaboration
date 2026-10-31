@@ -13,8 +13,7 @@ from runtime.artifacts import LocalArtifactStore
 from runtime.auth import LocalCredentialAuthenticator
 from runtime.delivery_node import LocalNodeEndpoint
 from runtime.domain import DomainAuthority
-from runtime.effects import LocalFileEffectGateway
-from runtime.models import AuthenticatedContext, EffectReadback
+from runtime.models import AuthenticatedContext
 from runtime.operator_files import OperatorFileError, read_operator_file
 from runtime.recovery_models import BoundaryRejected
 from runtime.scoped_artifacts import ScopedArtifactStores
@@ -135,6 +134,8 @@ class SurfaceSettings(ConfigModel):
     credential_ref: PrivateReference
     artifacts: ArtifactSettings | None = None
     additional_artifacts: tuple[ArtifactSettings, ...] = Field(default=(), max_length=63)
+    # Accepted for existing operator files; task Effect/Lease services are no
+    # longer constructed. Artifacts and source access keep their own policy.
     effects: EffectSettings | None = None
     remote_endpoints: tuple[RemoteEndpointSettings, ...] = Field(default=(), max_length=64)
     filesystem: FilesystemSettings = Field(default_factory=FilesystemSettings)
@@ -231,21 +232,4 @@ def configured_service(path, *, delivery_endpoints=None, expected_settings=None)
                 if target.endpoint_id in domain._delivery_endpoints:
                     raise ConfigurationError("duplicate configured execution endpoint")
                 domain._delivery_endpoints[target.endpoint_id] = ConfiguredRemoteEndpoint(domain, target)
-        if settings.effects:
-            config = settings.effects
-            gateway = resources.enter_context(LocalFileEffectGateway(domain.leases, config.root,
-                scope_id=config.scope_id, resource_paths=config.resource_paths))
-            domain._effect_registration_gateway = gateway
-            def actual_readback(cursor, caller, effect):
-                observed = gateway.historical_readback_in_transaction(
-                    cursor, lease_id=effect["lease_id"], resource_id=effect["resource_id"],
-                    generation=effect["generation"], fencing_token=effect["fencing_token"],
-                    readback_ref=effect["readback_ref"], caller=caller, scope_id=effect["scope_id"],
-                    grant_ref=caller.grant_ref, authority_incarnation=caller.authority_incarnation,
-                    expected_operation_id=effect["operation_id"],
-                )
-                return {**{key: observed[key] for key in EffectReadback.model_fields
-                           if key not in ("effect_id", "work_item_id")},
-                        "effect_id": effect["effect_id"], "work_item_id": effect["work_item_id"]}
-            domain._effect_readback_verifier = actual_readback
         yield SharedService(domain, LocalCredentialAuthenticator(context)), settings

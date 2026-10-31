@@ -133,8 +133,11 @@ The additive schema retains existing records; it does not delete task tables,
 guess old authors or manufacture reply relationships. Two delivery endpoint
 columns become nullable for an Authority Inbox without a Native location.
 
-Task mutation tools are removed from the normal catalog; old generic command
-surfaces reject task and result-projection mutations. Default project adapters
+Task tools are removed from the normal catalog. Generic CLI/MCP/HTTP commands
+now declare only Node/Runtime/receiver registration, endpoint binding, permitted
+message reads and delivery maintenance. Their exported schemas and parsers no
+longer accept task reads/mutations, task Attempts, Lease/Effect, task Harness
+bindings or execution-result projection. Default project adapters
 no longer load task/Review/Watcher execution modules. Current `read_resource`
 reads Project, Route, captured source and communication records; `list_activity`
 uses current project configuration and actual message participants.
@@ -146,9 +149,19 @@ stored Native artifacts keep their original meaning and their own permission
 checks. Historical reads do not consume or update records, and old Native output
 does not satisfy a current reply wait. Current reads use the archive index after
 old task tables are retired. See [the operator procedure](COMMUNICATION-ADOPTION.md).
-Mixed schema storage and historical
-Domain library code remain during transition; production data cleanup needs its
-own current inventory and authorization. An old binary is not a promised rollback
+The default Domain facade no longer has Work, Review, execution receipt, task
+Attempt, Lease/Effect or task Harness-binding methods. Historical seeding and
+regression methods live in test fixtures excluded from the Runtime wheel.
+Delivery rejects new legacy packets; operator scan/dispatch services process
+current communication packets only. Existing operator `effects` settings can be
+read during adoption but do not construct a task gateway. New installation
+Grants do not request the retired business permissions. The retired task Human
+Bridge console command is no longer installed.
+
+Mixed 1.13 schema storage and some unbound historical modules remain during
+transition. New-install storage pruning remains engineering work; production
+cleanup requires its current inventory and applicable authorization.
+An old binary is not a promised rollback
 after new messages have been written.
 
 ## Verification and supported claims
@@ -177,3 +190,6 @@ SSH database forward. It qualifies that communication direction, not signed
 cross-machine Native delivery or OpenCode receiver autoactivation. The first
 failure exposed the empty-filter bug; original failed and corrected model runs
 are retained in [the cross-Harness evidence](../../integration_evidence/acs-cross-harness-20261031/REPORT.md).
+
+The default Domain cleanup, current-source Native and cross-Harness reruns,
+and actual installed wheel are recorded in [the kernel evidence](../../integration_evidence/acs-surface-retirement-20261031/REPORT.md).

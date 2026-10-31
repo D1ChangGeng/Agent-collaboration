@@ -1,0 +1,12 @@
+{
+  "runtime/domain.py": {
+    "before": "e15306fae18b4f7ddb7c348e935d76a49c890e365081a2f0c5c458e91014ee65",
+    "after": "27e184e331e0142c554e2bff922e59a953e36225de57f637574d63c52ecb47a1",
+    "ast_equivalent": true
+  },
+  "runtime/enrollment.py": {
+    "before": "9f89b7ee47dc908b0e118294f0d2a440a5a06b786edaf29515385028a23e39f4",
+    "after": "9879d80beca5df153a6f85ec0b4426b562a4ed649cd09b229cfb1e840f5cdc5b",
+    "ast_equivalent": true
+  }
+}

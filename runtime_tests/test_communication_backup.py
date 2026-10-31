@@ -74,16 +74,19 @@ def test_snapshot_restore_preserves_history_and_fences_possible_post_snapshot_na
                            (json.dumps([*permissions, "work_item.create"]), comm.authority.context.grant_ref))
         connection.execute("INSERT INTO collaboration_routes(tenant_id,project_id,route_id,scope_id,definition) "
             "VALUES (%s,'project-alpha','historical-route','local-scope','{}')", (comm.authority.tenant_id,))
-    comm.authority.create_work_item(command(comm.authority, "work_item.create", "historical-work"),
-                                   "local-scope", "slot-b", "historical-source")
+    from runtime_tests.fixtures.legacy_domain import DomainAuthority as HistoricalFixture
+    historical = HistoricalFixture(comm.dsn, context=comm.authority.context)
+    historical.create_work_item(command(historical, "work_item.create", "historical-work"),
+                                "local-scope", "slot-b", "historical-source")
     with comm.authority._connect() as connection:
         connection.execute("INSERT INTO collaboration_work_links VALUES (%s,'project-alpha','historical-work','historical-route','{}')",
                            (comm.authority.tenant_id,))
     packet = DeliveryPacket(work_item_id="historical-work", target_scope_id="local-scope", target_agent_slot_id="slot-b",
         accepted_revision=0, goal="Recorded historical goal", accepted_state_summary="Original summary",
         request="Original structured content is retained", source_baseline="historical-source", expected_response="Historical expectation")
-    comm.dispatcher.service.send_message(command(comm.authority, "message.send", "historical-message"), packet,
-                                         endpoint_id="endpoint-b", binding_revision=1)
+    from runtime_tests.fixtures.legacy_delivery import DeliveryService as HistoricalDelivery
+    HistoricalDelivery(historical, comm.dispatcher.service.endpoints).send_message(
+        command(historical, "message.send", "historical-message"), packet, endpoint_id="endpoint-b", binding_revision=1)
     with comm.authority._connect() as connection:
         adopt_legacy_index(connection.cursor(), comm.authority.tenant_id)
 
@@ -177,8 +180,9 @@ def test_snapshot_restore_preserves_history_and_fences_possible_post_snapshot_na
             "original_packet_preserved": True, "explicit_reply_preserved": True,
             "post_snapshot_fixture_native_effects": 1, "native_replays_after_restore": 0,
             "model_requested": False, "source_schema": schema, "temporary_restore_database": target}
-        evidence = ROOT/"integration_evidence/acs-retirement-20261031"
-        evidence.mkdir(parents=True, exist_ok=True)
+        evidence_root = Path(os.environ.get("ACS_BACKUP_EVIDENCE_ROOT", str(ROOT/"integration_evidence/acs-backup-20261031")))
+        evidence = evidence_root/uuid.uuid4().hex
+        evidence.mkdir(parents=True)
         (evidence/"backup-restore-facts.json").write_text(json.dumps(facts, indent=2), encoding="utf-8")
     finally:
         if created:

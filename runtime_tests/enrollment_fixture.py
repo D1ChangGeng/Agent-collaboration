@@ -1,7 +1,8 @@
-"""Shared formal enrollment for regression fixtures.
+"""Historical execution enrollment for regression fixtures.
 
 Only existing Scope/Grant bootstrap is fixture setup. Node, Runtime and Attempt
-records are created through the real Domain APIs with real Ed25519 signatures.
+records use the current technical enrollment APIs and test-only historical
+Attempt/receipt methods, with real Ed25519 signatures.
 Source/provider/start observations remain explicitly test-fixture metadata; this
 helper is not an OS containment or Harness-conformance measurement.
 """

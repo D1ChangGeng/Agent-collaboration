@@ -15,10 +15,8 @@ psycopg = pytest.importorskip("psycopg")
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from runtime.delivery import DeliveryService
 from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
 from runtime.delivery_node import LocalNodeEndpoint
-from runtime.domain import DomainAuthority
 from runtime.errors import (
     AuthorizationDenied,
     IdempotencyConflict,
@@ -29,7 +27,9 @@ from runtime.errors import (
 from runtime.harness_sessions import BindingChange, BindingResult, BindingRetire
 from runtime.models import CommandEnvelope
 from runtime.node import NodeJournal
-from runtime.surfaces import PAYLOADS, SharedService, SurfaceCommand
+from runtime.surfaces import PAYLOADS, SharedService
+from runtime_tests.fixtures.legacy_delivery import DeliveryService
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 from runtime_tests.test_delivery import FixtureDriver
 
 BASE_18_SHA256 = "b8554614d9923ae43a653371c4445c33fdfe189c219b3376f29e23c476ee7614"
@@ -413,13 +413,11 @@ def test_unknown_1_10_checksum_rejected_without_projection_columns(isolated_dsn)
 
 
 def test_surface_contract_is_explicit():
-    assert PAYLOADS["harness_session.attach"] is BindingChange
-    assert PAYLOADS["harness_session.replace"] is BindingChange
-    assert PAYLOADS["harness_session.retire"] is BindingRetire
-    assert PAYLOADS["harness_session.result"] is BindingResult
+    assert not {"harness_session.attach", "harness_session.replace", "harness_session.retire",
+                "harness_session.result", "harness_session.read"}.intersection(PAYLOADS)
 
 
-def test_authenticated_surface_routes_binding_commands(isolated_dsn):
+def test_authenticated_surface_rejects_task_binding_commands_before_mutation(isolated_dsn):
     authority = DomainAuthority(isolated_dsn)
     prepare(authority)
 
@@ -430,21 +428,15 @@ def test_authenticated_surface_routes_binding_commands(isolated_dsn):
 
     service = SharedService(authority, Authenticator())
     attach = command(authority, "harness_session.attach")
-    outer = SurfaceCommand(
-        command_type=attach.command_type, target_id=attach.target_id,
-        expected_revision=attach.expected_revision, command_id=attach.command_id,
-        idempotency_key=attach.idempotency_key, correlation_id=attach.correlation_id,
-        target_kind=attach.target_kind, issued_at=attach.issued_at,
-        deadline=attach.deadline, payload=binding("surface-bind", "surface-native").model_dump(),
-    )
+    outer = {
+        "command_type": attach.command_type, "target_id": attach.target_id,
+        "expected_revision": attach.expected_revision, "command_id": attach.command_id,
+        "idempotency_key": attach.idempotency_key, "correlation_id": attach.correlation_id,
+        "target_kind": "message", "issued_at": attach.issued_at.isoformat(),
+        "deadline": attach.deadline.isoformat(), "payload": binding("surface-bind", "surface-native").model_dump(),
+    }
     reply = service.handle(outer, "test-credential")
-    assert reply.ok and reply.result["state"] == "active"
-    read = command(authority, "harness_session.read", 1)
-    read_reply = service.handle(SurfaceCommand(
-        command_type=read.command_type, target_id=read.target_id,
-        expected_revision=read.expected_revision, command_id=read.command_id,
-        idempotency_key=read.idempotency_key, correlation_id=read.correlation_id,
-        target_kind=read.target_kind, issued_at=read.issued_at,
-        deadline=read.deadline, payload={},
-    ), "test-credential")
-    assert read_reply.ok and read_reply.result["active_binding_id"] == "surface-bind"
+    assert not reply.ok and reply.error.code == "INPUT_INVALID"
+    read_reply = service.handle({**outer, "command_type": "harness_session.read", "payload": {}}, "test-credential")
+    assert not read_reply.ok and read_reply.error.code == "INPUT_INVALID"
+    assert query(authority, "SELECT count(*) FROM harness_session_bindings") == [(0,)]

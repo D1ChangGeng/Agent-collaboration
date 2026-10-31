@@ -335,9 +335,7 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
     catalog = json.loads((ROOT / "docs/runtime/p2-mcp-tool-contract.json").read_text(encoding="utf-8"))
     permissions = {"profile.root_manager", "profile.engineer", "profile.reviewer",
                    "project.adopt", "source.manage", "source.read", "artifact.read", "artifact.write",
-                   "work_item.create", "work_item.read", "work_item.transition", "message.send",
-                   "message.read", "review.assign", "review.record", "acceptance.finalize",
-                   "runtime.invoke", "runtime.control", "delivery.manage", "evidence.record"}
+                   "message.send", "message.read", "runtime.invoke", "runtime.control", "delivery.manage"}
     for name in catalog["profiles"]["root_manager"]:
         permissions.update(catalog["tools"][name]["security_scopes"])
     secret = secrets.token_urlsafe(48)

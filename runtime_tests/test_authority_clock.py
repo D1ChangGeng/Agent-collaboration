@@ -15,7 +15,6 @@ import runtime.domain as domain_module
 import runtime.lease_authority as lease_module
 import runtime.receiver_domain as receiver_module
 import runtime.recovery as recovery_module
-from runtime.domain import DomainAuthority
 from runtime.errors import AcceptanceGuardFailed, AuthorizationDenied
 from runtime.models import CommandEnvelope
 from runtime.receiver_domain import (
@@ -30,6 +29,7 @@ from runtime.recovery import (
     PostgresHumanBridgeAuthority,
 )
 from runtime.recovery_models import BoundaryRejected, RecoveryPath, canonical_digest
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 from runtime_tests.test_domain_ledger import isolated_dsn  # noqa: F401 - imported pytest fixture
 from runtime_tests.test_recovery import identity as response_identity
 from runtime_tests.test_recovery import observation as response_observation

@@ -39,11 +39,11 @@ from mcp_types import (
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from runtime.domain import DomainAuthority
 from runtime.json_payload import bounded_payload
 from runtime.models import AuthenticatedContext, CommandEnvelope
 from runtime.surface_config import SurfaceSettings
 from runtime.surfaces import PAYLOADS, SurfaceCommand
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 
 SOURCE = Path(__file__).resolve().parents[1]
 PYTHON = os.environ.get("ACS_SURFACE_TEST_PYTHON", sys.executable)

@@ -1,0 +1,15 @@
+{
+  "snapshot_rows_and_digests_preserved": true,
+  "tables_verified": 82,
+  "backup_sha256": "74ea069ba9744e53adc2f66b9ada3734a5cadf735698384a7d6838177605a1c5",
+  "backup_bytes": 286137,
+  "source_and_restored_old_authorities_revoked": true,
+  "read_only_new_generation": true,
+  "original_packet_preserved": true,
+  "explicit_reply_preserved": true,
+  "post_snapshot_fixture_native_effects": 1,
+  "native_replays_after_restore": 0,
+  "model_requested": false,
+  "source_schema": "comm_test_a9372f254534433d9c4b27b59dbb449b",
+  "temporary_restore_database": "acs_restore_fe1ae00417ab4f8a8627dee4576d8527"
+}

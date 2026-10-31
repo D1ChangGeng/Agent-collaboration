@@ -1,0 +1,22 @@
+{
+  "reason": "completed",
+  "exit_code": 0,
+  "exit_code_before_cleanup": 0,
+  "controller_error": null,
+  "process_stop": {
+    "verified": true,
+    "containment_id": "process-session:1522456:linux:1522456:157148714",
+    "birth_ref": "linux:1522456:157148714",
+    "backend": "posix-process-session",
+    "scope": "owned_process_group",
+    "subtree_containment": false,
+    "alive": false,
+    "pid": 1522456,
+    "members": [],
+    "root_exit_code": 0,
+    "remaining_group_members": [],
+    "stopped": true
+  },
+  "version": "1.18.34",
+  "source_files": 116
+}

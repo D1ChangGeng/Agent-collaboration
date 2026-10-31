@@ -16,7 +16,6 @@ psycopg = pytest.importorskip("psycopg")
 from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
-from runtime.domain import DomainAuthority
 from runtime.errors import (
     AuthorizationDenied,
     FencingRejected,
@@ -26,6 +25,7 @@ from runtime.errors import (
 )
 from runtime.models import CommandEnvelope, LeaseRequest
 from runtime_tests.enrollment_fixture import raw_ledger_counts, register_execution_fixture
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 
 PERMISSIONS = ("lease.acquire", "lease.renew", "lease.release", "lease.revoke", "lease.inspect", "effect.write", "effect.read")
 

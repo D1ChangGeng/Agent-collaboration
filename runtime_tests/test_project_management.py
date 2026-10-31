@@ -11,16 +11,16 @@ import psycopg
 import pytest
 
 from runtime.auth import LocalCredentialAuthenticator
-from runtime.delivery import DeliveryService
 from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
 from runtime.delivery_node import LocalNodeEndpoint
-from runtime.domain import DomainAuthority
 from runtime.errors import AuthorizationDenied
 from runtime.mcp_runtime import McpRuntime
 from runtime.node import NodeJournal
 from runtime.project_common import digest
 from runtime.project_service import ProjectService
 from runtime.surfaces import SharedService
+from runtime_tests.fixtures.legacy_delivery import DeliveryService
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 from runtime_tests.test_delivery import command
 from runtime_tests.test_project_service import CATALOG, ok, scalar, send_args, work_args
 from runtime_tests.test_project_service import project as project_fixture

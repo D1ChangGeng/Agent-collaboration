@@ -55,7 +55,8 @@ def test_ordinary_codex_opencode_exchange_over_ssh(comm, tmp_path):
     label = "cross-iris-" + uuid.uuid4().hex[:12]
     files = [p for folder in (ROOT / "runtime", ROOT / "runtime_deployment")
              for p in folder.rglob("*") if p.suffix in {".py", ".sql"}]
-    files += [ROOT / "pyproject.toml", ROOT / "uv.lock", ROOT / "docs/runtime/p2-mcp-tool-contract.json"]
+    files += [ROOT / "pyproject.toml", ROOT / "uv.lock", ROOT / "docs/runtime/p2-mcp-tool-contract.json",
+              Path(__file__), ROOT / "runtime_tests/test_communication.py"]
     manifest = {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
     helper = ROOT / "runtime_tests/fixtures/cross_harness_remote.py"
     manifest["remote_actor.py"] = hashlib.sha256(helper.read_bytes()).hexdigest()
@@ -115,6 +116,8 @@ def test_ordinary_codex_opencode_exchange_over_ssh(comm, tmp_path):
             if key in provider:
                 value = provider[key]
                 config.append(key + "=" + (str(value).lower() if isinstance(value, bool) else json.dumps(value)))
+        for path in sorted((Path.home()/".agents/skills").glob("*/SKILL.md")):
+            config.extend(["[[skills.config]]", "path="+json.dumps(str(path.resolve())), "enabled=false"])
         (native_home / "config.toml").write_text("\n".join(config) + "\n", encoding="utf-8")
         a_client = comm.clients["a"]
         a_surface = tmp_path / "a-surface.json"

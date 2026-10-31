@@ -21,7 +21,7 @@ import pytest
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from runtime.delivery import DeliveryDispatcher, DeliveryRejected, DeliveryService, digest
+from runtime.delivery import DeliveryDispatcher, DeliveryRejected, digest
 from runtime.delivery_models import (
     DeliveryEnvelope,
     DeliveryPacket,
@@ -30,10 +30,11 @@ from runtime.delivery_models import (
     InvocationObservation,
 )
 from runtime.delivery_node import DeliveryTransportError, LocalNodeEndpoint, logical_payload
-from runtime.domain import DomainAuthority
 from runtime.errors import AuthorizationDenied, IdempotencyConflict
 from runtime.models import CommandEnvelope
 from runtime.node import JournalOperation, NodeJournal
+from runtime_tests.fixtures.legacy_delivery import DeliveryService
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 
 
 class FixtureDriver:
@@ -852,7 +853,7 @@ def test_real_core_process_crash_after_committed_attempt_recovers(setup, activat
 import json,os,sys,runtime
 from types import SimpleNamespace
 runtime.__path__.insert(0,sys.argv[1])
-from runtime.domain import DomainAuthority
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 from runtime.delivery import DeliveryService,DeliveryDispatcher
 # Descriptor-only test proxy: this process dies before contacting the Node.
 # The actual parent Node remains alive; no Node restart/transport is claimed here.

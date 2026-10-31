@@ -83,6 +83,7 @@ def main():
     print(json.dumps({"state": "started", "version": version,
                       "isolation": {"mcp": ["acs"], "plugins": 0, "provider": "acs-test"}}), flush=True)
     reason = "completed"
+    controller_error = None
     try:
         end = time.monotonic() + 240
         while owned.process.poll() is None:
@@ -93,12 +94,18 @@ def main():
             if time.monotonic() >= end:
                 reason = "bounded_observation_timeout"
                 break
+    except Exception as error:
+        controller_error = type(error).__name__
+        reason = "controller_error"
+        raise
     finally:
+        before_cleanup = owned.process.poll()
         proof = supervisor.terminate_tree(owned)
         for thread in threads:
             thread.join(timeout=10)
         assert not any(thread.is_alive() for thread in threads), "log streams did not stop"
         facts = {"reason": reason, "exit_code": owned.process.returncode,
+                 "exit_code_before_cleanup": before_cleanup, "controller_error": controller_error,
                  "process_stop": proof, "version": version, "source_files": len(manifest)}
         (root / "b-process-facts.json").write_text(json.dumps(facts, indent=2))
         print(json.dumps(facts), flush=True)

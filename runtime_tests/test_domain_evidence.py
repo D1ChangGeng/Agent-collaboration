@@ -23,7 +23,6 @@ from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
 from runtime.artifacts import LocalArtifactStore
-from runtime.domain import DomainAuthority as DefaultAuthority
 from runtime.errors import (
     AcceptanceGuardFailed,
     AuthorizationDenied,
@@ -41,6 +40,7 @@ from runtime.models import (
     WorkItemState,
 )
 from runtime_tests.enrollment_fixture import register_execution_fixture
+from runtime_tests.fixtures.legacy_domain import DomainAuthority as DefaultAuthority
 
 
 def authority_class():

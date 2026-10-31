@@ -22,10 +22,9 @@ from psycopg.conninfo import make_conninfo
 from temporalio.client import Client
 
 from runtime.auth import LocalCredentialAuthenticator
-from runtime.delivery import DeliveryDispatcher, DeliveryService
+from runtime.delivery import DeliveryDispatcher
 from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
 from runtime.delivery_temporal import delivery_worker, submit_delivery
-from runtime.domain import DomainAuthority
 from runtime.enrollment import EnrollmentAuthority
 from runtime.enrollment_models import (
     NodeChallengeRequest,
@@ -50,6 +49,8 @@ from runtime.receiver_models import EndpointBinding, EndpointRegistration
 from runtime.remote_endpoint import RemoteNodeTransport, serve
 from runtime.surfaces import SharedService, SurfaceCommand
 from runtime.systemd_supervisor import SystemdUserSupervisor
+from runtime_tests.fixtures.legacy_delivery import DeliveryService
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 from runtime_tests.receiver_deployment_fixture import configured_factory_binding
 from runtime_tests.test_receiver_protocol import certificate
 
