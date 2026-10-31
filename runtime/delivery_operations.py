@@ -57,6 +57,7 @@ class DeliveryOperations:
                 "AND o.operation_id=m.operation_id JOIN operations op "
                 "ON op.tenant_id=m.tenant_id AND op.operation_id=m.operation_id "
                 "WHERE m.tenant_id=%s AND m.packet_json->>'target_scope_id'=%s "
+                "AND m.packet_json->>'schema_version' IN ('acs-message/1','acs-notice/1') "
                 "AND o.topic='message.delivery' AND op.status='committed' "
                 "AND m.state IN ('queued','delivering','retry_wait') "
                 "AND m.next_attempt_at<=clock_timestamp() ORDER BY m.created_at,m.message_id LIMIT %s",
@@ -74,6 +75,9 @@ class DeliveryOperations:
         original Delivery identity owns dedup and native dispatch certainty.
         """
         self._expect(command, "delivery.dispatch")
+        # Receivers may be adopted after the SharedService was constructed.
+        # Read trusted current capacity instead of its construction-time copy.
+        self.dispatcher.service.endpoints = dict(self.authority._delivery_endpoints)
         identity = {"tenant_id": command.tenant_id, "message_id": command.target_id,
                     "operation_id": operation_id}
         result = CommandResult(command_id=command.command_id, operation_id=f"op-{uuid.uuid4()}",
@@ -100,6 +104,8 @@ class DeliveryOperations:
             row = found[0]
             scope = row["packet_json"]["target_scope_id"]
             self.authority._authorize(command, cursor, "delivery.dispatch", scope)
+            if row["packet_json"].get("schema_version") not in {"acs-message/1", "acs-notice/1"}:
+                raise DeliveryRejected("historical_delivery_read_only")
             duplicate, hashed = self.authority._dedup(cursor, command, result, {"delivery_identity": identity})
             if duplicate is not None:
                 result = duplicate
@@ -117,7 +123,7 @@ class DeliveryOperations:
                     "to_state,initiated_by,lineage_mode,command_id,resulting_revision,evidence_refs,"
                     "command_hash_version,canonical_hash) "
                     "VALUES (%s,NULL,'message',%s,%s,'delivery.dispatch.authorized',%s,'external_command',%s,%s,'[]','v2',%s)",
-                    (command.tenant_id, command.target_id, row["packet_json"]["work_item_id"],
+                    (command.tenant_id, command.target_id, None,
                      command.principal_ref, command.command_id, command.expected_revision, hashed),
                 )
                 self.authority._operation(cursor, command, result.operation_id)

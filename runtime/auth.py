@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from runtime.models import AuthenticatedContext
 
@@ -22,7 +22,7 @@ class LocalCredentialAuthenticator:
         expected = context.credential_hash or os.environ.get("ACS_P1_LOCAL_CREDENTIAL_SHA256", "")
         if not secret or len(expected) != 64:
             raise LocalCredentialUnavailable(f"{variable} and ACS_P1_LOCAL_CREDENTIAL_SHA256 are required")
-        return cls(context=AuthenticatedContext(context.tenant_id, context.authority_id, context.authority_incarnation, context.principal_ref, context.grant_ref, expected))
+        return cls(context=replace(context, credential_hash=expected))
 
     def authenticate(self, secret: str | None) -> AuthenticatedContext:
         if not secret:

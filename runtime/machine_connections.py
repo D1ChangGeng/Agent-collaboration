@@ -7,6 +7,7 @@ import time
 
 from nacl.signing import SigningKey
 
+from runtime.delivery_node import DeliveryTransportError
 from runtime.receiver_delivery import RemoteNodeEndpointAdapter, RemoteSenderDeployment
 
 
@@ -25,7 +26,8 @@ class ConfiguredRemoteEndpoint:
                 private = self.settings.authority_signing_key_ref.resolve()
                 deployment = RemoteSenderDeployment(SigningKey(bytes.fromhex(private)), row["boot_incarnation"],
                     self.settings.journal_generation, self.settings.old_boot_isolation_ref)
-                self._bound = RemoteNodeEndpointAdapter(self.authority, self.settings.endpoint_id, deployment)
+                self._bound = RemoteNodeEndpointAdapter(self.authority, self.settings.endpoint_id, deployment,
+                    timeout=self.settings.request_timeout_seconds)
                 self._fingerprint = fingerprint
             return self._bound
 
@@ -38,6 +40,15 @@ class ConfiguredRemoteEndpoint:
             self._bound = None
 
     def inspect_runtime(self):
+        """Observe only: a status query cannot prepare a service or native turn."""
+        with self._lock:
+            try:
+                return self._adapter().transport.inspect_runtime()
+            except (OSError, ValueError, RuntimeError):
+                return {"state": "offline", "harness": "unknown", "version": "unknown"}
+
+    def prepare_runtime(self):
+        """Explicitly prepare a configured receiver before authorized delivery."""
         with self._lock:
             try:
                 observed = self._adapter().transport.inspect_runtime()
@@ -64,8 +75,8 @@ class ConfiguredRemoteEndpoint:
         return self._adapter().descriptor()
 
     def deliver(self, *args, **kwargs):
-        if self.inspect_runtime()["state"] == "offline":
-            raise RuntimeError("configured machine is offline")
+        if self.prepare_runtime()["state"] == "offline":
+            raise DeliveryTransportError("configured_machine_offline")
         return self._adapter().deliver(*args, **kwargs)
 
     def filesystem(self, context, operation, arguments):

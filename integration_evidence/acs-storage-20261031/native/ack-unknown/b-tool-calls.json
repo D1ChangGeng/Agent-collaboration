@@ -1,0 +1,10 @@
+{
+  "native_tool_calls": [
+    "exec",
+    "exec"
+  ],
+  "mcp_invocations": [
+    "mcp__acs__send_message"
+  ],
+  "work_table_present": false
+}

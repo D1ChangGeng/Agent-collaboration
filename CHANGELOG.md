@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented here.
 
+## 2.0.0 - 2026-11-01
+
+- Replace the normal task lifecycle with natural messages, explicit recipient
+  replies, durable Inbox/history and bounded default Native delivery.
+- Retain trusted caller/project boundaries, retry identities, dispatch fences
+  and read-only historical provenance; fresh storage uses 46 tables.
+- Preserve v1.6 current-file project management and startup recovery. Add exact
+  1.14 adoption with snapshot restore/transaction rollback verification.
+- Require a guided major-version upgrade; existing data, credentials and Node
+  identity are preserved. See `docs/RELEASE-NOTES-v2.0.0.md` for the procedure
+  and the measured support boundaries.
+
 ## 1.6.0 - 2026-10-14
 
 - Register owner Projects and Routes with their current management machine and

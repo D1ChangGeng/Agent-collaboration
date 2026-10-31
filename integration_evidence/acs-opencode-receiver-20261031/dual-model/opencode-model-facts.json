@@ -1,0 +1,40 @@
+{
+  "evidence_class": "independent Codex A and OpenCode B models",
+  "session_id": "ses_e6da720bfffe5KsyrE5BFgt96S",
+  "request": {
+    "message_id": "message-7195f3d77e6e4b238abaeda17d1eb669",
+    "operation_id": "op-782aca93-9302-43ed-a2c9-82cbf621298a",
+    "message_handle": "message:project-alpha:message-7195f3d77e6e4b238abaeda17d1eb669"
+  },
+  "reply": {
+    "project_id": "project-alpha",
+    "message_id": "message-0a8d43bafb4b46e389c3d6cee02508cc",
+    "message_handle": "message:project-alpha:message-0a8d43bafb4b46e389c3d6cee02508cc",
+    "response_handle": "response:project-alpha:message-0a8d43bafb4b46e389c3d6cee02508cc",
+    "from": "collaborator:project-alpha:slot-b",
+    "to": "collaborator:project-alpha:slot-a-real",
+    "sequence": 2,
+    "content": "opencode-cedar-f30feb27791f",
+    "reply_to": [
+      "message:project-alpha:message-7195f3d77e6e4b238abaeda17d1eb669"
+    ],
+    "response_mode_at_send": "async",
+    "activation": "invoke",
+    "state": "delivered",
+    "receipt_high_water": "target_inbox_committed",
+    "operation_id": "op-7cc7d14f-5399-4f3a-b2a8-aef1bd4d27a6",
+    "consumed": false,
+    "model_consumption": "unconfirmed",
+    "delivery": {
+      "state": "delivered",
+      "error_code": null,
+      "attempts": 0
+    }
+  },
+  "prompt_async_count": 1,
+  "model_elapsed_seconds": 133.13921752700116,
+  "collector": false,
+  "event_subscription": false,
+  "work_table_present": false,
+  "selection": "inherited from isolated OpenCode configuration"
+}

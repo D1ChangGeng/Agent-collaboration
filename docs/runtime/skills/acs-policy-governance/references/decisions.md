@@ -1,46 +1,10 @@
-# Governance decision map
+# acs-policy-governance: decisions
 
-Read access_mode from the installed service. New single-owner installation
-selects owner. Shared is an explicit deployment choice and remains the
-compatibility interpretation for existing unspecified configuration.
-Migration changes trusted configuration and the compatible schema while
-preserving identities, deduplication, revocation and historical evidence.
-Explicit owner adoption preserves the private credential and original
-configuration backup, then clears natural expiry only on active, nonrevoked
-records. The installer can apply this adoption to its verified private owner
-Root profile; explicit shared configuration retains its choice. This helper
-updates Surface/database identity state. Receiver owner/native migration
-preserves original profile, credential, keys and Node identity while binding a
-new matching process/factory digest to the next Endpoint revision signed with
-the existing Node key. Commit that revision before restart and mode/Session
-readback. Explicitly revoked records retain their lifecycle state.
+Choose from the actual caller identity, current contact/receiver configuration and active tool schema.
 
-For owner admission, verify trusted credential and tenant/principal/Authority,
-active service and target objects, explicit revocation, canonical request
-identity and expected revisions. Select roles according to work responsibilities
-and Harness requirements. Apply the exact candidate and independence checks
-when accepting a result.
+- A trusted Client can be unbound to a Native Session. A lower caller does not become a Client by omitting its Slot.
+- Distinct Agents sharing a principal require trusted Slot bindings; from text or arbitrary Session IDs are not identity.
+- Upper management inherits lower role eligibility within actual authorization. Role labels do not invent operational permissions.
+- Private message reads require the actual participant identity; optional filters narrow visibility.
 
-For shared governance, grant the required Scope, operation, direction, duration
-and resources, then apply Policy, Profile and budget rules. Recheck these at
-dispatch, retry and protected effects.
-
-Choose an explicit business deadline when the request has a latest useful time.
-Owner omission keeps continuous validity. Evaluate a supplied deadline or a
-shared expiry against the applicable Authority clock after lock waits and at
-the protected boundary. Internal RPC and caller wait timeouts govern their own
-durations.
-
-Verify TLS, keys, Node identity, signed receiver state, nonces, generations and
-durable command identity independently of business lifetime. OAuth expiry is a
-transport credential check. Canonical UTC, wire signatures and historical
-hashes retain their recorded values.
-
-A resource Lease is meaningful at the gateway that checks it. Native Harness
-execution follows the selected user environment and approval configuration.
-Codex interactive requests require an actual native client handler; standard
-headless Receiver factory uses its transport's explicit -32601 response.
-Keep protection and evidence claims within the boundary actually observed.
-
-See `docs/runtime/TIME-MODEL.md` for explicit time windows and
-`docs/runtime/OWNER-RUNTIME.md` for migration and owner semantics.
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-decisions.md); it is not the current communication contract.

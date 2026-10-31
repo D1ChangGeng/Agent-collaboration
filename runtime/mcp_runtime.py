@@ -21,6 +21,7 @@ from runtime.errors import (
     BusinessDeadlineExpired,
     IdempotencyConflict,
     IdentityRejected,
+    InvalidToolArgument,
     InvalidTransition,
     NotFound,
     RevisionConflict,
@@ -52,6 +53,9 @@ class McpRuntime:
         self.presentation_timezone = presentation_timezone
 
     def input_schema(self, name: str) -> dict[str, Any]:
+        from runtime.communication_tools import DESCRIPTIONS, schema
+        if name in DESCRIPTIONS or name == "configure_team":
+            return schema(name)
         from runtime.filesystem_schema import ALL_TOOLS, input_schema
         owner = getattr(getattr(getattr(self.service, "service", None), "authority", None), "access_mode", "shared") == "owner"
         if owner and name in ALL_TOOLS:
@@ -64,16 +68,10 @@ class McpRuntime:
             if name in {"list_files", "search_files", "read_source", "read_source_file", "list_source_files", "search_source_files"} and "revision" not in required:
                 required.append("revision")
                 optional = [field for field in optional if field != "revision"]
-            if name == "configure_team":
-                relaxed.update({"policies", "budgets"})
-            if name == "create_work":
-                relaxed.update({"budget", "source_baseline"})
-            if name in {"request_review", "create_route"}:
-                relaxed.update({"source_baseline", "source_binding_ids"})
-            if name == "handoff_work":
-                relaxed.add("source_state")
             if name == "load_project":
                 optional.extend(["machine_id", "management_path"])
+            if name == "create_route":
+                relaxed.add("source_binding_ids")
             for field in list(required):
                 if field in relaxed:
                     required.remove(field)
@@ -92,19 +90,9 @@ class McpRuntime:
             properties[field] = {"type": kind}
             if field in ARRAYS:
                 if field in {"members", "policies", "budgets", "evidence_dispositions"}:
-                    from runtime.project_management import TeamBudget, TeamMember, TeamPolicy
-                    from runtime.project_work import EvidenceDisposition
-                    item_schema = {"members": TeamMember, "policies": TeamPolicy,
-                                   "budgets": TeamBudget, "evidence_dispositions": EvidenceDisposition}[field].model_json_schema()
-                    if field == "members" and not owner:
-                        item_schema["required"] = list(dict.fromkeys([*item_schema.get("required", []),
-                            "profile", "grant_ref", "permissions", "expires_at", "budget_ref"]))
-                        item_schema["properties"]["permissions"]["minItems"] = 1
-                    definitions.update(item_schema.pop("$defs", {}))
-                    properties[field]["items"] = item_schema
-                else:
-                    properties[field]["items"] = {"type": "string"}
-            if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"} or (owner and field in {"deadline", "source_baseline", "source_state"}):
+                    raise ValueError("legacy task input schemas are not supported")
+                properties[field]["items"] = {"type": "string"}
+            if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"} or (owner and field == "deadline"):
                 properties[field]["type"] = [kind, "null"]
             if field == "decision" and name in {"submit_review", "accept_work"}:
                 properties[field]["enum"] = (["pass", "fail"] if name == "submit_review"
@@ -153,10 +141,12 @@ class McpRuntime:
             item_type = dict if field in {"members", "policies", "budgets", "evidence_dispositions"} else str
             if isinstance(value, list) and (len(value) > 100 or any(type(x) is not item_type for x in value)):
                 raise ValueError("tool list arguments require bounded text entries")
+            if "enum" in schema["properties"][field] and value not in schema["properties"][field]["enum"]:
+                raise ValueError("argument value differs from the tool schema")
         if len(json.dumps(arguments, allow_nan=False).encode()) > 65536:
             raise ValueError("tool input exceeds the configured bound")
 
-    def call(self, name, arguments):
+    def call(self, name, arguments, *, request_id=None):
         try:
             credential = self.credential_provider()
             self.service.service.authenticate(credential)
@@ -167,6 +157,9 @@ class McpRuntime:
             if name not in self.service.IMPLEMENTED:
                 raise ValueError("tool is not implemented")
             self._validate(name, arguments)
+            if name in {"send_message", "configure_team"} and not arguments.get("client_request_id"):
+                import uuid
+                arguments = {**arguments, "client_request_id": request_id or uuid.uuid4().hex}
             state, data, follow_ups = self.service.execute(name, arguments, credential)
             result = {"schema_version": "acs-mcp-result/3",
                       "result_type": self.service.catalog["tools"][name]["result_type"],
@@ -203,6 +196,9 @@ class McpRuntime:
             result = self._problem("guard_rejected")
         except SourceError:
             result = self._problem("source_unavailable")
+        except InvalidToolArgument as error:
+            result = self._problem("invalid_arguments")
+            result["data"].update(field=error.field, guidance=error.guidance)
         except (ValueError, TypeError, KeyError, ValidationError):
             result = self._problem("invalid_arguments")
         except Exception:  # noqa: BLE001 - transport never exposes private backend errors

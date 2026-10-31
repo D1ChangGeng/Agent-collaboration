@@ -35,6 +35,8 @@ class AuthenticatedContext:
     principal_ref: str
     grant_ref: str
     credential_hash: str = ""
+    agent_slot_id: str | None = None
+    trusted_client: bool = False
 
 
 type PayloadValue = JsonValue

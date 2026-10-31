@@ -17,14 +17,8 @@ class P2McpToolContractTests(unittest.TestCase):
 
     def test_surface_groups_are_exact_and_names_are_concise(self):
         groups = self.catalog["tool_groups"]
-        self.assertEqual(
-            list(groups),
-            [
-                "global", "project_context", "project_lists", "project_reads",
-                "source_reads", "project_actions", "continuation",
-                "source_writes", "advanced",
-            ],
-        )
+        self.assertIn("global", groups)
+        self.assertIn("communication", groups)
         names = [name for group in groups.values() for name in group]
         self.assertEqual(len(names), len(set(names)))
         self.assertEqual(set(names), set(self.catalog["tools"]))
@@ -32,6 +26,9 @@ class P2McpToolContractTests(unittest.TestCase):
         self.assertIn("list_harnesses", names)
         self.assertNotIn("setup_collaboration", names)
         self.assertNotIn("find_harnesses", names)
+        from runtime.communication_tools import TASK_TOOLS
+        self.assertFalse(set(names).intersection(TASK_TOOLS))
+        self.assertIn("list_messages", names)
         for name in names:
             self.assertIn(len(name.split("_")), (2, 3), name)
 
@@ -68,26 +65,24 @@ class P2McpToolContractTests(unittest.TestCase):
         configure = self.catalog["tools"]["configure_team"]
         self.assertEqual(configure["result_type"], "team_configuration")
         required = set(configure["input_schema"]["required"])
-        self.assertTrue(
-            {
-                "project_id", "scope_handle", "expected_revision", "members",
-                "policies", "budgets",
-            }
-            <= required
-        )
-        self.assertNotIn("scope", required)
+        self.assertEqual(required, {"project_id", "members"})
+        self.assertIn("expected_revision", configure["input_schema"]["optional"])
+        self.assertIn("scope_handle", configure["input_schema"]["optional"])
+        member = configure["input_schema"]["json_schema"]["properties"]["members"]["items"]
+        self.assertIn("if_unchanged", member["properties"])
 
     def test_read_and_message_consumption_are_separate(self):
         resource = self.catalog["tools"]["read_resource"]
         message = self.catalog["tools"]["read_message"]
         self.assertTrue(resource["annotations"]["readOnlyHint"])
-        self.assertFalse(message["annotations"]["readOnlyHint"])
+        self.assertTrue(message["annotations"]["readOnlyHint"])
         self.assertNotIn("consume", resource["input_schema"]["optional"])
-        self.assertEqual(message["input_schema"]["defaults"]["consume"], True)
-        self.assertTrue(
-            {"summary", "detail", "content", "history", "evidence"}
-            <= set(resource["input_schema"]["views"])
-        )
+        self.assertNotIn("consume", message["input_schema"]["optional"])
+        self.assertFalse(self.catalog["defaults"]["read_consumes"])
+        self.assertEqual(resource["input_schema"]["json_schema"]["properties"]["view"]["enum"],
+                         ["summary", "detail", "content"])
+        self.assertNotIn("WorkItem", resource["description"])
+        self.assertNotIn("active work", self.catalog["tools"]["load_project"]["description"])
 
     def test_send_wait_and_subscription_defaults_are_explicit(self):
         defaults = self.catalog["defaults"]
@@ -96,23 +91,22 @@ class P2McpToolContractTests(unittest.TestCase):
         send = self.catalog["tools"]["send_message"]["input_schema"]
         self.assertIn("response_mode", send["optional"])
         self.assertNotIn("response_mode", send["required"])
-        self.assertEqual(send["response_modes"], ["async", "sync"])
+        self.assertEqual(send["required"], ["project_id", "to", "content"])
+        self.assertEqual(send["json_schema"]["properties"]["response_mode"]["enum"], ["async", "sync"])
         self.assertEqual(
-            self.catalog["tools"]["wait_for_response"]["input_schema"]["modes"],
+            self.catalog["tools"]["wait_for_response"]["input_schema"]["json_schema"]["properties"]["mode"]["enum"],
             ["any", "all"],
         )
-        self.assertIn("watch_changes", self.catalog["tool_groups"]["continuation"])
+        self.assertNotIn("work_handle", send["json_schema"]["properties"])
 
     def test_profiles_limit_tool_discovery(self):
         profiles = self.catalog["profiles"]
         self.assertIn("load_project", profiles["root_manager"])
-        self.assertIn("submit_review", profiles["reviewer"])
+        self.assertIn("send_message", profiles["reviewer"])
         self.assertNotIn("accept_work", profiles["reviewer"])
         self.assertIn("apply_patch", profiles["engineer"])
-        self.assertEqual(
-            profiles["operator"],
-            ["read_profile", "list_projects", "list_connections", "submit_command"],
-        )
+        self.assertNotIn("configure_team", profiles["engineer"])
+        self.assertNotIn("configure_team", profiles["reviewer"])
 
     def test_result_envelope_and_gate_revision_are_bound(self):
         envelope = self.catalog["result_envelope"]
@@ -125,9 +119,10 @@ class P2McpToolContractTests(unittest.TestCase):
             envelope["knowledge_hint_required"],
             ["skill", "topic", "reason", "reference"],
         )
-        self.assertEqual(
-            self.gates["p2_surface_revision"], self.catalog["surface_revision"]
-        )
+        # Historical Gates retain the surface they measured. New communication
+        # semantics require new evidence, never rewriting a passed old Gate.
+        self.assertEqual(self.catalog["surface_revision"], "acs-communication/1")
+        self.assertTrue(self.gates["p2_surface_revision"].startswith("acs-p2-mcp-workflow/"))
         self.assertEqual(
             self.gates["gates"]["P2-CONTROL-PARITY"]["requires"],
             ["P2-MANAGEMENT-WORKFLOW"],

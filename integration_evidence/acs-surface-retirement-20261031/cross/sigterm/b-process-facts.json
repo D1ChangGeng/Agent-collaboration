@@ -1,0 +1,20 @@
+{
+  "reason": "completed",
+  "exit_code": -15,
+  "process_stop": {
+    "verified": true,
+    "containment_id": "process-session:1516527:linux:1516527:157128184",
+    "birth_ref": "linux:1516527:157128184",
+    "backend": "posix-process-session",
+    "scope": "owned_process_group",
+    "subtree_containment": false,
+    "alive": false,
+    "pid": 1516527,
+    "members": [],
+    "root_exit_code": -15,
+    "remaining_group_members": [],
+    "stopped": true
+  },
+  "version": "1.18.34",
+  "source_files": 116
+}

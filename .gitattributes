@@ -1,3 +1,44 @@
 
 runtime_tests/fixtures/*.sql text eol=lf
+runtime/*.sql text eol=lf
 runtime_tests/p1_codex_stdio_fixture.py text eol=lf
+
+# Generated test evidence preserves verbatim traceback whitespace.
+integration_evidence/**/*.xml -whitespace
+
+# Preserve hashes of these raw Windows/Linux run artifacts across checkouts.
+integration_evidence/acs-surface-retirement-20261031/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-surface-retirement-20261031/**/*.xml -whitespace
+
+integration_evidence/acs-storage-20261031/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-storage-20261031/**/*.xml -whitespace
+
+integration_evidence/acs-restart-20261031/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-restart-20261031/**/*.xml -whitespace
+
+integration_evidence/acs-opencode-receiver-20261031/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-opencode-receiver-20261031/**/*.xml -whitespace
+
+integration_evidence/acs-remote-native-20261031/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-remote-native-20261031/**/*.xml -whitespace
+
+integration_evidence/acs-maintenance-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-maintenance-20261101/**/*.xml -whitespace
+
+integration_evidence/acs-content-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-content-20261101/**/*.xml -whitespace
+
+integration_evidence/acs-configuration-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-configuration-20261101/**/*.xml -whitespace
+
+integration_evidence/acs-core-audit-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-core-audit-20261101/**/*.xml -whitespace
+integration_evidence/acs-core-audit-20261101/**/*.txt -whitespace
+
+integration_evidence/acs-installed-native-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-installed-native-20261101/**/*.xml -whitespace
+integration_evidence/acs-installed-native-20261101/**/*.txt -whitespace
+
+integration_evidence/acs-release-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-release-20261101/**/*.xml -whitespace
+integration_evidence/acs-release-20261101/**/*.txt -whitespace

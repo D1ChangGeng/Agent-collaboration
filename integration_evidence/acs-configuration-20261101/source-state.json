@@ -1,0 +1,67 @@
+{
+  "parent_commit": "6f144e3a35e3bcdb3ef67d5074dcd47dcefc6235",
+  "branch": "codex/core-cleanup",
+  "model_scope": "independent Windows Codex A / 1302-1 Owner OpenCode B; default stdio maintenance",
+  "model_source_files_match": 108,
+  "tests": {
+    "after.xml": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "before.xml": {
+      "tests": 2,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "ci-components-linux-current.xml": {
+      "tests": 1616,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 729
+    },
+    "ci-components-linux-recheck.xml": {
+      "tests": 1616,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 729
+    },
+    "codex-74e9625d91ac45f69210414cdc0c7ef7.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "opencode-recheck.xml": {
+      "tests": 49,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "races.xml": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "regression.xml": {
+      "tests": 56,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 6
+    }
+  },
+  "catalog": "acs-p2-mcp-tool-contract/10",
+  "wheel_sha256": "8d9a9f6578ff23d4898a2bc77da46b10f862ce7b2b6a044c0f3cdb89a1197eaa",
+  "existing_readmes_preserved": {
+    "README.md": "9e1341285d25c806289c6a652c6912f7a6f2a629a8998a5a780318309565796c",
+    "README.zh-CN.md": "d8b1639e46a52eed9b4e6929d086556aba677f010e55f2ed09d3382887891a89"
+  },
+  "provider_key_absent_from_artifacts": true,
+  "initial_ci_failure": "abort entry wait timed out; not reproduced in unchanged 49-test Driver file or complete repeat; cause unestablished",
+  "push": "not_attempted",
+  "production_change": "none",
+  "full_objective": "active"
+}

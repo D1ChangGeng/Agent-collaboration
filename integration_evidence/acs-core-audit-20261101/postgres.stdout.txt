@@ -1,0 +1,106 @@
+........................................................................ [ 19%]
+.........................................................s.s............ [ 39%]
+........................................................................ [ 59%]
+........................F.s.......s..................................... [ 79%]
+......................s......sss........................................ [ 98%]
+....                                                                     [100%]
+=================================== FAILURES ===================================
+______________ test_actual_stdio_mcp_processes_exchange_messages _______________
+  + Exception Group Traceback (most recent call last):
+  |   File "/tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/runtime_tests/test_communication.py", line 691, in test_actual_stdio_mcp_processes_exchange_messages
+  |     asyncio.run(exercise())
+  |   File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+  |     return runner.run(main)
+  |            ^^^^^^^^^^^^^^^^
+  |   File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+  |     return self._loop.run_until_complete(task)
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+  |     return future.result()
+  |            ^^^^^^^^^^^^^^^
+  |   File "/tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/runtime_tests/test_communication.py", line 666, in exercise
+  |     async with (stdio_client(parameters("a"), errlog=errors) as a_streams,
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 231, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/tmp/retirement-linux-0e2dd2bb8ee24bdebf4131061b830d96/venv/lib/python3.12/site-packages/mcp/client/stdio.py", line 200, in stdio_client
+  |     async with anyio.create_task_group() as tg:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/tmp/retirement-linux-0e2dd2bb8ee24bdebf4131061b830d96/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/tmp/retirement-linux-0e2dd2bb8ee24bdebf4131061b830d96/venv/lib/python3.12/site-packages/mcp/client/stdio.py", line 204, in stdio_client
+    |     yield read_stream, write_stream
+    |   File "/tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/runtime_tests/test_communication.py", line 667, in exercise
+    |     ClientSession(*a_streams, read_timeout_seconds=20) as a,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/tmp/retirement-linux-0e2dd2bb8ee24bdebf4131061b830d96/venv/lib/python3.12/site-packages/mcp/client/session.py", line 514, in __aexit__
+    |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/tmp/retirement-linux-0e2dd2bb8ee24bdebf4131061b830d96/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+    |     raise BaseExceptionGroup(
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Exception Group Traceback (most recent call last):
+      |   File "/tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/runtime_tests/test_communication.py", line 668, in exercise
+      |     stdio_client(parameters("b"), errlog=errors) as b_streams,
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      |   File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 231, in __aexit__
+      |     await self.gen.athrow(value)
+      |   File "/tmp/retirement-linux-0e2dd2bb8ee24bdebf4131061b830d96/venv/lib/python3.12/site-packages/mcp/client/stdio.py", line 200, in stdio_client
+      |     async with anyio.create_task_group() as tg:
+      |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+      |   File "/tmp/retirement-linux-0e2dd2bb8ee24bdebf4131061b830d96/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+      |     raise BaseExceptionGroup(
+      | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+      +-+---------------- 1 ----------------
+        | Exception Group Traceback (most recent call last):
+        |   File "/tmp/retirement-linux-0e2dd2bb8ee24bdebf4131061b830d96/venv/lib/python3.12/site-packages/mcp/client/stdio.py", line 204, in stdio_client
+        |     yield read_stream, write_stream
+        |   File "/tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/runtime_tests/test_communication.py", line 669, in exercise
+        |     ClientSession(*b_streams, read_timeout_seconds=20) as b):
+        |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        |   File "/tmp/retirement-linux-0e2dd2bb8ee24bdebf4131061b830d96/venv/lib/python3.12/site-packages/mcp/client/session.py", line 514, in __aexit__
+        |     result = await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+        |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        |   File "/tmp/retirement-linux-0e2dd2bb8ee24bdebf4131061b830d96/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+        |     raise BaseExceptionGroup(
+        | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+        +-+---------------- 1 ----------------
+          | Traceback (most recent call last):
+          |   File "/tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/runtime_tests/test_communication.py", line 690, in exercise
+          |     (ROOT / "integration_evidence/acs-communication-20261031/stdio-mcp.json").write_text(json.dumps(facts, indent=2))
+          |   File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/pathlib.py", line 1047, in write_text
+          |     with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+          |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          |   File "/home/d26fo/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/pathlib.py", line 1013, in open
+          |     return io.open(self, mode, buffering, encoding, errors, newline)
+          |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          | FileNotFoundError: [Errno 2] No such file or directory: '/tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/integration_evidence/acs-communication-20261031/stdio-mcp.json'
+          +------------------------------------
+=============================== warnings summary ===============================
+runtime_tests/test_project_http.py::test_http_subscription_stops_after_auth_loss_and_reconnect_recovers[token_revoked]
+runtime_tests/test_project_http.py::test_http_subscription_stops_after_auth_loss_and_reconnect_recovers[token_expired]
+runtime_tests/test_project_http.py::test_http_subscription_stops_after_auth_loss_and_reconnect_recovers[grant_revoked]
+  /tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/runtime_tests/test_project_http.py:271: MCPDeprecationWarning: resources/subscribe is removed as of 2026-07-28; use Client.listen() instead.
+    await client.subscribe_resource(uri)
+
+runtime_tests/test_project_http.py::test_http_subscription_stops_after_auth_loss_and_reconnect_recovers[token_revoked]
+runtime_tests/test_project_http.py::test_http_subscription_stops_after_auth_loss_and_reconnect_recovers[token_expired]
+runtime_tests/test_project_http.py::test_http_subscription_stops_after_auth_loss_and_reconnect_recovers[grant_revoked]
+  /tmp/acs-core-audit-ccf7541fb6ec4087a82622b4edf76cdc/runtime_tests/test_project_http.py:291: MCPDeprecationWarning: resources/subscribe is removed as of 2026-07-28; use Client.listen() instead.
+    await client.subscribe_resource(uri)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /mnt/d/Chatgpt/Agent-collaboration/integration_evidence/acs-core-audit-20261101/postgres.xml -
+=========================== short test summary info ============================
+SKIPPED [1] runtime_tests/test_receiver_domain_delivery.py:399: actual Temporal endpoint and namespace required
+SKIPPED [1] runtime_tests/test_receiver_domain_delivery.py:483: ACS_INSTALLED_RECEIVER is required for the actual console-script test
+SKIPPED [1] runtime_tests/test_communication.py:746: real independent Codex experiment is opt-in
+SKIPPED [1] runtime_tests/test_communication_content.py:176: one actual reader model plus a scripted peer is opt-in
+SKIPPED [1] runtime_tests/test_communication_receiver.py:178: actual production factory session probe is opt-in
+SKIPPED [1] runtime_tests/test_receiver_opencode_factory.py:164: actual local Linux OpenCode lifecycle is opt-in
+SKIPPED [2] runtime_tests/test_receiver_opencode_factory.py:203: actual OpenCode model request with approved isolated Provider is opt-in
+1 failed, 355 passed, 8 skipped, 6 warnings in 401.49s (0:06:41)

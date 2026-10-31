@@ -1,0 +1,28 @@
+{
+  "files": {
+    "actual-factory-close-failure.xml": "eeb5a6c175cf6a6914715e62e3f2c6d5be5eeb491b4072a4174f8dac52712769",
+    "actual-factory.xml": "41eb25a6085d9218986db803bfc7da8a76dec41e21066cafdd876581fb6e7e69",
+    "actual-model.xml": "d09ccaf41b0b6721bbfc2b9edcc1b542672b2497d4e82a3ec6e1e55c6c61aa64",
+    "codex-regression-model.xml": "0b4f690184b0385f95f90d21d9cf3028c87b895b9bcab4626ceaf903e438b708",
+    "defaults.xml": "2475d8911f87e1aa648804637641f7c028f03334f418c9d1ba34d218909f149e",
+    "dual-model-approval-failure.xml": "959461bc514240cb2706517ad20ece2a67949b00eea22ebf41109ead8017d827",
+    "dual-model.xml": "4552724bccabfd8f3a16db603bea7aeedc341ab12ac26b9aa9c7efe76c082000",
+    "factory-first.xml": "1a48712f75c10979989ce743cf307f857bc448da915747a3920f0201bdab851c",
+    "final-source.xml": "8d935abd59c453716c275cbd2195e570ed4bbe8760960a302472029eb9ee4c89",
+    "final.xml": "0f3131810383efaf36f9ff7656f47bc4fe324c27b9ef46f9bc7620e3eb84c278",
+    "installed-candidate.json": "83dd12fdda33550d004f70cca36b7187b7a6949e2341f90b0752613b6fb14543",
+    "REPORT.md": "3bc0534681610b19f6c6e65730c450437bf866f9b58a87ab37d63eb224cb6a88",
+    "shared-authority-first.xml": "a26c677f549d1ef792adb1181818d27bd9425cf1d73a8abae7586ccae5b1565c",
+    "source-state.json": "dddb3e8a9889bf1639ea4c49e3d0837b744ffc7ec84121e604721bd579c658ef",
+    "wiring.xml": "dde25e9e96b68fd6bca4d44db3128afcf3813889fd930c8ff783e5dfd33a4aee",
+    "approval-failure/codex-a.jsonl": "a8e20083a012ac10e1dc24d8a37877e6b6738a0b7c6f2bf533dfc1c1cc7c5052",
+    "approval-failure/codex-a.stderr": "11239f58123a6c6cf2566c6543769ed38e5e3532a967c7bd2d12d867434af430",
+    "dual-model/codex-a.jsonl": "e55cdd5a6a57c971f6c27387b529dc9265c2822119b4eb430d6df09ad8d89159",
+    "dual-model/codex-a.stderr": "3425d7d5dc552d10ab89fec78cdc235546e52a1b93070ad63c64c899f355293b",
+    "dual-model/opencode-model-facts.json": "dfb6dc7bbdc9fcf48d7136b1308577bf4420ab6ae76bc57ef67bcefd7e555218",
+    "dual-model/source-files.json": "b0a561f19b784f9e1d0bdb69c7c816b7206175ba3b1b97205d60be673f1e490d",
+    "remote-driver/facts.json": "9baf4e8a5d763b615d36d1a679d7c4b106a937c546d53b899e0b0ff31b9bb720",
+    "session/real-opencode-factory.json": "964437869b17ad44412d7793290f90b700c044dd7ae41c89a567c1fac63550e2",
+    "single-model/opencode-model-facts.json": "df15085c7f7b74b955d74033ecbf032e8860c317270cfef88e1bb7d9e61227e7"
+  }
+}

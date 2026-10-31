@@ -1,0 +1,44 @@
+{
+  "evidence_class": "scripted public API, real installed wheel/PostgreSQL, no model",
+  "wheel_sha256": "6a1ed49128ce04854119e021f5ffac9aa6da83d7c774885240b0cb543f76b868",
+  "wheel": "D:\\Chatgpt\\Agent-collaboration\\dist\\candidates\\acs-opencode-receiver-20261031-a8bf4c3\\agent_collaboration_runtime-0.1.0-py3-none-any.whl",
+  "installed_runtime": "D:\\Chatgpt\\Agent-collaboration\\dist\\candidates\\acs-opencode-receiver-20261031-a8bf4c3\\installed\\runtime\\domain.py",
+  "exact_source_files": 106,
+  "entry_points": [
+    "acs-project-runtime",
+    "acs-receiver",
+    "acs-receiver-provision",
+    "acs-runtime"
+  ],
+  "technical_commands": [
+    "delivery.dispatch",
+    "delivery.scan",
+    "endpoint.register",
+    "message.bind",
+    "message.read",
+    "node.challenge",
+    "node.enroll",
+    "node.revoke",
+    "node.rotate",
+    "receiver.connection.register",
+    "receiver.key.register",
+    "runtime.register"
+  ],
+  "counts": {
+    "communication_messages": 2,
+    "communication_replies": 1
+  },
+  "schema_layout": "current communication core 1 / project 2",
+  "table_count": 46,
+  "retired_tables_absent": [
+    "work_items",
+    "attempts",
+    "accepted_state_revisions",
+    "leases",
+    "effects",
+    "reviews",
+    "artifacts",
+    "native_response_observations",
+    "collaboration_handoffs"
+  ]
+}

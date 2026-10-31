@@ -21,7 +21,7 @@ import pytest
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from runtime.delivery import DeliveryDispatcher, DeliveryRejected, DeliveryService, digest
+from runtime.delivery import DeliveryDispatcher, DeliveryRejected, digest
 from runtime.delivery_models import (
     DeliveryEnvelope,
     DeliveryPacket,
@@ -30,10 +30,11 @@ from runtime.delivery_models import (
     InvocationObservation,
 )
 from runtime.delivery_node import DeliveryTransportError, LocalNodeEndpoint, logical_payload
-from runtime.domain import DomainAuthority
 from runtime.errors import AuthorizationDenied, IdempotencyConflict
 from runtime.models import CommandEnvelope
 from runtime.node import JournalOperation, NodeJournal
+from runtime_tests.fixtures.legacy_delivery import DeliveryService
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 
 
 class FixtureDriver:
@@ -407,7 +408,7 @@ def test_queued_command_rechecks_actual_authority_and_source_state(setup, change
     assert query(f, "SELECT count(*) FROM inbox_messages") == [(0,)]
 
 
-def test_ack_loss_retries_same_identity_without_second_fixture_invoke(setup):
+def test_ack_loss_reads_known_native_ack_without_second_fixture_invoke(setup):
     f = setup
     identity, _, _, _ = send(f, activation="invoke")
     original = f.endpoint.deliver
@@ -420,13 +421,13 @@ def test_ack_loss_retries_same_identity_without_second_fixture_invoke(setup):
             raise DeliveryTransportError("injected ACK loss after real Node commit")
         return response
     f.endpoint.deliver = lose_ack
-    assert f.dispatcher.dispatch(identity)["status"] == "retry_wait"
-    assert query(f, "SELECT count(*) FROM inbox_messages") == [(0,)]
+    assert f.dispatcher.dispatch(identity)["status"] == "delivered"
+    assert query(f, "SELECT count(*) FROM inbox_messages") == [(1,)]
     assert f.journal.get_message(identity["message_id"]).state == "response_received"
     due(f, identity["message_id"])
     assert DeliveryDispatcher(f.service).dispatch(identity)["status"] == "delivered"
     assert f.driver.calls == [identity["operation_id"]]
-    assert query(f, "SELECT ordinal,status FROM delivery_attempts ORDER BY ordinal") == [(1, "retry_wait"), (2, "delivered")]
+    assert query(f, "SELECT ordinal,status FROM delivery_attempts ORDER BY ordinal") == [(1, "delivered")]
     assert query(f, "SELECT count(*) FROM inbox_messages") == [(1,)]
 
 
@@ -738,7 +739,7 @@ def test_real_node_boot_restart_and_authorized_rebind_preserve_logical_inbox(set
         original(*args, **kwargs)
         raise DeliveryTransportError("injected ACK loss before Core projection")
     f.endpoint.deliver = lose_ack
-    assert f.dispatcher.dispatch(identity)["status"] == "retry_wait"
+    assert f.dispatcher.dispatch(identity)["status"] == ("delivered" if activation == "invoke" else "retry_wait")
     old_receipts = f.journal.receipts(identity["operation_id"])
     reopened = NodeJournal(f.path)  # Actual new boot, no reused explicit incarnation.
     assert reopened.boot_incarnation != f.journal.boot_incarnation
@@ -751,8 +752,9 @@ def test_real_node_boot_restart_and_authorized_rebind_preserve_logical_inbox(set
     assert reopened.receipts(identity["operation_id"]) == old_receipts
     assert len(reopened.list_mailbox()) == 1
     assert len(f.driver.calls) == (1 if activation == "invoke" else 0)
-    selection = query(f, "SELECT selection_revision,selection_json->>'boot_incarnation' FROM delivery_attempts WHERE ordinal=2")
-    assert selection == [(2, reopened.boot_incarnation)]
+    ordinal = 1 if activation == "invoke" else 2
+    selection = query(f, "SELECT selection_revision,selection_json->>'boot_incarnation' FROM delivery_attempts WHERE ordinal=%s", (ordinal,))
+    assert selection == ([(1, f.journal.boot_incarnation)] if activation == "invoke" else [(2, reopened.boot_incarnation)])
 
 
 def test_early_response_cannot_regress_during_actual_inbox_commit(setup):
@@ -783,13 +785,14 @@ def test_missing_endpoint_exhausts_bounded_budget_without_node_actions(setup):
 
 def test_replacement_node_cannot_repeat_an_unreconciled_native_activation(setup, tmp_path):
     f = setup
+    f.driver.fail = True  # A possible call with no persisted Native ACK.
     identity, _, _, _ = send(f, activation="invoke")
     deliver = f.endpoint.deliver
     def lost(*args, **kwargs):
         deliver(*args, **kwargs)
         raise DeliveryTransportError("lost ACK from original activation location")
     f.endpoint.deliver = lost
-    assert f.dispatcher.dispatch(identity)["status"] == "retry_wait"
+    assert f.dispatcher.dispatch(identity)["status"] == "uncertain"
     replacement_journal = NodeJournal(tmp_path / "different-node.sqlite")
     replacement = LocalNodeEndpoint(replacement_journal, "local-scope", "local-slot", f.driver)
     service = DeliveryService(f.authority, {"endpoint": replacement})
@@ -852,8 +855,9 @@ def test_real_core_process_crash_after_committed_attempt_recovers(setup, activat
 import json,os,sys,runtime
 from types import SimpleNamespace
 runtime.__path__.insert(0,sys.argv[1])
-from runtime.domain import DomainAuthority
-from runtime.delivery import DeliveryService,DeliveryDispatcher
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
+from runtime.delivery import DeliveryDispatcher
+from runtime_tests.fixtures.legacy_delivery import DeliveryService
 # Descriptor-only test proxy: this process dies before contacting the Node.
 # The actual parent Node remains alive; no Node restart/transport is claimed here.
 descriptor=json.loads(sys.argv[3])

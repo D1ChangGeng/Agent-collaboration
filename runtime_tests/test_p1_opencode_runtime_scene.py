@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 from runtime.codex_driver import AuthorizedOperation, BindingIdentity, DriverJournal
-from runtime.delivery import DeliveryDispatcher, DeliveryService
+from runtime.delivery import DeliveryDispatcher
 from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
 from runtime.delivery_node import LocalNodeEndpoint
 from runtime.native_delivery import NativeDeliveryAdapter
@@ -30,6 +30,7 @@ from runtime.p1_opencode_host_node import (
     OpenCodeHostUnixServer,
 )
 from runtime.systemd_supervisor import SystemdUserSupervisor
+from runtime_tests.fixtures.legacy_delivery import DeliveryService
 from runtime_tests.test_delivery import command, query
 from tools.runtime.p1_opencode_projection import project_original_opencode_terminal
 from tools.runtime.p1_opencode_readback import (

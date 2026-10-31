@@ -16,7 +16,7 @@ psycopg = pytest.importorskip("psycopg")
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from runtime.schema_upgrade import apply_candidate_schema
+from runtime_tests.fixtures.legacy_schema_upgrade import apply_candidate_schema
 from runtime.recovery import (
     AuthoritySnapshot,
     BridgeAuthoritySnapshot,

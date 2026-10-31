@@ -15,10 +15,8 @@ psycopg = pytest.importorskip("psycopg")
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from runtime.delivery import DeliveryService
 from runtime.delivery_models import DeliveryPacket, EndpointBindingRequest
 from runtime.delivery_node import LocalNodeEndpoint
-from runtime.domain import DomainAuthority
 from runtime.errors import (
     AuthorizationDenied,
     IdempotencyConflict,
@@ -29,7 +27,9 @@ from runtime.errors import (
 from runtime.harness_sessions import BindingChange, BindingResult, BindingRetire
 from runtime.models import CommandEnvelope
 from runtime.node import NodeJournal
-from runtime.surfaces import PAYLOADS, SharedService, SurfaceCommand
+from runtime.surfaces import PAYLOADS, SharedService
+from runtime_tests.fixtures.legacy_delivery import DeliveryService
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 from runtime_tests.test_delivery import FixtureDriver
 
 BASE_18_SHA256 = "b8554614d9923ae43a653371c4445c33fdfe189c219b3376f29e23c476ee7614"
@@ -302,7 +302,7 @@ def test_exact_1_9_to_1_11_migration_preserves_rows(isolated_dsn):
     assert hashlib.sha256(fixture.read_bytes()).hexdigest() == BASE_18_SHA256
     with psycopg.connect(isolated_dsn) as connection:
         connection.execute(fixture.read_bytes())
-        connection.execute((Path(__file__).parents[1] / "runtime/schema_1_9.sql").read_bytes())
+        connection.execute((Path(__file__).parents[1] / "runtime_tests/fixtures/legacy_schema_1_9.sql").read_bytes())
         connection.execute(
             "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
             "VALUES ('acs-p1-runtime','1.9',%s)", (BASE_19_SHA256,),
@@ -327,11 +327,10 @@ def test_exact_1_9_to_1_11_migration_preserves_rows(isolated_dsn):
     authority = DomainAuthority(isolated_dsn)
     authority.initialize()
     authority.initialize()
-    schema_bytes = ((Path(__file__).parents[1] / "runtime/schema.sql").read_text(encoding="utf-8") + "\n" +
-                    (Path(__file__).parents[1] / "runtime/schema_1_13.sql").read_text(encoding="utf-8") + "\n" +
-                    (Path(__file__).parents[1] / "runtime/schema_1_14.sql").read_text(encoding="utf-8")).encode()
+    schema_bytes = ((Path(__file__).parents[1] / "runtime_tests/fixtures/legacy_schema.sql").read_text(encoding="utf-8") + "\n" +
+                    (Path(__file__).parents[1] / "runtime_tests/fixtures/legacy_schema_1_13.sql").read_text(encoding="utf-8")).encode()
     assert query(authority, "SELECT schema_version,schema_checksum FROM runtime_schema_metadata") == [
-        ("1.14", hashlib.sha256(schema_bytes).hexdigest())]
+        ("1.13", hashlib.sha256(schema_bytes).hexdigest())]
     assert query(authority, "SELECT status FROM scopes WHERE scope_id='migration-sentinel'") == [("active",)]
     assert query(authority, "SELECT row_to_json(w)::text FROM work_items w WHERE work_item_id='migration-work'") == [
         (before,)]
@@ -345,8 +344,8 @@ def test_exact_1_10_to_current_migration_preserves_binding(isolated_dsn):
     fixture = Path(__file__).with_name("fixtures") / "schema-1.8-a942.sql"
     with psycopg.connect(isolated_dsn) as connection:
         connection.execute(fixture.read_bytes())
-        connection.execute((root / "runtime/schema_1_9.sql").read_bytes())
-        connection.execute((root / "runtime/schema_1_10.sql").read_bytes())
+        connection.execute((root / "runtime_tests/fixtures/legacy_schema_1_9.sql").read_bytes())
+        connection.execute((root / "runtime_tests/fixtures/legacy_schema_1_10.sql").read_bytes())
         connection.execute(
             "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
             "VALUES ('acs-p1-runtime','1.10',%s)", (BASE_110_SHA256,),
@@ -368,7 +367,7 @@ def test_exact_1_10_to_current_migration_preserves_binding(isolated_dsn):
     authority = DomainAuthority(isolated_dsn)
     authority.initialize()
     authority.initialize()
-    assert query(authority, "SELECT schema_version FROM runtime_schema_metadata") == [("1.14",)]
+    assert query(authority, "SELECT schema_version FROM runtime_schema_metadata") == [("1.13",)]
     assert query(authority, "SELECT row_to_json(h)::text FROM harness_session_bindings h "
                             "WHERE binding_id='old-binding'")[0][0].startswith(before[:-1])
     assert query(authority, "SELECT attempt_context FROM harness_session_bindings "
@@ -379,7 +378,7 @@ def test_unknown_1_9_checksum_rejected_without_partial_schema(isolated_dsn):
     fixture = Path(__file__).with_name("fixtures") / "schema-1.8-a942.sql"
     with psycopg.connect(isolated_dsn) as connection:
         connection.execute(fixture.read_bytes())
-        connection.execute((Path(__file__).parents[1] / "runtime/schema_1_9.sql").read_bytes())
+        connection.execute((Path(__file__).parents[1] / "runtime_tests/fixtures/legacy_schema_1_9.sql").read_bytes())
         connection.execute(
             "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
             "VALUES ('acs-p1-runtime','1.9',%s)", ("f" * 64,),
@@ -397,8 +396,8 @@ def test_unknown_1_10_checksum_rejected_without_projection_columns(isolated_dsn)
     fixture = Path(__file__).with_name("fixtures") / "schema-1.8-a942.sql"
     with psycopg.connect(isolated_dsn) as connection:
         connection.execute(fixture.read_bytes())
-        connection.execute((root / "runtime/schema_1_9.sql").read_bytes())
-        connection.execute((root / "runtime/schema_1_10.sql").read_bytes())
+        connection.execute((root / "runtime_tests/fixtures/legacy_schema_1_9.sql").read_bytes())
+        connection.execute((root / "runtime_tests/fixtures/legacy_schema_1_10.sql").read_bytes())
         connection.execute(
             "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
             "VALUES ('acs-p1-runtime','1.10',%s)", ("f" * 64,),
@@ -414,13 +413,11 @@ def test_unknown_1_10_checksum_rejected_without_projection_columns(isolated_dsn)
 
 
 def test_surface_contract_is_explicit():
-    assert PAYLOADS["harness_session.attach"] is BindingChange
-    assert PAYLOADS["harness_session.replace"] is BindingChange
-    assert PAYLOADS["harness_session.retire"] is BindingRetire
-    assert PAYLOADS["harness_session.result"] is BindingResult
+    assert not {"harness_session.attach", "harness_session.replace", "harness_session.retire",
+                "harness_session.result", "harness_session.read"}.intersection(PAYLOADS)
 
 
-def test_authenticated_surface_routes_binding_commands(isolated_dsn):
+def test_authenticated_surface_rejects_task_binding_commands_before_mutation(isolated_dsn):
     authority = DomainAuthority(isolated_dsn)
     prepare(authority)
 
@@ -431,21 +428,15 @@ def test_authenticated_surface_routes_binding_commands(isolated_dsn):
 
     service = SharedService(authority, Authenticator())
     attach = command(authority, "harness_session.attach")
-    outer = SurfaceCommand(
-        command_type=attach.command_type, target_id=attach.target_id,
-        expected_revision=attach.expected_revision, command_id=attach.command_id,
-        idempotency_key=attach.idempotency_key, correlation_id=attach.correlation_id,
-        target_kind=attach.target_kind, issued_at=attach.issued_at,
-        deadline=attach.deadline, payload=binding("surface-bind", "surface-native").model_dump(),
-    )
+    outer = {
+        "command_type": attach.command_type, "target_id": attach.target_id,
+        "expected_revision": attach.expected_revision, "command_id": attach.command_id,
+        "idempotency_key": attach.idempotency_key, "correlation_id": attach.correlation_id,
+        "target_kind": "message", "issued_at": attach.issued_at.isoformat(),
+        "deadline": attach.deadline.isoformat(), "payload": binding("surface-bind", "surface-native").model_dump(),
+    }
     reply = service.handle(outer, "test-credential")
-    assert reply.ok and reply.result["state"] == "active"
-    read = command(authority, "harness_session.read", 1)
-    read_reply = service.handle(SurfaceCommand(
-        command_type=read.command_type, target_id=read.target_id,
-        expected_revision=read.expected_revision, command_id=read.command_id,
-        idempotency_key=read.idempotency_key, correlation_id=read.correlation_id,
-        target_kind=read.target_kind, issued_at=read.issued_at,
-        deadline=read.deadline, payload={},
-    ), "test-credential")
-    assert read_reply.ok and read_reply.result["active_binding_id"] == "surface-bind"
+    assert not reply.ok and reply.error.code == "INPUT_INVALID"
+    read_reply = service.handle({**outer, "command_type": "harness_session.read", "payload": {}}, "test-credential")
+    assert not read_reply.ok and read_reply.error.code == "INPUT_INVALID"
+    assert query(authority, "SELECT count(*) FROM harness_session_bindings") == [(0,)]

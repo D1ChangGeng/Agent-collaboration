@@ -1,0 +1,3 @@
+Reading additional input from stdin...
+2026-10-31T13:33:01.529815Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-10-31T13:33:14.571148Z ERROR codex_core::tools::router: error=agent_name must use only lowercase letters, digits, and underscores

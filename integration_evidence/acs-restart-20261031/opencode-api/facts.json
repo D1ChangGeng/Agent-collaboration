@@ -1,0 +1,48 @@
+{
+  "version": "1.18.34",
+  "root": "/tmp/acs-opencode-session-vjay0yxp",
+  "session_keys": [
+    "id",
+    "slug",
+    "projectID",
+    "directory",
+    "path",
+    "cost",
+    "tokens",
+    "title",
+    "agent",
+    "model",
+    "version",
+    "metadata",
+    "time"
+  ],
+  "readback_keys": [
+    "id",
+    "slug",
+    "projectID",
+    "directory",
+    "path",
+    "cost",
+    "tokens",
+    "title",
+    "agent",
+    "model",
+    "version",
+    "metadata",
+    "time"
+  ],
+  "metadata_persisted": {
+    "acs_binding_id": "probe",
+    "acs_binding": {
+      "node_id": "probe"
+    },
+    "acs_operation_id": "probe"
+  },
+  "agent_persisted": "build",
+  "model_persisted": {
+    "id": "probe",
+    "providerID": "probe"
+  },
+  "actual_session_id": "ses_e6dc0cda4ffe8PzfMzz62T2ESa",
+  "model_turns": 0
+}

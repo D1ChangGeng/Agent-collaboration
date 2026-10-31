@@ -13,8 +13,7 @@ from runtime.artifacts import LocalArtifactStore
 from runtime.auth import LocalCredentialAuthenticator
 from runtime.delivery_node import LocalNodeEndpoint
 from runtime.domain import DomainAuthority
-from runtime.effects import LocalFileEffectGateway
-from runtime.models import AuthenticatedContext, EffectReadback
+from runtime.models import AuthenticatedContext
 from runtime.operator_files import OperatorFileError, read_operator_file
 from runtime.recovery_models import BoundaryRejected
 from runtime.scoped_artifacts import ScopedArtifactStores
@@ -60,6 +59,8 @@ class RoleContext(ConfigModel):
     principal_ref: str = Field(min_length=1, max_length=256)
     grant_ref: str = Field(min_length=1, max_length=256)
     credential_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    agent_slot_id: str | None = Field(default=None, min_length=1, max_length=256)
+    trusted_client: bool = False
 
 
 class ArtifactSettings(ConfigModel):
@@ -93,6 +94,7 @@ class RemoteEndpointSettings(ConfigModel):
     endpoint_id: str = Field(min_length=1, max_length=256)
     authority_signing_key_ref: PrivateReference
     journal_generation: int = Field(default=1, ge=1)
+    request_timeout_seconds: int = Field(default=30, ge=1, le=120, strict=True)
     old_boot_isolation_ref: str | None = None
     prepare_argv: tuple[str, ...] = Field(default=(), max_length=64)
 
@@ -133,10 +135,13 @@ class SurfaceSettings(ConfigModel):
     credential_ref: PrivateReference
     artifacts: ArtifactSettings | None = None
     additional_artifacts: tuple[ArtifactSettings, ...] = Field(default=(), max_length=63)
+    # Accepted for existing operator files; task Effect/Lease services are no
+    # longer constructed. Artifacts and source access keep their own policy.
     effects: EffectSettings | None = None
     remote_endpoints: tuple[RemoteEndpointSettings, ...] = Field(default=(), max_length=64)
     filesystem: FilesystemSettings = Field(default_factory=FilesystemSettings)
     temporal_endpoint: str | None = None
+    delivery_maintenance: Literal["auto", "external"] = "auto"
     presentation_timezone: str = "UTC"
 
     @field_validator("presentation_timezone")
@@ -221,27 +226,11 @@ def configured_service(path, *, delivery_endpoints=None, expected_settings=None)
                                  delivery_endpoints=delivery_endpoints,
                                  node_response_reader=trusted_local_node_response_reader(delivery_endpoints))
         domain._filesystem_settings = settings.filesystem
+        domain._communication_maintenance_mode = settings.delivery_maintenance
         if settings.remote_endpoints:
             from runtime.machine_connections import ConfiguredRemoteEndpoint
             for target in settings.remote_endpoints:
                 if target.endpoint_id in domain._delivery_endpoints:
                     raise ConfigurationError("duplicate configured execution endpoint")
                 domain._delivery_endpoints[target.endpoint_id] = ConfiguredRemoteEndpoint(domain, target)
-        if settings.effects:
-            config = settings.effects
-            gateway = resources.enter_context(LocalFileEffectGateway(domain.leases, config.root,
-                scope_id=config.scope_id, resource_paths=config.resource_paths))
-            domain._effect_registration_gateway = gateway
-            def actual_readback(cursor, caller, effect):
-                observed = gateway.historical_readback_in_transaction(
-                    cursor, lease_id=effect["lease_id"], resource_id=effect["resource_id"],
-                    generation=effect["generation"], fencing_token=effect["fencing_token"],
-                    readback_ref=effect["readback_ref"], caller=caller, scope_id=effect["scope_id"],
-                    grant_ref=caller.grant_ref, authority_incarnation=caller.authority_incarnation,
-                    expected_operation_id=effect["operation_id"],
-                )
-                return {**{key: observed[key] for key in EffectReadback.model_fields
-                           if key not in ("effect_id", "work_item_id")},
-                        "effect_id": effect["effect_id"], "work_item_id": effect["work_item_id"]}
-            domain._effect_readback_verifier = actual_readback
         yield SharedService(domain, LocalCredentialAuthenticator(context)), settings

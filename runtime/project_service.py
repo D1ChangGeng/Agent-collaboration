@@ -1,91 +1,69 @@
 """Project-scoped typed actions composed with the PostgreSQL Domain service."""
 from __future__ import annotations
 
-import hashlib
 import json
 import re
-import time
 import uuid
 from copy import copy
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import Any, ClassVar
 
-import anyio
-
 from runtime.agent_organization import organization_model, organization_projection
-from runtime.codex_driver import AuthorizedOperation, DriverRejected, OutcomeUncertain
-from runtime.connection_clock import canonical_utc
-from runtime.delivery_models import DeliveryPacket
-from runtime.delivery_node import InvocationPreCallRejected, LocalNodeEndpoint
+from runtime.communication import CommunicationActions
+from runtime.communication_management import CommunicationManagement
+from runtime.communication_tools import adopt_catalog
 from runtime.errors import (
-    AcceptanceGuardFailed,
     AuthorizationDenied,
     IdempotencyConflict,
+    InvalidToolArgument,
     NotFound,
     RevisionConflict,
 )
 from runtime.models import CommandEnvelope, CommandResult
-from runtime.native_delivery import NativeDeliveryAdapter
-from runtime.project_common import IDENTIFIER, canonical, digest, handle, parse_handle
+from runtime.project_common import IDENTIFIER, canonical, digest, handle, page_result
 from runtime.project_context import CurrentProjectContext
-from runtime.project_continuation import ContinuationActions
-from runtime.project_inbox import InboxActions
 from runtime.project_management import ManagementActions
+from runtime.project_resources import ResourceActions
 from runtime.project_routes import RouteActions
-from runtime.project_source import read_response_artifact
-from runtime.project_work import WorkActions
-from runtime.source import SourceChangedDuringSnapshot, SourceReadbackError
-from runtime.surfaces import SharedService, SurfaceCommand
-
-RECEIPTS = (
-    "accepted_by_authority", "target_inbox_committed", "runtime_dispatched",
-    "runtime_acknowledged", "response_received",
-)
+from runtime.project_schema_state import adopt_project_schema
+from runtime.source import SourceChangedDuringSnapshot
+from runtime.surfaces import SharedService
 
 
-class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, ManagementActions, RouteActions, InboxActions):
+class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationManagement, ManagementActions, RouteActions, ResourceActions):
     """Authenticated project adapter; never owns an alternate execution state."""
 
+    _page_result = staticmethod(page_result)
+
     IMPLEMENTED = frozenset({
-        "read_profile", "configure_project", "list_projects", "list_connections", "load_project", "list_routes", "list_work",
-        "create_work", "send_message", "read_message", "check_inbox", "wait_for_response",
-        "list_sources", "list_files", "search_files", "read_file", "read_source", "read_diff",
-        "configure_team", "list_collaborators", "list_harnesses",
-        "revise_work", "handoff_work", "acknowledge_handoff", "withdraw_handoff",
-        "request_review", "submit_review",
-        "read_resource", "list_evidence", "list_reviews", "list_activity",
-        "accept_work", "cancel_work", "stop_attempt",
-        "watch_changes", "set_notification",
-        "create_route", "update_route",
-        "list_directory", "glob", "grep", "write_file", "edit_file", "apply_patch",
-        "filesystem_context", "select_filesystem",
-        "read_source_file", "list_source_files", "search_source_files",
+        'apply_patch', 'check_inbox', 'configure_project', 'configure_team', 'create_route', 'edit_file',
+        'filesystem_context', 'glob', 'grep', 'list_activity', 'list_collaborators',
+        'list_connections', 'list_directory', 'list_files', 'list_harnesses',
+        'list_messages', 'list_projects', 'list_routes', 'list_source_files',
+        'list_sources', 'load_project', 'read_diff', 'read_file', 'read_message',
+        'read_profile', 'read_resource', 'read_source', 'read_source_file', 'search_files',
+        'search_source_files', 'select_filesystem', 'send_message', 'update_route',
+        'wait_for_response', 'write_file'
     })
     DOMAIN_PERMISSIONS: ClassVar[dict[str, tuple[str, ...]]] = {
-        "create_work": ("work_item.create",),
-        "send_message": ("message.send",),
-        "read_message": ("message.read",),
-        "check_inbox": ("message.read",),
-        "wait_for_response": ("message.read",),
-        "list_files": ("artifact.read",),
-        "search_files": ("artifact.read",),
-        "read_file": ("artifact.read",),
-        "read_source": ("artifact.read",),
-        "read_diff": ("artifact.read",),
-        "request_review": ("review.assign",),
-        "handoff_work": ("message.send",),
-        "submit_review": ("review.record",),
-        "accept_work": ("work_item.transition", "acceptance.finalize"),
-        "cancel_work": ("work.manage",),
-        "stop_attempt": ("runtime.control",),
-        "create_route": ("grants.manage",),
+        'send_message': ('message.send',),
+        'read_message': ('message.read',),
+        'check_inbox': ('message.read',),
+        'wait_for_response': ('message.read',),
+        'list_files': ('artifact.read',),
+        'search_files': ('artifact.read',),
+        'read_file': ('artifact.read',),
+        'read_source': ('artifact.read',),
+        'read_diff': ('artifact.read',),
+        'create_route': ('grants.manage',),
     }
+
 
     def __init__(self, service: SharedService, catalog: dict[str, Any], *, profile: str, sources=None):
         if profile not in catalog["profiles"]:
             raise ValueError("unknown Profile")
+        catalog = adopt_catalog(catalog)
         self.service, self.catalog, self.profile = service, catalog, profile
         self.sources = sources
         from runtime.filesystem_gateway import FilesystemGateway
@@ -95,7 +73,8 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
             self.catalog = {**catalog, "tools": dict(catalog["tools"]),
                             "profiles": {name:list(tools) for name,tools in catalog["profiles"].items()}}
             for selected in ("root_manager", "operator"):
-                self.catalog["profiles"][selected].append("configure_project")
+                if "configure_project" not in self.catalog["profiles"][selected]:
+                    self.catalog["profiles"][selected].append("configure_project")
             for name in ALL_TOOLS:
                 self.catalog["tools"][name] = definition(name)
         self.artifacts = getattr(service.authority, "_artifact_store", None)
@@ -106,38 +85,10 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
 
     def initialize(self) -> None:
         """Explicit operator schema adoption; not invoked by a tool request."""
-        schema = Path(__file__).with_name("project_schema.sql").read_bytes()
-        checksum = hashlib.sha256(schema).hexdigest()
         with self.service.authority._connect() as connection:
-            connection.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
-                               ("acs-project-runtime-schema",))
-            old = connection.execute(
-                "SELECT schema_version,schema_checksum FROM runtime_schema_metadata "
-                "WHERE schema_name='acs-project-runtime' FOR UPDATE",
-            ).fetchone()
-            if old and old not in {("1", checksum), ("1", "6fedb1731cde6224c0ec4770d7d5b18580d60554e9ef7b82739679b9bcfc0440"), ("1", "ccad2138f9ed4cddbe2e7e30ed797b4ead75d3c1359e4401997906e1233bfa3a")}:
-                raise ValueError("project schema requires explicit migration")
-            connection.execute(schema)
-            connection.execute(
-                "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
-                "VALUES ('acs-project-runtime','1',%s) ON CONFLICT(schema_name) DO NOTHING",
-                (checksum,),
-            )
-            connection.execute("UPDATE runtime_schema_metadata SET schema_checksum=%s WHERE schema_name='acs-project-runtime'", (checksum,))
-            control = Path(__file__).with_name("project_control_schema.sql").read_bytes()
-            control_checksum = hashlib.sha256(control).hexdigest()
-            current = connection.execute(
-                "SELECT schema_version,schema_checksum FROM runtime_schema_metadata "
-                "WHERE schema_name='acs-project-control' FOR UPDATE",
-            ).fetchone()
-            if current and current != ("1", control_checksum):
-                raise ValueError("project control schema requires explicit migration")
-            connection.execute(control)
-            connection.execute(
-                "INSERT INTO runtime_schema_metadata(schema_name,schema_version,schema_checksum) "
-                "VALUES ('acs-project-control','1',%s) ON CONFLICT(schema_name) DO NOTHING",
-                (control_checksum,),
-            )
+            adopt_project_schema(connection)
+            from runtime.communication_archive import adopt_legacy_index
+            adopt_legacy_index(connection.cursor(), self.context.tenant_id)
 
     def admit_project(self, command: CommandEnvelope, *, project_id: str, root_id: str,
                       scope_id: str, agent_slot_id: str, name: str,
@@ -301,7 +252,9 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
         context = authority.context
         request_id = args.get("client_request_id") or uuid.uuid4().hex
         identity = "mcp-" + digest([context.tenant_id, context.principal_ref,
-                                     args.get("project_id"), request_id])
+                                     args.get("project_id"), request_id,
+                                     *([self.profile, context.agent_slot_id, context.trusted_client]
+                                       if name == "project.send_message" and "content" in args else [])])
         canonical_now = getattr(authority, "canonical_now", None)
         now = canonical_now() if callable(canonical_now) else datetime.now(UTC)
         for field in ("expected_revision", "expected_work_revision", "expected_route_revision", "expected_root_revision"):
@@ -320,6 +273,37 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
         )
 
     def _authorize(self, authority, cursor, project_id, name, args):
+        if name == "configure_project" and (authority.access_mode != "owner" or
+                not self.context.trusted_client and self.profile not in {"root_manager", "operator"}):
+            raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+        if not self.context.trusted_client:
+            cursor.execute("SELECT profile,status,agent_slot_id FROM collaboration_team_members WHERE tenant_id=%s "
+                "AND project_id=%s AND principal_ref=%s AND grant_ref=%s", (self.context.tenant_id, project_id,
+                    self.context.principal_ref, self.context.grant_ref))
+            identities = cursor.fetchall()
+            if identities and (len(identities) != 1 or identities[0][0] != self.profile or identities[0][1] != "active"
+                    or self.context.agent_slot_id is not None and identities[0][2] != self.context.agent_slot_id):
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+        if name in {"configure_team", "create_route", "update_route"}:
+            if not self.context.trusted_client and self.profile not in {"root_manager", "route_manager"}:
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+            if name == "create_route" and not self.context.trusted_client and self.profile != "root_manager":
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+        from runtime.communication_tools import DESCRIPTIONS
+        communication_context = name == "list_activity" or (name == "read_resource" and args.get("handle", "").split(":", 1)[0] in {"message", "response", "notification"})
+        if (name in DESCRIPTIONS or communication_context) and (communication_context or self.context.agent_slot_id is not None or self.context.trusted_client
+                or name in {"send_message", "read_message", "check_inbox", "list_messages", "wait_for_response", "list_collaborators"}):
+            cursor.execute("SELECT scope_id,root_id,revision,context_manifest FROM collaboration_projects "
+                           "WHERE tenant_id=%s AND project_id=%s AND state='active'",
+                           (self.context.tenant_id, project_id))
+            project = cursor.fetchone()
+            if project is None:
+                raise NotFound("project", project_id)
+            command = self._command(authority, "project." + name, args)
+            for permission in ("profile." + self.profile, *self.catalog["tools"][name]["security_scopes"]):
+                authority._authorize(command, cursor, permission)
+            self._communication_address(cursor, project_id)
+            return authority, (*project, self.context.grant_ref, self.context.agent_slot_id), command
         if authority.access_mode == "owner":
             return self._owner_project_context(authority, cursor, project_id, name, args)
         cursor.execute(
@@ -366,22 +350,25 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
     def _owner_project_context(self, authority, cursor, project_id, name, args):
         cursor.execute(
             "SELECT p.scope_id,p.root_id,p.revision,p.context_manifest,m.grant_ref,m.agent_slot_id "
-            "FROM collaboration_projects p JOIN LATERAL (SELECT grant_ref,agent_slot_id "
-            "FROM collaboration_memberships WHERE tenant_id=p.tenant_id AND project_id=p.project_id "
-            "ORDER BY (principal_ref=%s AND profile=%s) DESC,principal_ref,profile LIMIT 1) m ON TRUE "
+            "FROM collaboration_projects p LEFT JOIN collaboration_memberships m ON m.tenant_id=p.tenant_id "
+            "AND m.project_id=p.project_id AND m.principal_ref=%s AND m.profile=%s "
             "WHERE p.tenant_id=%s AND p.project_id=%s AND p.state='active' FOR UPDATE OF p",
             (self.context.principal_ref, self.profile, self.context.tenant_id, project_id),
         )
         row = cursor.fetchone()
         if row is None:
             raise NotFound("project", project_id)
+        if row[4] is None:
+            if not self.context.trusted_client:
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+            row = (*row[:4], self.context.grant_ref, None)
         scope = self._requested_scope(cursor, project_id, args)
         return self._route_authority(authority, cursor, project_id, row, scope, (),
                                      dict(args, _tool_name=name))
 
     def _accessible(self, credential, name="list_projects"):
         self.service.authenticate(credential)
-        if self.service.authority.access_mode == "owner":
+        if self.service.authority.access_mode == "owner" and self.context.trusted_client:
             with self.service.authority.transaction() as (_authority, connection):
                 rows = connection.execute("SELECT project_id,root_id,revision FROM collaboration_projects "
                     "WHERE tenant_id=%s AND state='active' ORDER BY project_id", (self.context.tenant_id,)).fetchall()
@@ -413,6 +400,9 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
         self.service.authenticate(credential)
         if self.service.authority.access_mode == "owner":
             return sorted(name for name in self.IMPLEMENTED if name in self.catalog["tools"] and
+                (name != "configure_project" or self.context.trusted_client or self.profile in {"root_manager", "operator"}) and
+                (self.context.trusted_client or self.profile in {"root_manager", "route_manager"}
+                    or name not in {"configure_team", "create_route", "update_route"}) and
                 (self.sources is not None or name not in {"list_files", "search_files", "read_source",
                     "read_diff", "read_source_file", "list_source_files", "search_source_files"}))
         available = []
@@ -425,6 +415,8 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
                 (self.context.tenant_id, self.context.principal_ref, self.profile),
             ).fetchall()
             for name in candidates:
+                if name == "configure_project":
+                    continue  # Current-file configuration is an Owner capability.
                 from runtime.filesystem_schema import ALL_TOOLS
                 if name in ALL_TOOLS and name != "read_file":
                     continue
@@ -458,9 +450,15 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
 
     def execute(self, name: str, args: dict[str, Any], credential: str):
         self.service.authenticate(credential)
-        if (name not in self.IMPLEMENTED or (self.service.authority.access_mode != "owner"
-                and name not in self.catalog["profiles"][self.profile])):
+        if name not in self.IMPLEMENTED:
             raise ValueError("tool is unavailable in the authenticated Profile")
+        if name == "configure_project" and not self.context.trusted_client and self.profile not in {"root_manager", "operator"}:
+            raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+        if self.service.authority.access_mode != "owner" and name not in self.catalog["profiles"][self.profile]:
+            raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+        if name == "read_resource" and args.get("handle", "").split(":", 1)[0] not in {"project", "route", "artifact", "message", "response", "notification"}:
+            raise InvalidToolArgument("handle", "Use a Project, Route, source Artifact or communication handle. Business task records are outside ACS.")
+
         from runtime.filesystem_schema import ALL_TOOLS
         if self.service.authority.access_mode == "owner" and name in ALL_TOOLS:
             command = self._command(self.service.authority, "machine.filesystem", {},
@@ -473,15 +471,6 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
                 "machine_id": data["machine_id"], "path": data["path"], "cursor": data["next_cursor"]}}]
                 if data.get("next_cursor") else [])
             return "observed", data, follow
-        if self.service.authority.access_mode == "owner" and (name == "check_inbox"
-                or name == "read_message" and args.get("handle", "").startswith("response:")):
-            # Finish project authorization before remote I/O; its receiver uses
-            # independent Domain transactions. The main read rechecks identity.
-            with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
-                self._authorize(authority,cursor,args["project_id"],name,args)
-            from runtime.response_transfer import ensure_response_artifacts
-            ensure_response_artifacts(self.service.authority,self.artifacts,
-                project_id=args["project_id"],message_id=parse_handle(args["handle"],"response",args["project_id"]) if name == "read_message" else None)
         if self.service.authority.access_mode != "owner" and name in ALL_TOOLS and name != "read_file":
             raise ValueError("machine file tools require the configured owner service")
         if name == "read_profile":
@@ -500,8 +489,6 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
                                 if len(rows) > limit else None}, []
         if name == "wait_for_response":
             return self._wait(args, credential)
-        if name == "stop_attempt":
-            return self._stop_attempt_external(args, credential)
         if name == "send_message":
             self._validate_send_observation(args)
         project_id = args["project_id"]
@@ -511,8 +498,10 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
               connection.cursor() as cursor):
             bound, project, command = self._authorize(authority, cursor, project_id, name, args)
             request_id = args.get("client_request_id")
+            request_owner = (self._communication_address(cursor, project_id) if name == "send_message"
+                             else self.context.principal_ref)
             submitted = ({key: value for key, value in args.items()
-                          if key not in {"response_mode", "wait_until", "wait_timeout_seconds"}}
+                          if key not in {"response_mode", "wait_timeout_seconds"}}
                          if name == "send_message" else args)
             input_digest = digest([name, submitted])
             prior = None
@@ -523,13 +512,17 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
                     "SELECT input_digest,result_json FROM collaboration_commands "
                     "WHERE tenant_id=%s AND project_id=%s AND principal_ref=%s "
                     "AND client_request_id=%s FOR UPDATE",
-                    (self.context.tenant_id, project_id, self.context.principal_ref, request_id),
+                    (self.context.tenant_id, project_id, request_owner, request_id),
                 )
                 prior = cursor.fetchone()
                 if prior and prior[0] not in {input_digest, digest([name, args])}:
                     raise IdempotencyConflict(request_id)
             result = (tuple(prior[1]) if prior else
                       getattr(self, "_" + name)(bound, cursor, project, command, args, credential))
+            if prior and name == "send_message":
+                # Preserve the committed operation and its stored response, but
+                # distinguish a retry from a newly accepted submission.
+                result = (result[0], {**result[1], "duplicate": True}, result[2])
             # Recheck after potentially expensive reads/commands, before commit.
             self._authorize(bound, cursor, project_id, name, args)
             if request_id and prior is None:
@@ -537,19 +530,35 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
                     "INSERT INTO collaboration_commands(tenant_id,project_id,principal_ref,"
                     "client_request_id,tool_name,input_digest,command_id,result_json) "
                     "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
-                    (self.context.tenant_id, project_id, self.context.principal_ref,
+                    (self.context.tenant_id, project_id, request_owner,
                      request_id, name, input_digest, command.command_id, canonical(result)),
                 )
         if name == "send_message" and args.get("response_mode", "async") == "sync":
-            observation = self._wait({"project_id": project_id,
-                "handles": [result[1]["response_handle"]], "mode": "all",
-                "until": args.get("wait_until", "response_received"),
-                "timeout_seconds": args.get("wait_timeout_seconds")}, credential)
+            try:
+                observation = self._wait({"project_id": project_id,
+                    "handles": [result[1]["response_handle"]], "mode": "all",
+                    "until": "response_received",
+                    "timeout_seconds": args.get("wait_timeout_seconds")}, credential)
+            except Exception as error:  # noqa: BLE001 - retain the committed send when observation fails.
+                # A later observation failure must not erase the committed send.
+                return "observation_unavailable", dict(result[1], observation={
+                    "code": "authorization_denied" if isinstance(error, AuthorizationDenied) else "service_unavailable",
+                    "message_committed": True}), result[2]
             result = (observation[0], dict(result[1], observation=observation[1]), result[2])
+        if name == "configure_team" and args.get("prepare_native", True) and not prior:
+            result = self._prepare_communication_sessions(result, args, credential)
+            if request_id:
+                try:
+                    with self.service.authority._connect() as connection:
+                        connection.execute("UPDATE collaboration_commands SET result_json=%s WHERE tenant_id=%s "
+                            "AND project_id=%s AND principal_ref=%s AND client_request_id=%s", (canonical(result),
+                                self.context.tenant_id, project_id, request_owner, request_id))
+                except Exception:  # noqa: BLE001 - initial configuration already committed.
+                    result = (result[0], {**result[1], "native_observation_retention": "unavailable"}, result[2])
         return result
 
     def _verify_command_management_identity(self, authority, cursor, project, command, args):
-        if authority.access_mode == "owner":
+        if authority.access_mode == "owner" or self.context.trusted_client or command.command_type == "project.send_message":
             return
         if not project[3].get("management"):
             return
@@ -578,268 +587,7 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
                                          identity_command, args["project_id"],
                                          require_current=True)
 
-    def _attempt_control_provider(self, authority, cursor, args, committed=None):
-        attempt_id = parse_handle(args["attempt_handle"], "attempt", args["project_id"])
-        if committed is None:
-            enrolled = authority.enrollment.current_attempt_binding(cursor, attempt_id)
-            attempt = enrolled["attempt"]
-            cursor.execute("SELECT w.execution_status FROM collaboration_work_links l "
-                           "JOIN work_items w USING(tenant_id,work_item_id) WHERE l.tenant_id=%s "
-                           "AND l.project_id=%s AND l.work_item_id=%s",
-                           (self.context.tenant_id, args["project_id"], attempt["work_item_id"]))
-            work = cursor.fetchone()
-            if work is None:
-                raise NotFound("attempt", attempt_id)
-            if work[0] != "cancelled":
-                raise AcceptanceGuardFailed(
-                    "Attempt control requires the owning Work cancellation policy first"
-                )
-            actual_revision = 1 if attempt["status"] == "running" else max(
-                attempt.get("enrollment_revision") or 1, 2,
-            )
-            if args["expected_revision"] != actual_revision:
-                raise RevisionConflict(attempt_id, args["expected_revision"], actual_revision)
-            if attempt["status"] != "running":
-                raise AcceptanceGuardFailed("only a running Attempt can be stopped")
-            expected_descriptor = {
-                "machine_id": enrolled["binding"]["machine_id"],
-                "node_id": enrolled["node"]["node_id"],
-                "boot_incarnation": enrolled["binding"]["boot_incarnation"],
-                "scope_id": attempt["scope_id"],
-                "agent_slot_id": attempt["agent_slot_id"],
-            }
-        else:
-            cursor.execute("SELECT to_jsonb(a) FROM attempts a "
-                           "JOIN collaboration_work_links l "
-                           "ON l.tenant_id=a.tenant_id AND l.work_item_id=a.work_item_id "
-                           "WHERE a.tenant_id=%s AND l.project_id=%s AND a.attempt_id=%s "
-                           "FOR UPDATE OF a", (self.context.tenant_id,
-                           args["project_id"], attempt_id))
-            row = cursor.fetchone()
-            if row is None:
-                raise NotFound("attempt", attempt_id)
-            attempt = row[0]
-            expected_descriptor = {key: committed[key] for key in (
-                "machine_id", "node_id", "boot_incarnation",
-            )} | {"scope_id": attempt["scope_id"],
-                 "agent_slot_id": attempt["agent_slot_id"]}
-        candidates = []
-        for endpoint_id, endpoint in authority._delivery_endpoints.items():
-            if not isinstance(endpoint, LocalNodeEndpoint) or endpoint.driver is None:
-                continue
-            if committed is not None and endpoint_id != committed["endpoint_id"]:
-                continue
-            descriptor = endpoint.descriptor()
-            if all(descriptor.get(key) == value for key, value in expected_descriptor.items()):
-                candidates.append((endpoint_id, endpoint))
-        if len(candidates) != 1:
-            raise AcceptanceGuardFailed(
-                "exactly one current local Attempt control provider is required"
-            )
-        endpoint_id, endpoint = candidates[0]
-        provider = endpoint.driver
-        if isinstance(provider, NativeDeliveryAdapter):
-            try:
-                provider._check_binding()
-            except (DriverRejected, InvocationPreCallRejected) as error:
-                raise AcceptanceGuardFailed(
-                    "Attempt control Driver ownership is not current"
-                ) from error
-            driver = provider.driver
-        else:
-            driver = provider
-        identity = getattr(driver, "identity", None)
-        if (identity is None or not callable(getattr(driver, "terminate", None))
-                or not callable(getattr(getattr(driver, "journal", None), "read", None))
-                or (identity.node_id, identity.node_boot_id, identity.runtime_id,
-                    identity.attempt_id, identity.agent_slot_id, identity.revision) != (
-                    attempt["enrollment_node_id"], attempt["enrollment_boot_incarnation"],
-                    attempt["enrollment_runtime_id"], attempt_id, attempt["agent_slot_id"],
-                    attempt["enrollment_node_binding_revision"])):
-            raise AcceptanceGuardFailed("Attempt control Driver binding is not current")
-        return attempt_id, attempt, endpoint_id, endpoint, driver
 
-    def _finalize_attempt_control(self, args, requested, outcome, observation):
-        project_id = args["project_id"]
-        request_id = args["client_request_id"]
-        input_digest = digest(["stop_attempt", args])
-        attempt_id = parse_handle(args["attempt_handle"], "attempt", project_id)
-        with (self.service.authority.transaction() as (_authority, connection),
-              connection.cursor() as cursor):
-            cursor.execute("SELECT input_digest,result_json,command_id FROM collaboration_commands "
-                           "WHERE tenant_id=%s AND project_id=%s AND principal_ref=%s "
-                           "AND client_request_id=%s FOR UPDATE",
-                           (self.context.tenant_id, project_id, self.context.principal_ref, request_id))
-            stored = cursor.fetchone()
-            if stored is None or stored[0] != input_digest:
-                raise IdempotencyConflict(request_id)
-            current = tuple(stored[1])
-            if current[0] != "stop_requested":
-                return current
-            cursor.execute("SELECT status,enrollment_revision,work_item_id,provider FROM attempts "
-                           "WHERE tenant_id=%s AND attempt_id=%s FOR UPDATE",
-                           (self.context.tenant_id, attempt_id))
-            attempt = cursor.fetchone()
-            if attempt is None:
-                raise NotFound("attempt", attempt_id)
-            attempt_state = attempt[0]
-            if outcome == "stopped" and attempt_state == "running":
-                cursor.execute("UPDATE attempts SET status='cancelled' "
-                               "WHERE tenant_id=%s AND attempt_id=%s",
-                               (self.context.tenant_id, attempt_id))
-                attempt_state = "cancelled"
-            attempt_revision = 1 if attempt_state == "running" else max(attempt[1] or 1, 2)
-            cursor.execute("SELECT effect_id,status,readback_ref FROM effects WHERE tenant_id=%s "
-                           "AND work_item_id=%s AND status IN ('prepared','uncertain') ORDER BY effect_id",
-                           (self.context.tenant_id, attempt[2]))
-            effects = [{"effect_handle": handle("effect", project_id, row[0]),
-                "state": row[1], "readback_ref": row[2]} for row in cursor.fetchall()]
-            acknowledgement = {"stopped": "acknowledged", "uncertain": "uncertain",
-                               "rejected": "rejected"}[outcome]
-            data = {**requested[1], "revision": attempt_revision,
-                "attempt_state": attempt_state, "driver_acknowledgement": acknowledgement,
-                "effect_uncertainty": ("control_outcome_uncertain" if outcome == "uncertain"
-                    else "requires_readback" if effects else "none_observed"),
-                "unresolved_effects": effects, "control_observation": observation}
-            final = (outcome, data, [])
-            cursor.execute("UPDATE collaboration_commands SET result_json=%s WHERE tenant_id=%s "
-                           "AND project_id=%s AND principal_ref=%s AND client_request_id=%s",
-                           (canonical(final), self.context.tenant_id, project_id,
-                            self.context.principal_ref, request_id))
-            cursor.execute("UPDATE operations SET status=%s,updated_at=clock_timestamp() "
-                           "WHERE operation_id=%s", (outcome, data["operation_id"]))
-            cursor.execute("SELECT canonical_hash FROM domain_events WHERE tenant_id=%s "
-                           "AND command_id=%s ORDER BY event_id LIMIT 1",
-                           (self.context.tenant_id, stored[2]))
-            prior = cursor.fetchone()
-            cursor.execute("INSERT INTO domain_events(tenant_id,target_kind,target_id,related_work_item_id,"
-                           "to_state,initiated_by,lineage_mode,command_id,resulting_revision,evidence_refs,"
-                           "command_hash_version,canonical_hash) VALUES (%s,'attempt',%s,%s,%s,%s,"
-                           "'external_command',%s,%s,'[]','v2',%s)",
-                           (self.context.tenant_id, attempt_id, attempt[2], "attempt." + outcome,
-                            self.context.principal_ref, stored[2], attempt_revision,
-                            prior[0] if prior else None))
-            cursor.execute("INSERT INTO outbox(tenant_id,message_id,operation_id,topic,payload) "
-                           "VALUES (%s,%s,%s,%s,%s) ON CONFLICT(tenant_id,message_id) DO NOTHING",
-                           (self.context.tenant_id, "msg-" + stored[2] + "-final",
-                            data["operation_id"], "attempt." + outcome,
-                            canonical({"project_id": project_id, "attempt_id": attempt_id,
-                                       "driver_acknowledgement": acknowledgement})))
-        return final
-
-    def _stop_attempt_external(self, args, credential):
-        project_id = args["project_id"]
-        if not IDENTIFIER.fullmatch(project_id):
-            raise ValueError("invalid project_id")
-        reason = args["reason"]
-        if not isinstance(reason, str) or not 1 <= len(reason) <= 2048:
-            raise ValueError("Attempt stop reason is outside bounds")
-        request_id = args["client_request_id"]
-        input_digest = digest(["stop_attempt", args])
-        driver = command = None
-        with (self.service.authority.transaction() as (authority, connection),
-              connection.cursor() as cursor):
-            bound, project, command = self._authorize(
-                authority, cursor, project_id, "stop_attempt", args,
-            )
-            self._verify_command_management_identity(bound, cursor, project, command, args)
-            bound._lock_command_identity(cursor, command)
-            cursor.execute("SELECT input_digest,result_json FROM collaboration_commands "
-                           "WHERE tenant_id=%s AND project_id=%s AND principal_ref=%s "
-                           "AND client_request_id=%s FOR UPDATE",
-                           (self.context.tenant_id, project_id, self.context.principal_ref, request_id))
-            prior = cursor.fetchone()
-            if prior and prior[0] != input_digest:
-                raise IdempotencyConflict(request_id)
-            if prior and prior[1][0] != "stop_requested":
-                return tuple(prior[1])
-            if prior is None:
-                cursor.execute("SELECT 1 FROM collaboration_commands WHERE tenant_id=%s "
-                               "AND project_id=%s AND tool_name='stop_attempt' "
-                               "AND result_json->>0 IN ('stop_requested','uncertain') "
-                               "AND result_json->1->>'attempt_handle'=%s FOR UPDATE",
-                               (self.context.tenant_id, project_id, args["attempt_handle"]))
-                if cursor.fetchone():
-                    raise AcceptanceGuardFailed(
-                        "Attempt has an unresolved prior control outcome"
-                    )
-            provider_unavailable = False
-            if prior:
-                requested = tuple(prior[1])
-                try:
-                    attempt_id, attempt, endpoint_id, endpoint, driver = \
-                        self._attempt_control_provider(bound, cursor, args, requested[1])
-                except AcceptanceGuardFailed:
-                    attempt_id = parse_handle(args["attempt_handle"], "attempt", project_id)
-                    driver = None
-                    provider_unavailable = True
-            else:
-                attempt_id, attempt, endpoint_id, endpoint, driver = self._attempt_control_provider(
-                    bound, cursor, args,
-                )
-                recorded = self._management_record(bound, cursor, command, args,
-                    target_kind="attempt", target_id=attempt_id,
-                    state="attempt.stop_requested", revision=1)
-                requested = ("stop_requested", {"project_id": project_id,
-                    "attempt_handle": args["attempt_handle"], "revision": 1,
-                    "attempt_state": attempt["status"], "operation_id": recorded.operation_id,
-                    "endpoint_id": endpoint_id, "machine_id": endpoint.identity.machine_id,
-                    "node_id": endpoint.identity.node_id,
-                    "boot_incarnation": endpoint.identity.boot_incarnation,
-                    "runtime_id": attempt["runtime_id"], "provider": attempt["provider"],
-                    "driver": type(driver).__name__,
-                    "driver_evidence_class": endpoint.descriptor()["evidence_class"],
-                    "reason": reason, "accepted_state_changed": False}, [])
-                cursor.execute("INSERT INTO collaboration_commands(tenant_id,project_id,principal_ref,"
-                               "client_request_id,tool_name,input_digest,command_id,result_json) "
-                               "VALUES (%s,%s,%s,%s,'stop_attempt',%s,%s,%s)",
-                               (self.context.tenant_id, project_id, self.context.principal_ref,
-                                request_id, input_digest, command.command_id, canonical(requested)))
-        if provider_unavailable:
-            return self._finalize_attempt_control(args, requested, "uncertain",
-                {"evidence_class": "authority_observation",
-                 "state": "control_provider_unavailable"})
-        operation = AuthorizedOperation(operation_id=requested[1]["operation_id"],
-            command_id=command.command_id,
-            message_id="attempt-stop-" + digest([project_id, attempt_id, request_id]),
-            grant_ref=command.grant_ref, deadline=command.deadline)
-        journal_record = driver.journal.read(operation.operation_id)
-        if journal_record and (journal_record["binding_id"] != driver.binding_id
-                               or journal_record["action"] != "terminate"):
-            return self._finalize_attempt_control(args, requested, "uncertain",
-                {"evidence_class": "driver_journal_readback",
-                 "state": "identity_conflict"})
-        if journal_record and journal_record["state"] == "acknowledged":
-            observation = journal_record["result"]
-            outcome = "stopped"
-        elif journal_record and journal_record["state"] == "rejected":
-            observation = {"evidence_class": "driver_journal_readback", "state": "rejected",
-                           "error_type": (journal_record["result"] or {}).get("error_type")}
-            outcome = "rejected"
-        elif journal_record and journal_record["state"] == "uncertain":
-            observation = {"evidence_class": "driver_journal_readback", "state": "uncertain",
-                           "error_type": (journal_record["result"] or {}).get("error_type")}
-            outcome = "uncertain"
-        else:
-            try:
-                observation = driver.terminate(operation)
-                if (not isinstance(observation, dict)
-                        or observation.get("receipt_layer") not in {"process_tree_terminated", "process_group_terminated"}):
-                    raise OutcomeUncertain("Driver did not return a termination acknowledgement")
-                outcome = "stopped"
-            except DriverRejected as error:
-                observation = {"evidence_class": "driver_journal_readback", "state": "rejected",
-                               "error_type": type(error).__name__}
-                outcome = "rejected"
-            except (OutcomeUncertain, OSError, TimeoutError) as error:
-                observation = {"evidence_class": "driver_journal_readback", "state": "uncertain",
-                               "error_type": type(error).__name__}
-                outcome = "uncertain"
-            except Exception as error:  # noqa: BLE001 - never guess after a control call
-                observation = {"evidence_class": "driver_journal_readback", "state": "uncertain",
-                               "error_type": type(error).__name__}
-                outcome = "uncertain"
-        return self._finalize_attempt_control(args, requested, outcome, observation)
 
     def _profile_snapshot(self):
         if self.service.authority.access_mode == "owner":
@@ -848,7 +596,7 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
                 authority._authorize(command, cursor)
             return "observed", {"subject": self.context.principal_ref,
                 "tenant_id": self.context.tenant_id, "profile": self.profile,
-                "granted_profiles": sorted(self.catalog["profiles"]),
+                "granted_profiles": sorted(self.catalog["profiles"]) if self.context.trusted_client else [self.profile],
                 "authority_id": self.context.authority_id,
                 "authority_incarnation": self.context.authority_incarnation,
                 "domain_schema_version": self.service.authority.SCHEMA_VERSION,
@@ -932,6 +680,11 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
         return self._page_result(args.get("project_id"), rows, args, "connection_key")
 
     def _agent_context_binding(self, authority, cursor, project, project_id):
+        if self.context.trusted_client:
+            return {"principal_ref": self.context.principal_ref, "agent_slot_id": None,
+                    "communication_address": self._communication_address(cursor, project_id),
+                    "organization": organization_projection("client"), "profile": self.profile,
+                    "authorization": {"source": "trusted_client_binding", "operation_checks": "live authority and project checks"}}
         cursor.execute("SELECT scope_id,permissions,expires_at FROM grants WHERE tenant_id=%s AND grant_ref=%s",
                        (self.context.tenant_id, authority.context.grant_ref))
         scope, permissions, expires = cursor.fetchone()
@@ -970,6 +723,8 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
                                  "match_observations": {"reviewer_ref": self.context.principal_ref}}}
 
     def _load_project(self, authority, cursor, project, command, args, credential):
+        if set(args.get("include", [])) - {"root", "routes", "instructions", "knowledge_indexes", "source_bindings", "policies"}:
+            raise InvalidToolArgument("include", "Choose root, routes, instructions, knowledge_indexes, source_bindings or policies.")
         if args.get("at_revision") not in (None, project[2]):
             raise RevisionConflict(args["project_id"], args["at_revision"], project[2])
         data = {
@@ -977,7 +732,7 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
             "root_handle": handle("project", args["project_id"], project[1]),
             "project_revision": project[2], "manifest": project[3],
             "routes": self._list_routes(authority, cursor, project, command, args, credential)[1]["items"],
-            "active_work": self._list_work(authority, cursor, project, command, args, credential)[1]["items"],
+            "communication_address": self._communication_address(cursor, args["project_id"]),
             "context_completeness": "partial", "missing_context": [],
             "agent_organization_model": organization_model(),
             "source_guidance": {"default_read": "current_main_worktree",
@@ -1130,9 +885,9 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
             return "partial", data, follow
         maximum = self.sources.bound(args.get("max_inline_bytes", 65536), minimum=4096)
         include = set(args.get("include", ["root", "routes", "instructions", "knowledge_indexes",
-                                           "source_bindings", "active_work", "policies"]))
+                                           "source_bindings", "policies"]))
         if include - {"root", "routes", "instructions", "knowledge_indexes", "source_bindings",
-                      "active_work", "policies"}:
+                      "policies"}:
             raise ValueError("invalid project context include")
         if args.get("context_view", "root_management") not in {
                 "root_management", "route_management", "reviewer", "finalizer"}:
@@ -1283,379 +1038,4 @@ class ProjectService(CurrentProjectContext, ContinuationActions, WorkActions, Ma
         rows = [{"route_handle": handle("route", args["project_id"], row[0]),
             "scope_id": row[1], "revision": row[2], "state": row[3], "definition": row[4]}
             for row in cursor.fetchall()]
-        if authority.access_mode == "owner":
-            for item in rows:
-                item["definition"] = {key:value for key,value in item["definition"].items()
-                    if key not in {"source_binding_ids","management_source_state","management_source_readback"}}
         return self._page_result(args["project_id"], rows, args, "route_handle")
-
-    def _list_work(self, authority, cursor, project, _command, args, _credential):
-        scopes = self._visible_scopes(authority, cursor, project)
-        limit, after, since = self._list_bounds(args, "work")
-        route_id = parse_handle(args["route_handle"], "route", args["project_id"]) if args.get("route_handle") else None
-        assigned = args.get("assigned_to")
-        if assigned and assigned.startswith("collaborator:"):
-            assigned = parse_handle(assigned, "collaborator", args["project_id"])
-        states, blocked = args.get("states", []), args.get("blocked")
-        cursor.execute(
-            "SELECT w.work_item_id,w.revision,w.state,w.execution_status,w.source_baseline,w.agent_slot_id,l.route_id,"
-            "h.handoff_id,h.state "
-            "FROM collaboration_work_links l JOIN work_items w USING(tenant_id,work_item_id) "
-            "LEFT JOIN LATERAL (SELECT handoff_id,state FROM collaboration_handoffs h "
-            "WHERE h.tenant_id=w.tenant_id AND h.work_item_id=w.work_item_id "
-            "ORDER BY assigned_work_revision DESC LIMIT 1) h ON TRUE "
-            "WHERE l.tenant_id=%s AND l.project_id=%s AND (%s::text[] IS NULL OR w.scope_id=ANY(%s)) "
-            "AND (%s::text IS NULL OR l.route_id=%s) AND (%s::text IS NULL OR w.agent_slot_id=%s) "
-            "AND w.work_item_id>%s AND (%s::timestamptz IS NULL OR w.updated_at>%s) "
-            "AND (%s::text[]='{}'::text[] OR w.state=ANY(%s)) "
-            "AND (%s::boolean IS NULL OR (w.execution_status='blocked')=%s) ORDER BY w.work_item_id LIMIT %s",
-            (self.context.tenant_id, args["project_id"], scopes, scopes, route_id, route_id, assigned, assigned,
-             after, since, since, states, states, blocked, blocked, limit+1),
-        )
-        rows = [{"work_handle": handle("work", args["project_id"], row[0]),
-            "revision": row[1], "state": row[2], "execution_status": row[3],
-            "source_baseline": row[4], "assigned_to": row[5],
-            "route_handle": handle("route", args["project_id"], row[6]),
-            "handoff_handle": handle("handoff", args["project_id"], row[7]) if row[7] else None,
-            "acknowledgement": row[8] if row[7] else "not_required"} for row in cursor.fetchall()]
-        return self._page_result(args["project_id"], rows, args, "work_handle")
-
-    def _create_work(self, authority, cursor, project, command, args, _credential):
-        route_id = parse_handle(args["route_handle"], "route", args["project_id"])
-        cursor.execute("SELECT revision,scope_id FROM collaboration_routes WHERE tenant_id=%s "
-                       "AND project_id=%s AND route_id=%s AND state='active' FOR UPDATE",
-                       (self.context.tenant_id, args["project_id"], route_id))
-        route = cursor.fetchone()
-        if route is None:
-            raise NotFound("route", route_id)
-        if route[0] != args["expected_route_revision"]:
-            raise RevisionConflict(route_id, args["expected_route_revision"], route[0])
-        work_handle = handle("work", args["project_id"], args["work_item_id"])
-        if args["accepted_state"] != {"revision": 0}:
-            raise ValueError("new WorkItem requires genesis accepted revision")
-        domain_command = command.model_copy(update={"command_type": "work_item.create",
-            "target_kind": "work_item", "target_id": args["work_item_id"],
-            "expected_revision": 0})
-        result = authority.create_work_item(domain_command, route[1], project[5], args.get("source_baseline"))
-        args = dict(args, source_baseline=args.get("source_baseline"))
-        cursor.execute("INSERT INTO collaboration_work_links VALUES (%s,%s,%s,%s,%s)",
-                       (self.context.tenant_id, args["project_id"], args["work_item_id"],
-                        route_id, canonical(args)))
-        return "created", dict(result.model_dump(mode="json"), project_id=args["project_id"],
-                               work_handle=work_handle), []
-
-    @staticmethod
-    def _validate_send_observation(args):
-        wait_timeout = args.get("wait_timeout_seconds")
-        if ((wait_timeout is not None and (type(wait_timeout) is not int
-                or not 0 <= wait_timeout <= 2**53 - 1))
-                or args.get("wait_until", "response_received") not in (*RECEIPTS, "terminal")
-                or args.get("response_mode", "async") not in {"async", "sync"}):
-            raise ValueError("invalid synchronous observation options")
-        if (args.get("response_mode") == "sync" and not args.get("expect_response", True)
-                and args.get("wait_until", "response_received") == "response_received"):
-            raise ValueError("waiting for a response requires response tracking")
-
-    def _message_expiry(self, authority, cursor, work, target, policy, args, issued_at):
-        if authority.access_mode == "owner":
-            return canonical_utc(datetime.fromisoformat(args["deadline"])) if args.get("deadline") else None
-        """Derive business validity independently of command and wait budgets."""
-        now = authority.canonical_now(cursor)
-        team = policy.get("collaboration_team")
-        ttl = policy.get("message_ttl_seconds", 86400)
-        budget = work[4].get("budget", {})
-        for value in (ttl, budget.get("message_ttl_seconds", ttl)):
-            if type(value) is not int or not 1 <= value <= 86400 * 365:
-                raise ValueError("Message validity duration is outside Policy bounds")
-        ttl = min(ttl, budget.get("message_ttl_seconds", ttl))
-        if team:
-            ttl = min(ttl, *(item["rules"]["max_deadline_seconds"] for item in team["policies"]))
-        caps = [issued_at + timedelta(seconds=ttl)]
-        cursor.execute("WITH RECURSIVE chain AS (SELECT grant_ref,expires_at,0 AS depth FROM grants "
-                       "WHERE grant_ref=%s UNION ALL SELECT g.grant_ref,g.expires_at,c.depth+1 "
-                       "FROM chain c JOIN grant_delegations d ON d.grant_ref=c.grant_ref "
-                       "JOIN grants g ON g.grant_ref=d.parent_grant_ref WHERE c.depth<8) "
-                       "SELECT expires_at FROM chain", (authority.context.grant_ref,))
-        caps.extend(row[0] for row in cursor.fetchall())
-        # create_work.deadline is command admission, not a Work lifetime.
-        # Explicit budget expiry is a business horizon when supplied.
-        if budget.get("expires_at"):
-            caps.append(canonical_utc(datetime.fromisoformat(budget["expires_at"])))
-        if team:
-            cursor.execute("SELECT b.expires_at,g.expires_at FROM collaboration_team_members m "
-                           "JOIN collaboration_team_budgets b USING(tenant_id,project_id,scope_id,budget_ref) "
-                           "JOIN grants g ON g.grant_ref=m.grant_ref WHERE m.tenant_id=%s AND m.project_id=%s "
-                           "AND m.scope_id=%s AND m.agent_slot_id=%s",
-                           (authority.tenant_id, args["project_id"], work[0], target["agent_slot_id"]))
-            row = cursor.fetchone()
-            if row:
-                caps.extend(row)
-        limit = min(caps)
-        if args.get("deadline") is not None:
-            chosen = canonical_utc(datetime.fromisoformat(args["deadline"]))
-            if chosen > limit:
-                raise ValueError("Message expiry exceeds its Policy, Grant or budget horizon")
-        else:
-            chosen = limit
-        if chosen <= now:
-            raise ValueError("Message business validity has expired")
-        return chosen
-
-    def _send_message(self, authority, cursor, project, command, args, _credential):
-        self._validate_send_observation(args)
-        work_id = parse_handle(args["work_handle"], "work", args["project_id"])
-        cursor.execute(
-            "SELECT w.scope_id,w.source_baseline,w.state,w.execution_status,l.definition "
-            "FROM collaboration_work_links l "
-            "JOIN work_items w USING(tenant_id,work_item_id) WHERE l.tenant_id=%s "
-            "AND l.project_id=%s AND l.work_item_id=%s FOR UPDATE OF w",
-            (self.context.tenant_id, args["project_id"], work_id),
-        )
-        work = cursor.fetchone()
-        if work is None:
-            raise NotFound("work_item", work_id)
-        if work[2] != "candidate" or work[3] in {"failed", "cancelled"}:
-            raise AcceptanceGuardFailed("Message submission requires an active candidate Work")
-        target = args["target"]
-        if (set(target) != {"scope_id", "agent_slot_id"} or target["scope_id"] != work[0]):
-            raise ValueError("target Scope does not belong to the WorkItem")
-        cursor.execute(
-            "SELECT endpoint_id,revision FROM delivery_endpoints WHERE tenant_id=%s "
-            "AND scope_id=%s AND agent_slot_id=%s AND status='active' "
-            "AND (%s OR expires_at>clock_timestamp()) ORDER BY endpoint_id FOR UPDATE",
-            (self.context.tenant_id, work[0], target["agent_slot_id"], authority.access_mode == "owner"),
-        )
-        endpoints = cursor.fetchall()
-        if len(endpoints) != 1:
-            raise ValueError("delivery needs one current admitted endpoint")
-        if args.get("delivery_policy", "queue_until_idle") != "queue_until_idle":
-            raise ValueError("active-turn steering is unavailable in this delivery adapter")
-        cursor.execute("SELECT policy FROM scopes WHERE tenant_id=%s AND scope_id=%s",
-                       (self.context.tenant_id, work[0]))
-        scope_policy = cursor.fetchone()[0]
-        configured_team = scope_policy.get("collaboration_team")
-        if authority.access_mode != "owner" and configured_team and any(args.get("delivery_policy", "queue_until_idle") not in
-                item["rules"]["allowed_delivery_policies"] for item in configured_team["policies"]):
-            raise AuthorizationDenied(command.principal_ref, command.grant_ref)
-        if args.get("response_mode", "async") not in {"async", "sync"}:
-            raise ValueError("invalid response mode")
-        expiry = self._message_expiry(authority, cursor, work, target, scope_policy, args, command.issued_at)
-        message_id = "message-" + uuid.uuid4().hex
-        response_handle = handle("response", args["project_id"], message_id)
-        packet = {"work_item_id": work_id, "target_scope_id": work[0],
-                  "target_agent_slot_id": target["agent_slot_id"],
-                  "accepted_revision": args["accepted_revision"], "goal": args["goal"],
-                  "accepted_state_summary": "Read authoritative accepted revision " + str(args["accepted_revision"]),
-                  "request": args["request"], "constraints": args["constraints"],
-                  "source_baseline": work[1], "expected_response": "Structured response with required evidence",
-                  "required_evidence": args["required_evidence"],
-                  "activation": args.get("activation", "invoke"), "delivery_policy": "queue_until_idle",
-                  "deadline": expiry.isoformat() if expiry else None}
-        request = SurfaceCommand(
-            command_type="message.send", target_kind="message", target_id=message_id,
-            expected_revision=args["expected_work_revision"], command_id=command.command_id,
-            idempotency_key=command.idempotency_key, correlation_id=command.correlation_id,
-            issued_at=command.issued_at, deadline=expiry,
-            payload={"packet": packet, "endpoint_id": endpoints[0][0],
-                     "binding_revision": endpoints[0][1]},
-        )
-        # Reuse the Domain handler called by CLI and versioned HTTP. Transport
-        # authentication precedes resolution of the stored project Grant.
-        result = authority.send_message(request.to_domain(authority.context),
-            DeliveryPacket.model_validate(packet),
-            endpoint_id=endpoints[0][0], binding_revision=endpoints[0][1])
-        cursor.execute(
-            "INSERT INTO collaboration_response_tracking(tenant_id,project_id,message_id,"
-            "initiating_principal,initiating_slot,response_handle,delivery_policy,expect_response) "
-            "VALUES (%s,%s,%s,%s,%s,%s,'queue_until_idle',%s)",
-            (self.context.tenant_id, args["project_id"], message_id, self.context.principal_ref,
-             project[5], response_handle, args.get("expect_response", True)),
-        )
-        cursor.execute("INSERT INTO collaboration_response_subscriptions(tenant_id,project_id,message_id) "
-                       "VALUES (%s,%s,%s)", (self.context.tenant_id, args["project_id"], message_id))
-        return "accepted", dict(result.model_dump(mode="json"), project_id=args["project_id"],
-            message_id=message_id, message_handle=handle("message", args["project_id"], message_id),
-            response_handle=response_handle, deadline=expiry.isoformat() if expiry else None,
-            notification_handle=handle("subscription", args["project_id"], message_id)), [
-                {"rel": "read_response", "tool": "read_message", "arguments": {
-                    "project_id": args["project_id"], "handle": response_handle, "consume": True}},
-                {"rel": "wait", "tool": "wait_for_response", "arguments": {
-                    "project_id": args["project_id"], "handles": [response_handle],
-                    "mode": "all", "until": "response_received"}},
-            ]
-
-    def _read_message(self, authority, cursor, _project, command, args, _credential):
-        kind = args["handle"].split(":", 1)[0]
-        if kind == "notification":
-            return self._read_notification(cursor, args)
-        if kind == "review":
-            return self._read_review_message(cursor, args)
-        if kind not in {"message", "response"}:
-            raise ValueError("message or response handle required")
-        message_id = parse_handle(args["handle"], kind, args["project_id"])
-        cursor.execute("SELECT t.initiating_principal,m.command_json->>'principal_ref',i.target_agent_slot_id "
-                       "FROM delivery_messages m JOIN collaboration_work_links l "
-                       "ON l.tenant_id=m.tenant_id AND l.work_item_id=m.packet_json->>'work_item_id' "
-                       "LEFT JOIN collaboration_response_tracking t ON t.tenant_id=m.tenant_id AND t.message_id=m.message_id AND t.project_id=l.project_id "
-                       "LEFT JOIN inbox_messages i ON i.tenant_id=m.tenant_id AND i.message_id=m.message_id "
-                       "WHERE m.tenant_id=%s AND l.project_id=%s AND m.message_id=%s",
-                       (self.context.tenant_id, args["project_id"], message_id))
-        row = cursor.fetchone()
-        if row is None or (kind == "response" and row[0] is None):
-            raise NotFound("message", message_id)
-        observed = authority.read_message(command.model_copy(update={
-            "command_type": "message.read", "target_kind": "message", "target_id": message_id,
-        }), message_id)
-        message = observed["message"]
-        if kind == "response" and args.get("consume", True) and message["receipt_high_water"] == "response_received":
-            if row[0] != self.context.principal_ref:
-                raise AuthorizationDenied(self.context.principal_ref, authority.context.grant_ref)
-            cursor.execute("UPDATE collaboration_response_subscriptions SET consumed_at=clock_timestamp() "
-                           "WHERE tenant_id=%s AND project_id=%s AND message_id=%s "
-                           "AND consumed_at IS NULL",
-                           (self.context.tenant_id, args["project_id"], message_id))
-        # Raw delivery commands contain private authorization references and are
-        # not an MCP response. Expose only explicitly selected observation fields.
-        consumed = self._inbox_consumed(cursor, args["project_id"], "message", message_id, 1) if kind == "message" else False
-        if kind == "message" and row[2] and args.get("consume", True):
-            if self._owns_inbox_slot(cursor, args["project_id"], row[2]):
-                self._consume_inbox(cursor, args["project_id"], "message", message_id, 1)
-                consumed = True
-            elif row[1] != self.context.principal_ref:
-                raise AuthorizationDenied(self.context.principal_ref, authority.context.grant_ref)
-        data = {"project_id": args["project_id"], "message_id": message_id,
-            "response_handle": handle("response", args["project_id"], message_id),
-            "state": message["state"], "receipt_high_water": message["receipt_high_water"],
-            "operation_id": message["operation_id"], "receipts": observed["receipts"]}
-        if kind == "message":
-            if row[0] is None:
-                data.pop("response_handle")
-            data.update(kind="message", message_handle=handle("message", args["project_id"], message_id), consumed=consumed, content={key: message["packet_json"][key]
-                for key in ("goal", "request", "constraints", "source_baseline", "required_evidence", "expected_response")})
-            self._inbox_bound(data, args)
-        else:
-            data["kind"] = "response"
-            response_receipts = [evidence for layer, evidence in observed["receipts"]
-                                 if layer == "response_received"]
-            if response_receipts:
-                if len(response_receipts) != 1:
-                    raise SourceReadbackError("response receipt identity is ambiguous")
-                receipt = response_receipts[0]
-                response_digest = receipt.get("response_digest")
-                if (not isinstance(response_digest, str)
-                        or receipt.get("response_artifact_ref") != "artifact:" + response_digest):
-                    raise SourceReadbackError("response receipt has no exact artifact identity")
-                data["response_artifact"] = {
-                    "opaque_ref": receipt["response_artifact_ref"],
-                    "sha256": response_digest,
-                    "content_state": "provider_unavailable",
-                }
-                artifact_store = self.sources.store if self.sources is not None else self.artifacts
-                if artifact_store is not None:
-                    reference, payload = read_response_artifact(
-                        artifact_store,
-                        message["packet_json"]["target_scope_id"], response_digest,
-                        args.get("max_inline_bytes", 16384), authority, command,
-                    )
-                    data["response_artifact"] = {
-                        **reference.model_dump(mode="json"),
-                        "opaque_ref": receipt["response_artifact_ref"],
-                        "content_state": "inline" if payload is not None else "verified_reference",
-                    }
-                    if payload is not None:
-                        try:
-                            data["response"] = json.loads(payload)
-                        except (UnicodeDecodeError, json.JSONDecodeError) as error:
-                            raise SourceReadbackError(
-                                "response artifact is not canonical JSON"
-                            ) from error
-            if authority.access_mode == "owner":
-                cursor.execute("SELECT projection_id,attempt_id,dispatch_id,native_outcome,response_digest,observed_at "
-                    "FROM native_response_observations WHERE tenant_id=%s AND message_id=%s "
-                    "AND disposition='fenced_late' ORDER BY observed_at,projection_id",
-                    (authority.tenant_id,message_id))
-                historical=[]
-                store=self.sources.store if self.sources is not None else self.artifacts
-                for projection,attempt,dispatch,outcome,response_digest,observed_at in cursor.fetchall():
-                    item={"projection_id":projection,"attempt_id":attempt,"dispatch_id":dispatch,
-                        "native_outcome":outcome,"disposition":"fenced_late","observed_at":observed_at.isoformat(),
-                        "response_artifact":{"opaque_ref":"artifact:"+response_digest,"sha256":response_digest,
-                                             "content_state":"provider_unavailable"}}
-                    if store is not None:
-                        reference,payload=read_response_artifact(store,message["packet_json"]["target_scope_id"],
-                            response_digest,args.get("max_inline_bytes",16384),authority,command)
-                        item["response_artifact"]={**reference.model_dump(mode="json"),
-                            "opaque_ref":"artifact:"+response_digest,
-                            "content_state":"inline" if payload is not None else "verified_reference"}
-                        if payload is not None:
-                            item["response"]=json.loads(payload)
-                    historical.append(item)
-                if historical:
-                    data["historical_responses"]=historical
-        return "observed", data, []
-
-    def _check_inbox(self, authority, cursor, project, command, args, credential):
-        scopes = self._visible_scopes(authority, cursor, project)
-        cursor.execute(
-            "SELECT t.response_handle FROM collaboration_response_tracking t "
-            "JOIN collaboration_response_subscriptions s USING(tenant_id,project_id,message_id) "
-            "JOIN delivery_messages m USING(tenant_id,message_id) "
-            "WHERE t.tenant_id=%s AND t.project_id=%s AND t.initiating_principal=%s "
-            "AND s.consumed_at IS NULL AND t.response_handle>%s AND (%s::text[]='{}' OR m.state=ANY(%s)) "
-            "AND (%s::text[] IS NULL OR m.packet_json->>'target_scope_id'=ANY(%s)) "
-            "ORDER BY t.response_handle LIMIT 101",
-            (self.context.tenant_id, args["project_id"], self.context.principal_ref, args.get("cursor") or "",
-             args.get("states", []), args.get("states", []), scopes, scopes),
-        )
-        handles = [row[0] for row in cursor.fetchall()]
-        items = []
-        for item in handles:
-            read_args = {"project_id": args["project_id"], "handle": item, "consume": False}
-            try:
-                scoped, selected, read_command = self._authorize(authority, cursor, args["project_id"], "read_message", read_args)
-            except AuthorizationDenied:
-                continue
-            value = self._read_message(scoped, cursor, selected, read_command, read_args, credential)[1]
-            items.append({key: value[key] for key in ("message_id", "response_handle", "state", "receipt_high_water", "operation_id")}
-                         | {"kind": "response", "handle": item, "read": {"tool": "read_message", "arguments": dict(read_args, consume=True)}})
-        items.extend(self._incoming_inbox(authority, cursor, project, command, args, credential))
-        items.extend(self._review_inbox(authority, cursor, project, command, args, credential))
-        kinds, states = args.get("kinds", []), args.get("states", [])
-        if set(kinds) - {"message", "response", "review", "notification"}:
-            raise ValueError("unknown Inbox kind")
-        items = [item for item in items if (not kinds or item["kind"] in kinds) and (not states or item["state"] in states)]
-        _, page, _ = self._page_result(args["project_id"], items, args, "handle")
-        notifications = self._notification_inbox(cursor, args["project_id"]) if not kinds or "notification" in kinds else []
-        return "observed", {**page,
-                            "notifications": notifications}, []
-
-    def _wait(self, args, credential):
-        timeout = args.get("timeout_seconds")
-        if ((timeout is not None and (type(timeout) is not int or not 0 <= timeout <= 2**53 - 1)) or args["mode"] not in {"any", "all"}
-                or args["until"] not in (*RECEIPTS, "terminal") or not 1 <= len(args["handles"]) <= 32
-                or len(set(args["handles"])) != len(args["handles"])):
-            raise ValueError("invalid wait options")
-        for value in args["handles"]:
-            parse_handle(value, "response", args["project_id"])
-        end = None if timeout is None else time.monotonic() + timeout
-        while True:
-            try:
-                anyio.from_thread.check_cancelled()
-            except RuntimeError:
-                pass  # Direct synchronous callers have no AnyIO cancellation scope.
-            observations = [self.execute("read_message", {"project_id": args["project_id"],
-                "handle": item, "consume": False}, credential)[1] for item in args["handles"]]
-            terminal = [item["response_handle"] for item in observations
-                        if item["state"] in {"blocked", "expired", "budget_exhausted"}
-                        or "response_received" in {receipt[0] for receipt in item["receipts"]}]
-            satisfied = [item["response_handle"] for item in observations
-                         if (item["response_handle"] in terminal if args["until"] == "terminal"
-                             else args["until"] in {receipt[0] for receipt in item["receipts"]})]
-            ready = len(satisfied) == len(observations) if args["mode"] == "all" else bool(satisfied)
-            pending = [item for item in args["handles"] if item not in satisfied and item not in terminal]
-            if ready or not pending or (end is not None and time.monotonic() >= end):
-                return "satisfied" if ready else "terminal" if not pending else "timeout", {"project_id": args["project_id"],
-                    "satisfied": satisfied,
-                    "pending": pending, "terminal": terminal,
-                    "observations": observations}, []
-            time.sleep(0.5 if end is None else min(0.5, max(0, end - time.monotonic())))

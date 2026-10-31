@@ -326,15 +326,13 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
     catalog = json.loads((ROOT / "docs/runtime/p2-mcp-tool-contract.json").read_text(encoding="utf-8"))
     permissions = {"profile.root_manager", "profile.engineer", "profile.reviewer",
                    "project.adopt", "source.manage", "source.read", "artifact.read", "artifact.write",
-                   "work_item.create", "work_item.read", "work_item.transition", "message.send",
-                   "message.read", "review.assign", "review.record", "acceptance.finalize",
-                   "runtime.invoke", "runtime.control", "delivery.manage", "evidence.record"}
+                   "message.send", "message.read", "runtime.invoke", "runtime.control", "delivery.manage"}
     for name in catalog["profiles"]["root_manager"]:
         permissions.update(catalog["tools"][name]["security_scopes"])
     secret = secrets.token_urlsafe(48)
     context = AuthenticatedContext("local-tenant", "acs-p1-authority", "local-1",
                                    "agent:root", "grant:root",
-                                   hashlib.sha256(secret.encode()).hexdigest())
+                                   hashlib.sha256(secret.encode()).hexdigest(), trusted_client=True)
     dsn = ("postgresql://acs:" + quote(environment["ACS_POSTGRES_PASSWORD"], safe="")
            + "@127.0.0.1:" + environment["ACS_POSTGRES_PORT"] + "/acs")
     authority = DomainAuthority(dsn, context=context, access_mode="owner")
@@ -353,7 +351,7 @@ def initialize_local_authority(environment: dict[str, str], *, require_existing:
         "tenant_id": context.tenant_id, "authority_id": context.authority_id,
         "authority_incarnation": context.authority_incarnation,
         "principal_ref": context.principal_ref, "grant_ref": context.grant_ref,
-        "credential_hash": context.credential_hash},
+        "credential_hash": context.credential_hash, "trusted_client": True},
         "dsn_ref": {"kind": "file", "name": str(dsn_path)},
         "credential_ref": {"kind": "file", "name": str(credential_path)}}
     owner_file(config_path, json.dumps(surface, indent=2) + "\n")

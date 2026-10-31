@@ -1,0 +1,47 @@
+{
+  "candidate_parent": "fd6bb4bbb3f9bdc5a09e0a119b8c6f79cf7ade8b",
+  "branch": "codex/core-cleanup",
+  "source_sha256": {
+    "runtime/communication_dispatch.py": "ebd6a7fe00e40e2d2977b189e6a84e6d307a92a6b71f2b3f74cbf7a10fa8bc2b",
+    "runtime/project_service.py": "322d904ebb71e43de2a984fc5dfb9dce335db7891cb170038e014840c4de09ee",
+    "runtime/opencode_driver.py": "9aeecfcb3f65791ab19d103027ac2a01605857bf53425769d75b3cbea7a4340b",
+    "runtime/posix_process_supervisor.py": "501f33df6bf94ff4d6bd7c2288c67933d6004e8734c042ff19bfcce0cccafef6",
+    "runtime_tests/test_communication_restart.py": "af4691c183d9e86f0e45aaf66c23deec0c9521b244d3bbede07a27f3aa10fa88",
+    "runtime_tests/test_communication.py": "2868a36971202a43cf5e9af2842ab016c3ec04dbbca6d4280e83a9048cd47bf5",
+    "runtime_tests/test_opencode_driver.py": "fd57cf9016acf8d6425db0e5485de8ad06632d42caa61d3ff55d8e1424cc476a",
+    "runtime_tests/test_posix_process_supervisor.py": "f4bedba03b65266413d58939ea9e073504f72cd158c96964a76374484413b8b5"
+  },
+  "tests": {
+    "regression.xml": {
+      "tests": 85,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2
+    },
+    "opencode-regression.xml": {
+      "tests": 93,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3
+    },
+    "posix-real.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "fixed.xml": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "preserved_readmes": {
+    "README.md": "9e1341285d25c806289c6a652c6912f7a6f2a629a8998a5a780318309565796c",
+    "README.zh-CN.md": "d8b1639e46a52eed9b4e6929d086556aba677f010e55f2ed09d3382887891a89"
+  },
+  "push": "not_attempted",
+  "production_change": "none",
+  "opencode_remote_driver": "not_run_source_upload_rejected_by_auto_review"
+}

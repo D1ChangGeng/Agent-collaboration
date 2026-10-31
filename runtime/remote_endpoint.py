@@ -256,7 +256,7 @@ class ReceiverHandler(BaseHTTPRequestHandler):
         try:
             value = provider() if callable(provider) else {"state": "online", "harness": "unknown", "version": "unknown"}
         except Exception:  # noqa: BLE001 -- health output never contains private errors
-            value = {"state": "offline", "harness": "unknown", "version": "unknown"}
+            value = {"state": "unknown", "harness": "unknown", "version": "unknown"}
         encoded = json.dumps(value).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")

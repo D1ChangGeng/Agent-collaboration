@@ -1,0 +1,296 @@
+[FAIL] invalid JSON-compatible YAML at /tmp/tmpgbiwwc6e/Legacy Route/.agents/route.yaml: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+[APPLIED] write /tmp/tmp87a7phqf/workspace/Partial Route/.agents/route.yaml
+[APPLIED] write /tmp/tmp87a7phqf/workspace/Partial Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmp87a7phqf/workspace/Partial Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmp87a7phqf/workspace/Partial Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmp87a7phqf/workspace/Partial Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmp87a7phqf/workspace/Partial Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmp87a7phqf/workspace/Partial Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmp87a7phqf/workspace/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpdwb9iydn/workspace/Custom Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpdwb9iydn/workspace/Custom Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpdwb9iydn/workspace/Custom Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpdwb9iydn/workspace/Custom Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpdwb9iydn/workspace/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpnyfqgg7q/Legacy Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpnyfqgg7q/Legacy Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpnyfqgg7q/Legacy Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpnyfqgg7q/Legacy Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpnyfqgg7q/Legacy Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpnyfqgg7q/Legacy Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpnyfqgg7q/.agents/coordination/routes.yaml
+[OK] Route already exists and is unchanged
+[APPLIED] write /tmp/tmp4rfeu3bs/Bound Source Route/.agents/route.yaml
+[APPLIED] write /tmp/tmp4rfeu3bs/Bound Source Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmp4rfeu3bs/Bound Source Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmp4rfeu3bs/Bound Source Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmp4rfeu3bs/Bound Source Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmp4rfeu3bs/Bound Source Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmp4rfeu3bs/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmp4rfeu3bs/Unbound Source Route/.agents/route.yaml
+[APPLIED] write /tmp/tmp4rfeu3bs/Unbound Source Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmp4rfeu3bs/Unbound Source Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmp4rfeu3bs/Unbound Source Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmp4rfeu3bs/Unbound Source Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmp4rfeu3bs/Unbound Source Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmp4rfeu3bs/.agents/coordination/routes.yaml
+[FAIL] route id must be a non-empty string
+[APPLIED] write /tmp/tmpy1pm_p73/A Route/AGENTS.md
+[APPLIED] write /tmp/tmpy1pm_p73/A Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpy1pm_p73/A Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpy1pm_p73/A Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpy1pm_p73/A Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpy1pm_p73/A Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpy1pm_p73/A Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpy1pm_p73/A Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpy1pm_p73/.agents/coordination/routes.yaml
+[FAIL] invalid route state
+[APPLIED] write /tmp/tmparv5fcw2/Lazy Source Route/AGENTS.md
+[APPLIED] write /tmp/tmparv5fcw2/Lazy Source Route/.agents/route.yaml
+[APPLIED] write /tmp/tmparv5fcw2/Lazy Source Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmparv5fcw2/Lazy Source Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmparv5fcw2/Lazy Source Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmparv5fcw2/Lazy Source Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmparv5fcw2/Lazy Source Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmparv5fcw2/Lazy Source Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmparv5fcw2/.agents/coordination/routes.yaml
+[OK] Route already exists and is unchanged
+[OK] route metadata and preserved route surface are valid
+[DRY-RUN] write /tmp/tmpv8cbd9up/New Route/AGENTS.md
+[DRY-RUN] write /tmp/tmpv8cbd9up/New Route/.agents/route.yaml
+[DRY-RUN] write /tmp/tmpv8cbd9up/New Route/.agents/settings.yaml
+[DRY-RUN] write /tmp/tmpv8cbd9up/New Route/.agents/knowledge/index.yaml
+[DRY-RUN] write /tmp/tmpv8cbd9up/New Route/.agents/knowledge/guides/.gitkeep
+[DRY-RUN] write /tmp/tmpv8cbd9up/New Route/.agents/knowledge/decisions/.gitkeep
+[DRY-RUN] write /tmp/tmpv8cbd9up/New Route/.agents/knowledge/observations/.gitkeep
+[DRY-RUN] write /tmp/tmpv8cbd9up/New Route/.agents/knowledge/archive/.gitkeep
+[DRY-RUN] write /tmp/tmpv8cbd9up/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmplf63d3pr/Existing Route/AGENTS.md
+[APPLIED] write /tmp/tmplf63d3pr/Existing Route/.agents/route.yaml
+[APPLIED] write /tmp/tmplf63d3pr/Existing Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmplf63d3pr/Existing Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmplf63d3pr/Existing Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmplf63d3pr/Existing Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmplf63d3pr/Existing Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmplf63d3pr/Existing Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmplf63d3pr/.agents/coordination/routes.yaml
+[DRY-RUN] write /tmp/tmplf63d3pr/New Route/AGENTS.md
+[DRY-RUN] write /tmp/tmplf63d3pr/New Route/.agents/route.yaml
+[DRY-RUN] write /tmp/tmplf63d3pr/New Route/.agents/settings.yaml
+[DRY-RUN] write /tmp/tmplf63d3pr/New Route/.agents/knowledge/index.yaml
+[DRY-RUN] write /tmp/tmplf63d3pr/New Route/.agents/knowledge/guides/.gitkeep
+[DRY-RUN] write /tmp/tmplf63d3pr/New Route/.agents/knowledge/decisions/.gitkeep
+[DRY-RUN] write /tmp/tmplf63d3pr/New Route/.agents/knowledge/observations/.gitkeep
+[DRY-RUN] write /tmp/tmplf63d3pr/New Route/.agents/knowledge/archive/.gitkeep
+[DRY-RUN] write /tmp/tmplf63d3pr/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmplf63d3pr/New Route/AGENTS.md
+[APPLIED] write /tmp/tmplf63d3pr/New Route/.agents/route.yaml
+[APPLIED] write /tmp/tmplf63d3pr/New Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmplf63d3pr/New Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmplf63d3pr/New Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmplf63d3pr/New Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmplf63d3pr/New Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmplf63d3pr/New Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmplf63d3pr/.agents/coordination/routes.yaml
+[FAIL] route path already exists; use route adopt
+[APPLIED] write /tmp/tmpa5hu1cld/A Route/AGENTS.md
+[APPLIED] write /tmp/tmpa5hu1cld/A Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpa5hu1cld/A Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpa5hu1cld/A Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpa5hu1cld/A Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpa5hu1cld/A Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpa5hu1cld/A Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpa5hu1cld/A Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpa5hu1cld/.agents/coordination/routes.yaml
+[FAIL] route id/path mismatch
+[FAIL] route target is not a directory
+[APPLIED] write /tmp/tmpg0qd2kc9/A Route/AGENTS.md
+[APPLIED] write /tmp/tmpg0qd2kc9/A Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/A Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/A Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/A Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/A Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/A Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/A Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/B Route/AGENTS.md
+[APPLIED] write /tmp/tmpg0qd2kc9/B Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/B Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/B Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/B Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/B Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/B Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/B Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/C Route/AGENTS.md
+[APPLIED] write /tmp/tmpg0qd2kc9/C Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/C Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/C Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpg0qd2kc9/C Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/C Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/C Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/C Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpg0qd2kc9/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpnwqi2k57/A Route/AGENTS.md
+[APPLIED] write /tmp/tmpnwqi2k57/A Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpnwqi2k57/A Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpnwqi2k57/A Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpnwqi2k57/A Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpnwqi2k57/A Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpnwqi2k57/A Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpnwqi2k57/A Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpnwqi2k57/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpnwqi2k57/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpgit2qvyh/A Route/AGENTS.md
+[APPLIED] write /tmp/tmpgit2qvyh/A Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpgit2qvyh/A Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpgit2qvyh/A Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpgit2qvyh/A Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpgit2qvyh/A Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpgit2qvyh/A Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpgit2qvyh/A Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpgit2qvyh/.agents/coordination/routes.yaml
+[FAIL] display name must be a non-empty string
+[FAIL] display name must be a non-empty string
+[FAIL] display name must be a non-empty string
+[APPLIED] write /tmp/tmp2wqs4gb3/C Route/AGENTS.md
+[APPLIED] write /tmp/tmp2wqs4gb3/C Route/.agents/route.yaml
+[APPLIED] write /tmp/tmp2wqs4gb3/C Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmp2wqs4gb3/C Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmp2wqs4gb3/C Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmp2wqs4gb3/C Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmp2wqs4gb3/C Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmp2wqs4gb3/C Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmp2wqs4gb3/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpcl1caft_/Legacy Lazy Route/AGENTS.md
+[APPLIED] write /tmp/tmpcl1caft_/Legacy Lazy Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpcl1caft_/Legacy Lazy Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpcl1caft_/Legacy Lazy Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpcl1caft_/Legacy Lazy Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpcl1caft_/Legacy Lazy Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpcl1caft_/Legacy Lazy Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpcl1caft_/Legacy Lazy Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpcl1caft_/.agents/coordination/routes.yaml
+[OK] Route already exists and is unchanged
+[APPLIED] write /tmp/tmpb2evt8ca/workspace/Existing Route/AGENTS.md
+[APPLIED] write /tmp/tmpb2evt8ca/workspace/Existing Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpb2evt8ca/workspace/Existing Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpb2evt8ca/workspace/Existing Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpb2evt8ca/workspace/Existing Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpb2evt8ca/workspace/Existing Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpb2evt8ca/workspace/Existing Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpb2evt8ca/workspace/Existing Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpb2evt8ca/workspace/.agents/coordination/routes.yaml
+[OK] Route already exists and is unchanged
+[OK] Route already exists and is unchanged
+[OK] Route already exists and is unchanged
+[OK] Route already exists and is unchanged
+[FAIL] Workspace schema 0.2 cannot accept v0.3 Route writes; run explicit workspace upgrade first
+[FAIL] Workspace schema 0.2 cannot accept v0.3 Route writes; run explicit workspace upgrade first
+[FAIL] Workspace schema 0.2 cannot accept v0.3 Route writes; run explicit workspace upgrade first
+[FAIL] Workspace schema 0.2 cannot accept v0.3 Route writes; run explicit workspace upgrade first
+[APPLIED] write /tmp/tmpyc6me86m/A Route/AGENTS.md
+[APPLIED] write /tmp/tmpyc6me86m/A Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpyc6me86m/A Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpyc6me86m/A Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpyc6me86m/A Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpyc6me86m/A Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpyc6me86m/A Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpyc6me86m/A Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpyc6me86m/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpizcavsc9/A Route/AGENTS.md
+[APPLIED] write /tmp/tmpizcavsc9/A Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpizcavsc9/A Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpizcavsc9/A Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpizcavsc9/A Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpizcavsc9/A Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpizcavsc9/A Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpizcavsc9/A Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpizcavsc9/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpe6zr017j/workspace/A Route/AGENTS.md
+[APPLIED] write /tmp/tmpe6zr017j/workspace/A Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpe6zr017j/workspace/A Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpe6zr017j/workspace/A Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpe6zr017j/workspace/A Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpe6zr017j/workspace/A Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpe6zr017j/workspace/A Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpe6zr017j/workspace/A Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpe6zr017j/workspace/.agents/coordination/routes.yaml
+[FAIL] error workspace target is not a directory: /tmp/tmplb_gmxt7/workspace
+[APPLIED] write /tmp/tmp8dfqpls0/A Route/AGENTS.md
+[APPLIED] write /tmp/tmp8dfqpls0/A Route/.agents/route.yaml
+[APPLIED] write /tmp/tmp8dfqpls0/A Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmp8dfqpls0/A Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmp8dfqpls0/A Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmp8dfqpls0/A Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmp8dfqpls0/A Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmp8dfqpls0/A Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmp8dfqpls0/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpkcp12qox/workspace/Registered Route/AGENTS.md
+[APPLIED] write /tmp/tmpkcp12qox/workspace/Registered Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpkcp12qox/workspace/Registered Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpkcp12qox/workspace/Registered Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpkcp12qox/workspace/Registered Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpkcp12qox/workspace/Registered Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpkcp12qox/workspace/Registered Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpkcp12qox/workspace/Registered Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpkcp12qox/workspace/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpfupx1z_q/C Route/AGENTS.md
+[APPLIED] write /tmp/tmpfupx1z_q/C Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpfupx1z_q/C Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpfupx1z_q/C Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpfupx1z_q/C Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpfupx1z_q/C Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpfupx1z_q/C Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpfupx1z_q/C Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpfupx1z_q/.agents/coordination/routes.yaml
+[OK] Route already exists and is unchanged
+[APPLIED] write /tmp/tmpfupx1z_q/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpafi7dt82/workspace/C Route/AGENTS.md
+[APPLIED] write /tmp/tmpafi7dt82/workspace/C Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpafi7dt82/workspace/C Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpafi7dt82/workspace/C Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpafi7dt82/workspace/C Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpafi7dt82/workspace/C Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpafi7dt82/workspace/C Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpafi7dt82/workspace/C Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpafi7dt82/workspace/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpcyisckf6/A Route/AGENTS.md
+[APPLIED] write /tmp/tmpcyisckf6/A Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpcyisckf6/A Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpcyisckf6/A Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpcyisckf6/A Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/A Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/A Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/A Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpcyisckf6/B Route/AGENTS.md
+[APPLIED] write /tmp/tmpcyisckf6/B Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpcyisckf6/B Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpcyisckf6/B Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpcyisckf6/B Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/B Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/B Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/B Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/.agents/coordination/routes.yaml
+[APPLIED] write /tmp/tmpcyisckf6/C Route/AGENTS.md
+[APPLIED] write /tmp/tmpcyisckf6/C Route/.agents/route.yaml
+[APPLIED] write /tmp/tmpcyisckf6/C Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmpcyisckf6/C Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmpcyisckf6/C Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/C Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/C Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/C Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmpcyisckf6/.agents/coordination/routes.yaml
+[FAIL] route path is not canonical: A Route/
+[FAIL] workspace uninstall requires a reviewed ownership plan
+[APPLIED] write /tmp/tmp08a0b45y/C Route/AGENTS.md
+[APPLIED] write /tmp/tmp08a0b45y/C Route/.agents/route.yaml
+[APPLIED] write /tmp/tmp08a0b45y/C Route/.agents/settings.yaml
+[APPLIED] write /tmp/tmp08a0b45y/C Route/.agents/knowledge/index.yaml
+[APPLIED] write /tmp/tmp08a0b45y/C Route/.agents/knowledge/guides/.gitkeep
+[APPLIED] write /tmp/tmp08a0b45y/C Route/.agents/knowledge/decisions/.gitkeep
+[APPLIED] write /tmp/tmp08a0b45y/C Route/.agents/knowledge/observations/.gitkeep
+[APPLIED] write /tmp/tmp08a0b45y/C Route/.agents/knowledge/archive/.gitkeep
+[APPLIED] write /tmp/tmp08a0b45y/.agents/coordination/routes.yaml

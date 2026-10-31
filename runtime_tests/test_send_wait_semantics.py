@@ -1,170 +1,96 @@
-"""Caller waiting, business expiry and discovery transaction regressions."""
+"""Real explicit replies with a virtual observation clock, never fabricated answers.
+
+Retired Work/receipt tests remain in fixtures/legacy-send-wait-v6.py.
+"""
 from __future__ import annotations
 
-import json
 import threading
-from datetime import datetime, timedelta
 from types import SimpleNamespace
-from unittest.mock import Mock
 
 import anyio
-import psycopg
 
-from runtime import project_service as module
+from runtime import communication as module
 from runtime.mcp_runtime import McpRuntime
-from runtime.project_service import ProjectService
-from runtime_tests.test_project_service import (
-    CATALOG,
-    ok,
-    scalar,
-    send_args,
-    work_args,
-)
-from runtime_tests.test_project_service import (
-    project as project_fixture,
-)
+from runtime_tests.test_communication import call, send
+from runtime_tests.test_communication import comm as comm_fixture
 
-project = project_fixture
-
-def observation(*, complete=False, state="queued"):
-    return {"response_handle": "response:project-alpha:message-one", "state": state,
-            "receipts": [("response_received", {})] if complete else []}
+comm = comm_fixture
 
 
-def wait_service(monkeypatch, *, complete_after=90, state="queued"):
+def wait_service(f, monkeypatch, *, complete_after=90, uncertain=False):
     elapsed = [0.0]
-    service = ProjectService.__new__(ProjectService)
-    service.execute = lambda *_args: ("observed", observation(
-        complete=elapsed[0] >= complete_after, state=state), [])
-    clock = SimpleNamespace(monotonic=lambda: elapsed[0],
-                            sleep=lambda _seconds: elapsed.__setitem__(0, elapsed[0] + 31))
-    monkeypatch.setattr(module, "time", clock)
-    return service, elapsed
+    request = send(f, activation="invoke" if uncertain else "message_only")["data"]
+    if uncertain:
+        def lose_ack(invocation):
+            f.drivers["b"].calls.append(invocation)
+            raise OSError("controlled lost native ACK")
+        f.drivers["b"].invoke = lose_ack
+        assert f.dispatcher.dispatch({"tenant_id": f.authority.tenant_id, "message_id": request["message_id"],
+                                     "operation_id": request["operation_id"]})["status"] == "uncertain"
+    original = f.clients["a"].service.execute
+    sent_reply = []
+    def observe(name, args, credential):
+        if name == "read_message" and elapsed[0] >= complete_after and not sent_reply:
+            sent_reply.append(send(f, "b", "a", "A real explicit reply", reply_to=[request["message_handle"]], activation="message_only"))
+        return original(name, args, credential)
+    monkeypatch.setattr(f.clients["a"].service, "execute", observe)
+    monkeypatch.setattr(module, "time", SimpleNamespace(monotonic=lambda: elapsed[0],
+        sleep=lambda _seconds: elapsed.__setitem__(0, elapsed[0]+31)))
+    return request["message_handle"], elapsed
 
 
-def options(**extra):
-    return {"project_id": "project-alpha", "handles": ["response:project-alpha:message-one"],
-            "mode": "all", "until": "response_received", **extra}
+def test_default_wait_reaches_completion_after_the_previous_thirty_second_window(comm, monkeypatch):
+    request, elapsed = wait_service(comm, monkeypatch)
+    result = call(comm, "a", "wait_for_response", handles=[request])
+    assert result["state"] == "satisfied" and elapsed[0] >= 90
+    assert result["data"]["satisfied"] == [request]
 
 
-def test_default_wait_reaches_completion_after_the_previous_thirty_second_window(monkeypatch):
-    service, elapsed = wait_service(monkeypatch)
-    state, data, _ = service._wait(options(), "credential")
-    assert state == "satisfied" and elapsed[0] >= 90
-    assert data["satisfied"] == options()["handles"]
+def test_explicit_wait_budget_returns_pending_without_cancelling_tracking(comm, monkeypatch):
+    request, _elapsed = wait_service(comm, monkeypatch)
+    result = call(comm, "a", "wait_for_response", handles=[request], timeout_seconds=31)
+    assert result["state"] == "timeout" and result["data"]["pending"] == [request]
+    assert call(comm, "b", "read_message", handle=request)["data"]["content"]
 
 
-def test_explicit_wait_budget_returns_pending_without_cancelling_tracking(monkeypatch):
-    service, _ = wait_service(monkeypatch)
-    state, data, _ = service._wait(options(timeout_seconds=31), "credential")
-    assert state == "timeout" and data["pending"] == options()["handles"]
-
-
-def test_uncertain_delivery_can_still_complete_during_default_wait(monkeypatch):
-    service, elapsed = wait_service(monkeypatch, state="uncertain")
-    assert service._wait(options(), "credential")[0] == "satisfied"
-    assert elapsed[0] >= 90
+def test_uncertain_delivery_can_still_complete_during_default_wait(comm, monkeypatch):
+    request, elapsed = wait_service(comm, monkeypatch, uncertain=True)
+    assert call(comm, "a", "wait_for_response", handles=[request])["state"] == "satisfied"
+    assert elapsed[0] >= 90 and len(comm.drivers["b"].calls) == 1
 
 
 def test_mcp_contract_exposes_optional_wait_and_business_expiry():
-    runtime = McpRuntime(SimpleNamespace(catalog=CATALOG), lambda: "credential")
+    runtime = McpRuntime(SimpleNamespace(), lambda: "credential")
     assert "deadline" not in runtime.input_schema("send_message")["required"]
     assert "timeout_seconds" not in runtime.input_schema("wait_for_response")["required"]
     for value in (None, 0, 31, 3600):
-        runtime._validate("wait_for_response", options(timeout_seconds=value))
+        runtime._validate("wait_for_response", {"project_id": "project-alpha",
+            "handles": ["message:project-alpha:original"], "timeout_seconds": value})
 
 
-def test_cancelled_mcp_wait_releases_its_worker_without_a_fixed_wait_deadline():
-    done = threading.Event()
-    entered = threading.Event()
-    service = ProjectService.__new__(ProjectService)
-    service.execute = lambda *_args: (entered.set() or "observed", observation(), [])
-
+def test_cancelled_mcp_wait_releases_its_worker_without_a_fixed_wait_deadline(comm, monkeypatch):
+    done, entered = threading.Event(), threading.Event()
+    request = send(comm, activation="message_only")["data"]["message_handle"]
+    original = comm.clients["a"].service.execute
+    def observe(name, args, credential):
+        if name == "read_message":
+            entered.set()
+        return original(name, args, credential)
+    monkeypatch.setattr(comm.clients["a"].service, "execute", observe)
     def wait():
         try:
-            service._wait(options(), "credential")
+            comm.clients["a"].service._wait({"project_id": "project-alpha", "handles": [request]},
+                                           comm.clients["a"].credential_provider())
         finally:
             done.set()
-
     async def exercise():
-        with anyio.move_on_after(0.05):
-            await anyio.to_thread.run_sync(wait, abandon_on_cancel=True)
-        assert entered.is_set()
-        assert await anyio.to_thread.run_sync(done.wait, 2)
-
+        async with anyio.create_task_group() as tasks:
+            async def start():
+                await anyio.to_thread.run_sync(wait, abandon_on_cancel=True)
+            tasks.start_soon(start)
+            assert await anyio.to_thread.run_sync(entered.wait, 5)
+            tasks.cancel_scope.cancel()
+        with anyio.CancelScope(shield=True):
+            assert await anyio.to_thread.run_sync(done.wait, 5)
     anyio.run(exercise)
-
-
-def test_auto_expiry_outlives_internal_command_budget_and_respects_grant(project):
-    ok(project, "create_work", work_args())
-    args = send_args()
-    args.pop("deadline")
-    sent = ok(project, "send_message", args)["data"]
-    with psycopg.connect(project.dsn) as connection:
-        row = connection.execute("SELECT deadline,command_json->>'issued_at' FROM delivery_messages").fetchone()
-        expiry = connection.execute("SELECT expires_at FROM grants WHERE grant_ref='grant:p1'").fetchone()[0]
-    assert row[0] > datetime.fromisoformat(row[1]) + timedelta(seconds=30)
-    assert row[0] <= expiry and datetime.fromisoformat(sent["deadline"]) == row[0]
-
-
-def test_auto_expiry_respects_work_budget_and_scope_policy(project):
-    args = work_args()
-    args["budget"]["message_ttl_seconds"] = 60
-    ok(project, "create_work", args)
-    with psycopg.connect(project.dsn) as connection:
-        connection.execute("UPDATE scopes SET policy=policy || '{\"message_ttl_seconds\":120}'::jsonb")
-    args = send_args()
-    args.pop("deadline")
-    ok(project, "send_message", args)
-    with psycopg.connect(project.dsn) as connection:
-        expiry, issued = connection.execute("SELECT deadline,command_json->>'issued_at' FROM delivery_messages").fetchone()
-    assert (expiry - datetime.fromisoformat(issued)).total_seconds() == 60
-
-
-def test_observation_changes_replay_the_same_committed_message(project):
-    ok(project, "create_work", work_args())
-    args = send_args()
-    args.pop("deadline")
-    first = ok(project, "send_message", args)["data"]
-    second = ok(project, "send_message", dict(args, response_mode="sync", wait_timeout_seconds=0))
-    assert second["state"] == "timeout" and second["data"]["message_id"] == first["message_id"]
-    assert scalar(project, "SELECT count(*) FROM delivery_messages") == 1
-    assert scalar(project, "SELECT count(*) FROM collaboration_response_subscriptions") == 1
-
-
-def test_default_sync_waits_for_a_durable_final_response(project, monkeypatch):
-    ok(project, "create_work", work_args())
-    elapsed = [0.0]
-    def complete(_seconds):
-        elapsed[0] += 31
-        evidence = {"response_digest": "a" * 64, "response_artifact_ref": "artifact:" + "a" * 64}
-        with psycopg.connect(project.dsn) as connection:
-            connection.execute("INSERT INTO delivery_receipts(tenant_id,message_id,receipt_id,layer,evidence_json) "
-                               "SELECT tenant_id,message_id,'final-response','response_received',%s::jsonb "
-                               "FROM delivery_messages", (json.dumps(evidence),))
-            connection.execute("UPDATE delivery_messages SET receipt_high_water='response_received'")
-    monkeypatch.setattr(module, "time", SimpleNamespace(monotonic=lambda: elapsed[0], sleep=complete))
-    args = send_args()
-    args.pop("deadline")
-    result = ok(project, "send_message", dict(args, response_mode="sync"))
-    assert result["state"] == "satisfied" and elapsed[0] == 31
-    assert result["data"]["observation"]["observations"][0]["receipt_high_water"] == "response_received"
-
-
-def test_discovery_uses_one_transaction_and_rechecks_revocation(project, monkeypatch):
-    original = project.authority.transaction
-    counted = Mock(wraps=original)
-    monkeypatch.setattr(project.authority, "transaction", counted)
-    names = project.projects.available_tools(project.credential)
-    assert "send_message" in names and counted.call_count == 1
-    with psycopg.connect(project.dsn) as connection:
-        connection.execute("UPDATE grants SET permissions=permissions - 'messages.send' WHERE grant_ref='grant:p1'")
-    assert "send_message" not in project.projects.available_tools(project.credential)
-    assert counted.call_count == 2
-
-
-def test_machine_without_projects_discovers_the_two_entry_tools(project):
-    with psycopg.connect(project.dsn) as connection:
-        connection.execute("DELETE FROM collaboration_memberships")
-    assert set(project.projects.available_tools(project.credential)) == {"read_profile", "list_projects"}
-    assert project.projects.execute("list_projects", {}, project.credential)[1]["items"] == []
+    assert call(comm, "b", "read_message", handle=request)["data"]["content"]

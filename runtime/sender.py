@@ -22,7 +22,7 @@ class DeliveryIdentity:
     operation_id: str
     attempt_id: str
     dispatch_id: str
-    accepted_revision: int
+    accepted_revision: int | None
     accepted_state_digest: str
     envelope_digest: str
     selection_digest: str

@@ -1,27 +1,12 @@
-# Review and acceptance tool map
+# acs-review-acceptance: tools
 
-- list_reviews discovers assignments and completed decisions.
-- request_review creates an exact candidate and Evidence-bound assignment;
-  owner source_baseline is optional when the WorkItem has no selected version.
-- submit_review records the structured decision, findings and supporting facts.
-- list_evidence and read_resource inspect exact supporting records.
-- Git, native tools and read_file establish the candidate actually inspected;
-  historical read_source and read_diff use explicit archive selections.
-- accept_work commits AcceptedStateRevision after the applicable prerequisites.
-- Eligible revise_work can select, replace or clear an owner work version.
+Use the actual exposed tools; retain returned handles instead of constructing internal routing identities.
 
-Owner submit_review and accept_work receive the Agent's actively observed
-commit/tree through source_readback. They compare that report with recorded
-candidate Evidence and execution receipts. Candidate identity, Evidence inventory
-and content, reviewer independence, integrated results and protected-effect
-readback remain acceptance checks.
+- `send_message`
+- `read_message`
+- `read_source`
+- `read_diff`
 
-Owner invocation checks authenticated identity, active objects, explicit
-revocation, stable request identity and expected revisions. Shared deployments
-retain their Grant, Policy, SourceBinding and clean-checkout readback checks.
-Exact inputs come from the installed access mode's active tool schema.
+Engineering judgment outside ACS. The bridge transmits messages and authorized source references without a Review lifecycle.
 
-Completed Artifact and Review records retain their original digests and
-provenance. Read their exact identities; refresh evidence when evaluating a
-claim about the current source or running system. Historical reference results
-retain the scenario and configuration they measured.
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-tools.md); it is not the current communication contract.

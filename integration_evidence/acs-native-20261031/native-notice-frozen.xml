@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="247.127" timestamp="2026-10-31T19:02:51.255155+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_native" name="test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp[notice]" time="246.770"><failure message="AssertionError: A failed or did not finish; see native-agent-a logs&#10;assert None == 0&#10; +  where None = poll()&#10; +    where poll = &lt;Popen: returncode: None args: ['C:\\Users\\D26FO\\AppData\\Local\\OpenAI\\C...&gt;.poll">runtime_tests\test_communication_native.py:406: in test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp
+    asyncio.run(run())
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py:726: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+runtime_tests\test_communication_native.py:393: in run
+    assert process.poll()==0,"A failed or did not finish; see native-agent-a logs"
+E   AssertionError: A failed or did not finish; see native-agent-a logs
+E   assert None == 0
+E    +  where None = poll()
+E    +    where poll = &lt;Popen: returncode: None args: ['C:\\Users\\D26FO\\AppData\\Local\\OpenAI\\C...&gt;.poll</failure></testcase></testsuite></testsuites>

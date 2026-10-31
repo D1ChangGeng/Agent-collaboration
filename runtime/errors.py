@@ -6,6 +6,14 @@ class RuntimeErrorBase(Exception):
 
 
 @dataclass
+class InvalidToolArgument(ValueError):
+    """Public field guidance, supplied by the tool implementation, never a traceback."""
+
+    field: str
+    guidance: str
+
+
+@dataclass
 class AuthorizationDenied(RuntimeErrorBase):
     principal_ref: str
     grant_ref: str

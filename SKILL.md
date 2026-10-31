@@ -130,8 +130,9 @@ using or repairing the selected service. Owner admission follows its trusted
 credential, tenant/principal/Authority, active service and objects, explicit
 revocation, request deduplication and expected revisions. Roles define duties;
 ordinary team members supply slot, principal, role and Harness requirements.
-Independent candidate Review, Artifact hashes and deterministic storage remain
-acceptance prerequisites.
+Agents assess engineering results and reviews outside the communication core.
+Normal collaboration uses natural messages and explicit replies; see
+[the communication contract](docs/runtime/COMMUNICATION.md).
 
 Keep Connection, Node, Runtime and Endpoint registrations during service or
 client recovery. Execution reads actual process and native Session state,
@@ -152,12 +153,11 @@ preparation executes the stored deterministic argument vector and rechecks
 health. Keep private keys in their reference store.
 
 Owner commands and Messages have an optional chosen business deadline.
-Async returns committed handles; sync waits for the target condition with an
-optional caller timeout. Durable Inbox and result tracking follow the actual
-Connection/Session and survive caller disconnect. Load current management
-documents through machine files. For Review, report the candidate's commit/tree
-actually observed through Git, native tools or the selected machine reader,
-together with its recorded Evidence.
+Async returns committed handles; sync waits for the recipient's first explicit
+associated reply with an optional observation timeout. Durable Inbox and reply
+relationships survive caller disconnect. Load current management documents
+through machine files. Agents exchange actual Git versions and review findings
+as ordinary message content.
 
 Existing unspecified service configuration retains shared behavior until
 explicit owner migration. Shared deployments retain their configured Grants,
@@ -174,11 +174,11 @@ the next Endpoint registration with the existing Node key, commit the new
 revision, then restart and read back the matching mode, digest and Session.
 Preserve explicit revocation throughout that transition.
 
-The owner stdio MCP entry automatically maintains committed Message dispatch when
-temporal_endpoint is configured. New installation records the selected local
-Temporal address/port. A custom configuration with that field omitted retains
-pending Outbox state for its separately operated dispatcher. Verify the
-configured provider and actual worker/dispatch result.
+The default stdio and HTTP entries maintain committed natural-message delivery
+with bounded concurrency. Direct library users provide their own dispatcher.
+Existing provider profiles may retain Temporal for their earlier deployment;
+the normal communication maintenance path does not depend on it. Verify the
+actual entry and dispatch result.
 
 ## Installation verification scope
 
@@ -276,10 +276,10 @@ their running version. A manual rollback records the rejected version in
 again.
 
 Existing installations use the verified
-[v1.6.0 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.6.0)
+[v2.0.0 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.0.0)
 for a guided Runtime schema and MCP catalog upgrade. Preserve the existing
 automatic update policy and verify the known schema migration before activation.
-See [the release notes](docs/RELEASE-NOTES-v1.6.0.md).
+See [the release notes](docs/RELEASE-NOTES-v2.0.0.md).
 
 ## ChatGPT web setup route
 
@@ -355,16 +355,12 @@ saved location. A single `load_project` call can select `machine_id` and
 `management_path` for that read. Read back the resulting revision,
 observed document paths and context completeness.
 
-Agents choose the source version for each WorkItem. Owner `source_baseline`
-may be omitted or null; `revise_work` can select, change or clear it when the
-WorkItem is eligible for an intent revision. Owner Attempts can report actual
-execution source through authenticated receipts after execution. Review and
-acceptance use the Agent's inspected commit/tree, exact candidate Evidence and
-execution receipts, with independent Reviewer and Finalizer authorization.
-Existing Source records are available for explicit historical queries by
-`source_id` and `revision`. See [Owner Runtime](docs/runtime/OWNER-RUNTIME.md)
-for project registration, current context and acceptance, and
-[the adoption contract](docs/runtime/UPGRADE-CONTRACT.md) for schema migration.
+Agents choose and communicate the source version they actually inspect through
+Git, native file tools or an authorized reader. Existing Source records require
+explicit `source_id` and `revision`; current files use machine readers. First
+delegation, clarification, review findings and handoff use `send_message` with
+natural content. See [the communication contract](docs/runtime/COMMUNICATION.md)
+for current context, replies and explicit schema adoption.
 
 For a management workspace, use the explicit command families:
 

@@ -1,58 +1,40 @@
 ---
 name: acs-runtime-model
-description: Machine, Node, Runtime, Harness, Driver, Session, Endpoint, Attempt, Lease, Resource, capability, and Effect knowledge for ACS. Use when reasoning about execution placement, lifecycle, capabilities, fencing, or protected external effects.
+description: Actual Node, endpoint and Native Session bindings for ACS. Use when selecting receiving capacity, checking readiness or distinguishing configuration from real Native contact.
 ---
 
 # acs-runtime-model
 
 ## Knowledge boundary
 
-Execution capacity and protected resources. Logical work ownership belongs to acs-collaboration-model; recovery sequencing belongs to acs-continuity-recovery.
+Native receiving capacity and one authorized initiation, separate from message authorship and Agent reasoning.
 
 ## Core invariants
 
-- Machine, Node, Runtime, Harness, Driver, Session, Connection and Endpoint are distinct identities.
-- Machine filesystem service operates directly under its connected OS account; file readiness and native Harness Session readiness have separate observations.
-- filesystem_context identifies actual machine/account/home/cwd; session selection and per-call overrides choose file targets, and cursors retain the original target.
-- Owner registrations persist through disconnection; execution reads actual process and Session state, reconnects and prepares the selected environment.
-- Native modes use the selected user's tools, MCP servers, plugins, project/provider/model and approval configuration; interactive approval requires the actual native client handler.
-- Attached Session read, send and cancellation follow the actual native API; process termination requires verified ownership of the stopped object.
-- Attempt replacement preserves lineage; a Lease fences the concrete resource gateway that enforces it.
-- Uncertain external effects require authority readback; explicit deadlines and shared capability windows retain their applicable clock checks.
+- list_harnesses is observation only: it does not prepare, spawn, resume or invoke.
+- Configuration commit, receiver preparation and observed Native Session are distinct facts; only a real Adapter supplies a Session ID.
+- Busy, offline and unknown are different. Use supported queueing; an uncertain dispatch is not permission to invoke again.
+- Native final output is not a reply. ACS does not continuously observe execution or decide work completion.
 
 ## Retrieval map
 
-Read the smallest reference that resolves the material question.
+Read only the reference needed for this question.
 
 | Question | Reference |
 |---|---|
-| Runtime entity model and authority | [model](references/model.md) |
-| Placement, replacement, lease and effect decisions | [decisions](references/decisions.md) |
-| Runtime discovery and control tools | [tools](references/tools.md) |
+| Current model | [model](references/model.md) |
+| Decisions and limitations | [decisions](references/decisions.md) |
+| Actual tools | [tools](references/tools.md) |
 
 ## Tool vocabulary
 
-Relevant tools: filesystem_context, select_filesystem, read_file,
-list_directory, glob, grep, write_file, edit_file, apply_patch, list_connections,
-list_harnesses, list_collaborators, stop_attempt, read_resource.
-
-Tool descriptions and the machine contract define exact invocation schemas.
-This Skill explains the model, authority and decision implications around those
-tools.
+Relevant tools: list_connections, list_harnesses, configure_team.
 
 ## Application
 
-Apply this knowledge to the user's goal and current evidence. Read the
-installed access mode and active tool schema, then compose actions from trusted
-identity, object state, revisions and required readback. References explain
-durable semantics; ProjectContextPack and current sources provide project facts.
-The product contracts are `docs/runtime/OWNER-RUNTIME.md` and
-`docs/runtime/MACHINE-FILESYSTEM.md` in the verified ACS release or source
-checkout.
+Use the active schema and actual runtime evidence. The current source contract is `docs/runtime/COMMUNICATION.md` when that verified checkout is available. Read historical v6 material only for an explicit archive/transition question; it does not authorize or define current operations.
 
 ## Related knowledge
-
-Expand into an adjacent domain when the task crosses this Skill boundary:
 
 - [acs-collaboration-model](../acs-collaboration-model/SKILL.md)
 - [acs-continuity-recovery](../acs-continuity-recovery/SKILL.md)

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="79.051" timestamp="2026-10-31T23:41:38.930027+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_remote_native" name="test_physical_signed_receiver_and_independent_reply[lifecycle]" time="77.839"><failure message="AssertionError: {'data': {'caller_bindings': [{'agent_slot_id': 'slot-b', 'grant_ref': 'grant:b', 'principal_ref': 'agent:b', 'profile...00:00', 'fold': 0, 'timezone': 'UTC'}}, 'timezone': 'UTC'}, 'timestamp_authority': 'unverified', ...}, 'ok': True, ...}&#10;assert None == 'ses_e6d96e137ffeMFYx22cToqjbdO'">comm = namespace(clients={'a': &lt;runtime.mcp_runtime.McpRuntime object at 0x0000028F94182520&gt;, 'b': &lt;runtime.mcp_runtime.McpRu...iveryDispatcher object at 0x0000028F94180D60&gt;, authority=&lt;runtime.domain.DomainAuthority object at 0x0000028F92EA27B0&gt;)
+tmp_path = WindowsPath('D:/Chatgpt/Agent-collaboration/.tmp/remote-native-9055136edfa44be09364ae8edf5e126d/test_physical_signed_receiver_0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000028F941810F0&gt;
+sender_mode = 'lifecycle'
+
+    @pytest.mark.skipif(os.getenv("ACS_REAL_REMOTE_NATIVE_TEST")!="1",
+                        reason="source upload, physical SSH host and actual Native capacity are explicit opt-in")
+    @pytest.mark.parametrize("sender_mode",["lifecycle","scripted","codex"])
+    def test_physical_signed_receiver_and_independent_reply(comm,tmp_path,monkeypatch,sender_mode):
+        if sender_mode!="lifecycle" and os.getenv("ACS_REAL_REMOTE_MODEL_TEST")!="1":
+            pytest.skip("actual approved Provider model requests are separately opt-in")
+        host = os.environ["ACS_REMOTE_SSH_HOST"]
+        remote_python = os.environ["ACS_REMOTE_PYTHON"]
+        remote_binary = os.environ["ACS_REMOTE_OPENCODE"]
+        assert host and not host.startswith("-")
+        assert remote_python.startswith("/tmp/") and remote_binary.startswith("/")
+        ssh = ["ssh","-T","-o","BatchMode=yes","-o","ConnectTimeout=10"]
+        remote_root = "/tmp/acs-remote-native-"+uuid.uuid4().hex
+        def remote(text, timeout=45):
+            result = subprocess.run([*ssh,host,text],capture_output=True,timeout=timeout)
+            assert result.returncode==0,result.stderr.decode(errors="replace")[-1500:]
+            return result.stdout.decode().strip()
+    
+        files = [path for folder in (ROOT/"runtime",ROOT/"runtime_deployment") for path in folder.glob("*")
+                 if path.suffix in {".py",".sql"}]
+        files += [ROOT/"runtime_tests/fixtures/remote_native_receiver.py",Path(__file__)]
+        manifest = {path.relative_to(ROOT).as_posix():hashlib.sha256(path.read_bytes()).hexdigest() for path in files}
+        (tmp_path/"source-files.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
+        archive = tmp_path/"source.tar"
+        with tarfile.open(archive,"w") as pack:
+            for path in files:
+                info = pack.gettarinfo(str(path),arcname=path.relative_to(ROOT).as_posix())
+                info.mode = 0o600
+                with path.open("rb") as source:
+                    pack.addfile(info,source)
+        remote("mkdir -m 700 "+shlex.quote(remote_root))
+        upload = subprocess.run(["scp","-q",str(archive),host+":"+remote_root+"/source.tar"],capture_output=True,timeout=60)
+        assert upload.returncode==0,upload.stderr
+        remote("tar -xf "+remote_root+"/source.tar -C "+remote_root)
+        values = conninfo_to_dict(comm.dsn)
+        assert values["host"]=="127.0.0.1" and values["dbname"]=="acs_communication_test"
+        remote_db_port = int(remote("python3 -c "+shlex.quote(
+            "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1])")))
+        public_port = free_port()
+        tunnel = actor = a = None
+        outputs = []
+        received = queue.Queue()
+        wire = (tmp_path/"receiver-controller.jsonl").open("w",encoding="utf-8")
+        errors = (tmp_path/"receiver-controller.stderr.txt").open("w",encoding="utf-8")
+        outputs.extend((wire,errors))
+        facts = {"remote_root":remote_root,"ssh_host":host,"sender_mode":sender_mode,
+                 "receiver_entry":"current source load_process_config/load_callbacks/ReceiverHTTPServer; installed entry not measured"}
+        def read_responses():
+            for line in actor.stdout:
+                wire.write(line.decode())
+                wire.flush()
+                received.put(json.loads(line))
+            received.put({"state":"controller_exited"})
+        def rpc(request=None,timeout=60):
+            if request is not None:
+                actor.stdin.write((json.dumps(request)+"\n").encode())
+                actor.stdin.flush()
+            result = received.get(timeout=timeout)
+            assert result.get("state")!="controller_exited","remote controller exited; see stderr"
+            return result
+        try:
+            catalog_path = os.environ["ACS_REMOTE_BASE_CATALOG"]
+            actor = subprocess.Popen([*ssh,host,"ACS_REMOTE_BASE_CATALOG="+shlex.quote(catalog_path)+" "+
+                shlex.quote(remote_python)+" "+remote_root+"/runtime_tests/fixtures/remote_native_receiver.py"],
+                stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=errors)
+            reader = threading.Thread(target=read_responses,daemon=True)
+            reader.start()
+            prepared = rpc()
+            assert prepared["source_files"]==manifest,"remote source differs"
+            expected_contract = {name:{key:CATALOG["tools"][name][key] for key in
+                ("description","input_schema","security_scopes")} for name in DESCRIPTIONS}
+            assert prepared["contract"]==expected_contract,"remote ordinary communication contract differs"
+            facts.update(hostname=prepared["hostname"],source_files=manifest)
+            tunnel = subprocess.Popen([*ssh,"-o","ExitOnForwardFailure=yes","-N","-R",
+                f"127.0.0.1:{remote_db_port}:127.0.0.1:{values['port']}","-L",
+                f"127.0.0.1:{public_port}:127.0.0.1:{prepared['listen_port']}",host],
+                stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+            manager = comm.clients["a"]
+            # Native Owner receiver and its technical registration share the Owner
+            # authority policy. A/B retain ordinary, distinct MCP credentials.
+            comm.authority.access_mode = "owner"
+            prepare_ordinary_agents(comm,tmp_path)
+            comm.clients["manager"] = manager
+            observer_ctx = replace(comm.authority.context,principal_ref="node:remote-test",grant_ref="grant:remote-node")
+            observer = DomainAuthority(comm.dsn,context=observer_ctx,access_mode="owner")
+            with comm.authority._connect() as connection:
+                connection.execute("UPDATE grants SET permissions=permissions || %s::jsonb WHERE grant_ref=%s",
+                    (json.dumps(["receiver.manage","enrollment.manage"]),comm.authority.context.grant_ref))
+                connection.execute("INSERT INTO grants SELECT %s,tenant_id,%s,authority_id,authority_incarnation,scope_id,%s,"
+                    "expires_at,NULL FROM grants WHERE grant_ref=%s",(observer_ctx.grant_ref,observer_ctx.principal_ref,
+                    json.dumps(["runtime.register","endpoint.register"]),comm.authority.context.grant_ref))
+            node_id,runtime_id,endpoint_id,boot = "remote-node","remote-runtime","remote-opencode-endpoint","isolated-boot"
+            expiry = datetime.now(UTC)+timedelta(hours=1)
+            comm.authority.enroll_node(command(comm.authority,"node.enroll","node",node_id),NodeEnrollment(
+                scope_id="local-scope",agent_slot_id="slot-b",observer_grant_ref=observer_ctx.grant_ref,
+                machine_id="1302-1",boot_incarnation=boot,public_key=prepared["node_public_key"],expires_at=expiry))
+            def proof(purpose_command,node_input):
+                challenge = observer.challenge_node(command(observer,"node.challenge","node",node_id,1),NodeChallengeRequest(
+                    purpose=purpose_command.command_type,purpose_command_id=purpose_command.command_id,
+                    purpose_hash=EnrollmentAuthority.signing_hash(purpose_command,node_input)))
+                signature = rpc({"action":"sign","message_hex":challenge.message_hex})["signature"]
+                return NodeCommandProof(challenge_id=challenge.challenge_id,signature=signature)
+            runtime = RuntimeRegistration(node_id=node_id,node_binding_revision=1,provider="receiver-tls",
+                producer_grant_ref=observer_ctx.grant_ref,expires_at=expiry)
+            envelope = command(observer,"runtime.register","runtime",runtime_id)
+            observer.register_runtime(envelope,runtime,proof(envelope,{"request":runtime.model_dump(mode="json")}))
+            authority_key = SigningKey.generate()
+            comm.authority.register_authority_transport_key(command(comm.authority,"receiver.key.register","authority_transport_key","remote-key"),
+                AuthorityTransportKeyRegistration(key_id="remote-key",revision=1,public_key=public_key(authority_key),expires_at=expiry))
+            comm.authority.register_receiver_connection(command(comm.authority,"receiver.connection.register","connection","remote-tunnel"),
+                ConnectionReferenceRegistration(connection_ref="remote-tunnel",revision=1,locator_host="127.0.0.1",
+                    locator_port=public_port,route_class="tunnel",policy_digest="c"*64,expires_at=expiry))
+            registration = EndpointRegistration(registration_id="remote-registration",endpoint_id=endpoint_id,endpoint_revision=1,
+                connection_ref="remote-tunnel",tenant_id=comm.authority.tenant_id,authority_id=comm.authority.context.authority_id,
+                authority_incarnation=comm.authority.context.authority_incarnation,node_id=node_id,node_binding_revision=1,
+                runtime_id=runtime_id,runtime_revision=1,machine_id="1302-1",boot_incarnation=boot,scope_id="local-scope",
+                agent_slot_id="slot-b",tls_certificate_sha256=prepared["certificate_sha256"],config_sha256="0"*64,expires_at=expiry)
+            with comm.authority._connect() as connection:
+                node_key_id = connection.execute("SELECT key_id FROM enrolled_node_bindings WHERE node_id=%s",(node_id,)).fetchone()[0]
+            provider_key = os.environ["ACS_REMOTE_PROVIDER_KEY"] if sender_mode!="lifecycle" else None
+            label = "remote-cedar-"+uuid.uuid4().hex[:12]
+            configured = rpc({"action":"configure","binary":remote_binary,"dsn":make_conninfo(comm.dsn,port=remote_db_port),
+                "credential":comm.clients["b"].credential_provider(),"context":asdict(comm.clients["b"].service.context),
+                "provider_key":provider_key,"label":label,"binding":{"registration":registration.model_dump(mode="json"),
+                    "locator_host":"127.0.0.1","locator_port":public_port,"route_class":"tunnel","node_key_id":node_key_id,
+                    "node_public_key":prepared["node_public_key"],"registration_signature":"0"*128},
+                "client_config":{"authority_key_id":"remote-key","authority_key_revision":1,"authority_public_key":public_key(authority_key),
+                    "authority_public_key_fingerprint":hashlib.sha256(bytes.fromhex(public_key(authority_key))).hexdigest(),
+                    "expected_boot_incarnation":boot,"journal_generation":1,"access_mode":"owner"}})
+            registration = EndpointRegistration.model_validate_json(json.dumps(configured["registration"]),strict=True)
+            envelope = command(observer,"endpoint.register","endpoint",endpoint_id)
+            node_input = {"registration":registration.model_dump(mode="json"),"registration_signature":configured["registration_signature"]}
+            observer.register_receiver_endpoint(envelope,EndpointRegistrationCommand(registration=registration,
+                registration_signature=configured["registration_signature"],proof=proof(envelope,node_input)))
+            started = rpc({"action":"start"},timeout=120)
+            assert started["native"]["session_ref"].startswith("ses_")
+            monkeypatch.setenv("ACS_TEST_AUTHORITY_SIGNING_KEY",authority_key.encode().hex())
+            endpoint = ConfiguredRemoteEndpoint(comm.authority,RemoteEndpointSettings(endpoint_id=endpoint_id,
+                authority_signing_key_ref=PrivateReference(kind="environment",name="ACS_TEST_AUTHORITY_SIGNING_KEY")))
+            comm.dispatcher.service.endpoints[endpoint_id] = endpoint
+            comm.authority._delivery_endpoints[endpoint_id] = endpoint
+            comm.dispatcher.service.bind_endpoint(bind_command(comm.authority,"message.bind",endpoint_id),
+                EndpointBindingRequest(scope_id="local-scope",agent_slot_id="slot-b",expires_at=expiry))
+            observed = call(comm,"manager","configure_team",
+                members=[{"agent_slot_id":"slot-b","principal_ref":"agent:b","endpoint_id":endpoint_id}])
+            facts["configuration"] = observed
+            facts["post_configuration_health"] = endpoint.inspect_runtime()
+&gt;           assert observed["data"]["native_sessions"][0]["session_ref"]==started["native"]["session_ref"],observed
+E           AssertionError: {'data': {'caller_bindings': [{'agent_slot_id': 'slot-b', 'grant_ref': 'grant:b', 'principal_ref': 'agent:b', 'profile...00:00', 'fold': 0, 'timezone': 'UTC'}}, 'timezone': 'UTC'}, 'timestamp_authority': 'unverified', ...}, 'ok': True, ...}
+E           assert None == 'ses_e6d96e137ffeMFYx22cToqjbdO'
+
+runtime_tests\test_communication_remote_native.py:242: AssertionError</failure></testcase></testsuite></testsuites>

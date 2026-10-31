@@ -9,7 +9,6 @@ import pytest
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from runtime.domain import DomainAuthority
 from runtime.errors import AcceptanceGuardFailed, AuthorizationDenied, LeaseRejected
 from runtime.models import (
     AuthenticatedContext,
@@ -19,6 +18,7 @@ from runtime.models import (
     TransitionRequest,
     WorkItemState,
 )
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 
 DSN = os.getenv("ACS_P1_DSN", "")
 

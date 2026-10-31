@@ -1,0 +1,67 @@
+[
+  {
+    "appContext": null,
+    "arguments": {
+      "handle": "notification:project-alpha:communication-1",
+      "project_id": "project-alpha"
+    },
+    "completedAtMs": 1793440536930,
+    "durationMs": 63,
+    "error": null,
+    "id": "exec-fa45c12a-9deb-4cd4-8272-cc023c0e47fc",
+    "mcpAppUi": null,
+    "pluginId": null,
+    "readOnlyHint": true,
+    "result": {
+      "_meta": null,
+      "content": [
+        {
+          "text": "{\"schema_version\": \"acs-mcp-result/3\", \"result_type\": \"message_snapshot\", \"ok\": true, \"state\": \"observed\", \"data\": {\"source\": \"acs\", \"message_handle\": \"message:project-alpha:message-9ff0562f3430496d9eb6051a4191c043\", \"state\": \"blocked\", \"code\": \"native_pre_call_rejected\", \"native_delivery\": {\"state\": \"delivered\", \"receipt_high_water\": \"runtime_acknowledged\", \"error_code\": null, \"model_consumption\": \"unconfirmed\"}, \"meaning\": \"Communication obstacle; no Agent reply or work outcome inferred.\"}, \"follow_ups\": [], \"metadata\": {\"evidence_class\": \"authority_observation\", \"observed_at\": \"2026-10-31T09:55:36.928237+00:00\", \"timestamp_source\": \"node_local_utc\", \"timestamp_authority\": \"unverified\", \"presentation\": {\"timezone\": \"UTC\", \"timestamps\": {\"/metadata/observed_at\": {\"canonical_utc\": \"2026-10-31T09:55:36.928237+00:00\", \"timezone\": \"UTC\", \"display\": \"2026-10-31T09:55:36.928237+00:00\", \"fold\": 0}}}}}",
+          "type": "text"
+        }
+      ],
+      "structuredContent": {
+        "data": {
+          "code": "native_pre_call_rejected",
+          "meaning": "Communication obstacle; no Agent reply or work outcome inferred.",
+          "message_handle": "message:project-alpha:message-9ff0562f3430496d9eb6051a4191c043",
+          "native_delivery": {
+            "error_code": null,
+            "model_consumption": "unconfirmed",
+            "receipt_high_water": "runtime_acknowledged",
+            "state": "delivered"
+          },
+          "source": "acs",
+          "state": "blocked"
+        },
+        "follow_ups": [],
+        "metadata": {
+          "evidence_class": "authority_observation",
+          "observed_at": "2026-10-31T09:55:36.928237+00:00",
+          "presentation": {
+            "timestamps": {
+              "/metadata/observed_at": {
+                "canonical_utc": "2026-10-31T09:55:36.928237+00:00",
+                "display": "2026-10-31T09:55:36.928237+00:00",
+                "fold": 0,
+                "timezone": "UTC"
+              }
+            },
+            "timezone": "UTC"
+          },
+          "timestamp_authority": "unverified",
+          "timestamp_source": "node_local_utc"
+        },
+        "ok": true,
+        "result_type": "message_snapshot",
+        "schema_version": "acs-mcp-result/3",
+        "state": "observed"
+      }
+    },
+    "server": "acs",
+    "startedAtMs": 1793440536867,
+    "status": "completed",
+    "tool": "read_message",
+    "type": "mcpToolCall"
+  }
+]

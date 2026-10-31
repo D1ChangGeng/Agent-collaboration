@@ -1,5 +1,13 @@
 # Collaboration Runtime adoption contract
 
+The current communication change follows the [implemented communication
+contract](COMMUNICATION.md) and [v2.0.0 upgrade procedure](../RELEASE-NOTES-v2.0.0.md). Normal Agent
+communication, explicit replies and system notices are independent of WorkItem
+and Native terminal results. Earlier Gate records below retain their historical
+scope; their task and result-projection mechanisms do not define the new normal
+communication path. Current engineering evidence is recorded separately from
+formal release acceptance.
+
 Status: accepted architecture and implementation authorization; Runtime support
 is determined by the named Gate records. Contract revision: 2026-10-14.1.
 The original adoption baseline is 2026-09-25.1; recorded Gates retain the exact

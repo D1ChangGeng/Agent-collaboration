@@ -1,0 +1,6 @@
+Reading additional input from stdin...
+2026-10-31T13:39:14.546238Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-10-31T13:39:15.514851Z  WARN codex_mcp::rmcp_client: MCP server startup failed server_name="acs" error=handshaking with MCP server failed: connection closed: initialize response: connection closed: initialize response
+2026-10-31T13:39:15.515040Z ERROR codex_core::session: Failed to create session: required MCP servers failed to initialize: acs: handshaking with MCP server failed: connection closed: initialize response: connection closed: initialize response
+2026-10-31T13:39:15.515254Z  WARN codex_mcp::rmcp_client: failed to initialize MCP client during shutdown: MCP startup failed: handshaking with MCP server failed: connection closed: initialize response: connection closed: initialize response
+Error: thread/start: thread/start failed: error creating thread: Fatal error: Failed to initialize session: required MCP servers failed to initialize: acs: handshaking with MCP server failed: connection closed: initialize response: connection closed: initialize response (code -32603)

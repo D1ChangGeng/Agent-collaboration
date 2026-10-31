@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="3.957" timestamp="2026-10-31T20:23:23.847632+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_receiver" name="test_shared_receiver_authorizes_committed_sender_separately_from_its_observer" time="1.551" /><testcase classname="runtime_tests.test_communication_receiver" name="test_committed_unbound_client_origin_survives_recovery_to_a_registered_route" time="1.527"><failure message="KeyError: 'revision'">runtime_tests\test_communication_receiver.py:79: in test_committed_unbound_client_origin_survives_recovery_to_a_registered_route
+    envelope, _binding = comm.dispatcher._authorize(cursor, row)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\delivery.py:507: in _authorize
+    "boot_incarnation": binding["boot_incarnation"], "binding_revision": binding["revision"]}), binding
+                                                                         ^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'revision'</failure></testcase><testcase classname="runtime_tests.test_communication_receiver" name="test_receiver_refuses_legacy_native_activation_before_calling_bridge" time="0.001" /><testcase classname="runtime_tests.test_communication_receiver" name="test_native_receiver_settings_do_not_require_execution_collector_storage" time="0.417" /></testsuite></testsuites>

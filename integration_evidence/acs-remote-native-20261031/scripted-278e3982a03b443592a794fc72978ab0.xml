@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="56.186" timestamp="2026-11-01T01:19:07.446082+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_remote_native" name="test_physical_signed_receiver_and_independent_reply[scripted]" time="55.425"><failure message="AssertionError: remote controller exited; see stderr&#10;assert 'controller_exited' != 'controller_exited'&#10; +  where 'controller_exited' = &lt;built-in method get of dict object at 0x00000198407C2240&gt;('state')&#10; +    where &lt;built-in method get of dict object at 0x00000198407C2240&gt; = {'state': 'controller_exited'}.get">runtime_tests\test_communication_remote_native.py:536: in test_physical_signed_receiver_and_independent_reply
+    assert (
+E   AssertionError: {'data': {'caller_bindings': [{'agent_slot_id': 'slot-b', 'grant_ref': 'grant:b', 'principal_ref': 'agent:b', 'profile...00:00', 'fold': 0, 'timezone': 'UTC'}}, 'timezone': 'UTC'}, 'timestamp_authority': 'unverified', ...}, 'ok': True, ...}
+E   assert None == 'ses_e6d3dac67ffegPr1tYEA9M66hR'
+
+During handling of the above exception, another exception occurred:
+runtime_tests\test_communication_remote_native.py:654: in test_physical_signed_receiver_and_independent_reply
+    facts["stop"] = rpc({"action": "stop"}, timeout=30)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_communication_remote_native.py:263: in rpc
+    assert result.get("state") != "controller_exited", "remote controller exited; see stderr"
+E   AssertionError: remote controller exited; see stderr
+E   assert 'controller_exited' != 'controller_exited'
+E    +  where 'controller_exited' = &lt;built-in method get of dict object at 0x00000198407C2240&gt;('state')
+E    +    where &lt;built-in method get of dict object at 0x00000198407C2240&gt; = {'state': 'controller_exited'}.get</failure></testcase></testsuite></testsuites>

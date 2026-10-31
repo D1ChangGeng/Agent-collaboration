@@ -1,0 +1,26 @@
+Traceback (most recent call last):
+  File "/tmp/acs-remote-native-04a7f460531b4685824bfc34fbbbf9c1/runtime_tests/fixtures/remote_native_receiver.py", line 399, in <module>
+    main()
+  File "/tmp/acs-remote-native-04a7f460531b4685824bfc34fbbbf9c1/runtime_tests/fixtures/remote_native_receiver.py", line 342, in main
+    native = capacity.health()
+             ^^^^^^^^^^^^^^^^^
+  File "/tmp/acs-remote-native-04a7f460531b4685824bfc34fbbbf9c1/runtime_deployment/receiver_opencode.py", line 124, in health
+    view = self.driver.inspect(operation)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/acs-remote-native-04a7f460531b4685824bfc34fbbbf9c1/runtime/opencode_driver.py", line 767, in inspect
+    view = self._inspect(operation)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/acs-remote-native-04a7f460531b4685824bfc34fbbbf9c1/runtime/opencode_driver.py", line 743, in _inspect
+    _, statuses = self._http(operation, "GET", "/session/status")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/acs-remote-native-04a7f460531b4685824bfc34fbbbf9c1/runtime/opencode_driver.py", line 320, in _http
+    self.journal.event(operation.operation_id, "http_intent",
+  File "/tmp/acs-remote-native-04a7f460531b4685824bfc34fbbbf9c1/runtime/codex_driver.py", line 370, in event
+    observed_at or (self.clock.observation_time() if self.clock is not None else datetime.now(UTC)).isoformat()),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/acs-remote-native-04a7f460531b4685824bfc34fbbbf9c1/runtime/connection_clock.py", line 222, in observation_time
+    reading = self.synchronize()
+              ^^^^^^^^^^^^^^^^^^
+  File "/tmp/acs-remote-native-04a7f460531b4685824bfc34fbbbf9c1/runtime/connection_clock.py", line 160, in synchronize
+    raise ClockUncertain("connection clock sample exceeds timing bounds")
+runtime.connection_clock.ClockUncertain: connection clock sample exceeds timing bounds

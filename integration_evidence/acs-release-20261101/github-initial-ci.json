@@ -1,0 +1,10 @@
+{
+  "commit": "1767c148b31a25fcc89aedf9384c2edc293ba939",
+  "pull_request_run": 41235477713,
+  "job": 124638230002,
+  "failed_step": "actions/setup-python@v5",
+  "runner": "Ubuntu 26.04.1 / ubuntu-26.04",
+  "error": "The version '3.9' with architecture 'x64' was not found for Ubuntu 26.04.",
+  "runtime_tests_started_in_failed_job": false,
+  "correction": "Retain Python 3.9 coverage on ubuntu-22.04; keep current images for 3.11/3.12; disable matrix fail-fast."
+}

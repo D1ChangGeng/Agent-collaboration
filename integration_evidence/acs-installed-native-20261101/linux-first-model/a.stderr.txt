@@ -1,0 +1,4 @@
+WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "/tmp" (codex_home: AbsolutePathBuf("/tmp/ain-30f8878734d5/test_installed_receiver_consol0/codex-a"))
+Reading additional input from stdin...
+2026-10-31T18:42:03.418649Z ERROR codex_core::session: Failed to create session: required MCP servers failed to initialize: acs: handshaking with MCP server failed: connection closed: initialize response
+Error: thread/start: thread/start failed: error creating thread: Fatal error: Failed to initialize session: required MCP servers failed to initialize: acs: handshaking with MCP server failed: connection closed: initialize response (code -32603)

@@ -1,0 +1,54 @@
+{
+  "source_head": "9921e6e466e5b17ab8cfc204acdd21da928e8c37",
+  "remote_root": "/tmp/acs-cross-harness-15c65e81348a4c0f9e78a0a02d372915",
+  "ssh_host": "1302-1",
+  "messages": [
+    [
+      "message-36a584e439a2440a97d6e7b03254b414",
+      "collaborator:project-alpha:slot-a-real",
+      "collaborator:project-alpha:slot-b",
+      "Please provide the release label for this isolated exercise. Reply with the exact label.",
+      "message_only"
+    ],
+    [
+      "message-9155b838ed4a4694a0643e489db1f6fb",
+      "collaborator:project-alpha:slot-b",
+      "collaborator:project-alpha:slot-a-real",
+      "cross-iris-f837bc6f1bb2",
+      "message_only"
+    ]
+  ],
+  "reply_relationships": [
+    [
+      "message-36a584e439a2440a97d6e7b03254b414",
+      "message-9155b838ed4a4694a0643e489db1f6fb"
+    ]
+  ],
+  "work_count": 0,
+  "label": "cross-iris-f837bc6f1bb2",
+  "actor_profiles": {
+    "a": "engineer",
+    "b": "engineer"
+  },
+  "a_tools": [
+    "check_inbox",
+    "list_collaborators",
+    "check_inbox",
+    "list_collaborators",
+    "send_message",
+    "send_message",
+    "wait_for_response",
+    "wait_for_response",
+    "wait_for_response",
+    "wait_for_response"
+  ],
+  "b_tools": [
+    "acs_check_inbox",
+    "acs_list_collaborators",
+    "acs_check_inbox",
+    "acs_read_message",
+    "acs_send_message"
+  ],
+  "native_autoactivation": "not_tested",
+  "transport": "public stdio MCP and loopback SSH reverse forwarding"
+}

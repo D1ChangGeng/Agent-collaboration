@@ -1,0 +1,39 @@
+{
+  "installed_version": "codex-cli 0.166.0-alpha.5.1",
+  "b_native_thread": "01a19226-ac48-7ac0-914e-2a05b22c941c",
+  "messages": [
+    [
+      "message-5fdf0b2e2bc14a068a4f4115ad972087",
+      "collaborator:project-alpha:slot-a-real",
+      "collaborator:project-alpha:slot-b",
+      "Please provide the release label for this isolated exercise.",
+      "invoke"
+    ],
+    [
+      "message-00cc6ff3772d493c9edbd52703af8774",
+      "collaborator:project-alpha:slot-b",
+      "collaborator:project-alpha:slot-a-real",
+      "The release label for this isolated exercise is native-orchid-f65f1a62d09b.",
+      "invoke"
+    ]
+  ],
+  "reply_relationships": [
+    [
+      "message-5fdf0b2e2bc14a068a4f4115ad972087",
+      "message-00cc6ff3772d493c9edbd52703af8774"
+    ]
+  ],
+  "native_turn_start_count": 1,
+  "work_count": 0,
+  "label": "native-orchid-f65f1a62d09b",
+  "activation": "production dispatcher and NativeDeliveryAdapter",
+  "fault_injection": null,
+  "source_manifest_sha256": "644d31cf393f2702f2e257d7905e159349592af94e3657cc615bc71abe0c4939",
+  "production_receiver_factory": true,
+  "work_table_present": false,
+  "personal_skill_readback": {
+    "discovered": 51,
+    "enabled": 0
+  },
+  "collector_created": false
+}

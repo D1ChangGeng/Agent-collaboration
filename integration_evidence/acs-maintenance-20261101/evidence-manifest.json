@@ -1,0 +1,28 @@
+{
+  "files": {
+    "after.xml": "657c42240cfbc4765d2da26d92a875a784e573016825589d8460ad2c1cc40b97",
+    "before.xml": "312ea1da93c3a56eea17547d16ba19d31977c6dfcca0d4c9b836aabb38f582c7",
+    "bounds.xml": "d2e287b0bf545ba621ea54487ab361a82612d0d42d0b1551d951e5d8520c2e5c",
+    "budget-isolated.xml": "ae09ea17eae5c486ec6bf7d69bc798a85a7b1bcdd4343c7e2fed091f1bc73b81",
+    "ci-components-linux-current.xml": "efffe86fb91f3dd86b5058e8ff6bf408272d5505e9cd1a161e7d65b72d6b1a8c",
+    "classification.xml": "9d536348dcd82dd02295a6a6d7c6c9ab91c55122fd43f1530a4d725aea1a2f58",
+    "codex-67dc298c1fe94ad283e4ab031d557092.xml": "d84f90e6206fee196e0fef1f4add4a34ddeeec563d31385866a786dc193ff2a3",
+    "codex-97c28b146d634c6db92bfd90f52eaa96.xml": "9c9e1cedfb43c9855423e53135901504a1bb45eb6d381e3fcf23c179dded39c3",
+    "delivery-fixed.xml": "5e17ea740b47b0769ef7154c5f122affb3060314189873f1b5a92c603bb5e2a4",
+    "final-maintenance.xml": "a551d3e4f50f15c8efb2ce310e45651f99d69775ddd2934d61ab543b1916b0a4",
+    "final-regression.xml": "aa6d678c4287e4a43db9571955223cca6757064f23e4dbe4eef7560a45b1ce67",
+    "installed-candidate.json": "1f627746d0ba8f7850e345ea48b0416727fe406a6a7793f9c17709ef7c7d8f76",
+    "installed-smoke.py": "68aafadfa1c35093a790061879c2848893257c2768e32f678297d95d907b73ce",
+    "known-ack-before.xml": "27a36cfb8aff8fe7cafc377b1128ae0f0793e622a08de455e0457110efa57da6",
+    "linux-source-snapshot-current.json": "a62d68136ef15bd40bad707ac6d41040559c20933cd9298ffc20f8d396503f55",
+    "regression.xml": "bd6968509687ce70d46a456829c271ee606d4acca396553bcf81b03c60fe9656",
+    "REPORT.md": "94325cbb30c502301a5701128ceb86c4bc4e242129d891893830b8b57f4d7b98",
+    "source-state.json": "e3ddfd3829b3eddae2346283e44986d3df3745e9ecab7afe013af77e2da2f28b",
+    "dual-model/a-public-events.jsonl": "f588843400635266ca6ac27398e3f65963227f250777af33f2bdcc918d4b51c6",
+    "dual-model/a.stderr.txt": "7e9cccd050a6ad6b10fd0d73239660a05222a1a6f23f608288d593271b2a7cea",
+    "dual-model/facts.json": "ab74790caf2b6d4c4f8974862bd0354971b04ce6559c109d1124ad6571c0ec11",
+    "dual-model/receiver-controller.jsonl": "b15ba34d06690ef6eda7dbae0c142e5a106cd1adec3ce96b295802ad88bce514",
+    "dual-model/receiver-controller.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dual-model/source-files.json": "9717cddb0cd28eddfe0767b66a1e1d46fa8baec7b80d952246955db8e86ab771"
+  }
+}

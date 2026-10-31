@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="171.345" timestamp="2026-10-31T23:19:41.636806+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_receiver_opencode_factory" name="test_real_opencode_factory_receives_and_replies_through_its_own_mcp[codex]" time="170.007"><failure message="AssertionError: Codex A did not submit; see its raw log&#10;assert (None is None and 21174.939424631 &lt; 21174.811920918)&#10; +  where None = poll()&#10; +    where poll = &lt;Popen: returncode: None args: ['/usr/local/bin/codex', 'exec', '--ephemeral...&gt;.poll&#10; +  and   21174.939424631 = &lt;built-in function monotonic&gt;()&#10; +    where &lt;built-in function monotonic&gt; = &lt;module 'time' (built-in)&gt;.monotonic">comm = namespace(clients={'a': &lt;runtime.mcp_runtime.McpRuntime object at 0x78c5cbab6f00&gt;, 'b': &lt;runtime.mcp_runtime.McpRuntim...very.DeliveryDispatcher object at 0x78c5cbab6bd0&gt;, authority=&lt;runtime.domain.DomainAuthority object at 0x78c5cbccf6b0&gt;)
+tmp_path = PosixPath('/tmp/acs-opencode-dual-model-68ca/test_real_opencode_factory_rec0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x78c5cbab6b70&gt;
+sender_mode = 'codex'
+
+    @pytest.mark.skipif(os.getenv("ACS_REAL_OPENCODE_MODEL_TEST")!="1" or not sys.platform.startswith("linux"),
+                        reason="actual OpenCode model request with approved isolated Provider is opt-in")
+    @pytest.mark.parametrize("sender_mode", ["scripted", "codex"])
+    def test_real_opencode_factory_receives_and_replies_through_its_own_mcp(comm,tmp_path,monkeypatch,sender_mode):
+        import shutil
+        import subprocess
+        import time
+        import uuid
+        from concurrent.futures import ThreadPoolExecutor
+        from dataclasses import asdict
+    
+        from runtime.delivery_models import EndpointBindingRequest
+        from runtime.delivery_node import LocalNodeEndpoint
+        from runtime_tests.test_communication import await_waiter, prepare_ordinary_agents
+        from runtime_tests.test_delivery import command as bind_command
+    
+        manager=comm.clients["a"]
+        prepare_ordinary_agents(comm,tmp_path)
+        comm.clients["manager"]=manager
+        config,supplied,_observer=enrolled_opencode_config(comm,tmp_path)
+        supplied["executable"]=os.environ["ACS_REAL_OPENCODE_BINARY"]
+        label="opencode-cedar-"+uuid.uuid4().hex[:12]
+        provider_key=json.loads(Path("/home/d26fo/.codex/auth.json").read_text())["OPENAI_API_KEY"]
+        monkeypatch.setenv("ACS_OC_TEST_PROVIDER_KEY",provider_key)
+        monkeypatch.setenv("ACS_RECEIVER_DSN",comm.dsn)
+        monkeypatch.setenv("ACS_OC_TEST_DSN",comm.dsn)
+        monkeypatch.setenv("ACS_OC_TEST_CREDENTIAL",comm.clients["b"].credential_provider())
+        surface=tmp_path/"opencode-b-surface.json"
+        surface.write_text(json.dumps({"context":asdict(comm.clients["b"].service.context),"delivery_maintenance":"external",
+            "dsn_ref":{"kind":"environment","name":"ACS_OC_TEST_DSN"},
+            "credential_ref":{"kind":"environment","name":"ACS_OC_TEST_CREDENTIAL"}}))
+        surface.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        from runtime.codex_driver import file_digest
+        source_files=[path for directory in (root/"runtime",root/"runtime_deployment") for path in directory.glob("*")
+                      if path.suffix in {".py",".sql"}]
+        source_files += [Path(__file__),root/"runtime_tests/test_communication.py",root/"docs/runtime/p2-mcp-tool-contract.json"]
+        source_manifest={path.relative_to(root).as_posix():file_digest(path) for path in source_files}
+        (tmp_path/"source-files.json").write_text(json.dumps(source_manifest,indent=2),encoding="utf-8")
+        wrapper=tmp_path/"opencode-b-mcp.py"
+        wrapper.write_text("import sys\nsys.path.insert(0,"+repr(str(root))+")\nfrom runtime.project_entry import main\nraise SystemExit(main("+
+            repr(["--config",str(surface),"--catalog",str(root/"docs/runtime/p2-mcp-tool-contract.json"),"--profile","engineer"])+"))\n")
+        native_config={"model":"acs-test/gpt-6.1-sol","default_agent":"acs-peer","plugin":[],
+            "provider":{"acs-test":{"npm":"@ai-sdk/openai-compatible","name":"Isolated approved Provider",
+                "options":{"baseURL":"https://api.payapionline.top/v1","apiKey":"{env:ACS_OC_TEST_PROVIDER_KEY}"},
+                "models":{"gpt-6.1-sol":{"name":"gpt-6.1-sol"}}}},
+            "permission":{"*":"deny","acs_*":"allow"},
+            "agent":{"acs-peer":{"mode":"primary","prompt":"You are Agent B, ACS collaborator slot-b in project-alpha. "
+                f"The release label for this isolated exercise is {label}. Respond through ACS when contacted. "
+                "Use the ACS MCP tools and retain the received reply relationship. Do not inspect or change files.",
+                "permission":{"*":"deny","acs_*":"allow"}}},
+            "mcp":{"acs":{"type":"local","command":[sys.executable,str(wrapper)],"enabled":True,"timeout":180000}}}
+        monkeypatch.setenv("OPENCODE_CONFIG_CONTENT",json.dumps(native_config))
+        capacity=OpenCodeReceiverCapacity(config,"c"*64,supplied)
+        sender_process=None
+        try:
+            endpoint=LocalNodeEndpoint(capacity.node,"local-scope","slot-b",capacity.adapter)
+            comm.dispatcher.service.endpoints["opencode-endpoint"]=endpoint
+            comm.authority._delivery_endpoints["opencode-endpoint"]=endpoint
+            comm.dispatcher.service.bind_endpoint(bind_command(comm.authority,"message.bind","opencode-endpoint"),
+                EndpointBindingRequest(scope_id="local-scope",agent_slot_id="slot-b",expires_at=datetime.now(UTC)+timedelta(minutes=5)))
+            call(comm,"manager","configure_team",prepare_native=False,
+                members=[{"agent_slot_id":"slot-b","principal_ref":"agent:b","endpoint_id":"opencode-endpoint"}])
+            started=time.monotonic()
+            if sender_mode=="scripted":
+                sent=call(comm,"a","send_message",to="collaborator:project-alpha:slot-b",
+                          content="What is the release label for this isolated exercise? Please reply through ACS.")["data"]
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    waiting=pool.submit(call,comm,"a","wait_for_response",handles=[sent["message_handle"]],timeout_seconds=180)
+                    await_waiter(comm)
+                    dispatched=comm.dispatcher.dispatch({"tenant_id":comm.authority.tenant_id,
+                        "message_id":sent["message_id"],"operation_id":sent["operation_id"]})
+                    assert dispatched["status"] in {"delivered","uncertain"},dispatched
+                    observed=waiting.result(timeout=190)
+            else:
+                binary=shutil.which("codex")
+                assert binary,"an actual local Codex CLI is required for the dual-model case"
+                a_home=tmp_path/"codex-a"
+                a_home.mkdir(mode=0o700)
+                a_config=['model="gpt-6.1-sol"','model_provider="acs-test"','approval_policy="never"','sandbox_mode="read-only"',
+                    'project_doc_max_bytes=0','[features]','apps=false','plugins=false','[model_providers.acs-test]',
+                    'name="Approved isolated Provider"','base_url="https://api.payapionline.top/v1"','env_key="ACS_A_PROVIDER_KEY"',
+                    'wire_api="responses"','requires_openai_auth=true']
+                for path in sorted((Path.home()/".agents/skills").glob("*/SKILL.md")):
+                    a_config.extend(['[[skills.config]]','path='+json.dumps(str(path.resolve())),'enabled=false'])
+                (a_home/"config.toml").write_text("\n".join(a_config)+"\n")
+                a_surface=tmp_path/"codex-a-surface.json"
+                a_surface.write_text(json.dumps({"context":asdict(comm.clients["a"].service.context),"delivery_maintenance":"external",
+                    "dsn_ref":{"kind":"environment","name":"ACS_A_TEST_DSN"},
+                    "credential_ref":{"kind":"environment","name":"ACS_A_TEST_CREDENTIAL"}}))
+                a_surface.chmod(0o600)
+                a_wrapper=tmp_path/"codex-a-mcp.py"
+                a_wrapper.write_text("import sys\nsys.path.insert(0,"+repr(str(root))+")\nfrom runtime.project_entry import main\nraise SystemExit(main("+
+                    repr(["--config",str(a_surface),"--catalog",str(root/"docs/runtime/p2-mcp-tool-contract.json"),"--profile","engineer"])+"))\n")
+                # B's private initial label/configuration and MCP credential must
+                # never be inherited by A. Both model contexts know only their role.
+                a_env={key:value for key,value in os.environ.items() if not key.startswith(("OPENCODE_","ACS_OC_","ACS_RECEIVER_","CODEX_"))}
+                a_env.update(CODEX_HOME=str(a_home),ACS_A_PROVIDER_KEY=provider_key,ACS_A_TEST_DSN=comm.dsn,
+                             ACS_A_TEST_CREDENTIAL=comm.clients["a"].credential_provider())
+                declaration="mcp_servers={acs={command="+json.dumps(sys.executable)+",args=["+json.dumps(str(a_wrapper))+"]," \
+                    'env_vars=["ACS_A_TEST_DSN","ACS_A_TEST_CREDENTIAL"],required=true,startup_timeout_sec=30,tool_timeout_sec=180}}'
+                with (tmp_path/"codex-a.jsonl").open("w") as output,(tmp_path/"codex-a.stderr").open("w") as errors:
+                    sender_process=subprocess.Popen([binary,"exec","--ephemeral","--json","--skip-git-repo-check","--sandbox","read-only",
+                        "-C",str(tmp_path),"-c",declaration,
+                        ("You are ordinary Agent A in ACS project-alpha. Use ACS MCP to ask collaborator slot-b for the release label of this "
+                        "isolated exercise. The normal ACS send defaults can activate B. Wait for B's actual ACS reply and report its exact label. "
+                        "Use the configured ACS MCP tools; do not inspect or change files.")],env=a_env,stdin=subprocess.DEVNULL,stdout=output,stderr=errors)
+                deadline=time.monotonic()+150
+                while True:
+                    with comm.authority._connect() as connection:
+                        committed=connection.execute("SELECT message_id,operation_id FROM delivery_messages WHERE tenant_id=%s "
+                            "AND packet_json-&gt;&gt;'sender'='collaborator:project-alpha:slot-a-real'",(comm.authority.tenant_id,)).fetchone()
+                    if committed:
+                        break
+&gt;                   assert sender_process.poll() is None and time.monotonic()&lt;deadline,"Codex A did not submit; see its raw log"
+E                   AssertionError: Codex A did not submit; see its raw log
+E                   assert (None is None and 21174.939424631 &lt; 21174.811920918)
+E                    +  where None = poll()
+E                    +    where poll = &lt;Popen: returncode: None args: ['/usr/local/bin/codex', 'exec', '--ephemeral...&gt;.poll
+E                    +  and   21174.939424631 = &lt;built-in function monotonic&gt;()
+E                    +    where &lt;built-in function monotonic&gt; = &lt;module 'time' (built-in)&gt;.monotonic
+
+runtime_tests/test_receiver_opencode_factory.py:310: AssertionError</failure></testcase></testsuite></testsuites>

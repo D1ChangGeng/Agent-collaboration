@@ -69,6 +69,8 @@ class PosixProcessSupervisor(_Ownership):
                 "birth_ref": handle.birth_ref, "backend": "posix-process-session",
                 "scope": "owned_process_group", "subtree_containment": False,
                 "alive": bool(members), "pid": handle.process.pid, "members": members,
+                "root_pid": handle.process.pid, "root_exited": handle.process.poll() is not None,
+                "remaining_pids": members,
                 "root_exit_code": handle.process.poll(), "remaining_group_members": members}
 
     def terminate_tree(self, handle):

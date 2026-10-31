@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="41.034" timestamp="2026-11-01T03:41:28.254755+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_installed_native" name="test_installed_receiver_console_and_independent_reply[codex]" time="38.879"><failure message="AssertionError: Codex A did not submit; see raw log&#10;assert (1 is None)&#10; +  where 1 = poll()&#10; +    where poll = &lt;Popen: returncode: 1 args: ['/usr/local/bin/codex', 'exec', '--ephemeral', ...&gt;.poll">runtime_tests/test_communication_installed_native.py:26: in test_installed_receiver_console_and_independent_reply
+    exercise_receiver(comm, tmp_path, monkeypatch, sender_mode)
+runtime_tests/test_communication_remote_native.py:664: in test_physical_signed_receiver_and_independent_reply
+    assert a.poll() is None and time.monotonic() &lt; deadline, (
+E   AssertionError: Codex A did not submit; see raw log
+E   assert (1 is None)
+E    +  where 1 = poll()
+E    +    where poll = &lt;Popen: returncode: 1 args: ['/usr/local/bin/codex', 'exec', '--ephemeral', ...&gt;.poll</failure></testcase></testsuite></testsuites>

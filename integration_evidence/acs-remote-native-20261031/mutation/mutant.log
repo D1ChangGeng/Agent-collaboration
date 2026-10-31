@@ -1,0 +1,13 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+______ test_retry_uses_original_operation_and_conflict_preserves_content ______
+runtime_tests\test_communication.py:249: in test_retry_uses_original_operation_and_conflict_preserves_content
+    rejected(comm, "a", "send_message", "idempotency_conflict", client_request_id=request_id,
+runtime_tests\test_communication.py:157: in rejected
+    assert not result["ok"] and result["data"]["code"] == code, result
+E   AssertionError: {'data': {'activation': 'message_only', 'client_request_id': 'ed5501a5302143159a7e75668a046322', 'command_id': 'mcp-7c...00:00', 'fold': 0, 'timezone': 'UTC'}}, 'timezone': 'UTC'}, 'timestamp_authority': 'unverified', ...}, 'ok': True, ...}
+E   assert (not True)
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-remote-native-20261031\mutation\mutant.xml -
+=========================== short test summary info ===========================
+FAILED runtime_tests\test_communication.py::test_retry_uses_original_operation_and_conflict_preserves_content
+1 failed in 1.62s

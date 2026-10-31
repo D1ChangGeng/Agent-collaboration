@@ -4,8 +4,9 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from copy import copy
 from contextlib import asynccontextmanager
+from copy import copy
+from functools import partial
 from importlib.metadata import version
 
 import anyio
@@ -20,6 +21,8 @@ from mcp_types import (
     ListToolsResult,
     ReadResourceResult,
 )
+
+from runtime.communication_tools import SERVER_INSTRUCTIONS
 
 INBOX = re.compile(r"acs://projects/([A-Za-z0-9][A-Za-z0-9._-]{0,127})/inbox\Z")
 
@@ -140,7 +143,8 @@ def create_project_server(runtime=None, *, runtime_provider=None):
         active_runtime = copy(current_runtime())
         active_runtime.service = copy(active_runtime.service)
         context = active_runtime.service.context
-        owner = (context.tenant_id, context.principal_ref, context.grant_ref, active_runtime.service.profile)
+        owner = (context.tenant_id, context.principal_ref, context.grant_ref, context.agent_slot_id,
+                 context.trusted_client, active_runtime.service.profile)
         if key in states and states[key]["owner"] != owner:
             raise MCPError(code=-32001, message="Session identity changed")
         if key not in states:
@@ -217,7 +221,9 @@ def create_project_server(runtime=None, *, runtime_provider=None):
 
     async def call_tool(ctx, params):
         state = await connection_state(ctx)
-        result = await anyio.to_thread.run_sync(state["runtime"].call, params.name, params.arguments or {},
+        request_id = state["connection_ref"] + ":" + str(ctx.request_id)
+        result = await anyio.to_thread.run_sync(partial(state["runtime"].call, params.name, params.arguments or {},
+                                               request_id=request_id),
                                                abandon_on_cancel=True)
         return CallToolResult.model_validate(result)
 
@@ -243,10 +249,7 @@ def create_project_server(runtime=None, *, runtime_provider=None):
         return ReadResourceResult.model_validate({"contents": [{"uri": str(params.uri),
             "mimeType": "application/json", "text": json.dumps(result[1], default=str)}]})
 
-    return _ProjectServer("agent-collaboration-runtime", version="0.1.0", lifespan=lifespan,
-        instructions="Use list_projects and load_project for missing or stale project context. "
-        "Every project-scoped action requires an explicit project_id. Retain response handles across reconnects. "
-        "Subscribe to the project Inbox resource for completion wake signals; refetch it after reconnecting.",
+    return _ProjectServer("agent-collaboration-runtime", version="0.1.0", instructions=SERVER_INSTRUCTIONS, lifespan=lifespan,
         on_list_tools=list_tools, on_call_tool=call_tool, on_list_resources=list_resources,
         on_read_resource=read_resource, on_subscribe_resource=subscribe, on_unsubscribe_resource=unsubscribe,
         on_subscriptions_listen=listen)

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="247.328" timestamp="2026-10-31T18:49:27.213964+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_native" name="test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp[notice]" time="246.983"><failure message="AssertionError: Native manager has not actually read the system notification&#10;assert []">runtime_tests\test_communication_native.py:398: in test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp
+    asyncio.run(run())
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py:726: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+runtime_tests\test_communication_native.py:388: in run
+    assert observed_notice_calls,"Native manager has not actually read the system notification"
+E   AssertionError: Native manager has not actually read the system notification
+E   assert []</failure></testcase></testsuite></testsuites>

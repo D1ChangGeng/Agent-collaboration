@@ -1,0 +1,54 @@
+{
+  "implementation_commit": "40ea9c108d2eac698754cc42da842679af9ceeb7",
+  "base_commit": "03193767632daf5191eef8435cd32d4f5c4bc8a7",
+  "branch": "codex/core-cleanup",
+  "push": "not_requested_not_performed",
+  "receiver_sync": "same_workspace_none; remote_checkout_not_updated",
+  "native_run_directory": "notice-f865e8bd5360",
+  "native_source_manifest_sha256": "9c944ef7917d38a3088a6e654abdf5cf4dfe2941db4d7b1fea0f239cc7fd656d",
+  "native_facts": {
+    "installed_version": "codex-cli 0.166.0-alpha.5.1",
+    "native_turns": 1,
+    "manager_reads": 1,
+    "original_request_received_no_agent_reply": true
+  },
+  "reports": {
+    "notices-verified.xml": {
+      "tests": "94",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "5",
+      "time": "145.697"
+    },
+    "native-notice-current.xml": {
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "66.450"
+    },
+    "native-notice-frozen-retry.xml": {
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "172.256"
+    },
+    "notice-delivery-regression.xml": {
+      "tests": "202",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "12",
+      "time": "143.257"
+    }
+  },
+  "candidate": "D:\\Chatgpt\\Agent-collaboration\\dist\\candidates\\acs-communication-40ea9c1",
+  "wheel_sha256": "126da78dea2c15bffef8ad836914e9c9afe772ca91885d325eba1128c12a9537",
+  "wheel_native_source_files_identical": 109,
+  "preserved_user_file_sha256": {
+    "README.md": "9e1341285d25c806289c6a652c6912f7a6f2a629a8998a5a780318309565796c",
+    "README.zh-CN.md": "d8b1639e46a52eed9b4e6929d086556aba677f010e55f2ed09d3382887891a89"
+  },
+  "goal_status": "active",
+  "scope": "local Windows Native notification acceptance; independent A/manager B; controlled C pre-call fault; real installed package/PG public API smoke"
+}

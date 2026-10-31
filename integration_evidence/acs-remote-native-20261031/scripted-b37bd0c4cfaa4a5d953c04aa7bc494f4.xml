@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="62.530" timestamp="2026-11-01T01:28:53.424545+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_remote_native" name="test_physical_signed_receiver_and_independent_reply[scripted]" time="61.774"><failure message="AssertionError: {'harness': 'opencode', 'observation': 'native_readback_unavailable', 'session_ref': None, 'state': 'unknown', ...}&#10;assert 'unknown' == 'idle'&#10;  &#10;  - idle&#10;  + unknown">runtime_tests\test_communication_remote_native.py:540: in test_physical_signed_receiver_and_independent_reply
+    assert facts["post_configuration_health"]["state"] == "idle", facts[
+E   AssertionError: {'harness': 'opencode', 'observation': 'native_readback_unavailable', 'session_ref': None, 'state': 'unknown', ...}
+E   assert 'unknown' == 'idle'
+E     
+E     - idle
+E     + unknown</failure></testcase></testsuite></testsuites>

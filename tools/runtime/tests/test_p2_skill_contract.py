@@ -11,13 +11,13 @@ TOOL_CONTRACT = ROOT / "docs" / "runtime" / "p2-mcp-tool-contract.json"
 EXPECTED = {
     "agent-collaboration-setup": {"list_projects", "load_project"},
     "acs-project-context": {"list_projects", "load_project", "list_routes"},
-    "acs-collaboration-model": {"configure_team", "create_work", "handoff_work"},
-    "acs-runtime-model": {"list_connections", "list_harnesses", "stop_attempt"},
-    "acs-continuity-recovery": {"check_inbox", "wait_for_response", "watch_changes"},
+    "acs-collaboration-model": {"configure_team", "send_message", "list_collaborators"},
+    "acs-runtime-model": {"list_connections", "list_harnesses", "configure_team"},
+    "acs-continuity-recovery": {"check_inbox", "wait_for_response", "list_messages"},
     "acs-source-evidence": {"list_sources", "read_source", "read_diff"},
-    "acs-review-acceptance": {"request_review", "submit_review", "accept_work"},
-    "acs-policy-governance": {"read_profile", "configure_team", "submit_command"},
-    "acs-web-collaboration": {"list_projects", "load_project", "read_file"},
+    "acs-review-acceptance": {"send_message", "read_message", "read_diff"},
+    "acs-policy-governance": {"read_profile", "configure_team", "list_collaborators"},
+    "acs-web-collaboration": {"list_projects", "load_project", "check_inbox"},
 }
 KNOWLEDGE = set(EXPECTED) - {"agent-collaboration-setup"}
 
@@ -82,9 +82,9 @@ class P2SkillContractTests(unittest.TestCase):
             meta = frontmatter(text)
             with self.subTest(skill=name):
                 self.assertEqual(meta["name"], name)
-                self.assertTrue(required_sections <= set(
+                self.assertTrue(required_sections <= {
                     line for line in text.splitlines() if line.startswith("## ")
-                ))
+                })
                 for reference in ("model.md", "decisions.md", "tools.md"):
                     path = directory / "references" / reference
                     self.assertTrue(path.is_file())

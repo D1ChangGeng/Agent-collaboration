@@ -29,7 +29,6 @@ from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
 from runtime.artifacts import LocalArtifactStore
-from runtime.domain import DomainAuthority
 from runtime.effects import LocalFileEffectGateway
 from runtime.enrollment import EnrollmentAuthority
 from runtime.enrollment_models import (
@@ -58,6 +57,7 @@ from runtime.models import (
     TransitionRequest,
     WorkItemState,
 )
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 
 
 def command(domain, name, target_kind, target_id, revision=0):

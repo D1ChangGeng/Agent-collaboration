@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.836" timestamp="2026-10-31T22:21:21.825792+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_backup" name="test_snapshot_restore_preserves_history_and_fences_possible_post_snapshot_native_effects" time="1.556"><failure message="psycopg.errors.CheckViolation: non-WorkItem event cannot impersonate a WorkItem event&#10;CONTEXT:  PL/pgSQL function acs_domain_event_target() line 8 at RAISE">comm = namespace(clients={'a': &lt;runtime.mcp_runtime.McpRuntime object at 0x000001BF9F1FCC20&gt;, 'b': &lt;runtime.mcp_runtime.McpRu...iveryDispatcher object at 0x000001BF9F1210F0&gt;, authority=&lt;runtime.domain.DomainAuthority object at 0x000001BF9F10FB60&gt;)
+tmp_path = WindowsPath('D:/Chatgpt/Agent-collaboration/.tmp/storage-backup-c2d8/test_snapshot_restore_preserve0')
+
+    @pytest.mark.skipif(not os.getenv("ACS_POSTGRES_REHEARSAL_CONTAINER"), reason="owned PostgreSQL restore rehearsal is opt-in")
+    def test_snapshot_restore_preserves_history_and_fences_possible_post_snapshot_native_effects(comm, tmp_path):
+        container = os.environ["ACS_POSTGRES_REHEARSAL_CONTAINER"]
+        assert container == "acs-communication-test-20261031"
+        base = conninfo_to_dict(comm.dsn)
+        assert (base["host"], base["port"], base["dbname"]) == ("127.0.0.1", "55439", "acs_communication_test")
+        prefix = (["wsl.exe", "-d", os.getenv("ACS_POSTGRES_REHEARSAL_WSL", "Ubuntu"), "--"] if os.name == "nt" else [])
+        flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        def docker(*args, input=None):
+            return subprocess.run([*prefix, "docker", *args], input=input, capture_output=True,
+                                  check=True, timeout=90, creationflags=flags).stdout
+        labels = json.loads(docker("inspect", "--format", "{{json .Config.Labels}}", container))
+        assert labels.get("acs.purpose") == "isolated-communication-tests"
+        port = json.loads(docker("inspect", "--format", "{{json .NetworkSettings.Ports}}", container))
+        assert port["5432/tcp"] == [{"HostIp": "127.0.0.1", "HostPort": "55439"}]
+    
+        # Seed a real stored legacy packet using the historical schema, explicitly
+        # outside the normal public tool surface. Current message actions stay taskless.
+        with comm.authority._connect() as connection:
+            permissions = connection.execute("SELECT permissions FROM grants WHERE grant_ref=%s", (comm.authority.context.grant_ref,)).fetchone()[0]
+            connection.execute("UPDATE grants SET permissions=%s WHERE grant_ref=%s",
+                               (json.dumps([*permissions, "work_item.create"]), comm.authority.context.grant_ref))
+            connection.execute("INSERT INTO collaboration_routes(tenant_id,project_id,route_id,scope_id,definition) "
+                "VALUES (%s,'project-alpha','historical-route','local-scope','{}')", (comm.authority.tenant_id,))
+        from runtime_tests.fixtures.legacy_domain import DomainAuthority as HistoricalFixture
+        historical = HistoricalFixture(comm.dsn, context=comm.authority.context)
+        historical.initialize()
+        from runtime_tests.fixtures.legacy_storage import initialize_legacy_project_schema
+        initialize_legacy_project_schema(historical)
+&gt;       historical.create_work_item(command(historical, "work_item.create", "historical-work"),
+                                    "local-scope", "slot-b", "historical-source")
+
+runtime_tests\test_communication_backup.py:82: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+runtime_tests\fixtures\legacy_domain.py:315: in create_work_item
+    self._record(
+runtime_tests\fixtures\legacy_domain.py:1230: in _record
+    cursor.execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;psycopg.Cursor [closed] [BAD] at 0x1bf9f107710&gt;
+query = "INSERT INTO domain_events(tenant_id,work_item_id,from_state,to_state,initiated_by,lineage_mode,command_id,resulting_revision,evidence_refs,command_hash_version,canonical_hash) VALUES (%s,%s,%s,%s,%s,'external_command',%s,%s,%s,%s,%s)"
+params = ('tenant:comm_test_527e3af2c4c546e3b117584dbfc5cc96', 'historical-work', None, &lt;WorkItemState.CANDIDATE: 'candidate'&gt;, 'agent:engineer', 'cmd-b0e94e16-a322-4d4d-841d-e91918244677', ...)
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -&gt; Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.CheckViolation: non-WorkItem event cannot impersonate a WorkItem event
+E           CONTEXT:  PL/pgSQL function acs_domain_event_target() line 8 at RAISE
+
+.venv\Lib\site-packages\psycopg\cursor.py:117: CheckViolation</failure></testcase></testsuite></testsuites>

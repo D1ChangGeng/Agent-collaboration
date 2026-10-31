@@ -1,43 +1,24 @@
-# Continuity tool map
+# acs-continuity-recovery: tools
 
-- check_inbox discovers durable Messages, responses, Reviews and notifications.
-- read_message reads or consumes Message and response content.
-- watch_changes records event subscriptions.
-- wait_for_response observes any or all targets until its selected condition;
-  optional timeout_seconds returns pending handles early.
-- set_notification changes notification delivery while preserving durable state.
-- list_activity reads events and receipt lineage.
-- cancel_work records the durable Work decision.
-- stop_attempt controls one concrete execution try.
+Use the actual exposed tools; retain returned handles instead of constructing internal routing identities.
 
-Automatic owner stdio MCP dispatch uses the configured temporal_endpoint. The
-standard new installer writes the selected local Temporal address/port.
-An unconfigured custom service retains pending Outbox for its separately
-operated dispatcher. Read worker and receipt state before claiming dispatch.
+- `check_inbox`
+- `list_messages`
+- `read_message`
+- `wait_for_response`
 
-send_message defaults to response_mode=async and returns committed Message,
-response and notification handles. Sync waits for response_received by default;
-wait_until selects another condition. Optional wait_timeout_seconds bounds
-only the caller's observation. Zero observes once. Owner deadline is optional
-and remains separate from these caller settings.
+Communication persistence and bounded technical recovery; model understanding and work outcomes are external.
 
-For an owner response handle, read_message and check_inbox prepare missing
-terminal response Artifacts after their preliminary Project authorization
-transaction has completed. Remote preparation uses signed delivery.readback
-chunks bound to the original Dispatch and Node. Formal readback then checks
-current access and the Core Scope CAS digest in a fresh transaction.
+`read_message` bounds the original body and its embedded first reply separately.
+Use returned read actions to continue the relevant body's handle and byte offset.
+`next_offset=0` is a valid continuation; null means complete. A wait can already
+be satisfied while a long reply still has more content to read. Continuations
+retain normal participant and current Grant checks.
 
-An already copied historical result reads from the verified Core cache.
-Explicit revocation is checked at the applicable query, transport and formal
-read boundaries. Terminal content and receipt facts retain their original
-identities. Owner historical_responses exposes fenced_late results with exact
-attempt_id, dispatch_id, native outcome and digest; transfer selects that
-original dispatch_id. Current task and delivery receipts keep separate state.
+`check_inbox` also returns ACS-authored communication notifications. Use their
+`notification_handle` with `read_message` to see the actual obstacle and the
+notification's own Native delivery state. These notices do not satisfy a reply
+wait. Definite unreachability may notify the configured direct manager; busy and
+unknown Native outcomes do not authorize blind retries or automatic parent turns.
 
-Notifications follow the actual MCP Connection and Session. Native wake uses
-the observed capability; Project Inbox remains available after disconnection.
-Response tracking and subscriptions continue when a caller timeout or cancelled
-observation releases a wait.
-
-See `docs/runtime/OWNER-RUNTIME.md` for owner validity and
-`docs/runtime/SEND-WAIT-LIFECYCLE.md` for receipt mechanics and shared horizons.
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-tools.md); it is not the current communication contract.

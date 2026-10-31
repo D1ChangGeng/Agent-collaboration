@@ -43,7 +43,8 @@ def compatible(previous: dict, candidate: dict) -> bool:
     protected = {"docker-compose.acs-local.yml", "docs/runtime/p2-mcp-tool-contract.json", "LICENSE"}
     protected.update(name for name in set(old) | set(new)
                      if name.startswith("runtime/") and (name.endswith(".sql") or
-                        name in {"runtime/migrations.py", "runtime/schema_upgrade.py"}))
+                        name in {"runtime/migrations.py", "runtime/schema_upgrade.py",
+                                 "runtime/communication_storage.py", "runtime/project_schema_state.py"}))
     return all(name in old and name in new and old[name]["sha256"] == new[name]["sha256"]
                for name in protected)
 

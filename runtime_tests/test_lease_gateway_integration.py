@@ -16,12 +16,12 @@ from dataclasses import replace
 
 import pytest
 
-from runtime.domain import DomainAuthority
 from runtime.effects import LocalFileEffectGateway
 from runtime.errors import EffectUnavailable, FencingRejected
 from runtime.lease_authority import LeaseAuthority
 from runtime_tests import test_lease_authority as lease_suite
 from runtime_tests.enrollment_fixture import register_execution_fixture
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 from runtime_tests.test_lease_authority import (
     PERMISSIONS,
     acquire,

@@ -1,0 +1,22 @@
+{
+  "files": {
+    "after.xml": "ce790e4e85fab9c39752ff8e8689ca787cb3ab473e95d65f57a12314fa4050ec",
+    "before.xml": "22cc8730b7da97c36ca98a001f03430847d19064b1a29a3c40c28ec80e72cc53",
+    "boundaries.xml": "d398d0da8b2aa383e64d72c7623d47a68ea2f09acc4606e84bf23ec62b51db54",
+    "ci-components-linux-current.xml": "eb125d2788c126e289890adb8cc90b80a184835e0db4084a69a36bf2024c1942",
+    "final-regression.xml": "91a1d0b164a63340ddf6800dd84251bd170c0f76285dd79307a4592b8f29393f",
+    "installed-candidate.json": "9e32071999a7d4e5741195afa5557c1489916372b8266b3e97d96818c1a9e0a3",
+    "installed-smoke.py": "46f36f0b958ce2789a492502ca7aafeb067180535a6004d8dd73d98a181238ed",
+    "linux-source-snapshot-current.json": "a8abaa5dbbd8e07db0637631db3395940d1949c72ec7a501c5bac2ca80c66758",
+    "model-23bc3bd2b0c349998d3915261898372b.xml": "34c83ab6bfc5d1cb03556e3eb417beb9d516ec4fa10635884023b268c58c4fa2",
+    "model-7e3718031ebd4b9db6cebf927dbdbf0d.xml": "adc43a39c6ab31a2ed5496235c9d5fb200817c15aed27d5f5fa4455fea5131e9",
+    "regression.xml": "1c6244d9e69ff561dccc8a51e9b88464b596feee3b6d42896c4aded3feb3a937",
+    "REPORT.md": "704ac558105eb10ee5d8810ff0e04b6d489dff159c9292f9a64ee6a21667d78c",
+    "source-state.json": "f019f3fa6e79bb81ce0e99f86dd1143eef5a14b9a9df94a3050fc47533623868",
+    "wait.xml": "8b114b024499f4c604be6d9383f401b85e18a935943ff69213cfb59025bb8543",
+    "reader/a.stderr.txt": "c169a685cf449585e816d2450602f61eb7fd4c123456de3aa677b0386058ec30",
+    "reader/public-events.jsonl": "96fe711e9b8a97fe3555bdd2259acfcdf1fef59d22ca464c47684306354b58b2",
+    "reader/reader-facts.json": "3ecdc0d1229f6f5f9a1436834607f7cad3a69f5fa9b3ab9dc19b97155aa3a927",
+    "reader/source-files.json": "cc215a1fc3a4d06dd0138ccbc169f5d1147cd739f4b4a84aa0c62ddc70248f24"
+  }
+}

@@ -81,7 +81,7 @@ def invocation_for(envelope: DeliveryEnvelope, attempt_id: str) -> InvocationReq
         envelope_digest=hashlib.sha256(canonical(envelope.model_dump(mode="json")).encode()).hexdigest(),
         logical_payload_digest=NodeJournal.payload_digest(logical_payload(envelope)),
         selection_digest=hashlib.sha256(canonical(selection).encode()).hexdigest(),
-        accepted_revision=envelope.packet.accepted_revision,
+        accepted_revision=getattr(envelope.packet, "accepted_revision", None),
         accepted_state_digest=envelope.accepted_state_digest,
         envelope=envelope,
     )
@@ -125,6 +125,15 @@ class LocalNodeEndpoint:
                 "scope_id": self.scope_id, "agent_slot_id": self.agent_slot_id,
                 "supports_invoke": self.driver is not None,
                 "evidence_class": self.driver.evidence_class if self.driver else "local_sqlite_commit"}
+
+    def inspect_runtime(self):
+        inspect = getattr(self.driver, "inspect_runtime", None)
+        return inspect() if callable(inspect) else {"state": "unknown", "harness": "unknown", "session_ref": None}
+
+    def prepare_runtime(self):
+        prepare = getattr(self.driver, "prepare_runtime", None)
+        return prepare() if callable(prepare) else {"state": "unknown", "harness": "unknown", "session_ref": None,
+                                                   "preparation": "unavailable"}
 
     def _check(self, envelope, authorize):
         if (envelope.machine_id != self.identity.machine_id or envelope.node_id != self.identity.node_id
@@ -403,7 +412,7 @@ class LocalNodeEndpoint:
                                    "native_dispatch_ref": observation.native_dispatch_ref,
                                    "native_ack_ref": observation.native_ack_ref,
                                    "source": self.driver.evidence_class})
-                if observation.response_ref is not None:
+                if observation.response_ref is not None and envelope.packet.schema_version == "acs-delivery/1":
                     if observation.native_ack_ref is None:
                         raise ValueError("response must include native acknowledgment")
                     self._receipt(connection, envelope, "response_received",
@@ -436,4 +445,6 @@ class LocalNodeEndpoint:
         if row is None or row[1] not in {"runtime_dispatched", "acknowledged", "uncertain"}:
             raise DeliveryBoundaryRejected("collectable_invocation_unavailable")
         invocation = InvocationRequest.model_validate_json(row[0], strict=True)
+        if invocation.envelope.packet.schema_version != "acs-delivery/1":
+            raise DeliveryBoundaryRejected("natural_messages_use_explicit_replies")
         return self.response_collector.collect_and_project(invocation)

@@ -1,0 +1,40 @@
+{
+  "installed_version": "codex-cli 0.166.0-alpha.5.1",
+  "b_native_thread": "01a191c8-8fde-7841-8b18-c2ed76d6ce10",
+  "messages": [
+    [
+      "message-fb872806bc194c04b1a93911922f3c5c",
+      "collaborator:project-alpha:slot-a-real",
+      "collaborator:project-alpha:slot-b",
+      "What is the release label for this isolated exercise? Please reply with the exact label.",
+      "invoke"
+    ],
+    [
+      "message-e48d064ee6804f74af1d024153555b30",
+      "collaborator:project-alpha:slot-b",
+      "collaborator:project-alpha:slot-a-real",
+      "native-orchid-ccac114c66f9",
+      "invoke"
+    ]
+  ],
+  "reply_relationships": [
+    [
+      "message-fb872806bc194c04b1a93911922f3c5c",
+      "message-e48d064ee6804f74af1d024153555b30"
+    ]
+  ],
+  "native_turn_start_count": 1,
+  "work_count": 0,
+  "label": "native-orchid-ccac114c66f9",
+  "activation": "production dispatcher and NativeDeliveryAdapter",
+  "fault_injection": "observation loss after actual Native response",
+  "source_manifest_sha256": "c9de677ec5b4addd97f37900912525d38b2333908bb6b3bffe106a442db8a823",
+  "production_receiver_factory": true,
+  "collector_created": false,
+  "authority_native_state": "uncertain",
+  "replay_states": [
+    "uncertain",
+    "uncertain"
+  ],
+  "post_retry_native_turn_start_count": 1
+}

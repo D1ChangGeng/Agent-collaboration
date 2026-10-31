@@ -15,7 +15,6 @@ psycopg = pytest.importorskip("psycopg")
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from runtime.domain import DomainAuthority
 from runtime.errors import (
     AuthorizationDenied,
     IdempotencyConflict,
@@ -24,6 +23,7 @@ from runtime.errors import (
 )
 from runtime.migrations import FOUNDATION_HASH_VERSION, HARDENED_HASH_VERSION, legacy_command_hash
 from runtime.models import CommandEnvelope, CommandResult, TransitionRequest, WorkItemState
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 
 
 @pytest.fixture
@@ -306,7 +306,7 @@ def test_old_schema_adoption_and_verified_replay(isolated_dsn, version):
     before = query(domain, "SELECT legacy_record FROM command_dedup")[0][0]
     assert before["payload_hash"] == digest
     assert before["result_json"]["command_id"] == cmd.command_id
-    assert query(domain, "SELECT schema_version FROM runtime_schema_metadata") == [("1.14",)]
+    assert query(domain, "SELECT schema_version FROM runtime_schema_metadata") == [("1.13",)]
     result = create(domain, cmd)
     assert result.duplicate and result.operation_id == expected.operation_id
     assert counts(domain) == (1, 1, 0, 0)

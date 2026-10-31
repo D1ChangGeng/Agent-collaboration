@@ -1,5 +1,11 @@
 # Owner Runtime contract
 
+For ACS v2.0.0, the [communication contract](COMMUNICATION.md) and
+[upgrade procedure](../RELEASE-NOTES-v2.0.0.md) define the active message, reply,
+configuration and adoption semantics. Task/Review/acceptance and terminal-result
+sections below retain their v1.x migration history and do not expose those
+retired tools in the v2 Runtime.
+
 Status: accepted product behavior for the single-owner installation.
 Implementation and deployment claims remain bound to the code, configuration
 and verification evidence of the installed release.

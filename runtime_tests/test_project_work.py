@@ -6,9 +6,9 @@ import json
 import sys
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from threading import Barrier
 from dataclasses import asdict, replace
 from datetime import UTC, datetime, timedelta
+from threading import Barrier
 
 import psycopg
 import pytest
@@ -18,17 +18,23 @@ from runtime.codex_driver import BindingIdentity, DriverJournal, DriverRejected,
 from runtime.delivery import DeliveryDispatcher, DeliveryService
 from runtime.delivery_models import EndpointBindingRequest
 from runtime.delivery_node import LocalNodeEndpoint
-from runtime.domain import DomainAuthority
 from runtime.errors import AcceptanceGuardFailed
 from runtime.mcp_runtime import McpRuntime
-from runtime.models import EvidenceBundle, EvidenceRecord, ExecutionReceipt, TransitionRequest, WorkItemState
+from runtime.models import (
+    EvidenceBundle,
+    EvidenceRecord,
+    ExecutionReceipt,
+    TransitionRequest,
+    WorkItemState,
+)
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.node import NodeJournal
 from runtime.project_service import ProjectService
 from runtime.surfaces import SharedService
 from runtime_tests.enrollment_fixture import enrollment_command, register_execution_fixture
-from runtime_tests.test_project_management import managed as managed_fixture
+from runtime_tests.fixtures.legacy_domain import DomainAuthority
 from runtime_tests.test_project_management import bind_worker, team_args, worker_client
+from runtime_tests.test_project_management import managed as managed_fixture
 from runtime_tests.test_project_service import CATALOG, deadline, ok, scalar, send_args, work_args
 from runtime_tests.test_project_source import source_project as source_fixture
 

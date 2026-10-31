@@ -1,38 +1,10 @@
-# Collaboration model
+# acs-collaboration-model: model
 
-## Logical entities
+Communication among autonomous Agents. Their planning, engineering review and work acceptance remain external.
 
-AgentSlot is the durable recipient and responsibility identity inside a Scope.
-Principal identifies the collaborator. Role describes duties. Harness
-requirements select the execution product. A replaceable Session can bind to
-the Slot.
+- Use send_message for questions, replies, corrections and natural handoffs. Provide natural content and a stable recipient.
+- reply_to names original messages; only the actual recipient replying to the original sender satisfies their relationship.
+- The default is invoke + async. message_only stores Inbox without Native activation; sync still waits for an explicit reply.
+- No WorkItem, task handoff, Review or AcceptedState is created by normal communication.
 
-Owner team configuration records these business bindings. Shared deployments
-also bind per-subject Grants, Policy, Profiles and budgets. Root and Route
-describe responsibility extent. Engineer, Reviewer, Specialist and Finalizer
-describe duties; candidate-specific independence checks govern Review.
-
-WorkItem records goal, accepted state, constraints, dependencies, source
-baseline and evidence requirements. Business budget or deadline is optional
-where the selected mode permits it. Attempt records one execution try. Message
-records one logical communication. Handoff records responsibility transfer.
-
-## Independent state dimensions
-
-WorkItem acceptance, execution, waiting, Review, effect, publication and source
-synchronization advance independently. Attempt completion establishes its
-execution result. Acceptance records a separate decision after the required
-candidate checks. Message delivery and source synchronization have their own
-receipts.
-
-## Lineage and lifetime
-
-Mutations retain authenticated subject, tenant, project_id, Scope, stable
-request identity and expected revisions. Owner commands and Messages remain
-valid by default while their service and target are active; an explicit
-business deadline can bound a request. Shared mode additionally applies its
-configured expiry and admission rules. System retries preserve the initiating
-command and Message identities.
-
-Team revisions preserve prior configuration and ownership. Session replacement
-keeps durable work, Inbox, response and subscription identities.
+Exact arguments and observed effects come from the running tool schema. Historical input, when needed for a transition, is in [the v6 archive](legacy-v6-model.md); it is not the current communication contract.

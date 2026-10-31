@@ -1,0 +1,14 @@
+{
+  "files": {
+    "first.xml": "c857d2f4b6d09000dd6ef2eb9ddffb04bfd8a31cea0348ac5d1a4153aa23989a",
+    "fixed.xml": "5f88c323095e4f4523ad0aabac01a7a52298e087b2e19567cfd9147d4f14e9e7",
+    "opencode-owner-events.xml": "a9d396e981f0703a297a8633e170bb5c5ab442dbbf4ac613f8668fdf26279364",
+    "opencode-regression.xml": "43ff4ce945796ff20d989ce31ce5079b0a2b29eb622f88293412a516f63d9008",
+    "posix-real.xml": "fd9f8d25c5f8a897a969c647a215225371338aeaff249f2f774b585f7dfeb74b",
+    "regression.xml": "87a2a6722b8115d08301d2cb1affad59f766bc46e80e92edb69c4f6e2c5a0341",
+    "REPORT.md": "883f4269d641cb7a6e3a494da8fd5aabeed7ef8fad8ceb2358cbd43c6a0774b8",
+    "restart-facts.json": "e5d857f1cd8498ea659e6b0acdeb1c3f6d3b664e6e000a1a34cf813853302194",
+    "source-state.json": "245c5cdbe9cbcfd4a351b2c57777775e4f0c7bcc802319252b68d1fd9f8c9c2a",
+    "opencode-api/facts.json": "6c10061c4603bd73035b9f2c0b3d4237b76154ffebb354d0564b120489bf739b"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "source": "production CodexReceiverCapacity",
+  "version": "0.166.0-alpha.5.1",
+  "session_ref": "01a191ba-ced7-7311-a532-77b0f9bd201f",
+  "observer_principal": "agent:b",
+  "thread_starts": 1,
+  "model_turns": 0,
+  "collector_created": false
+}

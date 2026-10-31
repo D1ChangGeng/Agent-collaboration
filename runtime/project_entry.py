@@ -9,6 +9,7 @@ from pathlib import Path
 import anyio
 
 from runtime.mcp_runtime import McpRuntime
+from runtime.project_schema_state import ProjectSchemaAdoptionRequired, verify_project_schema
 from runtime.project_service import ProjectService
 from runtime.project_source import ProjectSources
 from runtime.surface_config import configured_service
@@ -18,11 +19,11 @@ from runtime.surface_entry import SafeArguments
 async def serve_stdio(server, service=None, settings=None):
     from mcp.server.stdio import stdio_server
 
-    from runtime.owner_dispatch import maintain_owner_deliveries
+    from runtime.communication_dispatch import maintain_communication_deliveries
 
     async with anyio.create_task_group() as tasks:
-        if service is not None and settings is not None and service.authority.access_mode == "owner":
-            tasks.start_soon(maintain_owner_deliveries, service, settings)
+        if service is not None:
+            tasks.start_soon(maintain_communication_deliveries, service)
         try:
             async with stdio_server() as (read, write):
                 await server.run(read, write, server.create_initialization_options())
@@ -54,6 +55,7 @@ def main(argv=None, *, delivery_endpoints=None):
             # Schema and project adoption are explicit operator steps. Starting
             # a client cannot provision identities, grants, or database tables.
             service.authenticate(settings.credential())
+            verify_project_schema(service.authority)
             if args.transport == "stdio":
                 if args.http_config or not args.profile:
                     raise ValueError("stdio requires a Profile and no HTTP configuration")
@@ -76,6 +78,9 @@ def main(argv=None, *, delivery_endpoints=None):
                 uvicorn.run(app, host=settings.host, port=settings.port,
                             access_log=False, log_level="error", proxy_headers=False)
         return 0
+    except ProjectSchemaAdoptionRequired:
+        print('{"error":"project_schema_adoption_required"}', file=sys.stderr)
+        return 2
     except Exception:  # noqa: BLE001 - never expose credentials or backend configuration
         print('{"error":"project_runtime_unavailable"}', file=sys.stderr)
         return 2

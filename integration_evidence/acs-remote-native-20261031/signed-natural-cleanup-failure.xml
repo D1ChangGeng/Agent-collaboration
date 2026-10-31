@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="4.277" timestamp="2026-11-01T01:00:31.086912+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_signed_receiver" name="test_natural_packet_round_trips_signed_admission_and_receipt_without_a_task_revision" time="2.728"><failure message="AttributeError: 'ReceiverService' object has no attribute 'close'. Did you mean: 'clock'?">runtime_tests/test_communication_signed_receiver.py:240: in test_natural_packet_round_trips_signed_admission_and_receipt_without_a_task_revision
+    server.service.close()
+    ^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'ReceiverService' object has no attribute 'close'. Did you mean: 'clock'?</failure></testcase></testsuite></testsuites>

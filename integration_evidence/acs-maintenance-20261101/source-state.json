@@ -1,0 +1,47 @@
+{
+  "parent_commit": "dced06be3c88c914b1c4cea871b8008d24a0d03f",
+  "branch": "codex/core-cleanup",
+  "model_source_files_match": 108,
+  "evaluator_dispatch_calls": 0,
+  "native_prompts": 1,
+  "authority_counts": [
+    2,
+    1,
+    null
+  ],
+  "tests": {
+    "final-maintenance.xml": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "delivery-fixed.xml": {
+      "tests": 59,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "ci-components-linux-current.xml": {
+      "tests": 1602,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 715
+    },
+    "codex-97c28b146d634c6db92bfd90f52eaa96.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "existing_readmes_preserved": {
+    "README.md": "9e1341285d25c806289c6a652c6912f7a6f2a629a8998a5a780318309565796c",
+    "README.zh-CN.md": "d8b1639e46a52eed9b4e6929d086556aba677f010e55f2ed09d3382887891a89"
+  },
+  "wheel_sha256": "179d55666897fafe6d620d32b960f186ecf678e5e291b10a6cf081af4ae7d267",
+  "provider_key_absent_from_artifacts": true,
+  "push": "not_attempted",
+  "production_change": "none",
+  "full_objective": "active"
+}

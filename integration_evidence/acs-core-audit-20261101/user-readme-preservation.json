@@ -1,0 +1,14 @@
+{
+  "README.md": {
+    "worktree_sha256": "28af6028b437d90d54f5f40fbbe7fceb3ced7b2f7b7e258a6098054b38b8431e",
+    "user_block_sha256": "2f8969927ef856f836257c72f3dbcf9b3b86e295590e9373a9b193dc34d235e3",
+    "user_lines_unstaged": 5,
+    "worktree_modified_by_staging": false
+  },
+  "README.zh-CN.md": {
+    "worktree_sha256": "b02c7c28f71c7ff2657456465e55abec6bc05ddc8fda10a938eebb7bb98533d6",
+    "user_block_sha256": "418973439096de46860ce59655d1c67c0462791b9f69ad3a8351ab58458faf7b",
+    "user_lines_unstaged": 5,
+    "worktree_modified_by_staging": false
+  }
+}
