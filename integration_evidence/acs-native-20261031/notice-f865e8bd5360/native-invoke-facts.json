@@ -1,0 +1,35 @@
+{
+  "installed_version": "codex-cli 0.166.0-alpha.5.1",
+  "b_native_thread": "01a19171-0dad-74b1-8361-15bf6cac77ff",
+  "messages": [
+    [
+      "message-0bee6e19823c405d98172b91c8da5d0f",
+      "collaborator:project-alpha:slot-a-real",
+      "collaborator:project-alpha:slot-c",
+      "What is the release label of this isolated exercise?",
+      "invoke"
+    ]
+  ],
+  "reply_relationships": [],
+  "native_turn_start_count": 1,
+  "work_count": 0,
+  "label": "native-orchid-662f62ab041a",
+  "activation": "production dispatcher and NativeDeliveryAdapter",
+  "fault_injection": null,
+  "source_manifest_sha256": "9c944ef7917d38a3088a6e654abdf5cf4dfe2941db4d7b1fea0f239cc7fd656d",
+  "system_notification": {
+    "source": "acs",
+    "message_handle": "message:project-alpha:message-0bee6e19823c405d98172b91c8da5d0f",
+    "state": "blocked",
+    "code": "native_pre_call_rejected",
+    "native_delivery": {
+      "state": "delivered",
+      "receipt_high_water": "runtime_acknowledged",
+      "error_code": null,
+      "model_consumption": "unconfirmed"
+    },
+    "meaning": "Communication obstacle; no Agent reply or work outcome inferred."
+  },
+  "manager_read_tool_count": 1,
+  "original_request_received_no_agent_reply": true
+}

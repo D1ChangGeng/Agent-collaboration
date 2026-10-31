@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="247.011" timestamp="2026-10-31T18:44:36.104257+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_native" name="test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp[notice]" time="246.606"><failure message="AssertionError: Native manager has not actually read the system notification&#10;assert []">runtime_tests\test_communication_native.py:392: in test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp
+    await task
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py:726: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+runtime_tests\test_communication_native.py:387: in run
+    (evidence/"manager-notice-tool-observations.json").write_text(json.dumps(observed_notice_calls,indent=2),encoding="utf-8")
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Native manager has not actually read the system notification
+E   assert []</failure></testcase></testsuite></testsuites>

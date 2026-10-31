@@ -1,0 +1,28 @@
+{
+  "files": [
+    "NOTICES.md",
+    "notices-source-state.json",
+    "notices-verified.xml",
+    "notice-delivery-regression.xml",
+    "native-notice-current.xml",
+    "native-notice-frozen-retry.xml",
+    "native-notice-frozen.xml",
+    "native-notice.xml",
+    "native-notice-final.xml",
+    "native-notice-verified.xml",
+    "native-notice-live.xml",
+    "notice-core-current.xml",
+    "notices-integrated.xml",
+    "notice-auth-final.xml",
+    "notice-wheel-install-current.json",
+    "installed-communication-smoke.py",
+    "notice-f865e8bd5360/native-invoke-facts.json",
+    "notice-f865e8bd5360/source-files.json",
+    "notice-f865e8bd5360/manager-notice-tool-observations.json",
+    "notice-f865e8bd5360/native-agent-a.jsonl",
+    "notice-9633a34d6f23/native-invoke-facts.json",
+    "notice-9633a34d6f23/manager-notice-tool-observations.json"
+  ],
+  "secret_pattern_matches": 0,
+  "isolated_schema_leftovers": 0
+}
