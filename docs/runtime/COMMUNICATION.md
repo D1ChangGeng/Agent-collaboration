@@ -36,7 +36,7 @@ Use `next_cursor` for the next page and `resume_cursor` for later arrivals.
 Changing a history query's filters resets its cursor. Authority commit order is
 not an assertion about cross-machine clocks or Agent work order.
 
-This body presentation is catalog `acs-p2-mcp-tool-contract/9`, read input
+This body presentation is catalog `acs-p2-mcp-tool-contract/10`, read input
 `acs-mcp-read-message/3` and result revision `acs-communication-results/2`.
 Stored Message packets, authors and reply relationships are unchanged. Existing
 clients must use a continuation when `next_offset` is non-null, including zero.
@@ -63,6 +63,18 @@ revision also rejects. Configuration commit, receiver preparation and observed
 Native Session are separate results. Only a real bound Adapter may supply a
 Session ID. An absent provider is reported as unavailable. `list_harnesses` is
 read-only and never prepares, spawns, resumes or invokes a receiver.
+
+The configuration result retains its resolved `endpoint_id` and
+`binding_revision`. Preparation checks that receiving selection before and
+after the Adapter call. A changed selection returns `configuration_changed`
+without a current Session claim. If preparation had already started, its
+`preparation_observation` remains a separate fact for the previous binding.
+Changes to unrelated display metadata do not invalidate a receiving selection.
+These versions are returned observations; Agents need not maintain them to make
+ordinary partial configuration updates.
+The [configuration evidence](../../integration_evidence/acs-configuration-20261101/REPORT.md)
+records controlled PostgreSQL races separately from the actual remote Native
+configuration and independent-model exchange.
 
 Node observers can register a communication Runtime without task Attempt or
 execution-result permissions. The production Codex receiver derives its own

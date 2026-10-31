@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="11.053" timestamp="2026-11-01T02:47:46.574223+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_configuration" name="test_later_receiver_change_cannot_prepare_a_different_target_for_an_older_call" time="6.411"><failure message="AssertionError: {'collaborator_handle': 'collaborator:project-alpha:slot-b', 'observation': 'native_driver_readback', 'preparation': 'unknown', 'receiver_state': 'idle', ...}&#10;assert 'native_observed' == 'configuration_changed'&#10;  &#10;  - configuration_changed&#10;  + native_observed">runtime_tests\test_communication_configuration.py:120: in test_later_receiver_change_cannot_prepare_a_different_target_for_an_older_call
+    assert observed["state"] == "configuration_changed", observed
+E   AssertionError: {'collaborator_handle': 'collaborator:project-alpha:slot-b', 'observation': 'native_driver_readback', 'preparation': 'unknown', 'receiver_state': 'idle', ...}
+E   assert 'native_observed' == 'configuration_changed'
+E     
+E     - configuration_changed
+E     + native_observed</failure></testcase><testcase classname="runtime_tests.test_communication_configuration" name="test_unrelated_property_change_merges_without_invalidating_receiver_preparation" time="3.517" /></testsuite></testsuites>

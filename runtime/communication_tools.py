@@ -96,8 +96,10 @@ DESCRIPTIONS = {
     "configure_team": "Add or partially update stable collaborators in the current authorized scope. "
         "Only specified members and fields change. Existing members remain. For a new member provide "
         "agent_slot_id and principal_ref; role/profile and Harness preferences are optional. Names never change "
-        "historical authors. if_unchanged detects conflicting property edits. Native session state is reported "
-        "separately from committed configuration; credentials and Native IDs are not inferred from message text.",
+        "historical authors. if_unchanged detects conflicting property edits. Native preparation retains the committed "
+        "receiving location and binding version; a later receiving change reports configuration_changed without "
+        "claiming a current Session. Native state is separate from committed configuration; credentials and Native IDs "
+        "are not inferred from message text.",
     "list_collaborators": "Find authorized contacts and your own stable address. Names and roles help select a "
         "recipient; use collaborator_handle directly as send_message.to. Optional filters narrow visibility.",
     "send_message": "Send natural content from your authenticated identity to a collaborator. Use this tool for "
@@ -179,7 +181,7 @@ def adopt_catalog(catalog):
         "team_configuration": ["project_id", "configuration_state", "team_revision", "native_sessions"]})
     used_types = {tool["result_type"] for tool in tools.values()}
     result_types = {kind: fields for kind, fields in result_types.items() if kind in used_types}
-    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/9", "surface_revision": "acs-communication/1",
+    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/10", "surface_revision": "acs-communication/1",
             "defaults": defaults, "receipt_order": ["accepted_by_authority", "target_inbox_committed",
                 "runtime_dispatched", "runtime_acknowledged"], "tools": tools, "profiles": profiles,
             "advanced_tools": [], "compatibility_aliases": {}, "tool_groups": groups, "result_types": result_types,

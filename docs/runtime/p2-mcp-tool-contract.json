@@ -1,5 +1,5 @@
 {
-  "schema_version": "acs-p2-mcp-tool-contract/9",
+  "schema_version": "acs-p2-mcp-tool-contract/10",
   "surface_revision": "acs-communication/1",
   "server": "agent-collaboration-runtime",
   "naming_convention": "concise_action_phrase",
@@ -808,8 +808,8 @@
     },
     "configure_team": {
       "title": "Configure Team",
-      "description": "Add or partially update stable collaborators in the current authorized scope. Only specified members and fields change. Existing members remain. For a new member provide agent_slot_id and principal_ref; role/profile and Harness preferences are optional. Names never change historical authors. if_unchanged detects conflicting property edits. Native session state is reported separately from committed configuration; credentials and Native IDs are not inferred from message text.",
-      "selection_guidance": "Add or partially update stable collaborators in the current authorized scope. Only specified members and fields change. Existing members remain. For a new member provide agent_slot_id and principal_ref; role/profile and Harness preferences are optional. Names never change historical authors. if_unchanged detects conflicting property edits. Native session state is reported separately from committed configuration; credentials and Native IDs are not inferred from message text.",
+      "description": "Add or partially update stable collaborators in the current authorized scope. Only specified members and fields change. Existing members remain. For a new member provide agent_slot_id and principal_ref; role/profile and Harness preferences are optional. Names never change historical authors. if_unchanged detects conflicting property edits. Native preparation retains the committed receiving location and binding version; a later receiving change reports configuration_changed without claiming a current Session. Native state is separate from committed configuration; credentials and Native IDs are not inferred from message text.",
+      "selection_guidance": "Add or partially update stable collaborators in the current authorized scope. Only specified members and fields change. Existing members remain. For a new member provide agent_slot_id and principal_ref; role/profile and Harness preferences are optional. Names never change historical authors. if_unchanged detects conflicting property edits. Native preparation retains the committed receiving location and binding version; a later receiving change reports configuration_changed without claiming a current Session. Native state is separate from committed configuration; credentials and Native IDs are not inferred from message text.",
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": false,

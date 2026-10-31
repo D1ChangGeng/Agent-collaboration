@@ -5,10 +5,24 @@ from datetime import datetime
 
 from runtime.communication_permissions import expanded_permissions
 from runtime.errors import AuthorizationDenied, RevisionConflict
-from runtime.project_common import IDENTIFIER, canonical, digest, handle
+from runtime.project_common import IDENTIFIER, canonical, digest, handle, parse_handle
 
 
 class CommunicationManagement:
+    def _receiving_binding(self, authority, cursor, project_id, scope, slot):
+        cursor.execute("SELECT definition FROM collaboration_teams WHERE tenant_id=%s AND project_id=%s AND scope_id=%s",
+                       (self.context.tenant_id, project_id, scope))
+        saved = cursor.fetchone()
+        member = next((value for value in saved[0]["members"] if value["agent_slot_id"] == slot), {}) if saved else {}
+        preferred = member.get("endpoint_id")
+        cursor.execute("SELECT endpoint_id,revision FROM delivery_endpoints WHERE tenant_id=%s AND scope_id=%s "
+                       "AND agent_slot_id=%s AND status='active' AND (%s OR expires_at>clock_timestamp()) "
+                       "AND (%s::text IS NULL OR endpoint_id=%s) ORDER BY endpoint_id",
+                       (self.context.tenant_id, scope, slot, authority.access_mode == "owner", preferred, preferred))
+        rows = cursor.fetchall()
+        return {"endpoint_id": rows[0][0], "binding_revision": rows[0][1]} if len(rows) == 1 else {
+            "endpoint_id": None, "binding_revision": None}
+
     def _prepare_communication_sessions(self, result, args, credential):
         """Prepare only explicit authorized configuration targets, after commit.
 
@@ -16,27 +30,31 @@ class CommunicationManagement:
         saved configuration, never a fabricated Session or a task-era Attempt.
         """
         sessions = []
-        for reference in result[1]["member_handles"]:
+        for committed in result[1]["native_sessions"]:
+            reference = committed["collaborator_handle"]
             slot = reference.rsplit(":", 1)[1]
-            item = {"collaborator_handle": reference, "session_ref": None, "state": "provider_unavailable"}
+            item = {**committed, "session_ref": None, "state": "provider_unavailable"}
+            expected = {name: committed.get(name) for name in ("endpoint_id", "binding_revision")}
             try:
                 with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
                     bound, _project, command = self._authorize(authority, cursor, args["project_id"], "configure_team", args)
                     self.service.authenticate(credential)
-                    cursor.execute("SELECT endpoint_id FROM delivery_endpoints WHERE tenant_id=%s AND agent_slot_id=%s "
-                                   "AND status='active'", (self.context.tenant_id, slot))
-                    endpoints = cursor.fetchall()
-                    cursor.execute("SELECT t.definition FROM collaboration_teams t JOIN collaboration_team_members m "
-                        "USING(tenant_id,project_id,scope_id) WHERE t.tenant_id=%s AND t.project_id=%s AND m.agent_slot_id=%s",
-                        (self.context.tenant_id, args["project_id"], slot))
-                    selected = cursor.fetchone()
-                    declared = next((member for member in selected[0]["members"] if member["agent_slot_id"] == slot), {}) if selected else {}
-                    if declared.get("endpoint_id"):
-                        endpoints = [item for item in endpoints if item[0] == declared["endpoint_id"]]
-                    provider = bound._delivery_endpoints.get(endpoints[0][0]) if len(endpoints) == 1 else None
+                    scope = parse_handle(result[1]["scope_handle"], "scope", args["project_id"])
+                    current = self._receiving_binding(bound, cursor, args["project_id"], scope, slot)
+                    if current != expected:
+                        item.update(state="configuration_changed", receiver_state="unknown")
+                        sessions.append(item)
+                        continue
+                    provider = bound._delivery_endpoints.get(expected["endpoint_id"]) if expected["endpoint_id"] else None
                     if provider is not None and callable(getattr(provider, "prepare_runtime", None)):
                         bound._authorize(command, cursor, "runtime.invoke")
                         observed = provider.prepare_runtime()
+                        if self._receiving_binding(bound, cursor, args["project_id"], scope, slot) != expected:
+                            item.update(state="configuration_changed", receiver_state="unknown",
+                                preparation_observation={"session_ref":observed.get("session_ref") if observed.get("observation")=="native_driver_readback" else None,
+                                    "receiver_state":observed.get("state","unknown"),"observation":observed.get("observation","unknown")})
+                            sessions.append(item)
+                            continue
                         confirmed = observed.get("observation") == "native_driver_readback" and observed.get("session_ref")
                         item.update(session_ref=observed.get("session_ref"), state="native_observed" if confirmed else "receiver_unconfirmed",
                                     receiver_state=observed.get("state", "unknown"), observation=observed.get("observation", "unknown"),
@@ -206,4 +224,5 @@ class CommunicationManagement:
                 "grant_ref": members[slot]["grant_ref"], "profile": members[slot]["profile"], "trusted_client": False}
                 for slot in sorted(seen)],
             "native_sessions": [{"collaborator_handle": handle("collaborator", project_id, slot),
+                **self._receiving_binding(authority, cursor, project_id, scope, slot),
                 "session_ref": None, "state": "not_observed"} for slot in sorted(seen)]}, []

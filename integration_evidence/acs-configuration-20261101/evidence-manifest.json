@@ -1,0 +1,23 @@
+{
+  "files": {
+    "after.xml": "fd9ce28927348c16946b97b6300301a7e8930bf6cba1b91824bde10f4e65147b",
+    "before.xml": "4e57a7b22af6b6b8801cdc4df65674712642d18ab9d2711dc45025c4082ea607",
+    "ci-components-linux-current.xml": "47a27c625d8f07f994aa3acc47e5d200b564d8873f778d0b9e72dfbfcc326d1e",
+    "ci-components-linux-recheck.xml": "f980843e1d6695b2110f5424ee1cf9300d897762126f4939be39bbcda3823b75",
+    "codex-74e9625d91ac45f69210414cdc0c7ef7.xml": "b2d7f20c86a8e6c020ae06906ed70c609bc6c212d9b20e417fd0f486224fbb35",
+    "installed-candidate.json": "d51a5ea778fb92271ae97f2c25448d1f59d5a0e117f7c70257e0e695b23bc289",
+    "installed-smoke.py": "184044f9cd431980ab8d23b625f66d65594def7c15a64c9830d73a3eba9a9a17",
+    "linux-source-snapshot-current.json": "c80cf98a48d67507ee0136254188d6b21a3be26b5cff74f2fd8e31fab7742c28",
+    "opencode-recheck.xml": "acfc6dbdabe5edf45f09281394bcbdd8edaae8fac10f6c5d0a628b48ae643eeb",
+    "races.xml": "8b8e4c0ecd427a7d3f2772e9890ba9366b1936badd7a1d924c5997244342f355",
+    "regression.xml": "082fc2cfacf7987259c6847bf113e0d32dc4ed7483f8eade0e03cf9bf3692cb5",
+    "REPORT.md": "319b92a5b9828e65470f56760b3d7ed252feb9be29c3e7a143395c4166a5fedc",
+    "source-state.json": "913636c1c2227421480ed3b2824b59d3749e5a6c70c43d71c1a8e90131f94753",
+    "dual-model/a.stderr.txt": "c5216a12c2aa95f3547075b75de0f41e1b60f30fcad1e7be611c1dbb3b7ffc87",
+    "dual-model/facts.json": "2e44624dfc03a05571020ad447d15576534f120ee4ee6c3b469f9201b83e1289",
+    "dual-model/public-events.jsonl": "d4cc825b5fb8be7c96d61df841cbc360a415bc6a3c85ad9a123244ddfa966a63",
+    "dual-model/receiver-controller.jsonl": "6c164dce88893b1ae79c59d466aef8d08f5753847c4cf83e2eb37ba6f494b60a",
+    "dual-model/receiver-controller.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dual-model/source-files.json": "8764608d1490a733aa6203632295ab98d6b68128b727209efbf6084892f019c6"
+  }
+}
