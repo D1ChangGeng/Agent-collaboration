@@ -65,17 +65,19 @@ class McpRuntime:
         optional = list(definition["optional"])
         if owner:
             relaxed = {"deadline"}
-            if name in {"read_file", "list_files", "search_files", "read_source", "read_source_file", "list_source_files", "search_source_files"}:
-                relaxed.update({"revision", "source_id"})
-                optional.append("source_root")
-            if name == "configure_team":
-                relaxed.update({"policies", "budgets"})
-            if name == "create_work":
-                relaxed.add("budget")
+            if name in {"list_files", "search_files", "read_source", "read_source_file", "list_source_files", "search_source_files"} and "revision" not in required:
+                required.append("revision")
+                optional = [field for field in optional if field != "revision"]
+            if name == "load_project":
+                optional.extend(["machine_id", "management_path"])
+            if name == "create_route":
+                relaxed.add("source_binding_ids")
             for field in list(required):
                 if field in relaxed:
                     required.remove(field)
                     optional.append(field)
+        if owner and name == "create_route":
+            optional = [field for field in optional if field != "source_binding_ids"]
         properties = {}
         definitions = {}
         for field in [*required, *optional]:
@@ -90,7 +92,7 @@ class McpRuntime:
                 if field in {"members", "policies", "budgets", "evidence_dispositions"}:
                     raise ValueError("legacy task input schemas are not supported")
                 properties[field]["items"] = {"type": "string"}
-            if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"} or (owner and field in {"deadline", "source_id", "source_root", "revision"}):
+            if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"} or (owner and field == "deadline"):
                 properties[field]["type"] = [kind, "null"]
             if field == "decision" and name in {"submit_review", "accept_work"}:
                 properties[field]["enum"] = (["pass", "fail"] if name == "submit_review"

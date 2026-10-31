@@ -63,11 +63,14 @@ def locked(path: Path, *, timeout=60):
 
 def command(*args, env=None, timeout=60):
     try:
-        result = subprocess.run(args, env=env, stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL, timeout=timeout, check=False)
+        result = subprocess.run(args, env=env, capture_output=True,
+                                timeout=timeout, check=False)
     except (OSError, subprocess.TimeoutExpired) as error:
         raise StartupUnavailable("startup_command_unavailable") from error
     if result.returncode:
+        errors = result.stderr if isinstance(result.stderr, bytes) else str(result.stderr).encode()
+        if any(marker in errors for marker in (b"No such container", b"RW layer", b"RWLayer")):
+            raise StartupUnavailable("startup_provider_backend_unreadable")
         raise StartupUnavailable("startup_command_failed")
 
 
@@ -322,8 +325,9 @@ def restore_configured(installation: Path, active: Path) -> dict:
     for name, restore in components:
         try:
             result.update(restore())
-        except (StartupUnavailable, OSError, ValueError, KeyError):
-            result[name] = "owner_repair_required"
+        except (StartupUnavailable, OSError, ValueError, KeyError) as error:
+            result[name] = ("provider_backend_repair_required" if name == "core" and
+                            str(error) == "startup_provider_backend_unreadable" else "owner_repair_required")
     return result
 
 

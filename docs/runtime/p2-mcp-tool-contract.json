@@ -1,5 +1,5 @@
 {
-  "schema_version": "acs-p2-mcp-tool-contract/10",
+  "schema_version": "acs-p2-mcp-tool-contract/11",
   "surface_revision": "acs-communication/1",
   "server": "agent-collaboration-runtime",
   "naming_convention": "concise_action_phrase",
@@ -114,8 +114,8 @@
     },
     "load_project": {
       "title": "Load project context",
-      "description": "Load authorized Project identity, instructions, Routes, knowledge and SourceBindings. Use the returned source observations and available readers to inspect actual files; communication history uses list_messages.",
-      "selection_guidance": "Load authorized Project identity, instructions, Routes, knowledge and SourceBindings. Use the returned source observations and available readers to inspect actual files; communication history uses list_messages.",
+      "description": "Load authorized Project identity, current management files, Routes and knowledge from the selected machine. Recorded Source readers require an explicit source and revision; communication history uses list_messages.",
+      "selection_guidance": "Load authorized Project identity, current management files, Routes and knowledge from the selected machine. Recorded Source readers require an explicit source and revision; communication history uses list_messages.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -1287,6 +1287,31 @@
       "security_scopes": [
         "message.read"
       ]
+    },
+    "configure_project": {
+      "title": "Configure project management files",
+      "description": "Set, replace or clear the current machine and management document location of a Project. Agents select source versions explicitly for their work.",
+      "selection_guidance": "Use to maintain the current Project management file location.",
+      "input_schema": {
+        "schema_version": "acs-mcp-configure-project/1",
+        "required": [
+          "client_request_id",
+          "project_id",
+          "expected_revision",
+          "changes"
+        ],
+        "optional": []
+      },
+      "result_type": "project_configuration_receipt",
+      "security_scopes": [
+        "project.adopt"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
     }
   },
   "result_envelope": {
@@ -1466,6 +1491,11 @@
     "collaborator_page": [
       "items",
       "next_cursor"
+    ],
+    "project_configuration_receipt": [
+      "project_id",
+      "revision",
+      "operation_id"
     ]
   },
   "result_revision": "acs-communication-results/2",
@@ -1513,7 +1543,8 @@
       "apply_patch"
     ],
     "communication": [
-      "list_messages"
+      "list_messages",
+      "configure_project"
     ]
   },
   "project_context_rule": {
@@ -1554,7 +1585,8 @@
       "read_source_file",
       "list_source_files",
       "search_source_files",
-      "list_messages"
+      "list_messages",
+      "configure_project"
     ],
     "reviewer": [
       "read_profile",
@@ -1637,7 +1669,8 @@
       "read_message",
       "check_inbox",
       "list_messages",
-      "wait_for_response"
+      "wait_for_response",
+      "configure_project"
     ]
   },
   "agent_organization_model": {

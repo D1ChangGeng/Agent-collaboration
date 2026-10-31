@@ -56,6 +56,21 @@ class StartupRecoveryTests(unittest.TestCase):
         self.assertEqual(run.call_args.kwargs["env"]["ACS_POSTGRES_PASSWORD"], "p" * 50)
         self.assertEqual(run.call_args.kwargs["timeout"], 90)
 
+    def test_missing_existing_container_has_specific_backend_diagnostic(self):
+        failed = mock.Mock(returncode=1,stderr=b"Error response from daemon: No such container: existing-id")
+        with mock.patch.object(startup.subprocess,"run",return_value=failed), self.assertRaisesRegex(
+            startup.StartupUnavailable,"startup_provider_backend_unreadable"):
+            startup.command("docker","compose","up")
+
+    def test_backend_repair_preserves_independent_tunnel_recovery(self):
+        self.write(self.root/"state.json",{"startup":{"web_profile_ref":str(self.root/"web.json")}})
+        with mock.patch.object(startup,"ensure_core",side_effect=startup.StartupUnavailable(
+            "startup_provider_backend_unreadable")), mock.patch.object(
+            startup,"ensure_web",return_value={"web_tunnel":"supervision_requested"}) as web:
+            result=startup.restore_configured(self.root,self.active)
+        self.assertEqual(result["core"],"provider_backend_repair_required")
+        web.assert_called_once()
+
     def test_core_failure_does_not_skip_independent_tunnel_recovery(self):
         self.write(self.root / "state.json", {"startup": {
             "web_profile_ref": str(self.root / "web.json"),

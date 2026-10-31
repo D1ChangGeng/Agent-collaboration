@@ -5,20 +5,20 @@ existing Root ID, Route registry, project guidance and knowledge. It writes a
 stable `project_id` to `.agents/manifest.json` and an `ACS-PROJECT` managed block
 in the Management Root's `AGENTS.md`.
 
-## Discover the existing Source first
+## Locate the current Management Root
 
-Before selecting a setup target, the Agent inspects the actual project session,
-containing Git checkout, Management Root identity and authorized existing
-SourceBinding metadata. It probes relevant local or already authorized SSH/WSL
-paths with `scripts/acs_source_discovery.py --include-untracked` and compares
-machine/account, repository root, Project/Root identity, commit/tree and working
-tree. The user supplies only unresolved location or access information. See
-[Source discovery](SOURCE-DISCOVERY.md) for the read-only sequence.
+The Agent inspects the selected Management Root, its Project/Root identity,
+Route registry, instructions and knowledge. Use the path spelling of the machine
+holding these files and verify access through its connected OS account.
+A correctly initialized Management Root can be nested in Git or held in a
+standalone directory. Owner registration stores its current machine and directory.
 
-Use the discovered path on its actual machine for the commands below. When the
-Source provider needs a separate Linux view, verify the authorized access or Git
-synchronization and exact commit/tree before registering it. Runtime deployment
-location is not evidence of project Source location.
+Source inspection is an Agent decision when the task depends on product files
+or a specific version. Use available machine, native or Git readers and record
+the source actually observed. [Source discovery](SOURCE-DISCOVERY.md) provides
+an optional read-only Git checkout probe and the Shared Source export procedure.
+Runtime deployment, management file location and product source location each
+have their own observed identity.
 
 Preview against the existing Management Root:
 
@@ -43,7 +43,69 @@ preserved. Explicit rollback verifies both backups and current target hashes:
 python scripts/project_setup.py workspace rollback-runtime-project --root <management-root> --rollback-dir <private-backup-directory>
 ```
 
-## Explicit Domain and Source registration
+## Owner Project registration
+
+Install the optional Runtime package in the setup Python environment and use the
+selected owner's private surface configuration. The registration bridge reads
+its configured access mode; `runtime_project_registration` selects the current
+file registration path for owner mode. Supply the existing Root Scope and
+AgentSlot, a project display name and the explicit goal of each registered Route:
+
+```json
+{
+  "schema_version": "acs-runtime-registration/1",
+  "scope_id": "<existing-root-scope>",
+  "agent_slot_id": "<existing-root-slot>",
+  "name": "Project display name",
+  "route_goals": {"<existing-route-id>": "Explicit existing Route goal"}
+}
+```
+
+Project and Root identity come from the initialized Management Root. The plan
+records its absolute directory, `machine_id: local`, instruction paths and
+knowledge index paths. `local` uses the OS account executing the registration
+and current file service. Use that machine's own directory namespace. A standalone
+Management Root registers through the same entry point.
+
+Preview validates the management metadata and reads current document contents.
+Its digest binds Project/Root identity, management location, file inventory,
+Route goals, catalog and private configuration:
+
+```text
+python scripts/project_setup.py workspace register-runtime-project --root <management-root> --runtime-config <private-config> --registration-spec <specification> --tool-catalog <catalog> --dry-run
+```
+
+After reviewing the plan, apply its digest. `--adopt-project-schema` explicitly
+adopts the Project extension schema; use the matching installed schema for
+ordinary registration. [Runtime adoption](UPGRADE-CONTRACT.md) records the known
+Domain 1.14 and Project schema migration boundaries.
+
+```text
+python scripts/project_setup.py workspace register-runtime-project --root <management-root> --runtime-config <private-config> --registration-spec <specification> --tool-catalog <catalog> --expected-plan-digest <reviewed-digest> --adopt-project-schema
+```
+
+Apply rechecks the plan, admits the Project identity, configures current file
+locations and registered Routes through their expected revisions, then reads
+`load_project`. The readback reports the management machine/path, current
+instructions and knowledge indexes, observed document facts and context
+completeness. Existing identity conflicts require explicit reconciliation;
+management instructions and knowledge retain their original bytes.
+
+Reapplying equivalent registration observes existing records. A changed location
+or document set gets a new preview and current context readback. For later
+configuration, use `configure_project` to set, replace or clear `management`
+and its document paths with the current Project revision. Daily file inspection
+and changes use the standard machine file tools.
+
+The Agent chooses the source version for each WorkItem. Owner `source_baseline`
+may be omitted or null; an eligible `revise_work` can select, change or clear
+that version. Review and acceptance use the commit/tree actually observed and
+reported by the Agent with the candidate's recorded Evidence. Existing Source
+records retain their explicit historical IDs and captured revisions. See
+[Owner Runtime](OWNER-RUNTIME.md) for current context, source history and
+acceptance.
+
+## Shared Domain and Source registration
 
 Commit and synchronize the adopted identity files first. The optional Runtime
 package must be installed in the setup Python environment. An operator supplies

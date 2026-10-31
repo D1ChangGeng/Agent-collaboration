@@ -21,6 +21,8 @@ SCHEMA_VERSIONS = {"project_schema.sql": "2"}
 PREVIOUS_SCHEMAS = {"acs-project-runtime": {
     ("1", "6fedb1731cde6224c0ec4770d7d5b18580d60554e9ef7b82739679b9bcfc0440"),
     ("1", "ccad2138f9ed4cddbe2e7e30ed797b4ead75d3c1359e4401997906e1233bfa3a"),
+    ("1", "2a5a388410369b1c0c37a6a803d2dbb60df451b879fba50d54711f84e4902305"),
+    ("1", "89d5e958bcd75d4b7faf901b297ad63cc208ef45196bac6217afa32d5f6973c9"),
 }}
 SCHEMA_RELATIONS = {
     "project_schema.sql": ("collaboration_projects", "collaboration_memberships", "collaboration_routes", "collaboration_route_grants",

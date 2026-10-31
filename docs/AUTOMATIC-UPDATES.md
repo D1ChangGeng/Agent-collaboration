@@ -1,17 +1,18 @@
 # Automatic upgrades
 
-ACS v1.3.0 enables automatic upgrades by default for new installations.
+New ACS installations enable automatic upgrades by default.
 It checks the latest stable Release daily on the installed Linux Runtime host
 and activates eligible updates after verification. The installation's recorded
 machine, owner account, home directory, Harness selection and web settings
 determine the update target.
 
-Existing v1.2.0 installations need one AI-guided upgrade using the verified
-[v1.4.0 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.4.0).
-Ask the setup Skill to inspect the installation, verify the new Bootstrap and
-Release digests, preview the upgrade and validate the connections afterward.
-The v1.2.0 installation has no automatic update service to perform that first
-upgrade.
+The v1.6 Runtime schema and MCP catalog transition requires a guided upgrade.
+Use the verified
+[v1.6.0 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.6.0)
+for an AI-guided upgrade. The Agent inspects the installation, verifies Bootstrap
+and Release digests, executes the preview and upgrade commands, and validates
+the actual access mode and connections afterward. See the
+[release notes](RELEASE-NOTES-v1.6.0.md) and the transition below.
 
 ## Controls
 
@@ -85,16 +86,63 @@ Before activation, ACS:
 2. Verifies the previous installed Release files and the ownership of managed
    launcher, updater and local Skill files.
 3. Builds a new version's Python environment from the dependency lockfile.
-4. Reads the existing provider configuration and checks service health and
-   the owner's existing Grant authorization.
+4. Reads the existing provider configuration and checks service health, trusted
+   owner identity, active state and explicit revocation; shared mode checks its
+   configured Grant authorization.
 5. Refreshes owned local Skills transactionally and activates the verified
    version, retaining the previous version for rollback.
 
-The update uses existing projects, SourceBindings, Grants and provider
-composition. Project setup, new SourceBindings or Grants, and Compose changes
-require their respective setup operations. Custom edits to managed files need
-ownership review before an upgrade can proceed. Skills on separate client hosts
-are refreshed through the setup Skill's client maintenance lifecycle.
+The update uses the existing projects, SourceBindings, selected access mode,
+identity records, explicit revocation and provider composition. Project setup,
+new SourceBindings and shared Grants, and Compose changes require their
+respective setup operations. Custom edits to managed files need ownership review
+before an upgrade can proceed. Skills on separate client hosts are refreshed
+through the setup Skill's client maintenance lifecycle.
+
+## Guided upgrade to v1.6.0
+
+The Agent uses `--version v1.6.0` with the verified Release Bootstrap and the
+recorded Runtime host, machine/account/home binding, client selection and web
+choice. It executes installation and diagnostic commands, retaining the existing
+configuration, credentials, cryptographic key references, projects, Root/Route
+identities, SourceBindings, deduplication, recorded evidence, explicit revocation
+state and the existing automatic update policy.
+
+Domain schema 1.14 includes a formal migration from the known schema 1.13
+identity. Project schema version 1 accepts the two exact prior checksums for
+Linux/Git LF bytes and Windows Release CRLF bytes. The migration enables
+optional work and Review baselines while retaining existing source values,
+candidates and Evidence. The Agent checks the installed schema identity,
+previews the migration, applies it through the guided upgrade and reads back
+the recorded versions and checksums. An unknown schema identity requires
+migration review. See [the release notes](RELEASE-NOTES-v1.6.0.md#schema-migration)
+for both checksums and [the adoption contract](runtime/UPGRADE-CONTRACT.md#current-file-context-and-work-version-migration)
+for the migration details.
+
+After activation, owner Project and Route context reads use the selected
+machine's current management files. Verify the saved machine/path or configure
+it with `configure_project`, then read a representative instruction and
+knowledge index with `load_project`. An authorized standalone Management Root
+uses the same workflow to read current files.
+
+New private installations use `access_mode: owner`. During a guided upgrade, the
+installer can adopt owner mode for a positively identified existing private Root
+profile. The adoption verifies its credential, backs up the original
+configuration as `.before-owner-upgrade`, and updates active, nonrevoked
+registration records while preserving their identities. Explicit shared
+configurations retain shared mode. Loading an unspecified configuration retains
+shared behavior until explicit adoption. Read back `read_profile.access_mode`
+after restart or reconnection.
+
+Existing Receivers have a separate signed deployment binding. Owner/native
+adoption preserves the original profile, Node identity and key references,
+updates the Endpoint registration and matching process configuration together,
+then restarts and reads back the committed revision/digest, actual native mode,
+Session and readiness. Revoked and retired objects retain their lifecycle state.
+The [owner migration contract](runtime/OWNER-RUNTIME.md#existing-installations-and-migration)
+describes this transition. Retain the previous Release and configuration backups
+for recovery; confirm both application and database compatibility before rollback
+across a schema change.
 
 ## Connections after activation
 
@@ -103,13 +151,56 @@ version from `state.json` when a new MCP process starts. Configured local,
 SSH, WSL and private Tunnel launch commands therefore follow the activated
 version. Running MCP sessions continue on the version they started with; start
 a new connection to use the activated version. A long-running Tunnel process
-uses it when its MCP process next starts.
+uses it when its MCP process next starts. For a catalog/schema upgrade, the Agent
+restarts the configured Tunnel/MCP process, verifies Tunnel health, then guides
+the owner to select **Refresh** on the existing connection in ChatGPT Plugins,
+inspect refreshed tool metadata and start a new chat. The
+[owner contract](runtime/OWNER-RUNTIME.md#chatgpt-connection-metadata) includes the
+official metadata-refresh procedure.
 
 A failed verification leaves the active version available.
-Inspect the update result and reconnect through the stable launcher to verify
-`tools/list`, `read_profile` and `list_projects` after activation. Verify
-`load_project` for registered projects and actual ChatGPT calls for enabled web
-access.
+Inspect the update result and reconnect Codex/OpenCode through the stable launcher.
+Verify `tools/list`, the actual mode in `read_profile` and `list_projects`.
+Owner verification also reads `filesystem_context` and a selected current path.
+Verify `load_project` product and Management Root observations for registered
+projects, and actual ChatGPT calls in a new chat for enabled web access.
+
+## Startup recovery
+
+Before executing the active MCP version, the stable launcher restores the
+existing owner Core provider project from its private installation configuration.
+It verifies owned files and Release composition and brings the recorded
+PostgreSQL/Temporal services up. Normal Runtime authentication applies the
+existing identity and revocation state.
+
+For Windows/WSL installations, maintain the owner login task from the full
+verified Release on the Windows client. Run `scripts/acs_windows_startup.ps1`
+with the recorded distribution, Linux account, installation root and machine
+identity: preview first, then `-Apply`, then `-Check`. Existing task migration
+backs up its definition and receipt, verifies the selected installation's Linux
+maintainer and hands off its recovery lock before the replacement task starts.
+Core, SSH and web processes retain their existing supervision.
+The GUI host launches WSL in the background,
+and the task calls the stable launcher's `--maintain-startup` entry.
+New maintenance processes verify and select the active Release helper.
+After activation, restart the registered task and verify the selected version
+and actual service/connection health. The
+[startup recovery guide](runtime/STARTUP-RECOVERY.md) includes commands and
+reviewed adoption of existing tasks.
+
+Core, private SSH and Secure MCP Tunnel recovery have independent attempts and
+health observations. A `provider_backend_repair_required` result directs the
+Agent to `scripts/acs_docker_backend.py --provider-config <private-provider-config>`.
+A readable existing provider returns `ready`; otherwise the helper inspects
+the actual Docker data root and preserved containerd store before presenting a
+repair plan. Applying a plan requires its current digest, explicit authorization
+for shared Docker/containerd changes, OS administration and a new private
+backup directory. Record the repair and rollback result separately from
+ordinary startup.
+
+Use `acs_launcher.py --installation-root <installation-root> --check-startup`,
+task readback and service diagnostics to establish observed startup state.
+The Agent verifies each selected client's actual MCP calls afterward.
 
 ## Rollback and recovery
 

@@ -2,12 +2,114 @@
 
 All notable changes to this project will be documented here.
 
-## Unreleased
+## 2.0.0 - 2026-11-01
 
-- Stable MCP startup restores the existing owner Core provider project before
-  executing the selected Runtime. Private SSH and Secure MCP Tunnel profiles
-  support single-instance supervision and reconnect/process recovery while
-  preserving credentials, Grant authorization and independent local/web health.
+- Replace the normal task lifecycle with natural messages, explicit recipient
+  replies, durable Inbox/history and bounded default Native delivery.
+- Retain trusted caller/project boundaries, retry identities, dispatch fences
+  and read-only historical provenance; fresh storage uses 46 tables.
+- Preserve v1.6 current-file project management and startup recovery. Add exact
+  1.14 adoption with snapshot restore/transaction rollback verification.
+- Require a guided major-version upgrade; existing data, credentials and Node
+  identity are preserved. See `docs/RELEASE-NOTES-v2.0.0.md` for the procedure
+  and the measured support boundaries.
+
+## 1.6.0 - 2026-10-14
+
+- Register owner Projects and Routes with their current management machine and
+  directory, including authorized standalone Management Roots. Read current
+  instructions and knowledge indexes through the selected machine filesystem.
+- Add `configure_project` to set, replace or clear saved management locations
+  and document paths. Support per-call `machine_id` and `management_path`
+  selection in `load_project`, with observed paths and context completeness.
+- Let Agents select the source version appropriate to each WorkItem. Owner
+  `source_baseline` may be omitted or null and can be selected, changed or
+  cleared through eligible `revise_work` intent revisions.
+- Admit owner Attempt source observations through authenticated execution
+  receipts after execution. Review and acceptance record the Agent's inspected
+  commit/tree and check exact candidate, Evidence and receipt consistency,
+  Reviewer and Finalizer independence, trusted identity, deduplication and
+  explicit revocation.
+- Preserve recorded Source history through explicit `source_id` and `revision`
+  archive reads, together with existing shared Source and permission contracts.
+- Introduce Domain schema 1.14 with formal migration from known schema 1.13.
+  Accept both exact Project schema version 1 checksums for prior LF source and
+  CRLF Windows Release assets; preserve recorded source values and evidence.
+- Update installation and guided upgrade documentation to v1.6.0. Runtime
+  package advances to v0.2.0; setup Skill remains v0.4.0. Guided upgrades retain
+  automatic update policy, startup recovery and Sustainable Use License 1.0.
+
+## 1.5.3 - 2026-10-14
+
+- Complete the maintenance-lock handoff when migrating an existing Windows/WSL
+  owner login task to the stable background startup entry.
+- Verify the selected installation's Linux lock holder, owner account, reviewed
+  previous or stable maintenance command and process creation identity before
+  sending SIGTERM and waiting for exit. Core, SSH and web processes retain
+  their existing supervision.
+- Validate the candidate helper against an existing production owner task with
+  the published v1.5.2 Core: adoption and apply completed, and the migrated task
+  ran in the background through the stable maintenance entry.
+- Update current Release installation and migration guidance to v1.5.3.
+
+## 1.5.2 - 2026-10-14
+
+- Add a Windows owner login recovery task with preview, apply and check modes,
+  machine/account binding, backed-up task migration and a GUI background host
+  that propagates the WSL process exit code.
+- Add the stable launcher's `--maintain-startup` entry to verify the active
+  Release recovery helper before running owner maintenance.
+- Diagnose Docker's actual data root and containerd connection, report readable
+  existing providers as ready, and offer a digest-bound repair plan with
+  explicit shared-runtime authorization, service-unit backup and rollback.
+  Existing container data stays in place.
+- Distinguish provider backend repair from other owner startup failures and
+  retain independent Core, SSH and web recovery attempts.
+- Document the Windows task and shared backend recovery workflow. Observed
+  recovery includes PostgreSQL/Temporal health, SSH/Tunnel reconnection,
+  owner MCP discovery in Windows Codex and OpenCode, and web project/file
+  readback.
+
+## 1.5.1 - 2026-10-13
+
+- Correct machine readiness and upgrade diagnostics to report trusted owner
+  identity, lifetime and actual access mode, with an optional owner Grant summary
+  and the existing shared Grant summary.
+- Preserve credential authentication and Project, Source and tool readbacks
+  during standard Release Bootstrap verification and activation.
+- Validate diagnostics against the v1.5.0 Runtime with a real database:
+  authenticated owner identity, registrations retained until explicit change,
+  and Project, Source and tool readbacks.
+- Update current installation and guided upgrade references to v1.5.1.
+
+## 1.5.0 - 2026-10-13
+
+- New private installations use owner access with trusted identity, tenant and
+  Authority checks, active objects, explicit revocation, request deduplication
+  and expected revisions. Durable Machine, Node, Connection and Endpoint
+  registrations support reconnect and actual readiness inspection; shared mode
+  retains its configured Grants, Policies and budgets.
+- Native Codex/OpenCode execution uses the selected user's tools, MCP servers,
+  plugins, project settings, provider, models and approval configuration.
+  Attached Session actions and owned-process controls retain native readback.
+- Owner commands and messages support optional business deadlines. Async
+  returns committed handles; sync and response waits observe their condition
+  with optional caller timeouts. Temporal delivery recovery and signed terminal
+  response transfer preserve tracking, result digests and historical responses.
+- Add independent owner machine filesystem tools: `read_file`,
+  `list_directory`, `glob`, `grep`, `write_file`, `edit_file` and
+  `apply_patch`, with per-connection machine/directory selection and optional
+  per-call overrides. Local, SSH and signed Node services use OS account
+  permissions and paginate text, binary, discovery and search results.
+- SourceBinding provides repository, location and version guidance. Current
+  product reads resolve the physical primary worktree; explicit Source tools
+  retain captured versions, actual-source readback and stable pagination.
+- Stable MCP startup restores existing owner Core services. Configured private
+  SSH and Secure MCP Tunnel profiles supervise owned processes and recover
+  connections with preserved credentials and authorization.
+- Publish v1.5.0 installation and guided upgrade documentation covering owner
+  adoption, matching signed Receiver configuration, mode/readiness readback,
+  preserved identities and revocations, rollback and client metadata refresh.
 
 ## 1.4.0 - 2026-10-03
 

@@ -1,10 +1,10 @@
 # Get started with Agent Collaboration System
 
-The current source has an unreleased communication-core candidate. Its
-[contract](runtime/COMMUNICATION.md) and [support record](runtime/COMMUNICATION-STATUS.md)
-define the current tools, explicit adoption and measured environments. The
-v1.4.0 Bootstrap instructions below install that published Release; installing
-it does not switch an existing service to the candidate.
+ACS v2.0.0 uses natural messages, explicit replies and a durable Inbox.
+Its [contract](runtime/COMMUNICATION.md) and [support record](runtime/COMMUNICATION-STATUS.md)
+define current tools and measured environments. Existing v1.x installations
+follow the [guided upgrade](RELEASE-NOTES-v2.0.0.md), including backup and
+explicit schema adoption, before switching services.
 
 Give the [repository link](https://github.com/D1ChangGeng/Agent-collaboration)
 to a local Codex or OpenCode session and ask it to guide the installation.
@@ -19,12 +19,12 @@ You confirm required login, permissions, secret entry and connection consent.
 
 ## Agent launch request
 
-Use the [v1.4.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.4.0)
+Use the [v2.0.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.0.0)
 and its `acs_bootstrap.py` asset for the machine selection flow described here.
-The default Bootstrap version is `v1.4.0`. Existing v1.2.0 installations use the
-verified v1.4.0 Bootstrap for their first guided upgrade; afterward the installed
+The default Bootstrap version is `v2.0.0`. Existing v1.2.0 installations use the
+verified v2.0.0 Bootstrap for their first guided upgrade; afterward the installed
 updater provides the automatic upgrade controls. See the
-[release notes](RELEASE-NOTES-v1.4.0.md).
+[release notes](RELEASE-NOTES-v2.0.0.md).
 
 For a fresh machine, use the standard Release Bootstrap shipped with that
 Release before project setup:
@@ -161,7 +161,7 @@ Skills refresh with the upgrade; Skills on separate client hosts are refreshed
 through client setup maintenance.
 
 Existing v1.2.0 installations first need one AI-guided upgrade using the verified
-v1.4.0 Release Bootstrap. Read [automatic upgrades](AUTOMATIC-UPDATES.md) for
+v2.0.0 Release Bootstrap. Read [automatic upgrades](AUTOMATIC-UPDATES.md) for
 the installed controls, status meanings and rollback procedure.
 
 ## Start a project

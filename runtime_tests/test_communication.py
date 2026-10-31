@@ -134,6 +134,40 @@ def send(f, caller="a", to="b", content="Please check the source and ask if you 
                 content=content, **{"client_request_id": uuid.uuid4().hex, **args})
 
 
+def test_owner_bound_agent_project_directory_does_not_expose_unrelated_project(comm, tmp_path):
+    prepare_ordinary_agents(comm, tmp_path)
+    for client in comm.clients.values():
+        client.service.service.authority.access_mode = "owner"
+    with comm.authority._connect() as connection:
+        connection.execute("INSERT INTO scopes(scope_id,tenant_id,status) VALUES ('hidden-scope',%s,'active')",
+                           (comm.authority.tenant_id,))
+        connection.execute("INSERT INTO collaboration_projects(tenant_id,project_id,root_id,scope_id,name,context_manifest) "
+            "VALUES (%s,'project-hidden','hidden-root','hidden-scope','Unrelated project','{}')", (comm.authority.tenant_id,))
+    result = comm.clients["a"].call("list_projects", {})["structuredContent"]
+    assert result["ok"]
+    assert [item["project_id"] for item in result["data"]["items"]] == ["project-alpha"]
+    configured = comm.clients["a"].call("configure_project", {"project_id":"project-alpha",
+        "client_request_id":"ordinary-cannot-configure", "expected_revision":1,
+        "changes":{"management":None}})["structuredContent"]
+    assert not configured["ok"] and configured["data"]["code"] == "authorization_denied"
+    assert "configure_project" not in comm.clients["a"].service.available_tools(comm.clients["a"].credential_provider())
+
+
+def test_owner_can_create_route_without_a_recorded_source_version(comm):
+    client = comm.clients["a"]
+    client.service.service.authority.access_mode = "owner"
+    project = client.call("list_projects", {})["structuredContent"]["data"]["items"][0]
+    result = client.call("create_route", {"project_id":"project-alpha", "client_request_id":"route-with-current-files",
+        "root_handle":project["root_handle"], "expected_root_revision":project["project_revision"],
+        "route_id":"route-current", "display_name":"Current development", "goal":"Communicate through current files"})["structuredContent"]
+    assert result["ok"], result
+    assert result["data"]["route_handle"] == "route:project-alpha:route-current"
+    assert "source_binding_ids" not in client.input_schema("create_route")["properties"]
+    with comm.authority._connect() as connection:
+        assert connection.execute("SELECT count(*) FROM collaboration_sources").fetchone()[0] == 0
+        assert connection.execute("SELECT to_regclass('work_items')").fetchone()[0] is None
+
+
 def test_public_work_free_a_b_loop(comm):
     f = comm
     sent = send(f, activation="message_only")

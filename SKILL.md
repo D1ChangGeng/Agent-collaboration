@@ -15,8 +15,9 @@ installation and a project's Management Root. New single-owner Runtime
 installation records access_mode=owner. Global installation establishes
 the selected Runtime host and client connections. Project setup can follow
 later when the user invokes this Skill for a project. The preferred Management
-Root is nested in the project's Git repository; standalone Workspaces remain
-supported for compatibility.
+Root is nested in the project's Git repository. Owner project registration also
+supports Management Roots in other authorized directories and records the
+machine and directory of their current files.
 
 After setup, ordinary collaboration proceeds through project `AGENTS.md`,
 `.agents/`, knowledge Skills and MCP tools. Invoke this Skill for installation,
@@ -101,6 +102,9 @@ Git, or Harness facts. Read only the reference needed for the current request.
    caller-side stdio descriptor with the client's MCP configuration mechanism.
    A Runtime host selected as a client receives the same explicit client setup.
    Keep credentials on the Runtime host and record configuration rollback data.
+   For a selected Windows client with a WSL Runtime, configure owner login
+   recovery through the Windows/WSL startup procedure below as part of machine
+   setup, using the machine/account binding already confirmed by the user.
 7. Verify services and actual MCP `tools/list`, `read_profile` and
    `list_projects` from each selected client. An empty project list is a valid
    initial machine installation. `load_project` is required after a project has
@@ -126,8 +130,9 @@ using or repairing the selected service. Owner admission follows its trusted
 credential, tenant/principal/Authority, active service and objects, explicit
 revocation, request deduplication and expected revisions. Roles define duties;
 ordinary team members supply slot, principal, role and Harness requirements.
-Independent candidate Review, Artifact hashes and deterministic storage remain
-acceptance prerequisites.
+Agents assess engineering results and reviews outside the communication core.
+Normal collaboration uses natural messages and explicit replies; see
+[the communication contract](docs/runtime/COMMUNICATION.md).
 
 Keep Connection, Node, Runtime and Endpoint registrations during service or
 client recovery. Execution reads actual process and native Session state,
@@ -148,10 +153,11 @@ preparation executes the stored deterministic argument vector and rechecks
 health. Keep private keys in their reference store.
 
 Owner commands and Messages have an optional chosen business deadline.
-Async returns committed handles; sync waits for the target condition with an
-optional caller timeout. Durable Inbox and result tracking follow the actual
-Connection/Session and survive caller disconnect. Inspect the current workspace
-view for active edits, and use a fixed view or commit snapshot for Review.
+Async returns committed handles; sync waits for the recipient's first explicit
+associated reply with an optional observation timeout. Durable Inbox and reply
+relationships survive caller disconnect. Load current management documents
+through machine files. Agents exchange actual Git versions and review findings
+as ordinary message content.
 
 Existing unspecified service configuration retains shared behavior until
 explicit owner migration. Shared deployments retain their configured Grants,
@@ -168,11 +174,11 @@ the next Endpoint registration with the existing Node key, commit the new
 revision, then restart and read back the matching mode, digest and Session.
 Preserve explicit revocation throughout that transition.
 
-The owner stdio MCP entry automatically maintains committed Message dispatch when
-temporal_endpoint is configured. New installation records the selected local
-Temporal address/port. A custom configuration with that field omitted retains
-pending Outbox state for its separately operated dispatcher. Verify the
-configured provider and actual worker/dispatch result.
+The default stdio and HTTP entries maintain committed natural-message delivery
+with bounded concurrency. Direct library users provide their own dispatcher.
+Existing provider profiles may retain Temporal for their earlier deployment;
+the normal communication maintenance path does not depend on it. Verify the
+actual entry and dispatch result.
 
 ## Installation verification scope
 
@@ -189,11 +195,56 @@ default; `--project-id` selects one context and `--deep` is diagnostic scope.
 
 Read [startup recovery](docs/runtime/STARTUP-RECOVERY.md) for reboot or disconnect
 repair. Reuse the recorded Runtime host/account and client entry. Verify owner
-service identity before restoring dependencies; keep private SSH/Web Tunnel
-supervision separate from local MCP readiness. Preserve existing credentials,
-configured access mode, durable registrations and signed Runtime facts. Test fault recovery with isolated ports, then
-read actual tools/profile through the configured entry. Machine boot settings
-require the selected host's administration and a rollback backup.
+service identity before restoring dependencies; inspect Core, private SSH and
+web Tunnel recovery separately. Preserve existing credentials, configured access
+mode, durable registrations and signed Runtime facts. Test fault recovery with
+isolated ports, then read actual tools/profile through the configured entry.
+Machine boot settings require the selected host's administration and a rollback
+backup.
+
+### Windows client with a WSL Runtime
+
+During installation or authorized startup maintenance, execute
+`scripts/acs_windows_startup.ps1` from the verified Release or its verified
+installed setup Skill payload on the selected Windows client, under the
+installing Windows account. Verify Windows x64, WSL, Task Scheduler PowerShell
+cmdlets and the installed 64-bit .NET Framework C# compiler before apply.
+Use the user-confirmed WSL distribution, observed Linux owner account, private installation root and
+full machine identity. Pass them as `-WslDistribution`, `-RuntimeUser`,
+`-LinuxInstallationRoot` and `-ExpectedMachineId`; obtain these values from
+the installation probe and receipt. Use Bootstrap's
+`client_connection.background_startup` script source, parameter binding and
+sequence when supplied. Run the default preview, execute
+`-Apply`, then read back `-Check`. An installation with `startup.enabled=false`
+returns `owner_disabled`; report that owner policy. Arrange this procedure as
+part of the selected machine setup and carry it through to actual verification.
+
+The task invokes a GUI background host and the stable launcher's
+`--maintain-startup` entry. Verify the registered principal, selected action,
+single-instance behavior, login trigger and failure retry. For a verified
+existing task, retain its task name and use `-AdoptExisting` with the reviewed
+`-LegacyEntrypoint`; the helper backs up the task definition and receipt before
+migration. During the lock handoff, it identifies the current installation's
+Linux maintainer, checks its owner account, reviewed previous entry or stable
+same-root command and process creation identity, then sends SIGTERM and waits
+for exit before starting the replacement task. A mismatched lock holder requires
+owner review. Core, SSH and web processes retain their existing supervision.
+Read back task state, Core dependencies, each selected transport and
+actual client MCP calls. Record task restart evidence and machine reboot
+evidence according to what was measured.
+
+Inspect the actual Docker service/init mechanism before configuring WSL boot.
+When startup reports `provider_backend_repair_required`, run the verified
+`scripts/acs_docker_backend.py --provider-config <private-provider-config>`
+to inspect the daemon's actual data root and preserved ACS store.
+A `ready` result completes backend diagnosis. Review a `planned` repair with
+the owner; `review_required` needs the listed configuration/workload issues
+resolved before a new plan. Obtain explicit authorization for the shared
+Docker/containerd changes, and apply only with `--shared-runtime-confirmed`,
+the current `--plan-digest`, a new absolute `--backup` directory and the
+selected host's OS administration. Verify existing provider containers and
+PostgreSQL/Temporal health afterward, then verify SSH, Tunnel and client MCP
+readback. Keep installation-specific values in the private receipt.
 
 ## Automatic upgrade maintenance
 
@@ -214,8 +265,8 @@ digests, the previous installation, the new locked environment, provider health
 and the active identity before activation; shared mode also verifies its
 configured Grant authorization. Updates preserve project registrations,
 access mode and explicit revocation state. Owner mode adoption is an explicit
-configuration/schema transition with backup. Project setup, SourceBinding
-creation and Compose changes retain their setup lifecycles.
+configuration/schema transition with backup. Project setup and Compose changes
+retain their setup lifecycles. Existing Source records keep their archive identity.
 
 Owned local Skills refresh transactionally; selected remote client Skills are
 refreshed through client setup maintenance. Stable launcher commands select the
@@ -224,8 +275,11 @@ their running version. A manual rollback records the rejected version in
 `held_version` for explicit review before automatic checks apply that version
 again.
 
-Existing installations with a changed MCP catalog require an AI-guided upgrade with the verified
-v1.4.0 Release Bootstrap before invoking the installed update controls.
+Existing installations use the verified
+[v2.0.0 Release Bootstrap](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.0.0)
+for a guided Runtime schema and MCP catalog upgrade. Preserve the existing
+automatic update policy and verify the known schema migration before activation.
+See [the release notes](docs/RELEASE-NOTES-v2.0.0.md).
 
 ## ChatGPT web setup route
 
@@ -283,15 +337,30 @@ pending steps.
 
 ## Project setup lifecycle
 
-For an existing project, discover its working Source before choosing a setup
-or SourceBinding target. Inspect the session checkout, Management Root identity
-and authorized existing SourceBinding metadata, then probe related local or
-authorized SSH/WSL paths with `scripts/acs_source_discovery.py --include-untracked`.
-Compare actual machine/account, repository root and commit/tree. Ask for the
-smallest missing location or access fact when observations are incomplete or
-ambiguous. Use the discovered host's own path namespace; see
-[Source discovery](docs/runtime/SOURCE-DISCOVERY.md) and
-[project adoption](docs/runtime/PROJECT-ADOPTION.md).
+For an existing project, inspect the Management Root, its Project/Root identity
+and the machine and directory that hold its current files. Use the selected
+machine's OS path namespace and verify access through the available machine,
+native or Git tools. Inspect the actual repository and commit/tree when the
+work depends on a source version. Ask for the smallest missing location or
+access fact when observations are incomplete or ambiguous.
+
+Owner registration records durable Project/Root identity, Routes and current
+management file locations. A Management Root may be nested in Git or stored in
+an authorized standalone directory. `load_project` reads its configured
+instruction and knowledge index paths through the selected machine filesystem.
+Use `configure_project` with `project_id`, `client_request_id`,
+`expected_revision` and `changes` to set or replace `management`,
+`instruction_paths` and `knowledge_index_paths`; `management: null` clears the
+saved location. A single `load_project` call can select `machine_id` and
+`management_path` for that read. Read back the resulting revision,
+observed document paths and context completeness.
+
+Agents choose and communicate the source version they actually inspect through
+Git, native file tools or an authorized reader. Existing Source records require
+explicit `source_id` and `revision`; current files use machine readers. First
+delegation, clarification, review findings and handoff use `send_message` with
+natural content. See [the communication contract](docs/runtime/COMMUNICATION.md)
+for current context, replies and explicit schema adoption.
 
 For a management workspace, use the explicit command families:
 
@@ -514,6 +583,6 @@ When setup is complete:
 4. Recommend committing the setup if appropriate.
 5. Explicitly state that normal collaboration now proceeds through `AGENTS.md` and `.agents/`, and that this skill should not be loaded again unless the collaboration setup itself needs maintenance.
 
-For WSL startup maintenance, verify the installed Docker init mechanism with an
-actual successful invocation, and configure an owner login recovery task using
-the verified helper `--maintain` entry. Read back services and Tunnel health.
+For Windows/WSL setup, complete the owner login recovery procedure above and
+include its binding, task state, service health and actual MCP readback in the
+installation report.

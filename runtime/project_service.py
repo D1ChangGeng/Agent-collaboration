@@ -22,6 +22,7 @@ from runtime.errors import (
 )
 from runtime.models import CommandEnvelope, CommandResult
 from runtime.project_common import IDENTIFIER, canonical, digest, handle, page_result
+from runtime.project_context import CurrentProjectContext
 from runtime.project_management import ManagementActions
 from runtime.project_resources import ResourceActions
 from runtime.project_routes import RouteActions
@@ -30,13 +31,13 @@ from runtime.source import SourceChangedDuringSnapshot
 from runtime.surfaces import SharedService
 
 
-class ProjectService(CommunicationActions, CommunicationManagement, ManagementActions, RouteActions, ResourceActions):
+class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationManagement, ManagementActions, RouteActions, ResourceActions):
     """Authenticated project adapter; never owns an alternate execution state."""
 
     _page_result = staticmethod(page_result)
 
     IMPLEMENTED = frozenset({
-        'apply_patch', 'check_inbox', 'configure_team', 'create_route', 'edit_file',
+        'apply_patch', 'check_inbox', 'configure_project', 'configure_team', 'create_route', 'edit_file',
         'filesystem_context', 'glob', 'grep', 'list_activity', 'list_collaborators',
         'list_connections', 'list_directory', 'list_files', 'list_harnesses',
         'list_messages', 'list_projects', 'list_routes', 'list_source_files',
@@ -69,7 +70,11 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
         from runtime.filesystem_schema import ALL_TOOLS, definition
         self.filesystems = FilesystemGateway(service.authority)
         if service.authority.access_mode == "owner":
-            self.catalog = {**catalog, "tools": dict(catalog["tools"])}
+            self.catalog = {**catalog, "tools": dict(catalog["tools"]),
+                            "profiles": {name:list(tools) for name,tools in catalog["profiles"].items()}}
+            for selected in ("root_manager", "operator"):
+                if "configure_project" not in self.catalog["profiles"][selected]:
+                    self.catalog["profiles"][selected].append("configure_project")
             for name in ALL_TOOLS:
                 self.catalog["tools"][name] = definition(name)
         self.artifacts = getattr(service.authority, "_artifact_store", None)
@@ -268,6 +273,9 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
         )
 
     def _authorize(self, authority, cursor, project_id, name, args):
+        if name == "configure_project" and (authority.access_mode != "owner" or
+                not self.context.trusted_client and self.profile not in {"root_manager", "operator"}):
+            raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
         if not self.context.trusted_client:
             cursor.execute("SELECT profile,status,agent_slot_id FROM collaboration_team_members WHERE tenant_id=%s "
                 "AND project_id=%s AND principal_ref=%s AND grant_ref=%s", (self.context.tenant_id, project_id,
@@ -360,7 +368,7 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
 
     def _accessible(self, credential, name="list_projects"):
         self.service.authenticate(credential)
-        if self.service.authority.access_mode == "owner":
+        if self.service.authority.access_mode == "owner" and self.context.trusted_client:
             with self.service.authority.transaction() as (_authority, connection):
                 rows = connection.execute("SELECT project_id,root_id,revision FROM collaboration_projects "
                     "WHERE tenant_id=%s AND state='active' ORDER BY project_id", (self.context.tenant_id,)).fetchall()
@@ -392,6 +400,7 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
         self.service.authenticate(credential)
         if self.service.authority.access_mode == "owner":
             return sorted(name for name in self.IMPLEMENTED if name in self.catalog["tools"] and
+                (name != "configure_project" or self.context.trusted_client or self.profile in {"root_manager", "operator"}) and
                 (self.context.trusted_client or self.profile in {"root_manager", "route_manager"}
                     or name not in {"configure_team", "create_route", "update_route"}) and
                 (self.sources is not None or name not in {"list_files", "search_files", "read_source",
@@ -406,6 +415,8 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
                 (self.context.tenant_id, self.context.principal_ref, self.profile),
             ).fetchall()
             for name in candidates:
+                if name == "configure_project":
+                    continue  # Current-file configuration is an Owner capability.
                 from runtime.filesystem_schema import ALL_TOOLS
                 if name in ALL_TOOLS and name != "read_file":
                     continue
@@ -441,6 +452,8 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
         self.service.authenticate(credential)
         if name not in self.IMPLEMENTED:
             raise ValueError("tool is unavailable in the authenticated Profile")
+        if name == "configure_project" and not self.context.trusted_client and self.profile not in {"root_manager", "operator"}:
+            raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
         if self.service.authority.access_mode != "owner" and name not in self.catalog["profiles"][self.profile]:
             raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
         if name == "read_resource" and args.get("handle", "").split(":", 1)[0] not in {"project", "route", "artifact", "message", "response", "notification"}:
@@ -545,7 +558,7 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
         return result
 
     def _verify_command_management_identity(self, authority, cursor, project, command, args):
-        if self.context.trusted_client or command.command_type == "project.send_message":
+        if authority.access_mode == "owner" or self.context.trusted_client or command.command_type == "project.send_message":
             return
         if not project[3].get("management"):
             return
@@ -740,39 +753,17 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
                 data["missing_context"] = ["route_scoped_source_hydration"]
                 return "partial", data, []
             project = (*project[:3], data["manifest"], *project[4:])
+        if authority.access_mode == "owner":
+            return self._hydrate_current_context(authority, cursor, project, command, args, data)
         return self._hydrate_context(authority, cursor, project, command, args, data)
-
-    def _default_source(self, cursor, project_id):
-        cursor.execute("SELECT context_manifest FROM collaboration_projects WHERE tenant_id=%s "
-                       "AND project_id=%s AND state='active'", (self.context.tenant_id, project_id))
-        project = cursor.fetchone()
-        if project is None:
-            raise NotFound("project", project_id)
-        manifest = project[0]
-        cursor.execute("SELECT source_id,repository_identity FROM collaboration_sources WHERE tenant_id=%s "
-                       "AND project_id=%s ORDER BY source_id", (self.context.tenant_id, project_id))
-        rows = cursor.fetchall()
-        sources = [(source_id, identity) for source_id, identity in rows
-                   if identity.get("purpose") != "management-only-snapshot"]
-        if manifest.get("primary_source_id"):
-            if any(source_id == manifest["primary_source_id"] for source_id, _identity in sources):
-                return manifest["primary_source_id"]
-            raise ValueError("primary_source_id must identify a project source checkout")
-        primary = [source_id for source_id, identity in sources if identity.get("primary") is True]
-        if len(primary) == 1:
-            return primary[0]
-        management = manifest.get("management", {}).get("source_id")
-        if any(source_id == management for source_id, _identity in sources):
-            return management
-        if len(sources) == 1:
-            return sources[0][0]
-        raise ValueError("select a primary_source_id or source_id from the project's source hints")
 
     def _snapshot(self, cursor, args, authority=None, command=None):
         if self.sources is None:
             raise ValueError("Source provider is unavailable")
         if not args.get("source_id"):
-            args["source_id"] = self._default_source(cursor, args["project_id"])
+            raise ValueError("select source_id explicitly for the recorded Source reader")
+        if authority is not None and authority.access_mode == "owner" and not args.get("revision"):
+            raise ValueError("select a recorded revision explicitly; current files use machine readers")
         if args.get("source_root") and args.get("revision"):
             raise ValueError("select a current source_root or a captured revision")
         cursor.execute("SELECT s.revision,s.current_commit,s.repository_identity,p.snapshot_json "
@@ -785,39 +776,6 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
         if row is None:
             raise NotFound("source_revision", args["source_id"])
         snapshot = self.sources.snapshot(row[3])
-        if authority is not None and authority.access_mode == "owner" and args.get("revision") is None:
-            cursor.execute("SELECT context_manifest FROM collaboration_projects WHERE tenant_id=%s "
-                           "AND project_id=%s", (self.context.tenant_id, args["project_id"]))
-            manifest = cursor.fetchone()[0]
-            preferred_root = (manifest.get("primary_source_root")
-                              if manifest.get("primary_source_id") == args["source_id"] else None)
-            request, observed, selection = self.sources.current(
-                snapshot, authority, command, root=args.get("source_root"), preferred_root=preferred_root)
-            args["_source_selection"] = selection
-            location_changed = str(request.root) != snapshot.repository_root
-            if (location_changed or observed["commit"] != snapshot.source_commit
-                    or observed["tree"] != snapshot.source_tree
-                    or observed["working_tree"] != "clean" or snapshot.dirty):
-                if location_changed:
-                    cursor.execute("SELECT snapshot_json->>'repository_root' FROM collaboration_source_snapshots "
-                                   "WHERE tenant_id=%s AND project_id=%s AND source_id=%s AND source_commit=%s",
-                                   (self.context.tenant_id, args["project_id"], args["source_id"], observed["commit"]))
-                    retained = cursor.fetchone()
-                    if retained and retained[0] != str(request.root):
-                        request = replace(request, workspace_view=True)
-                snapshot = self.sources.capture(request, authority, command)
-                cursor.execute(
-                    "INSERT INTO collaboration_source_snapshots(tenant_id,project_id,source_id,source_commit,"
-                    "snapshot_digest,snapshot_json,command_id) VALUES (%s,%s,%s,%s,%s,%s,%s) "
-                    "ON CONFLICT(tenant_id,project_id,source_id,source_commit) DO NOTHING",
-                    (self.context.tenant_id, args["project_id"], args["source_id"], snapshot.view_revision,
-                     snapshot.snapshot_sha256, canonical(snapshot.manifest_dict()), command.command_id),
-                )
-                cursor.execute(
-                    "UPDATE collaboration_sources SET current_commit=%s WHERE tenant_id=%s AND project_id=%s AND source_id=%s",
-                    (snapshot.view_revision, self.context.tenant_id, args["project_id"], args["source_id"]),
-                )
-                row = (row[0], snapshot.view_revision, row[2], snapshot.manifest_dict())
         return row, snapshot
 
     def _list_sources(self, authority, cursor, project, _command, args, _credential):
@@ -839,12 +797,11 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
         return "observed", {"project_id": args["project_id"], "items": [
             {"source_id": row[0], "revision": row[1], "commit": row[4], "view_revision": row[2],
              "repository": row[3], "capabilities": ["read"], "provider": "filesystem",
-             "binding_kind": "source_hint", "version_guidance": "advisory",
-             "default_read": "current_main_worktree", "provider_choice": "agent",
+             "record_kind": "source_archive", "version_selection": "explicit",
              "origin_hint": {"host": row[3].get("origin_host"), "path": row[3].get("origin_path")},
              **({"current_readable_root": row[5]} if authority.access_mode == "owner" else {}),
              "read": {"tool": "read_source", "arguments": {
-                 "project_id": args["project_id"], "source_id": row[0]}}}
+                 "project_id": args["project_id"], "source_id": row[0], "revision": row[2]}}}
             for row in cursor.fetchall()]}, []
 
     def _source_read(self, name, authority, cursor, command, args):
@@ -892,6 +849,12 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
         args = dict(args)
         row, snapshot = self._snapshot(cursor, args, authority, command)
         self.sources.verify(snapshot, authority, command)
+        if authority.access_mode == "owner":
+            return "observed", {"project_id":args["project_id"], "source_id":args["source_id"],
+                "commit":snapshot.source_commit, "tree":snapshot.source_tree,
+                "view_revision":snapshot.view_revision, "repository":row[2],
+                "observed_at":snapshot.observed_at, "record_kind":"source_archive",
+                "version_selection":"explicit", "snapshot_digest":snapshot.snapshot_sha256}, []
         observed = self.sources.observe(snapshot, authority, command)
         current = (observed["commit"], observed["tree"], observed["working_tree"]) == (
             snapshot.source_commit, snapshot.source_tree, "dirty" if snapshot.dirty else "clean")
@@ -943,31 +906,6 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
         data["source_guidance"] = {"default_read": "current_main_worktree",
             "version_guidance": "advisory", "provider_choice": "agent",
             "version_hint_ref": "source_observation"}
-        if authority.access_mode == "owner":
-            try:
-                primary_id = self._default_source(cursor, args["project_id"])
-            except ValueError:
-                primary_id = None
-            data["source_guidance"]["primary_source_id"] = primary_id
-            if primary_id is None:
-                data["management_source_observation"] = data["source_observation"]
-                data["source_observation"] = None
-                data["source_guidance"]["version_hint_ref"] = None
-            if primary_id and primary_id != management["source_id"]:
-                cursor.execute("SELECT p.snapshot_json,s.repository_identity FROM collaboration_sources s "
-                               "JOIN collaboration_source_snapshots p ON "
-                               "(p.tenant_id,p.project_id,p.source_id,p.source_commit)="
-                               "(s.tenant_id,s.project_id,s.source_id,s.current_commit) "
-                               "WHERE s.tenant_id=%s AND s.project_id=%s AND s.source_id=%s",
-                               (self.context.tenant_id, args["project_id"], primary_id))
-                selected_source = cursor.fetchone()
-                selected_snapshot = self.sources.snapshot(selected_source[0])
-                _request, code_observed, selected = self.sources.current(
-                    selected_snapshot, authority, command, preferred_root=manifest.get("primary_source_root"))
-                data["management_source_observation"] = data["source_observation"]
-                data["source_observation"] = code_observed
-                data["source_guidance"]["repository"] = selected_source[1]
-                data["source_guidance"]["selection"] = selected
         data["management_root"] = dict(management, revision=snapshot.view_revision)
         data["source_bindings"] = self._list_sources(authority, cursor, project, command, args, None)[1]["items"]
         for source in data["source_bindings"]:
@@ -1065,6 +1003,8 @@ class ProjectService(CommunicationActions, CommunicationManagement, ManagementAc
 
     def _verify_management_identity(self, authority, cursor, project, command,
                                     project_id, *, require_current):
+        if authority.access_mode == "owner":
+            return
         management = project[3]["management"]
         if self.sources is None:
             raise ValueError("Management Source is unavailable")

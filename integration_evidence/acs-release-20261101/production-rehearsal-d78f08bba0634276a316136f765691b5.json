@@ -1,0 +1,23 @@
+{
+  "source_version": "v1.6.0 / schema 1.14",
+  "production_writes": false,
+  "snapshot_dump_sha256": "aadaec8fec8aa5bc88ef029177762ac67478a487f3e0291a283674dca19b5325",
+  "original_tables": 74,
+  "restored_original_data_matched": true,
+  "migration_rollback_restored_exact_rows_and_schema": true,
+  "original_rows_preserved_after_adoption": true,
+  "new_tables": [
+    "communication_archives",
+    "communication_clients",
+    "communication_messages",
+    "communication_notice_routes",
+    "communication_notices",
+    "communication_replies",
+    "communication_supervisors",
+    "communication_waits"
+  ],
+  "native_started": false,
+  "identity_bootstrap": false,
+  "isolated_rehearsal_database": "acs_release_rehearsal_d78f08bba0634276a316136f765691b5",
+  "backup_storage": "owner-private Runtime backups directory"
+}

@@ -36,6 +36,36 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertFalse(tool.included(".tmp/private.json"))
         self.assertFalse(tool.included("runtime/__pycache__/module.pyc"))
 
+    def test_doctor_owner_identity_readback_supports_machine_upgrade(self):
+        doctor = load("acs_doctor", "acs_doctor.py")
+        from types import SimpleNamespace
+        configured = SimpleNamespace(artifact_configs=list, credential=lambda: "private-credential")
+        service = SimpleNamespace(authenticate=mock.Mock(), authority=SimpleNamespace())
+        project = mock.Mock()
+        project.execute.side_effect = [
+            ("observed", {"connection_state": "authorized", "profile": "root_manager",
+                          "access_mode": "owner", "identity": {"ref": "agent:root", "lifetime": "until_explicit_change"}}, []),
+            ("observed", {"items": []}, []),
+        ]
+        project.available_tools.return_value = ["read_file", "filesystem_context"]
+        with tempfile.TemporaryDirectory() as td:
+            catalog = Path(td) / "catalog.json"
+            catalog.write_text("{}")
+            context = mock.MagicMock()
+            context.__enter__.return_value = (service, configured)
+            with mock.patch.dict(sys.modules, {
+                "runtime.project_source": SimpleNamespace(ProjectSources=mock.Mock()),
+                "runtime.project_service": SimpleNamespace(ProjectService=mock.Mock(return_value=project)),
+                "runtime.surface_config": SimpleNamespace(configured_service=mock.Mock(return_value=context)),
+            }):
+                result = doctor.runtime_readback(Path(td) / "config.json", catalog, "root_manager", deep=False)
+        self.assertEqual(result["state"], "authorized")
+        self.assertEqual(result["access_mode"], "owner")
+        self.assertEqual(result["identity"]["ref"], "agent:root")
+        self.assertIsNone(result["grant"])
+        self.assertEqual(result["tools"], ["read_file", "filesystem_context"])
+        service.authenticate.assert_called_once_with("private-credential")
+
     def test_doctor_redacts_backend_failure(self):
         doctor = load("acs_doctor", "acs_doctor.py")
         with mock.patch.dict("sys.modules", {"runtime.project_service": None}):

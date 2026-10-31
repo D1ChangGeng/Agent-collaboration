@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="30.324" timestamp="2026-11-01T04:32:55.017102+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication" name="test_owner_can_create_route_without_a_recorded_source_version" time="30.018"><error message="failed on setup with &quot;psycopg.OperationalError: connection failed: connection to server at &quot;127.0.0.1&quot;, port 55439 failed: server closed the connection unexpectedly&#10;&#09;This probably means the server terminated abnormally&#10;&#09;before or while processing the request.&quot;">runtime_tests\test_communication.py:69: in comm
+    with psycopg.connect(base, autocommit=True) as connection:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\.venv\Lib\site-packages\psycopg\connection.py:122: in connect
+    raise last_ex.with_traceback(None)
+E   psycopg.OperationalError: connection failed: connection to server at "127.0.0.1", port 55439 failed: server closed the connection unexpectedly
+E   	This probably means the server terminated abnormally
+E   	before or while processing the request.</error></testcase></testsuite></testsuites>

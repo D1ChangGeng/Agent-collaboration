@@ -32,6 +32,10 @@ CRITICAL_INDEXES = (
 LEGACY_CORE = {
     ("1.13", "2d8672c71b4cb3a4f7e9f0fc829261c5b6d57f97777c445f79d85b493b0fa259"),
     ("1.13", "faf4b7edd70228be14d77cf9d176077fc349746fad2d4b6436eab6490e9762fe"),
+    # Exact released v1.6.0 / main de3aa5a, independently matched to the
+    # observed 1.14 deployment. Preserve its metadata and all original rows.
+    ("1.14", "214ad4bedb7e0198ed34d2c489a22e5536f34e41ec4142f439861e82b14191b9"),
+    ("1.14", "b10a6b12c32a868fecceae49139608b36973b92d88bc6ee32cc64b3b85e83e75"),
 }
 # The released candidate's communication core, before task-free signed
 # admissions could retain their absent task revision. Adoption only relaxes

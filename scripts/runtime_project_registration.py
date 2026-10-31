@@ -40,6 +40,9 @@ def _git(root, *args):
 
 
 def preview(root, specification, settings, catalog):
+    if settings.access_mode == "owner":
+        from runtime_current_project_registration import preview as current_preview
+        return current_preview(root, specification, settings, catalog)
     required = {"schema_version", "source_root", "expected_commit", "expected_tree", "scope_id", "agent_slot_id",
                 "name", "source_id", "repository_identity", "route_goals"}
     if (not isinstance(specification, dict) or not required <= set(specification)
@@ -134,6 +137,9 @@ def apply(root, specification, config_path, catalog, expected_plan_digest, *, ad
     plan = preview(root, specification, settings, catalog)
     if plan["plan_digest"] != expected_plan_digest:
         raise ValueError("registration preview changed; obtain and review a new plan")
+    if settings.access_mode == "owner":
+        from runtime_current_project_registration import apply as current_apply
+        return current_apply(plan, config_path, catalog, adopt_schema=adopt_schema)
     with configured_service(config_path, expected_settings=settings) as (shared, actual), ExitStack() as resources:
         credential = actual.credential()
         shared.authenticate(credential)

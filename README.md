@@ -11,11 +11,12 @@ and **Routes**; Codex and OpenCode decide how to perform and review work.
 ACS authenticates participants, preserves communication and starts a permitted
 Native request when requested.
 
-The current source contains an unreleased communication-core candidate. See the
-[communication contract](docs/runtime/COMMUNICATION.md) for tools and adoption,
-and the [implementation and support record](docs/runtime/COMMUNICATION-STATUS.md)
-for measured environments and limitations. The v1.4.0 installation instructions
-below describe that published Release; they do not install this candidate.
+ACS v2.0.0 provides the communication core described in the
+[communication contract](docs/runtime/COMMUNICATION.md). The
+[implementation and support record](docs/runtime/COMMUNICATION-STATUS.md)
+binds tested environments and limitations to their evidence. Existing v1.x
+installations require the [guided upgrade](docs/RELEASE-NOTES-v2.0.0.md);
+automatic updates do not activate this major version.
 
 ## Start with an AI assistant
 
@@ -49,9 +50,9 @@ ordinary messages to delegate work and recover replies from Inbox.
 
 ## Standard release installation
 
-Use the [v1.4.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v1.4.0)
+Use the [v2.0.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.0.0)
 and its `acs_bootstrap.py` asset to start verified installation.
-See the [release notes](docs/RELEASE-NOTES-v1.4.0.md) for the upgrade path.
+See the [release notes](docs/RELEASE-NOTES-v2.0.0.md) for the upgrade path.
 
 The Release Bootstrap uses an explicit Runtime destination: local Linux,
 a named remote SSH target, or a named WSL distribution. It probes the selected
@@ -110,7 +111,7 @@ Compatibility changes require an AI-guided upgrade. A previous version remains
 available for rollback.
 
 Existing v1.2.0 installations need one AI-guided upgrade using the verified
-v1.4.0 Release Bootstrap before these checks are available. See
+v2.0.0 Release Bootstrap before these checks are available. See
 [automatic upgrades](docs/AUTOMATIC-UPDATES.md) for controls, verification and
 recovery.
 

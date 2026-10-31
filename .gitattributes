@@ -38,3 +38,7 @@ integration_evidence/acs-core-audit-20261101/**/*.txt -whitespace
 integration_evidence/acs-installed-native-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
 integration_evidence/acs-installed-native-20261101/**/*.xml -whitespace
 integration_evidence/acs-installed-native-20261101/**/*.txt -whitespace
+
+integration_evidence/acs-release-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+integration_evidence/acs-release-20261101/**/*.xml -whitespace
+integration_evidence/acs-release-20261101/**/*.txt -whitespace

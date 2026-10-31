@@ -125,6 +125,36 @@ def test_unknown_legacy_checksum_is_rejected_before_ddl_or_identity_changes(proj
         assert connection.execute("SELECT * FROM runtime_schema_metadata ORDER BY schema_name").fetchall() == metadata
 
 
+@pytest.mark.parametrize("line_ending", ["lf", "crlf"])
+def test_released_1_14_adoption_preserves_original_packets_and_fences(project, line_ending):
+    identity, packet = seed_legacy(project)
+    fixture_root = Path(__file__).parent / "fixtures"
+    pieces = [(fixture_root / name).read_bytes().replace(b"\r\n", b"\n")
+              for name in ("legacy_schema.sql", "legacy_schema_1_13.sql", "legacy_schema_1_14.sql")]
+    released = b"\n".join(pieces)
+    assert hashlib.sha256(released).hexdigest() == "214ad4bedb7e0198ed34d2c489a22e5536f34e41ec4142f439861e82b14191b9"
+    checksum = hashlib.sha256(released if line_ending == "lf" else released.replace(b"\n", b"\r\n")).hexdigest()
+    with psycopg.connect(project.dsn) as connection:
+        old_metadata(connection)
+        connection.execute(pieces[-1])
+        connection.execute("ALTER TABLE collaboration_review_requests ALTER COLUMN source_baseline DROP NOT NULL")
+        connection.execute("UPDATE runtime_schema_metadata SET schema_version='1.14',schema_checksum=%s WHERE schema_name='acs-p1-runtime'", (checksum,))
+        connection.execute("UPDATE runtime_schema_metadata SET schema_checksum=%s WHERE schema_name='acs-project-runtime'",
+            ("2a5a388410369b1c0c37a6a803d2dbb60df451b879fba50d54711f84e4902305",))
+        before = dataset(connection)
+        metadata = connection.execute("SELECT * FROM runtime_schema_metadata WHERE schema_name='acs-p1-runtime'").fetchone()
+    current = DomainAuthority(project.dsn, context=project.authority.context)
+    current.initialize()
+    project.projects.initialize()
+    assert verify_project_schema(current)
+    with psycopg.connect(project.dsn) as connection:
+        after = dataset(connection)
+        for table, rows in before.items():
+            assert set(rows) <= set(after[table]) if table == "communication_archives" else after[table] == rows, table
+        assert connection.execute("SELECT * FROM runtime_schema_metadata WHERE schema_name='acs-p1-runtime'").fetchone() == metadata
+        assert connection.execute("SELECT packet_json FROM delivery_messages WHERE message_id=%s", (identity["message_id"],)).fetchone()[0] == packet.model_dump(mode="json")
+
+
 def test_missing_adoption_at_startup_is_read_only_and_unversioned_storage_is_not_guessed(comm):
     with psycopg.connect(comm.dsn) as connection:
         connection.execute("DELETE FROM runtime_schema_metadata WHERE schema_name=%s", (CORE_NAME,))

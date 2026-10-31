@@ -1,7 +1,7 @@
 # ACS 通信核心：实现与支持记录
 
 本记录核对开发包 v2.33 的 R01–R34 与当前源码，接续
-`f6195bf25d7b6a6fb1c2df3c211028787b2eb29f`。它描述尚未发布的开发候选。
+`f6195bf25d7b6a6fb1c2df3c211028787b2eb29f`。它记录 v2.0.0 通信核心的实现范围。
 源码、软件发行版和生产服务是不同状态；旧 Release/Gate 的结论保留原版本范围。
 
 ## 实际可用的主链
@@ -23,7 +23,7 @@ OpenCode 1.18.34 B，通过真实 `acs-receiver --config`、默认 stdio 维护�
 两次断连，未由此取得该路径的资格，也不改写已有物理跨机方向证据。
 
 用法及采用命令见 [COMMUNICATION.md](COMMUNICATION.md)，机器可读接口见
-[工具目录](p2-mcp-tool-contract.json)。当前目录版本为 10，Message 为
+[工具目录](p2-mcp-tool-contract.json)。当前目录版本为 11，Message 为
 `acs-message/1`，Core/Project Schema 为 2。现有旧库需要显式采用；正常启动
 只读校验，不执行迁移。候选软件包沿用组件版本 0.1.0；开发包 v2.33 是文档版本。
 

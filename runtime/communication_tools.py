@@ -155,8 +155,8 @@ def adopt_catalog(catalog):
                                 "destructiveHint": False}
         tools[name] = value
     for name, text in {
-        "load_project": "Load authorized Project identity, instructions, Routes, knowledge and SourceBindings. "
-            "Use the returned source observations and available readers to inspect actual files; communication history uses list_messages.",
+        "load_project": "Load authorized Project identity, current management files, Routes and knowledge from the selected machine. "
+            "Recorded Source readers require an explicit source and revision; communication history uses list_messages.",
         "list_routes": "List registered development Routes with lifecycle, Scope, goal and source-state hints."
     }.items():
         tools[name] = {**tools[name], "description": text, "selection_guidance": text}
@@ -181,7 +181,7 @@ def adopt_catalog(catalog):
         "team_configuration": ["project_id", "configuration_state", "team_revision", "native_sessions"]})
     used_types = {tool["result_type"] for tool in tools.values()}
     result_types = {kind: fields for kind, fields in result_types.items() if kind in used_types}
-    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/10", "surface_revision": "acs-communication/1",
+    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/11", "surface_revision": "acs-communication/1",
             "defaults": defaults, "receipt_order": ["accepted_by_authority", "target_inbox_committed",
                 "runtime_dispatched", "runtime_acknowledged"], "tools": tools, "profiles": profiles,
             "advanced_tools": [], "compatibility_aliases": {}, "tool_groups": groups, "result_types": result_types,

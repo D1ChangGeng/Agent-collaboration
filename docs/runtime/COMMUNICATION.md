@@ -1,9 +1,9 @@
 # ACS communication contract
 
-Implementation authority: the user-authorized development package v2.33,
-`RFC_TEMP_SOURCE/ACS_Development_Package_v2.33/CODEX_START.md`. That number is a
-document version, not a software release. Current engineering evidence is in
-`integration_evidence/acs-communication-20261031/`.
+ACS v2.0.0 connects independent Agents through authenticated natural messages,
+explicit associated replies and durable history. This contract defines the
+normal communication surface. [Implementation and support](COMMUNICATION-STATUS.md)
+records the exact environments and evidence behind current claims.
 
 ## Normal use
 
@@ -36,7 +36,7 @@ Use `next_cursor` for the next page and `resume_cursor` for later arrivals.
 Changing a history query's filters resets its cursor. Authority commit order is
 not an assertion about cross-machine clocks or Agent work order.
 
-This body presentation is catalog `acs-p2-mcp-tool-contract/10`, read input
+This body presentation is catalog `acs-p2-mcp-tool-contract/11`, read input
 `acs-mcp-read-message/3` and result revision `acs-communication-results/2`.
 Stored Message packets, authors and reply relationships are unchanged. Existing
 clients must use a continuation when `next_offset` is non-null, including zero.

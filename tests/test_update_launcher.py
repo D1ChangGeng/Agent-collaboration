@@ -186,6 +186,32 @@ class UpdateLauncherTests(unittest.TestCase):
             self.assertEqual(result.stdout, active.name + "\n")
             self.assertEqual(result.stderr, "")
 
+    def test_startup_check_reports_backend_component_for_guided_repair(self):
+        status={"core":"provider_backend_repair_required","web_tunnel":"supervision_requested"}
+        output=io.StringIO()
+        with mock.patch.object(launcher,"restore_startup",return_value=status) as restore, redirect_stdout(output):
+            self.assertEqual(launcher.main(["--installation-root",str(self.root),"--check-startup"]),0)
+        self.assertEqual(json.loads(output.getvalue()),status)
+        self.assertFalse(restore.call_args.kwargs["require_core"])
+
+    def test_maintenance_entry_uses_the_verified_active_helper(self):
+        helper=self.first/"scripts/acs_startup.py"
+        helper.parent.mkdir(exist_ok=True)
+        helper.write_text("def maintain(root):\n    (root / 'maintenance-observed').write_text('active')\n")
+        manifest_path=self.first/"RELEASE-MANIFEST.json"
+        manifest=json.loads(manifest_path.read_text())
+        manifest["files"]["scripts/acs_startup.py"]={"bytes":helper.stat().st_size,
+            "sha256":hashlib.sha256(helper.read_bytes()).hexdigest()}
+        manifest_path.write_text(json.dumps(manifest))
+        with mock.patch.object(launcher,"restore_startup") as ordinary, mock.patch.object(launcher.os,"execv") as execute:
+            self.assertEqual(launcher.main(["--installation-root",str(self.root),"--maintain-startup"]),0)
+        self.assertEqual((self.root/"maintenance-observed").read_text(),"active")
+        ordinary.assert_not_called()
+        execute.assert_not_called()
+        helper.write_text("changed")
+        with redirect_stderr(io.StringIO()):
+            self.assertEqual(launcher.main(["--installation-root",str(self.root),"--maintain-startup"]),2)
+
     def test_background_catchup_is_detached_and_opt_out_does_not_spawn(self):
         state = activate(self.root, self.first)
         owner_file(self.root / "acs_bootstrap.py", "# stable updater\n")

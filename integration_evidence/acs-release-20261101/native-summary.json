@@ -1,0 +1,18 @@
+{
+  "software_version": "2.0.0",
+  "installed_files_matched": 107,
+  "installation_unchanged_after_model": true,
+  "messages": 2,
+  "explicit_replies": 1,
+  "native_prompts": 1,
+  "delivery": {
+    "status": "delivered",
+    "receipt_high_water": "runtime_acknowledged",
+    "attempts": 1,
+    "source": "default_stdio_maintenance"
+  },
+  "model_elapsed_seconds": 72.12035785800254,
+  "normal_console_exit": true,
+  "owned_process_group_empty": true,
+  "pyc_count": 0
+}

@@ -27,7 +27,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 REPOSITORY = "D1ChangGeng/Agent-collaboration"
-DEFAULT_VERSION = "v1.4.0"
+DEFAULT_VERSION = "v2.0.0"
 SCHEMA = "acs-bootstrap-state/1"
 WEB_CHOICES = ("enable", "skip", "later")
 WEB_DOCS = {
@@ -284,9 +284,19 @@ def client_connection(kind: str, locator: str, receipt: dict) -> dict:
     else:
         remote = "cd " + shlex.quote(target) + " && exec " + shlex.join(arguments)
     command = (transport_command(kind, locator, "")[:-1] + [remote] if kind == "ssh" else
-               ["wsl.exe", "--distribution", locator, "--exec", "sh", "-c", remote])
-    return {"transport": "stdio", "command": command[0], "args": command[1:],
-            "state": "requires_client_configuration_and_handshake"}
+               ["wsl.exe", "--distribution", locator, "--user", receipt["machine"]["account"], "--exec", "sh", "-c", remote])
+    result = {"transport": "stdio", "command": command[0], "args": command[1:],
+              "state": "requires_client_configuration_and_handshake"}
+    if kind == "wsl" and receipt.get("install_root"):
+        result["background_startup"] = {
+            "state": "requires_caller_activation",
+            "script": "scripts/acs_windows_startup.ps1",
+            "source": "verified_release_or_installed_setup_skill",
+            "parameters": {"WslDistribution":locator,"RuntimeUser":receipt["machine"]["account"],
+                           "LinuxInstallationRoot":receipt["install_root"],
+                           "ExpectedMachineId":receipt["machine"]["machine_id"]},
+            "sequence": ["preview", "apply", "check"]}
+    return result
 
 
 def install_root() -> Path:

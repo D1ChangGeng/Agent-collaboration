@@ -20,7 +20,7 @@ class DeliveryPacket(DeliveryModel):
     accepted_state_summary: str = Field(min_length=1, max_length=4096)
     request: str = Field(min_length=1, max_length=8192)
     constraints: tuple[str, ...] = Field(default=(), max_length=32)
-    source_baseline: str = Field(min_length=1, max_length=512)
+    source_baseline: str | None = Field(default=None, min_length=1, max_length=512)
     context_digests: tuple[str, ...] = Field(default=(), max_length=32)
     expected_response: str = Field(min_length=1, max_length=4096)
     required_evidence: tuple[str, ...] = Field(default=(), max_length=32)
