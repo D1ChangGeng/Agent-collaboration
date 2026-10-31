@@ -50,19 +50,19 @@ retired task tools were absent. No client configuration rewrite was needed.
 
 ## Independent real model communication
 
-Eight new production request/reply exchanges were independently checked:
+Nine new production request/reply exchanges were independently checked:
 
 - Two Windows Codex requests invoked the actual remote Codex engineer.
 - Four Linux OpenCode requests invoked that same receiving node, including
   a fresh model/MCP context after the WSL instance restart and v2.0.1 install.
-- Two Windows Codex A / physical remote OpenCode B exchanges used
-  `message_only`, including one after the WSL restart. B independently read
+- Three Windows Codex A / physical remote OpenCode B exchanges used
+  `message_only`, including two after the WSL restart. B independently read
   Inbox through its ordinary engineer MCP, then called `send_message` with
   the original sender and explicit `reply_to`. The controller supplied B
   neither message content nor message handle.
 
 Each verified request has exactly one matching-author explicit reply. Invoke
-requests each have one Native attempt; both `message_only` requests have zero.
+requests each have one Native attempt; all three `message_only` requests have zero.
 Fresh clients read earlier messages and retained replies. In the final direct
 exchange, A's actual `send_message` and `wait_for_response` results were both
 `satisfied`; B's six normal ACS tool calls completed. Native terminal output
@@ -97,6 +97,19 @@ deduplication rows, 20 Grants, seven projects, 15 communication messages and
 seven reply links. Later verification exchanges append new records. The DSN,
 credential, caller context and configured startup identity were retained.
 Private backups and detailed fingerprints remain on their selected hosts.
+
+The final strict installation check detected three Python cache files in each
+retained receiver prefix. The diagnostic OpenCode test helper had imported its
+process supervisor from those prefixes without disabling bytecode writes.
+Every registered file hash was unchanged. Only those identified generated
+caches were relocated to private artifact folders outside the immutable
+prefixes. The helper now disables bytecode before import; the strict checker
+and manifest were retained. Both old and active installations passed again.
+After restarting only the owned Receiver, a ninth real exchange exercised the
+fixed helper. Its associated reply and actual satisfied wait were checked,
+and the active installation's 118 registered files passed the official check
+again after that model run. WSL's 1,002 declared release files and the official
+Windows startup check also passed.
 
 ## Tests and published bytes
 

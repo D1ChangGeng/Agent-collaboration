@@ -32,14 +32,24 @@
   "verified_new_real_model_exchanges": {
     "windows_codex_to_native_codex": 2,
     "linux_opencode_to_native_codex": 4,
-    "windows_codex_to_physical_opencode_message_only": 2,
-    "post_wsl_restart_exchanges": 2,
+    "windows_codex_to_physical_opencode_message_only": 3,
+    "post_wsl_restart_exchanges": 3,
     "one_explicit_matching_author_reply_per_request": true,
     "one_native_attempt_per_invoke_request": true,
     "zero_native_attempts_for_message_only_requests": true,
     "native_output_projection_used": false,
     "final_direct_send_and_wait_state": "satisfied",
     "global_provider_model_plugin_configuration_preserved": true
+  },
+  "final_install_integrity": {
+    "test_helper_bytecode_side_effect_detected": true,
+    "registered_file_hashes_changed": false,
+    "known_cache_files_relocated_per_retained_prefix": 3,
+    "test_helper_disables_bytecode_before_import": true,
+    "old_and_active_prefix_strict_checks_passed": true,
+    "active_prefix_registered_files_verified_after_fixed_real_model_run": 118,
+    "wsl_declared_release_files_verified": 1002,
+    "official_windows_startup_check": "passed"
   },
   "pre_patch_records_preserved": {
     "sealed_packets": 29,
