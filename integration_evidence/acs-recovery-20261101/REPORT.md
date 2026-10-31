@@ -4,8 +4,9 @@ Verified 2026-11-01 (Asia/Tokyo). Product source is commit
 `99124215300fd69de3ce7e088ca4dd1c19e65c0a`, tree
 `8489200e1071710d1147fc24d68422f646f072f7`, merged through
 [PR #19](https://github.com/D1ChangGeng/Agent-collaboration/pull/19).
-The existing WSL Owner Runtime and selected remote receiving node both run
-the verified v2.0.1 release.
+The v2.0.1 verification below covered the existing WSL Owner Runtime and
+selected remote receiving node. Later patch adoption is identified separately
+in the follow-up section; earlier restart observations retain their version.
 
 ## Actual defects and changes
 
@@ -144,3 +145,63 @@ All Shared/restricted Native profiles, all host/Harness directions, Windows
 login/reboot and sustained high load remain outside this qualification.
 Credentials, private message handles, raw model reasoning and backups are not
 included in the public evidence.
+
+## Follow-up: v2.0.2 patch adoption
+
+Both selected services adopted the published v2.0.2 commit
+`7c72faf36dff2ec9d0cab2ade7bcd883aa68b5bf`. Its product assets were downloaded
+and matched the frozen candidate byte-for-byte. The first automatic update
+returned a generic failure and retained v2.0.1. Retrying the same automatic
+path with the same strict guards activated v2.0.2; the original transient
+failure's cause was not established. A final update observation was up to date.
+
+The first post-update message was rejected before Native because an old
+long-lived sending entry combined the new registered Endpoint with its older
+in-memory receiving generation. The receiver fence remained intact. The
+failed original message was retained and not blindly replayed. Only old,
+owner-bound ACS entries matching their exact version/configuration and process
+identity were reconnected. A distinct new normal verification then completed:
+one actual Native attempt and one explicit matching-author reply. No unrelated
+service or whole host was restarted.
+
+A fresh connection through the original Windows MCP descriptor returned the
+new missing-`project_id` and range guidance. Invalid calls created no message,
+and history remained readable. WSL's 1,005 declared source files and the
+receiver's 118 registered files passed strict integrity checks. All pre-patch
+35 sealed packets, 2,537 command-dedup rows, 20 Grants, seven projects, 21 natural
+messages and ten reply links remained. Credentials, caller context, storage
+and startup identity were retained. The config-refresh defect is handled by
+the subsequent patch and must be separately validated on a retained connection.
+
+## Follow-up: v2.0.3 retained-connection validation
+
+Both selected services adopted the published v2.0.3 commit
+`f928cdad2eb8b2ba35bc6d47049442757b5569f6`. All five product assets were
+independently downloaded and matched the frozen candidate. One initial
+download error was retained; a retry succeeded before activation. Both CI
+flows and the existing release preflight passed. One first CI attempt had an
+unrelated simulated Codex RPC timeout at its unchanged 0.2-second budget;
+the exact local Linux case and the failed-job rerun passed. Its transient
+cause was not established, and the original failure remains in CI history.
+
+After owner activation, only entries still executing old ACS code were
+reconnected once. An actual Windows MCP client then initialized, read current
+status and retained that same connection while the remote Receiver and the
+trusted receiving configuration moved to the next signed generation. The
+client was not reinitialized after that change. It submitted one ordinary
+invoke request and received the real Codex engineer's explicit associated
+reply; its actual send and repeat wait both returned `satisfied`.
+
+Independent read-only evidence found one request, one correct-author reply,
+one Native attempt, and the new generation on all prepare/readiness/dispatch
+admissions. A is a scripted ordinary MCP application client in this specific
+warm-connection check; B is the real Native model. This is not counted as a
+new two-model A/B experiment. Earlier two-model evidence retains its own scope.
+
+After the model run, WSL's 1,007 declared release files and the Receiver's
+118 registered files passed strict integrity checks. All pre-patch 38 sealed
+packets, 2,543 dedup rows, 20 Grants, seven projects, 24 natural messages and
+11 reply links remained; the new verified exchange appended records. Identity,
+credentials, storage, keys and startup configuration were retained. No host
+or distribution reboot was performed for either patch follow-up, and the
+previously requested physical-host exclusion remains in force.
