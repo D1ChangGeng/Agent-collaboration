@@ -248,6 +248,8 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         if path.suffix in {".py", ".sql"}
     ]
     files += [ROOT / "runtime_tests/fixtures/remote_native_receiver.py", Path(__file__)]
+    if os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1":
+        files.append(ROOT / "runtime_tests/test_communication_ack_loss_native.py")
     manifest = {
         path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in files
@@ -522,6 +524,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 "context": asdict(comm.clients["b"].service.context),
                 "provider_key": provider_key,
                 "label": label,
+                "lose_dispatch_and_readback_acks": os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1",
                 **(
                     {
                         "installed_launcher": installed_launcher,
@@ -650,8 +653,14 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                     assert dispatched["status"] in {"delivered", "uncertain"}, dispatched
                     response = waiting.result(timeout=310)
             else:
+                ack_loss = os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1"
                 a, a_outputs = launch_codex(
-                    comm, tmp_path, provider_key, endpoint_id, authority_key.encode().hex()
+                    comm, tmp_path, provider_key, endpoint_id, authority_key.encode().hex(),
+                    prompt=("You are ordinary Agent A in ACS project-alpha. Ask collaborator slot-b for the release label "
+                        "using one normal ACS send_message with invoke + async. Call wait_for_response on the returned "
+                        "handle with timeout_seconds=0, retain that handle and finish this turn. A new client context "
+                        "will continue the same exchange. Do not send again. Use ACS tools only; do not inspect files."
+                        if ack_loss else None),
                 )
                 outputs.extend(a_outputs)
                 deadline = time.monotonic() + 150
@@ -694,7 +703,24 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                     "source": "default_stdio_maintenance",
                 }
                 facts["evaluator_dispatch_calls"] = 0
-                assert label in (tmp_path / "a.jsonl").read_text(encoding="utf-8")
+                if ack_loss:
+                    # This is the handle from A's successful normal send, not a
+                    # response copied from B or a synthetic recovery message.
+                    assert sent["message_handle"] in (tmp_path / "a.jsonl").read_text(encoding="utf-8")
+                    continued = tmp_path / "a-reconnected"
+                    continued.mkdir()
+                    a, a_outputs = launch_codex(comm, continued, provider_key, endpoint_id, authority_key.encode().hex(),
+                        prompt="You are a fresh ordinary Agent A context in ACS project-alpha, continuing your own "
+                        "already committed message " + sent["message_handle"] + ". Use wait_for_response with that "
+                        "original handle and timeout_seconds=300, then read_message and report B's release label. "
+                        "A transport acknowledgement may be unknown; only B's explicit related ACS message is a reply. "
+                        "Do not call send_message or invoke again. Use ACS tools only; do not inspect files.")
+                    outputs.extend(a_outputs)
+                    assert a.wait(timeout=360) == 0
+                    assert label in (continued / "a.jsonl").read_text(encoding="utf-8")
+                    facts["sender_context_replaced"] = True
+                else:
+                    assert label in (tmp_path / "a.jsonl").read_text(encoding="utf-8")
                 response = call(
                     comm,
                     "a",
@@ -715,6 +741,16 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
             )
         observation = rpc({"action": "observe"})
         facts["receiver"] = observation
+        if os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1":
+            assert not installed_launcher, "This fault is injected in the source Receiver transport fixture"
+            assert observation["dropped_ack_purposes"] == ["delivery.dispatch", "delivery.readback"]
+            assert dispatched["status"] == "uncertain", dispatched
+            assert dispatched["attempts"] == 1
+            with comm.authority._connect() as connection:
+                assert connection.execute("SELECT count(*) FROM delivery_attempts WHERE message_id=%s",
+                    (sent["message_id"],)).fetchone() == (1,)
+            facts["ack_loss"] = {"response_drops_after_commit": observation["dropped_ack_purposes"],
+                "native_prompt_count": 1, "core_delivery_state": "uncertain", "reply_wait_state": response["state"]}
         prompts = [
             row
             for row in observation["driver_requests"]

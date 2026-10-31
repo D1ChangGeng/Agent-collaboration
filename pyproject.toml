@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agent-collaboration-runtime"
-version = "2.0.1"
+version = "2.0.2"
 description = "Durable authenticated communication for independent AI agents"
 requires-python = ">=3.12"
 dependencies = [
