@@ -113,7 +113,7 @@ def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_p
 
     monkeypatch.setattr(
         "runtime_deployment.receiver_codex.DomainAuthority",
-        lambda dsn: SimpleNamespace(_dsn=dsn, _connect=lambda: _registered_node_connection()),
+        lambda dsn: SimpleNamespace(_dsn=dsn, access_mode="shared", _connect=lambda: _registered_node_connection()),
     )
     monkeypatch.setenv("ACS_RECEIVER_DSN", "postgresql://redacted")
     # Stop immediately after the profile is constructed; the remaining

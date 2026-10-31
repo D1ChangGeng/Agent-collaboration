@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="2" tests="10" time="4.283" timestamp="2026-10-31T23:07:32.357737+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_receiver_codex_factory" name="test_codex_receiver_settings_are_exact_and_bounded" time="0.007" /><testcase classname="runtime_tests.test_receiver_codex_factory" name="test_codex_receiver_capacity_uses_pinned_executable_directory_for_path" time="0.014"><failure message="AttributeError: 'types.SimpleNamespace' object has no attribute 'access_mode'">tmp_path = WindowsPath('D:/Chatgpt/Agent-collaboration/.tmp/receiver-shared-first-b9c3/test_codex_receiver_capacity_u0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x000002695F6ABBB0&gt;
+
+    def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_path, monkeypatch):
+        value = settings(tmp_path)
+        catalog = Path(value["model_catalog"])
+        catalog.write_text("{}", encoding="utf-8")
+        value["model_catalog_sha256"] = hashlib.sha256(b"{}").hexdigest()
+        executable = Path(value["executable"])
+        executable.write_bytes(b"codex")
+        value["executable_sha256"] = hashlib.sha256(b"codex").hexdigest()
+        schema = Path(value["protocol_schema"])
+        schema.write_bytes(b"schema")
+        value["protocol_schema_sha256"] = hashlib.sha256(b"schema").hexdigest()
+        cwd = Path(value["cwd"])
+        cwd.mkdir()
+        codex_home = Path(value["codex_home"])
+        codex_home.mkdir()
+        config = codex_home / "config.toml"
+        config.write_text('approval_policy = "never"\ndefault_permissions = "achp-engineer"\n')
+        value["config_sha256"] = hashlib.sha256(config.read_bytes()).hexdigest()
+    
+        observed = {}
+    
+        class Profile:
+            def __init__(self, *args):
+                observed["environment"] = args[9]
+    
+        class StopConstruction(Exception):
+            pass
+    
+        monkeypatch.setattr(
+            "runtime_deployment.receiver_codex.DomainAuthority",
+            lambda dsn: SimpleNamespace(_dsn=dsn, _connect=lambda: _registered_node_connection()),
+        )
+        monkeypatch.setenv("ACS_RECEIVER_DSN", "postgresql://redacted")
+        # Stop immediately after the profile is constructed; the remaining
+        # collaborators are covered by the production-factory integration tests.
+        monkeypatch.setattr("runtime_deployment.receiver_codex.LaunchProfile", Profile)
+        monkeypatch.setattr(
+            "runtime_deployment.receiver_codex.SystemdUserSupervisor",
+            lambda **_kwargs: (_ for _ in ()).throw(StopConstruction()),
+        )
+        monkeypatch.setattr(
+            "runtime_deployment.receiver_codex.WindowsJobSupervisor",
+            lambda **_kwargs: (_ for _ in ()).throw(StopConstruction()),
+        )
+        config_object = type("Config", (), {"binding": type("Binding", (), {
+            "registration": type("Registration", (), {
+                "config_sha256": "policy", "runtime_id": "runtime",
+                "node_id": "node", "boot_incarnation": "boot", "agent_slot_id": "slot",
+                "node_binding_revision": 1, "machine_id": "machine", "scope_id": "scope",
+                "tenant_id": "tenant", "authority_id": "authority", "authority_incarnation": "incarnation",
+            })()
+        })(), "ledger_path": str(Path(value["node_journal"]).with_name("receiver.sqlite"))})()
+        with pytest.raises(StopConstruction):
+&gt;           CodexReceiverCapacity(config_object, "policy", value)
+
+runtime_tests\test_receiver_codex_factory.py:139: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+runtime_deployment\receiver_codex.py:170: in __init__
+    self.binding = bind_registered_receiver(self.authority, registration, deployment_policy_sha256,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+authority = namespace(_dsn='postgresql://redacted', _connect=&lt;function test_codex_receiver_capacity_uses_pinned_executable_directo...stered-observer', grant_ref='registered-observer-grant', credential_hash='', agent_slot_id=None, trusted_client=False))
+registration = &lt;runtime_tests.test_receiver_codex_factory.Registration object at 0x000002695F7627B0&gt;
+deployment_policy_sha256 = 'policy', runtime_id = 'runtime'
+capacity_id = 'capacity-attempt'
+
+    def bind_registered_receiver(authority, registration, deployment_policy_sha256, runtime_id, capacity_id):
+        if registration.config_sha256 != deployment_policy_sha256 or registration.runtime_id != runtime_id:
+            raise NativeReceiverRejected("receiver deployment binding changed")
+        with authority._connect() as connection:
+            actor = connection.execute(
+                "SELECT observer_ref,observer_grant_ref FROM enrolled_nodes WHERE tenant_id=%s AND node_id=%s "
+                "AND authority_id=%s AND authority_incarnation=%s AND status='active'",
+                (registration.tenant_id, registration.node_id, registration.authority_id, registration.authority_incarnation),
+            ).fetchone()
+        if actor is None:
+            raise NativeReceiverRejected("configured Node identity is unavailable")
+        authority.context = AuthenticatedContext(registration.tenant_id, registration.authority_id,
+            registration.authority_incarnation, actor[0], actor[1])
+&gt;       if authority.access_mode == "owner":
+           ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute 'access_mode'
+
+runtime_deployment\receiver_authority.py:34: AttributeError</failure></testcase><testcase classname="runtime_tests.test_receiver_codex_factory" name="test_codex_receiver_current_authority_uses_configured_clock_skew" time="0.001" /><testcase classname="runtime_tests.test_receiver_codex_factory" name="test_codex_receiver_native_domain_recheck_uses_same_clock_skew" time="0.001" /><testcase classname="runtime_tests.test_receiver_codex_factory" name="test_factory_binding_digest_includes_settings" time="0.000"><skipped type="pytest.skip" message="deployment factory binding is POSIX-owned">D:\Chatgpt\Agent-collaboration\runtime_tests\test_receiver_codex_factory.py:196: deployment factory binding is POSIX-owned</skipped></testcase><testcase classname="runtime_tests.test_communication_receiver" name="test_shared_receiver_authorizes_committed_sender_separately_from_its_observer" time="1.295" /><testcase classname="runtime_tests.test_communication_receiver" name="test_committed_unbound_client_origin_survives_recovery_to_a_registered_route" time="1.642" /><testcase classname="runtime_tests.test_communication_receiver" name="test_receiver_refuses_legacy_native_activation_before_calling_bridge" time="0.001" /><testcase classname="runtime_tests.test_communication_receiver" name="test_native_receiver_settings_do_not_require_execution_collector_storage" time="0.401" /><testcase classname="runtime_tests.test_communication_receiver" name="test_actual_factory_preparation_uses_live_node_identity_without_task_collector" time="0.001"><skipped type="pytest.skip" message="actual production factory session probe is opt-in">D:\Chatgpt\Agent-collaboration\runtime_tests\test_communication_receiver.py:178: actual production factory session probe is opt-in</skipped></testcase></testsuite></testsuites>

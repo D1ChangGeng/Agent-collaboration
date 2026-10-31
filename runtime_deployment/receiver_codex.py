@@ -2,31 +2,20 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 import re
 import subprocess
 import uuid
-from copy import copy
-from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
-from runtime.auth import AuthenticatedContext
 from runtime.codex_driver import (
-    AuthorizedOperation,
-    BindingIdentity,
     CodexAppServerDriver,
     DriverJournal,
     LaunchProfile,
 )
-from runtime.communication_permissions import committed_delivery_context
 from runtime.connection_clock import ConnectionClock
-from runtime.delivery_models import InvocationRequest
-from runtime.delivery_node import InvocationPreCallRejected
 from runtime.domain import DomainAuthority
-from runtime.lifetimes import earliest
-from runtime.models import CommandEnvelope
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.node import NodeJournal
 from runtime.posix_process_supervisor import PosixProcessSupervisor
@@ -35,6 +24,11 @@ from runtime.receiver_delivery import ReceiverNativeDeliveryBridge
 from runtime.receiver_entry import DeploymentCallbacks
 from runtime.supervisor import WindowsJobSupervisor
 from runtime.systemd_supervisor import SystemdUserSupervisor
+from runtime_deployment.receiver_authority import (
+    NativeReceiverAuthority,
+    NativeReceiverRejected,
+    bind_registered_receiver,
+)
 
 SCHEMA = "acs-receiver-codex-factory/1"
 FIELDS = {
@@ -50,8 +44,7 @@ FIELDS = {
 RETIRED_FIELDS = {"artifact_root", "collector_max_reads", "collector_interval_seconds"}
 
 
-class CodexReceiverRejected(RuntimeError):
-    pass
+CodexReceiverRejected = NativeReceiverRejected
 
 
 def _text(settings: dict[str, Any], name: str) -> str:
@@ -159,7 +152,7 @@ def validate_settings(settings: object, *, execution_mode="restricted") -> dict[
     return dict(settings)
 
 
-class CodexReceiverCapacity:
+class CodexReceiverCapacity(NativeReceiverAuthority):
     def __init__(self, config, deployment_policy_sha256: str, settings: dict[str, Any]):
         self.config = config
         self.settings = validate_settings(settings, execution_mode="native" if getattr(config, "access_mode", "shared") == "owner" else "restricted")
@@ -174,29 +167,8 @@ class CodexReceiverCapacity:
         if not self.authority._dsn:
             raise CodexReceiverRejected("receiver Domain DSN is unavailable")
         registration = config.binding.registration
-        if (
-            registration.config_sha256 != deployment_policy_sha256
-            or registration.runtime_id != self.settings["runtime_id"]
-        ):
-            raise CodexReceiverRejected("Codex receiver deployment binding changed")
-        with self.authority._connect() as connection:
-            actor = connection.execute(
-                "SELECT observer_ref,observer_grant_ref FROM enrolled_nodes WHERE tenant_id=%s "
-                "AND node_id=%s AND authority_id=%s AND authority_incarnation=%s AND status='active'",
-                (registration.tenant_id, registration.node_id, registration.authority_id,
-                 registration.authority_incarnation),
-            ).fetchone()
-        if actor is None:
-            raise CodexReceiverRejected("configured Node identity is unavailable")
-        self.authority.context = AuthenticatedContext(registration.tenant_id, registration.authority_id,
-            registration.authority_incarnation, actor[0], actor[1])
-        if getattr(config, "access_mode", "shared") == "owner":
-            self.authority.owner_identity_ref = actor[1]
-        self.binding = BindingIdentity(
-            registration.node_id, registration.boot_incarnation, registration.runtime_id,
-            self.settings["capacity_attempt_id"], registration.agent_slot_id,
-            registration.node_binding_revision,
-        )
+        self.binding = bind_registered_receiver(self.authority, registration, deployment_policy_sha256,
+                                                self.settings["runtime_id"], self.settings["capacity_attempt_id"])
         self.node = NodeJournal(
             self.settings["node_journal"], machine_id=registration.machine_id,
             node_id=registration.node_id, boot_incarnation=registration.boot_incarnation,
@@ -298,111 +270,17 @@ class CodexReceiverCapacity:
             self.driver.spawn(self._lifecycle_operation("spawn"))
         return self.health()
 
-    def _lifecycle_operation(self, action: str) -> AuthorizedOperation:
-        prefix = "spawn" if action == "spawn" else "close"
-        return AuthorizedOperation(
-            self.settings[prefix + "_operation_id"],
-            self.settings[prefix + "_command_id"],
-            self.settings[prefix + "_message_id"],
-            self.authority.context.grant_ref,
-            None if getattr(self.config, "access_mode", "shared") == "owner" else earliest(self.config.binding.registration.expires_at,
-                self.clock.now() + timedelta(minutes=5)),
-        )
-
-    def _domain_invocation(self, operation: AuthorizedOperation) -> InvocationRequest:
-        prefix = "delivery-invocation:"
-        if not operation.operation_id.startswith(prefix):
-            raise CodexReceiverRejected("Codex Driver operation is outside a Delivery Attempt")
-        attempt_id = operation.operation_id.removeprefix(prefix)
-        with self.authority._connect() as connection:
-            row = connection.execute(
-                "SELECT a.invocation_json,m.command_json,m.deadline FROM delivery_attempts a "
-                "JOIN delivery_messages m ON m.tenant_id=a.tenant_id AND m.message_id=a.message_id "
-                "WHERE a.tenant_id=%s AND a.attempt_id=%s",
-                (self.authority.tenant_id, attempt_id),
-            ).fetchone()
-            if row is None or not isinstance(row[0], dict):
-                raise CodexReceiverRejected("Codex Driver Attempt is unavailable")
-            invocation = InvocationRequest.model_validate_json(json.dumps(row[0]), strict=True)
-            command = CommandEnvelope.model_validate_json(json.dumps(row[1], default=str), strict=True)
-            if invocation.envelope.packet.schema_version == "acs-delivery/1":
-                raise InvocationPreCallRejected("legacy_task_invocation_retired")
-            self._authorize_domain_command(
-                command, connection.cursor(), "runtime.invoke",
-                invocation.envelope.packet.target_scope_id, invocation.envelope.packet,
-            )
-        if (
-            (invocation.invocation_id, invocation.command_id, invocation.message_id)
-            != (operation.operation_id, operation.command_id, operation.message_id)
-            or operation.grant_ref != command.grant_ref
-            or row[2] is not None and (operation.deadline is None or operation.deadline > row[2])
-        ):
-            raise CodexReceiverRejected("Codex Driver operation lineage changed")
-        return invocation
-
-    def _authorize_domain_command(self, command, cursor, permission, scope_id, packet) -> None:
-        actor = copy(self.authority)
-        actor.context = committed_delivery_context(cursor, command, packet)
-        actor._authorize(
-            command,
-            cursor,
-            permission,
-            scope_id,
-            clock_skew_seconds=0 if getattr(self, "clock", None) is not None else self.config.clock_skew_seconds,
-        )
-
-    def _current(self, operation: AuthorizedOperation, observed: BindingIdentity) -> None:
-        if observed != self.binding:
-            raise CodexReceiverRejected("Codex receiver Driver binding changed")
-        with self.authority._connect() as connection, connection.cursor() as cursor:
-            self.authority.enrollment._active_runtime(cursor, self.binding.runtime_id)
-        if operation.operation_id in {
-            self.settings["spawn_operation_id"], self.settings["close_operation_id"],
-        }:
-            if operation.grant_ref != self.authority.context.grant_ref:
-                raise CodexReceiverRejected("Codex receiver lifecycle identity changed")
-            return
-        self._domain_invocation(operation)
-
-    def _authorize_invocation(self, invocation, observed) -> AuthorizedOperation:
-        if observed != self.binding:
-            raise CodexReceiverRejected("Codex receiver invocation binding changed")
-        operation = AuthorizedOperation(
-            invocation.invocation_id, invocation.command_id, invocation.message_id,
-            invocation.envelope.grant_ref, invocation.envelope.packet.deadline,
-        )
-        self._domain_invocation(operation)
-        return operation
 
 
 
 
-    def authorize_current(self, admission) -> bool:
-        return self.authority.receiver_transport.current_authority(
-            admission,
-            clock_skew_seconds=0 if getattr(self, "clock", None) is not None else self.config.clock_skew_seconds,
-        )
 
-    def native_invoke(self, admission):
-        invocation = self.bridge._invocation(admission)
-        if invocation.envelope.packet.schema_version == "acs-delivery/1":
-            raise InvocationPreCallRejected("legacy_task_invocation_retired")
-        result = self.bridge(admission)
-        return result
 
-    def readiness(self, admission):
-        return self.bridge.readiness(admission)
 
-    def close(self):
-        if self._closed:
-            return
-        self._closed = True
-        try:
-            if self.driver.owned is not None and self.driver.owned.process.poll() is None:
-                self.driver.terminate(self._lifecycle_operation("close"))
-            self.driver.detach_transport()
-        finally:
-            self.supervisor.close()
+
+
+
+
 
 def callbacks(config, deployment_policy_sha256, settings):
     capacity = CodexReceiverCapacity(config, deployment_policy_sha256, settings)

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="19.901" timestamp="2026-10-31T23:13:46.281478+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_receiver_opencode_factory" name="test_real_opencode_factory_prepares_an_actual_session_without_a_model" time="18.455"><failure message="AttributeError: 'LoopbackHttp' object has no attribute 'close'">comm = namespace(clients={'a': &lt;runtime.mcp_runtime.McpRuntime object at 0x709f69509520&gt;, 'b': &lt;runtime.mcp_runtime.McpRuntim...very.DeliveryDispatcher object at 0x709f69522480&gt;, authority=&lt;runtime.domain.DomainAuthority object at 0x709f697d08c0&gt;)
+tmp_path = PosixPath('/tmp/acs-opencode-factory-real-871a/test_real_opencode_factory_pre0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x709f69522930&gt;
+
+    @pytest.mark.skipif(os.getenv("ACS_REAL_OPENCODE_TEST")!="1" or not sys.platform.startswith("linux"),
+                        reason="actual local Linux OpenCode lifecycle is opt-in")
+    def test_real_opencode_factory_prepares_an_actual_session_without_a_model(comm,tmp_path,monkeypatch):
+        from runtime.delivery_models import EndpointBindingRequest
+        from runtime.delivery_node import LocalNodeEndpoint
+        from runtime_tests.test_delivery import command as bind_command
+    
+        config,supplied,observer=enrolled_opencode_config(comm,tmp_path)
+        supplied["executable"]=os.environ["ACS_REAL_OPENCODE_BINARY"]
+        monkeypatch.setenv("ACS_RECEIVER_DSN",comm.dsn)
+        monkeypatch.setenv("OPENCODE_CONFIG_CONTENT",json.dumps({"mcp":{},"plugin":[],"permission":{"*":"deny"}}))
+        capacity=OpenCodeReceiverCapacity(config,"c"*64,supplied)
+        facts={}
+        try:
+            assert capacity.authority.context.principal_ref==observer.context.principal_ref
+            actual=capacity.health()
+            assert actual["state"]=="idle" and actual["session_ref"].startswith("ses_")
+            assert capacity.driver._event_thread is None and not hasattr(capacity,"collector")
+            endpoint=LocalNodeEndpoint(capacity.node,"local-scope","slot-b",capacity.adapter)
+            comm.dispatcher.service.endpoints["opencode-endpoint"]=endpoint
+            comm.authority._delivery_endpoints["opencode-endpoint"]=endpoint
+            comm.dispatcher.service.bind_endpoint(bind_command(comm.authority,"message.bind","opencode-endpoint"),
+                EndpointBindingRequest(scope_id="local-scope",agent_slot_id="slot-b",expires_at=datetime.now(UTC)+timedelta(minutes=2)))
+            result=call(comm,"a","configure_team",members=[{"agent_slot_id":"slot-b","principal_ref":"agent:b","endpoint_id":"opencode-endpoint"}])
+            assert result["data"]["native_sessions"][0]["session_ref"]==actual["session_ref"]
+            with capacity.journal._connect() as connection:
+                requests=[json.loads(row[0]) for row in connection.execute("SELECT body FROM driver_events WHERE kind='http_dispatch'")]
+            assert sum(row.get("method")=="POST" and row.get("path")=="/session" for row in requests)==1
+            assert not any("prompt_async" in row.get("path","") or row.get("path")=="/event" for row in requests)
+            facts={"evidence_class":"production OpenCodeReceiverCapacity and actual OpenCode, no model",
+                "native":actual,"native_session_creates":1,"model_turns":0,"collector":False,"event_subscription":False,
+                "inherited_agent_and_model":capacity.driver.profile.agent is None and capacity.driver.profile.model_id is None}
+        finally:
+&gt;           capacity.close()
+
+runtime_tests/test_receiver_opencode_factory.py:190: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+runtime_deployment/receiver_authority.py:139: in close
+    self.driver.terminate(self._lifecycle_operation("close"))
+runtime/opencode_driver.py:1049: in terminate
+    return self._run(operation, "terminate", {"native_session_id": self.session_id}, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime/opencode_driver.py:294: in _run
+    result = function()
+             ^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def perform():
+        if self.ownership != "exclusive_owned" or self.owned is None or self.supervisor is None:
+            raise DriverRejected("termination requires this Driver's owned containment")
+        self._auth(operation)
+        proof = self.supervisor.terminate_tree(self.owned)
+        if self.profile.execution_mode == "native" and proof.get("scope") == "owned_process_group":
+            if (proof.get("verified") is not True or proof.get("birth_ref") != self.owned.birth_ref
+                    or proof.get("containment_id") != self.owned.containment_id
+                    or proof.get("root_exit_code") is None or proof.get("remaining_group_members") != []
+                    or self.owned.process.poll() is None):
+                raise OutcomeUncertain("owned process group stop readback is incomplete")
+            if self.client is not None:
+&gt;               self.client.close()
+                ^^^^^^^^^^^^^^^^^
+E               AttributeError: 'LoopbackHttp' object has no attribute 'close'
+
+runtime/opencode_driver.py:1034: AttributeError</failure></testcase></testsuite></testsuites>

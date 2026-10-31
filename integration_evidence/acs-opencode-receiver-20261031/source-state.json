@@ -1,0 +1,45 @@
+{
+  "candidate_parent": "a8bf4c3c1dbbb6fc4c0735ca863a4bd9e221211b",
+  "branch": "codex/core-cleanup",
+  "final_source_files_match_dual_model": 109,
+  "tests": {
+    "final-source.xml": {
+      "tests": 113,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 8
+    },
+    "actual-factory.xml": {
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "actual-model.xml": {
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "dual-model.xml": {
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "codex-regression-model.xml": {
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    }
+  },
+  "existing_readmes_preserved": {
+    "README.md": "9e1341285d25c806289c6a652c6912f7a6f2a629a8998a5a780318309565796c",
+    "README.zh-CN.md": "d8b1639e46a52eed9b4e6929d086556aba677f010e55f2ed09d3382887891a89"
+  },
+  "provider_key_absent_from_retained_artifacts": true,
+  "source_upload": "explicit user authorization after auto-review rejection",
+  "push": "not_attempted",
+  "production_change": "none"
+}

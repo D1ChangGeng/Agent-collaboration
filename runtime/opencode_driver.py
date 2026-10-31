@@ -122,9 +122,9 @@ class OpenCodeLaunchProfile:
     cache_root: str
     temp_root: str
     config_sha256: str
-    agent: str
-    provider_id: str
-    model_id: str
+    agent: str | None
+    provider_id: str | None
+    model_id: str | None
     environment: dict[str, str]
     execution_mode: str = "restricted"
 
@@ -157,9 +157,14 @@ class OpenCodeLaunchProfile:
             raise DriverRejected("OpenCode schema/configuration changed")
         if self.execution_mode == "restricted" and config_digest and file_digest(self.config_path) != self.config_sha256:
             raise DriverRejected("OpenCode configuration changed before native startup")
-        if not all(isinstance(value, str) and value for value in (self.agent, self.provider_id, self.model_id)):
+        selections = (self.agent, self.provider_id, self.model_id)
+        if self.execution_mode == "restricted" and not all(isinstance(value, str) and value for value in selections):
             raise DriverRejected("trusted agent/provider/model selection is required")
         if self.execution_mode == "native":
+            if any(value is not None and (not isinstance(value, str) or not value) for value in selections):
+                raise DriverRejected("native selection must be explicit or inherited")
+            if (self.provider_id is None) != (self.model_id is None):
+                raise DriverRejected("native provider/model selection must be paired")
             if any(not isinstance(key, str) or not isinstance(value, str) or "\0" in key+value
                    for key, value in self.environment.items()):
                 raise DriverRejected("invalid process environment")
@@ -469,8 +474,9 @@ class OpenCodeNativeDriver:
     def _session_payload(self, operation_id):
         return {
             "title": "ACS " + operation_id,
-            "agent": self.profile.agent,
-            "model": {"providerID": self.profile.provider_id, "id": self.profile.model_id},
+            **({"agent": self.profile.agent} if self.profile.agent is not None else {}),
+            **({"model": {"providerID": self.profile.provider_id, "id": self.profile.model_id}}
+               if self.profile.provider_id is not None else {}),
             "metadata": self._metadata(operation_id),
             **({"permission": SESSION_RULES} if self.profile.execution_mode == "restricted" else {}),
         }
@@ -488,9 +494,9 @@ class OpenCodeNativeDriver:
                 or expected_operation is not None and metadata.get("acs_operation_id") != expected_operation
                 or Path(value.get("directory", "")).resolve() != Path(self.profile.cwd).resolve()
                 or self.profile.execution_mode == "restricted" and value.get("permission") != SESSION_RULES
-                or value.get("agent") != self.profile.agent
-                or value.get("model", {}).get("id") != self.profile.model_id
-                or value.get("model", {}).get("providerID") != self.profile.provider_id):
+                or self.profile.agent is not None and value.get("agent") != self.profile.agent
+                or self.profile.model_id is not None and value.get("model", {}).get("id") != self.profile.model_id
+                or self.profile.provider_id is not None and value.get("model", {}).get("providerID") != self.profile.provider_id):
             raise DriverRejected("native session is not bound to the original Node/Attempt/profile")
         return value
 
@@ -800,9 +806,9 @@ class OpenCodeNativeDriver:
         info = value.get("info", {})
         parts = value.get("parts")
         if (info.get("id") != message_id or info.get("sessionID") != self.session_id or info.get("role") != "user"
-                or info.get("agent") != self.profile.agent
-                or info.get("model", {}).get("providerID") != self.profile.provider_id
-                or info.get("model", {}).get("modelID") != self.profile.model_id
+                or self.profile.agent is not None and info.get("agent") != self.profile.agent
+                or self.profile.provider_id is not None and info.get("model", {}).get("providerID") != self.profile.provider_id
+                or self.profile.model_id is not None and info.get("model", {}).get("modelID") != self.profile.model_id
                 or info.get("tools") is not None or info.get("system") is not None):
             raise DriverRejected("native message readback differs from the exact authorized input")
         # OpenCode persists the exact user-message header before its text part.
@@ -849,8 +855,10 @@ class OpenCodeNativeDriver:
                 self._active_operation_id = operation.operation_id
                 self._start_events(operation)
                 code, _ = self._http(operation, "POST", "/session/" + self.session_id + "/prompt_async", {
-                    "messageID": message_id, "agent": self.profile.agent,
-                    "model": {"providerID": self.profile.provider_id, "modelID": self.profile.model_id},
+                    "messageID": message_id,
+                    **({"agent": self.profile.agent} if self.profile.agent is not None else {}),
+                    **({"model": {"providerID": self.profile.provider_id, "modelID": self.profile.model_id}}
+                       if self.profile.provider_id is not None else {}),
                     "parts": [{"type": "text", "text": text}],
                 }, on_dispatch=on_dispatch)
                 if code != 204:
@@ -1016,17 +1024,14 @@ class OpenCodeNativeDriver:
                 raise DriverRejected("termination requires this Driver's owned containment")
             self._auth(operation)
             proof = self.supervisor.terminate_tree(self.owned)
-            if self.profile.execution_mode == "native" and proof.get("scope") == "owned_process_group":
+            owned_group = self.profile.execution_mode == "native" and proof.get("scope") == "owned_process_group"
+            if owned_group:
                 if (proof.get("verified") is not True or proof.get("birth_ref") != self.owned.birth_ref
                         or proof.get("containment_id") != self.owned.containment_id
                         or proof.get("root_exit_code") is None or proof.get("remaining_group_members") != []
                         or self.owned.process.poll() is None):
                     raise OutcomeUncertain("owned process group stop readback is incomplete")
-                if self.client is not None:
-                    self.client.close()
-                return self._receipt("process_group_terminated", supervisor_proof=proof)
-
-            if (proof.get("verified") is not True or proof.get("birth_ref") != self.owned.birth_ref
+            elif (proof.get("verified") is not True or proof.get("birth_ref") != self.owned.birth_ref
                     or proof.get("containment_id") != self.owned.containment_id
                     or proof.get("root_exited") is not True or proof.get("remaining_pids") != []
                     or self.owned.process.poll() is None):
@@ -1037,7 +1042,7 @@ class OpenCodeNativeDriver:
                 if thread.is_alive():
                     raise OutcomeUncertain("native diagnostic drain thread did not stop")
             self._diag_threads = []
-            return self._receipt("process_tree_terminated", supervisor_proof=proof)
+            return self._receipt("process_group_terminated" if owned_group else "process_tree_terminated", supervisor_proof=proof)
         return self._run(operation, "terminate", {"native_session_id": self.session_id}, perform)
 
     def detach_transport(self):

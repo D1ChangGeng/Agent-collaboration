@@ -1,0 +1,15 @@
+{
+  "evidence_class": "production OpenCodeReceiverCapacity and actual OpenCode, no model",
+  "native": {
+    "state": "idle",
+    "harness": "opencode",
+    "version": "1.18.34",
+    "session_ref": "ses_e6daf09c6ffepy1rdHSkVlUVNN",
+    "observation": "native_driver_readback"
+  },
+  "native_session_creates": 1,
+  "model_turns": 0,
+  "collector": false,
+  "event_subscription": false,
+  "inherited_agent_and_model": true
+}

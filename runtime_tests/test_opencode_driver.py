@@ -328,6 +328,24 @@ def test_owner_native_session_has_no_background_execution_event_subscription(nat
     assert not any(request.get("path") == "/event" for request in requests)
 
 
+def test_owner_native_selection_can_follow_the_selected_environment(native):
+    driver = native.driver
+    driver.profile = replace(driver.profile, execution_mode="native", agent=None, provider_id=None, model_id=None)
+    driver.profile.validate()
+    payload = driver._session_payload("owner-defaults")
+    assert "agent" not in payload and "model" not in payload and "permission" not in payload
+    # The actual server may supply its selected values. They do not replace
+    # the ACS identity/directory checks that bind this native Session.
+    session = {**payload, "id":"ses_selected", "directory":driver.profile.cwd,
+               "agent":"selected-agent", "model":{"providerID":"selected-provider","id":"selected-model"}}
+    assert driver._session(session, expected_operation="owner-defaults")["id"] == "ses_selected"
+    with pytest.raises(DriverRejected):
+        driver._session({**session, "metadata":{}}, expected_operation="owner-defaults")
+    driver.profile = replace(driver.profile, provider_id="half-selected")
+    with pytest.raises(DriverRejected, match="paired"):
+        driver.profile.validate()
+
+
 def test_owned_idle_session_replacement_is_read_back_before_prompt(native):
     driver = native.driver
     driver.spawn(operation("spawn"))

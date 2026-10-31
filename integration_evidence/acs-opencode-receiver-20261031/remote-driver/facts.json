@@ -1,0 +1,26 @@
+{
+  "native_version": "1.18.34",
+  "actual_session_id": "ses_e6da68c02ffe13cSTDNw9Huhfs",
+  "session_state": "idle",
+  "native_create_count": 1,
+  "model_turns": 0,
+  "event_subscription": false,
+  "root": "/tmp/acs-opencode-driver-local-w2qsdv4n",
+  "process_stop": {
+    "verified": true,
+    "containment_id": "process-session:1656335:linux:1656335:157702438",
+    "birth_ref": "linux:1656335:157702438",
+    "backend": "posix-process-session",
+    "scope": "owned_process_group",
+    "subtree_containment": false,
+    "alive": false,
+    "pid": 1656335,
+    "members": [],
+    "root_pid": 1656335,
+    "root_exited": true,
+    "remaining_pids": [],
+    "root_exit_code": -15,
+    "remaining_group_members": [],
+    "stopped": true
+  }
+}
