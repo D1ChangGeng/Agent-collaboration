@@ -11,6 +11,9 @@ Client 与绑定角色，Root 统一配置入口复用现有登记/团队机制�
 和切换结果以安装读回及生产验收为准。
 [身份与 Root 验收](../../integration_evidence/acs-identity-root-20261102/REPORT.md)
 记录四个独立模型、三次原 Session 续接、真实 stdio/HTTP 与受限权限正反例。
+[v2.3.0 生产切换](../../integration_evidence/acs-identity-root-production-20261102/REPORT.md)
+记录两端安装、Windows/WSL 新连接、真实 Native 关联回复、代次 8 与原有数据保留。
+升级前的旧 MCP 通道已回收，现有聊天需要重连以取得新版工具目录。
 
 ## 实际可用的主链
 
