@@ -38,8 +38,6 @@ class RootManagement:
         manager = args.get("manager")
         if not changes and root_id is None and name is None and manager is None:
             raise InvalidToolArgument("changes", "Provide Root settings to change, or a manager to configure.")
-        if manager is not None and not self.context.trusted_client and manager.get("agent_slot_id") != self.context.agent_slot_id:
-            raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
         with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
             command = self._command(authority, "project.configure_root", args)
             authority._authorize(command, cursor)
@@ -79,6 +77,8 @@ class RootManagement:
                     scope_id=scope, agent_slot_id=None, name=name, context_manifest=manifest, credential=credential)
                 existing = (scope, selected_root, 1, manifest, name)
             bound, project, _ = self._authorize(authority, cursor, project_id, "configure_root", args)
+            if manager is not None and not self.context.trusted_client and manager.get("agent_slot_id") != project[5]:
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
             request_id = args.get("client_request_id")
             input_digest = digest(["configure_root", args])
             authority._lock_command_identity(cursor, command)

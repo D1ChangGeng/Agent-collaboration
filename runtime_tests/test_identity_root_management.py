@@ -158,7 +158,8 @@ def test_root_manager_cannot_demote_an_existing_peer_manager(comm, owner_client)
 
 
 @pytest.mark.parametrize("access_mode", ["owner", "shared"])
-def test_same_principal_slots_keep_their_own_first_entry_and_loaded_context(comm, owner_client, access_mode):
+@pytest.mark.parametrize("explicit_slot", [True, False])
+def test_same_principal_slots_keep_their_own_first_entry_and_loaded_context(comm, owner_client, access_mode, explicit_slot):
     manager = owner_client if access_mode == "owner" else actor(comm,
         replace(comm.authority.context, trusted_client=True, agent_slot_id=None), "root_manager",
         comm.clients["a"].credential_provider(), access_mode="shared")
@@ -172,7 +173,7 @@ def test_same_principal_slots_keep_their_own_first_entry_and_loaded_context(comm
                           prepare_native=False, members=members)
     for binding in configured["caller_bindings"]:
         context = replace(comm.authority.context, principal_ref=binding["principal_ref"], grant_ref=binding["grant_ref"],
-                          agent_slot_id=binding["agent_slot_id"], trusted_client=False)
+                          agent_slot_id=binding["agent_slot_id"] if explicit_slot else None, trusted_client=False)
         child = actor(comm, context, binding["profile"], comm.clients["a"].credential_provider(), access_mode=access_mode)
         profile = accepted(child, "read_profile")
         assert profile["actor"]["organization"]["level"] == "root"
@@ -180,6 +181,42 @@ def test_same_principal_slots_keep_their_own_first_entry_and_loaded_context(comm
         assert profile["actor"]["bindings"][0]["agent_slot_id"] == binding["agent_slot_id"]
         pack = accepted(child, "load_project", project_id="project-alpha")
         assert pack["actor_binding"]["agent_slot_id"] == binding["agent_slot_id"]
+        peer = next(item for item in configured["caller_bindings"] if item["agent_slot_id"] != binding["agent_slot_id"])
+        denied = result(child, "configure_team", project_id="project-alpha", members=[{
+            "agent_slot_id": peer["agent_slot_id"], "role": "engineer", "profile": "engineer"}])
+        assert not denied["ok"] and denied["data"]["code"] == "authorization_denied"
+        if access_mode == "owner":
+            accepted(child, "configure_root", project_id="project-alpha", changes={}, prepare_native=False,
+                     manager={"agent_slot_id": binding["agent_slot_id"], "display_name": "Own Root manager"})
+
+
+@pytest.mark.parametrize("access_mode", ["owner", "shared"])
+def test_shared_principal_and_grant_still_require_the_actual_slot(comm, owner_client, access_mode):
+    parent = owner_client if access_mode == "owner" else actor(comm,
+        replace(comm.authority.context, trusted_client=True, agent_slot_id=None), "root_manager",
+        comm.clients["a"].credential_provider(), access_mode="shared")
+    permissions = ["profile.root_manager", "projects.read", "context.read", "message.read", "message.send", "collaborators.read", "runtime.read"]
+    members = [{"agent_slot_id": slot, "principal_ref": "agent:one-principal", "role": "root",
+                **({"permissions": permissions} if access_mode == "shared" else {})} for slot in ("shared-slot-one", "shared-slot-two")]
+    bindings = accepted(parent, "configure_team", project_id="project-alpha", members=members, prepare_native=False)["caller_bindings"]
+    common_grant = bindings[0]["grant_ref"]
+    with comm.authority._connect() as connection:
+        connection.execute("UPDATE collaboration_team_members SET grant_ref=%s WHERE agent_slot_id='shared-slot-two'", (common_grant,))
+    peers = []
+    for binding in bindings:
+        context = replace(comm.authority.context, principal_ref=binding["principal_ref"], grant_ref=common_grant,
+                          agent_slot_id=binding["agent_slot_id"], trusted_client=False)
+        peer = actor(comm, context, "root_manager", comm.clients["a"].credential_provider(), access_mode=access_mode)
+        assert accepted(peer, "read_profile")["actor"]["bindings"][0]["agent_slot_id"] == binding["agent_slot_id"]
+        peers.append(peer)
+    sent = accepted(peers[0], "send_message", project_id="project-alpha", to="collaborator:project-alpha:shared-slot-two",
+                    content="Distinct Slot request", activation="message_only")
+    original = accepted(peers[1], "read_message", project_id="project-alpha", handle=sent["message_handle"])
+    answer = accepted(peers[1], "send_message", project_id="project-alpha", to=original["from"], reply_to=[original["message_handle"]],
+                      content="Distinct Slot response", activation="message_only")
+    assert answer["from"] != sent["from"]
+    ambiguous = actor(comm, replace(context, agent_slot_id=None), "root_manager", comm.clients["a"].credential_provider(), access_mode=access_mode)
+    assert result(ambiguous, "read_profile")["data"]["code"] == "authorization_denied"
 
 
 def test_root_manager_configuration_is_atomic_and_native_state_is_truthful(comm, owner_client):

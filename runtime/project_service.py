@@ -614,8 +614,9 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
                        "JOIN scopes c ON c.scope_id=m.scope_id AND c.tenant_id=m.tenant_id "
                        "JOIN grants g ON g.grant_ref=m.grant_ref AND g.tenant_id=m.tenant_id "
                        "WHERE m.tenant_id=%s AND m.principal_ref=%s AND m.grant_ref=%s "
-                       "AND (%s::text IS NULL OR m.project_id=%s)",
-                       (self.context.tenant_id, self.context.principal_ref, self.context.grant_ref, project_id, project_id))
+                       "AND (%s::text IS NULL OR m.project_id=%s) AND (%s::text IS NULL OR m.agent_slot_id=%s)",
+                       (self.context.tenant_id, self.context.principal_ref, self.context.grant_ref, project_id, project_id,
+                        self.context.agent_slot_id, self.context.agent_slot_id))
         identities = cursor.fetchall()
         if not identities and self.service.authority.access_mode == "owner" and self.context.agent_slot_id is not None:
             cursor.execute("SELECT 1 FROM collaboration_team_members WHERE tenant_id=%s AND principal_ref=%s "

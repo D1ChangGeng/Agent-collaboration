@@ -121,8 +121,7 @@ class CommunicationManagement:
                     member["role"] in {"root", "route"} or member["profile"] in {"root_manager", "route_manager"}):
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
             if (not self.context.trusted_client and (member["role"] == "root" or member["profile"] == "root_manager")
-                    and (member["principal_ref"] != self.context.principal_ref
-                         or self.context.agent_slot_id is not None and slot != self.context.agent_slot_id)):
+                    and manager_address != handle("collaborator", project_id, slot)):
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
             if old and old["principal_ref"] != member["principal_ref"]:
                 raise ValueError("a stable Slot cannot change author identity")
@@ -155,8 +154,7 @@ class CommunicationManagement:
             existing_root = (configured[3] == "root" or configured[4] == "root_manager") if configured else any(
                 profile == "root_manager" for _principal, profile in owners)
             if (not self.context.trusted_client and existing_root
-                    and (member["principal_ref"] != self.context.principal_ref
-                         or self.context.agent_slot_id is not None and slot != self.context.agent_slot_id)):
+                    and manager_address != handle("collaborator", project_id, slot)):
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
             # Reuse an existing membership's real credential binding when adding
             # display metadata to an already configured contact.
