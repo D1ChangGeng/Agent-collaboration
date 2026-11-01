@@ -250,8 +250,14 @@ class ReceiverTransportAuthority:
                     or runtime_value["node_boot_incarnation"] != registration.boot_incarnation):
                 raise AcceptanceGuardFailed("receiver endpoint Runtime binding differs")
             verify(key_row[1], request.registration_signature, registration)
-            if self.authority.access_mode != "owner" and (registration.expires_at is None or not self.authority.canonical_now(cursor) < _time(registration.expires_at) <= _time(valid_until)):
-                raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node proof")
+            if self.authority.access_mode != "owner":
+                # The one-use challenge admits this registration command now.
+                # Its short nonce lifetime is not the requested resource lease:
+                # that lease is bounded by the active Node, Runtime and Grants.
+                runtime_until = self.authority.enrollment._active_runtime(cursor, registration.runtime_id)[4]
+                if (registration.expires_at is None or not self.authority.canonical_now(cursor)
+                        < _time(registration.expires_at) <= _time(runtime_until)):
+                    raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node/Runtime authority")
             cursor.execute(
                 "SELECT endpoint_revision FROM delivery_endpoint_registrations WHERE tenant_id=%s "
                 "AND endpoint_id=%s ORDER BY endpoint_revision DESC LIMIT 1 FOR UPDATE",
@@ -267,8 +273,12 @@ class ReceiverTransportAuthority:
                 (command.tenant_id, registration.endpoint_id),
             )
             self.authority._authorize(command, cursor, "endpoint.register", registration.scope_id)
-            if self.authority.access_mode != "owner" and (registration.expires_at is None or not self.authority.canonical_now(cursor) < _time(registration.expires_at) <= _time(valid_until)):
-                raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node proof")
+            if self.authority.access_mode != "owner":
+                now = self.authority.canonical_now(cursor)
+                if not now < _time(valid_until):
+                    raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+                if registration.expires_at is None or not now < _time(registration.expires_at) <= _time(runtime_until):
+                    raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node/Runtime authority")
             cursor.execute(
                 "INSERT INTO delivery_endpoint_registrations(tenant_id,authority_id,authority_incarnation,"
                 "endpoint_id,endpoint_revision,registration_id,connection_ref,node_id,node_binding_revision,"

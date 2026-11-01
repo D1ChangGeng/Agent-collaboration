@@ -12,6 +12,10 @@ All notable changes to this project will be documented here.
   roots and use bounded operation-derived process labels.
 - Add opt-in reverse physical Native and sustained real MCP/PostgreSQL checks,
   exact-permission negative tests and concurrent authorization regressions.
+- Bound Shared Endpoint leases by current Node/Runtime/Grant authority while
+  preserving one-use challenge freshness at registration commit.
+- Handle foreign process exits during Linux listener ownership scans and stop
+  expired owned capacity before releasing its claim.
 
 ## 2.0.3 - 2026-11-01
 

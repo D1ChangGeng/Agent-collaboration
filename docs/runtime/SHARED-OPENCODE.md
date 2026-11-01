@@ -11,6 +11,11 @@ workflow and signed Node/Runtime/Endpoint registration. Preserve the original
 receiver keys and journals during an upgrade. A Shared receiver's registration,
 grants and command proof must all remain current for the requested lifetime.
 
+The one-use Node challenge must still be fresh when its registration commits.
+The explicitly requested Endpoint lifetime is bounded by the active Node,
+Runtime and Grants. It can outlive that consumed challenge; model initialization
+does not shorten the registered resource to the nonce's admission window.
+
 In addition to the normal factory fields, the private settings require:
 
 | Field | Value |

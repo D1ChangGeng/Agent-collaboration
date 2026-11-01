@@ -25,6 +25,13 @@ own observation after Session validation, instead of consuming the lease while
 reading message history. Native SDK metadata uses private state while the
 operator configuration directory retains its closed admission rules.
 
+A Shared Endpoint's explicit resource lifetime is bounded by its current Node,
+Runtime and Grants. The one-use Node challenge remains an admission check,
+including a fresh check after registration locks; its short nonce window no
+longer truncates the registered resource. Linux listener ownership inspection
+also tolerates an unrelated process exiting during `/proc` traversal. Expired
+capacity cleanup stops the proven owned process before releasing its claim.
+
 No database migration is required from v2.0.3. Upgrade the existing Owner Runtime
 and any separate receiver using their normal verified release and signed update
 paths; retain credentials, keys, journals and communication data. Shared mode is

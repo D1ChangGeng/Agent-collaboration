@@ -522,7 +522,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
             agent_slot_id="slot-b",
             tls_certificate_sha256=prepared["certificate_sha256"],
             config_sha256="0" * 64,
-            expires_at=datetime.now(UTC) + timedelta(seconds=270) if shared else expiry,
+            expires_at=expiry,
         )
         with comm.authority._connect() as connection:
             node_key_id = connection.execute(

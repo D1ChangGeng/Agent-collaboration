@@ -89,7 +89,7 @@ def test_opencode_receiver_rechecks_the_committed_sender_not_its_observer(comm):
             capacity._authorize_domain_command(command,cursor,"runtime.invoke",packet.target_scope_id,packet)
 
 
-def enrolled_opencode_config(comm,tmp_path):
+def enrolled_opencode_config(comm,tmp_path, *, signing_key=None):
     import json
 
     from nacl.signing import SigningKey
@@ -103,7 +103,7 @@ def enrolled_opencode_config(comm,tmp_path):
     with comm.authority._connect() as connection:
         for grant,scope in ((comm.authority.context.grant_ref,"enrollment.manage"),(observer.context.grant_ref,"runtime.register")):
             connection.execute("UPDATE grants SET permissions=permissions || %s::jsonb WHERE grant_ref=%s",(json.dumps([scope]),grant))
-    key=SigningKey.generate()
+    key=signing_key or SigningKey.generate()
     comm.authority.enroll_node(command(comm.authority,"node.enroll","node","opencode-node"),NodeEnrollment(
         scope_id="local-scope",agent_slot_id="slot-b",observer_grant_ref=observer.context.grant_ref,machine_id="machine",
         boot_incarnation="boot",public_key=public_key(key),expires_at=datetime.now(UTC)+timedelta(minutes=5)))
