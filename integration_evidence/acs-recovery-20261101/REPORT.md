@@ -253,3 +253,49 @@ The existing live connector independently returned Owner mode, authorized
 communication core Schema 2, seven visible Projects and current project context.
 The formal local source checkout was fast-forwarded, with both existing
 five-line README edits restored and all untracked work retained.
+
+
+## Follow-up: v2.2.0 Codex Shared and production adoption
+
+Both selected installations run the published v2.2.0 commit
+`a5142b2479f348c1fd5a90dfc660c5ac38ae378a`, tree
+`8160fa13ea3faa55c3ea84c6cd4ca4c0f3e762b0`. The product and qualification
+assets were independently downloaded and compared byte for byte. Exact-candidate
+push/PR validation and the completed release preflight passed. The separate
+[qualification](../acs-codex-shared-20261101/REPORT.md) records the real two-model
+physical Codex Shared loop, OS permission probes, idle survival and immutable
+1,800-second Windows-to-WSL transport run with 6,544 exchanges.
+
+The WSL owner updater retained its machine/account, storage, credential, context
+and startup identity. The physical receiver adopted its independently verified
+staged wheel with signed generation 7. Only its proven owned ACS service cgroup
+was stopped. Six original key/credential hashes, registration identity, ledger
+and Driver/Node Journal paths remain unchanged. The ordinary client credential
+was copied byte for byte; client configuration changed only its versioned MCP
+entry. No host or WSL distribution reboot was performed.
+
+An actual ordinary MCP connection initialized before receiver cutover and
+submitted one natural invoke request afterward. Its first 300-second reply wait
+expired. The request had one real Native ACK, not a reply. A replacement MCP
+connection continued the original handle without any send or reinvocation and
+received the real engineer's own explicitly related reply; repeat waiting was
+also satisfied. A is scripted in this production check, B is a real Native
+model. The independent two-model acceptance is the separate isolated experiment.
+The configured xhigh model environment was preserved. A read-only provider
+probe authenticated successfully and listed the selected model; the exact
+latency cause was not established. The initial timeout is retained as evidence.
+
+Independent database readback found one request, one correct-author reply link,
+one Native Attempt and generation 7 on every signed prepare/readiness/dispatch
+admission. Delivery reached runtime_acknowledged. The actual Native Session
+returned to idle. Both new packets are acs-message/1 with no task identity or
+revision fields; both new events target messages with null task associations.
+
+All 1,024 WSL release files and 119 registered receiver files passed integrity
+checks. Every original sealed packet (42), dedup row (2,553), Grant (20), Project
+(7), natural message (28), reply link (13) and historical WorkItem (15) retained
+its fingerprint. The check appended records: 44 sealed packets, 2,558 dedup rows,
+30 messages and 14 replies; Grants, Projects and historical WorkItems stayed at
+20, 7 and 15. No data cleanup or irreversible migration was performed. Precise
+scope and counters are in the JSON; production handles, credentials and model
+reasoning are excluded from the public additions.
