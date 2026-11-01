@@ -1,18 +1,18 @@
 {
   "scope": "first-entry identity, unified Root management, scoped context and tools",
-  "implementation_commit": "4739539d9a2c4a068888fded13bc0de72951cd72",
-  "implementation_tree": "69629564c453f5e4080dd51d19a67fa828dd22e1",
+  "implementation_commit": "a99000ac40662127f63e56b4407d3c5ea3c1e24f",
+  "implementation_tree": "31a7622e4f220e379a3a2c2f16bbd7906e993b54",
   "core_implementation_commit": "2908aeabe0b5ed6d7a14c111a6ec3e811c33d60d",
   "gate_contract_test_commit": "759544fdbd24b415ef00dc2cdece7e58c53903ef",
   "catalog_version": "acs-p2-mcp-tool-contract/12",
   "schema_migration_required": false,
   "windows_postgres_stdio_http": {
-    "tests": 114,
+    "tests": 122,
     "failures": 0,
     "errors": 0,
     "skipped": 1,
-    "passed": 113,
-    "source_commit": "2908aeabe0b5ed6d7a14c111a6ec3e811c33d60d"
+    "passed": 121,
+    "source_commit": "a99000ac40662127f63e56b4407d3c5ea3c1e24f"
   },
   "windows_final_identity_contract": {
     "tests": 25,
@@ -23,23 +23,36 @@
     "source_commit": "4739539d9a2c4a068888fded13bc0de72951cd72"
   },
   "linux_components": {
-    "tests": 1746,
+    "tests": 1754,
     "failures": 0,
     "errors": 0,
-    "skipped": 807,
+    "skipped": 815,
     "passed": 939
   },
   "linux_postgres_stdio_http": {
-    "tests": 145,
+    "tests": 153,
     "failures": 0,
     "errors": 0,
     "skipped": 1,
-    "passed": 144
+    "passed": 152
   },
   "gate_contract_tests": {
     "tests": 10,
     "passed": 10,
     "failed": 0
+  },
+  "slot_identity_and_peer_manager_matrix": {
+    "passed": 8,
+    "owner_and_shared": true,
+    "explicit_and_resolved_slots": true,
+    "shared_principal_and_shared_grant": true,
+    "ambiguous_identity_rejected": true,
+    "existing_peer_demotion_rejected": true
+  },
+  "completed_ci_before_slot_hardening": {
+    "url": "https://github.com/D1ChangGeng/Agent-collaboration/actions/runs/41343650277",
+    "commit": "759544fdbd24b415ef00dc2cdece7e58c53903ef",
+    "conclusion": "success"
   },
   "local_full_gate_tooling": {
     "tests": 124,
@@ -97,7 +110,7 @@
       "root": "root",
       "route": "route"
     },
-    "elapsed_seconds": 311.779
+    "elapsed_seconds": 352.524
   },
   "installed_wheel": {
     "actual_installed_wheel": true,
@@ -105,8 +118,8 @@
     "messages": 6,
     "explicit_replies": 3,
     "model_driven": false,
-    "root_module_sha256": "493368cd78b93af1221455861838f043992801fe258eb1e91428e994e8d299ea",
-    "sha256": "b7d92dcaf73888a3142f3c87326b3b928903a9481b755726b00479e2870c5aa3",
+    "root_module_sha256": "e5f17119e0181a7df7bca4ef452d3fa87b20f1d0363aa1f418890dd5c9f9df98",
+    "sha256": "dca560a50ca06f3aec2eeb8c8039c06ee2dc967506f0cea9e86f8a167406a59c",
     "distribution_version": "2.2.0 development candidate; not published",
     "all_runtime_bytes_match_tested_source": true
   },
@@ -121,6 +134,8 @@
     "ordinary Agent management denied",
     "stale role, revoked Grant, inactive Slot and inactive Scope rejected",
     "OAuth and Shared context actions reflect available tools",
+    "same Principal/Grant with explicit distinct Slots keeps separate actors and authors",
+    "unique Slot can be resolved; ambiguity rejected; existing manager role checked before update",
     "readable invalid reply relation explains correction; private reference remains opaque"
   ],
   "excluded_from_qualification": [
@@ -147,7 +162,7 @@
     "runtime/communication_core_schema.sql": "8ff205fd4ba6472f1eb828354f95d598be5ec4bdc399b544e0369a04950b1ba8",
     "runtime/communication_dispatch.py": "d54fbff41d9605fc04f14ab32ba85137ae7438356e9e64b61e888b57b87f9348",
     "runtime/communication_faults.py": "c966efdf2588a715464906686bc589a7afd427fe8569542cbd8e4fbfee53d25d",
-    "runtime/communication_management.py": "d13cb3702dbb98fe27e71bb4ad419de99dcc2f5f9147af71106fedf27a155f19",
+    "runtime/communication_management.py": "49c896e9ca0d39c947f8e1aed083380be2b23a57b1124f5dc32c54b320837553",
     "runtime/communication_notice_schema.sql": "0b6de534ef9a3efe620bfa85bf9003b7460d4509d866606c767d05e0999b56ab",
     "runtime/communication_permissions.py": "480f0318394231643f097b5b90e5b16829418756c123c7245375c63d122f1015",
     "runtime/communication_schema.sql": "da29710812a72216868d26ffd724dcb2f2e8dcb24fe910ba293c269ed2684497",
@@ -207,7 +222,7 @@
     "runtime/project_routes.py": "cf4fd6a91326ae9fe1b57fa2a3eb04637840a6ce6b95e2203b1418bf6b223ae6",
     "runtime/project_schema.sql": "203fc1d938400c2434885362d13689b753935794a322fc34ed2dfeda357e9ca1",
     "runtime/project_schema_state.py": "6596bbee1e9b1231bc0aaedfd8e9e142b232add90bd28815ea051d868e11b67e",
-    "runtime/project_service.py": "cda6eaa5ea5829a9c90fd7d98f465ccd1dec656fdd352196f8bf6d0e81cda2a6",
+    "runtime/project_service.py": "a06b38217e68c7daed5161e07d797f02913c199f79ad7d842cd03534a5f795ac",
     "runtime/project_source.py": "d2c494588b514e5393fd4278e35d489851996d3da38bbf4acc3942dc2a4eb7bf",
     "runtime/provider.py": "8ebafc5a0bc8995c4d35b2760907249834669d244b8c192d537555b6c20a46ba",
     "runtime/receiver.py": "4141c9f18e21a3c81ca20fa3a5db6e61ee2efd788a2eafd1ca3b1f0169393c48",
@@ -228,7 +243,7 @@
     "runtime/remote_endpoint.py": "87c30de7977ba073f06cf92f697a4df7c3894377ec5d1db2d764a433b5c4de34",
     "runtime/response_collector.py": "5c9eff652009ddf4fb107d8c5e4c6db7b20cbacee648f6243f653239bcecb106",
     "runtime/response_transfer.py": "eb18d92cd5389c42f610903d9372a7a4cfb44981a22f2faa7cf0975868d60bf9",
-    "runtime/root_management.py": "493368cd78b93af1221455861838f043992801fe258eb1e91428e994e8d299ea",
+    "runtime/root_management.py": "e5f17119e0181a7df7bca4ef452d3fa87b20f1d0363aa1f418890dd5c9f9df98",
     "runtime/scoped_artifacts.py": "b2f297b143712b97c62444b1c27eba96c645e070c45f01160006901c5338b55e",
     "runtime/sender.py": "a57d8be8af1d50a5121e1fea929ac94b4bc805291df7cea323528af430d6739b",
     "runtime/source.py": "d588cd25f8f01a7a287c4e9e5c103a1f776998507b22c062dc6b37ed48e2b3d0",

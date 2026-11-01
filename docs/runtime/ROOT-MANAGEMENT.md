@@ -43,6 +43,15 @@ comes from the trusted stdio/OAuth binding and current authoritative records.
 Role changes, revoked Grants, inactive Slots and inactive Scopes invalidate old
 management access. A trusted binding must be refreshed after changing roles.
 
+Project discovery and role context reuse the same existing `CONTACTS` view as
+message addressing. Multiple Slots under one Principal keep their actual Grant
+and Slot identities, including a shared Grant when the trusted Slot is explicit.
+An unambiguous binding may supply a missing Slot; ambiguous bindings reject.
+Management compares the resolved caller address with the target and checks the
+target's current role before applying changes. Changing a requested role field
+cannot bypass peer-manager protection. Current configured roles take precedence
+over historical membership rows, and replaced legacy Owner bindings reject.
+
 Context actions are checked through the same authorization path as calls. OAuth
 scopes additionally narrow discovery, context actions and execution even on an
 Owner deployment. Invalid input receives bounded field guidance only where the
