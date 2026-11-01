@@ -91,6 +91,7 @@ SERVER_INSTRUCTIONS = (
     "Native sub-agent messaging uses its own agent paths and is a separate channel. "
     "Keep project_id and returned opaque handles intact. Reading retains history; only the actual recipient's associated ACS message is a reply."
     " Use list_projects and load_project for missing or stale context. Resource notifications are hints to read Inbox, not proof of model consumption."
+    " For a retryable unavailable result, preserve the original client_request_id when retrying a send; an unknown outcome is not an authority rejection."
 )
 
 

@@ -21,6 +21,14 @@ checks ordinary MCP communication and exact message/reply counts after two
 startup disconnects. Container readback showed no database restart or OOM;
 the precise lower-level cause of the WSL disconnect remains unassigned.
 
+An established database connection failure returns `unknown` with unavailable
+evidence, rather than claiming the authority rejected the request. An admitted
+send retains its original request key and explicit recovery guidance. The
+sustained client follows this contract with bounded same-key retries and
+independent exact readback; it does not bypass authorization or retry Native
+effects. Post-commit observation-loss coverage verifies one committed message
+after recovery with the original key.
+
 Actual qualification includes a Windows Codex A to physical Linux Codex Shared B
 exchange, independent ordinary credentials, one Native call, the explicit
 related reply and OS permission positive/negative probes. Windows direct MCP

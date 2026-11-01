@@ -11,8 +11,10 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
+import psycopg
 from pydantic import ValidationError
 
+from runtime.communication_tools import NATIVE_COLLABORATION_TOOLS
 from runtime.connection_clock import presentation_metadata
 from runtime.delivery import DeliveryRejected
 from runtime.errors import (
@@ -162,6 +164,7 @@ class McpRuntime:
             raise InvalidToolArgument("$", "Reduce the tool input to the 65536-byte UTF-8 JSON limit.")
 
     def call(self, name, arguments, *, request_id=None):
+        recovery_request_id = None
         try:
             credential = self.credential_provider()
             self.service.service.authenticate(credential)
@@ -175,6 +178,8 @@ class McpRuntime:
             if name in {"send_message", "configure_team"} and not arguments.get("client_request_id"):
                 import uuid
                 arguments = {**arguments, "client_request_id": request_id or uuid.uuid4().hex}
+            if name in {"send_message", "configure_team"}:
+                recovery_request_id = arguments["client_request_id"]
             state, data, follow_ups = self.service.execute(name, arguments, credential)
             result = {"schema_version": "acs-mcp-result/3",
                       "result_type": self.service.catalog["tools"][name]["result_type"],
@@ -189,6 +194,16 @@ class McpRuntime:
             )
             if not machine_file and credential and credential in json.dumps(result, default=str):
                 raise ValueError("credentials cannot be tool results")
+        except psycopg.OperationalError:
+            # A broken connection can hide a committed result. Never report an
+            # authority rejection or replay SQL/Native effects at this boundary.
+            retryable = recovery_request_id is not None or name in set(NATIVE_COLLABORATION_TOOLS) - {"send_message"}
+            result = self._problem("service_unavailable", retryable=retryable)
+            result["state"] = "unknown"
+            result["metadata"]["evidence_class"] = "authority_unavailable"
+            if recovery_request_id is not None:
+                result["data"].update(client_request_id=recovery_request_id,
+                                     recovery="retry_with_same_client_request_id")
         except FilesystemError as error:
             result = self._problem(error.code, retryable=error.code == "machine_offline")
             result["data"].update(error.details)

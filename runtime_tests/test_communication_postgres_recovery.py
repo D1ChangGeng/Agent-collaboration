@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import socket
 import sys
 import threading
 from contextlib import contextmanager
 
+import psycopg
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
@@ -16,6 +18,29 @@ from runtime_tests.test_communication import comm as comm_fixture
 from runtime_tests.test_surfaces import profile
 
 comm = comm_fixture
+
+
+def test_lost_post_commit_observation_preserves_original_request(comm, monkeypatch):
+    client = comm.clients["a"]
+    original = client.service.execute
+    arguments = {"project_id": "project-alpha", "to": "collaborator:project-alpha:slot-b",
+                 "content": "committed before observation loss", "activation": "message_only",
+                 "client_request_id": "post-commit-original"}
+    def lose_observation(*args, **kwargs):
+        original(*args, **kwargs)
+        raise psycopg.OperationalError("connection lost " + client.credential_provider())
+    monkeypatch.setattr(client.service, "execute", lose_observation)
+    unknown = client.call("send_message", arguments)["structuredContent"]
+    assert not unknown["ok"] and unknown["state"] == "unknown"
+    assert unknown["metadata"]["evidence_class"] == "authority_unavailable"
+    assert unknown["data"]["client_request_id"] == arguments["client_request_id"]
+    assert unknown["data"]["recovery"] == "retry_with_same_client_request_id"
+    assert client.credential_provider() not in json.dumps(unknown)
+    monkeypatch.setattr(client.service, "execute", original)
+    recovered = client.call("send_message", arguments)["structuredContent"]
+    assert recovered["ok"]
+    with comm.authority._connect() as connection:
+        assert connection.execute("SELECT count(*) FROM communication_messages").fetchone() == (1,)
 
 
 @contextmanager

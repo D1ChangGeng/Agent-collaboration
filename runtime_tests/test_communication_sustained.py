@@ -30,6 +30,7 @@ def test_sustained_real_mcp_with_reconnect_and_independent_readback(comm, tmp_pa
     retries = 0
     denied = 0
     independently_verified = False
+    transient_recoveries = 0
     source_files = {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
                     for folder in (ROOT / "runtime", ROOT / "runtime_deployment")
                     for path in folder.glob("*") if path.suffix in {".py", ".sql"}}
@@ -44,7 +45,7 @@ def test_sustained_real_mcp_with_reconnect_and_independent_readback(comm, tmp_pa
         config, environment, _ = profile(tmp_path, dsn=comm.dsn, context=client.service.context,
                                           extra={"delivery_maintenance": "external"})
         prefix = ["-m", "runtime.project_entry"]
-        if os.getenv("ACS_LOAD_DIAGNOSTICS") == "1":
+        if os.getenv("ACS_LOAD_DIAGNOSTICS") in {"1", "errors"}:
             diagnostic = tmp_path / f"load_diagnostic_{name}.py"
             diagnostic.write_text("import sys,traceback,faulthandler\nsys.path.insert(0," + repr(str(ROOT)) + ")\n"
                 "from runtime.mcp_runtime import McpRuntime\noriginal=McpRuntime._problem\n"
@@ -55,16 +56,33 @@ def test_sustained_real_mcp_with_reconnect_and_independent_readback(comm, tmp_pa
                 " try: return call(self,*a,**kw)\n finally: print('CALL_END',os.getpid(),time.monotonic(),a[0],kw.get('request_id'),file=sys.stderr,flush=True)\n"
                 "McpRuntime.call=traced\nfrom runtime.project_entry import main\nraise SystemExit(main())\n")
             prefix = [str(diagnostic)]
+            if os.getenv("ACS_LOAD_DIAGNOSTICS") == "errors":
+                diagnostic.write_text("import sys,traceback\nsys.path.insert(0," + repr(str(ROOT)) + ")\n"
+                    "from runtime.mcp_runtime import McpRuntime\noriginal=McpRuntime._problem\n"
+                    "def observed(*a,**kw):\n if sys.exception() is not None: traceback.print_exc(file=sys.stderr)\n return original(*a,**kw)\n"
+                    "McpRuntime._problem=staticmethod(observed)\nfrom runtime.project_entry import main\nraise SystemExit(main())\n")
         return StdioServerParameters(command=sys.executable, args=[*prefix, "--config", str(config),
             "--catalog", str(ROOT / "docs/runtime/p2-mcp-tool-contract.json"), "--profile", "engineer"],
             env=environment, cwd=str(ROOT))
 
     async def invoke(session, tool, **args):
+        nonlocal transient_recoveries
         if os.getenv("ACS_LOAD_DIAGNOSTICS") == "1":
             with (tmp_path / "client-trace.private.jsonl").open("a") as trace:
                 trace.write(json.dumps({"time": time.monotonic(), "event": "begin", "tool": tool,
                                        "request_key": args.get("client_request_id")}) + "\n")
-        result = await session.call_tool(tool, {"project_id": "project-alpha", **args})
+        for attempt in range(4):
+            result = await session.call_tool(tool, {"project_id": "project-alpha", **args})
+            problem = result.structured_content or {}
+            if not result.is_error or problem.get("data", {}).get("code") != "service_unavailable" or not problem.get("data", {}).get("retryable"):
+                break
+            if attempt == 3:
+                break
+            # Reads are safe. Sends always retain the same explicit request key;
+            # never retry an uncertain Native invocation or invent a new Message.
+            assert tool != "send_message" or args.get("client_request_id")
+            transient_recoveries += 1
+            await asyncio.sleep(0.05 * (2 ** attempt))
         if os.getenv("ACS_LOAD_DIAGNOSTICS") == "1":
             with (tmp_path / "client-trace.private.jsonl").open("a") as trace:
                 trace.write(json.dumps({"time": time.monotonic(), "event": "end", "tool": tool,
@@ -161,6 +179,7 @@ def test_sustained_real_mcp_with_reconnect_and_independent_readback(comm, tmp_pa
             return ordered[min(len(ordered) - 1, int((len(ordered) - 1) * p))] if ordered else None
         facts = {"evidence_class": "scripted ordinary peers over real stdio MCP and PostgreSQL", "model_load": False,
                  "runtime_files_sha256": source_files, "source_unchanged": unchanged_source(),
+                 "transient_recoveries": transient_recoveries,
                  "configured_active_seconds": seconds, "wall_seconds": time.monotonic() - started,
                  "workers": workers, "phases": phases, "exchanges": len(latencies), "request_retries": retries,
                  "third_party_denials": denied, "failures": failures,
