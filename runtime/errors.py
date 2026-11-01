@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 
 
 class RuntimeErrorBase(Exception):
@@ -17,6 +18,8 @@ class InvalidToolArgument(ValueError):
 class AuthorizationDenied(RuntimeErrorBase):
     principal_ref: str
     grant_ref: str
+    field: str | None = dataclass_field(default=None, kw_only=True)
+    guidance: str | None = dataclass_field(default=None, kw_only=True)
 
     def __str__(self) -> str:
         return f"authorization denied for {self.principal_ref} with {self.grant_ref}"
@@ -37,6 +40,8 @@ class RevisionConflict(RuntimeErrorBase):
     target_id: str
     expected: int
     actual: int
+    field: str | None = None
+    guidance: str | None = None
 
     def __str__(self) -> str:
         return f"revision conflict for {self.target_id}: expected {self.expected}, actual {self.actual}"

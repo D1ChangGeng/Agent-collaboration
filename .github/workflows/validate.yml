@@ -72,6 +72,9 @@ jobs:
           runtime_tests/test_communication_input_guidance.py
           runtime_tests/test_communication_content.py
           runtime_tests/test_communication_configuration.py
+          runtime_tests/test_identity_root_management.py
+          runtime_tests/test_root_management_stdio.py
+          runtime_tests/test_root_management_http.py
           runtime_tests/test_communication_restart.py
           runtime_tests/test_communication_adapters.py
           runtime_tests/test_communication_faults.py

@@ -374,7 +374,10 @@ class CommunicationActions:
             request_id = parse_handle(reference, "message", project_id)
             original = self._communication_row(authority, cursor, args, request_id)
             if (original[1], original[0]) != (sender, args["to"]):
-                raise AuthorizationDenied(self.context.principal_ref, authority.context.grant_ref)
+                raise AuthorizationDenied(self.context.principal_ref, authority.context.grant_ref, field="reply_to",
+                    guidance="reply_to can only answer messages from this recipient addressed to your identity. "
+                    "When delegating to a different collaborator, send a new message without reply_to; "
+                    "describe relevant context in content instead.")
             request_ids.append(request_id)
         cursor.execute("SELECT s.scope_id FROM agent_slots s WHERE s.tenant_id=%s AND s.agent_slot_id=%s "
                        "AND s.status='active' AND EXISTS(SELECT 1 FROM " + CONTACTS + " m "

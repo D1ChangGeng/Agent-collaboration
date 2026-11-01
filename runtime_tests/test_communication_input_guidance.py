@@ -59,6 +59,22 @@ def test_hidden_tool_and_invalid_credentials_do_not_disclose_corrective_fields(c
     assert 'field' not in rejected['data'] and 'guidance' not in rejected['data']
 
 
+def test_readable_reply_relationship_error_explains_new_delegation_without_disclosing_private_messages(comm):
+    from runtime_tests.test_communication import send
+    original = send(comm, activation='message_only')['data']['message_handle']
+    arguments = {'project_id': 'project-alpha', 'to': 'collaborator:project-alpha:slot-c',
+                 'content': 'Delegate to a different peer', 'reply_to': [original], 'activation': 'message_only'}
+    denied = comm.clients['b'].call('send_message', arguments)['structuredContent']
+    assert denied['data']['code'] == 'authorization_denied'
+    assert denied['data']['field'] == 'reply_to' and 'new message' in denied['data']['guidance']
+    arguments['to'] = 'collaborator:project-alpha:local-slot'
+    foreign = comm.clients['c'].call('send_message', arguments)['structuredContent']
+    assert foreign['data']['code'] == 'authorization_denied'
+    assert 'field' not in foreign['data'] and 'guidance' not in foreign['data']
+    with psycopg.connect(comm.dsn) as connection:
+        assert connection.execute('SELECT count(*) FROM communication_messages').fetchone() == (1,)
+
+
 def test_unavailable_guidance_discovery_is_not_reported_as_permission_denial(comm, monkeypatch):
     def unavailable(_credential):
         raise RuntimeError('private-backend-detail')

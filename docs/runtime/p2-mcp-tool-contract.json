@@ -1,5 +1,5 @@
 {
-  "schema_version": "acs-p2-mcp-tool-contract/11",
+  "schema_version": "acs-p2-mcp-tool-contract/12",
   "surface_revision": "acs-communication/1",
   "server": "agent-collaboration-runtime",
   "naming_convention": "concise_action_phrase",
@@ -12,7 +12,9 @@
     "separate_tool_when_authorization_state_or_result_differs"
   ],
   "advanced_tools": [],
-  "compatibility_aliases": {},
+  "compatibility_aliases": {
+    "configure_project": "configure_root"
+  },
   "defaults": {
     "activation": "invoke",
     "delivery_policy": "queue_until_idle",
@@ -36,8 +38,8 @@
   "tools": {
     "read_profile": {
       "title": "Read connection profile",
-      "description": "Read trusted subject, tenant, access_mode, client Profile view, connection state and applicable OAuth scope summary. Owner identity remains active until explicit revocation; shared deployments report their configured governance.",
-      "selection_guidance": "Use at the start of a global or web session.",
+      "description": "Read your authenticated actor identity, management level, current Root/Scope bindings and permitted continuation actions. Profile names alone do not determine management identity. A trusted Client needs no fixed Slot or Native Session. Connection state and applicable transport authorization remain separate observations.",
+      "selection_guidance": "Read your authenticated actor identity, management level, current Root/Scope bindings and permitted continuation actions. Profile names alone do not determine management identity. A trusted Client needs no fixed Slot or Native Session. Connection state and applicable transport authorization remain separate observations.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -846,7 +848,9 @@
               "type": "string"
             },
             "expected_revision": {
-              "type": "integer"
+              "type": "integer",
+              "minimum": 0,
+              "description": "Optional team_revision for the selected Scope, independent of Root/Route revisions. Omit for partial merging; use member.if_unchanged for observed-property conflicts."
             },
             "members": {
               "type": "array",
@@ -935,8 +939,8 @@
     },
     "send_message": {
       "title": "Send Message",
-      "description": "Send natural content from your authenticated identity to a collaborator. Use this tool for replies, corrections and handoffs; reply_to names original message handles. Defaults to invoke + async. sync waits for the recipient's first explicit reply, including clarification. message_only does not wake the recipient. Timeout leaves communication intact. Reuse client_request_id for the same send's retry; intentional identical sends use different IDs.",
-      "selection_guidance": "Send natural content from your authenticated identity to a collaborator. Use this tool for replies, corrections and handoffs; reply_to names original message handles. Defaults to invoke + async. sync waits for the recipient's first explicit reply, including clarification. message_only does not wake the recipient. Timeout leaves communication intact. Reuse client_request_id for the same send's retry; intentional identical sends use different IDs.",
+      "description": "Send natural content from your authenticated identity to a collaborator. Use this tool for replies, corrections and handoffs; reply_to names original messages from the same peer addressed to you. A delegation to another collaborator is a new message; put background context in content, not reply_to. Defaults to invoke + async. sync waits for the recipient's first explicit reply, including clarification. message_only does not wake the recipient. Timeout leaves communication intact. Reuse client_request_id for the same send's retry; intentional identical sends use different IDs.",
+      "selection_guidance": "Send natural content from your authenticated identity to a collaborator. Use this tool for replies, corrections and handoffs; reply_to names original messages from the same peer addressed to you. A delegation to another collaborator is a new message; put background context in content, not reply_to. Defaults to invoke + async. sync waits for the recipient's first explicit reply, including clarification. message_only does not wake the recipient. Timeout leaves communication intact. Reuse client_request_id for the same send's retry; intentional identical sends use different IDs.",
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": false,
@@ -1312,6 +1316,189 @@
         "idempotentHint": true,
         "openWorldHint": true
       }
+    },
+    "configure_root": {
+      "title": "Configure Root",
+      "description": "Establish, adopt or configure one Root and its communication namespace using the Owner service. A trusted Client can establish a new Root; a bound Root Manager configures its existing authorized Root. project_id is the namespace key, not a second management lifecycle. On first setup provide changes.name; root_id defaults to project_id. Optional manager configures the real Root collaborator through the same operation. Native preparation reports actual availability separately; no Client Slot or Session is synthesized.",
+      "selection_guidance": "Establish, adopt or configure one Root and its communication namespace using the Owner service. A trusted Client can establish a new Root; a bound Root Manager configures its existing authorized Root. project_id is the namespace key, not a second management lifecycle. On first setup provide changes.name; root_id defaults to project_id. Optional manager configures the real Root collaborator through the same operation. Native preparation reports actual availability separately; no Client Slot or Session is synthesized.",
+      "input_schema": {
+        "schema_version": "acs-mcp-configure-root/1",
+        "required": [
+          "project_id",
+          "changes"
+        ],
+        "optional": [
+          "client_request_id",
+          "expected_revision",
+          "if_unchanged",
+          "manager",
+          "prepare_native"
+        ],
+        "json_schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project_id",
+            "changes"
+          ],
+          "properties": {
+            "project_id": {
+              "type": "string"
+            },
+            "client_request_id": {
+              "type": "string"
+            },
+            "expected_revision": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "if_unchanged": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "root_id": {
+                  "type": "string"
+                },
+                "management": {
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "instruction_paths": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 32
+                },
+                "knowledge_index_paths": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 32
+                },
+                "skill_catalog": {
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "management_identity": {
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "changes": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "root_id": {
+                  "type": "string"
+                },
+                "management": {
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "instruction_paths": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 32
+                },
+                "knowledge_index_paths": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 32
+                },
+                "skill_catalog": {
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "management_identity": {
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "manager": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "agent_slot_id"
+              ],
+              "properties": {
+                "agent_slot_id": {
+                  "type": "string"
+                },
+                "principal_ref": {
+                  "type": "string"
+                },
+                "display_name": {
+                  "type": "string"
+                },
+                "harness_requirements": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "codex",
+                      "opencode"
+                    ]
+                  }
+                },
+                "endpoint_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "if_unchanged": {
+                  "type": "object"
+                }
+              }
+            },
+            "prepare_native": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        }
+      },
+      "result_type": "root_configuration",
+      "security_scopes": [
+        "collaborators.manage",
+        "grants.manage"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
     }
   },
   "result_envelope": {
@@ -1369,10 +1556,15 @@
     ],
     "profile_snapshot": [
       "subject",
-      "tenant",
-      "profiles",
-      "oauth_scopes",
-      "connections"
+      "tenant_id",
+      "profile",
+      "granted_profiles",
+      "authority_id",
+      "authority_incarnation",
+      "domain_schema_version",
+      "connection_state",
+      "actor",
+      "organization_model"
     ],
     "message_snapshot": [
       "project_id",
@@ -1468,13 +1660,19 @@
       "native_status"
     ],
     "project_context": [
-      "project",
+      "project_id",
+      "root_handle",
+      "project_revision",
+      "manifest",
+      "actor_binding",
+      "communication_address",
+      "agent_organization_model",
       "management_root",
       "instructions",
       "routes",
       "knowledge_indexes",
-      "source_bindings",
-      "policies",
+      "skills",
+      "source_guidance",
       "context_completeness",
       "missing_context"
     ],
@@ -1496,6 +1694,12 @@
       "project_id",
       "revision",
       "operation_id"
+    ],
+    "root_configuration": [
+      "project_id",
+      "root_handle",
+      "configuration_state",
+      "manager_configuration"
     ]
   },
   "result_revision": "acs-communication-results/2",
@@ -1543,8 +1747,10 @@
       "apply_patch"
     ],
     "communication": [
-      "list_messages",
-      "configure_project"
+      "list_messages"
+    ],
+    "management": [
+      "configure_root"
     ]
   },
   "project_context_rule": {
@@ -1586,7 +1792,8 @@
       "list_source_files",
       "search_source_files",
       "list_messages",
-      "configure_project"
+      "configure_project",
+      "configure_root"
     ],
     "reviewer": [
       "read_profile",
@@ -1670,7 +1877,8 @@
       "check_inbox",
       "list_messages",
       "wait_for_response",
-      "configure_project"
+      "configure_project",
+      "configure_root"
     ]
   },
   "agent_organization_model": {

@@ -21,7 +21,14 @@ class P2McpToolContractTests(unittest.TestCase):
         self.assertIn("communication", groups)
         names = [name for group in groups.values() for name in group]
         self.assertEqual(len(names), len(set(names)))
-        self.assertEqual(set(names), set(self.catalog["tools"]))
+        aliases = self.catalog["compatibility_aliases"]
+        self.assertEqual(aliases, {"configure_project": "configure_root"})
+        self.assertFalse(set(names).intersection(aliases))
+        self.assertEqual(set(names) | set(aliases), set(self.catalog["tools"]))
+        self.assertTrue(set(aliases.values()) <= set(names))
+        from runtime.project_service import ProjectService
+        self.assertTrue((set(aliases) | set(aliases.values())) <= ProjectService.IMPLEMENTED)
+        self.assertIn("configure_root", names)
         self.assertIn("configure_team", names)
         self.assertIn("list_harnesses", names)
         self.assertNotIn("setup_collaboration", names)
@@ -50,6 +57,14 @@ class P2McpToolContractTests(unittest.TestCase):
     def test_result_types_match_the_exposed_surface(self):
         used = {tool["result_type"] for tool in self.catalog["tools"].values()}
         self.assertEqual(used, set(self.catalog["result_types"]))
+
+    def test_first_entry_result_contract_exposes_actor_identity_and_current_context(self):
+        profile = set(self.catalog["result_types"]["profile_snapshot"])
+        self.assertTrue({"subject", "tenant_id", "profile", "actor", "organization_model"} <= profile)
+        self.assertFalse(profile.intersection({"tenant", "profiles", "connections"}))
+        context = set(self.catalog["result_types"]["project_context"])
+        self.assertTrue({"project_id", "root_handle", "actor_binding", "communication_address"} <= context)
+        self.assertFalse(context.intersection({"project", "active_work_summary"}))
 
     def test_project_id_is_explicit_on_every_project_tool(self):
         global_tools = set(self.catalog["project_context_rule"]["global_tools"])

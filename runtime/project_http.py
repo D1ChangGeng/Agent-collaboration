@@ -203,7 +203,14 @@ class OAuthProjectService(ProjectService):
         allowed = set(self.token_authorization.access.scopes)
         candidates = [name for name in self.catalog["profiles"][self.profile]
                       if set(self.catalog["tools"][name]["security_scopes"]) <= allowed]
-        return self._discover_tools(credential, candidates)
+        return [name for name in self._discover_tools(credential, candidates) if name in candidates]
+
+    def _caller_identity(self, authority, cursor):
+        actor = super()._caller_identity(authority, cursor)
+        allowed = set(self.token_authorization.access.scopes)
+        actor["next_actions"] = [action for action in actor["next_actions"]
+            if set(self.catalog["tools"][action["tool"]]["security_scopes"]) <= allowed]
+        return actor
 
     def execute(self, name, args, credential):
         self.token_authorization.authorize_tool(self.catalog, name)
