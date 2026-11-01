@@ -273,6 +273,7 @@ def main():
                     }
                 )
             elif action == "configure":
+                shared = request.get("shared_profile", False)
                 installed_launcher = request.get("installed_launcher")
                 lose_acks = request.get("lose_dispatch_and_readback_acks", False)
                 for key in tuple(os.environ):
@@ -292,7 +293,7 @@ def main():
                     surface,
                     json.dumps(
                         {
-                            "access_mode": "owner",
+                            "access_mode": "shared" if shared else "owner",
                             "context": request["context"],
                             "delivery_maintenance": "external",
                             "dsn_ref": {"kind": "environment", "name": "ACS_B_DSN"},
@@ -311,6 +312,7 @@ def main():
                     + "sys.stderr=open("
                     + repr(str(state / "mcp.stderr.txt"))
                     + ",'a',buffering=1)\n"
+                    + "import time\nprint('MCP import start',time.monotonic(),file=sys.stderr)\n"
                     + "from runtime.project_entry import main\nraise SystemExit(main("
                     + repr(
                         [
@@ -332,7 +334,7 @@ def main():
                         default_agent="acs-peer",
                         provider={
                             "acs-test": {
-                                "npm": "@ai-sdk/openai" if request.get("lose_dispatch_and_readback_acks") else "@ai-sdk/openai-compatible",
+                                "npm": "@ai-sdk/openai" if request.get("lose_dispatch_and_readback_acks") or request.get("provider_responses") else "@ai-sdk/openai-compatible",
                                 "name": "Isolated approved Provider",
                                 "options": {
                                     "baseURL": "https://api.payapionline.top/v1",
@@ -389,6 +391,32 @@ def main():
                     "node_journal": str(state / "node.sqlite"),
                     "runtime_id": binding.registration.runtime_id,
                 }
+                if shared:
+                    from runtime.opencode_driver import COLLABORATION_TOOLS, file_digest
+                    permissions = {"*": "deny", "task": "deny", **{"acs_" + tool: "allow" for tool in COLLABORATION_TOOLS}}
+                    native["permission"] = permissions
+                    native["agent"]["acs-peer"]["permission"] = permissions
+                    native["agent"]["acs-peer"]["model"] = native["model"]
+                    del os.environ["OPENCODE_CONFIG_CONTENT"]
+                    # Each profile root is private and empty before first launch.
+                    for field, directory in (("config_root", "restricted-config"), ("data_root", "restricted-data"),
+                        ("state_root", "restricted-state"), ("cache_root", "restricted-cache")):
+                        root = state / directory
+                        root.mkdir(mode=0o700)
+                        settings[field] = str(root)
+                    config_path = Path(settings["config_root"]) / "opencode/opencode.json"
+                    config_path.parent.mkdir(mode=0o700)
+                    write_private(config_path, json.dumps(native))
+                    schema = state / "openapi.json"
+                    write_private(schema, json.dumps(request["shared_schema"]))
+                    environment_dir = Path(f"/run/user/{os.getuid()}/acs-receiver-opencode/receiver-run-" + request["shared_run"] + "/systemd-env")
+                    environment_dir.mkdir(mode=0o700, parents=True)
+                    settings.update(executable_sha256=file_digest(request["binary"]), opencode_version="1.18.34",
+                        schema_path=str(schema), schema_sha256=file_digest(schema), config_sha256=file_digest(config_path),
+                        agent="acs-peer", provider_id="acs-test", model_id="gpt-6.1-sol", collaboration_server="acs",
+                        systemd_environment_dir=str(environment_dir), environment_refs={
+                            name: {"kind": "environment", "name": name} for name in
+                            ("ACS_B_DSN", "ACS_B_CREDENTIAL", "ACS_B_PROVIDER_KEY")})
                 if installed_launcher:
                     settings_path = state / "factory-settings.json"
                     write_private(settings_path, json.dumps(settings))

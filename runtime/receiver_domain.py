@@ -376,11 +376,28 @@ class ReceiverTransportAuthority:
                 return None
             return request, receipt
 
-    def _command_actor(self, command):
+    def _command_actor(self, command, cursor=None):
         actor = self.authority
         if actor.access_mode == "owner":
             actor = copy(actor)
             actor.context = replace(actor.context, principal_ref=command.principal_ref, grant_ref=command.grant_ref)
+        elif cursor is not None:
+            # A Shared dispatcher is a technical observer, not the original
+            # sender. Recover only from this authority's exact committed row.
+            if (command.tenant_id, command.authority_id, command.authority_incarnation) != (
+                    actor.tenant_id, actor.context.authority_id, actor.context.authority_incarnation):
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            cursor.execute("SELECT command_json,packet_json FROM delivery_messages WHERE tenant_id=%s "
+                "AND message_id=%s AND command_id=%s", (actor.tenant_id, command.target_id, command.command_id))
+            row = cursor.fetchone()
+            if row is None or _model(CommandEnvelope, row[0]) != command:
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            if row[1].get("schema_version") in {"acs-message/1", "acs-notice/1"}:
+                from runtime.communication_permissions import committed_delivery_context
+                from runtime.delivery_models import PACKET
+                actor = copy(actor)
+                actor.context = committed_delivery_context(cursor, command, PACKET.validate_json(json.dumps(row[1]), strict=True))
+                actor._communication_recovery = True
         return actor
 
     def dispatch_marker_current(self, invocation) -> bool:
@@ -448,7 +465,7 @@ class ReceiverTransportAuthority:
                 ):
                     return False
                 command = _model(CommandEnvelope, row[0])
-                actor = self._command_actor(command)
+                actor = self._command_actor(command, cursor)
                 actor._authorize(
                     command.model_copy(update={"deadline": None}) if self.authority.access_mode == "owner" and admission.purpose == "delivery.readback" else command,
                     cursor,
@@ -512,7 +529,7 @@ class ReceiverTransportAuthority:
             if lineage is None:
                 raise AcceptanceGuardFailed("receiver admission delivery lineage is unavailable")
             command = _model(CommandEnvelope, lineage[0])
-            actor = self._command_actor(command)
+            actor = self._command_actor(command, cursor)
             if self.authority.access_mode == "owner" and admission.purpose == "delivery.readback":
                 command = command.model_copy(update={"deadline": None})
             actor._authorize(command, cursor, "message.send", admission.scope_id)

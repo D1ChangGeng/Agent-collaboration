@@ -161,6 +161,17 @@ def test_factory_binds_real_enrollment_and_inherited_selection_with_a_labeled_na
         capacity.close()
 
 
+def test_shared_receiver_observation_coexists_with_configuring_callers_grant_lock(comm, tmp_path):
+    from runtime_tests.test_receiver_domain_delivery import command
+    _config, _supplied, observer = enrolled_opencode_config(comm, tmp_path)
+    with comm.authority._connect() as first, first.cursor() as cursor:
+        comm.authority._authorize(command(comm.authority, "message.read", "project", "project-alpha"), cursor, "message.read")
+        with observer._connect() as second, second.cursor() as readback:
+            readback.execute("SET LOCAL lock_timeout=200")
+            actual = observer.enrollment._active_runtime(readback, "runtime")
+            assert actual[0]["runtime_id"] == "runtime"
+
+
 @pytest.mark.skipif(os.getenv("ACS_REAL_OPENCODE_TEST")!="1" or not sys.platform.startswith("linux"),
                     reason="actual local Linux OpenCode lifecycle is opt-in")
 def test_real_opencode_factory_prepares_an_actual_session_without_a_model(comm,tmp_path,monkeypatch):

@@ -51,6 +51,10 @@ SESSION_RULES = [
     {"permission": "*", "pattern": "*", "action": "deny"},
     {"permission": "task", "pattern": "*", "action": "deny"},
 ]
+COLLABORATION_TOOLS = (
+    "read_profile", "list_projects", "load_project", "list_collaborators",
+    "check_inbox", "list_messages", "read_message", "send_message", "wait_for_response",
+)
 NATIVE_GITIGNORE = b"node_modules\npackage.json\npackage-lock.json\nbun.lock\n.gitignore"
 
 
@@ -127,6 +131,22 @@ class OpenCodeLaunchProfile:
     model_id: str | None
     environment: dict[str, str]
     execution_mode: str = "restricted"
+    collaboration_server: str | None = None
+
+    def collaboration_permissions(self):
+        server = self.collaboration_server
+        if server is None:
+            return {}
+        if not isinstance(server, str) or re.fullmatch(r"[a-z][a-z0-9_-]{0,31}", server) is None:
+            raise DriverRejected("collaboration MCP server name is invalid")
+        return {server + "_" + tool: "allow" for tool in COLLABORATION_TOOLS}
+
+    def restricted_permissions(self):
+        return {"*": "deny", "task": "deny", **self.collaboration_permissions()}
+
+    def session_permissions(self):
+        return [*SESSION_RULES, *({"permission": name, "pattern": "*", "action": "allow"}
+            for name in self.collaboration_permissions())]
 
     @property
     def config_path(self):
@@ -138,7 +158,7 @@ class OpenCodeLaunchProfile:
     def validate(self, *, executable=True, fresh=False, config_digest=True):
         if self.execution_mode not in {"native", "restricted"}:
             raise DriverRejected("unsupported execution environment")
-        if self.execution_mode == "restricted" and self.version not in {"1.18.27", "1.18.30", "1.18.31"}:
+        if self.execution_mode == "restricted" and self.version not in {"1.18.27", "1.18.30", "1.18.31", "1.18.34"}:
             raise DriverRejected("OpenCode version requires a separate reference profile")
         roots = [self.home, self.config_root, self.data_root, self.state_root,
                  self.cache_root, self.temp_root, self.cwd]
@@ -183,13 +203,27 @@ class OpenCodeLaunchProfile:
                 raise DriverRejected("project/custom-tool configuration must not be materialized")
         config = json.loads(self.config_path.read_text())
         selected = config.get("agent", {}).get(self.agent, {})
-        if (config.get("permission") != {"*": "deny", "task": "deny"}
-                or selected.get("permission") != {"*": "deny", "task": "deny"}
+        expected_permissions = self.restricted_permissions()
+        if (config.get("permission") != expected_permissions
+                or selected.get("permission") != expected_permissions
                 or config.get("default_agent") != self.agent
                 or config.get("model") != self.provider_id + "/" + self.model_id
                 or selected.get("model") != self.provider_id + "/" + self.model_id
-                or config.get("plugin", []) != [] or config.get("mcp", {}) != {}):
+                or config.get("plugin", []) != []):
             raise DriverRejected("deny-all global/agent permissions and pinned selection are required")
+        mcp = config.get("mcp", {})
+        if self.collaboration_server is None:
+            if mcp != {}:
+                raise DriverRejected("unapproved MCP configuration in restricted profile")
+        else:
+            entry = mcp.get(self.collaboration_server) if isinstance(mcp, dict) else None
+            command = entry.get("command") if isinstance(entry, dict) else None
+            if (not isinstance(mcp, dict) or set(mcp) != {self.collaboration_server} or not isinstance(entry, dict)
+                    or entry.get("type") != "local" or entry.get("enabled") is not True
+                    or not isinstance(command, list) or not command
+                    or any(not isinstance(arg, str) or not arg or "\0" in arg for arg in command)
+                    or not Path(command[0]).is_absolute()):
+                raise DriverRejected("restricted collaboration requires one pinned local MCP entry")
         for key, value in self.environment.items():
             if (not isinstance(key, str) or not isinstance(value, str) or "\0" in key + value
                     or "proxy" in key.lower() or key.startswith("OPENCODE_")
@@ -212,9 +246,17 @@ class OpenCodeLaunchProfile:
             "XDG_CACHE_HOME": self.cache_root, "TEMP": self.temp_root, "TMP": self.temp_root,
             "TMPDIR": self.temp_root, "OPENCODE_CONFIG_DIR": str(self.config_path.parent),
             "OPENCODE_DISABLE_PROJECT_CONFIG": "1", "OPENCODE_DISABLE_AUTOUPDATE": "1",
+            "OPENCODE_DISABLE_DEFAULT_PLUGINS": "1",
             "OPENCODE_DISABLE_MODELS_FETCH": "1", "OPENCODE_SERVER_USERNAME": "opencode",
             "OPENCODE_SERVER_PASSWORD": password,
         })
+        if self.collaboration_server is not None:
+            # OpenCode installs its SDK metadata in its native config directory.
+            # Keep those mutable, owned files in state, away from the operator's
+            # pinned configuration and its closed directory admission rules.
+            values.pop("OPENCODE_CONFIG_DIR", None)
+            values["OPENCODE_CONFIG"] = str(self.config_path)
+            values["XDG_CONFIG_HOME"] = str(Path(self.state_root) / "native-config")
         return values
 
 
@@ -223,7 +265,7 @@ class OpenCodeNativeDriver:
 
     def __init__(self, binding_id, profile, journal: DriverJournal, *, identity: BindingIdentity, check_current, supervisor=None,
                  http_timeout=10, readback_attempts=10, auth_stager=None,
-                 required_provider_url=None, clock=None):
+                 required_provider_url=None, clock=None, observe_events=True):
         if not isinstance(binding_id, str) or not binding_id or not callable(check_current):
             raise DriverRejected("immutable binding and current Node authorization are required")
         identity.validate()
@@ -246,6 +288,9 @@ class OpenCodeNativeDriver:
         self.auth_stager = auth_stager
         self.required_provider_url = required_provider_url
         self.auth_observation = None
+        if type(observe_events) is not bool:
+            raise DriverRejected("event observation must be a trusted boolean setting")
+        self.observe_events = observe_events
         self._lock = threading.RLock()
         self._claim_journal = journal
         self.client = self.owned = self.session_id = None
@@ -413,11 +458,17 @@ class OpenCodeNativeDriver:
                 {"version": health.get("version"), "agent": self.profile.agent})
             return
         agent = config.get("agent", {}).get(self.profile.agent, {})
-        if (config.get("permission") != {"*": "deny", "task": "deny"}
-                or agent.get("permission") != {"*": "deny", "task": "deny"}
+        if (config.get("permission") != self.profile.restricted_permissions()
+                or agent.get("permission") != self.profile.restricted_permissions()
                 or config.get("default_agent") != self.profile.agent
                 or config.get("model") != self.profile.provider_id + "/" + self.profile.model_id):
             raise DriverRejected("effective native configuration is not the deny-all profile")
+        if self.profile.collaboration_server is not None:
+            if set(config.get("mcp", {})) != {self.profile.collaboration_server}:
+                raise DriverRejected("effective MCP inventory differs from restricted profile")
+            _, servers = self._http(operation, "GET", "/mcp")
+            if servers.get(self.profile.collaboration_server, {}).get("status") != "connected":
+                raise DriverRejected("restricted collaboration MCP did not connect")
         _, agents = self._http(operation, "GET", "/agent")
         matches = [value for value in agents if value.get("name") == self.profile.agent]
         if len(matches) != 1:
@@ -453,6 +504,7 @@ class OpenCodeNativeDriver:
         ]
         if not global_denies:
             raise DriverRejected("native agent lacks a final deny-all boundary")
+        observed_collaboration = set()
         for rule in rules[global_denies[-1] + 1:]:
             private_allow = (
                 rule == {
@@ -462,10 +514,16 @@ class OpenCodeNativeDriver:
                 }
                 and reviewed_private_external_allow(self.profile, rule["pattern"])
             )
-            if rule["action"] != "deny" and not private_allow:
+            collaboration_allow = (rule["permission"] in self.profile.collaboration_permissions()
+                and rule["pattern"] == "*" and rule["action"] == "allow")
+            if collaboration_allow:
+                observed_collaboration.add(rule["permission"])
+            if rule["action"] != "deny" and not private_allow and not collaboration_allow:
                 raise DriverRejected(
                     "native agent has an unreviewed permission after the deny-all boundary"
                 )
+        if observed_collaboration != set(self.profile.collaboration_permissions()):
+            raise DriverRejected("native collaboration permissions were not positively observed")
 
     def _metadata(self, operation_id):
         return {"acs_binding_id": self.binding_id, "acs_binding": self._identity,
@@ -478,7 +536,7 @@ class OpenCodeNativeDriver:
             **({"model": {"providerID": self.profile.provider_id, "id": self.profile.model_id}}
                if self.profile.provider_id is not None else {}),
             "metadata": self._metadata(operation_id),
-            **({"permission": SESSION_RULES} if self.profile.execution_mode == "restricted" else {}),
+            **({"permission": self.profile.session_permissions()} if self.profile.execution_mode == "restricted" else {}),
         }
 
     def _session(self, value, *, expected_operation=None):
@@ -493,7 +551,7 @@ class OpenCodeNativeDriver:
                 or not isinstance(metadata.get("acs_operation_id"), str)
                 or expected_operation is not None and metadata.get("acs_operation_id") != expected_operation
                 or Path(value.get("directory", "")).resolve() != Path(self.profile.cwd).resolve()
-                or self.profile.execution_mode == "restricted" and value.get("permission") != SESSION_RULES
+                or self.profile.execution_mode == "restricted" and value.get("permission") != self.profile.session_permissions()
                 or self.profile.agent is not None and value.get("agent") != self.profile.agent
                 or self.profile.model_id is not None and value.get("model", {}).get("id") != self.profile.model_id
                 or self.profile.provider_id is not None and value.get("model", {}).get("providerID") != self.profile.provider_id):
@@ -511,7 +569,7 @@ class OpenCodeNativeDriver:
 
     def _start_events(self, operation):
         self._stop_events()
-        if self.profile.execution_mode == "native":
+        if self.profile.execution_mode == "native" or not self.observe_events:
             # Owner communication uses bounded session/message readback at the
             # dispatch boundary. It does not subscribe to execution events.
             self._event_state = "not_required"
@@ -609,8 +667,9 @@ class OpenCodeNativeDriver:
                 "process_dispatch",
                 {"argv": argv, "profile": self.profile.binding(), "binding": self._identity},
             )
+            process_label = "opencode-" + hashlib.sha256(operation.operation_id.encode()).hexdigest()[:32]
             self.owned = self.supervisor.launch(argv, cwd=self.profile.cwd,
-                                                env=self.profile.process_environment(password), label=operation.operation_id)
+                                                env=self.profile.process_environment(password), label=process_label)
             self.ownership = "exclusive_owned"
             self.journal.event(operation.operation_id, "process_started",
                                {"pid": self.owned.process.pid, "birth_ref": self.owned.birth_ref,
@@ -735,15 +794,36 @@ class OpenCodeNativeDriver:
             raise DriverRejected("mutation requires exclusive owned native capacity")
         self.profile.validate(executable=False, config_digest=False)
 
+    def _inspect_status(self, operation, *, on_dispatch=None):
+        _, statuses = self._http(operation, "GET", "/session/status", on_dispatch=on_dispatch)
+        if not isinstance(statuses, dict):
+            raise OutcomeUncertain("native status inventory is malformed")
+        status = statuses.get(self.session_id, {"type": "idle"})
+        if not isinstance(status, dict) or status.get("type") not in ("idle", "busy", "retry"):
+            raise OutcomeUncertain("unknown native session status")
+        return status
+
+    def inspect_readiness(self, operation, *, before_status):
+        """Read current activity after binding validation, without message history.
+
+        The trusted caller timestamps the final status request after expensive
+        authorization checks. A slow response still consumes the same lease.
+        """
+        with self._lock:
+            self._auth(operation)
+            if self.client is None or self.session_id is None:
+                raise OutcomeUncertain("no positively bound native session")
+            _, session = self._http(operation, "GET", "/session/" + self.session_id)
+            self._session(session)
+            status = self._inspect_status(operation, on_dispatch=before_status)
+            return self._receipt("context_observed", session=session, status=status)
+
     def _inspect(self, operation):
         if self.client is None or self.session_id is None:
             raise OutcomeUncertain("no positively bound native session")
         _, session = self._http(operation, "GET", "/session/" + self.session_id)
         self._session(session)
-        _, statuses = self._http(operation, "GET", "/session/status")
-        status = statuses.get(self.session_id, {"type": "idle"})
-        if status.get("type") not in ("idle", "busy", "retry"):
-            raise OutcomeUncertain("unknown native session status")
+        status = self._inspect_status(operation)
         _, messages = self._http(operation, "GET", "/session/" + self.session_id + "/message")
         if not isinstance(messages, list) or len(messages) > 4096:
             raise OutcomeUncertain("native message history exceeds the bounded readback profile")

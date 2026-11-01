@@ -160,6 +160,9 @@ class NativeHttpPeer:
                     self.answer(200, json.loads(profile.config_path.read_text()))
                 elif path == "/agent":
                     self.answer(200, [{"name": "engineer", "permission": SESSION_RULES}])
+                elif path == "/mcp":
+                    config = json.loads(profile.config_path.read_text())
+                    self.answer(200, {name: {"status": "connected"} for name in config.get("mcp", {})})
                 elif path == "/experimental/tool/ids":
                     self.answer(
                         200,

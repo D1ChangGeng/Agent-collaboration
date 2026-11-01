@@ -108,7 +108,9 @@ class EnrollmentAuthority:
             "JOIN scopes s ON s.scope_id=g.scope_id AND s.tenant_id=g.tenant_id "
             "WHERE g.tenant_id=%s AND g.grant_ref=%s AND g.scope_id=%s AND g.authority_id=%s "
             "AND g.authority_incarnation=%s AND a.status='active' AND s.status='active' "
-            "AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp() FOR UPDATE OF g,a,s",
+            # Enrollment observation must coexist with the caller's authorization
+            # read locks while a remote receiver checks its own current binding.
+            "AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp() FOR SHARE OF g,a,s",
             (ctx.tenant_id, grant_ref, scope_id, ctx.authority_id, ctx.authority_incarnation),
         )
         row = cursor.fetchone()

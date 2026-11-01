@@ -9,7 +9,7 @@ ACS 通过稳定联系人、自然消息、主动关联回复和持久 Inbox 连
 项目保有 **Management Root** 和 **Route**；Codex、OpenCode 自主安排工作与
 评审。ACS 验证参与者身份、保留通信，并按请求发起受权 Native 输入。
 
-ACS v2.0.3 提供[通信合同](docs/runtime/COMMUNICATION.md)中的核心能力，
+ACS v2.1.0 提供[通信合同](docs/runtime/COMMUNICATION.md)中的核心能力，
 实际环境和限制见[实现与支持记录](docs/runtime/COMMUNICATION-STATUS.md)。
 现有 v1.x 安装需要[引导升级](docs/RELEASE-NOTES-v2.0.0.md)，自动更新不会
 激活这个主版本。
@@ -117,7 +117,7 @@ sequenceDiagram
 
 ### 标准 Release 安装
 
-使用 [v2.0.3 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.0.3)
+使用 [v2.1.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.1.0)
 提供的 `acs_bootstrap.py` 入口，开始经过校验的安装流程。
 升级路径见[发布说明](docs/RELEASE-NOTES-v2.0.0.md)。
 

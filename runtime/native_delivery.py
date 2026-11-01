@@ -21,7 +21,11 @@ from runtime.codex_driver import (
     DriverRejected,
     OutcomeUncertain,
 )
-from runtime.delivery_models import InvocationObservation, InvocationRequest
+from runtime.delivery_models import (
+    TRANSPORT_READINESS_SECONDS,
+    InvocationObservation,
+    InvocationRequest,
+)
 from runtime.delivery_node import InvocationDeferred, InvocationPreCallRejected, invocation_for
 from runtime.opencode_driver import OpenCodeNativeDriver
 
@@ -195,7 +199,13 @@ class NativeDeliveryAdapter:
         self._check_binding()
         return operation
 
-    def readiness(self, invocation):
+    def transport_readiness(self, invocation):
+        return self.readiness(invocation, transport=True)
+
+    def readiness(self, invocation, *, transport=False):
+        if type(transport) is not bool:
+            raise InvocationPreCallRejected("readiness context must be a trusted boolean")
+        lease_seconds = TRANSPORT_READINESS_SECONDS if transport else 2
         operation = self._operation(invocation)
         reading = self.clock.reading() if self.clock is not None else None
         observed_at = reading.canonical_utc if reading is not None else datetime.now(UTC)
@@ -203,9 +213,21 @@ class NativeDeliveryAdapter:
         monotonic_now = self.clock.monotonic_now if self.clock is not None else time.monotonic
         generation = uuid.uuid4().hex
         native = self.driver.profile.execution_mode == "native"
-        until = float("inf") if native else monotonic_now() + min(2, operation.remaining(self.clock))
+        until = float("inf") if native else monotonic_now() + min(lease_seconds, operation.remaining(self.clock))
+        readback_stamp = None
+        def before_status():
+            nonlocal expiry_anchor, until
+            current = self.clock.reading() if self.clock is not None else None
+            expiry_anchor = current.earliest_utc if current is not None else datetime.now(UTC)
+            until = monotonic_now() + min(lease_seconds, operation.remaining(self.clock))
         try:
-            view = self.driver.inspect(operation)
+            view = (self.driver.inspect_readiness(operation, before_status=before_status)
+                    if not native and isinstance(self.driver, OpenCodeNativeDriver) else self.driver.inspect(operation))
+            if self.clock is not None and not native and isinstance(self.driver, OpenCodeNativeDriver):
+                # This trusted Driver receipt is already stamped from Authority
+                # time after the actual status response. Reuse that observation
+                # instead of spending the short idle lease on duplicate probes.
+                readback_stamp = view.get("observed_at")
             if isinstance(self.driver, CodexAppServerDriver):
                 state = view.get("thread", {}).get("status", {}).get("type")
                 activity = ("idle" if state == "idle" and not any(
@@ -221,15 +243,17 @@ class NativeDeliveryAdapter:
         except (OSError, RuntimeError):
             activity, native_session = "unknown", None
         if self.clock is not None:
-            observed_at = self.clock.observation_time()
+            observed_at = datetime.fromisoformat(readback_stamp) if readback_stamp else self.clock.observation_time()
         result = {"activity": activity, "observed_at": observed_at.isoformat(),
-                  "expires_at": None if native else min(operation.deadline, expiry_anchor + timedelta(seconds=2)).isoformat(),
+                  "expires_at": None if native else (
+                      min(operation.deadline, expiry_anchor + timedelta(seconds=lease_seconds)) if operation.deadline is not None
+                      else expiry_anchor + timedelta(seconds=lease_seconds)).isoformat(),
                   "native_session_ref": native_session, "binding_id": self._binding_id,
                   "source": "native_driver_readback", "generation": generation}
         if self.clock is not None:
             result["clock"] = self.clock.snapshot()
-        self._readiness_lease = (generation, until, result["observed_at"], result["expires_at"])
-        self._journal.event(operation.operation_id, "readiness_observation", result)
+        self._readiness_lease = (generation, until, result["observed_at"], result["expires_at"], lease_seconds)
+        self._journal.event(operation.operation_id, "readiness_observation", result, observed_at=readback_stamp)
         return result
 
     def _readiness_fresh(self, readiness):
@@ -247,7 +271,7 @@ class NativeDeliveryAdapter:
         if self.clock is not None:
             if readiness.get("clock", {}).get("clock_id") != self.clock.clock_id:
                 return False
-            return self.clock.fresh(observed, expires, max_lifetime=2)
+            return self.clock.fresh(observed, expires, max_lifetime=lease[4])
         return observed.tzinfo is not None and expires.tzinfo is not None and datetime.now(UTC) < expires
 
     def prepare(self, invocation):

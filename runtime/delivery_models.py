@@ -5,6 +5,10 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
 
+# Signed cross-host observation includes authorization and receipt persistence.
+# The receiver independently refreshes its shorter local lease before invoking.
+TRANSPORT_READINESS_SECONDS = 15
+
 
 class DeliveryModel(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
