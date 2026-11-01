@@ -560,7 +560,9 @@ class OpenCodeNativeDriver:
 
     def _drain_output(self, stream):
         try:
-            while chunk := stream.read(4096):
+            # Consume available diagnostics without waiting for a full buffer
+            # from a quiet, long-lived native process.
+            while chunk := stream.read1(4096):
                 with self._diag_lock:
                     self._diag_bytes += len(chunk)
                     self._diag_hash.update(chunk)

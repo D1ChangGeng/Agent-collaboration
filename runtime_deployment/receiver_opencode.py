@@ -169,9 +169,18 @@ class OpenCodeReceiverCapacity(NativeReceiverAuthority):
             self.authority.enrollment._active_runtime(cursor, self.binding.runtime_id)
         try:
             view = self.driver.inspect(operation)
-        except (ClockUnavailable, DriverRejected, HttpRejected, OutcomeUncertain, OSError):
+        except (ClockUnavailable, DriverRejected, HttpRejected, OutcomeUncertain, OSError) as error:
+            failure = (type(error).__name__, str(error)[:256])
+            if failure != getattr(self, "_health_error", None):
+                self._health_error = failure
+                try:
+                    self.journal.event(operation.operation_id, "native_health_unavailable",
+                        {"error_type": failure[0], "detail": failure[1]})
+                except (OSError, RuntimeError):
+                    pass  # The health result remains unknown if its clock/store is unavailable.
             return {"state": "unknown", "harness": "opencode", "version": self.driver.profile.version,
                     "session_ref": None, "observation": "native_readback_unavailable"}
+        self._health_error = None
         status = view.get("status", {}).get("type")
         return {"state": "idle" if status == "idle" else "busy" if status in {"busy", "retry"} else "unknown",
             "harness": "opencode", "version": self.driver.profile.version, "session_ref": self.driver.session_id,

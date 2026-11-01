@@ -528,7 +528,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
             node_key_id = connection.execute(
                 "SELECT key_id FROM enrolled_node_bindings WHERE node_id=%s", (node_id,)
             ).fetchone()[0]
-        provider_key = os.environ["ACS_REMOTE_PROVIDER_KEY"] if sender_mode != "lifecycle" else None
+        provider_key = os.environ["ACS_REMOTE_PROVIDER_KEY"] if sender_mode != "lifecycle" or shared else None
         label = "remote-cedar-" + uuid.uuid4().hex[:12]
         configured = rpc(
             {
@@ -759,6 +759,14 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 model_elapsed_seconds=time.monotonic() - start,
             )
         observation = rpc({"action": "observe"})
+        if shared and sender_mode == "lifecycle":
+            samples = []
+            until = time.monotonic() + int(os.getenv("ACS_SHARED_IDLE_SECONDS", "120"))
+            while time.monotonic() < until:
+                samples.append(rpc({"action": "observe"}))
+                time.sleep(2)
+            facts["idle_samples"] = samples
+            assert samples and all(s["native"]["state"] == "idle" and not s["owned_snapshot"]["root_exited"] for s in samples)
         facts["receiver"] = observation
         if os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1":
             assert not installed_launcher, "This fault is injected in the source Receiver transport fixture"

@@ -55,6 +55,30 @@ def test_generated_11827_openapi_supports_exact_native_paths():
         assert path in paths
 
 
+def test_native_short_output_is_drained_while_writer_remains_open():
+    from runtime.opencode_driver import OpenCodeNativeDriver
+    driver = object.__new__(OpenCodeNativeDriver)
+    driver._diag_lock = threading.Lock()
+    driver._diag_bytes = 0
+    driver._diag_hash = hashlib.sha256()
+    read_fd, write_fd = os.pipe()
+    stream = os.fdopen(read_fd, "rb")
+    thread = threading.Thread(target=driver._drain_output, args=(stream,), daemon=True)
+    thread.start()
+    try:
+        os.write(write_fd, b"short native output\n")
+        until = time.monotonic() + 2
+        while driver._diag_bytes == 0 and time.monotonic() < until:
+            time.sleep(.01)
+        assert driver._diag_bytes == len(b"short native output\n")
+        assert driver._diag_hash.hexdigest() == hashlib.sha256(b"short native output\n").hexdigest()
+    finally:
+        os.close(write_fd)
+        thread.join(timeout=2)
+        stream.close()
+    assert not thread.is_alive()
+
+
 def test_observed_11830_openapi_supports_exact_native_paths():
     schema_path = Path(__file__).with_name("schema-1.18.30") / "opencode-openapi.json"
     data = schema_path.read_bytes()

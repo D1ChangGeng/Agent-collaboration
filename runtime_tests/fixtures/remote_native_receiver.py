@@ -499,6 +499,34 @@ def main():
                     )
                     continue
                 process = load_process_config(state / "process.json")
+                if process.runtime.access_mode == "shared":
+                    from runtime.opencode_driver import OpenCodeNativeDriver
+                    from runtime.systemd_supervisor import SystemdUserSupervisor
+                    original_control = SystemdUserSupervisor._run_systemctl
+                    def recorded_control(arguments, *args, original_control=original_control, state=state, **kwargs):
+                        if "stop" in arguments:
+                            import traceback
+                            with (state / "supervisor-stop.private.txt").open("a") as trace:
+                                traceback.print_stack(limit=12, file=trace)
+                        return original_control(arguments, *args, **kwargs)
+                    SystemdUserSupervisor._run_systemctl = staticmethod(recorded_control)
+                    diagnostic_lock = threading.Lock()
+                    diagnostic = state / "native.private.log"
+                    def retained_output(driver, stream, diagnostic=diagnostic, diagnostic_lock=diagnostic_lock):
+                        try:
+                            while chunk := stream.read1(4096):
+                                with driver._diag_lock:
+                                    driver._diag_bytes += len(chunk)
+                                    driver._diag_hash.update(chunk)
+                                with diagnostic_lock:
+                                    size = diagnostic.stat().st_size if diagnostic.exists() else 0
+                                    if size < 1_048_576:
+                                        with diagnostic.open("ab") as output:
+                                            output.write(chunk[:1_048_576-size])
+                                        diagnostic.chmod(0o600)
+                        except (OSError, ValueError):
+                            pass
+                    OpenCodeNativeDriver._drain_output = retained_output
                 callbacks = load_callbacks(process)
                 capacity = callbacks.native_invoke.__self__
                 mcp_status = {}
@@ -582,6 +610,8 @@ def main():
                         "collector": hasattr(capacity, "collector"),
                         "event_subscription": capacity.driver._event_thread is not None,
                         "dropped_ack_purposes": server.test_dropped_acks,
+                        **({"owned_snapshot": capacity.supervisor.inspect(capacity.driver.owned)}
+                           if process.runtime.access_mode == "shared" else {}),
                     }
                 )
             elif action == "stop":
