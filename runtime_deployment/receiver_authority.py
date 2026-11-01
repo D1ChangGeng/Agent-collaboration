@@ -139,6 +139,9 @@ class NativeReceiverAuthority:
                 self.driver.terminate(self._lifecycle_operation("close"))
         finally:
             try:
-                self.driver.detach_transport()
-            finally:
+                # Cleanup authority comes from proven process ownership even
+                # when the lifecycle Grant/deadline has expired. Stop that
+                # capacity before releasing its journal/kernel claim.
                 self.supervisor.close()
+            finally:
+                self.driver.detach_transport()

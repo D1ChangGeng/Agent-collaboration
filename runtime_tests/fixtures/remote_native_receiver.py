@@ -273,6 +273,7 @@ def main():
                     }
                 )
             elif action == "configure":
+                shared = request.get("shared_profile", False)
                 installed_launcher = request.get("installed_launcher")
                 lose_acks = request.get("lose_dispatch_and_readback_acks", False)
                 for key in tuple(os.environ):
@@ -292,7 +293,7 @@ def main():
                     surface,
                     json.dumps(
                         {
-                            "access_mode": "owner",
+                            "access_mode": "shared" if shared else "owner",
                             "context": request["context"],
                             "delivery_maintenance": "external",
                             "dsn_ref": {"kind": "environment", "name": "ACS_B_DSN"},
@@ -311,6 +312,7 @@ def main():
                     + "sys.stderr=open("
                     + repr(str(state / "mcp.stderr.txt"))
                     + ",'a',buffering=1)\n"
+                    + "import time\nprint('MCP import start',time.monotonic(),file=sys.stderr)\n"
                     + "from runtime.project_entry import main\nraise SystemExit(main("
                     + repr(
                         [
@@ -332,7 +334,7 @@ def main():
                         default_agent="acs-peer",
                         provider={
                             "acs-test": {
-                                "npm": "@ai-sdk/openai" if request.get("lose_dispatch_and_readback_acks") else "@ai-sdk/openai-compatible",
+                                "npm": "@ai-sdk/openai" if request.get("lose_dispatch_and_readback_acks") or request.get("provider_responses") else "@ai-sdk/openai-compatible",
                                 "name": "Isolated approved Provider",
                                 "options": {
                                     "baseURL": "https://api.payapionline.top/v1",
@@ -389,6 +391,32 @@ def main():
                     "node_journal": str(state / "node.sqlite"),
                     "runtime_id": binding.registration.runtime_id,
                 }
+                if shared:
+                    from runtime.opencode_driver import COLLABORATION_TOOLS, file_digest
+                    permissions = {"*": "deny", "task": "deny", **{"acs_" + tool: "allow" for tool in COLLABORATION_TOOLS}}
+                    native["permission"] = permissions
+                    native["agent"]["acs-peer"]["permission"] = permissions
+                    native["agent"]["acs-peer"]["model"] = native["model"]
+                    del os.environ["OPENCODE_CONFIG_CONTENT"]
+                    # Each profile root is private and empty before first launch.
+                    for field, directory in (("config_root", "restricted-config"), ("data_root", "restricted-data"),
+                        ("state_root", "restricted-state"), ("cache_root", "restricted-cache")):
+                        root = state / directory
+                        root.mkdir(mode=0o700)
+                        settings[field] = str(root)
+                    config_path = Path(settings["config_root"]) / "opencode/opencode.json"
+                    config_path.parent.mkdir(mode=0o700)
+                    write_private(config_path, json.dumps(native))
+                    schema = state / "openapi.json"
+                    write_private(schema, json.dumps(request["shared_schema"]))
+                    environment_dir = Path(f"/run/user/{os.getuid()}/acs-receiver-opencode/receiver-run-" + request["shared_run"] + "/systemd-env")
+                    environment_dir.mkdir(mode=0o700, parents=True)
+                    settings.update(executable_sha256=file_digest(request["binary"]), opencode_version="1.18.34",
+                        schema_path=str(schema), schema_sha256=file_digest(schema), config_sha256=file_digest(config_path),
+                        agent="acs-peer", provider_id="acs-test", model_id="gpt-6.1-sol", collaboration_server="acs",
+                        systemd_environment_dir=str(environment_dir), environment_refs={
+                            name: {"kind": "environment", "name": name} for name in
+                            ("ACS_B_DSN", "ACS_B_CREDENTIAL", "ACS_B_PROVIDER_KEY")})
                 if installed_launcher:
                     settings_path = state / "factory-settings.json"
                     write_private(settings_path, json.dumps(settings))
@@ -471,6 +499,34 @@ def main():
                     )
                     continue
                 process = load_process_config(state / "process.json")
+                if process.runtime.access_mode == "shared":
+                    from runtime.opencode_driver import OpenCodeNativeDriver
+                    from runtime.systemd_supervisor import SystemdUserSupervisor
+                    original_control = SystemdUserSupervisor._run_systemctl
+                    def recorded_control(arguments, *args, original_control=original_control, state=state, **kwargs):
+                        if "stop" in arguments:
+                            import traceback
+                            with (state / "supervisor-stop.private.txt").open("a") as trace:
+                                traceback.print_stack(limit=12, file=trace)
+                        return original_control(arguments, *args, **kwargs)
+                    SystemdUserSupervisor._run_systemctl = staticmethod(recorded_control)
+                    diagnostic_lock = threading.Lock()
+                    diagnostic = state / "native.private.log"
+                    def retained_output(driver, stream, diagnostic=diagnostic, diagnostic_lock=diagnostic_lock):
+                        try:
+                            while chunk := stream.read1(4096):
+                                with driver._diag_lock:
+                                    driver._diag_bytes += len(chunk)
+                                    driver._diag_hash.update(chunk)
+                                with diagnostic_lock:
+                                    size = diagnostic.stat().st_size if diagnostic.exists() else 0
+                                    if size < 1_048_576:
+                                        with diagnostic.open("ab") as output:
+                                            output.write(chunk[:1_048_576-size])
+                                        diagnostic.chmod(0o600)
+                        except (OSError, ValueError):
+                            pass
+                    OpenCodeNativeDriver._drain_output = retained_output
                 callbacks = load_callbacks(process)
                 capacity = callbacks.native_invoke.__self__
                 mcp_status = {}
@@ -554,6 +610,8 @@ def main():
                         "collector": hasattr(capacity, "collector"),
                         "event_subscription": capacity.driver._event_thread is not None,
                         "dropped_ack_purposes": server.test_dropped_acks,
+                        **({"owned_snapshot": capacity.supervisor.inspect(capacity.driver.owned)}
+                           if process.runtime.access_mode == "shared" else {}),
                     }
                 )
             elif action == "stop":

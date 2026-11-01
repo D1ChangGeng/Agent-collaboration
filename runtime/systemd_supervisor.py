@@ -172,6 +172,7 @@ class SystemdUserSupervisor(_Ownership):
                 (runtime / "acs-p1-codex", r"p1-run-[a-f0-9]{32}"),
                 (runtime / "acs-p1-opencode", r"p1-run-[a-f0-9]{32}"),
                 (runtime / "acs-receiver-codex", r"receiver-run-[a-f0-9]{32}"),
+                (runtime / "acs-receiver-opencode", r"receiver-run-[a-f0-9]{32}"),
             )
             if (
                 not any(

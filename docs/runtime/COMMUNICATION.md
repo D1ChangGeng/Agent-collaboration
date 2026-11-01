@@ -271,3 +271,12 @@ one acknowledged Native dispatch; B sent its own explicit reply. Receiver exit
 left its owned process group empty and the installation manifest unchanged.
 That run does not qualify the separately failing Windows localhost-to-WSL
 test-database path or a Systemd deployment.
+
+The [2.1.0 qualification](../../integration_evidence/acs-qualification-20261101/REPORT.md)
+adds the reverse physical direction, a Linux systemd OpenCode Shared receiver
+with two independent ordinary model contexts, and a 600-second real MCP/
+PostgreSQL transport run on the Linux Runtime host. Both model exchanges use
+the recipient's own explicit MCP reply; Native terminal output remains separate.
+The exact profile, source hashes, ACK uncertainty, retained failures and
+untested combinations are in that evidence. Operator setup for the restricted
+receiver is described in [Shared OpenCode](SHARED-OPENCODE.md).

@@ -345,7 +345,10 @@ class DomainAuthority:
             "AND s.tenant_id=%s "
             "AND s.status='active' "
             "AND g.revoked_at IS NULL "
-            "AND g.expires_at>clock_timestamp() FOR UPDATE",
+            # Authorization is a stable read. SHARE fences revocation and policy
+            # changes through commit while allowing independent readers. UPDATE
+            # locks here can deadlock concurrent sends against FK key-share locks.
+            "AND g.expires_at>clock_timestamp() FOR SHARE",
             (
                 current.grant_ref,
                 current.tenant_id,
@@ -426,7 +429,7 @@ class DomainAuthority:
             "g.authority_id,g.authority_incarnation,s.status,s.policy,d.parent_policy_digest "
             "FROM ancestry a JOIN grants g ON g.grant_ref=a.ref JOIN scopes s ON s.scope_id=g.scope_id "
             "LEFT JOIN grant_delegations d ON d.grant_ref=a.ref "
-            "ORDER BY a.depth DESC FOR UPDATE OF g,s",
+            "ORDER BY a.depth DESC FOR SHARE OF g,s",
             (command.grant_ref, command.grant_ref),
         )
         chain = cursor.fetchall()

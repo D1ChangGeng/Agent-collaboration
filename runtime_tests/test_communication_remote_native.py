@@ -51,7 +51,7 @@ from runtime.surface_config import PrivateReference, RemoteEndpointSettings
 from runtime_tests.test_communication import CATALOG, await_waiter, call, prepare_ordinary_agents
 from runtime_tests.test_communication import comm as comm_fixture
 from runtime_tests.test_delivery import command as bind_command
-from runtime_tests.test_receiver_domain_delivery import command
+from runtime_tests.test_receiver_domain_delivery import command as receiver_command
 
 comm = comm_fixture
 ROOT = Path(__file__).resolve().parents[1]
@@ -116,7 +116,7 @@ def launch_codex(
     surface.write_text(
         json.dumps(
             {
-                "access_mode": "owner",
+                "access_mode": comm.authority.access_mode,
                 "context": asdict(comm.clients["a"].service.context),
                 **(
                     {
@@ -144,7 +144,8 @@ def launch_codex(
     wrapper.write_text(
         "import sys\nsys.path.insert(0,"
         + repr(str(ROOT))
-        + ")\nfrom runtime.project_entry import main\n"
+        + ")\nsys.stderr=open(" + repr(str(tmp_path / "a-mcp.stderr.txt")) + ",'a',buffering=1)\n"
+        + "from runtime.project_entry import main\n"
         "raise SystemExit(main("
         + repr(
             [
@@ -223,6 +224,19 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         pytest.skip("actual approved Provider model requests are separately opt-in")
     local_wsl = os.getenv("ACS_NATIVE_LOCAL_WSL")
     installed_launcher = os.getenv("ACS_INSTALLED_NATIVE_RECEIVER")
+    shared = os.getenv("ACS_NATIVE_SHARED_PROFILE") == "1"
+    mode = "shared" if shared else "owner"
+    if shared:
+        original_failure = comm.dispatcher._failure
+        def retain_dispatch_failure(cursor, row, error):
+            import traceback
+            with (tmp_path / "dispatch-error.private.txt").open("a") as errors:
+                traceback.print_exception(error, file=errors)
+            return original_failure(cursor, row, error)
+        monkeypatch.setattr(comm.dispatcher, "_failure", retain_dispatch_failure)
+    def command(*args, **kwargs):
+        value = receiver_command(*args, **kwargs)
+        return value.model_copy(update={"deadline": datetime.now(UTC) + timedelta(minutes=5)}) if shared else value
     host = "wsl:" + local_wsl if local_wsl else os.environ["ACS_REMOTE_SSH_HOST"]
     remote_python = os.environ["ACS_REMOTE_PYTHON"]
     remote_binary = os.environ["ACS_REMOTE_OPENCODE"]
@@ -387,23 +401,23 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         manager = comm.clients["a"]
         # Native Owner receiver and its technical registration share the Owner
         # authority policy. A/B retain ordinary, distinct MCP credentials.
-        comm.authority.access_mode = "owner"
+        comm.authority.access_mode = mode
         prepare_ordinary_agents(comm, tmp_path)
         comm.clients["manager"] = manager
         for client in comm.clients.values():
-            client.service.service.authority.access_mode = "owner"
+            client.service.service.authority.access_mode = mode
         facts["actor_profiles"] = {
             name: {
                 "profile": comm.clients[name].service.profile,
                 "principal_ref": comm.clients[name].service.context.principal_ref,
-                "access_mode": "owner",
+                "access_mode": mode,
             }
             for name in ("a", "b")
         }
         observer_ctx = replace(
             comm.authority.context, principal_ref="node:remote-test", grant_ref="grant:remote-node"
         )
-        observer = DomainAuthority(comm.dsn, context=observer_ctx, access_mode="owner")
+        observer = DomainAuthority(comm.dsn, context=observer_ctx, access_mode=mode)
         with comm.authority._connect() as connection:
             connection.execute(
                 "UPDATE grants SET permissions=permissions || %s::jsonb WHERE grant_ref=%s",
@@ -449,6 +463,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                     purpose=purpose_command.command_type,
                     purpose_command_id=purpose_command.command_id,
                     purpose_hash=EnrollmentAuthority.signing_hash(purpose_command, node_input),
+                    ttl_seconds=300 if shared else 120,
                 ),
             )
             signature = rpc({"action": "sign", "message_hex": challenge.message_hex})["signature"]
@@ -513,7 +528,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
             node_key_id = connection.execute(
                 "SELECT key_id FROM enrolled_node_bindings WHERE node_id=%s", (node_id,)
             ).fetchone()[0]
-        provider_key = os.environ["ACS_REMOTE_PROVIDER_KEY"] if sender_mode != "lifecycle" else None
+        provider_key = os.environ["ACS_REMOTE_PROVIDER_KEY"] if sender_mode != "lifecycle" or shared else None
         label = "remote-cedar-" + uuid.uuid4().hex[:12]
         configured = rpc(
             {
@@ -525,6 +540,9 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 "provider_key": provider_key,
                 "label": label,
                 "lose_dispatch_and_readback_acks": os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1",
+                "provider_responses": os.getenv("ACS_NATIVE_PROVIDER_RESPONSES") == "1",
+                **({"shared_profile": True, "shared_run": uuid.uuid4().hex,
+                    "shared_schema": json.loads(Path(os.environ["ACS_SHARED_OPENCODE_SCHEMA"]).read_text())} if shared else {}),
                 **(
                     {
                         "installed_launcher": installed_launcher,
@@ -551,7 +569,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                     ).hexdigest(),
                     "expected_boot_incarnation": boot,
                     "journal_generation": 1,
-                    "access_mode": "owner",
+                    "access_mode": mode,
                 },
             }
         )
@@ -581,6 +599,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
             comm.authority,
             RemoteEndpointSettings(
                 endpoint_id=endpoint_id,
+                request_timeout_seconds=30 if shared else 5,
                 authority_signing_key_ref=PrivateReference(
                     kind="environment", name="ACS_TEST_AUTHORITY_SIGNING_KEY"
                 ),
@@ -646,7 +665,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                         "a",
                         "wait_for_response",
                         handles=[sent["message_handle"]],
-                        timeout_seconds=300,
+                        timeout_seconds=120 if shared else 300,
                     )
                     await_waiter(comm)
                     dispatched = dispatch_committed(comm, sent)
@@ -660,7 +679,12 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                         "using one normal ACS send_message with invoke + async. Call wait_for_response on the returned "
                         "handle with timeout_seconds=0, retain that handle and finish this turn. A new client context "
                         "will continue the same exchange. Do not send again. Use ACS tools only; do not inspect files."
-                        if ack_loss else None),
+                        if ack_loss else ("You are ordinary Agent A in ACS project-alpha. Ask collaborator slot-b for its "
+                            "release label using send_message with activation=invoke and response_mode=async. Retain the "
+                            "returned original message handle. Call wait_for_response with that handle and timeout_seconds=300 "
+                            "to wait for B's explicit related reply. If still pending, continue waiting on that same handle. "
+                            "Finish only after reporting B's exact label. Use normal ACS tools and keep the original request identity."
+                            if shared else None)),
                 )
                 outputs.extend(a_outputs)
                 deadline = time.monotonic() + 150
@@ -684,7 +708,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 # The actual stdio MCP entry owns default maintenance. The
                 # evaluator only observes this committed operation and never
                 # calls dispatch/recovery or forwards an input to B.
-                assert a.wait(timeout=360) == 0
+                assert a.wait(timeout=600 if shared else 360) == 0
                 observed_end = time.monotonic() + 60
                 while True:
                     with comm.authority._connect() as connection:
@@ -740,6 +764,14 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 model_elapsed_seconds=time.monotonic() - start,
             )
         observation = rpc({"action": "observe"})
+        if shared and sender_mode == "lifecycle":
+            samples = []
+            until = time.monotonic() + int(os.getenv("ACS_SHARED_IDLE_SECONDS", "120"))
+            while time.monotonic() < until:
+                samples.append(rpc({"action": "observe"}))
+                time.sleep(2)
+            facts["idle_samples"] = samples
+            assert samples and all(s["native"]["state"] == "idle" and not s["owned_snapshot"]["root_exited"] for s in samples)
         facts["receiver"] = observation
         if os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1":
             assert not installed_launcher, "This fault is injected in the source Receiver transport fixture"

@@ -19,6 +19,7 @@ from runtime.receiver_config import receiver_clock_identity
 from runtime.receiver_delivery import ReceiverNativeDeliveryBridge
 from runtime.receiver_entry import DeploymentCallbacks
 from runtime.supervisor import WindowsJobSupervisor
+from runtime.systemd_supervisor import SystemdUserSupervisor
 from runtime_deployment.receiver_authority import (
     NativeReceiverAuthority,
     NativeReceiverRejected,
@@ -30,6 +31,32 @@ REQUIRED = {"schema_version", "binding_id", "capacity_attempt_id", "executable",
             "driver_journal", "node_journal", "runtime_id"}
 OPTIONAL = {"home", "config_root", "data_root", "state_root", "cache_root", "temp_root",
             "agent", "provider_id", "model_id", "schema_path"}
+SHARED_REQUIRED = {"executable_sha256", "opencode_version", "schema_sha256", "config_sha256",
+                   "agent", "provider_id", "model_id", "collaboration_server", "systemd_environment_dir"}
+SHARED_OPTIONAL = {"environment_refs"}
+
+
+def shared_settings(settings):
+    if (not isinstance(settings, dict) or not SHARED_REQUIRED <= set(settings)
+            or set(settings) - REQUIRED - OPTIONAL - SHARED_REQUIRED - SHARED_OPTIONAL):
+        raise NativeReceiverRejected("Shared profile requires pinned hashes, selection and supervised environment")
+    current = validate_settings({k:v for k,v in settings.items() if k not in SHARED_REQUIRED - OPTIONAL - REQUIRED
+                                 and k not in SHARED_OPTIONAL})
+    for field in ("executable_sha256", "schema_sha256", "config_sha256"):
+        value = settings[field]
+        if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
+            raise NativeReceiverRejected("Shared profile digest is invalid: " + field)
+    for field in ("opencode_version", "collaboration_server", "systemd_environment_dir"):
+        value = settings[field]
+        if not isinstance(value, str) or not value or "\0" in value:
+            raise NativeReceiverRejected("Shared profile setting is invalid: " + field)
+    if not Path(settings["systemd_environment_dir"]).is_absolute():
+        raise NativeReceiverRejected("Shared environment directory must be absolute")
+    current.update({key:settings[key] for key in SHARED_REQUIRED})
+    current["environment_refs"] = settings.get("environment_refs", {})
+    if not isinstance(current["environment_refs"], dict) or len(current["environment_refs"]) > 16:
+        raise NativeReceiverRejected("Shared environment references are unbounded")
+    return current
 
 
 def validate_settings(settings):
@@ -68,10 +95,11 @@ def validate_settings(settings):
 
 class OpenCodeReceiverCapacity(NativeReceiverAuthority):
     def __init__(self, config, deployment_policy_sha256, settings):
-        if getattr(config, "access_mode", "shared") != "owner":
-            raise NativeReceiverRejected("OpenCode receiver requires a separately qualified Shared profile")
+        shared = getattr(config, "access_mode", "shared") != "owner"
+        if shared and os.name != "posix":
+            raise NativeReceiverRejected("Shared profile requires the qualified Linux systemd user supervisor")
         self.config = config
-        self.settings = validate_settings(settings)
+        self.settings = shared_settings(settings) if shared else validate_settings(settings)
         instance = uuid.uuid4().hex
         for prefix in ("spawn", "close"):
             for kind in ("operation", "command", "message"):
@@ -79,7 +107,7 @@ class OpenCodeReceiverCapacity(NativeReceiverAuthority):
         dsn = os.environ.get("ACS_RECEIVER_DSN")
         if not dsn:
             raise NativeReceiverRejected("receiver Domain DSN is unavailable")
-        self.authority = DomainAuthority(dsn, access_mode="owner")
+        self.authority = DomainAuthority(dsn, access_mode="shared" if shared else "owner")
         registration = config.binding.registration
         self.binding = bind_registered_receiver(self.authority, registration, deployment_policy_sha256,
                                                self.settings["runtime_id"], self.settings["capacity_attempt_id"])
@@ -90,18 +118,35 @@ class OpenCodeReceiverCapacity(NativeReceiverAuthority):
         for name in ("home", "config_root", "data_root", "state_root", "cache_root", "temp_root"):
             Path(self.settings[name]).mkdir(mode=0o700, parents=True, exist_ok=True)
         binary = self.settings["executable"]
-        version = subprocess.run([binary, "--version"], capture_output=True, text=True, check=True, timeout=10).stdout.strip()
-        environment = dict(os.environ)
+        # Restricted startup verifies the binary hash before execution, then
+        # checks the actual /global/health version inside the owned supervisor.
+        # A separate --version process can populate the supposedly fresh HOME.
+        version = self.settings["opencode_version"] if shared else subprocess.run(
+            [binary, "--version"], capture_output=True, text=True, check=True, timeout=10).stdout.strip()
+        environment = ({"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"} if shared else dict(os.environ))
         environment["PATH"] = str(Path(binary).parent) + os.pathsep + environment.get("PATH", "")
+        if shared:
+            from runtime.surface_config import PrivateReference
+            for name, reference in self.settings["environment_refs"].items():
+                environment[name] = PrivateReference.model_validate(reference, strict=True).resolve()
         settings = self.settings
         config_file = Path(settings["config_root"])/"opencode/opencode.json"
-        profile = OpenCodeLaunchProfile(binary, file_digest(binary), version, settings["schema_path"], "not-measured",
+        profile = OpenCodeLaunchProfile(binary, settings["executable_sha256"] if shared else file_digest(binary),
+            version, settings["schema_path"], settings["schema_sha256"] if shared else "not-measured",
             settings["cwd"], settings["home"], settings["config_root"], settings["data_root"], settings["state_root"],
-            settings["cache_root"], settings["temp_root"], file_digest(config_file) if config_file.is_file() else "not-configured",
-            settings["agent"], settings["provider_id"], settings["model_id"], environment, execution_mode="native")
-        self.supervisor = WindowsJobSupervisor(max_processes=None, termination_timeout=10) if os.name == "nt" else PosixProcessSupervisor(termination_timeout=10)
+            settings["cache_root"], settings["temp_root"], settings["config_sha256"] if shared else
+                file_digest(config_file) if config_file.is_file() else "not-configured",
+            settings["agent"], settings["provider_id"], settings["model_id"], environment,
+            execution_mode="restricted" if shared else "native",
+            collaboration_server=settings["collaboration_server"] if shared else None)
+        self.supervisor = (WindowsJobSupervisor(max_processes=128 if shared else None, termination_timeout=10)
+            if os.name == "nt" else SystemdUserSupervisor(tasks_max=128, memory_max=1_073_741_824,
+                cpu_quota_percent=100, termination_timeout=10,
+                environment_directory=Path(settings["systemd_environment_dir"])) if shared
+            else PosixProcessSupervisor(termination_timeout=10))
         self.driver = OpenCodeNativeDriver(settings["binding_id"], profile, self.journal, identity=self.binding,
-            check_current=self._current, supervisor=self.supervisor, clock=self.clock)
+            check_current=self._current, supervisor=self.supervisor, clock=self.clock, observe_events=False,
+            http_timeout=60 if shared else 10)
         self._closed = False
         try:
             self.adapter = NativeDeliveryAdapter(self.driver, authorize_invocation=self._authorize_invocation,
@@ -124,9 +169,18 @@ class OpenCodeReceiverCapacity(NativeReceiverAuthority):
             self.authority.enrollment._active_runtime(cursor, self.binding.runtime_id)
         try:
             view = self.driver.inspect(operation)
-        except (ClockUnavailable, DriverRejected, HttpRejected, OutcomeUncertain, OSError):
+        except (ClockUnavailable, DriverRejected, HttpRejected, OutcomeUncertain, OSError) as error:
+            failure = (type(error).__name__, str(error)[:256])
+            if failure != getattr(self, "_health_error", None):
+                self._health_error = failure
+                try:
+                    self.journal.event(operation.operation_id, "native_health_unavailable",
+                        {"error_type": failure[0], "detail": failure[1]})
+                except (OSError, RuntimeError):
+                    pass  # The health result remains unknown if its clock/store is unavailable.
             return {"state": "unknown", "harness": "opencode", "version": self.driver.profile.version,
                     "session_ref": None, "observation": "native_readback_unavailable"}
+        self._health_error = None
         status = view.get("status", {}).get("type")
         return {"state": "idle" if status == "idle" else "busy" if status in {"busy", "retry"} else "unknown",
             "harness": "opencode", "version": self.driver.profile.version, "session_ref": self.driver.session_id,

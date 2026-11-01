@@ -64,7 +64,7 @@ def test_rejected_lifecycle_close_still_releases_transport_and_owned_supervision
     with pytest.raises(NativeReceiverRejected,match="revoked"):
         capacity.close()
     capacity.close()
-    assert calls==["rejected","detach","owned_stop"]
+    assert calls==["rejected","owned_stop","detach"]
 
 
 def test_opencode_receiver_rechecks_the_committed_sender_not_its_observer(comm):
@@ -89,7 +89,7 @@ def test_opencode_receiver_rechecks_the_committed_sender_not_its_observer(comm):
             capacity._authorize_domain_command(command,cursor,"runtime.invoke",packet.target_scope_id,packet)
 
 
-def enrolled_opencode_config(comm,tmp_path):
+def enrolled_opencode_config(comm,tmp_path, *, signing_key=None):
     import json
 
     from nacl.signing import SigningKey
@@ -103,7 +103,7 @@ def enrolled_opencode_config(comm,tmp_path):
     with comm.authority._connect() as connection:
         for grant,scope in ((comm.authority.context.grant_ref,"enrollment.manage"),(observer.context.grant_ref,"runtime.register")):
             connection.execute("UPDATE grants SET permissions=permissions || %s::jsonb WHERE grant_ref=%s",(json.dumps([scope]),grant))
-    key=SigningKey.generate()
+    key=signing_key or SigningKey.generate()
     comm.authority.enroll_node(command(comm.authority,"node.enroll","node","opencode-node"),NodeEnrollment(
         scope_id="local-scope",agent_slot_id="slot-b",observer_grant_ref=observer.context.grant_ref,machine_id="machine",
         boot_incarnation="boot",public_key=public_key(key),expires_at=datetime.now(UTC)+timedelta(minutes=5)))
@@ -159,6 +159,17 @@ def test_factory_binds_real_enrollment_and_inherited_selection_with_a_labeled_na
             capacity.health()
     finally:
         capacity.close()
+
+
+def test_shared_receiver_observation_coexists_with_configuring_callers_grant_lock(comm, tmp_path):
+    from runtime_tests.test_receiver_domain_delivery import command
+    _config, _supplied, observer = enrolled_opencode_config(comm, tmp_path)
+    with comm.authority._connect() as first, first.cursor() as cursor:
+        comm.authority._authorize(command(comm.authority, "message.read", "project", "project-alpha"), cursor, "message.read")
+        with observer._connect() as second, second.cursor() as readback:
+            readback.execute("SET LOCAL lock_timeout=200")
+            actual = observer.enrollment._active_runtime(readback, "runtime")
+            assert actual[0]["runtime_id"] == "runtime"
 
 
 @pytest.mark.skipif(os.getenv("ACS_REAL_OPENCODE_TEST")!="1" or not sys.platform.startswith("linux"),

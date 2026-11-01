@@ -250,8 +250,14 @@ class ReceiverTransportAuthority:
                     or runtime_value["node_boot_incarnation"] != registration.boot_incarnation):
                 raise AcceptanceGuardFailed("receiver endpoint Runtime binding differs")
             verify(key_row[1], request.registration_signature, registration)
-            if self.authority.access_mode != "owner" and (registration.expires_at is None or not self.authority.canonical_now(cursor) < _time(registration.expires_at) <= _time(valid_until)):
-                raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node proof")
+            if self.authority.access_mode != "owner":
+                # The one-use challenge admits this registration command now.
+                # Its short nonce lifetime is not the requested resource lease:
+                # that lease is bounded by the active Node, Runtime and Grants.
+                runtime_until = self.authority.enrollment._active_runtime(cursor, registration.runtime_id)[4]
+                if (registration.expires_at is None or not self.authority.canonical_now(cursor)
+                        < _time(registration.expires_at) <= _time(runtime_until)):
+                    raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node/Runtime authority")
             cursor.execute(
                 "SELECT endpoint_revision FROM delivery_endpoint_registrations WHERE tenant_id=%s "
                 "AND endpoint_id=%s ORDER BY endpoint_revision DESC LIMIT 1 FOR UPDATE",
@@ -267,8 +273,12 @@ class ReceiverTransportAuthority:
                 (command.tenant_id, registration.endpoint_id),
             )
             self.authority._authorize(command, cursor, "endpoint.register", registration.scope_id)
-            if self.authority.access_mode != "owner" and (registration.expires_at is None or not self.authority.canonical_now(cursor) < _time(registration.expires_at) <= _time(valid_until)):
-                raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node proof")
+            if self.authority.access_mode != "owner":
+                now = self.authority.canonical_now(cursor)
+                if not now < _time(valid_until):
+                    raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+                if registration.expires_at is None or not now < _time(registration.expires_at) <= _time(runtime_until):
+                    raise AcceptanceGuardFailed("receiver endpoint expiry exceeds current Node/Runtime authority")
             cursor.execute(
                 "INSERT INTO delivery_endpoint_registrations(tenant_id,authority_id,authority_incarnation,"
                 "endpoint_id,endpoint_revision,registration_id,connection_ref,node_id,node_binding_revision,"
@@ -376,11 +386,28 @@ class ReceiverTransportAuthority:
                 return None
             return request, receipt
 
-    def _command_actor(self, command):
+    def _command_actor(self, command, cursor=None):
         actor = self.authority
         if actor.access_mode == "owner":
             actor = copy(actor)
             actor.context = replace(actor.context, principal_ref=command.principal_ref, grant_ref=command.grant_ref)
+        elif cursor is not None and command.payload.get("schema_version") in {"acs-message/1", "acs-notice/1"}:
+            # A Shared dispatcher is a technical observer, not the original
+            # sender. Recover only from this authority's exact committed row.
+            if (command.tenant_id, command.authority_id, command.authority_incarnation) != (
+                    actor.tenant_id, actor.context.authority_id, actor.context.authority_incarnation):
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            cursor.execute("SELECT command_json,packet_json FROM delivery_messages WHERE tenant_id=%s "
+                "AND message_id=%s AND command_id=%s", (actor.tenant_id, command.target_id, command.command_id))
+            row = cursor.fetchone()
+            if row is None or _model(CommandEnvelope, row[0]) != command:
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            if row[1].get("schema_version") in {"acs-message/1", "acs-notice/1"}:
+                from runtime.communication_permissions import committed_delivery_context
+                from runtime.delivery_models import PACKET
+                actor = copy(actor)
+                actor.context = committed_delivery_context(cursor, command, PACKET.validate_json(json.dumps(row[1]), strict=True))
+                actor._communication_recovery = True
         return actor
 
     def dispatch_marker_current(self, invocation) -> bool:
@@ -448,7 +475,7 @@ class ReceiverTransportAuthority:
                 ):
                     return False
                 command = _model(CommandEnvelope, row[0])
-                actor = self._command_actor(command)
+                actor = self._command_actor(command, cursor)
                 actor._authorize(
                     command.model_copy(update={"deadline": None}) if self.authority.access_mode == "owner" and admission.purpose == "delivery.readback" else command,
                     cursor,
@@ -512,7 +539,7 @@ class ReceiverTransportAuthority:
             if lineage is None:
                 raise AcceptanceGuardFailed("receiver admission delivery lineage is unavailable")
             command = _model(CommandEnvelope, lineage[0])
-            actor = self._command_actor(command)
+            actor = self._command_actor(command, cursor)
             if self.authority.access_mode == "owner" and admission.purpose == "delivery.readback":
                 command = command.model_copy(update={"deadline": None})
             actor._authorize(command, cursor, "message.send", admission.scope_id)

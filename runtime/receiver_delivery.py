@@ -12,7 +12,7 @@ from datetime import datetime
 from nacl.signing import SigningKey
 
 from runtime.connection_clock import ConnectionClock
-from runtime.delivery_models import InvocationRequest
+from runtime.delivery_models import TRANSPORT_READINESS_SECONDS, InvocationRequest
 from runtime.delivery_node import (
     DeliveryTransportError,
     InvocationDeferred,
@@ -149,7 +149,8 @@ class ReceiverNativeDeliveryBridge:
         return {"native_observation": observation.model_dump(mode="json")}
 
     def readiness(self, admission):
-        return self.native_adapter.readiness(self._invocation(admission))
+        observe = getattr(self.native_adapter, "transport_readiness", self.native_adapter.readiness)
+        return observe(self._invocation(admission))
 
     def collect_response(self, admission):
         """Project a delayed terminal response without invoking or resuming native work."""
@@ -358,7 +359,7 @@ class RemoteNodeEndpointAdapter:
                     fresh = True
                 else:
                     expires_at = datetime.fromisoformat(observation["expires_at"])
-                    fresh = self.clock.fresh(observed_at, expires_at, max_lifetime=2)
+                    fresh = self.clock.fresh(observed_at, expires_at, max_lifetime=TRANSPORT_READINESS_SECONDS)
             except (RemoteTransportRejected, ValueError, RuntimeError, KeyError, TypeError):
                 raise InvocationDeferred("unknown") from None
             if not fresh or observation.get("activity") != "idle":

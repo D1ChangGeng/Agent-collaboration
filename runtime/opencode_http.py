@@ -132,11 +132,11 @@ def listener_owner_pids(port):
                 for descriptor in (process / "fd").iterdir():
                     try:
                         target = os.readlink(descriptor)
-                    except (FileNotFoundError, PermissionError):
+                    except (FileNotFoundError, ProcessLookupError, PermissionError):
                         continue
                     if target.startswith("socket:[") and target[8:-1] in inodes:
                         owners.add(int(process.name))
-            except (FileNotFoundError, PermissionError):
+            except (FileNotFoundError, ProcessLookupError, PermissionError):
                 continue
         return owners
     raise HttpRejected("listener ownership is unsupported on this OS")
@@ -144,7 +144,7 @@ def listener_owner_pids(port):
 
 class LoopbackHttp:
     PATHS = re.compile(
-        r"^/(?:global/health|doc|config|agent|provider|event|experimental/tool/ids|session"
+        r"^/(?:global/health|doc|config|agent|provider|mcp|event|experimental/tool/ids|session"
         r"(?:/status|/ses_[A-Za-z0-9_-]+(?:/abort|/prompt_async|/message(?:/msg_[A-Za-z0-9_-]+)?)?)?)$"
     )
 
@@ -178,8 +178,8 @@ class LoopbackHttp:
         deadline = started + _duration(self.timeout if timeout is None else timeout)
         if method not in ("GET", "POST") or not self.PATHS.fullmatch(path):
             raise HttpRejected("HTTP method/path is outside the native Driver allowlist")
-        if path == "/provider" and method != "GET":
-            raise HttpRejected("provider auth inspection is read-only")
+        if path in {"/provider", "/mcp"} and method != "GET":
+            raise HttpRejected("provider/MCP inspection is read-only")
         if method == "GET" and payload is not None:
             raise HttpRejected("GET request cannot carry a mutation body")
         if not self.verify_owner():
