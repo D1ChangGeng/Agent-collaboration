@@ -97,7 +97,7 @@
     "sustained_high_load",
     "permanent_resolution_of_previous_intermittent_windows_postgres_forwarding"
   ],
-  "current_selected_installation_release": "v2.0.3",
+  "current_selected_installation_release": "v2.2.0",
   "patch_followup_2_0_2": {
     "source_commit": "7c72faf36dff2ec9d0cab2ade7bcd883aa68b5bf",
     "both_selected_services_upgraded": true,
@@ -246,5 +246,104 @@
     "transient_timeout_cause": "not_established",
     "new_host_or_distribution_reboot_performed": false,
     "old_database_connection_fence_retained": true
+  },
+  "v2_2_0_followup": {
+    "release": "v2.2.0",
+    "source_commit": "a5142b2479f348c1fd5a90dfc660c5ac38ae378a",
+    "source_tree": "8160fa13ea3faa55c3ea84c6cd4ca4c0f3e762b0",
+    "selected_installations_upgraded": true,
+    "published_assets_independently_downloaded_and_matched": true,
+    "product_and_qualification_asset_count": 7,
+    "release_preflight_and_exact_candidate_ci_passed": true,
+    "receiver_generation": 7,
+    "same_mcp_connection_initialized_before_receiver_cutover": true,
+    "production_communication": {
+      "version": "2.2.0",
+      "source_commit": "a5142b2479f348c1fd5a90dfc660c5ac38ae378a",
+      "same_mcp_connection_across_receiver_cutover": true,
+      "first_wait_state": "timeout",
+      "reply_observed_after_connection_replacement": true,
+      "continuation_resend_calls": 0,
+      "normal_native_roundtrip": true,
+      "correct_reply_author": true,
+      "repeated_wait_satisfied": true,
+      "request_count": 1,
+      "reply_relation_count": 1,
+      "native_attempt_count": 1,
+      "signed_admission_generations": [
+        7
+      ],
+      "signed_admission_purposes": [
+        "delivery.dispatch",
+        "delivery.prepare",
+        "delivery.readiness"
+      ],
+      "delivery_state": "delivered",
+      "receipt_high_water": "runtime_acknowledged",
+      "historical_work_relation_retained": true,
+      "historical_work_rows": 15,
+      "new_message_task_fields": false,
+      "new_message_task_event_links": false,
+      "existing_project_count": 7,
+      "native_terminal_projection_used": false
+    },
+    "preservation": {
+      "delivery_messages": {
+        "before": 42,
+        "current": 44,
+        "all_original_rows_preserved": true
+      },
+      "command_dedup": {
+        "before": 2553,
+        "current": 2558,
+        "all_original_rows_preserved": true
+      },
+      "grants": {
+        "before": 20,
+        "current": 20,
+        "all_original_rows_preserved": true
+      },
+      "collaboration_projects": {
+        "before": 7,
+        "current": 7,
+        "all_original_rows_preserved": true
+      },
+      "communication_messages": {
+        "before": 28,
+        "current": 30,
+        "all_original_rows_preserved": true
+      },
+      "communication_replies": {
+        "before": 13,
+        "current": 14,
+        "all_original_rows_preserved": true
+      },
+      "work_items": {
+        "before": 15,
+        "current": 15,
+        "all_original_rows_preserved": true
+      }
+    },
+    "node_preservation": {
+      "version": "2.2.0",
+      "generation": 7,
+      "original_key_credential_hashes_preserved": 6,
+      "identity_and_journal_paths_preserved": true,
+      "ordinary_client_credential_preserved": true,
+      "active_selected_release_service": true
+    },
+    "owner_source_files_verified": 1024,
+    "receiver_registered_files_verified": 119,
+    "post_reply_native_idle_readback": true,
+    "configured_provider_auth_and_selected_model_readonly_probe": "passed",
+    "first_wait_300_seconds": "timeout",
+    "reply_recovered_in_replacement_connection_with_original_handle": true,
+    "resend_or_reinvoke_count": 0,
+    "production_models": 1,
+    "production_sender": "scripted ordinary MCP client",
+    "isolated_independent_model_qualification": "acs-codex-shared-20261101",
+    "native_terminal_projection_used": false,
+    "new_host_or_distribution_reboot_performed": false,
+    "model_latency_cause": "not established; the original configured xhigh environment was preserved"
   }
 }
