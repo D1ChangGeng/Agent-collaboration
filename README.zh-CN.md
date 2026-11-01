@@ -9,7 +9,7 @@ ACS 通过稳定联系人、自然消息、主动关联回复和持久 Inbox 连
 项目保有 **Management Root** 和 **Route**；Codex、OpenCode 自主安排工作与
 评审。ACS 验证参与者身份、保留通信，并按请求发起受权 Native 输入。
 
-ACS v2.2.0 提供[通信合同](docs/runtime/COMMUNICATION.md)中的核心能力，
+ACS v2.3.0 提供[通信合同](docs/runtime/COMMUNICATION.md)中的核心能力，
 实际环境和限制见[实现与支持记录](docs/runtime/COMMUNICATION-STATUS.md)。
 现有 v1.x 安装需要[引导升级](docs/RELEASE-NOTES-v2.0.0.md)，自动更新不会
 激活这个主版本。
@@ -54,23 +54,24 @@ Management Root。当前通信核心通过普通消息委任工作，并从 Inbo
 
 ## Agent 组织模型
 
-Root Agent 负责项目级范围，Route Agent 负责开发线级范围。**Task Agent**
-是承担明确任务的外部 Agent 的候选统称；Engineer、Reviewer、Specialist、Finalizer
-表示职责，可在实际授权允许的情况下组合。
+受信 Client、Root 和 Route Manager 构成管理层级。普通协作者承担 Engineer、
+Reviewer、Specialist、Finalizer 等职责，并遵守实际授权。首次接入时，
+`read_profile.actor` 在选择项目之前说明真实身份及当前范围。
 
 ```mermaid
 flowchart TB
-    R[Root Agent：项目级] --> D[Route Agent：开发线级]
-    D --> E[Task Agent：Engineer]
-    D --> V[Task Agent：Reviewer]
-    D --> S[Task Agent：Specialist]
-    D --> F[Task Agent：Finalizer]
+    C[受信 Client] --> R[Root Manager]
+    R --> D[Route Manager]
+    D --> E[Engineer]
+    D --> V[Reviewer]
+    D --> S[Specialist]
+    D --> F[Finalizer]
 ```
 
 组织责任范围、Role、Profile 与 Grant 各有独立含义。稳定 Slot 在 Native Session
 替换后保留作者身份。Agent 可以通过普通消息请 Reviewer 核查具体 commit 并回报。
-[组织模型提案](docs/runtime/AGENT-ORGANIZATION-MODEL.md)保留其历史设计范围，
-实际运行以当前工具合同为准。
+[Root 管理](docs/runtime/ROOT-MANAGEMENT.md)通过 `configure_root` 统一配置，
+Project 保留为其通信和隔离标识。升级说明见 [v2.3.0](docs/RELEASE-NOTES-v2.3.0.md)。
 
 ## 架构
 

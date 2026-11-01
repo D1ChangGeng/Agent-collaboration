@@ -11,7 +11,7 @@ and **Routes**; Codex and OpenCode decide how to perform and review work.
 ACS authenticates participants, preserves communication and starts a permitted
 Native request when requested.
 
-ACS v2.2.0 provides the communication core described in the
+ACS v2.3.0 provides the communication core described in the
 [communication contract](docs/runtime/COMMUNICATION.md). The
 [implementation and support record](docs/runtime/COMMUNICATION-STATUS.md)
 binds tested environments and limitations to their evidence. Existing v1.x
@@ -50,9 +50,9 @@ ordinary messages to delegate work and recover replies from Inbox.
 
 ## Standard release installation
 
-Use the [v2.2.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.2.0)
+Use the [v2.3.0 Release](https://github.com/D1ChangGeng/Agent-collaboration/releases/tag/v2.3.0)
 and its `acs_bootstrap.py` asset to start verified installation.
-See the [release notes](docs/RELEASE-NOTES-v2.0.0.md) for the upgrade path.
+See the [release notes](docs/RELEASE-NOTES-v2.3.0.md) for the upgrade path.
 
 The Release Bootstrap uses an explicit Runtime destination: local Linux,
 a named remote SSH target, or a named WSL distribution. It probes the selected
@@ -133,26 +133,26 @@ as an Agent needs them.
 
 ## Agent organization
 
-Root Agent carries project responsibility; Route Agent carries development-line
-responsibility. **Task Agent** is the proposed collective term for an external
-Agent carrying explicit task responsibility. Engineer, Reviewer, Specialist and
-Finalizer describe duties that can be combined under actual authorization.
+Trusted Client, Root and Route manager are the management levels. Ordinary
+collaborators carry Engineer, Reviewer, Specialist or Finalizer duties under
+their actual authorization. `read_profile.actor` reports the authenticated
+identity and current scope before a project is selected.
 
 ```mermaid
 flowchart TB
-    R[Root Agent] --> D[Route Agent]
-    D --> E[Task Agent: Engineer]
-    D --> V[Task Agent: Reviewer]
-    D --> S[Task Agent: Specialist]
-    D --> F[Task Agent: Finalizer]
+    C[Trusted Client] --> R[Root manager]
+    R --> D[Route manager]
+    D --> E[Engineer]
+    D --> V[Reviewer]
+    D --> S[Specialist]
+    D --> F[Finalizer]
 ```
 
 Organization extent, Role, Profile and Grant have separate meanings. Stable
 Slots retain authorship when replaceable Native Sessions change. Agents can
 ask a reviewer to inspect a particular commit and send findings using ordinary
-messages. The [organization model proposal](docs/runtime/AGENT-ORGANIZATION-MODEL.md)
-retains its historical design scope; the current tool contract defines runtime
-behavior.
+messages. [Root management](docs/runtime/ROOT-MANAGEMENT.md) uses one
+`configure_root` entry; Project remains its communication/isolation key.
 
 ## Architecture
 
