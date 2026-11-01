@@ -27,17 +27,18 @@ from runtime.project_management import ManagementActions
 from runtime.project_resources import ResourceActions
 from runtime.project_routes import RouteActions
 from runtime.project_schema_state import adopt_project_schema
+from runtime.root_management import RootManagement
 from runtime.source import SourceChangedDuringSnapshot
 from runtime.surfaces import SharedService
 
 
-class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationManagement, ManagementActions, RouteActions, ResourceActions):
+class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions, CommunicationManagement, ManagementActions, RouteActions, ResourceActions):
     """Authenticated project adapter; never owns an alternate execution state."""
 
     _page_result = staticmethod(page_result)
 
     IMPLEMENTED = frozenset({
-        'apply_patch', 'check_inbox', 'configure_project', 'configure_team', 'create_route', 'edit_file',
+        'apply_patch', 'check_inbox', 'configure_project', 'configure_root', 'configure_team', 'create_route', 'edit_file',
         'filesystem_context', 'glob', 'grep', 'list_activity', 'list_collaborators',
         'list_connections', 'list_directory', 'list_files', 'list_harnesses',
         'list_messages', 'list_projects', 'list_routes', 'list_source_files',
@@ -91,9 +92,12 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
             adopt_legacy_index(connection.cursor(), self.context.tenant_id)
 
     def admit_project(self, command: CommandEnvelope, *, project_id: str, root_id: str,
-                      scope_id: str, agent_slot_id: str, name: str,
+                      scope_id: str, agent_slot_id: str | None, name: str,
                       context_manifest: dict[str, Any], credential: str) -> dict[str, Any]:
-        """Admit installer-verified identities under an existing Scope and Grant.
+        """Register one Root namespace under existing authenticated authority.
+
+        Installer adoption may retain its real Slot; trusted Owner Clients need
+        no Slot or membership merely to establish a Root communication space.
 
         The installer remains responsible for the AGENTS/manifest write and
         preservation checks. This operation cannot create or enlarge a Grant.
@@ -118,21 +122,25 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
                 return replay.model_dump(mode="json")
             if command.expected_revision != 0:
                 raise RevisionConflict(project_id, command.expected_revision, 0)
-            cursor.execute("SELECT 1 FROM agent_slots WHERE tenant_id=%s AND scope_id=%s "
+            if agent_slot_id is None and not (authority.access_mode == "owner" and self.context.trusted_client):
+                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+            if agent_slot_id is not None:
+                cursor.execute("SELECT 1 FROM agent_slots WHERE tenant_id=%s AND scope_id=%s "
                            "AND agent_slot_id=%s AND status='active' FOR UPDATE",
                            (command.tenant_id, scope_id, agent_slot_id))
-            if not cursor.fetchone():
-                raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+                if not cursor.fetchone():
+                    raise AuthorizationDenied(command.principal_ref, command.grant_ref)
             cursor.execute(
                 "INSERT INTO collaboration_projects(tenant_id,project_id,root_id,scope_id,"
                 "name,context_manifest) VALUES (%s,%s,%s,%s,%s,%s)",
                 (command.tenant_id, project_id, root_id, scope_id, name, canonical(context_manifest)),
             )
-            cursor.execute(
-                "INSERT INTO collaboration_memberships VALUES (%s,%s,%s,%s,%s,%s)",
-                (command.tenant_id, project_id, command.principal_ref, command.grant_ref,
-                 self.profile, agent_slot_id),
-            )
+            if agent_slot_id is not None:
+                cursor.execute(
+                    "INSERT INTO collaboration_memberships VALUES (%s,%s,%s,%s,%s,%s)",
+                    (command.tenant_id, project_id, command.principal_ref, command.grant_ref,
+                     self.profile, agent_slot_id),
+                )
             for route in context_manifest.get("routes", []):
                 handle("route", project_id, route["route_id"])
                 if route["scope_id"] != scope_id:
@@ -273,17 +281,13 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
         )
 
     def _authorize(self, authority, cursor, project_id, name, args):
+        from runtime.agent_organization import management_tool_allowed
+        if not management_tool_allowed(name, self.profile, trusted_client=self.context.trusted_client):
+            raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
         if name == "configure_project" and (authority.access_mode != "owner" or
                 not self.context.trusted_client and self.profile not in {"root_manager", "operator"}):
             raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
-        if not self.context.trusted_client:
-            cursor.execute("SELECT profile,status,agent_slot_id FROM collaboration_team_members WHERE tenant_id=%s "
-                "AND project_id=%s AND principal_ref=%s AND grant_ref=%s", (self.context.tenant_id, project_id,
-                    self.context.principal_ref, self.context.grant_ref))
-            identities = cursor.fetchall()
-            if identities and (len(identities) != 1 or identities[0][0] != self.profile or identities[0][1] != "active"
-                    or self.context.agent_slot_id is not None and identities[0][2] != self.context.agent_slot_id):
-                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+        self._check_caller_binding(cursor, project_id)
         if name in {"configure_team", "create_route", "update_route"}:
             if not self.context.trusted_client and self.profile not in {"root_manager", "route_manager"}:
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
@@ -397,12 +401,16 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
         return self._discover_tools(credential, self.catalog["profiles"][self.profile])
 
     def _discover_tools(self, credential, candidates):
+        from runtime.agent_organization import management_tool_allowed
         self.service.authenticate(credential)
+        with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
+            if authority.access_mode == "owner":
+                authority._authorize(self._command(authority, "project.read_profile", {"project_id": "identity"}), cursor)
+            self._check_caller_binding(cursor)
         if self.service.authority.access_mode == "owner":
             return sorted(name for name in self.IMPLEMENTED if name in self.catalog["tools"] and
-                (name != "configure_project" or self.context.trusted_client or self.profile in {"root_manager", "operator"}) and
-                (self.context.trusted_client or self.profile in {"root_manager", "route_manager"}
-                    or name not in {"configure_team", "create_route", "update_route"}) and
+                name != "configure_project" and
+                management_tool_allowed(name, self.profile, trusted_client=self.context.trusted_client) and
                 (self.sources is not None or name not in {"list_files", "search_files", "read_source",
                     "read_diff", "read_source_file", "list_source_files", "search_source_files"}))
         available = []
@@ -415,8 +423,8 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
                 (self.context.tenant_id, self.context.principal_ref, self.profile),
             ).fetchall()
             for name in candidates:
-                if name == "configure_project":
-                    continue  # Current-file configuration is an Owner capability.
+                if name in {"configure_root", "configure_project"}:
+                    continue  # Root current-file setup is an Owner capability.
                 from runtime.filesystem_schema import ALL_TOOLS
                 if name in ALL_TOOLS and name != "read_file":
                     continue
@@ -475,6 +483,8 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
             raise ValueError("machine file tools require the configured owner service")
         if name == "read_profile":
             return self._profile_snapshot()
+        if name == "configure_root":
+            return self._configure_root_entry(args, credential)
         if name == "list_connections":
             return self._connections(args, credential)
         if name == "list_projects":
@@ -589,11 +599,66 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
 
 
 
+    def _check_caller_binding(self, cursor, project_id=None):
+        if self.context.trusted_client:
+            return
+        cursor.execute("SELECT m.profile,m.status,m.agent_slot_id,s.status,c.status,g.revoked_at "
+                       "FROM collaboration_team_members m JOIN agent_slots s ON s.agent_slot_id=m.agent_slot_id AND s.tenant_id=m.tenant_id "
+                       "JOIN scopes c ON c.scope_id=m.scope_id AND c.tenant_id=m.tenant_id "
+                       "JOIN grants g ON g.grant_ref=m.grant_ref AND g.tenant_id=m.tenant_id "
+                       "WHERE m.tenant_id=%s AND m.principal_ref=%s AND m.grant_ref=%s "
+                       "AND (%s::text IS NULL OR m.project_id=%s)",
+                       (self.context.tenant_id, self.context.principal_ref, self.context.grant_ref, project_id, project_id))
+        identities = cursor.fetchall()
+        if identities and (len(set(identities)) != 1 or identities[0][0] != self.profile
+                or any(value != "active" for value in (identities[0][1], identities[0][3], identities[0][4]))
+                or identities[0][5] is not None
+                or self.context.agent_slot_id is not None and identities[0][2] != self.context.agent_slot_id):
+            raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+
+    def _caller_identity(self, authority, cursor):
+        self._check_caller_binding(cursor)
+        if self.context.trusted_client:
+            actions = [{"tool": "list_projects", "arguments": {}}]
+            if authority.access_mode == "owner":
+                actions.append({"tool": "configure_root", "purpose": "establish or configure a Root and its communication namespace"})
+            return {"organization": organization_projection("client"), "agent_slot_id": None,
+                    "binding_source": "trusted_client_binding", "native_session_requirement": "none",
+                    "management_scope": "authorized Root namespaces",
+                    "next_actions": actions}
+        cursor.execute(
+            "SELECT p.scope_id,p.root_id,p.revision,p.context_manifest,m.grant_ref,m.agent_slot_id,p.project_id "
+            "FROM collaboration_memberships m JOIN collaboration_projects p USING(tenant_id,project_id) "
+            "WHERE m.tenant_id=%s AND m.principal_ref=%s AND m.profile=%s AND m.grant_ref=%s "
+            "AND p.state='active' AND (%s::text IS NULL OR m.agent_slot_id=%s) ORDER BY p.project_id",
+            (self.context.tenant_id, self.context.principal_ref, self.profile, self.context.grant_ref,
+             self.context.agent_slot_id, self.context.agent_slot_id),
+        )
+        bindings = []
+        actions = []
+        for row in cursor.fetchall():
+            binding = self._agent_context_binding(authority, cursor, row[:6], row[6])
+            bindings.append({"project_id": row[6], "root_handle": handle("project", row[6], row[1]), **binding})
+            try:
+                self._authorize(authority, cursor, row[6], "load_project", {"project_id": row[6]})
+            except (PermissionError, AuthorizationDenied):
+                continue
+            actions.append({"tool": "load_project", "arguments": {"project_id": row[6]}})
+        levels = {item["organization"]["level"] for item in bindings}
+        organization = bindings[0]["organization"] if len(levels) == 1 and bindings else organization_projection(None)
+        slots = {item["agent_slot_id"] for item in bindings}
+        slot = self.context.agent_slot_id or (next(iter(slots)) if len(slots) == 1 else None)
+        return {"organization": organization, "agent_slot_id": slot,
+                "binding_source": "trusted_collaborator_binding", "native_session_requirement": "verified receiving binding when invoked",
+                "native_session_observation": "not_observed_by_read_profile", "bindings": bindings,
+                "next_actions": actions}
+
     def _profile_snapshot(self):
         if self.service.authority.access_mode == "owner":
             with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
                 command = self._command(authority, "project.read_profile", {"project_id": "identity"})
                 authority._authorize(command, cursor)
+                actor = self._caller_identity(authority, cursor)
             return "observed", {"subject": self.context.principal_ref,
                 "tenant_id": self.context.tenant_id, "profile": self.profile,
                 "granted_profiles": sorted(self.catalog["profiles"]) if self.context.trusted_client else [self.profile],
@@ -601,7 +666,8 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
                 "authority_incarnation": self.context.authority_incarnation,
                 "domain_schema_version": self.service.authority.SCHEMA_VERSION,
                 "connection_state": "authorized", "access_mode": "owner",
-                "identity": {"ref": self.context.principal_ref, "lifetime": "until_explicit_change"}}, []
+                "identity": {"ref": self.context.principal_ref, "lifetime": "until_explicit_change"},
+                "actor": actor, "organization_model": organization_model()}, []
         with self.service.authority._connect() as connection, connection.cursor() as cursor:
             cursor.execute("SELECT scope_id,permissions,expires_at,revoked_at FROM grants WHERE tenant_id=%s "
                            "AND principal_ref=%s AND grant_ref=%s AND authority_id=%s AND authority_incarnation=%s",
@@ -618,11 +684,13 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
                     active = cursor.fetchone() is not None
                 except AuthorizationDenied:
                     active = False
+            actor = self._caller_identity(self.service.authority, cursor) if active else None
         return "observed", {"subject": self.context.principal_ref, "tenant_id": self.context.tenant_id,
             "profile": self.profile, "granted_profiles": [self.profile] if active else [],
             "authority_id": self.context.authority_id, "authority_incarnation": self.context.authority_incarnation,
             "domain_schema_version": self.service.authority.SCHEMA_VERSION,
             "connection_state": "authorized" if active else "authorization_unavailable",
+            "actor": actor, "organization_model": organization_model(),
             "grant": {"ref": self.context.grant_ref, "scope_id": grant[0] if grant else None,
                 "permissions": grant[1] if active else [], "expires_at": grant[2].isoformat() if grant else None}}, []
 
@@ -706,21 +774,32 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
             elif (scope == project[0] and self.profile == "root_manager"
                   and (authority.access_mode == "owner" or {"routes.manage", "collaborators.manage"}.intersection(permissions))):
                 role = "root"
-        return {"principal_ref": self.context.principal_ref, "agent_slot_id": project[5],
+        address = self._communication_address(cursor, project_id)
+        cursor.execute("SELECT manager_address FROM communication_supervisors WHERE tenant_id=%s AND project_id=%s AND agent_slot_id=%s",
+                       (self.context.tenant_id, project_id, project[5]))
+        manager = cursor.fetchone()
+        binding = {"principal_ref": self.context.principal_ref, "agent_slot_id": project[5],
+                "communication_address": address, "manager_handle": manager[0] if manager else None,
                 "scope_handle": handle("scope", project_id, scope),
                 "organization": organization_projection(role, level=declared.get("organization_level"),
                     responsibilities=declared.get("responsibilities")), "profile": self.profile,
                 "authorization": {"grant_ref": authority.context.grant_ref,
                                   "declared_permissions": permissions if authority.access_mode != "owner" else [],
                                   "expires_at": expires.isoformat() if expires and authority.access_mode != "owner" else None,
-                                  "operation_checks": "project and operation identity" if authority.access_mode == "owner" else "live Grant, Policy and candidate checks"},
-                "work_query": {"tool": "list_work", "arguments": {"project_id": project_id,
-                              "assigned_to": handle("collaborator", project_id, project[5])}},
+                                  "operation_checks": "project and operation identity" if authority.access_mode == "owner" else "live identity, Scope, Grant and Policy checks"},
+                "inbox_query": {"tool": "check_inbox", "arguments": {"project_id": project_id}},
+                "history_query": {"tool": "list_messages", "arguments": {"project_id": project_id}},
+                "contacts_query": {"tool": "list_collaborators", "arguments": {"project_id": project_id}},
                 "session_query": {"tool": "list_harnesses", "arguments": {
                                   "project_id": project_id, "scope_handle": handle("scope", project_id, scope),
-                                  "required_capabilities": []}},
-                "review_query": {"tool": "list_reviews", "arguments": {"project_id": project_id},
-                                 "match_observations": {"reviewer_ref": self.context.principal_ref}}}
+                                  "required_capabilities": []}}}
+        for key, query in list(binding.items()):
+            if key.endswith("_query"):
+                try:
+                    self._authorize(authority, cursor, project_id, query["tool"], query["arguments"])
+                except (PermissionError, AuthorizationDenied):
+                    binding.pop(key)
+        return binding
 
     def _load_project(self, authority, cursor, project, command, args, credential):
         if set(args.get("include", [])) - {"root", "routes", "instructions", "knowledge_indexes", "source_bindings", "policies"}:
@@ -985,7 +1064,7 @@ class ProjectService(CurrentProjectContext, CommunicationActions, CommunicationM
             data.pop("grant_summary", None)
             binding = data.get("actor_binding", {})
             binding.get("authorization", {}).pop("declared_permissions", None)
-            for key in ("work_query", "session_query", "review_query"):
+            for key in ("inbox_query", "history_query", "contacts_query", "session_query"):
                 query = binding.pop(key, None)
                 if query:
                     follow.append({"rel": key, **query})

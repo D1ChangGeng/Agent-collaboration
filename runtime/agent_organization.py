@@ -19,6 +19,17 @@ def organization_model() -> dict:
     return deepcopy(ORGANIZATION_MODEL)
 
 
+def management_tool_allowed(name: str, profile: str, *, trusted_client: bool) -> bool:
+    """One eligibility rule for discovery and calls; scoped checks still apply."""
+    if name in {"configure_root", "configure_project"}:
+        return trusted_client or profile in {"root_manager", "operator"}
+    if name == "create_route":
+        return trusted_client or profile == "root_manager"
+    if name in {"configure_team", "update_route"}:
+        return trusted_client or profile in {"root_manager", "route_manager"}
+    return True
+
+
 def organization_projection(primary_role: str | None, *, level: str | None = None,
                             responsibilities: list[str] | None = None) -> dict:
     inferred = ("client" if primary_role == "client" else "root" if primary_role == "root" else "route" if primary_role == "route"

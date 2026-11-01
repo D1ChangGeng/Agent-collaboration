@@ -36,7 +36,7 @@ Use `next_cursor` for the next page and `resume_cursor` for later arrivals.
 Changing a history query's filters resets its cursor. Authority commit order is
 not an assertion about cross-machine clocks or Agent work order.
 
-This body presentation is catalog `acs-p2-mcp-tool-contract/11`, read input
+This body presentation is catalog `acs-p2-mcp-tool-contract/12`, read input
 `acs-mcp-read-message/3` and result revision `acs-communication-results/2`.
 Stored Message packets, authors and reply relationships are unchanged. Existing
 clients must use a continuation when `next_offset` is non-null, including zero.
@@ -95,6 +95,40 @@ choice. Configuration returns actual `caller_bindings` for the existing trusted
 stdio/OAuth provisioning mechanism. It does not expose credentials or accept
 model-supplied sender identities. A changed profile requires the trusted caller
 binding to be refreshed; stale bindings are rejected against current configuration.
+
+## First connection and Root management
+
+Call `read_profile` before choosing a Root. `actor.organization.level` describes
+the authenticated Client, Root, Route manager or ordinary Agent binding; the
+legacy `profile` field alone does not identify that management level. The result
+includes authorized bindings and `load_project` actions. A trusted Client needs
+no fixed Slot or Native Session. Loading another context does not change identity.
+
+Project is the Root's communication namespace and isolation key. Root is the
+management responsibility and its context source. The existing storage pairs
+these identities one to one; Agents configure them through one `configure_root`
+operation rather than separate Project creation and admission workflows. A Client
+may establish a Root with a readable `changes.name`, select its `project_id`,
+attach existing current management files, and optionally configure its Root
+manager atomically. Existing IDs, history, Grants and file locations are retained.
+A bound Root manager configures its own Root; creating another Root remains a
+trusted Client operation. `configure_project` remains a hidden compatibility call
+for old current-file callers, not a second normal management entry.
+
+The Root manager creates Routes and configures their managers. A Route manager
+configures ordinary collaborators in its own Scope. Ordinary Agents communicate
+without gaining a management tier. Context includes the actual communication
+address, configured manager and Inbox/history/contact actions. Session discovery
+remains read-only; configuration reports committed settings separately from
+actual Native preparation. Tool discovery and calls use the same management
+eligibility and reject stale, downgraded or revoked caller bindings.
+
+`configure_team.expected_revision` checks the selected Scope's **team_revision**,
+independently of Root and Route revisions. It is optional for partial merging;
+member `if_unchanged` conditions protect observed values. A conflict returns the
+relevant field and corrective guidance; do not blindly replace an old condition
+with the latest version. Root configuration similarly supports partial changes,
+optional revision/old-value conditions and stable request-key retries.
 
 ## Persistence and Native effects
 

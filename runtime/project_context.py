@@ -17,12 +17,8 @@ def context_path(value):
 
 
 class CurrentProjectContext:
-    def _configure_project(self, authority, cursor, project, command, args, _credential):
-        if authority.access_mode != "owner":
-            raise ValueError("current-file project configuration requires the owner service")
-        if args["expected_revision"] != project[2]:
-            raise RevisionConflict(args["project_id"], args["expected_revision"], project[2])
-        changes = args["changes"]
+    @staticmethod
+    def _management_manifest_changes(previous, changes):
         allowed = {
             "management",
             "instruction_paths",
@@ -32,7 +28,7 @@ class CurrentProjectContext:
         }
         if not isinstance(changes, dict) or not changes or set(changes) - allowed:
             raise ValueError("configure the management file location and document paths")
-        manifest = {key: value for key, value in project[3].items() if key in allowed}
+        manifest = {key: value for key, value in previous.items() if key in allowed}
         manifest.update(changes)
         management = manifest.get("management")
         if management is not None and (
@@ -53,6 +49,14 @@ class CurrentProjectContext:
                 or any(not isinstance(value, str) for value in values)
             ):
                 raise ValueError("document paths must be a bounded text list")
+        return manifest
+
+    def _configure_project(self, authority, cursor, project, command, args, _credential):
+        if authority.access_mode != "owner":
+            raise ValueError("current-file project configuration requires the owner service")
+        if args["expected_revision"] != project[2]:
+            raise RevisionConflict(args["project_id"], args["expected_revision"], project[2])
+        manifest = self._management_manifest_changes(project[3], args["changes"])
         cursor.execute(
             "UPDATE collaboration_projects SET context_manifest=%s,revision=revision+1 "
             "WHERE tenant_id=%s AND project_id=%s",

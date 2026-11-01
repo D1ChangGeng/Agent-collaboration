@@ -17,7 +17,24 @@ DEFERRED_TOOLS = frozenset({"create_branch", "commit_changes", "push_changes", "
 def schema(name):
     properties = {"project_id": {"type": "string"}}
     required = ["project_id"]
-    if name == "send_message":
+    if name == "configure_root":
+        required += ["changes"]
+        document_paths = {"type": "array", "items": {"type": "string"}, "maxItems": 32}
+        manager = schema("configure_team")["properties"]["members"]["items"]
+        manager["properties"] = {k: v for k, v in manager["properties"].items()
+                                 if k in {"agent_slot_id", "principal_ref", "display_name", "harness_requirements", "endpoint_id", "if_unchanged"}}
+        manager["required"] = ["agent_slot_id"]
+        properties.update({"client_request_id": {"type": "string"},
+            "expected_revision": {"type": "integer", "minimum": 0},
+            "if_unchanged": {"type": "object"},
+            "changes": {"type": "object", "additionalProperties": False, "properties": {
+                "name": {"type": "string", "minLength": 1, "maxLength": 256}, "root_id": {"type": "string"},
+                "management": {"type": ["object", "null"]},
+                "instruction_paths": document_paths, "knowledge_index_paths": document_paths,
+                "skill_catalog": {"type": ["object", "null"]}, "management_identity": {"type": ["object", "null"]}}},
+            "manager": manager, "prepare_native": {"type": "boolean", "default": True}})
+        properties["if_unchanged"] = {**properties["changes"]}
+    elif name == "send_message":
         required += ["to", "content"]
         properties.update({"to": {"type": "string"}, "content": {"type": "string"},
             "client_request_id": {"type": "string"},
@@ -47,7 +64,8 @@ def schema(name):
     elif name == "configure_team":
         required += ["members"]
         properties.update({"client_request_id": {"type": "string"}, "scope_handle": {"type": "string"},
-            "expected_revision": {"type": "integer"}, "members": {"type": "array", "minItems": 1, "maxItems": 32,
+            "expected_revision": {"type": "integer", "minimum": 0,
+                "description": "Optional team_revision for the selected Scope, independent of Root/Route revisions. Omit for partial merging; use member.if_unchanged for observed-property conflicts."}, "members": {"type": "array", "minItems": 1, "maxItems": 32,
                 "items": {"type": "object", "additionalProperties": False, "required": ["agent_slot_id"],
                     "properties": {"agent_slot_id": {"type": "string"}, "principal_ref": {"type": "string"},
                         "display_name": {"type": "string"}, "role": {"type": "string", "enum": ["root", "route", "engineer", "reviewer", "specialist", "finalizer"]},
@@ -92,6 +110,9 @@ SERVER_INSTRUCTIONS = (
     "Keep project_id and returned opaque handles intact. Reading retains history; only the actual recipient's associated ACS message is a reply."
     " Use list_projects and load_project for missing or stale context. Resource notifications are hints to read Inbox, not proof of model consumption."
     " For a retryable unavailable result, preserve the original client_request_id when retrying a send; an unknown outcome is not an authority rejection."
+    " Start with read_profile to learn your trusted management identity and scope; Profile names alone do not select your role."
+    " A trusted Client can establish/configure a Root with configure_root; project_id identifies that Root's communication namespace."
+    " load_project reads current Root/Route context and does not change your identity or privileges."
 )
 
 
@@ -109,7 +130,8 @@ DESCRIPTIONS = {
     "list_collaborators": "Find authorized contacts and your own stable address. Names and roles help select a "
         "recipient; use collaborator_handle directly as send_message.to. Optional filters narrow visibility.",
     "send_message": "Send natural content from your authenticated identity to a collaborator. Use this tool for "
-        "replies, corrections and handoffs; reply_to names original message handles. Defaults to invoke + async. "
+        "replies, corrections and handoffs; reply_to names original messages from the same peer addressed to you. "
+        "A delegation to another collaborator is a new message; put background context in content, not reply_to. Defaults to invoke + async. "
         "sync waits for the recipient's first explicit reply, including clarification. message_only does not wake "
         "the recipient. Timeout leaves communication intact. Reuse client_request_id for the same send's retry; "
         "intentional identical sends use different IDs.",
@@ -166,16 +188,32 @@ def adopt_catalog(catalog):
         "list_routes": "List registered development Routes with lifecycle, Scope, goal and source-state hints."
     }.items():
         tools[name] = {**tools[name], "description": text, "selection_guidance": text}
+    root_schema = schema("configure_root")
+    root_description = ("Establish, adopt or configure one Root and its communication namespace using the Owner service. "
+        "A trusted Client can establish a new Root; a bound Root Manager configures its existing authorized Root. "
+        "project_id is the namespace key, not a second management lifecycle. On first setup provide changes.name; "
+        "root_id defaults to project_id. Optional manager configures the real Root collaborator through the same operation. "
+        "Native preparation reports actual availability separately; no Client Slot or Session is synthesized.")
+    tools["configure_root"] = {**tools["configure_project"], "title": "Configure Root",
+        "description": root_description, "selection_guidance": root_description,
+        "result_type": "root_configuration", "security_scopes": ["collaborators.manage", "grants.manage"],
+        "input_schema": {"schema_version": "acs-mcp-configure-root/1", "required": root_schema["required"],
+                         "optional": [k for k in root_schema["properties"] if k not in root_schema["required"]],
+                         "json_schema": root_schema}}
     profiles = {name: list(dict.fromkeys([*(tool for tool in items if tool in tools),
                                         *(tool for tool in DESCRIPTIONS if tool != "configure_team")]))
                 for name, items in catalog["profiles"].items()}
+    for name in ("root_manager", "operator"):
+        profiles[name] = list(dict.fromkeys([*profiles[name], "configure_root"]))
     defaults = {key: value for key, value in catalog.get("defaults", {}).items()
                 if key not in {"expect_response", "wait_until"}}
     defaults.update(read_consumes=False, wait_condition="explicit_recipient_reply")
-    groups = {name: [tool for tool in items if tool in tools] for name, items in catalog.get("tool_groups", {}).items()}
+    groups = {name: [tool for tool in items if tool in tools and tool != "configure_project"] for name, items in catalog.get("tool_groups", {}).items()}
+    if "configure_root" not in groups.setdefault("management", []):
+        groups["management"].append("configure_root")
     groups = {name: items for name, items in groups.items() if items}
     grouped = {tool for items in groups.values() for tool in items}
-    groups.setdefault("communication", []).extend(tool for tool in tools if tool not in grouped)
+    groups.setdefault("communication", []).extend(tool for tool in tools if tool not in grouped and tool != "configure_project")
     groups = {name: items for name, items in groups.items() if items}
     result_types = dict(catalog.get("result_types", {}))
     result_types["project_context"] = [field for field in result_types["project_context"] if field != "active_work_summary"]
@@ -185,12 +223,13 @@ def adopt_catalog(catalog):
         "response_observation": ["project_id", "satisfied", "pending", "observations"],
         "message_submission": ["project_id", "message_handle", "response_handle", "from", "to", "native_status"],
         "team_configuration": ["project_id", "configuration_state", "team_revision", "native_sessions"]})
+    result_types["root_configuration"] = ["project_id", "root_handle", "configuration_state", "manager_configuration"]
     used_types = {tool["result_type"] for tool in tools.values()}
     result_types = {kind: fields for kind, fields in result_types.items() if kind in used_types}
-    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/11", "surface_revision": "acs-communication/1",
+    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/12", "surface_revision": "acs-communication/1",
             "defaults": defaults, "receipt_order": ["accepted_by_authority", "target_inbox_committed",
                 "runtime_dispatched", "runtime_acknowledged"], "tools": tools, "profiles": profiles,
-            "advanced_tools": [], "compatibility_aliases": {}, "tool_groups": groups, "result_types": result_types,
+            "advanced_tools": [], "compatibility_aliases": {"configure_project": "configure_root"}, "tool_groups": groups, "result_types": result_types,
             "result_revision": "acs-communication-results/2",
             "agent_organization_model": {"schema_version": "acs-agent-organization/2",
                 "management_levels": ["client", "root", "route"], "ordinary_slot_is_management_level": False},

@@ -336,7 +336,8 @@ def test_owner_only_project_configuration_keeps_shared_profiles_unchanged(projec
     operator_before = list(CATALOG["profiles"]["operator"])
     assert "configure_project" not in project.projects.available_tools(project.credential)
     f = owner(project)
-    assert "configure_project" in f.projects.available_tools(f.credential)
+    assert "configure_root" in f.projects.available_tools(f.credential)
+    assert "configure_project" not in f.projects.available_tools(f.credential)
     assert CATALOG["profiles"]["root_manager"] == root_before
     assert CATALOG["profiles"]["operator"] == operator_before
     f.authority.access_mode = "shared"

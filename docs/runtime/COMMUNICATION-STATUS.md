@@ -4,6 +4,12 @@
 `f6195bf25d7b6a6fb1c2df3c211028787b2eb29f`，并更新至 v2.2.0 的资格范围。
 源码、软件发行版和生产服务是不同状态；旧 Release/Gate 的结论保留原版本范围。
 
+本轮身份与 Root 管理修复候选将目录更新为 12：首次 `read_profile` 明确区分
+Client 与绑定角色，Root 统一配置入口复用现有登记/团队机制，上下文动作、
+工具发现和实际调用共同校验授权。Project 保留通信隔离标识，不增加独立管理
+生命周期。设计与兼容说明见 [Root 管理](ROOT-MANAGEMENT.md)。这段候选说明
+不表示 v2.2.0 生产服务已完成此次更新。
+
 ## 实际可用的主链
 
 普通 A 从通讯录取得 B，发送自然消息；ACS 持久提交并按激活选择通过真实
@@ -25,7 +31,7 @@ Codex Shared 真实双模型和 OS 边界验证。Windows 直连 WSL 测试库�
 两次超时及后续完整负载复测分开保留，详见下方证据。
 
 用法及采用命令见 [COMMUNICATION.md](COMMUNICATION.md)，机器可读接口见
-[工具目录](p2-mcp-tool-contract.json)。当前目录版本为 11，Message 为
+[工具目录](p2-mcp-tool-contract.json)。候选目录版本为 12（v2.2.0 发行目录为 11），Message 为
 `acs-message/1`，Core/Project Schema 为 2。现有旧库需要显式采用；正常启动
 只读校验，不执行迁移。软件包版本为 2.2.0；开发包 v2.33 是文档版本。
 

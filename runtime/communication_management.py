@@ -80,7 +80,10 @@ class CommunicationManagement:
         prior = cursor.fetchone()
         revision, definition = prior if prior else (0, {"members": []})
         if args.get("expected_revision", revision) != revision:
-            raise RevisionConflict(scope, args["expected_revision"], revision)
+            raise RevisionConflict(scope, args["expected_revision"], revision, "expected_revision",
+                "expected_revision checks this Scope's team_revision, independently of Root and Route revisions. "
+                "For a partial update you may omit it and protect observed member properties with if_unchanged; "
+                "do not blindly replace a stale expected revision.")
         updates = args["members"]
         if not isinstance(updates, list) or not 1 <= len(updates) <= 32:
             raise ValueError("provide one to 32 collaborator updates")
@@ -101,7 +104,9 @@ class CommunicationManagement:
             old = members.get(slot, {})
             expected = update.get("if_unchanged", {})
             if not isinstance(expected, dict) or any(old.get(key) != value for key, value in expected.items()):
-                raise RevisionConflict(slot, revision, revision)
+                raise RevisionConflict(slot, revision, revision, "members.if_unchanged",
+                    "A member property changed. Read the current collaborator and reconsider the requested change; "
+                    "do not replace its old-value condition automatically.")
             inferred_profile = {"root": "root_manager", "route": "route_manager", "reviewer": "reviewer"}.get(update.get("role"), "engineer")
             member = {"profile": inferred_profile, "role": "engineer", "harness_requirements": [], **old,
                       **{key: value for key, value in update.items() if key != "if_unchanged"}}
@@ -115,8 +120,9 @@ class CommunicationManagement:
             if self.profile == "route_manager" and not self.context.trusted_client and (
                     member["role"] in {"root", "route"} or member["profile"] in {"root_manager", "route_manager"}):
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
-            if (not old and not self.context.trusted_client and (member["role"] == "root" or member["profile"] == "root_manager")
-                    and member["principal_ref"] != self.context.principal_ref):
+            if (not self.context.trusted_client and (member["role"] == "root" or member["profile"] == "root_manager")
+                    and (member["principal_ref"] != self.context.principal_ref
+                         or self.context.agent_slot_id is not None and slot != self.context.agent_slot_id)):
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
             if old and old["principal_ref"] != member["principal_ref"]:
                 raise ValueError("a stable Slot cannot change author identity")

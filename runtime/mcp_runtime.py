@@ -56,7 +56,7 @@ class McpRuntime:
 
     def input_schema(self, name: str) -> dict[str, Any]:
         from runtime.communication_tools import DESCRIPTIONS, schema
-        if name in DESCRIPTIONS or name == "configure_team":
+        if name in DESCRIPTIONS or name in {"configure_team", "configure_root"}:
             return schema(name)
         from runtime.filesystem_schema import ALL_TOOLS, input_schema
         owner = getattr(getattr(getattr(self.service, "service", None), "authority", None), "access_mode", "shared") == "owner"
@@ -94,6 +94,8 @@ class McpRuntime:
                 if field in {"members", "policies", "budgets", "evidence_dispositions"}:
                     raise ValueError("legacy task input schemas are not supported")
                 properties[field]["items"] = {"type": "string"}
+            if name == "load_project" and field == "include":
+                properties[field]["items"]["enum"] = ["root", "routes", "instructions", "knowledge_indexes", "source_bindings", "policies"]
             if field in {"at_revision", "cursor", "timeout_seconds", "wait_timeout_seconds"} or (owner and field == "deadline"):
                 properties[field]["type"] = [kind, "null"]
             if field == "decision" and name in {"submit_review", "accept_work"}:
@@ -160,8 +162,43 @@ class McpRuntime:
                     raise InvalidToolArgument(field, f"Provide at least {definition['minItems']} entries.")
                 if "maxItems" in definition and len(value) > definition["maxItems"]:
                     raise InvalidToolArgument(field, f"Provide at most {definition['maxItems']} entries.")
+                allowed = definition.get("items", {}).get("enum")
+                if allowed is not None and any(item not in allowed for item in value):
+                    raise InvalidToolArgument(field, "Choose entries from: " + json.dumps(allowed) + ".")
         if len(json.dumps(arguments, allow_nan=False, ensure_ascii=False).encode("utf-8")) > 65536:
             raise InvalidToolArgument("$", "Reduce the tool input to the 65536-byte UTF-8 JSON limit.")
+        if name in {"configure_root", "configure_team"}:
+            self._validate_configuration_value(arguments, schema, "$")
+
+    @classmethod
+    def _validate_configuration_value(cls, value, definition, field):
+        """Enforce the same bounded nested configuration schema we advertise."""
+        kinds = {"string": str, "integer": int, "array": list, "object": dict,
+                 "boolean": bool, "null": type(None)}
+        expected = definition.get("type", [])
+        expected = expected if isinstance(expected, list) else [expected]
+        if expected and type(value) not in [kinds[item] for item in expected]:
+            raise InvalidToolArgument(field, "Use the declared JSON type: " + " or ".join(expected) + ".")
+        if "enum" in definition and value not in definition["enum"]:
+            raise InvalidToolArgument(field, "Choose one of: " + json.dumps(definition["enum"]) + ".")
+        if isinstance(value, dict):
+            properties = definition.get("properties", {})
+            if definition.get("additionalProperties") is False and set(value) - set(properties):
+                raise InvalidToolArgument(field, "Remove properties not listed in this object's input schema.")
+            for key in definition.get("required", []):
+                if key not in value:
+                    raise InvalidToolArgument(key if field == "$" else field + "." + key, "Provide this required property.")
+            for key, item in value.items():
+                if key in properties:
+                    cls._validate_configuration_value(item, properties[key], key if field == "$" else field + "." + key)
+        if isinstance(value, list):
+            if len(value) < definition.get("minItems", 0) or len(value) > definition.get("maxItems", 100):
+                raise InvalidToolArgument(field, "Use the bounded number of entries declared in the input schema.")
+            for item in value:
+                cls._validate_configuration_value(item, definition.get("items", {}), field)
+        if isinstance(value, str) and (len(value) < definition.get("minLength", 0)
+                or "maxLength" in definition and len(value) > definition["maxLength"]):
+            raise InvalidToolArgument(field, "Use the text length declared in the input schema.")
 
     def call(self, name, arguments, *, request_id=None):
         recovery_request_id = None
@@ -175,10 +212,10 @@ class McpRuntime:
             if name not in self.service.IMPLEMENTED:
                 raise ValueError("tool is not implemented")
             self._validate(name, arguments)
-            if name in {"send_message", "configure_team"} and not arguments.get("client_request_id"):
+            if name in {"send_message", "configure_team", "configure_root"} and not arguments.get("client_request_id"):
                 import uuid
                 arguments = {**arguments, "client_request_id": request_id or uuid.uuid4().hex}
-            if name in {"send_message", "configure_team"}:
+            if name in {"send_message", "configure_team", "configure_root"}:
                 recovery_request_id = arguments["client_request_id"]
             state, data, follow_ups = self.service.execute(name, arguments, credential)
             result = {"schema_version": "acs-mcp-result/3",
@@ -211,12 +248,19 @@ class McpRuntime:
             result = self._problem("business_deadline_elapsed")
         except IdentityRejected as error:
             result = self._problem(error.code)
-        except (PermissionError, AuthorizationDenied):
+        except PermissionError:
             result = self._problem("authorization_denied")
+        except AuthorizationDenied as error:
+            result = self._problem("authorization_denied")
+            if error.field and error.guidance:
+                result["data"].update(field=error.field, guidance=error.guidance)
         except IdempotencyConflict:
             result = self._problem("idempotency_conflict")
-        except RevisionConflict:
+        except RevisionConflict as error:
             result = self._problem("revision_conflict")
+            if error.field and error.guidance:
+                result["data"].update(field=error.field, guidance=error.guidance,
+                                      expected_revision=error.expected, current_revision=error.actual)
         except NotFound:
             result = self._problem("not_found")
         except DeliveryRejected as error:
