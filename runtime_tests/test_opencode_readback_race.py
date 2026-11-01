@@ -1,12 +1,31 @@
 """Actual loopback HTTP peer with separately committed message/part fixtures."""
+import os
+import sys
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
 from runtime.codex_driver import DriverRejected, OutcomeUncertain
+from runtime.opencode_http import listener_owner_pids
 from runtime_tests.test_opencode_driver import native as native  # noqa: PLC0414
 from runtime_tests.test_opencode_driver import operation, prompts
 from runtime_tests.test_opencode_driver import profile as profile  # noqa: PLC0414
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="Linux /proc process-exit race")
+def test_foreign_process_exit_during_fd_scan_preserves_actual_listener_owner(native, monkeypatch):
+    native.driver.spawn(operation("listener-owner"))
+    original = Path.iterdir
+    gone = Path("/proc/876543210")
+    def entries(path):
+        if path == Path("/proc"):
+            return iter([gone, Path("/proc") / str(os.getpid())])
+        if path == gone / "fd":
+            raise ProcessLookupError(3, "No such process")
+        return original(path)
+    monkeypatch.setattr(Path, "iterdir", entries)
+    assert listener_owner_pids(native.driver.client.port) == {os.getpid()}
 
 
 def staged_parts(native, monkeypatch, *, empty_reads=2, mutation=None, metadata=None):

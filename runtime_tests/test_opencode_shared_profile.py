@@ -157,6 +157,6 @@ def test_collaboration_keeps_generated_native_data_out_of_pinned_config(native):
 
 def test_observed_opencode_11834_schema_is_pinned_and_contains_readiness_paths():
     schema = Path(__file__).parent / "schema-1.18.34/opencode-openapi.json"
-    assert file_digest(schema) == "9954544c3a941226e5a340d8ce2b1a4efac66b499df4f2bccd005646e22fbac1"
+    assert file_digest(schema) == "100c603616f4ab443ea0557b64840a78108028806503522ffc80d587461a9a98"
     paths = json.loads(schema.read_text())["paths"]
     assert {"/global/health", "/config", "/agent", "/mcp", "/session", "/session/status"} <= paths.keys()

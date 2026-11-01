@@ -144,7 +144,8 @@ def launch_codex(
     wrapper.write_text(
         "import sys\nsys.path.insert(0,"
         + repr(str(ROOT))
-        + ")\nfrom runtime.project_entry import main\n"
+        + ")\nsys.stderr=open(" + repr(str(tmp_path / "a-mcp.stderr.txt")) + ",'a',buffering=1)\n"
+        + "from runtime.project_entry import main\n"
         "raise SystemExit(main("
         + repr(
             [

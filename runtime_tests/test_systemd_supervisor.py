@@ -272,7 +272,10 @@ def test_owner_private_per_run_environment_directory_and_symlink_rejection():
 def test_opencode_owner_private_per_run_environment_directory_is_admitted():
     if not sys.platform.startswith("linux") or os.geteuid() == 0:
         pytest.skip("non-root Linux user manager is required")
-    base = Path(f"/run/user/{os.geteuid()}/acs-p1-opencode")
+    runtime = Path(f"/run/user/{os.geteuid()}")
+    if not runtime.is_dir():
+        pytest.skip("systemd user runtime directory is unavailable")
+    base = runtime / "acs-p1-opencode"
     base.mkdir(mode=0o700, exist_ok=True)
     run_root = base / ("p1-run-" + uuid.uuid4().hex)
     run_root.mkdir(mode=0o700)
@@ -288,10 +291,14 @@ def test_opencode_owner_private_per_run_environment_directory_is_admitted():
         shutil.rmtree(run_root)
 
 
-def test_receiver_owner_private_per_run_environment_directory_is_admitted():
+@pytest.mark.parametrize("harness", ["codex", "opencode"])
+def test_receiver_owner_private_per_run_environment_directory_is_admitted(harness):
     if not sys.platform.startswith("linux") or os.geteuid() == 0:
         pytest.skip("non-root Linux user manager is required")
-    base = Path(f"/run/user/{os.geteuid()}/acs-receiver-codex")
+    runtime = Path(f"/run/user/{os.geteuid()}")
+    if not runtime.is_dir():
+        pytest.skip("systemd user runtime directory is unavailable")
+    base = runtime / ("acs-receiver-" + harness)
     base.mkdir(mode=0o700, exist_ok=True)
     run_root = base / ("receiver-run-" + uuid.uuid4().hex)
     run_root.mkdir(mode=0o700)

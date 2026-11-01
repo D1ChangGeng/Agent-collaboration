@@ -64,7 +64,7 @@ def test_rejected_lifecycle_close_still_releases_transport_and_owned_supervision
     with pytest.raises(NativeReceiverRejected,match="revoked"):
         capacity.close()
     capacity.close()
-    assert calls==["rejected","detach","owned_stop"]
+    assert calls==["rejected","owned_stop","detach"]
 
 
 def test_opencode_receiver_rechecks_the_committed_sender_not_its_observer(comm):

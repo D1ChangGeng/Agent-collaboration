@@ -381,7 +381,7 @@ class ReceiverTransportAuthority:
         if actor.access_mode == "owner":
             actor = copy(actor)
             actor.context = replace(actor.context, principal_ref=command.principal_ref, grant_ref=command.grant_ref)
-        elif cursor is not None:
+        elif cursor is not None and command.payload.get("schema_version") in {"acs-message/1", "acs-notice/1"}:
             # A Shared dispatcher is a technical observer, not the original
             # sender. Recover only from this authority's exact committed row.
             if (command.tenant_id, command.authority_id, command.authority_incarnation) != (

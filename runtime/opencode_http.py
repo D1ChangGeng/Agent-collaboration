@@ -132,11 +132,11 @@ def listener_owner_pids(port):
                 for descriptor in (process / "fd").iterdir():
                     try:
                         target = os.readlink(descriptor)
-                    except (FileNotFoundError, PermissionError):
+                    except (FileNotFoundError, ProcessLookupError, PermissionError):
                         continue
                     if target.startswith("socket:[") and target[8:-1] in inodes:
                         owners.add(int(process.name))
-            except (FileNotFoundError, PermissionError):
+            except (FileNotFoundError, ProcessLookupError, PermissionError):
                 continue
         return owners
     raise HttpRejected("listener ownership is unsupported on this OS")
