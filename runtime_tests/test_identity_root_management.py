@@ -56,6 +56,8 @@ def test_first_client_context_is_explicit_before_selecting_a_project(owner_clien
     assert profile["actor"]["agent_slot_id"] is None
     assert profile["actor"]["native_session_requirement"] == "none"
     assert "configure_root" in {tool["name"] for tool in owner_client.tools_list()["tools"]}
+    assert set(owner_client.service.catalog["result_types"]["profile_snapshot"]) <= set(profile)
+    assert "actor" in owner_client.service.catalog["tools"]["read_profile"]["description"]
 
 
 @pytest.mark.parametrize("role,profile", [("root", "root_manager"), ("route", "route_manager"), ("engineer", "engineer")])

@@ -38,8 +38,8 @@
   "tools": {
     "read_profile": {
       "title": "Read connection profile",
-      "description": "Read trusted subject, tenant, access_mode, client Profile view, connection state and applicable OAuth scope summary. Owner identity remains active until explicit revocation; shared deployments report their configured governance.",
-      "selection_guidance": "Use at the start of a global or web session.",
+      "description": "Read your authenticated actor identity, management level, current Root/Scope bindings and permitted continuation actions. Profile names alone do not determine management identity. A trusted Client needs no fixed Slot or Native Session. Connection state and applicable transport authorization remain separate observations.",
+      "selection_guidance": "Read your authenticated actor identity, management level, current Root/Scope bindings and permitted continuation actions. Profile names alone do not determine management identity. A trusted Client needs no fixed Slot or Native Session. Connection state and applicable transport authorization remain separate observations.",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -1556,10 +1556,15 @@
     ],
     "profile_snapshot": [
       "subject",
-      "tenant",
-      "profiles",
-      "oauth_scopes",
-      "connections"
+      "tenant_id",
+      "profile",
+      "granted_profiles",
+      "authority_id",
+      "authority_incarnation",
+      "domain_schema_version",
+      "connection_state",
+      "actor",
+      "organization_model"
     ],
     "message_snapshot": [
       "project_id",
@@ -1655,13 +1660,19 @@
       "native_status"
     ],
     "project_context": [
-      "project",
+      "project_id",
+      "root_handle",
+      "project_revision",
+      "manifest",
+      "actor_binding",
+      "communication_address",
+      "agent_organization_model",
       "management_root",
       "instructions",
       "routes",
       "knowledge_indexes",
-      "source_bindings",
-      "policies",
+      "skills",
+      "source_guidance",
       "context_completeness",
       "missing_context"
     ],

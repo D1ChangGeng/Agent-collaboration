@@ -183,6 +183,9 @@ def adopt_catalog(catalog):
                                 "destructiveHint": False}
         tools[name] = value
     for name, text in {
+        "read_profile": "Read your authenticated actor identity, management level, current Root/Scope bindings and permitted continuation actions. "
+            "Profile names alone do not determine management identity. A trusted Client needs no fixed Slot or Native Session. "
+            "Connection state and applicable transport authorization remain separate observations.",
         "load_project": "Load authorized Project identity, current management files, Routes and knowledge from the selected machine. "
             "Recorded Source readers require an explicit source and revision; communication history uses list_messages.",
         "list_routes": "List registered development Routes with lifecycle, Scope, goal and source-state hints."
@@ -216,7 +219,11 @@ def adopt_catalog(catalog):
     groups.setdefault("communication", []).extend(tool for tool in tools if tool not in grouped and tool != "configure_project")
     groups = {name: items for name, items in groups.items() if items}
     result_types = dict(catalog.get("result_types", {}))
-    result_types["project_context"] = [field for field in result_types["project_context"] if field != "active_work_summary"]
+    result_types["profile_snapshot"] = ["subject", "tenant_id", "profile", "granted_profiles", "authority_id",
+        "authority_incarnation", "domain_schema_version", "connection_state", "actor", "organization_model"]
+    result_types["project_context"] = ["project_id", "root_handle", "project_revision", "manifest", "actor_binding",
+        "communication_address", "agent_organization_model", "management_root", "instructions", "routes",
+        "knowledge_indexes", "skills", "source_guidance", "context_completeness", "missing_context"]
     result_types["resource_snapshot"] = ["project_id", "handle"]
     result_types.update({"message_list": ["project_id", "items", "next_cursor", "resume_cursor"],
         "message_snapshot": ["project_id", "message_handle", "content", "reply_to", "reply", "next_offset"],
