@@ -142,14 +142,21 @@ class CommunicationManagement:
             owners = cursor.fetchall()
             if any(principal != member["principal_ref"] for principal, _profile in owners):
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
-            if (self.profile == "route_manager" and not self.context.trusted_client
-                    and any(profile in {"root_manager", "route_manager"} for _principal, profile in owners)):
-                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
-            cursor.execute("SELECT principal_ref,grant_ref,scope_id FROM collaboration_team_members "
+            cursor.execute("SELECT principal_ref,grant_ref,scope_id,role,profile FROM collaboration_team_members "
                            "WHERE tenant_id=%s AND project_id=%s AND agent_slot_id=%s",
                            (self.context.tenant_id, project_id, slot))
             configured = cursor.fetchone()
             if configured and (configured[0], configured[2]) != (member["principal_ref"], scope):
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+            existing_manager = (configured[3] in {"root", "route"} or configured[4] in {"root_manager", "route_manager"}) if configured else any(
+                profile in {"root_manager", "route_manager"} for _principal, profile in owners)
+            if self.profile == "route_manager" and not self.context.trusted_client and existing_manager:
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+            existing_root = (configured[3] == "root" or configured[4] == "root_manager") if configured else any(
+                profile == "root_manager" for _principal, profile in owners)
+            if (not self.context.trusted_client and existing_root
+                    and (member["principal_ref"] != self.context.principal_ref
+                         or self.context.agent_slot_id is not None and slot != self.context.agent_slot_id)):
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
             # Reuse an existing membership's real credential binding when adding
             # display metadata to an already configured contact.

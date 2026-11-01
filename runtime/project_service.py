@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, ClassVar
 
 from runtime.agent_organization import organization_model, organization_projection
-from runtime.communication import CommunicationActions
+from runtime.communication import CONTACTS, CommunicationActions
 from runtime.communication_management import CommunicationManagement
 from runtime.communication_tools import adopt_catalog
 from runtime.errors import (
@@ -312,14 +312,19 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
             return self._owner_project_context(authority, cursor, project_id, name, args)
         cursor.execute(
             "SELECT p.scope_id,p.root_id,p.revision,p.context_manifest,m.grant_ref,m.agent_slot_id "
-            "FROM collaboration_projects p JOIN collaboration_memberships m "
+            "FROM collaboration_projects p JOIN " + CONTACTS + " m "
             "USING(tenant_id,project_id) WHERE p.tenant_id=%s AND p.project_id=%s "
-            "AND p.state='active' AND m.principal_ref=%s AND m.profile=%s FOR UPDATE OF p,m",
-            (self.context.tenant_id, project_id, self.context.principal_ref, self.profile),
+            "AND p.state='active' AND m.principal_ref=%s AND m.profile=%s "
+            "AND (%s::text IS NULL OR m.agent_slot_id=%s) FOR UPDATE OF p",
+            (self.context.tenant_id, project_id, self.context.principal_ref, self.profile,
+             self.context.agent_slot_id, self.context.agent_slot_id),
         )
-        row = cursor.fetchone()
-        if row is None:
+        rows = cursor.fetchall()
+        if len(rows) > 1:
+            rows = [row for row in rows if row[4] == self.context.grant_ref]
+        if len(rows) != 1:
             raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+        row = rows[0]
         # Membership selects a scoped descendant of the authenticated Grant;
         # it cannot upgrade a stale credential to a replacement Grant merely
         # because both credentials name the same principal.
@@ -354,10 +359,12 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
     def _owner_project_context(self, authority, cursor, project_id, name, args):
         cursor.execute(
             "SELECT p.scope_id,p.root_id,p.revision,p.context_manifest,m.grant_ref,m.agent_slot_id "
-            "FROM collaboration_projects p LEFT JOIN collaboration_memberships m ON m.tenant_id=p.tenant_id "
-            "AND m.project_id=p.project_id AND m.principal_ref=%s AND m.profile=%s "
+            "FROM collaboration_projects p LEFT JOIN " + CONTACTS + " m ON m.tenant_id=p.tenant_id "
+            "AND m.project_id=p.project_id AND m.principal_ref=%s AND m.profile=%s AND m.grant_ref=%s "
+            "AND (%s::text IS NULL OR m.agent_slot_id=%s) "
             "WHERE p.tenant_id=%s AND p.project_id=%s AND p.state='active' FOR UPDATE OF p",
-            (self.context.principal_ref, self.profile, self.context.tenant_id, project_id),
+            (self.context.principal_ref, self.profile, self.context.grant_ref,
+             self.context.agent_slot_id, self.context.agent_slot_id, self.context.tenant_id, project_id),
         )
         row = cursor.fetchone()
         if row is None:
@@ -380,7 +387,7 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
                      "project_revision": revision} for project_id, root, revision in rows]
         with self.service.authority.transaction() as (authority, connection):
             rows = connection.execute(
-                "SELECT project_id FROM collaboration_memberships WHERE tenant_id=%s "
+                "SELECT DISTINCT project_id FROM " + CONTACTS + " m WHERE tenant_id=%s "
                 "AND principal_ref=%s AND profile=%s ORDER BY project_id",
                 (self.context.tenant_id, self.context.principal_ref, self.profile),
             ).fetchall()
@@ -418,7 +425,7 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
         # its live permission/delegation checks. Calls authorize again.
         with self.service.authority.transaction() as (authority, connection):
             rows = connection.execute(
-                "SELECT project_id FROM collaboration_memberships WHERE tenant_id=%s "
+                "SELECT DISTINCT project_id FROM " + CONTACTS + " m WHERE tenant_id=%s "
                 "AND principal_ref=%s AND profile=%s ORDER BY project_id",
                 (self.context.tenant_id, self.context.principal_ref, self.profile),
             ).fetchall()
@@ -610,6 +617,12 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
                        "AND (%s::text IS NULL OR m.project_id=%s)",
                        (self.context.tenant_id, self.context.principal_ref, self.context.grant_ref, project_id, project_id))
         identities = cursor.fetchall()
+        if not identities and self.service.authority.access_mode == "owner" and self.context.agent_slot_id is not None:
+            cursor.execute("SELECT 1 FROM collaboration_team_members WHERE tenant_id=%s AND principal_ref=%s "
+                           "AND agent_slot_id=%s AND (%s::text IS NULL OR project_id=%s)",
+                           (self.context.tenant_id, self.context.principal_ref, self.context.agent_slot_id, project_id, project_id))
+            if cursor.fetchone() is not None:
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
         if identities and (len(set(identities)) != 1 or identities[0][0] != self.profile
                 or any(value != "active" for value in (identities[0][1], identities[0][3], identities[0][4]))
                 or identities[0][5] is not None
@@ -628,7 +641,7 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
                     "next_actions": actions}
         cursor.execute(
             "SELECT p.scope_id,p.root_id,p.revision,p.context_manifest,m.grant_ref,m.agent_slot_id,p.project_id "
-            "FROM collaboration_memberships m JOIN collaboration_projects p USING(tenant_id,project_id) "
+            "FROM " + CONTACTS + " m JOIN collaboration_projects p USING(tenant_id,project_id) "
             "WHERE m.tenant_id=%s AND m.principal_ref=%s AND m.profile=%s AND m.grant_ref=%s "
             "AND p.state='active' AND (%s::text IS NULL OR m.agent_slot_id=%s) ORDER BY p.project_id",
             (self.context.tenant_id, self.context.principal_ref, self.profile, self.context.grant_ref,

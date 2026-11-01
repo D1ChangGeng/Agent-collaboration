@@ -15,8 +15,8 @@ from runtime_tests.test_communication import comm as comm_fixture
 comm = comm_fixture
 
 
-def actor(comm, context, profile, token):
-    authority = DomainAuthority(comm.dsn, context=context, access_mode="owner")
+def actor(comm, context, profile, token, *, access_mode="owner"):
+    authority = DomainAuthority(comm.dsn, context=context, access_mode=access_mode)
     service = ProjectService(SharedService(authority, LocalCredentialAuthenticator(context)), CATALOG, profile=profile)
     return McpRuntime(service, lambda: token)
 
@@ -143,6 +143,45 @@ def test_bound_root_cannot_establish_a_peer_root(comm, owner_client):
         assert connection.execute("SELECT count(*) FROM collaboration_projects WHERE project_id='root-other'").fetchone() == (0,)
 
 
+def test_root_manager_cannot_demote_an_existing_peer_manager(comm, owner_client):
+    first = member(comm, owner_client, "first-root", "root", "root_manager")
+    member(comm, owner_client, "peer-root", "root", "root_manager")
+    denied = result(first, "configure_team", project_id="project-alpha", client_request_id="demote-peer",
+                    members=[{"agent_slot_id": "peer-root", "role": "engineer", "profile": "engineer"}])
+    assert not denied["ok"] and denied["data"]["code"] == "authorization_denied"
+    with comm.authority._connect() as connection:
+        assert connection.execute("SELECT role,profile FROM collaboration_team_members WHERE agent_slot_id='peer-root'").fetchone() == ("root", "root_manager")
+    accepted(owner_client, "configure_team", project_id="project-alpha", client_request_id="client-demotes-peer",
+             members=[{"agent_slot_id": "peer-root", "role": "engineer", "profile": "engineer"}])
+    accepted(first, "configure_team", project_id="project-alpha", client_request_id="manage-now-ordinary-peer",
+             members=[{"agent_slot_id": "peer-root", "display_name": "Current ordinary Agent"}])
+
+
+@pytest.mark.parametrize("access_mode", ["owner", "shared"])
+def test_same_principal_slots_keep_their_own_first_entry_and_loaded_context(comm, owner_client, access_mode):
+    manager = owner_client if access_mode == "owner" else actor(comm,
+        replace(comm.authority.context, trusted_client=True, agent_slot_id=None), "root_manager",
+        comm.clients["a"].credential_provider(), access_mode="shared")
+    members = [{"agent_slot_id": slot, "principal_ref": "agent:shared-principal", "role": "root"}
+               for slot in ("first-principal-slot", "second-principal-slot")]
+    if access_mode == "shared":
+        for configured_member in members:
+            configured_member["permissions"] = ["profile.root_manager", "projects.read", "context.read", "message.read",
+                "message.send", "collaborators.read", "runtime.read", "collaborators.manage", "grants.manage"]
+    configured = accepted(manager, "configure_team", project_id="project-alpha", client_request_id="same-principal-roots",
+                          prepare_native=False, members=members)
+    for binding in configured["caller_bindings"]:
+        context = replace(comm.authority.context, principal_ref=binding["principal_ref"], grant_ref=binding["grant_ref"],
+                          agent_slot_id=binding["agent_slot_id"], trusted_client=False)
+        child = actor(comm, context, binding["profile"], comm.clients["a"].credential_provider(), access_mode=access_mode)
+        profile = accepted(child, "read_profile")
+        assert profile["actor"]["organization"]["level"] == "root"
+        assert len(profile["actor"]["bindings"]) == 1
+        assert profile["actor"]["bindings"][0]["agent_slot_id"] == binding["agent_slot_id"]
+        pack = accepted(child, "load_project", project_id="project-alpha")
+        assert pack["actor_binding"]["agent_slot_id"] == binding["agent_slot_id"]
+
+
 def test_root_manager_configuration_is_atomic_and_native_state_is_truthful(comm, owner_client):
     configured = accepted(owner_client, "configure_root", project_id="root-with-manager", client_request_id="root-manager-setup",
                           changes={"name": "Managed root"},
@@ -226,6 +265,19 @@ def test_stale_role_session_cannot_keep_discovering_or_using_old_privileges(comm
         manager.service.available_tools(manager.credential_provider())
     assert not result(manager, "configure_root", project_id="project-alpha", client_request_id="stale-manager-write",
                       changes={"name": "Must not write"})["ok"]
+
+
+def test_legacy_owner_slot_cannot_keep_a_replaced_binding_after_adoption(comm, owner_client):
+    legacy = actor(comm, replace(comm.authority.context, agent_slot_id="local-slot", trusted_client=False),
+                   "root_manager", comm.clients["a"].credential_provider())
+    assert accepted(legacy, "read_profile")["actor"]["organization"]["level"] == "root"
+    accepted(owner_client, "configure_team", project_id="project-alpha", client_request_id="adopt-legacy-as-engineer",
+             members=[{"agent_slot_id": "local-slot", "principal_ref": comm.authority.context.principal_ref,
+                       "role": "engineer", "profile": "engineer"}])
+    assert result(legacy, "read_profile")["data"]["code"] == "authorization_denied"
+    from runtime.errors import AuthorizationDenied
+    with pytest.raises(AuthorizationDenied):
+        legacy.service.available_tools(legacy.credential_provider())
 
 
 @pytest.mark.parametrize("boundary", ["grant", "slot", "scope"])
