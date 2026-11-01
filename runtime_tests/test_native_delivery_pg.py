@@ -29,6 +29,11 @@ def native_setup(request, tmp_path, monkeypatch):
     arguments = (root, selected, monkeypatch) if request.param == "codex" else (root, selected)
     fixture = module.native.__wrapped__(*arguments)
     native = next(fixture)
+    if request.param == "codex":
+        # The unit peer's 200 ms fault-injection budget also covers the real
+        # pre-send PostgreSQL marker transaction here. Allow that integration
+        # I/O while retaining every marker, revocation and replay assertion.
+        native.driver.rpc_timeout = 5
     try:
         native.driver.spawn(module.operation("native-pg-fixture-spawn"))
         yield native

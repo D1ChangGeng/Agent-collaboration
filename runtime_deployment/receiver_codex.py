@@ -23,6 +23,7 @@ from runtime.receiver_config import receiver_clock_identity
 from runtime.receiver_delivery import ReceiverNativeDeliveryBridge
 from runtime.receiver_entry import DeploymentCallbacks
 from runtime.supervisor import WindowsJobSupervisor
+from runtime.surface_config import PrivateReference
 from runtime.systemd_supervisor import SystemdUserSupervisor
 from runtime_deployment.receiver_authority import (
     NativeReceiverAuthority,
@@ -42,6 +43,7 @@ FIELDS = {
     "artifact_root", "collector_max_reads", "collector_interval_seconds",
 }
 RETIRED_FIELDS = {"artifact_root", "collector_max_reads", "collector_interval_seconds"}
+SHARED_OPTIONAL = {"environment_refs", "collaboration_server"}
 
 
 CodexReceiverRejected = NativeReceiverRejected
@@ -89,10 +91,10 @@ def native_settings(settings):
     current["codex_version"] = observed.stdout.strip().removeprefix("codex-cli ")
     return current
 
-def validate_settings(settings: object, *, execution_mode="restricted") -> dict[str, str]:
+def validate_settings(settings: object, *, execution_mode="restricted") -> dict[str, Any]:
     if execution_mode == "native":
         settings = native_settings(settings)
-    if not isinstance(settings, dict) or not FIELDS-RETIRED_FIELDS <= set(settings) or set(settings)-FIELDS:
+    if not isinstance(settings, dict) or not FIELDS-RETIRED_FIELDS <= set(settings) or set(settings)-FIELDS-SHARED_OPTIONAL:
         raise CodexReceiverRejected("Codex receiver factory settings differ")
     if settings.get("schema_version") != SCHEMA:
         raise CodexReceiverRejected("Codex receiver factory schema differs")
@@ -120,13 +122,14 @@ def validate_settings(settings: object, *, execution_mode="restricted") -> dict[
         if execution_mode == "restricted" and (not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value)):
             raise CodexReceiverRejected(f"Codex receiver digest {name} is invalid")
     if execution_mode == "restricted" and settings["codex_version"] not in {
-        "0.152.1", "0.153.2", "0.153.4", "0.155.0", "0.155.0-alpha.2.6",
+        "0.152.1", "0.153.2", "0.153.4", "0.155.0", "0.155.0-alpha.2.6", "0.163.0",
     }:
         raise CodexReceiverRejected("Codex receiver version has no reviewed Driver profile")
     if execution_mode == "restricted" and (
         settings["codex_version"] == "0.155.0" and settings["permission_profile"] != "achp-engineer"
         or settings["codex_version"] == "0.155.0-alpha.2.6"
         and settings["permission_profile"] != ":workspace"
+        or settings["codex_version"] == "0.163.0" and settings["permission_profile"] != "achp-engineer"
     ):
         raise CodexReceiverRejected("Codex receiver permission profile is not reviewed for version")
     _absolute(settings, "model_catalog")
@@ -149,6 +152,24 @@ def validate_settings(settings: object, *, execution_mode="restricted") -> dict[
         or not 0.1 <= settings.get("collector_interval_seconds", 1.0) <= 30
     ):
         raise CodexReceiverRejected("Codex receiver collector budget is invalid")
+    if execution_mode == "restricted" and settings["codex_version"] == "0.163.0":
+        if os.name != "posix":
+            raise CodexReceiverRejected("Codex 0.163 Shared profile requires qualified Linux supervision")
+        server = settings.get("collaboration_server")
+        if not isinstance(server, str) or not re.fullmatch(r"[a-z][a-z0-9_-]{0,31}", server):
+            raise CodexReceiverRejected("Shared Codex requires a communication MCP server")
+        references = settings.get("environment_refs", {})
+        if not isinstance(references, dict) or len(references) > 16:
+            raise CodexReceiverRejected("Shared environment references are unbounded")
+        for key, reference in references.items():
+            if not isinstance(key, str) or not re.fullmatch(r"ACS_[A-Z0-9_]{1,100}", key):
+                raise CodexReceiverRejected("Shared environment name is outside the explicit ACS namespace")
+            try:
+                PrivateReference.model_validate(reference, strict=True)
+            except ValueError as error:
+                raise CodexReceiverRejected("Shared environment reference is invalid") from error
+    elif set(settings) & SHARED_OPTIONAL:
+        raise CodexReceiverRejected("communication environment fields require the Codex 0.163 Shared profile")
     return dict(settings)
 
 
@@ -156,7 +177,7 @@ class CodexReceiverCapacity(NativeReceiverAuthority):
     def __init__(self, config, deployment_policy_sha256: str, settings: dict[str, Any]):
         self.config = config
         self.settings = validate_settings(settings, execution_mode="native" if getattr(config, "access_mode", "shared") == "owner" else "restricted")
-        if getattr(config, "access_mode", "shared") == "owner":
+        if getattr(config, "access_mode", "shared") == "owner" or self.settings["codex_version"] == "0.163.0":
             instance = uuid.uuid4().hex
             for prefix in ("spawn", "close"):
                 for kind in ("operation", "command", "message"):
@@ -200,6 +221,9 @@ class CodexReceiverCapacity(NativeReceiverAuthority):
             environment = dict(os.environ)
             environment["PATH"] = str(Path(self.settings["executable"]).parent) + os.pathsep + environment.get("PATH", "")
             environment["CODEX_HOME"] = self.settings["codex_home"]
+        elif self.settings["codex_version"] == "0.163.0":
+            for key, reference in self.settings.get("environment_refs", {}).items():
+                environment[key] = PrivateReference.model_validate(reference, strict=True).resolve()
         profile = LaunchProfile(
             self.settings["executable"], self.settings["executable_sha256"],
             self.settings["codex_version"], self.settings["protocol_schema"],
@@ -209,6 +233,7 @@ class CodexReceiverCapacity(NativeReceiverAuthority):
             environment,
             self.settings.get("model"),
             **({"execution_mode": "native"} if getattr(config, "access_mode", "shared") == "owner" else {}),
+            collaboration_server=self.settings.get("collaboration_server"),
         )
         self.supervisor = (
             WindowsJobSupervisor(max_processes=None if getattr(config, "access_mode", "shared") == "owner" else 64, termination_timeout=10)

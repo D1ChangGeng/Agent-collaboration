@@ -77,6 +77,9 @@ def contract_view(catalog):
 def read_mcp_status(capacity):
     """External test oracle; the production Driver's route allowlist stays intact."""
     client = capacity.driver.client
+    if hasattr(capacity.driver, "thread_id"):
+        return {"codex": client.request("mcpServerStatus/list", {
+            "threadId": capacity.driver.thread_id, "serverName": "acs", "detail": "toolsAndAuthOnly"}, timeout=60)}
     capacity._current(capacity._lifecycle_operation("spawn"), capacity.binding)
     assert client.verify_owner(), "test Native listener ownership changed"
     connection = http.client.HTTPConnection("127.0.0.1", client.port, timeout=60)
@@ -98,7 +101,7 @@ def read_mcp_status(capacity):
 
 def ownership_snapshot(capacity):
     proof = capacity.supervisor.inspect(capacity.driver.owned)
-    owners = sorted(listener_owner_pids(capacity.driver.client.port))
+    owners = sorted(listener_owner_pids(capacity.driver.client.port)) if hasattr(capacity.driver.client, "port") else []
     processes = []
     for pid in set(owners) | set(proof.get("remaining_pids", [])):
         try:
@@ -391,7 +394,13 @@ def main():
                     "node_journal": str(state / "node.sqlite"),
                     "runtime_id": binding.registration.runtime_id,
                 }
-                if shared:
+                codex = request.get("harness") == "codex"
+                factory_reference = "runtime_deployment.receiver_codex:callbacks" if codex else "runtime_deployment.receiver_opencode:callbacks"
+                if codex:
+                    from runtime_tests.fixtures.codex_shared_profile import configure
+                    assert shared and not installed_launcher
+                    settings = configure(state, work, wrapper, request, settings)
+                elif shared:
                     from runtime.opencode_driver import COLLABORATION_TOOLS, file_digest
                     permissions = {"*": "deny", "task": "deny", **{"acs_" + tool: "allow" for tool in COLLABORATION_TOOLS}}
                     native["permission"] = permissions
@@ -425,7 +434,7 @@ def main():
                             installed_launcher,
                             "--factory-binding",
                             "--factory-reference",
-                            "runtime_deployment.receiver_opencode:callbacks",
+                            factory_reference,
                             "--factory-settings",
                             str(settings_path),
                         ],
@@ -436,7 +445,7 @@ def main():
                     factory = FactoryBinding.model_validate_json(bound.stdout, strict=True)
                 else:
                     factory, _, _, _ = inspect_factory(
-                        "runtime_deployment.receiver_opencode:callbacks", settings=settings
+                        factory_reference, settings=settings
                     )
                 process = bind_process_config(config, factory, node_key)
                 write_private(state / "process.json", dump_process_config(process))
@@ -575,6 +584,9 @@ def main():
                         "startup_seconds": time.monotonic() - started_at,
                     }
                 )
+            elif action == "sandbox_probe":
+                from runtime_tests.fixtures.codex_shared_profile import sandbox_probe
+                emit({"state": "sandbox_probed", "evidence": sandbox_probe(callbacks.native_invoke.__self__, state)})
             elif action == "observe":
                 if installed_launcher:
                     emit(
@@ -593,7 +605,7 @@ def main():
                     events = [
                         json.loads(row[0])
                         for row in connection.execute(
-                            "SELECT body FROM driver_events WHERE kind='http_dispatch'"
+                            "SELECT body FROM driver_events WHERE kind IN ('http_dispatch','rpc_dispatch')"
                         )
                     ]
                 with sqlite3.connect(state / "receiver.sqlite") as connection:
@@ -608,7 +620,7 @@ def main():
                         "requests": requests,
                         "driver_requests": events,
                         "collector": hasattr(capacity, "collector"),
-                        "event_subscription": capacity.driver._event_thread is not None,
+                        "event_subscription": getattr(capacity.driver, "_event_thread", None) is not None,
                         "dropped_ack_purposes": server.test_dropped_acks,
                         **({"owned_snapshot": capacity.supervisor.inspect(capacity.driver.owned)}
                            if process.runtime.access_mode == "shared" else {}),

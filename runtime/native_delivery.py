@@ -222,8 +222,8 @@ class NativeDeliveryAdapter:
             until = monotonic_now() + min(lease_seconds, operation.remaining(self.clock))
         try:
             view = (self.driver.inspect_readiness(operation, before_status=before_status)
-                    if not native and isinstance(self.driver, OpenCodeNativeDriver) else self.driver.inspect(operation))
-            if self.clock is not None and not native and isinstance(self.driver, OpenCodeNativeDriver):
+                    if not native else self.driver.inspect(operation))
+            if self.clock is not None and not native:
                 # This trusted Driver receipt is already stamped from Authority
                 # time after the actual status response. Reuse that observation
                 # instead of spending the short idle lease on duplicate probes.

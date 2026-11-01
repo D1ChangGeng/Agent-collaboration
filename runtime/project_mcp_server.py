@@ -23,6 +23,7 @@ from mcp_types import (
 )
 
 from runtime.communication_tools import SERVER_INSTRUCTIONS
+from runtime.postgres_connection import connect
 
 INBOX = re.compile(r"acs://projects/([A-Za-z0-9][A-Za-z0-9._-]{0,127})/inbox\Z")
 
@@ -61,7 +62,7 @@ class _TrackedBus(InMemorySubscriptionBus):
 
 
 def _listener(dsn):
-    connection = psycopg.connect(dsn, autocommit=True)
+    connection = connect(dsn, autocommit=True)
     try:
         connection.execute("LISTEN acs_domain_change")
         connection.execute("LISTEN acs_receipt_change")

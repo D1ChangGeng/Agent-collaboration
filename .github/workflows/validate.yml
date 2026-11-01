@@ -60,10 +60,12 @@ jobs:
           runtime_tests/test_domain_ledger.py
           runtime_tests/test_lease_authority.py
           runtime_tests/test_receiver_domain_delivery.py
+          runtime_tests/test_native_delivery_pg.py
           runtime_tests/test_domain_evidence.py
           runtime_tests/test_recovery_postgres.py
           runtime_tests/test_communication.py
           runtime_tests/test_communication_concurrency.py
+          runtime_tests/test_communication_postgres_recovery.py
           runtime_tests/test_receiver_committed_actor.py
           runtime_tests/test_receiver_opencode_factory.py
           runtime_tests/test_shared_endpoint_lifetime.py
@@ -99,4 +101,6 @@ jobs:
       - name: Build Runtime wheel
         run: uv build --wheel
       - name: Assemble candidate distribution
-        run: python scripts/build_release.py --output dist/release --version 2.0.3
+        run: >-
+          python scripts/build_release.py --output dist/release
+          --version "$(uv run --frozen python -c 'import importlib.metadata; print(importlib.metadata.version("agent-collaboration-runtime"))')"

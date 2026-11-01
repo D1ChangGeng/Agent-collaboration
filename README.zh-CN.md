@@ -9,7 +9,7 @@ ACS 通过稳定联系人、自然消息、主动关联回复和持久 Inbox 连
 项目保有 **Management Root** 和 **Route**；Codex、OpenCode 自主安排工作与
 评审。ACS 验证参与者身份、保留通信，并按请求发起受权 Native 输入。
 
-ACS v2.1.0 提供[通信合同](docs/runtime/COMMUNICATION.md)中的核心能力，
+ACS v2.2.0 提供[通信合同](docs/runtime/COMMUNICATION.md)中的核心能力，
 实际环境和限制见[实现与支持记录](docs/runtime/COMMUNICATION-STATUS.md)。
 现有 v1.x 安装需要[引导升级](docs/RELEASE-NOTES-v2.0.0.md)，自动更新不会
 激活这个主版本。

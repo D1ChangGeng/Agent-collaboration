@@ -83,6 +83,22 @@ def test_codex_receiver_settings_are_exact_and_bounded(tmp_path):
             validate_settings(changed)
 
 
+@pytest.mark.skipif(os.name != "posix", reason="Codex 0.163 Shared receiver is qualified on Linux")
+@pytest.mark.parametrize("references", [
+    {"PATH": {"kind": "environment", "name": "UNTRUSTED_PATH"}},
+    {"ACS_KEY": {"kind": "literal", "value": "not-a-private-reference"}},
+    {str(i): {} for i in range(17)},
+])
+def test_codex_shared_rejects_invalid_environment_before_launch(tmp_path, references):
+    value = settings(tmp_path)
+    catalog = Path(value["model_catalog"])
+    catalog.write_text("{}")
+    value.update(codex_version="0.163.0", collaboration_server="acs", environment_refs=references,
+                 model_catalog_sha256=hashlib.sha256(catalog.read_bytes()).hexdigest())
+    with pytest.raises(CodexReceiverRejected):
+        validate_settings(value)
+
+
 def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_path, monkeypatch):
     value = settings(tmp_path)
     catalog = Path(value["model_catalog"])
@@ -105,7 +121,7 @@ def test_codex_receiver_capacity_uses_pinned_executable_directory_for_path(tmp_p
     observed = {}
 
     class Profile:
-        def __init__(self, *args):
+        def __init__(self, *args, **kwargs):
             observed["environment"] = args[9]
 
     class StopConstruction(Exception):

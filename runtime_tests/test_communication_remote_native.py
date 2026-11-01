@@ -225,6 +225,8 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
     local_wsl = os.getenv("ACS_NATIVE_LOCAL_WSL")
     installed_launcher = os.getenv("ACS_INSTALLED_NATIVE_RECEIVER")
     shared = os.getenv("ACS_NATIVE_SHARED_PROFILE") == "1"
+    codex_shared = os.getenv("ACS_NATIVE_RECEIVER_HARNESS") == "codex"
+    assert not codex_shared or shared
     mode = "shared" if shared else "owner"
     if shared:
         original_failure = comm.dispatcher._failure
@@ -239,7 +241,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         return value.model_copy(update={"deadline": datetime.now(UTC) + timedelta(minutes=5)}) if shared else value
     host = "wsl:" + local_wsl if local_wsl else os.environ["ACS_REMOTE_SSH_HOST"]
     remote_python = os.environ["ACS_REMOTE_PYTHON"]
-    remote_binary = os.environ["ACS_REMOTE_OPENCODE"]
+    remote_binary = os.environ["ACS_REMOTE_CODEX" if codex_shared else "ACS_REMOTE_OPENCODE"]
     assert host and not host.startswith("-")
     assert remote_python.startswith("/tmp/") and remote_binary.startswith("/")
     ssh = ["ssh", "-T", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10"]
@@ -262,6 +264,8 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         if path.suffix in {".py", ".sql"}
     ]
     files += [ROOT / "runtime_tests/fixtures/remote_native_receiver.py", Path(__file__)]
+    if codex_shared:
+        files.append(ROOT / "runtime_tests/fixtures/codex_shared_profile.py")
     if os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1":
         files.append(ROOT / "runtime_tests/test_communication_ack_loss_native.py")
     manifest = {
@@ -542,7 +546,9 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 "lose_dispatch_and_readback_acks": os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1",
                 "provider_responses": os.getenv("ACS_NATIVE_PROVIDER_RESPONSES") == "1",
                 **({"shared_profile": True, "shared_run": uuid.uuid4().hex,
-                    "shared_schema": json.loads(Path(os.environ["ACS_SHARED_OPENCODE_SCHEMA"]).read_text())} if shared else {}),
+                    **({"harness": "codex", "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+                        "source_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip()}
+                       if codex_shared else {"shared_schema": json.loads(Path(os.environ["ACS_SHARED_OPENCODE_SCHEMA"]).read_text())})} if shared else {}),
                 **(
                     {
                         "installed_launcher": installed_launcher,
@@ -591,9 +597,14 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         )
         started = rpc({"action": "start"}, timeout=120)
         facts["native_start"] = started
-        assert started["native"]["session_ref"].startswith("ses_")
+        assert bool(started["native"]["session_ref"]) if codex_shared else started["native"]["session_ref"].startswith("ses_")
         if sender_mode != "lifecycle":
-            assert started["mcp"].get("acs", {}).get("status") == "connected", started["mcp"]
+            if codex_shared:
+                servers = started["mcp"]["codex"]["data"]
+                assert len(servers) == 1 and servers[0]["name"] == "acs" and not servers[0].get("toolsError"), started["mcp"]
+                facts["sandbox"] = rpc({"action": "sandbox_probe"})["evidence"]
+            else:
+                assert started["mcp"].get("acs", {}).get("status") == "connected", started["mcp"]
         monkeypatch.setenv("ACS_TEST_AUTHORITY_SIGNING_KEY", authority_key.encode().hex())
         endpoint = ConfiguredRemoteEndpoint(
             comm.authority,
@@ -786,7 +797,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         prompts = [
             row
             for row in observation["driver_requests"]
-            if row.get("method") == "POST" and "prompt_async" in row.get("path", "")
+            if row.get("method") == "turn/start" or row.get("method") == "POST" and "prompt_async" in row.get("path", "")
         ]
         assert len(prompts) == (0 if sender_mode == "lifecycle" else 1)
         if installed_launcher:

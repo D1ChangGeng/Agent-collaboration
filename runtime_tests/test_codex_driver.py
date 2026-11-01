@@ -622,6 +622,27 @@ def test_spawn_records_intent_and_effective_profile(native):
     assert native.authorizations
 
 
+def test_codex_readiness_stamps_after_history_and_checks_final_status(native, monkeypatch):
+    driver = native.driver
+    driver.spawn(operation("readiness-stamp-spawn"))
+    order = []
+    original = driver._rpc
+
+    def traced(*args, **kwargs):
+        order.append(args[1])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(driver, "_rpc", traced)
+    def before_status():
+        order.append("stamp")
+        native.state["turns"] = [{"id": "new-turn", "status": "inProgress", "items": []}]
+
+    view = driver.inspect_readiness(operation("readiness-stamp"), before_status=before_status)
+    assert order == ["thread/read", "thread/turns/list", "thread/read", "stamp"]
+    assert view["thread"]["status"]["type"] == "active"
+    assert native.state["turn_calls"] == 0
+
+
 def test_exact_invoke_replay_resume_and_cancel(native):
     d = native.driver
     d.spawn(operation("spawn"))

@@ -1,6 +1,11 @@
 """Public communication schemas, shared by discovery and calls."""
 from __future__ import annotations
 
+NATIVE_COLLABORATION_TOOLS = (
+    "read_profile", "list_projects", "load_project", "list_collaborators",
+    "check_inbox", "list_messages", "read_message", "send_message", "wait_for_response",
+)
+
 TASK_TOOLS = frozenset({
     "list_work", "create_work", "revise_work", "handoff_work", "acknowledge_handoff", "withdraw_handoff",
     "request_review", "submit_review", "accept_work", "cancel_work", "stop_attempt", "list_evidence", "list_reviews",
@@ -86,6 +91,7 @@ SERVER_INSTRUCTIONS = (
     "Native sub-agent messaging uses its own agent paths and is a separate channel. "
     "Keep project_id and returned opaque handles intact. Reading retains history; only the actual recipient's associated ACS message is a reply."
     " Use list_projects and load_project for missing or stale context. Resource notifications are hints to read Inbox, not proof of model consumption."
+    " For a retryable unavailable result, preserve the original client_request_id when retrying a send; an unknown outcome is not an authority rejection."
 )
 
 
