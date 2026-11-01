@@ -9,6 +9,8 @@ Client 与绑定角色，Root 统一配置入口复用现有登记/团队机制�
 工具发现和实际调用共同校验授权。Project 保留通信隔离标识，不增加独立管理
 生命周期。设计与兼容说明见 [Root 管理](ROOT-MANAGEMENT.md)。这段候选说明
 不表示 v2.2.0 生产服务已完成此次更新。
+本候选的 [身份与 Root 验收](../../integration_evidence/acs-identity-root-20261102/REPORT.md)
+记录四个独立模型、三次原 Session 续接、真实 stdio/HTTP 与受限权限正反例。
 
 ## 实际可用的主链
 
