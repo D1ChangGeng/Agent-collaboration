@@ -99,4 +99,6 @@ jobs:
       - name: Build Runtime wheel
         run: uv build --wheel
       - name: Assemble candidate distribution
-        run: python scripts/build_release.py --output dist/release --version 2.0.3
+        run: >-
+          python scripts/build_release.py --output dist/release
+          --version "$(uv run --frozen python -c 'import importlib.metadata; print(importlib.metadata.version("agent-collaboration-runtime"))')"

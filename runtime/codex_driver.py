@@ -30,6 +30,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
+from runtime.communication_tools import NATIVE_COLLABORATION_TOOLS
 from runtime.driver_claim import ClaimRejected, KernelClaim
 
 if __package__:
@@ -152,6 +153,7 @@ class LaunchProfile:
     model: str | None = None
     execution_mode: str = "restricted"
     startup_overrides: tuple[str, ...] = ()
+    collaboration_server: str | None = None
 
     def validate(self):
         if len(self.startup_overrides) > 32:
@@ -167,7 +169,7 @@ class LaunchProfile:
         if self.execution_mode not in {"native", "restricted"}:
             raise DriverRejected("unsupported execution environment")
         if self.execution_mode == "restricted" and self.version not in {
-            "0.152.1", "0.153.2", "0.153.4", "0.155.0", "0.155.0-alpha.2.6",
+            "0.152.1", "0.153.2", "0.153.4", "0.155.0", "0.155.0-alpha.2.6", "0.163.0",
         }:
             raise DriverRejected("version has no reviewed reference profile")
         for path in (self.executable, self.cwd, self.codex_home, self.schema_path):
@@ -197,6 +199,29 @@ class LaunchProfile:
             )
         if "CODEX_HOME" in self.environment and self.environment["CODEX_HOME"] != self.codex_home:
             raise DriverRejected("environment CODEX_HOME conflicts with profile")
+        if self.execution_mode == "restricted" and self.version == "0.163.0":
+            expected = {":minimal": "read", self.cwd: "read", self.executable: "read"}
+            permission = config.get("permissions", {}).get(self.permission_profile, {})
+            disabled = ("multi_agent", "multi_agent_v2", "shell_tool", "request_permissions_tool", "apps", "plugins")
+            if (self.permission_profile != "achp-engineer" or permission.get("filesystem") != expected
+                    or permission.get("network") != {"enabled": False}
+                    or set(permission) - {"filesystem", "network"}
+                    or any(config.get("features", {}).get(name) is not False for name in disabled)
+                    or self.startup_overrides
+                    or any(k in config for k in ("sandbox_mode", "sandbox_workspace_write"))):
+                raise DriverRejected("Codex communication profile requires exact read-only permissions and disabled tools")
+            for key in self.environment:
+                if "proxy" in key.lower() or key in {"LD_PRELOAD", "LD_LIBRARY_PATH", "NODE_OPTIONS", "BUN_OPTIONS"}:
+                    raise DriverRejected("restricted environment contains an unreviewed runtime override")
+            if self.collaboration_server is not None:
+                servers = config.get("mcp_servers", {})
+                entry = servers.get(self.collaboration_server, {})
+                if (not re.fullmatch(r"[a-z][a-z0-9_-]{0,31}", self.collaboration_server)
+                        or set(servers) != {self.collaboration_server}
+                        or not Path(entry.get("command", "")).is_absolute()
+                        or entry.get("enabled_tools") != list(NATIVE_COLLABORATION_TOOLS)
+                        or entry.get("required") is not True):
+                    raise DriverRejected("restricted Codex requires one exact communication MCP entry")
         return self
 
     def binding(self):
@@ -625,7 +650,9 @@ class CodexAppServerDriver:
         states = {}
         cursor = None
         for _ in range(20):
-            params = {"threadId": self.thread_id, "limit": 100}
+            params = {"limit": 100}
+            if self.profile.version != "0.163.0":
+                params["threadId"] = self.thread_id
             if cursor is not None:
                 params["cursor"] = cursor
             page = self._rpc(operation, "experimentalFeature/list", params)
@@ -635,8 +662,29 @@ class CodexAppServerDriver:
                 break
         else:
             raise DriverRejected("feature pagination bound exceeded")
-        if any(states.get(name) is not False for name in ("multi_agent", "multi_agent_v2")):
+        disabled = (("multi_agent", "multi_agent_v2", "shell_tool", "request_permissions_tool", "apps", "plugins")
+                    if self.profile.version == "0.163.0" else ("multi_agent", "multi_agent_v2"))
+        if any(states.get(name) is not False for name in disabled):
             raise DriverRejected("native delegation disablement was not positively observed")
+        if self.profile.version == "0.163.0" and response.get("sandbox") != {"type": "readOnly", "networkAccess": False}:
+            raise DriverRejected("native read-only/network policy was not positively observed")
+        if self.profile.version == "0.163.0":
+            profiles = self._rpc(operation, "permissionProfile/list", {"cwd": self.profile.cwd, "limit": 100})
+            matches = [row for row in profiles.get("data", []) if row.get("id") == self.profile.permission_profile]
+            if len(matches) != 1 or matches[0].get("allowed") is not True:
+                raise DriverRejected("named native permission profile is not allowed")
+            if self.profile.collaboration_server is not None:
+                servers = self._rpc(operation, "mcpServerStatus/list", {"threadId": self.thread_id,
+                    "serverName": self.profile.collaboration_server, "detail": "toolsAndAuthOnly", "limit": 100})
+                matches = [row for row in servers.get("data", []) if row.get("name") == self.profile.collaboration_server]
+                # Shared exposes only the current project; list_projects is an
+                # Owner discovery capability, not a required Shared tool.
+                required = set(NATIVE_COLLABORATION_TOOLS) - {"list_projects"}
+                if (len(matches) != 1 or matches[0].get("toolsError")
+                        or matches[0].get("runtimeStatus") != "connected"
+                        or not required <= set(matches[0].get("tools", {}))
+                        or set(matches[0].get("tools", {})) - set(NATIVE_COLLABORATION_TOOLS)):
+                    raise DriverRejected("native communication MCP tools were not positively observed")
 
     def spawn(self, operation):
         def perform():
@@ -701,6 +749,8 @@ class CodexAppServerDriver:
             params = {"cwd": self.profile.cwd, "ephemeral": False}
             if self.profile.execution_mode == "restricted":
                 params["approvalPolicy"] = "never"
+                if self.profile.version == "0.163.0":
+                    params["permissions"] = self.profile.permission_profile
             else:
                 selected_config = Path(self.profile.codex_home) / "config.toml"
                 chosen = tomllib.loads(selected_config.read_text()) if selected_config.exists() else {}
@@ -886,6 +936,21 @@ class CodexAppServerDriver:
                     "no positively bound native thread; Node must inspect owned process"
                 )
             return self._inspect(operation)
+
+    def inspect_readiness(self, operation, *, before_status):
+        """Stamp a short idle lease at the final status read, after history I/O."""
+        with self._lock:
+            view = self.inspect(operation)
+            response = self._rpc(operation, "thread/read", {
+                "threadId": self.thread_id, "includeTurns": False,
+            }, on_dispatch=before_status)
+            current = self._native_thread(response)
+            if (current.get("id"), current.get("sessionId")) != (self.thread_id, self.session_id):
+                raise DriverRejected("readiness status changed native identity")
+            view["thread"] = current
+            if self.clock is not None:
+                view["observed_at"] = self.clock.observation_time().isoformat()
+            return view
 
     @staticmethod
     def _matching_turns(view, message_id, text):

@@ -51,10 +51,8 @@ SESSION_RULES = [
     {"permission": "*", "pattern": "*", "action": "deny"},
     {"permission": "task", "pattern": "*", "action": "deny"},
 ]
-COLLABORATION_TOOLS = (
-    "read_profile", "list_projects", "load_project", "list_collaborators",
-    "check_inbox", "list_messages", "read_message", "send_message", "wait_for_response",
-)
+from runtime.communication_tools import NATIVE_COLLABORATION_TOOLS as COLLABORATION_TOOLS
+
 NATIVE_GITIGNORE = b"node_modules\npackage.json\npackage-lock.json\nbun.lock\n.gitignore"
 
 

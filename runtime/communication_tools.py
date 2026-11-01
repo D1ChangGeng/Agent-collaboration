@@ -1,6 +1,11 @@
 """Public communication schemas, shared by discovery and calls."""
 from __future__ import annotations
 
+NATIVE_COLLABORATION_TOOLS = (
+    "read_profile", "list_projects", "load_project", "list_collaborators",
+    "check_inbox", "list_messages", "read_message", "send_message", "wait_for_response",
+)
+
 TASK_TOOLS = frozenset({
     "list_work", "create_work", "revise_work", "handoff_work", "acknowledge_handoff", "withdraw_handoff",
     "request_review", "submit_review", "accept_work", "cancel_work", "stop_attempt", "list_evidence", "list_reviews",

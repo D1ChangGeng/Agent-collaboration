@@ -280,3 +280,8 @@ the recipient's own explicit MCP reply; Native terminal output remains separate.
 The exact profile, source hashes, ACK uncertainty, retained failures and
 untested combinations are in that evidence. Operator setup for the restricted
 receiver is described in [Shared OpenCode](SHARED-OPENCODE.md).
+
+The [2.2.0 qualification](../../integration_evidence/acs-codex-shared-20261101/REPORT.md)
+adds physical Linux Codex 0.163.0 Shared Native, actual OS permission probes
+and Windows direct-to-WSL sustained transport readback. See
+[Shared Codex](SHARED-CODEX.md) for its pinned configuration and exact scope.

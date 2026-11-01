@@ -37,13 +37,14 @@ def test_sustained_real_mcp_with_reconnect_and_independent_readback(comm, tmp_pa
                                           extra={"delivery_maintenance": "external"})
         prefix = ["-m", "runtime.project_entry"]
         if os.getenv("ACS_LOAD_DIAGNOSTICS") == "1":
-            diagnostic = tmp_path / "load_diagnostic.py"
+            diagnostic = tmp_path / f"load_diagnostic_{name}.py"
             diagnostic.write_text("import sys,traceback,faulthandler\nsys.path.insert(0," + repr(str(ROOT)) + ")\n"
                 "from runtime.mcp_runtime import McpRuntime\noriginal=McpRuntime._problem\n"
                 "def observed(*a,**kw):\n if sys.exception() is not None: traceback.print_exc(file=sys.stderr)\n return original(*a,**kw)\n"
-                "McpRuntime._problem=staticmethod(observed)\ncall=McpRuntime.call\n"
-                "def traced(self,*a,**kw):\n faulthandler.dump_traceback_later(20,file=sys.stderr)\n"
-                " try: return call(self,*a,**kw)\n finally: faulthandler.cancel_dump_traceback_later()\n"
+                "McpRuntime._problem=staticmethod(observed)\ncall=McpRuntime.call\nimport time,os\n"
+                "faulthandler.dump_traceback_later(15,repeat=True,file=sys.stderr)\n"
+                "def traced(self,*a,**kw):\n print('CALL_BEGIN',os.getpid(),time.monotonic(),a[0],kw.get('request_id'),file=sys.stderr,flush=True)\n"
+                " try: return call(self,*a,**kw)\n finally: print('CALL_END',os.getpid(),time.monotonic(),a[0],kw.get('request_id'),file=sys.stderr,flush=True)\n"
                 "McpRuntime.call=traced\nfrom runtime.project_entry import main\nraise SystemExit(main())\n")
             prefix = [str(diagnostic)]
         return StdioServerParameters(command=sys.executable, args=[*prefix, "--config", str(config),
@@ -51,7 +52,15 @@ def test_sustained_real_mcp_with_reconnect_and_independent_readback(comm, tmp_pa
             env=environment, cwd=str(ROOT))
 
     async def invoke(session, tool, **args):
+        if os.getenv("ACS_LOAD_DIAGNOSTICS") == "1":
+            with (tmp_path / "client-trace.private.jsonl").open("a") as trace:
+                trace.write(json.dumps({"time": time.monotonic(), "event": "begin", "tool": tool,
+                                       "request_key": args.get("client_request_id")}) + "\n")
         result = await session.call_tool(tool, {"project_id": "project-alpha", **args})
+        if os.getenv("ACS_LOAD_DIAGNOSTICS") == "1":
+            with (tmp_path / "client-trace.private.jsonl").open("a") as trace:
+                trace.write(json.dumps({"time": time.monotonic(), "event": "end", "tool": tool,
+                                       "request_key": args.get("client_request_id")}) + "\n")
         assert not result.is_error and result.structured_content["ok"], result.structured_content
         return result.structured_content
 

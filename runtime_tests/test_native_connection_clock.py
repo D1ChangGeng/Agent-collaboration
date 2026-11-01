@@ -373,11 +373,10 @@ def test_readiness_fact_timestamp_accepts_low_uncertainty_consumer(native_clock,
     # transport; the real bound Driver and kernel claim remain in use.
     state = {"thread": {"status": {"type": "idle"}}, "turns": []} if native.driver.harness == "codex" else {"status": {"type": "idle"}}
     monkeypatch.setattr(native.driver, "inspect", lambda operation: state)
-    if native.driver.harness == "opencode":
-        def inspect_readiness(_operation, *, before_status):
-            before_status()
-            return {**state, "observed_at": producer.observation_time().isoformat()}
-        monkeypatch.setattr(native.driver, "inspect_readiness", inspect_readiness)
+    def inspect_readiness(_operation, *, before_status):
+        before_status()
+        return {**state, "observed_at": producer.observation_time().isoformat()}
+    monkeypatch.setattr(native.driver, "inspect_readiness", inspect_readiness)
     observed_before = producer.reading().earliest_utc
     result = adapter.readiness(invocation)
     issued = datetime.fromisoformat(result["observed_at"])

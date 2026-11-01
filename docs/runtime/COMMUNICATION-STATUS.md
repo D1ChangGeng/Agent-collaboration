@@ -1,7 +1,7 @@
 # ACS 通信核心：实现与支持记录
 
 本记录核对开发包 v2.33 的 R01–R34 与当前源码，接续
-`f6195bf25d7b6a6fb1c2df3c211028787b2eb29f`。它记录 v2.0.0 通信核心的实现范围。
+`f6195bf25d7b6a6fb1c2df3c211028787b2eb29f`，并更新至 v2.2.0 的资格范围。
 源码、软件发行版和生产服务是不同状态；旧 Release/Gate 的结论保留原版本范围。
 
 ## 实际可用的主链
@@ -19,13 +19,15 @@
 OpenCode 1.18.34 B，通过真实 `acs-receiver --config`、默认 stdio 维护器和
 双方普通 MCP 收发。一次 Native 发起、两条消息、一条主动回复，ACK 确认送达。
 退出后 Native 自有进程组为空，整个安装清单仍一致且没有额外字节码。
-这是同一 Linux 主机的实际安装验证；Windows localhost→WSL 测试库路径曾
-两次断连，未由此取得该路径的资格，也不改写已有物理跨机方向证据。
+这是同一 Linux 主机的实际安装验证。后续 v2.1.0 增加反向物理 Native、
+OpenCode Shared/Systemd、Linux 持续负载及两端生产升级；v2.2.0 增加
+Codex Shared 真实双模型和 OS 边界验证。Windows 直连 WSL 测试库的历史
+两次超时及后续完整负载复测分开保留，详见下方证据。
 
 用法及采用命令见 [COMMUNICATION.md](COMMUNICATION.md)，机器可读接口见
 [工具目录](p2-mcp-tool-contract.json)。当前目录版本为 11，Message 为
 `acs-message/1`，Core/Project Schema 为 2。现有旧库需要显式采用；正常启动
-只读校验，不执行迁移。候选软件包沿用组件版本 0.1.0；开发包 v2.33 是文档版本。
+只读校验，不执行迁移。软件包版本为 2.2.0；开发包 v2.33 是文档版本。
 
 ## 支持声明和验证层次
 
@@ -33,11 +35,11 @@ OpenCode 1.18.34 B，通过真实 `acs-receiver --config`、默认 stdio 维护�
 |---|---|---|
 | 普通 Slot/Client 的自然收发、权限和回复等待 | 真实 PG、独立 stdio/HTTP 入口、配对反例；独立模型主链 | 同一 Owner 的普通 Profile 不等于 Shared 受限 Harness 已资格化 |
 | Windows Codex Native 接收器 | 正式 Factory、真实 Node/Runtime、Session 准备、自主 MCP 回复、ACK 未知防重 | 精确二进制版本和源清单见对应报告，不推广到任意 Codex 版本 |
-| Windows Codex → 1302-1 OpenCode Native | OpenCode 1.18.34 Owner、正式 Factory/签名协议、默认入口自动投递及自主回信 | 接收服务由隔离测试入口装配；正式服务安装和相反物理 Native 方向未验收 |
+| Windows Codex → 1302-1 OpenCode Native | OpenCode 1.18.34 Owner、正式 Factory/签名协议、默认入口自动投递及自主回信；v2.1.0 另有反向物理方向 | 精确主机、Harness 与访问模式见各次源清单，不外推全部组合 |
 | 重连和进程中断 | 四个实际 MCP 进程、强制结束等待者、PG 原消息/回复、显式请求键重试 | Agent 由脚本驱动，不计双模型故障恢复验收 |
 | 忙时、异常、防重、上行通知和配置竞态 | 真实 PG/SQLite/HTTP，加明确标记的受控 Adapter 与并发时机 | 不据此宣称所有真实 Harness 故障窗口和模型消费均已验证 |
-| Shared 身份与签名接收授权 | 真实 PG 权限、Node 身份、发件人重验、撤销反例 | Shared OpenCode Native 不在本候选资格范围；Systemd 受限 Profile 未资格化 |
-| 安装候选 | wheel 独立安装、106 个源码文件逐字节匹配、46 表；真实 provisioner、console 启动、独立 Codex/OpenCode 回信及退出后完整性 | 同一 Linux Owner 实验；不是 Systemd 服务部署、生产升级或公开发布验收 |
+| Shared 身份与签名接收授权 | 真实 PG 权限、Node 身份、发件人重验、撤销反例；OpenCode 1.18.34 和 Codex 0.163.0 的 Linux Shared/Systemd 独立模型闭环 | 仅所列精确受限配置；Codex 含真实 OS 读写、范围外读取与网络正反例；Windows Shared 需另行资格化 |
+| 安装与生产 | wheel 安装完整性、provisioner、console；v2.1.0 WSL 服务和物理接收节点切换、服务读回、数据保留及公开发行 | 各版本升级状态以对应恢复验收材料为准，不由隔离模型实验代替 |
 | 长正文和资源 | UTF-8 续读、独立回复字节预算、实际单模型续读、四个并发投递上限 | 未建立 p95、吞吐 SLA、大规模持续负载或模型成功率结论 |
 
 ## R01–R34 逐项源码核对
@@ -105,15 +107,21 @@ OpenCode 1.18.34 B，通过真实 `acs-receiver --config`、默认 stdio 维护�
 - [已安装服务主链](../../integration_evidence/acs-installed-native-20261101/REPORT.md)：
   实际 console 启动、独立 Linux Codex/OpenCode、一次默认投递和主动回复，
   退出后安装完整性；篡改拒绝反例与未通过的 Windows localhost 路径单独保留。
+- [v2.1.0 资格](../../integration_evidence/acs-qualification-20261101/REPORT.md)：
+  反向物理 Native、OpenCode Shared、空闲生命周期及 Linux 600 秒负载。
+- [v2.2.0 Codex Shared 与 Windows 负载](../../integration_evidence/acs-codex-shared-20261101/REPORT.md)：
+  真实 Codex Shared 独立模型闭环、OS 边界、精确源清单和持续负载复核。
+- [恢复与生产升级](../../integration_evidence/acs-recovery-20261101/REPORT.md)：
+  生产服务、版本与数据保留的独立验收范围。
 
 各报告保留对应源清单、实际命令、版本、失败和证据层次；后来提交不追改
 早期实验的源版本，也不把全部历史目录合计为当前候选测试数。
 
 ## 仍未由这些证据证明的范围
 
-完整跨 Harness/权限/主机组合矩阵、Shared OpenCode/Systemd 受限 Native、反向
-物理 Native、Windows localhost→WSL 测试库路径、真实模型的所有故障替换窗口、
-更大持续负载、Systemd 服务部署、生产安装切换与发布均未在本记录中宣称通过。
+完整跨 Harness/权限/主机组合矩阵、Windows Shared Native、真实模型的全部
+故障替换窗口、更大规模或长时间运行以及模型吞吐 SLA 仍需单独验证。
+Windows 早期偶发超时的根因归属不由后来通过的复测推定。
 正式生产清理、不可逆迁移、远端环境切换和公开发布遵守各自授权边界。
 
 R01–R34 的代码机制已有对应定位，工程完成判断仍须结合所声明环境的运行证据。
