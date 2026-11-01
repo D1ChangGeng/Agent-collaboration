@@ -10,7 +10,12 @@ from runtime import codex_driver, delivery_node, native_delivery, opencode_drive
 from runtime.codex_driver import AuthorizedOperation, DriverJournal, DriverRejected
 from runtime.connection_clock import ConnectionClock
 from runtime.delivery_models import DeliveryEnvelope, DeliveryPacket
-from runtime.delivery_node import DeliveryBoundaryRejected, LocalNodeEndpoint, invocation_for
+from runtime.delivery_node import (
+    DeliveryBoundaryRejected,
+    InvocationDeferred,
+    LocalNodeEndpoint,
+    invocation_for,
+)
 from runtime.native_delivery import NativeDeliveryAdapter
 from runtime.node import NodeJournal
 from runtime.recovery_models import BoundaryRejected, canonical_digest
@@ -390,3 +395,35 @@ def test_readiness_fact_timestamp_accepts_low_uncertainty_consumer(native_clock,
     assert consumer.fresh(issued, expiry, max_lifetime=2)
     timeline.elapsed += 2.2
     assert not consumer.fresh(issued, expiry, max_lifetime=2)
+
+
+def test_codex_slow_final_status_expires_lease_without_native_dispatch(native_clock, monkeypatch):
+    native, timeline = native_clock
+    if native.driver.harness != "codex":
+        pytest.skip("Codex final status dispatch boundary")
+    driver = native.driver
+    driver.spawn(timeline.operation("slow-status-spawn", seconds=180))
+    original = driver._rpc
+
+    def delayed_status(operation, method, params, **kwargs):
+        if method == "thread/read" and kwargs.get("on_dispatch") is not None:
+            before_status = kwargs["on_dispatch"]
+            def delayed():
+                before_status()
+                timeline.elapsed += 2.1
+            kwargs["on_dispatch"] = delayed
+        return original(operation, method, params, **kwargs)
+
+    monkeypatch.setattr(driver, "_rpc", delayed_status)
+    value = envelope(timeline.clock, driver.identity, seconds=180)
+    value = value.model_copy(update={"packet": value.packet.model_copy(update={"delivery_policy": "queue_until_idle"})})
+    invocation = invocation_for(value, "attempt")
+    adapter = NativeDeliveryAdapter(driver, authorize_invocation=lambda request, identity: AuthorizedOperation(
+        request.invocation_id, request.command_id, request.message_id,
+        request.envelope.grant_ref, request.envelope.packet.deadline,
+    ), clock=timeline.clock)
+    observed = adapter.readiness(invocation)
+    assert observed["activity"] == "idle" and not adapter._readiness_fresh(observed)
+    with pytest.raises(InvocationDeferred):
+        adapter.prepare(invocation)
+    assert native.state["turn_calls"] == 0

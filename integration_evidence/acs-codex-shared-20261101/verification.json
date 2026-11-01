@@ -1,0 +1,295 @@
+{
+  "schema_version": "acs-codex-shared-qualification/1",
+  "product_version": "2.2.0",
+  "implementation_commit": "ae10fac6eb47f8e5616ddb241176058589150595",
+  "runtime_files_sha256": {
+    "runtime/agent_organization.py": "7301cec99fabe40c907b02e52c3150251f9ceaa80f724575124609f1e6e33d68",
+    "runtime/artifacts.py": "5b6cd77a91c11ac3501ffa4a31ae85177490ecbb2e7489b05bd5437668b3e9a8",
+    "runtime/auth.py": "19f14891d985c736f05593ff4919f99eb2ab3fdfff004956f32b94cd48d5152b",
+    "runtime/codex_driver.py": "a9e58072440ce0a7f6fd6e86ac4885a7e45470b045d7b142372d8b6987742b3c",
+    "runtime/codex_jsonrpc.py": "79544dd24f2fc39256a5296ad29b2fd46da2f46aaf9cf728b4617f6c6ca0744d",
+    "runtime/communication.py": "223a3475baa51e8c86185983f73c6b06dbd2a8266d772d70c66448287b582f76",
+    "runtime/communication_archive.py": "0ac1b81011791412c90de2ab36522737a538c28d5b117e30dbc8e9ea7263078c",
+    "runtime/communication_archive_schema.sql": "5ed1e2c6b057e6640b691a2303a9b133d48ab7264971c82c400dde20f5ecd601",
+    "runtime/communication_core_schema.sql": "8ff205fd4ba6472f1eb828354f95d598be5ec4bdc399b544e0369a04950b1ba8",
+    "runtime/communication_dispatch.py": "d54fbff41d9605fc04f14ab32ba85137ae7438356e9e64b61e888b57b87f9348",
+    "runtime/communication_faults.py": "c966efdf2588a715464906686bc589a7afd427fe8569542cbd8e4fbfee53d25d",
+    "runtime/communication_management.py": "b2bbc6eb0ddea2d5e99f21eb96a2cb43d3d640b9736207d51d2088e165c6fc3d",
+    "runtime/communication_notice_schema.sql": "0b6de534ef9a3efe620bfa85bf9003b7460d4509d866606c767d05e0999b56ab",
+    "runtime/communication_permissions.py": "480f0318394231643f097b5b90e5b16829418756c123c7245375c63d122f1015",
+    "runtime/communication_schema.sql": "da29710812a72216868d26ffd724dcb2f2e8dcb24fe910ba293c269ed2684497",
+    "runtime/communication_storage.py": "8157b91b1dd6ffcf242af265dededb8156f43b3d7f34a772a96926853c8d5297",
+    "runtime/communication_tools.py": "5847608eb55a5a5bdb29266d3d1cf321fa4d2d365afad5f1fbf64bd4fa3bae7a",
+    "runtime/connection_clock.py": "bb0ce22135e4d58daacb735c76568c2f6bf9a86989c784b5b08b05a325bcc2db",
+    "runtime/data_policy.py": "9d8a6e4222ee59f87f880e72db03fcd7f5570a03c1b2f6c0bb130790c9f5edc0",
+    "runtime/delivery.py": "7937bf7ada41d20e6839601ca39794c0eb461ba6ad95e8df0a68598a2db3ee10",
+    "runtime/delivery_models.py": "94f6157ec9ea757f300effef26ae4220837c6e296d9f4903d74a2a5c7b27f791",
+    "runtime/delivery_node.py": "0befccbd73daea72e76cb8c4d851ad94edaf4193c8583cd434d5a4971a408ffe",
+    "runtime/delivery_operations.py": "d559ad1897479d908241584c99ee0372c99c74010ac88710d2aa56e56c59ff6f",
+    "runtime/delivery_temporal.py": "91250d79992779410f245d4c1efc3c5dad203dabe809b0602df7227ec11d6816",
+    "runtime/domain.py": "5f1d95227068e1142d627108e4100c2f5d8031a2e1eceb0cb64f4e44d83e2c45",
+    "runtime/drivers.py": "b8957ecf3a407fb26bef9eb6b70d569548dc30f3e8f30df3e2d8833e81ec01fc",
+    "runtime/driver_claim.py": "612af352209542b65de95e7e4fa432fe19be45ae6381d9e257500a63667b97fa",
+    "runtime/effects.py": "66afa792472b06cf4d76afaa952783dc1cb60b4ee632ceb2baf5e1eac985071a",
+    "runtime/effect_domain.py": "ff8fce475fb751661c333773f65fff5405c322e11d5190104394110d56a5154a",
+    "runtime/enrollment.py": "d93d33751f140d56d45fea2aad74ccc4e0ac42a81bcb6e8fbd143a98f75b324f",
+    "runtime/enrollment_models.py": "476f5eff781c681daa1a0a0d05b731c601e2fb4ba6c1c10afe860fd079462e17",
+    "runtime/errors.py": "20590a2376819cb155c3fa91b9bde79a934c57d03ab9b35a7d6adcf82b2b8029",
+    "runtime/filesystem_gateway.py": "8d3c039030d76e6fb0b95c583e567d877685410f6d8bef8a74432a489f998a51",
+    "runtime/filesystem_locks.py": "58cca6e54b6dc67ac159e0ff392a292a1303460d916e57af64657b7c1dca4d4f",
+    "runtime/filesystem_patch.py": "319fd6edcc1b2637afff4da7d5160c5a8566b44e5706790a340a267aa10e48b0",
+    "runtime/filesystem_schema.py": "d21eba235044cb70bca19edf023cf4db92dd69c7ab53170ec3bbf64a4cad4d39",
+    "runtime/filesystem_transport.py": "13f0f04e23011223a24d8b6407e60f0a764d43e84034cc1d4b3f6ad681e33a41",
+    "runtime/harness_sessions.py": "539116cab8a55441a40886ff2f6dd005ead131b4706f5a6355d565e24023e138",
+    "runtime/human_bridge_dispatch.py": "06782b7c35c0a70fc65bec608a9dbbc94a09d98ab9de655832cc17b115cbbe7e",
+    "runtime/human_bridge_entry.py": "07ce0310f641fbc7bb1d11ca110f0377891512f33ed98cc8f38cc66f46ce7593",
+    "runtime/human_bridge_file_provider.py": "b91888023116f51de4f81df588b3ea8650fa74a0602d79e3ccf4a15846fd1dc1",
+    "runtime/json_payload.py": "50e687c2489637ca268cd655f7a6b68cafeed326b19d5b202653e1cccf04bc80",
+    "runtime/lease_authority.py": "cd9646b0dfcf8e625fe3fb4fa180647b3ea941e2dc02808055694c776fa80b36",
+    "runtime/lifetimes.py": "460dc66ad1ed410c30bd0a79bc2c70e01ad45958facb5aee907d70b94627e661",
+    "runtime/machine_connections.py": "7e4e81e8c701920a28632faf586639f2b5e0745f223365057cdd5c33ba33f362",
+    "runtime/machine_filesystem.py": "684f9357c270e9c5a3c5351b9674f4bf3be5767ee2981bd116d0919a19b583bb",
+    "runtime/mcp_runtime.py": "cef7c50b3a314d1bb1828c197ae0c2484d23dee1ade9cc50ccefeb6b09837676",
+    "runtime/migrations.py": "ac531c0b086d04ba70b8f42fb965a19a4503d5ff6ef0320e54afe592120933d1",
+    "runtime/models.py": "86c56b66d8e4514697c3edf2797aad92589e6c876acc2a828ab28352cea33e1f",
+    "runtime/native_delivery.py": "92192345c8905ba557d9f2c23dc1ab73936b5197da3a3a024032a1cfa8429dbc",
+    "runtime/node.py": "a58788f2b8ff1cac46d1e3ce0153877d8f0cc8044db869c4d7b3a66d1585b7a8",
+    "runtime/opencode_driver.py": "1bc30860016f69b05c2c53079d8dfd35d189e686339ca54e3f3362f56c4711fb",
+    "runtime/opencode_http.py": "60ab2d687205923b9bf8017bdf5a1dfed28b9761057c06a0ffa1f50c0283a958",
+    "runtime/operator_files.py": "ba614c897087c7204d52af842ab32dfd2ba7ef10769763df35f8f26ec67c5e0b",
+    "runtime/owner_dispatch.py": "cdcc252c2bad1fa54684646ecfd63dcd8f9ca50cea3c5b69a7cb378279f35b4c",
+    "runtime/owner_upgrade.py": "9f0f74fd1f318d6b0908b0f875a72c8e8cbf02b1a602e6f595abe329b738d489",
+    "runtime/p1_codex_host_node.py": "54a0b63653f3135ccf938b0200dc4002921e1229d6e4758cfd927eaefe84e3f6",
+    "runtime/p1_opencode_host_node.py": "90e994192d625d98c6a7071de0ed766300ff11ee21f69a815a16461db0478073",
+    "runtime/posix_process_supervisor.py": "88313b532c03fd737e068952039da3b3ed8736263b567c43e5b1b7372575202b",
+    "runtime/postgres_connection.py": "8ce7967fc343bcbbf971915c645ab8087fae11b14658e8293a1c83af5b4939b4",
+    "runtime/project_archive.py": "be60fd6d35ad0ae8623eb21403c6ac1e5bd19607b2f208b80c9a9edb76dbdadd",
+    "runtime/project_common.py": "9222b7fcb533ac6e2a29af88b300de250b1df08295886dccb487cd8ac77ce885",
+    "runtime/project_context.py": "a6110a203ab5bfe6f17995b139bf0b888eae38c5fbc917414703d0bcc4f0320a",
+    "runtime/project_entry.py": "912781cc272f46f798393e1e79981409acb1c19f74323938cfe778f78823b282",
+    "runtime/project_http.py": "f5a6a1e5d3b0c02e96ee7a7ae16a622045175e852da1ab3b52574f8ebf703479",
+    "runtime/project_management.py": "f4ecf6756c9c4c6b6df2c99e6daa1874ac4348ce33029d217d53ff8546fbcb6c",
+    "runtime/project_mcp_server.py": "26b9b896d213b93f66d03a8a70804ff5add17722d0a988057ee8b59dd0979b28",
+    "runtime/project_resources.py": "753b741123c1ebdacf9e64cc5ddc82b41c5caa412e7ebd84b4cc81bae26010cf",
+    "runtime/project_routes.py": "cf4fd6a91326ae9fe1b57fa2a3eb04637840a6ce6b95e2203b1418bf6b223ae6",
+    "runtime/project_schema.sql": "203fc1d938400c2434885362d13689b753935794a322fc34ed2dfeda357e9ca1",
+    "runtime/project_schema_state.py": "6596bbee1e9b1231bc0aaedfd8e9e142b232add90bd28815ea051d868e11b67e",
+    "runtime/project_service.py": "a841084179d00b5b368a27a0904742e331da9b76c5e3a3db168671d302cda4e4",
+    "runtime/project_source.py": "d2c494588b514e5393fd4278e35d489851996d3da38bbf4acc3942dc2a4eb7bf",
+    "runtime/provider.py": "8ebafc5a0bc8995c4d35b2760907249834669d244b8c192d537555b6c20a46ba",
+    "runtime/receiver.py": "4141c9f18e21a3c81ca20fa3a5db6e61ee2efd788a2eafd1ca3b1f0169393c48",
+    "runtime/receiver_config.py": "8c23c3119d98941dd7cb33b6e77a0a79fd488b0c8a78b9cedf48cfad289f1dd2",
+    "runtime/receiver_crypto.py": "2687065eea63b56af3db1fc54b7b9bbd1e812e7825ccaa489851f5ce8dddedd7",
+    "runtime/receiver_delivery.py": "7a948abfb86cfcf8068953aa377d188a01b613ed67f09eb73f552e8fbec2442d",
+    "runtime/receiver_deployment.py": "ded4890576853fe5096a7c204c69692989617f9fa129f0410be8d834f13ab89b",
+    "runtime/receiver_domain.py": "89921437e6d138b697fe1a2f180bb10c136ebe5820bcf01fc4bb37d465a79139",
+    "runtime/receiver_entry.py": "efdc39c40e4c18c999dce84ec946df17d6f916bbce94347d4605c7786622edf1",
+    "runtime/receiver_install.py": "106f47d090cf972e0921a847b3499d45c9d8e82fce2ec839478043f1a8a9f1d1",
+    "runtime/receiver_models.py": "f9ac2e4153f09d58e0b3f0f0a08a1d9bd04c130ca1d9e2d00646f8236f33e4a9",
+    "runtime/receiver_paths.py": "64ab9e35f75976d3179deff0cd0f2217dcc3183b86ff0b208e713e064e97bf4a",
+    "runtime/receiver_provision.py": "19e5e0b20862442579b4e4915e1b183fe12b72a4c236e765fb6e2bd893ebf15a",
+    "runtime/recovery.py": "a88c86bef85fd62c6709a24b96468deead1450eef16a548b28aec22975f1b196",
+    "runtime/recovery_models.py": "fb27fc862a9fd713b2b3cdae919ec20aa590d4331f0de64aa6ec01e05f2b7102",
+    "runtime/recovery_service.py": "ce6990f983c102b6f434096c65f3d9007cc0c6d587c2ac4eb58cdebc8586cf8c",
+    "runtime/recovery_temporal.py": "8590b617277e75a57bea7aef573f72ebdcff71044577316ffa10b2c4169b09f6",
+    "runtime/remote_endpoint.py": "87c30de7977ba073f06cf92f697a4df7c3894377ec5d1db2d764a433b5c4de34",
+    "runtime/response_collector.py": "5c9eff652009ddf4fb107d8c5e4c6db7b20cbacee648f6243f653239bcecb106",
+    "runtime/response_transfer.py": "eb18d92cd5389c42f610903d9372a7a4cfb44981a22f2faa7cf0975868d60bf9",
+    "runtime/scoped_artifacts.py": "b2f297b143712b97c62444b1c27eba96c645e070c45f01160006901c5338b55e",
+    "runtime/sender.py": "a57d8be8af1d50a5121e1fea929ac94b4bc805291df7cea323528af430d6739b",
+    "runtime/source.py": "d588cd25f8f01a7a287c4e9e5c103a1f776998507b22c062dc6b37ed48e2b3d0",
+    "runtime/source_models.py": "3c8ddb1309727562f3aec6b06ecbbc7347017a279994a09f74cb6d5a750873d5",
+    "runtime/supervisor.py": "cb163098a6b001ddb4d4c4d3c9059fd69707ce2bc4bb6f73cb6d022186fdc4d9",
+    "runtime/surfaces.py": "7ce469279593926af83e77347d2171a2e24ab59e34e8f0edc8e5eb6b8af9c8d7",
+    "runtime/surface_config.py": "f092527a55eff6c17c1433827a29245059b29d71fbbd4f7e239653af7b4c1c87",
+    "runtime/surface_entry.py": "08c32d2d88074c1fbb2cdbeb1370ec638035c29ecd2942250ab9931a626c102d",
+    "runtime/systemd_supervisor.py": "76d77492d95354f9b90939f7ececd9bec3b0d96fc21b07888bd8f2f1f7af3c65",
+    "runtime/temporal.py": "bc10b58350f19a019ef4e122c4d1c5d59273755e4c71a3970e98034650c36d44",
+    "runtime/__init__.py": "2b70889f6c0c7c5d029a6edb6c66b73ea91ac68999b74657a657e2db26bc9147",
+    "runtime_deployment/receiver_authority.py": "f14ef9b9c7f357f942e5bafad2cc24fc7c6d6d393ca9eb520f1c5ca7e9698ba8",
+    "runtime_deployment/receiver_codex.py": "473def19457766ea54b0cf8378d7183896849f3c6146c6700f0f085467f3ccea",
+    "runtime_deployment/receiver_opencode.py": "e250ae61cfbebc324bf2f52263d357439466c4f917b16654ef37cf15b8d13e74",
+    "runtime_deployment/receiver_p1.py": "afdab53f4bcd0d10a5213f5e96a53a20c762f722f6d86725b31879fa0356ce45",
+    "runtime_deployment/__init__.py": "8a3136ed3d5dc872e0789dde0623c14c36c7dd1473f8dd7ea2285b28c245d7bb"
+  },
+  "requirements": [
+    "R06",
+    "R11",
+    "R12",
+    "R15",
+    "R16",
+    "R18",
+    "R21",
+    "R22",
+    "R23",
+    "R24",
+    "R26",
+    "R32",
+    "R34"
+  ],
+  "codex_shared_native": {
+    "state": "passed",
+    "topology": "Windows Codex to physical Linux Codex Shared Native",
+    "codex_version": "0.163.0",
+    "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+    "independent_models": 2,
+    "ordinary_profiles": [
+      "engineer",
+      "engineer"
+    ],
+    "access_modes": [
+      "shared",
+      "shared"
+    ],
+    "native_prompts": 1,
+    "evaluator_dispatch_calls": 0,
+    "authority_counts": [
+      2,
+      1,
+      null
+    ],
+    "dispatch_status": "delivered",
+    "model_elapsed_seconds": 104.13119580000057,
+    "sandbox": {
+      "allowed_read": true,
+      "write_denied": true,
+      "outside_read_denied": true,
+      "network_host_positive": true,
+      "network_sandbox_denied": true,
+      "executor": "actual command/exec with achp-engineer profile"
+    },
+    "owned_cgroup_cleanup_verified": true,
+    "collector": false,
+    "native_event_subscription": false,
+    "supervisor_policy": {
+      "Type": "exec",
+      "ExitType": "cgroup",
+      "KillMode": "control-group",
+      "SendSIGKILL": "yes",
+      "TasksMax": "64",
+      "MemoryMax": "1073741824",
+      "NoNewPrivileges": "yes",
+      "RestrictSUIDSGID": "yes",
+      "LockPersonality": "yes",
+      "UMask": "0077",
+      "CPUQuotaPerSecUSec": "1s",
+      "TimeoutStopUSec": "10s"
+    }
+  },
+  "shared_idle": {
+    "configured_seconds": 120,
+    "observations": 25,
+    "all_idle_and_owned": true,
+    "native_prompts": 0,
+    "owned_cleanup_verified": true
+  },
+  "loads": {
+    "windows_600s_errors": {
+      "evidence_class": "scripted ordinary peers over real stdio MCP and PostgreSQL",
+      "model_load": false,
+      "source_unchanged": true,
+      "transient_recoveries": 0,
+      "configured_active_seconds": 600,
+      "wall_seconds": 610.6486453999969,
+      "workers": 4,
+      "phases": [
+        {
+          "phase": 0,
+          "active_seconds": 300.84419789999083,
+          "completed_exchanges": 932
+        },
+        {
+          "phase": 1,
+          "active_seconds": 300.61894349999784,
+          "completed_exchanges": 1920
+        }
+      ],
+      "exchanges": 1920,
+      "request_retries": 189,
+      "third_party_denials": 72,
+      "failures": [],
+      "round_trip_seconds": {
+        "p50": 1.1659332000126597,
+        "p95": 1.789353400003165,
+        "p99": 2.410034300002735
+      },
+      "independent_readback_passed": true
+    },
+    "windows_1800s": {
+      "evidence_class": "scripted ordinary peers over real stdio MCP and PostgreSQL",
+      "model_load": false,
+      "source_unchanged": true,
+      "transient_recoveries": 0,
+      "configured_active_seconds": 1800,
+      "wall_seconds": 1809.1887278000067,
+      "workers": 4,
+      "phases": [
+        {
+          "phase": 0,
+          "active_seconds": 900.670282799998,
+          "completed_exchanges": 3080
+        },
+        {
+          "phase": 1,
+          "active_seconds": 900.8506443000078,
+          "completed_exchanges": 6544
+        }
+      ],
+      "exchanges": 6544,
+      "request_retries": 653,
+      "third_party_denials": 256,
+      "failures": [],
+      "round_trip_seconds": {
+        "p50": 0.7742743999988306,
+        "p95": 1.5189635999995517,
+        "p99": 1.986022299999604
+      },
+      "independent_readback_passed": true
+    }
+  },
+  "tests": {
+    "linux_components": {
+      "tests": 1718,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 780
+    },
+    "pg_marker_clock_signature": {
+      "tests": 66,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 11
+    },
+    "database_recovery": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "review_slow_status_and_clock": {
+      "tests": 28,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    }
+  },
+  "independent_review": {
+    "method": "independent Codex static review of supplied patch/context; no tool execution",
+    "finding_count": 1,
+    "disposition": "The status request RTT belongs inside the two-second lease. Slow replies expire and cannot dispatch; a dedicated regression verifies zero Native calls. No permission or timing fence was relaxed."
+  },
+  "retained_failures": [
+    "Historical two Windows 600s SDK timeout runs: 2084 and2243 exchanges; no independent final readback.",
+    "One frozen Shared rerun hit a real PostgreSQL startup EOF; container had no restart or OOM.",
+    "The first1800s final attempt stopped at218.81s on a retryable unavailable result; client recovery/outcome semantics were subsequently completed.",
+    "A clock-test transport stub still used the old Codex inspection path; corrected with all expiry assertions retained.",
+    "Native-marker PG integration reused a200ms unit fault budget;5s integration budget now retains exact marker, revocation and uncertainty assertions.",
+    "Initial reviewer CLI could not inspect due local shell policy; review was completed using supplied authorized source."
+  ],
+  "limits": [
+    "Scripted load is communication transport evidence, not model throughput or an SLA.",
+    "The exact WSL forwarding/database disconnect cause remains unassigned; bounded recovery does not imply it cannot recur.",
+    "Qualified Codex0.163 Linux/systemd profile only; Windows Shared and other versions require separate qualification.",
+    "Production upgrade and data preservation are recorded separately."
+  ]
+}
