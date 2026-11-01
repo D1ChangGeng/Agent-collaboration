@@ -205,3 +205,51 @@ packets, 2,543 dedup rows, 20 Grants, seven projects, 24 natural messages and
 credentials, storage, keys and startup configuration were retained. No host
 or distribution reboot was performed for either patch follow-up, and the
 previously requested physical-host exclusion remains in force.
+
+
+## Follow-up: v2.1.0 qualification adoption
+
+Both selected services now run the published v2.1.0 commit
+`71c29114dd49a242a58d1ea30496497fa9cef453`, tree
+`622c1f893fd6c8a0bc74a6b448c4046b4d8fba9d`. The five product assets and two
+synthetic qualification summaries were independently downloaded and matched
+the frozen candidate byte for byte. Both final CI flows and the completed
+release preflight passed. Earlier failed qualification/CI attempts remain
+recorded with their actual scope.
+
+The WSL owner installation retained its machine/account binding, storage,
+credential, context and startup identity. The selected idle receiver adopted
+its staged prefix with the next signed generation, retaining keys, journals,
+ordinary credentials and client configuration outside the versioned MCP entry.
+Only the proven owned ACS service cgroup was stopped; its old process was
+observed exited and the group empty before generation 6 activation. No whole
+host or distribution restart was performed.
+
+An actual MCP connection was initialized before the receiver cutover and kept
+open while its trusted receiving settings moved from generation 5 to 6. It was
+not reinitialized. That same connection submitted one natural invoke request,
+received the real Codex engineer's own explicitly related MCP reply and observed
+`satisfied` again on a repeat wait. A is a scripted normal MCP client in this
+production check; B is the real Native model. The separate isolated
+qualification contains the two-model physical and Shared experiments.
+
+Independent read-only database evidence found one request, one correct-author
+reply relation, one Native attempt, and generation 6 on all prepare/readiness/
+dispatch admissions. The delivery reached `runtime_acknowledged`. The Native
+returned to its actual idle Session after the exchange. One post-model health
+read timed out; a bounded read-only retry returned idle. Its transient cause
+was not established, and no message or model invocation was repeated.
+
+WSL's 1,017 declared release files and the receiver's 118 registered files
+passed strict integrity checks. Every pre-upgrade sealed packet (40), dedup row
+(2,548), Grant (20), Project (7), natural message (26) and reply link (12) was
+preserved. The verification exchange appended records. Production retains its
+15 historical WorkItems and task-era relations under the additive adoption
+boundary. Both new packets are `acs-message/1` without task identity/revision
+fields; both new events target messages with null WorkItem associations. The
+old database remains connection-fenced and no historical data was cleaned.
+
+The existing live connector independently returned Owner mode, authorized
+communication core Schema 2, seven visible Projects and current project context.
+The formal local source checkout was fast-forwarded, with both existing
+five-line README edits restored and all untracked work retained.

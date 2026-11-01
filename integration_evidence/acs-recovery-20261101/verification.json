@@ -61,10 +61,24 @@
     "dsn_credential_caller_context_and_startup_identity": "preserved"
   },
   "tests": {
-    "windows_tooling": {"run": 257, "passed": 220, "skipped": 37, "failed": 0},
-    "native_windows_recovery": {"passed": 5, "failed": 0},
-    "linux_startup_and_handoff": {"passed": 19, "failed": 0},
-    "candidate_ci_runs": [41243017193, 41242975516],
+    "windows_tooling": {
+      "run": 257,
+      "passed": 220,
+      "skipped": 37,
+      "failed": 0
+    },
+    "native_windows_recovery": {
+      "passed": 5,
+      "failed": 0
+    },
+    "linux_startup_and_handoff": {
+      "passed": 19,
+      "failed": 0
+    },
+    "candidate_ci_runs": [
+      41243017193,
+      41242975516
+    ],
     "candidate_ci_state": "success",
     "windows_to_wsl_test_postgres_readonly_connections": 5
   },
@@ -94,12 +108,22 @@
     "initial_post_update_prepare_rejected_for_stale_sender_generation": true,
     "initial_failed_message_preserved_without_native_replay": true,
     "old_owner_bound_acs_entries_reconnected": true,
-    "new_distinct_real_native_roundtrip": {"native_attempts": 1, "explicit_matching_reply": 1},
+    "new_distinct_real_native_roundtrip": {
+      "native_attempts": 1,
+      "explicit_matching_reply": 1
+    },
     "new_input_guidance_from_actual_windows_entry": true,
     "invalid_input_created_no_message": true,
     "owner_declared_source_files_verified": 1005,
     "receiver_registered_files_verified": 118,
-    "pre_patch_records_preserved": {"packets": 35, "dedup_rows": 2537, "grants": 20, "projects": 7, "natural_messages": 21, "reply_links": 10},
+    "pre_patch_records_preserved": {
+      "packets": 35,
+      "dedup_rows": 2537,
+      "grants": 20,
+      "projects": 7,
+      "natural_messages": 21,
+      "reply_links": 10
+    },
     "credentials_context_storage_and_startup_preserved": true,
     "whole_host_reboot_performed": false
   },
@@ -108,7 +132,10 @@
     "both_selected_services_upgraded": true,
     "published_product_assets_byte_verified": 5,
     "initial_download_error_then_verified_retry": true,
-    "ci_runs": [41253306991, 41253296817],
+    "ci_runs": [
+      41253306991,
+      41253296817
+    ],
     "ci_state": "success",
     "initial_simulated_rpc_timeout_preserved_in_history": true,
     "timeout_budget_and_assertions_changed": false,
@@ -124,8 +151,100 @@
     "prepare_readiness_dispatch_admissions_used_new_generation": true,
     "owner_declared_source_files_verified_after_model": 1007,
     "receiver_registered_files_verified_after_model": 118,
-    "pre_patch_records_preserved": {"packets": 38, "dedup_rows": 2543, "grants": 20, "projects": 7, "natural_messages": 24, "reply_links": 11},
+    "pre_patch_records_preserved": {
+      "packets": 38,
+      "dedup_rows": 2543,
+      "grants": 20,
+      "projects": 7,
+      "natural_messages": 24,
+      "reply_links": 11
+    },
     "identity_credentials_storage_keys_and_startup_preserved": true,
     "host_or_distribution_reboot_performed": false
+  },
+  "v2_1_0_followup": {
+    "release": "v2.1.0",
+    "source_commit": "71c29114dd49a242a58d1ea30496497fa9cef453",
+    "source_tree": "622c1f893fd6c8a0bc74a6b448c4046b4d8fba9d",
+    "selected_installations_upgraded": 2,
+    "published_assets_independently_downloaded_and_matched": 7,
+    "product_assets_matched": 5,
+    "release_preflight_passed": true,
+    "push_and_pull_request_ci_passed": true,
+    "receiver_generation": 6,
+    "same_warm_mcp_connection_across_receiver_cutover": true,
+    "production_communication": {
+      "version": "2.1.0",
+      "source_commit": "71c29114dd49a242a58d1ea30496497fa9cef453",
+      "same_mcp_connection_across_receiver_cutover": true,
+      "normal_native_roundtrip": true,
+      "correct_reply_author": true,
+      "repeated_wait_satisfied": true,
+      "request_count": 1,
+      "reply_relation_count": 1,
+      "native_attempt_count": 1,
+      "signed_admission_generations": [
+        6
+      ],
+      "signed_admission_purposes": [
+        "delivery.dispatch",
+        "delivery.prepare",
+        "delivery.readiness"
+      ],
+      "delivery_state": "delivered",
+      "receipt_high_water": "runtime_acknowledged",
+      "historical_work_relation_retained": true,
+      "historical_work_rows": 15,
+      "new_message_task_fields": false,
+      "new_message_task_event_links": false,
+      "existing_project_count": 7,
+      "native_terminal_projection_used": false
+    },
+    "preservation": {
+      "active_version": "v2.1.0",
+      "source_commit": "71c29114dd49a242a58d1ea30496497fa9cef453",
+      "dsn_credential_context_and_startup_preserved": true,
+      "sealed_packets_and_existing_records": {
+        "delivery_messages": {
+          "before": 40,
+          "current": 42,
+          "all_original_rows_preserved": true
+        },
+        "command_dedup": {
+          "before": 2548,
+          "current": 2553,
+          "all_original_rows_preserved": true
+        },
+        "grants": {
+          "before": 20,
+          "current": 20,
+          "all_original_rows_preserved": true
+        },
+        "collaboration_projects": {
+          "before": 7,
+          "current": 7,
+          "all_original_rows_preserved": true
+        },
+        "communication_messages": {
+          "before": 26,
+          "current": 28,
+          "all_original_rows_preserved": true
+        },
+        "communication_replies": {
+          "before": 12,
+          "current": 13,
+          "all_original_rows_preserved": true
+        }
+      }
+    },
+    "owner_source_files_verified": 1017,
+    "receiver_registered_files_verified": 118,
+    "dsn_credential_context_keys_and_startup_preserved": true,
+    "ordinary_node_clients_preserved": true,
+    "post_model_health_first_read": "timeout",
+    "post_model_health_readonly_retry": "idle",
+    "transient_timeout_cause": "not_established",
+    "new_host_or_distribution_reboot_performed": false,
+    "old_database_connection_fence_retained": true
   }
 }
