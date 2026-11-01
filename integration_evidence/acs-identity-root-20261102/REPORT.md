@@ -5,6 +5,10 @@ Implementation: `a99000ac40662127f63e56b4407d3c5ea3c1e24f`, tree
 `61bea50284665ee3c2a10785169b73ff104e11e4`. This is a source candidate; the
 published production deployment remains v2.2.0. Aggregates and exact tested
 Runtime byte fingerprints are in [verification.json](verification.json).
+The [final implementation CI](https://github.com/D1ChangGeng/Agent-collaboration/actions/runs/41345775394)
+passed all five jobs on `a99000a`, including 447 PostgreSQL cases (12 skipped),
+124 Gate tooling tests and package assembly. Later evidence commits change
+documentation only; their Runtime bytes remain identical to this qualified code.
 Core repair commit is `2908aea`; the final result/description contract is in
 `4739539`, the compatibility-entry Gate check is in `759544f`, and effective
 Slot identity / existing peer-manager protection is completed in `a99000a`.
