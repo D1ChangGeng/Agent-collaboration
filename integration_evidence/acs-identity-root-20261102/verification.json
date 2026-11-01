@@ -1,7 +1,9 @@
 {
   "scope": "first-entry identity, unified Root management, scoped context and tools",
-  "implementation_commit": "2908aeabe0b5ed6d7a14c111a6ec3e811c33d60d",
-  "implementation_tree": "5c34582d00aff4c79341bca7ef27a6e62214211d",
+  "implementation_commit": "4739539d9a2c4a068888fded13bc0de72951cd72",
+  "implementation_tree": "69629564c453f5e4080dd51d19a67fa828dd22e1",
+  "core_implementation_commit": "2908aeabe0b5ed6d7a14c111a6ec3e811c33d60d",
+  "gate_contract_test_commit": "759544fdbd24b415ef00dc2cdece7e58c53903ef",
   "catalog_version": "acs-p2-mcp-tool-contract/12",
   "schema_migration_required": false,
   "windows_postgres_stdio_http": {
@@ -9,7 +11,16 @@
     "failures": 0,
     "errors": 0,
     "skipped": 1,
-    "passed": 113
+    "passed": 113,
+    "source_commit": "2908aeabe0b5ed6d7a14c111a6ec3e811c33d60d"
+  },
+  "windows_final_identity_contract": {
+    "tests": 25,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 25,
+    "source_commit": "4739539d9a2c4a068888fded13bc0de72951cd72"
   },
   "linux_components": {
     "tests": 1746,
@@ -24,6 +35,23 @@
     "errors": 0,
     "skipped": 1,
     "passed": 144
+  },
+  "gate_contract_tests": {
+    "tests": 10,
+    "passed": 10,
+    "failed": 0
+  },
+  "local_full_gate_tooling": {
+    "tests": 124,
+    "passed": 119,
+    "errors": 5,
+    "environment": "host user runtime directory unavailable; failing runner/test paths unchanged from baseline"
+  },
+  "github_initial_core_run": {
+    "url": "https://github.com/D1ChangGeng/Agent-collaboration/actions/runs/41342438246",
+    "postgres_passed": 439,
+    "postgres_skipped": 12,
+    "overall": "failed at old group/compatibility partition assertion; corrected in gate_contract_test_commit"
   },
   "actual_models": {
     "harness": "codex-cli 0.166.0-alpha.5.1",
@@ -69,7 +97,7 @@
       "root": "root",
       "route": "route"
     },
-    "elapsed_seconds": 340.409
+    "elapsed_seconds": 311.779
   },
   "installed_wheel": {
     "actual_installed_wheel": true,
@@ -78,7 +106,7 @@
     "explicit_replies": 3,
     "model_driven": false,
     "root_module_sha256": "493368cd78b93af1221455861838f043992801fe258eb1e91428e994e8d299ea",
-    "sha256": "e0a550588ac94f6198c883e9ee9f8f75bbbe64b8f59bede81ad368fbf77e91fb",
+    "sha256": "b7d92dcaf73888a3142f3c87326b3b928903a9481b755726b00479e2870c5aa3",
     "distribution_version": "2.2.0 development candidate; not published",
     "all_runtime_bytes_match_tested_source": true
   },
@@ -124,7 +152,7 @@
     "runtime/communication_permissions.py": "480f0318394231643f097b5b90e5b16829418756c123c7245375c63d122f1015",
     "runtime/communication_schema.sql": "da29710812a72216868d26ffd724dcb2f2e8dcb24fe910ba293c269ed2684497",
     "runtime/communication_storage.py": "8157b91b1dd6ffcf242af265dededb8156f43b3d7f34a772a96926853c8d5297",
-    "runtime/communication_tools.py": "45c7fe5849bb55d6743753b3e35f905f17136bb44dabdd3f99de7f919916b19a",
+    "runtime/communication_tools.py": "cd3daf98d805987fc5016bb106fd6e2a8e168f344ac04774ec825f01cdfb5454",
     "runtime/connection_clock.py": "bb0ce22135e4d58daacb735c76568c2f6bf9a86989c784b5b08b05a325bcc2db",
     "runtime/data_policy.py": "9d8a6e4222ee59f87f880e72db03fcd7f5570a03c1b2f6c0bb130790c9f5edc0",
     "runtime/delivery.py": "7937bf7ada41d20e6839601ca39794c0eb461ba6ad95e8df0a68598a2db3ee10",

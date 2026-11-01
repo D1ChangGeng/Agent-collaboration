@@ -1,10 +1,12 @@
 # First-entry identity and Root management verification
 
-Implementation: `2908aeabe0b5ed6d7a14c111a6ec3e811c33d60d`, tree
-`5c34582d00aff4c79341bca7ef27a6e62214211d`, based on
+Implementation: `4739539d9a2c4a068888fded13bc0de72951cd72`, tree
+`69629564c453f5e4080dd51d19a67fa828dd22e1`, based on
 `61bea50284665ee3c2a10785169b73ff104e11e4`. This is a source candidate; the
 published production deployment remains v2.2.0. Aggregates and exact tested
 Runtime byte fingerprints are in [verification.json](verification.json).
+Core repair commit is `2908aea`; the final result/description contract is in
+`4739539`, and the compatibility-entry Gate check is in `759544f`.
 
 S00 gives Project communication grouping/isolation duties and Root management
 and context-source duties. Existing storage pairs them one to one. The repair
@@ -25,10 +27,17 @@ Review queries no longer appear in the normal actor context.
 | Verification | Passed | Skipped | Failed / errors |
 |---|---:|---:|---:|
 | Windows PostgreSQL, stdio, HTTP and communication/configuration regression | 113 | 1 | 0 / 0 |
+| Windows final actor/result contract, four-role stdio and HTTP regression | 25 | 0 | 0 / 0 |
 | Linux Runtime components | 939 | 807 | 0 / 0 |
 | Linux PostgreSQL, stdio, HTTP, Shared permission and current-file regression | 144 | 1 | 0 / 0 |
 | Installed wheel, four separate actual stdio processes | 1 workflow | 0 | 0 |
 | Independent actual Codex models | 4 Sessions + 3 same-Session continuations | 0 | 0 |
+| Tool/result/compatibility contract checks | 10 | 0 | 0 / 0 |
+| Local full Gate tooling, with absent host user-runtime directory | 119 | 0 | 0 / 5 |
+
+The broad Windows run is pinned to core commit `2908aea`; the final Windows
+identity contract and both final Linux runs include `4739539`. The final model
+and installed-wheel checks below use the final unchanged Runtime bytes.
 
 The component run intentionally leaves environment-dependent PostgreSQL,
 Temporal, systemd, Native and platform-specific tests skipped. PostgreSQL runs
@@ -60,7 +69,7 @@ Independent database checks found exactly six committed messages, three explicit
 reply relationships, three configured collaborators and no Work table. Separate
 transcript checks verified the actual authors and reversed peer pairs for
 Client↔Root, Root↔Route and Route↔ordinary Agent, plus real reply readback in each
-of the three resumed Sessions. The workflow took about 340 seconds. It used
+of the three resumed Sessions. The workflow took about 312 seconds. It used
 `message_only`; ACS Native invocation count was zero. Actual CLI thread IDs were
 observed, while no receiving Native Session was fabricated or declared ready.
 
@@ -70,6 +79,15 @@ package repeated the role configuration chain and six-message/three-reply
 workflow. These peers were scripted and are recorded separately from the actual
 model test. Ruff and Git whitespace checks pass. The new PostgreSQL/stdio/HTTP
 tests are included in GitHub CI.
+
+The first GitHub run passed its complete PostgreSQL selection (439 passed,
+12 skipped), then failed the old assertion that every catalog entry belongs in
+a normal tool group. The revised check requires an exact, disjoint and complete
+partition of normal tools and the declared executable compatibility entry. Its
+ten contract checks pass. The local full Gate run has five errors because this
+host lacks the user runtime directory required by unchanged bus-attestation
+tests; all five follow the unchanged `gate_runner.py` / `test_gate_runner.py`
+paths. No fake user bus or production environment adjustment was introduced.
 
 Earlier failures remain part of the evidence boundary. The first actual model
 run confused team and Route revisions and could not recover from the sparse
