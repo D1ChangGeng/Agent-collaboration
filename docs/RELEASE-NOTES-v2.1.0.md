@@ -40,3 +40,10 @@ enabled only by an operator's complete restricted profile.
 Qualification includes reverse physical Native, restricted Shared and sustained
 MCP/PostgreSQL traffic. The release evidence records actual measurements,
 retained failures and the precise limits of each run.
+
+The [qualification report](../integration_evidence/acs-qualification-20261101/REPORT.md)
+records reverse physical Native and Shared independent-model exchanges,
+Shared idle survival and the 600-second transport run. The
+[machine-readable evidence](../integration_evidence/acs-qualification-20261101/verification.json)
+includes Runtime file hashes, policy limits, explicit ACK uncertainty and
+unqualified combinations. Production deployment readback is recorded separately.
