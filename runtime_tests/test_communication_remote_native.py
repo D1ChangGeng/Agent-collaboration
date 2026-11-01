@@ -679,7 +679,12 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                         "using one normal ACS send_message with invoke + async. Call wait_for_response on the returned "
                         "handle with timeout_seconds=0, retain that handle and finish this turn. A new client context "
                         "will continue the same exchange. Do not send again. Use ACS tools only; do not inspect files."
-                        if ack_loss else None),
+                        if ack_loss else ("You are ordinary Agent A in ACS project-alpha. Ask collaborator slot-b for its "
+                            "release label using send_message with activation=invoke and response_mode=async. Retain the "
+                            "returned original message handle. Call wait_for_response with that handle and timeout_seconds=300 "
+                            "to wait for B's explicit related reply. If still pending, continue waiting on that same handle. "
+                            "Finish only after reporting B's exact label. Use normal ACS tools and keep the original request identity."
+                            if shared else None)),
                 )
                 outputs.extend(a_outputs)
                 deadline = time.monotonic() + 150
@@ -703,7 +708,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 # The actual stdio MCP entry owns default maintenance. The
                 # evaluator only observes this committed operation and never
                 # calls dispatch/recovery or forwards an input to B.
-                assert a.wait(timeout=360) == 0
+                assert a.wait(timeout=600 if shared else 360) == 0
                 observed_end = time.monotonic() + 60
                 while True:
                     with comm.authority._connect() as connection:
