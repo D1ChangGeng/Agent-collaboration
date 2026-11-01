@@ -12,6 +12,15 @@ after those checks. Invocation still rechecks the Native target, current
 authority and dispatch marker. Each owned capacity gets fresh lifecycle
 operation identities, so a replacement cannot reuse an old spawn receipt.
 
+Windows direct-to-WSL tests also captured PostgreSQL connections closing during
+startup. Connection opening now has a default five-second timeout and at most
+two short retries for narrowly identified pre-query disconnects. Explicit DSN
+timeouts, TLS and authentication settings are retained. SQL, transaction commit
+and Native effects are never replayed by this recovery. A real TCP fault test
+checks ordinary MCP communication and exact message/reply counts after two
+startup disconnects. Container readback showed no database restart or OOM;
+the precise lower-level cause of the WSL disconnect remains unassigned.
+
 Actual qualification includes a Windows Codex A to physical Linux Codex Shared B
 exchange, independent ordinary credentials, one Native call, the explicit
 related reply and OS permission positive/negative probes. Windows direct MCP

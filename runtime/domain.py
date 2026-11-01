@@ -21,6 +21,7 @@ from runtime.models import (
     CommandEnvelope,
     CommandResult,
 )
+from runtime.postgres_connection import connect
 
 
 class DomainAuthority:
@@ -176,10 +177,10 @@ class DomainAuthority:
         options = psycopg.conninfo.conninfo_to_dict(self._dsn).get("options", "")
         options = (options + " -ctimezone=UTC").strip()
         if clock_probe:
-            return psycopg.connect(
+            return connect(
                 self._dsn, options=options + " -cstatement_timeout=5000", connect_timeout=5,
             )
-        return psycopg.connect(self._dsn, options=options)
+        return connect(self._dsn, options=options)
 
     def canonical_now(self, cursor: psycopg.Cursor | None = None) -> datetime:
         """Read fresh authority time, including after transaction lock waits."""

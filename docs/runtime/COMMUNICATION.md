@@ -285,3 +285,8 @@ The [2.2.0 qualification](../../integration_evidence/acs-codex-shared-20261101/R
 adds physical Linux Codex 0.163.0 Shared Native, actual OS permission probes
 and Windows direct-to-WSL sustained transport readback. See
 [Shared Codex](SHARED-CODEX.md) for its pinned configuration and exact scope.
+
+Database startup disconnect recovery is confined to connection opening, before
+any ACS query. It preserves explicit connection/TLS settings and never retries
+a query, transaction commit or Native call. The ordinary request identity and
+existing uncertain-outcome rules remain necessary across interrupted effects.

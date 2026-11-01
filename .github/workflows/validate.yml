@@ -64,6 +64,7 @@ jobs:
           runtime_tests/test_recovery_postgres.py
           runtime_tests/test_communication.py
           runtime_tests/test_communication_concurrency.py
+          runtime_tests/test_communication_postgres_recovery.py
           runtime_tests/test_receiver_committed_actor.py
           runtime_tests/test_receiver_opencode_factory.py
           runtime_tests/test_shared_endpoint_lifetime.py

@@ -30,6 +30,14 @@ def test_sustained_real_mcp_with_reconnect_and_independent_readback(comm, tmp_pa
     retries = 0
     denied = 0
     independently_verified = False
+    source_files = {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                    for folder in (ROOT / "runtime", ROOT / "runtime_deployment")
+                    for path in folder.glob("*") if path.suffix in {".py", ".sql"}}
+
+    def unchanged_source():
+        return source_files == {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                                for folder in (ROOT / "runtime", ROOT / "runtime_deployment")
+                                for path in folder.glob("*") if path.suffix in {".py", ".sql"}}
 
     def parameters(name):
         client = comm.clients[name]
@@ -66,6 +74,7 @@ def test_sustained_real_mcp_with_reconnect_and_independent_readback(comm, tmp_pa
 
     async def phase(index, duration):
         nonlocal retries, denied
+        assert unchanged_source(), "Runtime bytes changed between load phases"
         with (tmp_path / f"stdio-phase-{index}.stderr.txt").open("w+", encoding="utf-8") as errors:
             async with (stdio_client(parameters("a"), errlog=errors) as sa,
                         ClientSession(*sa, read_timeout_seconds=30) as a,
@@ -131,6 +140,7 @@ def test_sustained_real_mcp_with_reconnect_and_independent_readback(comm, tmp_pa
     try:
         asyncio.run(phase(0, seconds / 2))
         asyncio.run(phase(1, seconds / 2))
+        assert unchanged_source(), "Runtime bytes changed during sustained qualification"
         # Independent authority readback must match the external expected manifest.
         with comm.authority._connect() as connection:
             rows = connection.execute("SELECT m.message_id,d.packet_json->>'content' "
@@ -150,6 +160,7 @@ def test_sustained_real_mcp_with_reconnect_and_independent_readback(comm, tmp_pa
         def percentile(p):
             return ordered[min(len(ordered) - 1, int((len(ordered) - 1) * p))] if ordered else None
         facts = {"evidence_class": "scripted ordinary peers over real stdio MCP and PostgreSQL", "model_load": False,
+                 "runtime_files_sha256": source_files, "source_unchanged": unchanged_source(),
                  "configured_active_seconds": seconds, "wall_seconds": time.monotonic() - started,
                  "workers": workers, "phases": phases, "exchanges": len(latencies), "request_retries": retries,
                  "third_party_denials": denied, "failures": failures,
