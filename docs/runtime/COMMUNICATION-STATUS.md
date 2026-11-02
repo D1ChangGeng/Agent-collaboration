@@ -1,7 +1,7 @@
 # ACS 通信核心：实现与支持记录
 
 本记录核对开发包 v2.33 的 R01–R34 与当前源码，接续
-`f6195bf25d7b6a6fb1c2df3c211028787b2eb29f`，并更新至 v2.3.0 的资格范围。
+`f6195bf25d7b6a6fb1c2df3c211028787b2eb29f`，并更新至 v2.3.1 的资格范围。
 源码、软件发行版和生产服务是不同状态；旧 Release/Gate 的结论保留原版本范围。
 
 v2.3.0 身份与 Root 管理修复将目录更新为 12：首次 `read_profile` 明确区分
@@ -13,7 +13,15 @@ Client 与绑定角色，Root 统一配置入口复用现有登记/团队机制�
 记录四个独立模型、三次原 Session 续接、真实 stdio/HTTP 与受限权限正反例。
 [v2.3.0 生产切换](../../integration_evidence/acs-identity-root-production-20261102/REPORT.md)
 记录两端安装、Windows/WSL 新连接、真实 Native 关联回复、代次 8 与原有数据保留。
-升级前的旧 MCP 通道已回收，现有聊天需要重连以取得新版工具目录。
+现有长连接保持其启动版本；新建连接读取当前安装及工具目录。
+
+v2.3.1 进一步修复 Client 自我地址、同 Principal 多 Slot 的自我标记、
+Owner Route 跨范围读取／修改和历史组织标签覆盖真实角色的问题。
+受信只读文件通路保留 Owner 当前管理文件来源，接收端本机文件工具继续
+使用本机。只读鉴权避免持有 Project 写锁，真实跨机补读可再次校验当前权限。
+[接入与角色核查](../../integration_evidence/acs-client-role-20261102/REPORT.md)
+分别记录真实网页 Client、四角色 MCP 会话、原生 SSH 与候选接收端读取；
+正式生产切换及 Native 验收仍是独立证据。
 
 ## 实际可用的主链
 
@@ -38,7 +46,7 @@ Codex Shared 真实双模型和 OS 边界验证。Windows 直连 WSL 测试库�
 用法及采用命令见 [COMMUNICATION.md](COMMUNICATION.md)，机器可读接口见
 [工具目录](p2-mcp-tool-contract.json)。目录版本为 12（v2.2.0 发行目录为 11），Message 为
 `acs-message/1`，Core/Project Schema 为 2。现有旧库需要显式采用；正常启动
-只读校验，不执行迁移。软件包版本为 2.3.0；开发包 v2.33 是文档版本。
+只读校验，不执行迁移。软件包版本为 2.3.1；开发包 v2.33 是文档版本。
 
 ## 支持声明和验证层次
 

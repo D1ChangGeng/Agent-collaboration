@@ -49,6 +49,7 @@ INSTALL_CONTENT = (
     "docs/RELEASE-NOTES-v1.5.1.md",
     "docs/RELEASE-NOTES-v1.5.2.md",
     "docs/RELEASE-NOTES-v1.5.3.md",
+    "docs/RELEASE-NOTES-v2.3.1.md",
     "docs/TROUBLESHOOTING.md",
     "docs/runtime/OWNER-RUNTIME.md",
     "docs/runtime/MACHINE-FILESYSTEM.md",
