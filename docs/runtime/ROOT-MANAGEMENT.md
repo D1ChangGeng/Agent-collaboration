@@ -43,6 +43,38 @@ comes from the trusted stdio/OAuth binding and current authoritative records.
 Role changes, revoked Grants, inactive Slots and inactive Scopes invalidate old
 management access. A trusted binding must be refreshed after changing roles.
 
+Contact `is_self` uses the resolved communication address. A Client is not a
+legacy Root Slot sharing its Principal; two bound Slots with one Principal are
+not each other's identity. Legacy `organization_level` declarations do not
+override the current member role in first-entry context.
+
+Owner mode retains Route boundaries for direct context/resource selection and
+Route updates. Explicitly supplying a sibling Route handle cannot enlarge the
+caller scope. Client and Root managers retain authorized project-wide selection.
+
+## Current management files across hosts
+
+`local` in saved management locations names the owning service's filesystem.
+A receiving host can set trusted `filesystem.management_machine_id` to an
+existing file connection that reaches that origin. This affects management
+context hydration; ordinary native `local` file calls keep the receiving host's
+filesystem, and an explicit `load_project` machine/path choice still wins.
+
+The read-only SSH peer entry uses the existing `FilesystemSshMachine` transport
+and an operator-owned forced command. It binds a peer to its existing private
+ACS surface configuration and rechecks that live Project/Slot/Grant before and
+after reading. Requests supply file operations, not caller identities. This
+entry admits `filesystem_context` and `read_file` within configured read roots;
+it does not admit file writes, arbitrary commands or Native initiation. SSH keys,
+host verification, service state and tunnel recovery remain installation facts.
+The configured SSH machine advertises `allowed_operations` in filesystem
+discovery and rejects other operations locally as well as at the peer.
+
+`scripts/acs_filesystem_peer.py` verifies the active installation and module
+digest before selecting its locked Python and catalog. Failed transport or
+revoked identity remains unavailable; it does not substitute another checkout.
+Returned context identifies actual origin paths and current content hashes.
+
 Project discovery and role context reuse the same existing `CONTACTS` view as
 message addressing. Multiple Slots under one Principal keep their actual Grant
 and Slot identities, including a shared Grant when the trusted Slot is explicit.

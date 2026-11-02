@@ -64,6 +64,9 @@ def test_client_root_route_and_collaborator_over_real_stdio(comm, tmp_path):
                 route = await call(manager, "create_route", project_id="wire-root", client_request_id="wire-route",
                     root_handle=pack["root_handle"], expected_root_revision=pack["project_revision"], route_id="wire-route",
                     display_name="Wire Route", goal="Scoped communication")
+                sibling = await call(client, "create_route", project_id="wire-root", client_request_id="wire-sibling",
+                    root_handle=pack["root_handle"], expected_root_revision=route["root_revision"], route_id="wire-sibling",
+                    display_name="Sibling Route", goal="Separate Scope")
                 route_member = await call(manager, "configure_team", project_id="wire-root", client_request_id="wire-manager",
                     scope_handle=route["scope_handle"], members=[{"agent_slot_id": "wire-route-agent", "principal_ref": "agent:wire-route", "role": "route"}])
                 route_manager = await bound_session("route", route_member["caller_bindings"][0])
@@ -76,6 +79,22 @@ def test_client_root_route_and_collaborator_over_real_stdio(comm, tmp_path):
                 worker_profile = await call(worker, "read_profile")
                 assert worker_profile["actor"]["organization"]["level"] == "agent"
                 assert "configure_team" not in {tool.name for tool in (await worker.list_tools()).tools}
+
+                management = {"configure_root", "configure_team", "create_route", "update_route"}
+                for session, expected in [(client, management), (manager, management),
+                        (route_manager, {"configure_team", "update_route"}), (worker, set())]:
+                    actual_tools = {tool.name for tool in (await session.list_tools()).tools}
+                    assert actual_tools.intersection(management) == expected
+                    assert not actual_tools.intersection({"create_work", "list_work", "accept_work", "list_reviews"})
+                for session in (route_manager, worker):
+                    denied = (await session.call_tool("load_project", {"project_id": "wire-root",
+                        "route_handle": sibling["route_handle"]})).structured_content
+                    assert not denied["ok"] and denied["data"]["code"] == "authorization_denied"
+                    denied = (await session.call_tool("create_route", {"project_id": "wire-root",
+                        "client_request_id": "forbidden-child-route", "root_handle": pack["root_handle"],
+                        "expected_root_revision": sibling["root_revision"], "route_id": "forbidden",
+                        "display_name": "Forbidden", "goal": "Must reject"})).structured_content
+                    assert not denied["ok"] and denied["data"]["code"] == "authorization_denied"
 
                 for sender, receiver, target in [
                     (client, manager, "wire-root-agent"), (manager, route_manager, "wire-route-agent"),

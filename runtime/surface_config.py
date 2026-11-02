@@ -110,6 +110,7 @@ class FilesystemSshMachine(ConfigModel):
     machine_id: str
     ssh_target: str
     service_argv: tuple[str, ...]
+    allowed_operations: tuple[str, ...] | None = None
 
     @model_validator(mode="after")
     def safe_service_arguments(self):
@@ -118,12 +119,17 @@ class FilesystemSshMachine(ConfigModel):
             raise ValueError("SSH target is invalid")
         if not self.service_argv or any(not value or "\0" in value for value in self.service_argv):
             raise ValueError("SSH file service command is invalid")
+        from runtime.machine_filesystem import TOOLS
+        if self.allowed_operations is not None and (len(set(self.allowed_operations)) != len(self.allowed_operations)
+                or set(self.allowed_operations) - (TOOLS | {"filesystem_context"})):
+            raise ValueError("SSH file operations are invalid")
         return self
 
 
 class FilesystemSettings(ConfigModel):
     default_machine_id: str = "local"
     cwd: str | None = None
+    management_machine_id: str | None = None
     ssh_machines: tuple[FilesystemSshMachine, ...] = ()
 
 

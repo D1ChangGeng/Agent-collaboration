@@ -315,7 +315,8 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
             "FROM collaboration_projects p JOIN " + CONTACTS + " m "
             "USING(tenant_id,project_id) WHERE p.tenant_id=%s AND p.project_id=%s "
             "AND p.state='active' AND m.principal_ref=%s AND m.profile=%s "
-            "AND (%s::text IS NULL OR m.agent_slot_id=%s) FOR UPDATE OF p",
+            "AND (%s::text IS NULL OR m.agent_slot_id=%s)"
+            + ("" if self.catalog["tools"][name]["annotations"].get("readOnlyHint") else " FOR UPDATE OF p"),
             (self.context.tenant_id, project_id, self.context.principal_ref, self.profile,
              self.context.agent_slot_id, self.context.agent_slot_id),
         )
@@ -362,7 +363,8 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
             "FROM collaboration_projects p LEFT JOIN " + CONTACTS + " m ON m.tenant_id=p.tenant_id "
             "AND m.project_id=p.project_id AND m.principal_ref=%s AND m.profile=%s AND m.grant_ref=%s "
             "AND (%s::text IS NULL OR m.agent_slot_id=%s) "
-            "WHERE p.tenant_id=%s AND p.project_id=%s AND p.state='active' FOR UPDATE OF p",
+            "WHERE p.tenant_id=%s AND p.project_id=%s AND p.state='active'"
+            + ("" if self.catalog["tools"][name]["annotations"].get("readOnlyHint") else " FOR UPDATE OF p"),
             (self.context.principal_ref, self.profile, self.context.grant_ref,
              self.context.agent_slot_id, self.context.agent_slot_id, self.context.tenant_id, project_id),
         )
@@ -795,7 +797,7 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
         binding = {"principal_ref": self.context.principal_ref, "agent_slot_id": project[5],
                 "communication_address": address, "manager_handle": manager[0] if manager else None,
                 "scope_handle": handle("scope", project_id, scope),
-                "organization": organization_projection(role, level=declared.get("organization_level"),
+                "organization": organization_projection(role,
                     responsibilities=declared.get("responsibilities")), "profile": self.profile,
                 "authorization": {"grant_ref": authority.context.grant_ref,
                                   "declared_permissions": permissions if authority.access_mode != "owner" else [],

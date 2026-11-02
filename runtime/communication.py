@@ -253,6 +253,7 @@ class CommunicationActions:
             return keys + (["notice:" + str(notice[0])] if notice else [])
 
     def _list_collaborators(self, authority, cursor, project, _command, args, _credential):
+        address = self._communication_address(cursor, args["project_id"])
         scopes = self._visible_scopes(authority, cursor, project)
         if scopes is not None:
             scopes=list(dict.fromkeys([*scopes,project[0]]))
@@ -284,12 +285,12 @@ class CommunicationActions:
                 "profile": profile, "scope_handle": handle("scope", args["project_id"], scope_id), "state": state,
                 "manager_handle": manager,
                 "receiver": {"endpoint_id": declared.get("endpoint_id"), "selection": "configured" if declared.get("endpoint_id") else "automatic"},
-                "is_self": principal == self.context.principal_ref and profile == self.profile})
+                "is_self": handle("collaborator", args["project_id"], slot) == address})
         limit = args.get("limit", 50)
         if type(limit) is not int or not 1 <= limit <= 100:
             raise ValueError("invalid contact page size")
         items = [item for item in items if not args.get("cursor") or item["agent_slot_id"] > args["cursor"]]
-        return "observed", {"project_id": args["project_id"], "self": self._communication_address(cursor, args["project_id"]),
+        return "observed", {"project_id": args["project_id"], "self": address,
             "items": items[:limit], "next_cursor": items[limit-1]["agent_slot_id"] if len(items) > limit else None}, []
 
     def _communication_address(self, cursor, project_id):

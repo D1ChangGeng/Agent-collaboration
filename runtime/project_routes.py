@@ -273,7 +273,16 @@ class RouteActions:
 
     def _route_authority(self, authority, cursor, project_id, project, scope, permissions, args):
         if authority.access_mode == "owner":
-            scope = scope or project[0]
+            scopes = self._visible_scopes(authority, cursor, project)
+            if scope is not None and scopes is not None and scope not in scopes:
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+            if (args["_tool_name"] == "update_route" and self.profile == "route_manager"
+                    and not self.context.trusted_client):
+                cursor.execute("SELECT scope_id FROM grants WHERE tenant_id=%s AND grant_ref=%s",
+                               (self.context.tenant_id, self.context.grant_ref))
+                if scope != cursor.fetchone()[0]:
+                    raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+            scope = scope or (scopes[0] if scopes else project[0])
             self._scope(cursor, self.context.tenant_id, project_id, handle("scope", project_id, scope))
             grant, slot = self.context.grant_ref, self.context.agent_slot_id or project[5]
             bound = copy(authority)

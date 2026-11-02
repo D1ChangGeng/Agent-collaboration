@@ -147,7 +147,11 @@ class CurrentProjectContext:
             cursor, args["project_id"], manifest
         )
         saved_machine = machine
-        machine = args.get("machine_id") or machine
+        # A receiving host can explicitly bind the owner's saved local paths
+        # to its configured file connection. Ordinary local file tools retain
+        # this process's own OS filesystem; a caller override still wins.
+        origin = getattr(self.filesystems.settings, "management_machine_id", None)
+        machine = args.get("machine_id") or (origin if machine == "local" and origin else machine)
         if args.get("management_path"):
             directory = args["management_path"]
         elif args.get("machine_id") and machine != saved_machine:

@@ -9,7 +9,7 @@ ACS 通过稳定联系人、自然消息、主动关联回复和持久 Inbox 连
 项目保有 **Management Root** 和 **Route**；Codex、OpenCode 自主安排工作与
 评审。ACS 验证参与者身份、保留通信，并按请求发起受权 Native 输入。
 
-ACS v2.3.0 提供[通信合同](docs/runtime/COMMUNICATION.md)中的核心能力，
+ACS v2.3.1 提供[通信合同](docs/runtime/COMMUNICATION.md)中的核心能力，
 实际环境和限制见[实现与支持记录](docs/runtime/COMMUNICATION-STATUS.md)。
 现有 v1.x 安装需要[引导升级](docs/RELEASE-NOTES-v2.0.0.md)，自动更新不会
 激活这个主版本。
@@ -71,7 +71,7 @@ flowchart TB
 组织责任范围、Role、Profile 与 Grant 各有独立含义。稳定 Slot 在 Native Session
 替换后保留作者身份。Agent 可以通过普通消息请 Reviewer 核查具体 commit 并回报。
 [Root 管理](docs/runtime/ROOT-MANAGEMENT.md)通过 `configure_root` 统一配置，
-Project 保留为其通信和隔离标识。升级说明见 [v2.3.0](docs/RELEASE-NOTES-v2.3.0.md)。
+Project 保留为其通信和隔离标识。升级说明见 [v2.3.1](docs/RELEASE-NOTES-v2.3.1.md)。
 
 ## 架构
 

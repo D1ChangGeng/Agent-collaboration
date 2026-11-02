@@ -348,12 +348,23 @@ Owner registration records durable Project/Root identity, Routes and current
 management file locations. A Management Root may be nested in Git or stored in
 an authorized standalone directory. `load_project` reads its configured
 instruction and knowledge index paths through the selected machine filesystem.
-Use `configure_project` with `project_id`, `client_request_id`,
-`expected_revision` and `changes` to set or replace `management`,
-`instruction_paths` and `knowledge_index_paths`; `management: null` clears the
-saved location. A single `load_project` call can select `machine_id` and
+Use `configure_root` with `project_id`, `client_request_id` and `changes`
+to establish the Root's communication namespace or set its `management`,
+`instruction_paths` and `knowledge_index_paths`. It can configure its Root
+manager in the same operation. `management: null` clears the saved location;
+optional `expected_revision` protects an observed Root revision. Read
+`read_profile.actor` before selecting a Root: a trusted Client needs no Slot
+or fixed Native Session, and loading context does not change identity.
+`configure_project` remains a hidden compatibility call for older clients.
+A single `load_project` call can select `machine_id` and
 `management_path` for that read. Read back the resulting revision,
 observed document paths and context completeness.
+
+`local` names the MCP service process's own filesystem. A second host cannot
+read a saved local path on the first host merely because it uses the same
+Project. Verify the configured file connection and reported machine/path, or
+explicitly select the intended local clone and inspect its actual Git version.
+Do not silently substitute a different checkout when management reads fail.
 
 Agents choose and communicate the source version they actually inspect through
 Git, native file tools or an authorized reader. Existing Source records require
