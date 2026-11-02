@@ -1,5 +1,6 @@
 """First-entry context and authorization follow the actual communication identity."""
 import json
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -17,6 +18,22 @@ def test_client_directory_does_not_claim_a_legacy_root_slot_as_self(owner_client
     directory = accepted(owner_client, "list_collaborators", project_id="project-alpha")
     assert directory["self"].startswith("client:")
     assert not any(item["is_self"] for item in directory["items"])
+
+
+def test_read_context_can_reauthorize_at_its_file_peer_without_a_project_write_lock(comm, owner_client):
+    child = member_for_context(comm, owner_client)
+    service = owner_client.service
+
+    def peer_authorization():
+        peer = child.service
+        with peer.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
+            cursor.execute("SET LOCAL lock_timeout='500ms'")
+            peer._authorize(authority, cursor, "project-alpha", "load_project", {"project_id": "project-alpha"})
+
+    with service.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
+        service._authorize(authority, cursor, "project-alpha", "load_project", {"project_id": "project-alpha"})
+        with ThreadPoolExecutor(max_workers=1) as worker:
+            worker.submit(peer_authorization).result(timeout=3)
 
 
 def test_legacy_organization_metadata_cannot_relabel_an_ordinary_binding(comm, owner_client):
