@@ -67,6 +67,8 @@ after reading. Requests supply file operations, not caller identities. This
 entry admits `filesystem_context` and `read_file` within configured read roots;
 it does not admit file writes, arbitrary commands or Native initiation. SSH keys,
 host verification, service state and tunnel recovery remain installation facts.
+The configured SSH machine advertises `allowed_operations` in filesystem
+discovery and rejects other operations locally as well as at the peer.
 
 `scripts/acs_filesystem_peer.py` verifies the active installation and module
 digest before selecting its locked Python and catalog. Failed transport or

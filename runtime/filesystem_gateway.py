@@ -31,7 +31,9 @@ class FilesystemGateway:
                 descriptor = endpoint.descriptor()
                 result.append({"machine_id": descriptor["machine_id"], "transport": "node"})
         for target in getattr(self.settings, "ssh_machines", ()):
-            result.append({"machine_id": target.machine_id, "transport": "ssh"})
+            allowed = getattr(target, "allowed_operations", None)
+            result.append({"machine_id": target.machine_id, "transport": "ssh",
+                           **({"operations": list(allowed)} if allowed is not None else {})})
         return result
 
     def _target(self, machine_id):
@@ -51,6 +53,9 @@ class FilesystemGateway:
             return self.local.context(arguments.get("cwd"), arguments.get("base_cwd")) if operation == "filesystem_context" else self.local.execute(operation, arguments)
         if hasattr(target, "filesystem"):
             return target.filesystem(self.authority.context, operation, arguments)
+        allowed = getattr(target, "allowed_operations", None)
+        if allowed is not None and operation not in allowed:
+            raise FilesystemError("profile_denied", machine_id=machine_id, operation=operation)
         request = {"machine_id": machine_id, "operation": operation, "arguments": arguments}
         try:
             # Arguments and file content remain stdin data. The configured

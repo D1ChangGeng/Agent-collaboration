@@ -5,6 +5,21 @@ from runtime.filesystem_peer_entry import read_request
 from runtime.machine_filesystem import FilesystemError, MachineFilesystem
 
 
+def test_configured_read_only_machine_describes_and_enforces_its_operations(tmp_path):
+    from types import SimpleNamespace
+
+    from runtime.filesystem_gateway import FilesystemGateway
+    from runtime.surface_config import FilesystemSettings, FilesystemSshMachine
+    settings = FilesystemSettings(cwd=str(tmp_path), ssh_machines=(FilesystemSshMachine(
+        machine_id="owner-files", ssh_target="owner-files", service_argv=("acs-filesystem",),
+        allowed_operations=("filesystem_context", "read_file")),))
+    gateway = FilesystemGateway(SimpleNamespace(_delivery_endpoints={}), settings)
+    assert gateway.machines()[1]["operations"] == ["filesystem_context", "read_file"]
+    with pytest.raises(FilesystemError, match="profile_denied"):
+        gateway.execute("write_file", {"machine_id": "owner-files", "path": "AGENTS.md", "content": "Forbidden"})
+    assert not (tmp_path / "AGENTS.md").exists()
+
+
 def test_peer_reads_current_bytes_and_rechecks_authority(tmp_path):
     document = tmp_path / "AGENTS.md"
     document.write_bytes(b"Current instructions\n")
