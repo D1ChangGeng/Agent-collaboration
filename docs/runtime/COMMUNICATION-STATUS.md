@@ -22,6 +22,8 @@ Owner Route 跨范围读取／修改和历史组织标签覆盖真实角色的�
 [接入与角色核查](../../integration_evidence/acs-client-role-20261102/REPORT.md)
 分别记录真实网页 Client、四角色 MCP 会话、原生 SSH 与候选接收端读取；
 正式生产切换及 Native 验收仍是独立证据。
+[v2.3.1 生产验收](../../integration_evidence/acs-client-role-production-20261102/REPORT.md)
+记录两端正式安装、真实 Native 默认上下文与准确回信、只读运输恢复及原有数据保留。
 
 ## 实际可用的主链
 
