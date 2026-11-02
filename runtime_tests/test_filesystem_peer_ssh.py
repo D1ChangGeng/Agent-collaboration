@@ -131,8 +131,11 @@ def test_native_file_peer_supervisor_recovers_its_owned_child(ssh_key_directory)
     binary = os.environ.get("ACS_TEST_SSHD") or shutil.which("sshd")
     if not binary:
         pytest.skip("native sshd unavailable: set ACS_TEST_SSHD")
-    binary = Path(binary)
     root = ssh_key_directory
+    native = Path(binary)
+    binary = root / "sshd"
+    shutil.copyfile(native, binary)
+    binary.chmod(0o700)
     subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(root / "host")],
                    capture_output=True, check=True, timeout=10)
     with socket.socket() as listener:
