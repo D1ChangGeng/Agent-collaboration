@@ -83,6 +83,54 @@ class StartupRecoveryTests(unittest.TestCase):
         ssh.assert_called_once()
         self.assertEqual(result, {"core": "owner_repair_required", "web_tunnel": "supervision_requested", "ssh_tunnel": "owner_repair_required"})
 
+    def test_read_only_file_recovery_is_independent_of_original_transports(self):
+        self.write(self.root / "state.json", {"startup": {
+            "file_peer_profile_ref": str(self.root / "peer.json"),
+            "file_peer_ssh_profile_ref": str(self.profile)}})
+        with (mock.patch.object(startup, "ensure_core", side_effect=startup.StartupUnavailable("offline")),
+              mock.patch.object(startup, "ensure_file_peer", return_value={"management_file_peer": "supervision_requested"}) as peer,
+              mock.patch.object(startup, "ensure_ssh", return_value={"private_ssh": "supervised"}) as ssh):
+            result = startup.restore_configured(self.root, self.active)
+        peer.assert_called_once()
+        ssh.assert_called_once()
+        self.assertEqual(result, {"core": "owner_repair_required", "management_file_peer": "supervision_requested",
+                                  "management_file_tunnel": "supervised"})
+
+    def test_file_peer_configuration_and_binary_drift_require_review(self):
+        binary = self.root / "sshd"
+        binary.write_bytes(b"owned native SSH binary")
+        binary.chmod(0o700)
+        config = self.root / "sshd_config"
+        config.write_bytes(b"owned forced command config")
+        config.chmod(0o600)
+        profile = self.root / "file-peer.json"
+        self.write(profile, {"schema_version": "acs-read-only-file-peer-startup/1", "root": str(self.root),
+            "binary": str(binary), "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+            "config_file": str(config), "config_sha256": hashlib.sha256(config.read_bytes()).hexdigest()})
+        self.assertEqual(startup.file_peer_profile(profile)["binary"], str(binary))
+        config.write_bytes(b"changed forced command")
+        with self.assertRaisesRegex(startup.StartupUnavailable, "configuration_requires_review"):
+            startup.file_peer_profile(profile)
+        config.write_bytes(b"owned forced command config")
+        binary.write_bytes(b"changed binary")
+        with self.assertRaisesRegex(startup.StartupUnavailable, "binary_requires_review"):
+            startup.file_peer_profile(profile)
+
+    def test_active_release_change_replaces_only_the_recovery_worker(self):
+        initial = {"runtime_config_ref": str(self.private / "surface.json"), "current": str(self.active)}
+        updated = dict(initial, current=str(self.root / "new-active"))
+        self.write(self.root / "state.json", initial)
+        launcher = self.root / "acs_launcher.py"
+        launcher.write_bytes(b"owned stable launcher")
+        launcher.chmod(0o600)
+        with (mock.patch.object(startup, "restore_configured", side_effect=lambda *_: self.write(self.root / "state.json", updated)),
+              mock.patch.object(startup.time, "sleep"),
+              mock.patch.object(startup.os, "execv", side_effect=KeyboardInterrupt) as replace_worker,
+              self.assertRaises(KeyboardInterrupt)):
+            startup.maintain(self.root)
+        self.assertEqual(replace_worker.call_args.args, (sys.executable, [sys.executable, str(launcher),
+            "--installation-root", str(self.root), "--maintain-startup"]))
+
     def test_login_maintenance_retries_after_recovery_failure(self):
         self.write(self.root / "state.json", {"runtime_config_ref": str(self.private / "surface.json"), "current": str(self.active)})
         with (mock.patch.object(startup, "restore_configured", side_effect=[startup.StartupUnavailable("offline"), {}]) as restore,

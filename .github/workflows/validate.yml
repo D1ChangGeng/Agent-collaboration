@@ -73,6 +73,9 @@ jobs:
           runtime_tests/test_communication_content.py
           runtime_tests/test_communication_configuration.py
           runtime_tests/test_identity_root_management.py
+            runtime_tests/test_client_role_boundaries.py
+            runtime_tests/test_filesystem_peer_entry.py
+            runtime_tests/test_filesystem_peer_ssh.py
           runtime_tests/test_root_management_stdio.py
           runtime_tests/test_root_management_http.py
           runtime_tests/test_communication_restart.py

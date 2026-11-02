@@ -220,6 +220,90 @@ def supervise_ssh(path: Path) -> None:
             raise
 
 
+def file_peer_profile(path: Path) -> dict:
+    """Admit one fixed read-only sshd process, not arbitrary startup commands."""
+    data = json.loads(owner_path(path).read_bytes())
+    if data.get("schema_version") != "acs-read-only-file-peer-startup/1":
+        raise StartupUnavailable("file_peer_startup_contract_unknown")
+    root = owner_path(Path(data["root"]), directory=True)
+    if path.parent != root:
+        raise StartupUnavailable("file_peer_startup_root_differs")
+    binary = Path(data["binary"])
+    for item in (binary, *binary.parents):
+        if not item.is_absolute() or item.is_symlink():
+            raise StartupUnavailable("file_peer_binary_path_invalid")
+    info = binary.stat()
+    if (binary.name != "sshd" or not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+            or stat.S_IMODE(info.st_mode) & 0o022
+            or hashlib.sha256(binary.read_bytes()).hexdigest() != data["binary_sha256"]):
+        raise StartupUnavailable("file_peer_binary_requires_review")
+    config = owner_path(Path(data["config_file"]))
+    if config.parent != root or hashlib.sha256(config.read_bytes()).hexdigest() != data["config_sha256"]:
+        raise StartupUnavailable("file_peer_configuration_requires_review")
+    return data
+
+
+def file_peer_pid(data: dict) -> int | None:
+    root = Path(data["root"])
+    try:
+        observed = json.loads(owner_path(root / "file-peer-process.json").read_bytes())
+        process = Path("/proc") / str(observed["pid"])
+        if (process.stat().st_uid != os.getuid() or (process / "exe").resolve() != Path(data["binary"])
+                or (process / "stat").read_text().split(") ", 1)[1].split()[19] != observed["birth"]
+                or observed.get("argv") != [
+                    data["binary"], "-D", "-e", "-f", data["config_file"]]):
+            return None
+        return observed["pid"]
+    except (OSError, ValueError, KeyError, IndexError, StartupUnavailable):
+        return None
+
+
+def ensure_file_peer(path: Path) -> dict:
+    data = file_peer_profile(path)
+    root = Path(data["root"])
+    with locked(root / "file-peer-launch.lock", timeout=10):
+        lock_data = {"root": str(root), "supervisor_lock": "file-peer-supervisor.lock"}
+        if not supervisor_running(lock_data):
+            subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--supervise-file-peer", str(path)],
+                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
+    return {"management_file_peer": "supervision_requested"}
+
+
+def supervise_file_peer(path: Path) -> None:
+    data = file_peer_profile(path)
+    root = Path(data["root"])
+    try:
+        with locked(root / "file-peer-supervisor.lock", timeout=0):
+            delay = 1
+            while True:
+                if file_peer_pid(data) is not None:
+                    delay = 1
+                    time.sleep(2)
+                    continue
+                data = file_peer_profile(path)
+                process = subprocess.Popen([data["binary"], "-D", "-e", "-f", data["config_file"]],
+                                           stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                           stderr=subprocess.DEVNULL)
+                try:
+                    birth = (Path("/proc") / str(process.pid) / "stat").read_text().split(") ", 1)[1].split()[19]
+                    record = root / "file-peer-process.json"
+                    temporary = root / "file-peer-process.pending"
+                    # OpenSSH rewrites its process title after bind. Preserve
+                    # the owned launch vector alongside the exact PID birth.
+                    temporary.write_text(json.dumps({"pid": process.pid, "birth": birth,
+                        "argv": [data["binary"], "-D", "-e", "-f", data["config_file"]]}))
+                    temporary.chmod(0o600)
+                    temporary.replace(record)
+                finally:
+                    process.wait()
+                time.sleep(delay)
+                delay = min(delay * 2, 30)
+    except StartupUnavailable as error:
+        if str(error) != "startup_lock_busy":
+            raise
+
+
 def web_profile(path: Path) -> dict:
     data = json.loads(owner_path(path).read_bytes())
     if data.get("schema_version") != "acs-secure-tunnel-startup/1":
@@ -317,8 +401,13 @@ def restore_configured(installation: Path, active: Path) -> dict:
         return {"core": "owner_disabled"}
     result = {}
     components = [("core", lambda: ensure_core(installation, active))]
+    def file_tunnel(path):
+        return {"management_file_tunnel": ensure_ssh(path)["private_ssh"]}
+
     for name, field, restore in (("web_tunnel", "web_profile_ref", ensure_web),
-                                 ("ssh_tunnel", "ssh_profile_ref", ensure_ssh)):
+                                 ("ssh_tunnel", "ssh_profile_ref", ensure_ssh),
+                                 ("management_file_peer", "file_peer_profile_ref", ensure_file_peer),
+                                 ("management_file_tunnel", "file_peer_ssh_profile_ref", file_tunnel)):
         reference = state.get("startup", {}).get(field)
         if reference:
             components.append((name, lambda reference=reference, restore=restore: restore(Path(reference))))
@@ -335,6 +424,7 @@ def maintain(installation: Path) -> None:
     """Keep owner startup recovery active under an OS login/service manager."""
     state = json.loads(owner_path(installation / "state.json").read_bytes())
     private = owner_path(Path(state["runtime_config_ref"]).parent, directory=True)
+    initial_active = state.get("current")
     try:
         with locked(private / "login-recovery.lock", timeout=0):
             while True:
@@ -342,6 +432,15 @@ def maintain(installation: Path) -> None:
                     state = json.loads(owner_path(installation / "state.json").read_bytes())
                     if state.get("startup", {}).get("enabled", True) is False:
                         return
+                    if state.get("current") != initial_active:
+                        # Replace only this owned recovery worker. The stable
+                        # launcher verifies the newly active Release before the
+                        # next maintenance loop adopts its current mechanisms.
+                        launcher = installation / "acs_launcher.py"
+                        if launcher.is_symlink() or launcher.stat().st_uid != os.getuid():
+                            raise StartupUnavailable("startup_launcher_identity_differs")
+                        os.execv(sys.executable, [sys.executable, str(launcher),
+                            "--installation-root", str(installation), "--maintain-startup"])
                     restore_configured(installation, Path(state["current"]))
                 except (StartupUnavailable, OSError, ValueError, KeyError):
                     pass
@@ -356,6 +455,7 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--supervise-ssh", type=Path)
     mode.add_argument("--supervise-web", type=Path)
+    mode.add_argument("--supervise-file-peer", type=Path)
     mode.add_argument("--maintain", type=Path)
     args = parser.parse_args(argv)
     try:
@@ -363,6 +463,8 @@ def main(argv=None):
             supervise_ssh(args.supervise_ssh)
         elif args.supervise_web:
             supervise_web(args.supervise_web)
+        elif args.supervise_file_peer:
+            supervise_file_peer(args.supervise_file_peer)
         else:
             maintain(args.maintain)
     except (OSError, ValueError, KeyError, StartupUnavailable):

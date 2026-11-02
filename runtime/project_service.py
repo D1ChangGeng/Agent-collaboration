@@ -795,7 +795,7 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
         binding = {"principal_ref": self.context.principal_ref, "agent_slot_id": project[5],
                 "communication_address": address, "manager_handle": manager[0] if manager else None,
                 "scope_handle": handle("scope", project_id, scope),
-                "organization": organization_projection(role, level=declared.get("organization_level"),
+                "organization": organization_projection(role,
                     responsibilities=declared.get("responsibilities")), "profile": self.profile,
                 "authorization": {"grant_ref": authority.context.grant_ref,
                                   "declared_permissions": permissions if authority.access_mode != "owner" else [],

@@ -8,6 +8,10 @@ scope; their task and result-projection mechanisms do not define the new normal
 communication path. Current engineering evidence is recorded separately from
 formal release acceptance.
 
+Current first-entry identity, Root/Route management and role boundaries follow
+[Root management](ROOT-MANAGEMENT.md). The older task and proposed Task Agent
+sections below retain their historical Gate scope.
+
 Status: accepted architecture and implementation authorization; Runtime support
 is determined by the named Gate records. Contract revision: 2026-10-14.1.
 The original adoption baseline is 2026-09-25.1; recorded Gates retain the exact

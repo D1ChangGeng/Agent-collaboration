@@ -13,6 +13,8 @@ Project identity and authorized contact scope; Native capacity and source files 
 
 - Use the verified project_id and stable returned contact handles; names do not confer permission.
 - Client, project Root and Route manager are management levels; ordinary collaborators are not another management tier.
+- Project is the Root's communication namespace. Use configure_root to establish or configure that Root; loading another context never changes the caller identity.
+- read_profile.actor identifies the trusted Client or actual bound collaborator. Profile names and a shared Principal do not replace that binding.
 - A new Native Session preserves Slot authorship and historical message relationships. Repository hints do not synchronize code.
 
 ## Retrieval map
@@ -27,7 +29,7 @@ Read only the reference needed for this question.
 
 ## Tool vocabulary
 
-Relevant tools: list_projects, load_project, list_routes, list_collaborators.
+Relevant tools: read_profile, list_projects, configure_root, load_project, list_routes, list_collaborators.
 
 ## Application
 

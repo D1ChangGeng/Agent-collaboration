@@ -124,6 +124,7 @@ class FilesystemSshMachine(ConfigModel):
 class FilesystemSettings(ConfigModel):
     default_machine_id: str = "local"
     cwd: str | None = None
+    management_machine_id: str | None = None
     ssh_machines: tuple[FilesystemSshMachine, ...] = ()
 
 

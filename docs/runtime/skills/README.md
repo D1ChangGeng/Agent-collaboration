@@ -1,7 +1,7 @@
 # ACS knowledge Skill catalog
 
-Status: adopted P2 knowledge contract for MCP surface
-acs-p2-mcp-workflow/6. The machine-readable catalog is
+Status: current communication knowledge; historical v6 references are explicitly
+named `legacy-v6-*` and do not define normal operations. The machine-readable catalog is
 [p2-skill-contract.json](../p2-skill-contract.json).
 
 ACS uses four instruction layers:
@@ -23,11 +23,11 @@ repeatable mechanics.
 |---|---|
 | agent-collaboration-setup | global installation, project adoption, Harness and web connection setup |
 | acs-project-context | Project, Root, Route, Scope, project_id, context loading and multi-project topology |
-| acs-collaboration-model | AgentSlot, Role, team, WorkItem, delegation, handoff and Message semantics |
-| acs-runtime-model | Machine, Node, Runtime, Harness, Driver, Session, Attempt, Lease and Effect |
-| acs-continuity-recovery | Inbox, Outbox, receipts, response, subscription, wake, retry and recovery |
+| acs-collaboration-model | Stable contacts, scoped team configuration, natural messages and explicit replies |
+| acs-runtime-model | Machine, Node, Runtime, Harness, Driver, Session and Native receiving capability |
+| acs-continuity-recovery | Inbox, Outbox, receipts, response waiting, retry and recovery |
 | acs-source-evidence | SourceBinding, Git/filesystem state, Artifact, Evidence, digest and readback |
-| acs-review-acceptance | Review types, independence, findings, finalization and AcceptedState |
+| acs-review-acceptance | External Agent review and acceptance responsibilities, outside ACS communication state |
 | acs-policy-governance | Tenant, Grant, Policy, Profile, budget, OAuth, approval and data boundaries |
 | acs-web-collaboration | remote MCP, ProjectContextPack, Tunnel, OAuth and web Source access |
 
