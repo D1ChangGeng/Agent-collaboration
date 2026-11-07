@@ -1,0 +1,51 @@
+{
+  "schema_version": "acs-v11-verification/1",
+  "observed_at": "2026-11-06T14:55:28.621598+00:00",
+  "current_pure": {
+    "passed": 274,
+    "raw_log": "current-pure-contract-lifecycle-postreview.log",
+    "source_manifest_and_command": "current-pure-contract-lifecycle-postreview.json",
+    "junit": "current-pure-contract-lifecycle-postreview.xml",
+    "source_files": 855,
+    "source_unchanged": true
+  },
+  "sdk": {
+    "integrated_earlier_snapshot": {
+      "passed": 177,
+      "raw_log": "inherited/sdk-v11-c17-integrated-20261106.log"
+    },
+    "current_changed_receiver_port": {
+      "passed": 38,
+      "raw_log": "inherited/sdk-orca-receiver-port-20261106c.log"
+    },
+    "recovery_wrapper": {
+      "passed": 18,
+      "raw_log": "inherited/sdk-recovery-focused-20261106b.log"
+    },
+    "strict_typescript": "passed; postrun source/command evidence in inherited/sdk-orca-receiver-port-postrun-manifest-20261106.json",
+    "single_current_180_case_run_claimed": false
+  },
+  "pg_collection_only": {
+    "native_link_oauth_sdk": 11,
+    "p1_only_headless": 1,
+    "changed_paging_regressions": 63,
+    "executed": false
+  },
+  "independent_review": {
+    "lifecycle_findings_closed": 3,
+    "actual_signed_node_verifier_implemented": false,
+    "factory_or_production_adoption": false
+  },
+  "retained_failures": [
+    "pure-recovery-scope.json:default-sandbox50sASGI timeout",
+    "inherited prior169SDK166pass/3sandboxEACCES remains in .tmp/sdk-recovery-all-20261106.log",
+    "prior80file regression1790pass/3fail/155skip retained separately"
+  ],
+  "qualification": {
+    "CORE_P0_QUALIFIED": false,
+    "CLIENT_P1_CONTRACT_READY": false,
+    "ORCA_HOST_QUALIFIED": false
+  },
+  "current_tree_wheel_rebuilt": false,
+  "production_adoption": false
+}

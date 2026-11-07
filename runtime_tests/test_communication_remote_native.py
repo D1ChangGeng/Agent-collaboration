@@ -48,7 +48,7 @@ from runtime.receiver_domain import (
 )
 from runtime.receiver_models import EndpointRegistration
 from runtime.surface_config import PrivateReference, RemoteEndpointSettings
-from runtime_tests.test_communication import CATALOG, await_waiter, call, prepare_ordinary_agents
+from runtime_tests.test_communication import await_waiter, call, prepare_ordinary_agents
 from runtime_tests.test_communication import comm as comm_fixture
 from runtime_tests.test_delivery import command as bind_command
 from runtime_tests.test_receiver_domain_delivery import command as receiver_command
@@ -91,7 +91,7 @@ def launch_codex(
     home = tmp_path / "codex-a"
     home.mkdir(mode=0o700)
     config = [
-        'model="gpt-6.1-sol"',
+        "model="+json.dumps(os.getenv("ACS_NATIVE_TEST_MODEL", "gpt-6.1-sol")),
         'model_provider="acs-test"',
         'approval_policy="never"',
         'sandbox_mode="read-only"',
@@ -106,6 +106,14 @@ def launch_codex(
         'wire_api="responses"',
         "requires_openai_auth=true",
     ]
+    if os.getenv("ACS_NATIVE_TEST_MODEL"):
+        config[config.index("requires_openai_auth=true")] = "requires_openai_auth=false"
+        config[0:0] = ['model_reasoning_effort="low"', 'cli_auth_credentials_store="file"', 'web_search="disabled"']
+        feature_end = config.index("[model_providers.acs-test]")
+        config[feature_end:feature_end] = ["multi_agent=false", "multi_agent_v2=false", "shell_tool=false",
+                                         "request_permissions_tool=false", "daemon_auto_start=false"]
+        if os.name == "nt":
+            config.extend(["[windows]", 'sandbox="mxc"'])
     for path in sorted((Path.home() / ".agents/skills").glob("*/SKILL.md")):
         config.extend(
             ["[[skills.config]]", "path=" + json.dumps(str(path.resolve())), "enabled=false"]
@@ -183,6 +191,12 @@ def launch_codex(
         'env_vars=["ACS_A_DSN","ACS_A_CREDENTIAL","ACS_A_TRANSPORT_SEED"],required=true,startup_timeout_sec=30,tool_timeout_sec=360,'
         'tools={send_message={approval_mode="approve"}}}}'
     )
+    import tomllib
+
+    from runtime_tests.native_e2e_isolation import configured_mcp_servers
+
+    inventory = configured_mcp_servers(tomllib.loads((home/"config.toml").read_text()), [declaration])
+    (tmp_path/"a-mcp-inventory.json").write_text(json.dumps(sorted(inventory)), encoding="utf-8")
     out = (tmp_path / "a.jsonl").open("w", encoding="utf-8")
     err = (tmp_path / "a.stderr.txt").open("w", encoding="utf-8")
     process = subprocess.Popen(
@@ -263,7 +277,8 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         for path in folder.glob("*")
         if path.suffix in {".py", ".sql"}
     ]
-    files += [ROOT / "runtime_tests/fixtures/remote_native_receiver.py", Path(__file__)]
+    files += [ROOT / "runtime_tests/fixtures/remote_native_receiver.py", Path(__file__),
+              ROOT / "runtime_tests/native_e2e_isolation.py"]
     if codex_shared:
         files.append(ROOT / "runtime_tests/fixtures/codex_shared_profile.py")
     if os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1":
@@ -374,7 +389,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
         assert prepared["source_files"] == manifest, "remote source differs"
         expected_contract = {
             name: {
-                key: CATALOG["tools"][name][key]
+                key: comm.clients["a"].service.catalog["tools"][name][key]
                 for key in ("description", "input_schema", "security_scopes")
             }
             for name in DESCRIPTIONS
@@ -545,6 +560,7 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 "label": label,
                 "lose_dispatch_and_readback_acks": os.getenv("ACS_TEST_NATIVE_ACK_LOSS") == "1",
                 "provider_responses": os.getenv("ACS_NATIVE_PROVIDER_RESPONSES") == "1",
+                **({"model_id": os.environ["ACS_NATIVE_TEST_MODEL"]} if os.getenv("ACS_NATIVE_TEST_MODEL") else {}),
                 **({"shared_profile": True, "shared_run": uuid.uuid4().hex,
                     **({"harness": "codex", "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
                         "source_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip()}
@@ -700,11 +716,22 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                 outputs.extend(a_outputs)
                 deadline = time.monotonic() + 150
                 while True:
-                    with comm.authority._connect() as connection:
-                        row = connection.execute(
-                            "SELECT message_id,operation_id FROM delivery_messages WHERE packet_json->>'sender'=%s",
-                            ("collaborator:project-alpha:slot-a-real",),
-                        ).fetchone()
+                    from psycopg.errors import ConnectionTimeout
+
+                    try:
+                        with comm.authority._connect() as connection:
+                            row = connection.execute(
+                                "SELECT message_id,operation_id FROM delivery_messages WHERE packet_json->>'sender'=%s",
+                                ("collaborator:project-alpha:slot-a-real",),
+                            ).fetchone()
+                    except ConnectionTimeout:
+                        # This evaluator only observes the original request.
+                        # A transient read connection failure cannot authorize
+                        # another sender turn/message or a Native redispatch.
+                        assert time.monotonic() < deadline
+                        facts["sender_observation_connection_timeouts"] = facts.get("sender_observation_connection_timeouts", 0)+1
+                        time.sleep(0.25)
+                        continue
                     if row:
                         break
                     assert a.poll() is None and time.monotonic() < deadline, (
@@ -756,6 +783,12 @@ def test_physical_signed_receiver_and_independent_reply(comm, tmp_path, monkeypa
                     facts["sender_context_replaced"] = True
                 else:
                     assert label in (tmp_path / "a.jsonl").read_text(encoding="utf-8")
+                    from runtime_tests.native_e2e_isolation import validate_tool_destinations
+
+                    inventory = set(json.loads((tmp_path/"a-mcp-inventory.json").read_text()))
+                    events = [json.loads(line) for line in (tmp_path/"a.jsonl").read_text(encoding="utf-8").splitlines()
+                              if line.startswith("{")]
+                    facts["native_tool_isolation"] = validate_tool_destinations(events, inventory)
                 response = call(
                     comm,
                     "a",

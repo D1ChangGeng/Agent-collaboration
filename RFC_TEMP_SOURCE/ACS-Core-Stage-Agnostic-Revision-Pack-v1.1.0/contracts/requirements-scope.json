@@ -1,0 +1,405 @@
+{
+  "schema_version": "acs-requirement-scope/1",
+  "requirements": [
+    {
+      "id": "R-001",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP01",
+      "original_statement": "`sender` 来自可信 ingress context；正文、HTTP 参数、Session 标题均不授予身份。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-002",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP01",
+      "original_statement": "保留 Client/Root/Route/ordinary Slot 权限；未绑定不等于 Client；管理者不能默认读取私信。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-003",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP01",
+      "original_statement": "to 是稳定授权地址，Native 目标解析只在接收侧完成，默认无需发送方指定 Harness。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-004",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "消息提交、reply 索引、请求去重和 Outbox 同一事务；Authority ACK 只能在 commit 后发出。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-005",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "幂等键作用域 `(authority_incarnation, tenant, actor_address, operation_kind, client_request_id)`；规范化内容/目标/activation/reply_to/附件摘要不同则冲突；不同键同文是不同消息。",
+      "note": "旧合同提到 attachment digest 为可选扩展；未启用附件时不要为此强制开发二进制传输。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-006",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "reply_to 仅引用同一真实对端发给当前作者的请求；第三方委派使用新消息，不能代答。`sync` 与 wait 始终观察同一首个合法显式回复；澄清也是回复。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-007",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "Native 接纳、Provider 消费、Native turn 完成、消息在 UI 展示/阅读均不构成显式回复。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-008",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "message_only 不 Native 激活，包括与 sync 同时使用时。超时只停止 wait；消息、已触发操作和晚到回复保留。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-009",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP05",
+      "original_statement": "读取历史不消费。UTF-8 字节续读保留原 handle 与 next_offset（含 0）；原文和内嵌回复各自预算/游标。",
+      "note": "旧 MCP 的 UTF-8/不消费为 P0 旧语义，新增 HTTP 映射属于 P1。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-010",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP05",
+      "original_statement": "authority 接受顺序可用于消息/事件游标，但不是跨机器工作发生时间。",
+      "note": "旧 MCP stable cursor 属 P0；P1 新查询和事件必须共享同一提交顺序的安全规则。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-011",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "每次 Native 可能副作用之前持久化 operation_id、message/delivery 引用、canonical hash、binding_epoch、provider_generation、权限校验依据。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-012",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "same operation 在 transport retry 使用同 ID；查询与 replay-safe retry 只能作用原 Native 实例/去重域。没有证据不能生成新 operation 来规避未知。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-013",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP04",
+      "original_statement": "超时/网络错误/进程退出后 outcome=unknown；reconcile 可返回 accepted/definitively_not_admitted/unknown。只有可验证未接纳或原生同去重域 replay-safe 才允许恢复发送。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-014",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "接收端原子检查当前 epoch/generation/operation authority；租约失效不足以阻止旧进程，必须有实际 receiver fence。无法 fence 的通路标低能力，未知时停住。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-015",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP03",
+      "original_statement": "准备前和原生 handoff 前重验授权与绑定；撤销在副作用之前阻止执行。已经发往 Provider 的输入不能承诺撤回，记录竞态事实。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-016",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP03",
+      "original_statement": "busy 允许安全原生排队或延迟；approval/question/user draft/paused 默认禁止自动穿透；只依据已证明能力和明确策略例外。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-017",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP01",
+      "original_statement": "unknown/stale observation 不是 idle；静默、标题、屏幕文字可作为推断，不能单独证明已消费或确定无副作用。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-018",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP04",
+      "original_statement": "rebind 不改变历史作者/请求/消息；旧 epoch 回执保留历史证据但不允许旧实例接收新操作。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-019",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP04",
+      "original_statement": "重建 Session 需要配置授权；先恢复最小 ACS 身份、联系人、未读引用和回复规则，不声称恢复了模型工作记忆。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-020",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP04",
+      "original_statement": "唤醒是提示，可合并/去重，正文不可被合并丢弃。活动 ToolResult wait 优先交付回复，防止额外 Native 回合；wait 失效后回到 Inbox。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-021",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP05",
+      "original_statement": "通信 conversation 是现有两端消息的可重建查询投影，不是发信前置；默认按 Project 和无序地址对唯一。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-022",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "original_work_package": "WP05",
+      "original_statement": "个人 read position 只属于实际 viewer/actor，读取 API 不自动 mark_read，不共享为模型已消费；前进操作单调，手动标未读独立标记。",
+      "note": "个人已读/草稿属于 P2；P0 仍禁止将 UI 读取当模型消费，P1 会话列表不能伪造对端已读。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-023",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP06",
+      "original_statement": "snapshot 与 event cursor 在同一一致性边界创建；重连 replay 支持重复和断档，cursor 绑定身份/筛选/授权版本。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-024",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP06",
+      "original_statement": "订阅、检索、聚合计数、附件和错误同样复核授权；撤销后不得继续发送正文，缓存失效可明确通知当前连接。",
+      "note": "P1 新服务的鉴权/撤销必须完整；P0 既有 Domain/私信隔离不允许下降。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-025",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP06",
+      "original_statement": "分页 stable keyset；snapshot 边界固定，后续增量走游标；不可按客户端时钟翻页，不能暴露外域序号推断私信流量。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-026",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "original_work_package": "WP07",
+      "original_statement": "正文搜索、附件和原生引用不扩大权限；附件需可信 digest、大小、content type 和传输到接收主机的可达性校验。",
+      "note": "二进制附件、全文搜索属于 P2；资源引用 ACL/真实原生数据访问仍受 P0 原安全约束。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-027",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP07",
+      "original_statement": "ACS 消息与 native transcript 双源保留 distinct IDs、source、authority、独立 cursor；没有 linkage 不能靠正文相似度去重。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-028",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP05",
+      "original_statement": "HTTP 新面与既有 MCP 使用同一领域服务和授权；客户端不能成为较弱入口。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-029",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP09",
+      "original_statement": "限制正文、分页、订阅缓冲、并发、重试与附件配额；背压必须可见，不能 ACK 后悄悄丢弃已提交消息。",
+      "note": "核心消息/投递的预算与背压为 P0；P2 二进制附件及个人事件的限额仅在模块启用时实施。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-030",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP08",
+      "original_statement": "事件中字段缺失/unknown 保持未知；UI 不把“未观察”显示成空闲/完成。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-031",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP03",
+      "original_statement": "Codex/OpenCode 现有真实 Native 接入保留；支持声明精确到 OS/接入面/版本/授权模式。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-032",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP08",
+      "original_statement": "Orca Adapter 使用单一原生输入拥有者，不能与原生 Orchestration 同时投递同一消息。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-033",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP08",
+      "original_statement": "完整 UI 清单覆盖数据/操作/事件/降级/测试；原生工具、审批、Diff、模型选择仍由宿主拥有。",
+      "note": "UI 覆盖指 ACS 通信数据/动作与宿主 delegate/降级，非复制原生 Chat UI 后端；P2 功能仅标可选。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-034",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP08",
+      "original_statement": "插件 API 不足不以手工 PTY 输入/内部数据库注入冒充完整集成；host gap 明确归类。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-035",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP09",
+      "original_statement": "显式迁移、兼容 reader、原消息 checksum/作者/关系不变；默认启动只校验版本。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-036",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP04",
+      "original_statement": "恢复操作受权、幂等、有 expected revision、安全准入，失败不自动创建业务 Task 或换人完成。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-037",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP09",
+      "original_statement": "诊断最小暴露；日志无凭据/私信正文默认关闭；Manager notice 不包含第三方私信内容。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-038",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP10",
+      "original_statement": "真正模型/原生协议/受控 fixture/包自检证据分开；不可把模拟替代真实资格。",
+      "note": "开发证据分层在 P0/P1 各自强制，P2 不计入该轮两个完成 gate。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-039",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP01",
+      "original_statement": "受信接收能力变更必须重新确认；版本、二进制、主机、账号或连接代次变化使旧能力证据失效。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    },
+    {
+      "id": "R-040",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP09",
+      "original_statement": "Core 独立可用，关闭 Orca/UI 后消息持久性、等待恢复和维护器不消失。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true
+    }
+  ]
+}

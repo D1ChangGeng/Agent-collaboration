@@ -1,0 +1,647 @@
+{
+  "schema_version": "acs-orca-ui-readiness/1",
+  "features": [
+    {
+      "id": "UI01",
+      "feature": "可信身份与权限动作",
+      "authority": "ACS",
+      "queries": [
+        "getProfile"
+      ],
+      "commands": [],
+      "events": [
+        "permission.changed"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T003",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI02",
+      "feature": "项目与 Route 导航",
+      "authority": "ACS",
+      "queries": [
+        "listProjects",
+        "listRoutes"
+      ],
+      "commands": [],
+      "events": [
+        "permission.changed"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T089",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI03",
+      "feature": "联系人/收件地址",
+      "authority": "ACS",
+      "queries": [
+        "listContacts"
+      ],
+      "commands": [],
+      "events": [
+        "receiver.observed"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T005",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI04",
+      "feature": "通信会话列表/摘要",
+      "authority": "ACS",
+      "queries": [
+        "listConversations",
+        "getConversation",
+        "resolveConversation"
+      ],
+      "commands": [],
+      "events": [
+        "conversation.updated"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T041",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI05",
+      "feature": "历史分页/定位/长消息",
+      "authority": "ACS",
+      "queries": [
+        "listMessages",
+        "readMessage"
+      ],
+      "commands": [],
+      "events": [
+        "message.committed"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T017",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI06",
+      "feature": "显式关联回复/线程",
+      "authority": "ACS",
+      "queries": [
+        "readMessage"
+      ],
+      "commands": [
+        "sendMessage"
+      ],
+      "events": [
+        "reply.linked"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T011",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI07",
+      "feature": "普通发送/等待/不重复",
+      "authority": "ACS",
+      "queries": [
+        "getOperation"
+      ],
+      "commands": [
+        "sendMessage,waitForMessages"
+      ],
+      "events": [
+        "delivery.changed"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T009",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI08",
+      "feature": "个人未读/已读/静音/归档",
+      "authority": "ACS",
+      "queries": [
+        "getReadState",
+        "getPreferences"
+      ],
+      "commands": [
+        "markConversationRead,setConversationPreferences"
+      ],
+      "events": [
+        "read_state.changed"
+      ],
+      "source_id": "O12",
+      "source_review": "implementation_check",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T043",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI09",
+      "feature": "草稿与多设备恢复",
+      "authority": "ACS",
+      "queries": [
+        "getDraft"
+      ],
+      "commands": [
+        "saveDraft"
+      ],
+      "events": [
+        "draft.changed"
+      ],
+      "source_id": "O12",
+      "source_review": "implementation_check",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T084",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI10",
+      "feature": "消息搜索与摘要",
+      "authority": "ACS",
+      "queries": [
+        "searchMessages"
+      ],
+      "commands": [],
+      "events": [
+        "message.committed"
+      ],
+      "source_id": "O12",
+      "source_review": "implementation_check",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T048",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI11",
+      "feature": "原始送达状态与技术尝试",
+      "authority": "ACS",
+      "queries": [
+        "getDelivery",
+        "getOperation"
+      ],
+      "commands": [],
+      "events": [
+        "delivery.changed"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T014",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI12",
+      "feature": "能力/运行状态与证据",
+      "authority": "ACS",
+      "queries": [
+        "listReceivers",
+        "getReceiver"
+      ],
+      "commands": [],
+      "events": [
+        "receiver.observed,capability.changed"
+      ],
+      "source_id": "O03",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T033",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI13",
+      "feature": "故障诊断/恢复操作",
+      "authority": "ACS",
+      "queries": [
+        "getOperation"
+      ],
+      "commands": [
+        "recoverReceiver"
+      ],
+      "events": [
+        "delivery.changed"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T071",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI14",
+      "feature": "通知与个人 seen",
+      "authority": "ACS",
+      "queries": [
+        "listNotices"
+      ],
+      "commands": [
+        "markNoticeSeen"
+      ],
+      "events": [
+        "notice.created,notice.updated"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T088",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI15",
+      "feature": "附件/图片上传下载",
+      "authority": "ACS",
+      "queries": [
+        "getAttachment",
+        "downloadAttachment"
+      ],
+      "commands": [
+        "reserveAttachment,uploadAttachment,finalizeAttachment"
+      ],
+      "events": [
+        "attachment.ready"
+      ],
+      "source_id": "O01",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T085",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI16",
+      "feature": "实时更新/重连/快照",
+      "authority": "ACS",
+      "queries": [
+        "getSnapshot",
+        "subscribeEvents"
+      ],
+      "commands": [],
+      "events": [
+        "resync.required"
+      ],
+      "source_id": "O12",
+      "source_review": "implementation_check",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T045",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI17",
+      "feature": "Native Session 关联",
+      "authority": "ACS+host",
+      "queries": [
+        "listNativeLinks"
+      ],
+      "commands": [
+        "bindNativeLink"
+      ],
+      "events": [
+        "native_link.changed"
+      ],
+      "source_id": "O01",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T053",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI18",
+      "feature": "Native transcript/消息流",
+      "authority": "host",
+      "queries": [
+        "NativeViewProvider.read"
+      ],
+      "commands": [],
+      "events": [
+        "NativeViewProvider.watch"
+      ],
+      "source_id": "O01",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T082",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI19",
+      "feature": "工具调用/结果/进度/长输出",
+      "authority": "host",
+      "queries": [
+        "NativeViewProvider.read"
+      ],
+      "commands": [],
+      "events": [
+        "NativeViewProvider.watch"
+      ],
+      "source_id": "O01",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T082",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI20",
+      "feature": "原生 Diff 卡/文件打开",
+      "authority": "host",
+      "queries": [
+        "NativeViewProvider.read"
+      ],
+      "commands": [
+        "NativeViewProvider.reveal"
+      ],
+      "events": [
+        "NativeViewProvider.watch"
+      ],
+      "source_id": "O01",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T082",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI21",
+      "feature": "子 Agent / 后台任务行",
+      "authority": "host",
+      "queries": [
+        "NativeViewProvider.read"
+      ],
+      "commands": [
+        "NativeViewProvider.act:stop_native_task,stop_native_subagent"
+      ],
+      "events": [
+        "NativeViewProvider.watch"
+      ],
+      "source_id": "O01",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T082",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI22",
+      "feature": "原生问题/审批交互",
+      "authority": "host",
+      "queries": [
+        "NativeViewProvider.read"
+      ],
+      "commands": [
+        "NativeViewProvider.act:answer_question,answer_approval"
+      ],
+      "events": [
+        "NativeViewProvider.watch"
+      ],
+      "source_id": "O03",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T083",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI23",
+      "feature": "原生发送/stop/resume/排队编辑取消",
+      "authority": "host",
+      "queries": [
+        "NativeViewProvider.capabilities"
+      ],
+      "commands": [
+        "NativeViewProvider.act:submit_prompt,stop_turn,resume,update_queued_input,cancel_queued_input"
+      ],
+      "events": [
+        "NativeViewProvider.watch"
+      ],
+      "source_id": "O03",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T032",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI24",
+      "feature": "模型/effort/usage/上下文展示",
+      "authority": "host",
+      "queries": [
+        "NativeViewProvider.read"
+      ],
+      "commands": [
+        "NativeViewProvider.act:set_model"
+      ],
+      "events": [
+        "NativeViewProvider.watch"
+      ],
+      "source_id": "O01",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T087",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI25",
+      "feature": "Native Session 历史/clear/compact",
+      "authority": "host",
+      "queries": [
+        "NativeWorkspaceProvider.listSessions",
+        "NativeViewProvider.read"
+      ],
+      "commands": [
+        "NativeViewProvider.act:clear,compact"
+      ],
+      "events": [
+        "NativeViewProvider.watch"
+      ],
+      "source_id": "O01",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T086",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI26",
+      "feature": "工作区/Terminal/Git/编辑器定位",
+      "authority": "host",
+      "queries": [
+        "NativeViewProvider.capabilities"
+      ],
+      "commands": [
+        "NativeViewProvider.reveal"
+      ],
+      "events": [
+        "host workspace events"
+      ],
+      "source_id": "O02",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T082",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI27",
+      "feature": "Native 来源标识与去重链接",
+      "authority": "ACS+host",
+      "queries": [
+        "readMessage",
+        "NativeViewProvider.read"
+      ],
+      "commands": [],
+      "events": [
+        "message.committed,NativeViewProvider.watch"
+      ],
+      "source_id": "O01",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T054",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI28",
+      "feature": "插件宿主能力与降级",
+      "authority": "integration",
+      "queries": [
+        "getMeta",
+        "NativeViewProvider.capabilities"
+      ],
+      "commands": [],
+      "events": [
+        "capability.changed"
+      ],
+      "source_id": "O02",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T067",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI29",
+      "feature": "权限变化与缓存失效",
+      "authority": "ACS+host",
+      "queries": [
+        "getProfile"
+      ],
+      "commands": [],
+      "events": [
+        "permission.changed"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "host_extension_required or unsupported with reason; never invent native data",
+      "test_ids": [
+        "T047",
+        "T081"
+      ],
+      "status": "not_implemented"
+    },
+    {
+      "id": "UI30",
+      "feature": "UI 关闭后连续通信",
+      "authority": "ACS",
+      "queries": [
+        "getOperation"
+      ],
+      "commands": [],
+      "events": [
+        "delivery.changed"
+      ],
+      "source_id": "A02",
+      "source_review": "source_read",
+      "degradation": "typed unavailable/unknown; never fabricate success",
+      "test_ids": [
+        "T080",
+        "T081"
+      ],
+      "status": "not_implemented"
+    }
+  ]
+}

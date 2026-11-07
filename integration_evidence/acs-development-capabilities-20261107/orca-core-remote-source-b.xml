@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="6.426" timestamp="2026-11-07T18:41:19.911439+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_remote_source_pg" name="test_actual_core_remote_provenance_and_original_host_reconcile[False]" time="2.718"><failure message="AssertionError: ({'attempts': 1, 'message_id': 'message-985fcf68d7b947c69f69e5d5e4fada83', 'retry_after_seconds': 1, 'status': 'blocked'}, ('configured_endpoint_changed',), [('DeliveryRejected', 'configured_endpoint_changed', [])], [])&#10;assert 'blocked' == 'delivered'&#10;  &#10;  - delivered&#10;  + blocked">runtime_tests\test_communication_remote_source_pg.py:119: in test_actual_core_remote_provenance_and_original_host_reconcile
+    assert result["status"] == ("uncertain" if lost_host_ack else "delivered"), (result, state, failures, calls)
+E   AssertionError: ({'attempts': 1, 'message_id': 'message-985fcf68d7b947c69f69e5d5e4fada83', 'retry_after_seconds': 1, 'status': 'blocked'}, ('configured_endpoint_changed',), [('DeliveryRejected', 'configured_endpoint_changed', [])], [])
+E   assert 'blocked' == 'delivered'
+E     
+E     - delivered
+E     + blocked</failure></testcase><testcase classname="runtime_tests.test_communication_remote_source_pg" name="test_actual_core_remote_provenance_and_original_host_reconcile[True]" time="3.092"><failure message="AssertionError: ({'attempts': 1, 'message_id': 'message-a33aad993ee44209979612005b0aa864', 'retry_after_seconds': 1, 'status': 'blocked'}, ('configured_endpoint_changed',), [('DeliveryRejected', 'configured_endpoint_changed', [])], [])&#10;assert 'blocked' == 'uncertain'&#10;  &#10;  - uncertain&#10;  + blocked">runtime_tests\test_communication_remote_source_pg.py:119: in test_actual_core_remote_provenance_and_original_host_reconcile
+    assert result["status"] == ("uncertain" if lost_host_ack else "delivered"), (result, state, failures, calls)
+E   AssertionError: ({'attempts': 1, 'message_id': 'message-a33aad993ee44209979612005b0aa864', 'retry_after_seconds': 1, 'status': 'blocked'}, ('configured_endpoint_changed',), [('DeliveryRejected', 'configured_endpoint_changed', [])], [])
+E   assert 'blocked' == 'uncertain'
+E     
+E     - uncertain
+E     + blocked</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,27 @@
+{
+  "pass": true,
+  "requirements": {
+    "P0_required": 28,
+    "P1_required": 10,
+    "P2_optional": 2
+  },
+  "scenarios": {
+    "P0_required": 63,
+    "P1_required": 26,
+    "P2_optional": 7
+  },
+  "ui": {
+    "P1_required": 26,
+    "P2_optional": 4
+  },
+  "operations": {
+    "P1_required": 22,
+    "P2_optional": 13
+  },
+  "change_items": {
+    "P0_required": 11,
+    "P1_required": 10,
+    "P2_optional": 4
+  },
+  "note": "Package static only; no ACS implementation verified"
+}

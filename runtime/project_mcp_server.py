@@ -22,6 +22,7 @@ from mcp_types import (
     ReadResourceResult,
 )
 
+from runtime.communication_notifications import due_publication_keys, publish_wake_hint
 from runtime.communication_tools import SERVER_INSTRUCTIONS
 from runtime.postgres_connection import connect
 
@@ -108,15 +109,21 @@ def create_project_server(runtime=None, *, runtime_provider=None):
                         try:
                             keys = await anyio.to_thread.run_sync(active_runtime.service.pending_wake_keys,
                                 project_id, state["session_ref"], state["connection_ref"], active_runtime.credential_provider())
-                            newly_due = set(keys) - state["seen"].setdefault(uri, set())
+                            seen = state["seen"].get(uri)
+                            newly_due = due_publication_keys(keys, seen)
                             if newly_due:
-                                if state["modern"]:
-                                    if not state["bus"].listener_count:
-                                        continue
-                                    await state["bus"].publish(ResourceUpdated(uri=uri))
-                                else:
-                                    await state["session"].send_resource_updated(uri)
-                                state["seen"][uri].update(newly_due)
+                                if state["modern"] and not state["bus"].listener_count:
+                                    continue
+
+                                async def emit(target=uri):
+                                    if state["modern"]:
+                                        await state["bus"].publish(ResourceUpdated(uri=target))
+                                    else:
+                                        await state["session"].send_resource_updated(target)
+
+                                state["seen"][uri] = await publish_wake_hint(active_runtime.service,
+                                    project_id, state["session_ref"], state["connection_ref"],
+                                    active_runtime.credential_provider(), newly_due, seen, emit)
                             state["last_status"] = "observed"
                         except Exception:  # noqa: BLE001 - retain intent through outages; never emit private failures
                             state["last_status"] = "recovery_pending"
@@ -199,6 +206,7 @@ def create_project_server(runtime=None, *, runtime_provider=None):
     async def unsubscribe(ctx, params):
         state = await connection_state(ctx)
         state["resources"].pop(str(params.uri), None)
+        state["seen"].pop(str(params.uri), None)
         return EmptyResult()
 
     async def listen(ctx, params):

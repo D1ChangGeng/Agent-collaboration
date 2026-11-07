@@ -222,12 +222,13 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
         pytest.skip("Codex unavailable")
     selected_home = Path(os.environ.get("CODEX_HOME", str(Path.home()/".codex")))
     version = subprocess.run([binary,"--version"],capture_output=True,text=True,check=True,timeout=20).stdout.strip()
-    evidence_root = ROOT / "integration_evidence/acs-native-20261031"
+    evidence_root = Path(os.environ.get("ACS_REAL_NATIVE_EVIDENCE_ROOT", ROOT / "integration_evidence/acs-native-20261031")).resolve()
+    assert evidence_root.is_relative_to((ROOT/"integration_evidence").resolve())
     evidence = evidence_root / (("notice-" if system_notice else "invoke-")+uuid.uuid4().hex[:12])
     evidence.mkdir(parents=True, exist_ok=True)
     source_files = [path for directory in (ROOT/"runtime", ROOT/"runtime_deployment")
                     for path in directory.glob("*") if path.suffix in {".py", ".sql"}]
-    source_files += [ROOT/"docs/runtime/p2-mcp-tool-contract.json", Path(__file__),
+    source_files += [ROOT/"docs/runtime/p2-mcp-tool-contract.json", Path(__file__), Path(__file__).with_name("native_e2e_isolation.py"),
                      ROOT/"runtime_tests/test_communication.py", ROOT/"runtime_tests/test_communication_receiver.py"]
     source_manifest = {str(path.relative_to(ROOT)).replace("\\", "/"): file_digest(path) for path in source_files}
     (evidence/"source-files.json").write_text(json.dumps(source_manifest,indent=2),encoding="utf-8")
@@ -245,10 +246,18 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
         selected_provider = provider or selected_config.get("model_provider", "openai")
         values = ["model="+json.dumps(selected_config.get("model", "gpt-6.1-sol")),
                   "model_provider="+json.dumps(selected_provider), "approval_policy=\"never\"", "sandbox_mode=\"read-only\"",
-                  "project_doc_max_bytes=0", "[features]", "apps=false", "plugins=false"]
+                  "project_doc_max_bytes=0"]
+        for key in ("model_reasoning_effort", "cli_auth_credentials_store", "web_search"):
+            if key in selected_config:
+                values.append(key+"="+json.dumps(selected_config[key]))
+        values.extend(["[features]", "apps=false", "plugins=false", "multi_agent=false", "multi_agent_v2=false",
+                       "shell_tool=false", "request_permissions_tool=false", "daemon_auto_start=false"])
+        if selected_config.get("windows", {}).get("sandbox") == "mxc":
+            values.extend(["[windows]", 'sandbox="mxc"'])
         if selected_provider in selected_config.get("model_providers", {}):
             values.append("[model_providers."+selected_provider+"]")
-            for key in ("name","base_url","env_key","wire_api","requires_openai_auth","supports_websockets"):
+            for key in ("name","base_url","env_key","wire_api","requires_openai_auth","supports_websockets",
+                        "request_max_retries", "stream_max_retries"):
                 value = selected_config["model_providers"][selected_provider].get(key)
                 if value is not None:
                     values.append(key+"="+(str(value).lower() if isinstance(value,bool) else json.dumps(value)))
@@ -324,7 +333,7 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
     config = b_home/"config.toml"
     profile = LaunchProfile(binary,file_digest(binary),version.removeprefix("codex-cli "),str(schema_file),file_digest(schema_file),
         str(tmp_path),str(b_home),file_digest(config),":read-only",{k:v for k,v in b_environment.items() if k!="CODEX_HOME"},
-        execution_mode="native",startup_overrides=tuple(b_overrides))
+        execution_mode="native",startup_overrides=tuple(b_overrides), history_mode=os.getenv("ACS_NATIVE_TEST_HISTORY_MODE"))
     capacity = None
     if use_factory:
         from runtime_tests.test_communication_receiver import enrolled_native_factory
@@ -333,7 +342,7 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
         config.write_text("\n".join(overlays)+"\n"+config.read_text(encoding="utf-8"),encoding="utf-8")
         for name in ("ACS_NATIVE_TEST_DSN", "ACS_NATIVE_TEST_CREDENTIAL"):
             monkeypatch.setenv(name, b_environment[name])
-        capacity = enrolled_native_factory(comm, tmp_path, monkeypatch, b_home)
+        capacity = enrolled_native_factory(comm, tmp_path, monkeypatch, b_home, schema_path=schema_file)
         driver, supervisor, binding = capacity.driver, capacity.supervisor, capacity.binding
     else:
         driver = CodexAppServerDriver("native-real-b-"+uuid.uuid4().hex,profile,DriverJournal(tmp_path/"real-b-driver.sqlite"),
@@ -484,8 +493,14 @@ def test_real_default_invoke_activates_b_and_b_replies_through_its_own_mcp(comm,
         if not system_notice:
             assert label in transcript
         calls=[json.loads(line) for line in transcript.splitlines() if line.startswith('{')]
-        assert all(row['item'].get('server')=='acs' for row in calls if row.get('item',{}).get('type')=='mcp_tool_call'), \
-            "Isolated acceptance must not contact inherited App/MCP connections"
+        from runtime_tests.native_e2e_isolation import (
+            configured_mcp_servers,
+            validate_tool_destinations,
+        )
+
+        inventory = configured_mcp_servers(tomllib.loads((a_home/"config.toml").read_text(encoding="utf-8")), a_overrides)
+        facts["native_tool_isolation"] = validate_tool_destinations(calls, inventory)
+        (evidence/"native-invoke-facts.json").write_text(json.dumps(facts,indent=2),encoding="utf-8")
     finally:
         if process is not None and process.poll() is None:
             process.terminate()

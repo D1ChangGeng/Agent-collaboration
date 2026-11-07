@@ -1,0 +1,3270 @@
+{
+  "schema_version": "acs-v11-completion-audit/1",
+  "observed_at": "2026-11-07T06:12:01.403137+00:00",
+  "request_scope": "P0, P1 and explicitly requested P2 extensions",
+  "source_head": "19d7881d49ee887315c54c5bc02e0cc424061376",
+  "branch": "codex/core-cleanup",
+  "working_tree": "dirty_uncommitted",
+  "committed": false,
+  "pushed": false,
+  "receiver_sync_action": "none",
+  "runs": [
+    {
+      "id": "p2-initial",
+      "result": "p2-initial.json",
+      "log": "p2-initial.log",
+      "junit": "p2-initial.xml",
+      "counts": {
+        "tests": 343,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 343
+      },
+      "evidence_class": "E2_controlled_integration",
+      "source_files": 905,
+      "captured_files_match_current": false,
+      "reviewed_current_delta": [
+        "runtime/communication_http.py",
+        "runtime_tests/test_communication_http_auth.py"
+      ],
+      "delta_verification": "Current p0-p1-final reruns the complete P0/P1 batch plus exact P2/installed-package/SSRF and real SDK acceptance. Earlier component/storage evidence is retained on unchanged owning mechanisms."
+    },
+    {
+      "id": "exact-completion-b",
+      "result": "exact-completion-b.json",
+      "log": "exact-completion-b.log",
+      "junit": "exact-completion-b.xml",
+      "counts": {
+        "tests": 8,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 8
+      },
+      "evidence_class": "E2_controlled_integration",
+      "source_files": 908,
+      "captured_files_match_current": false,
+      "reviewed_current_delta": [
+        "runtime/communication_http.py",
+        "runtime_tests/test_communication_http_auth.py"
+      ],
+      "delta_verification": "Current p0-p1-final reruns the complete P0/P1 batch plus exact P2/installed-package/SSRF and real SDK acceptance. Earlier component/storage evidence is retained on unchanged owning mechanisms."
+    },
+    {
+      "id": "core-components-final",
+      "result": "core-components-final.json",
+      "log": "core-components-final.log",
+      "junit": "core-components-final.xml",
+      "counts": {
+        "tests": 1118,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 24,
+        "passed": 1094
+      },
+      "evidence_class": "E1_components",
+      "source_files": 908,
+      "captured_files_match_current": false,
+      "reviewed_current_delta": [
+        "runtime/communication_http.py",
+        "runtime_tests/test_communication_http_auth.py"
+      ],
+      "delta_verification": "Current p0-p1-final reruns the complete P0/P1 batch plus exact P2/installed-package/SSRF and real SDK acceptance. Earlier component/storage evidence is retained on unchanged owning mechanisms."
+    },
+    {
+      "id": "native-fences-components-final",
+      "result": "native-fences-components-final.json",
+      "log": "native-fences-components-final.log",
+      "junit": "native-fences-components-final.xml",
+      "counts": {
+        "tests": 198,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 7,
+        "passed": 191
+      },
+      "evidence_class": "E1_components",
+      "source_files": 908,
+      "captured_files_match_current": false,
+      "reviewed_current_delta": [
+        "runtime/communication_http.py",
+        "runtime_tests/test_communication_http_auth.py"
+      ],
+      "delta_verification": "Current p0-p1-final reruns the complete P0/P1 batch plus exact P2/installed-package/SSRF and real SDK acceptance. Earlier component/storage evidence is retained on unchanged owning mechanisms."
+    },
+    {
+      "id": "read-compatibility-final",
+      "result": "read-compatibility-final.json",
+      "log": "read-compatibility-final.log",
+      "junit": "read-compatibility-final.xml",
+      "counts": {
+        "tests": 3,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 3
+      },
+      "evidence_class": "E1_components",
+      "source_files": 909,
+      "captured_files_match_current": true,
+      "reviewed_current_delta": [],
+      "delta_verification": null
+    },
+    {
+      "id": "p0-p1-final",
+      "result": "p0-p1-final.json",
+      "log": "p0-p1-final.log",
+      "junit": "p0-p1-final.xml",
+      "counts": {
+        "tests": 522,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 3,
+        "passed": 519
+      },
+      "evidence_class": "E2_controlled_integration",
+      "source_files": 909,
+      "captured_files_match_current": true,
+      "reviewed_current_delta": [],
+      "delta_verification": null
+    }
+  ],
+  "scenario_count": 96,
+  "scenario_tiers": {
+    "P0_required": 63,
+    "P1_required": 26,
+    "P2_optional": 7
+  },
+  "api_operations": [
+    {
+      "operation_id": "getMeta",
+      "method": "GET",
+      "path": "/meta",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "getProfile",
+      "method": "GET",
+      "path": "/profile",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "listProjects",
+      "method": "GET",
+      "path": "/projects",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "listRoutes",
+      "method": "GET",
+      "path": "/projects/{project_id}/routes",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "listContacts",
+      "method": "GET",
+      "path": "/projects/{project_id}/contacts",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "listConversations",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "getConversation",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "listMessages",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "sendMessage",
+      "method": "POST",
+      "path": "/projects/{project_id}/messages",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "readMessage",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages/{message_handle}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "getDelivery",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages/{message_handle}/delivery",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "waitForMessages",
+      "method": "POST",
+      "path": "/projects/{project_id}/waits",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "getOperation",
+      "method": "GET",
+      "path": "/projects/{project_id}/operations/{operation_id}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "listReceivers",
+      "method": "GET",
+      "path": "/projects/{project_id}/receivers",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "getReceiver",
+      "method": "GET",
+      "path": "/projects/{project_id}/receivers/{receiver_id}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "recoverReceiver",
+      "method": "POST",
+      "path": "/projects/{project_id}/receivers/{receiver_id}/actions",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "getSnapshot",
+      "method": "GET",
+      "path": "/projects/{project_id}/snapshot",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "subscribeEvents",
+      "method": "GET",
+      "path": "/projects/{project_id}/events",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "getReadState",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/read-state",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "markConversationRead",
+      "method": "PUT",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/read-state",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "getPreferences",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/preferences",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "setConversationPreferences",
+      "method": "PUT",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/preferences",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "getDraft",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/draft",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "saveDraft",
+      "method": "PUT",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/draft",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "listNotices",
+      "method": "GET",
+      "path": "/projects/{project_id}/notices",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "markNoticeSeen",
+      "method": "PUT",
+      "path": "/projects/{project_id}/notices/{notice_handle}/seen",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "searchMessages",
+      "method": "GET",
+      "path": "/projects/{project_id}/search",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "reserveAttachment",
+      "method": "POST",
+      "path": "/projects/{project_id}/attachments",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "getAttachment",
+      "method": "GET",
+      "path": "/projects/{project_id}/attachments/{attachment_id}",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "uploadAttachment",
+      "method": "PUT",
+      "path": "/projects/{project_id}/attachments/{attachment_id}/content",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "downloadAttachment",
+      "method": "GET",
+      "path": "/projects/{project_id}/attachments/{attachment_id}/content",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "finalizeAttachment",
+      "method": "POST",
+      "path": "/projects/{project_id}/attachments/{attachment_id}/finalize",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections"
+    },
+    {
+      "operation_id": "listNativeLinks",
+      "method": "GET",
+      "path": "/projects/{project_id}/native-links",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "bindNativeLink",
+      "method": "PUT",
+      "path": "/projects/{project_id}/native-links/{link_id}",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    },
+    {
+      "operation_id": "resolveConversation",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/resolve",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls"
+    }
+  ],
+  "scenario_statuses": {
+    "verified_applicable_service_and_safety_contract": 68,
+    "verified_revised_legacy_compatibility": 1,
+    "unsupported_verified": 1,
+    "verified_P1_service_or_delegation_contract": 26
+  },
+  "scenarios": [
+    {
+      "id": "T001",
+      "title": "可信作者从入口解析",
+      "given": "已认证 A",
+      "when": "A 发送没有 sender 字段的消息",
+      "then": "原包作者为真实 A；receipt 可从新连接读回",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_public_work_free_a_b_loop",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T002",
+      "title": "伪造作者字段",
+      "given": "正文/参数声称 Root",
+      "when": "普通 A 尝试传入 sender/角色",
+      "then": "参数拒绝或仅作文本；权限不提高",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_invalid_or_forged_input_has_no_message_side_effect",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T003",
+      "title": "可信 Client 无 Slot",
+      "given": "合法 trusted Client",
+      "when": "首次 profile 与发信",
+      "then": "null Slot 可通信，身份不合成",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_trusted_unbound_client_receives_real_reply_without_a_fake_slot",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T004",
+      "title": "未绑定不提权",
+      "given": "普通 subject 无 Slot",
+      "when": "省略 Slot 或加载 Root context",
+      "then": "拒绝歧义/无权，非 Client",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_bound_slot_cannot_claim_another_slot_or_gain_management",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T005",
+      "title": "稳定地址跨 Session",
+      "given": "已有 B 地址且明确新绑定",
+      "when": "A 向 B 发普通消息",
+      "then": "不需 Harness 名或 Task；按当前合法绑定接收",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_rebind_pg.py::test_ready_target_rebind_retains_unknown_input_and_only_new_messages_use_new_epoch",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T006",
+      "title": "多接收端歧义",
+      "given": "B 有两个候选 receiver 无显式选择",
+      "when": "invoke 发送",
+      "then": "Inbox 提交，激活明确 selection_required；零广播",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_revised_legacy_compatibility",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_configuration_selects_one_real_receiver_and_rejects_another_slots_receiver",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "exact_old_gwt_passed": false,
+      "resolution": "v1.1 P0-01 preserves the existing MCP precommit endpoint_binding_ambiguous rejection; P0-03 requires zero broadcast. An explicit endpoint or message_only remains the supported submission. Do not relabel the old inbox-commit expectation as passed."
+    },
+    {
+      "id": "T007",
+      "title": "提交原子性",
+      "given": "可用真实 PG",
+      "when": "提交消息/reply/outbox/event intent",
+      "then": "所有记录同 commit；ACK 仅 commit 后",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_commit_crash.py::test_t008_killed_writer_cannot_ack_or_leave_partial_message_reply_outbox_or_event",
+          "current_passing_evidence": [
+            {
+              "run": "exact-completion-b",
+              "parameter_cases": 4
+            },
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T008",
+      "title": "提交窗口崩溃",
+      "given": "在 T1 各写入点故障注入",
+      "when": "杀死写进程后重连",
+      "then": "不存在半条消息或丢 Outbox 的 ACK",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_commit_crash.py::test_t008_killed_writer_cannot_ack_or_leave_partial_message_reply_outbox_or_event",
+          "current_passing_evidence": [
+            {
+              "run": "exact-completion-b",
+              "parameter_cases": 4
+            },
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T009",
+      "title": "同键恢复",
+      "given": "A 同键同文跨连接",
+      "when": "并发重试发送",
+      "then": "只一个 message 与一个逻辑操作",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_commit_crash.py::test_t009_same_request_key_across_device_connections_has_one_committed_operation",
+          "current_passing_evidence": [
+            {
+              "run": "exact-completion-b",
+              "parameter_cases": 1
+            },
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T010",
+      "title": "同键异文冲突",
+      "given": "已有 request key",
+      "when": "修改正文/目标/activation/附件重用 key",
+      "then": "409，无新增副作用",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_retry_uses_original_operation_and_conflict_preserves_content",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T011",
+      "title": "合法多引用回复",
+      "given": "B 收到 A 的多条请求",
+      "when": "B 对同 A 提交多 reply_to",
+      "then": "关系准确；首合法澄清满足 wait",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_one_reply_can_cover_multiple_same_peer_requests",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T012",
+      "title": "第三方不能代答",
+      "given": "C 可见某资源但非原收件人",
+      "when": "C reply_to A→B 私信",
+      "then": "拒绝且不泄露不存在/无权差别",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_third_party_cannot_read_or_answer_private_request",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T013",
+      "title": "Native 成功不冒充回复",
+      "given": "Provider 完成 turn",
+      "when": "查询 wait",
+      "then": "没有显式回信则仍 pending",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_native_activation_is_real_but_native_final_is_not_a_reply",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T014",
+      "title": "未知 ACK 仍有回复",
+      "given": "ACK 丢失但 B 独立回信",
+      "when": "read/wait 查询原消息",
+      "then": "wait satisfied，native unknown 保留",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_uncertain_native_ack_never_replays_and_does_not_block_real_reply",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T015",
+      "title": "message_only + sync",
+      "given": "无 Native endpoint",
+      "when": "发送 message_only 并 wait 超时",
+      "then": "Inbox 保存、Native 调用数 0",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_message_only_never_invokes_and_future_reply_satisfies",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication.py::test_message_only_reaches_a_valid_slot_without_a_native_endpoint",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T016",
+      "title": "超时不撤销",
+      "given": "A wait 超时 B 晚回",
+      "when": "新进程继续原 handle",
+      "then": "同一回复可见，A 未重发",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_reply_survives_timeout_and_new_runtime_instance",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication_wait_connection.py::test_wait_database_disconnect_keeps_original_handle_and_resumes_without_resending",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T017",
+      "title": "UTF-8 长正文",
+      "given": "多字节正文和长回复",
+      "when": "小 byte budget 分别续读",
+      "then": "完整重建同 digest，next_offset=0 正确继续",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_read_preserves_inbox_and_long_utf8_content_continues",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication.py::test_t094_large_original_and_reply_keep_independent_wait_read_continuations",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T018",
+      "title": "read 不消费",
+      "given": "消息多次 list/read",
+      "when": "再次 read 和 native wait",
+      "then": "消息仍存在，无 mark_read 或激活",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_read_preserves_inbox_and_long_utf8_content_continues",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T019",
+      "title": "提交序号分页",
+      "given": "并发 PG 写者提交交错",
+      "when": "稳定 cursor 分页",
+      "then": "不漏后提交消息，不按 UUID/本地钟排序",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_inbox_and_history_page_in_authority_order_with_concurrent_senders",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T020",
+      "title": "游标过滤改变",
+      "given": "已有 A-peer cursor",
+      "when": "用于其他 peer/filter",
+      "then": "scope mismatch，不串历史",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_query_filter_change_restarts_pagination",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T021",
+      "title": "handoff 前落盘",
+      "given": "接收端无历史 operation",
+      "when": "发原生输入",
+      "then": "durable intent 先于外部调用",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_native_handoff.py::test_handoff_is_durable_before_native_dispatch_and_not_part_of_prompt",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T022",
+      "title": "intent 后崩溃",
+      "given": "intent 已存原生结果不明",
+      "when": "重启 receiver",
+      "then": "unknown/reconcile，不盲重",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_native_handoff.py::test_unknown_handoff_reconciles_original_input_without_resubmission",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T023",
+      "title": "原操作重放",
+      "given": "Provider 原去重域支持 key",
+      "when": "相同 operation 运输重试",
+      "then": "同 receipt，不二次逻辑输入",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_signed_harness_adapter.py::test_signed_prepare_admission_replay_and_reconcile_use_one_original_native_input",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T024",
+      "title": "去重域变化",
+      "given": "原 Session unknown 后新建",
+      "when": "复用 operation 到新 Session",
+      "then": "拒绝无证据重放",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_signed_harness_adapter.py::test_prepared_generation_cannot_be_moved_to_a_replacement_session",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T025",
+      "title": "核验未知结果",
+      "given": "原生查询返回 correlated ACK",
+      "when": "reconcile",
+      "then": "unknown→accepted 并保留证据",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_native_handoff.py::test_unknown_handoff_reconciles_original_input_without_resubmission",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T026",
+      "title": "无查询能力",
+      "given": "Native 超时且不能查询",
+      "when": "恢复/重试按钮",
+      "then": "unknown 可见、零新输入",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_recovery_operations.py::test_unknown_original_input_cannot_be_retried_into_a_new_attempt",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T027",
+      "title": "旧 worker fence",
+      "given": "lease 已过期新 worker 取得",
+      "when": "旧进程继续 handoff",
+      "then": "receiver 拒绝旧 epoch",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_lifecycle_maintenance_pg.py::test_expired_lease_can_be_reclaimed_but_old_worker_never_executes",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T028",
+      "title": "无原生 fence",
+      "given": "仅 PTY 可写",
+      "when": "声明支持自动并发接管",
+      "then": "能力降级；不能伪造 fenced 支持",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_readonly_harness_adapter.py::test_readonly_signed_prepare_and_unsupported_admission_never_enter_native",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T029",
+      "title": "绑定前后重验",
+      "given": "prepare 开始后被 revoke",
+      "when": "到 native admission 前",
+      "then": "拒绝新副作用",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_message_wake_pg.py::test_reauthorization_after_capacity_read_stops_creation_and_input",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T030",
+      "title": "撤销撞上外部输入",
+      "given": "Provider 已可能接收才 revoke",
+      "when": "查询结果",
+      "then": "记录 native_possible/unknown，不假称已撤回",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_signed_harness_adapter.py::test_post_submit_authorization_loss_preserves_unknown_effect_without_receipt_disclosure",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T031",
+      "title": "忙时安全排队",
+      "given": "verified native enqueue",
+      "when": "busy 接收新消息",
+      "then": "queued receipt 非 consumed",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "unsupported_verified",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_native_input_observations.py::test_busy_is_separate_from_blocker_and_never_implies_safe_queue",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_signed_harness_adapter.py::test_unsupported_input_modes_do_not_type_into_a_terminal",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 4
+            }
+          ]
+        }
+      ],
+      "native_enqueue_qualified": false,
+      "resolution": "No currently claimed Native profile attests safe enqueue. Busy stays deferred and queue/steer are typed unsupported. The original verified-enqueue Given is not applicable to this support set."
+    },
+    {
+      "id": "T032",
+      "title": "审批/草稿保护",
+      "given": "用户正在审批或有未提交文字",
+      "when": "自动 wake",
+      "then": "延迟，无回车/覆盖/自动批准",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_signed_harness_adapter.py::test_busy_or_human_input_blockers_defer_before_native_marker",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 10
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_native_input_observations.py::test_exact_current_native_prompts_block_automatic_input",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T033",
+      "title": "状态过期",
+      "given": "之前 observed idle 已过 expires",
+      "when": "invoke",
+      "then": "重新观察/延迟",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_native_input_observations.py::test_stale_native_readback_is_unknown_instead_of_restamped",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T034",
+      "title": "终端静默",
+      "given": "没有可信 hook/native 状态",
+      "when": "infer quiet",
+      "then": "标 inferred/unknown，不证明 idle/consumed",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_readonly_harness_adapter.py::test_readonly_describe_and_observe_do_not_prepare_or_claim_a_native_session",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T035",
+      "title": "重绑保留历史",
+      "given": "旧 epoch 有 receipt/message",
+      "when": "合法 rebind",
+      "then": "作者/关系不变，历史归旧 epoch",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_rebind_pg.py::test_ready_target_rebind_retains_unknown_input_and_only_new_messages_use_new_epoch",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T036",
+      "title": "旧回执晚到",
+      "given": "旧 generation ACK 晚到",
+      "when": "新绑定已有消息",
+      "then": "只关联原 operation，不污染新 Session",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_native_handoff.py::test_changed_generation_preserves_positive_facts_and_never_submits_input",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T037",
+      "title": "受权 Session 恢复",
+      "given": "resume 能力与授权有效",
+      "when": "恢复接收端",
+      "then": "真实 session readback 与最小上下文",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_lifecycle_node.py::test_existing_native_probe_uses_real_message_less_read_capability_and_resume",
+          "current_passing_evidence": [
+            {
+              "run": "core-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ],
+      "scope": "Same live, owned Native session warm resume, with signed current authority and exact readback. Stopped-process cold recovery is not claimed."
+    },
+    {
+      "id": "T038",
+      "title": "无恢复权限",
+      "given": "原 Session 不存在",
+      "when": "list/read 状态",
+      "then": "不 spawn，不合成新 session",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_lifecycle_node.py::test_missing_profile_or_reservation_signs_unknown_without_native_contact",
+          "current_passing_evidence": [
+            {
+              "run": "core-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T039",
+      "title": "wait 与 wake 去重",
+      "given": "A 正活动等待 B",
+      "when": "B 回信",
+      "then": "ToolResult 返回且不重复启动 A",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_bidirectional_sync_commits_before_wait_and_avoids_duplicate_native",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication_message_wake_pg.py::test_active_reply_wait_precedes_message_wake_and_expiry_preserves_the_same_reply",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T040",
+      "title": "唤醒合并不丢正文",
+      "given": "连续多条 incoming",
+      "when": "合并 wake 提示",
+      "then": "全部 message IDs 在 Inbox 保持独立",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_message_wake_pg.py::test_first_message_wake_does_not_coalesce_distinct_durable_message_bodies",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T041",
+      "title": "无会话前置",
+      "given": "联系人存在但无 conversation",
+      "when": "send",
+      "then": "自动投影唯一 conversation",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T041",
+        "given": "联系人存在但无 conversation",
+        "when": "send",
+        "then": "自动投影唯一 conversation",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_client_views.py::test_t041_empty_view_then_first_message_keeps_the_same_unique_conversation",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_views.py::test_t041_empty_view_then_first_message_keeps_the_same_unique_conversation",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T042",
+      "title": "并发创建投影",
+      "given": "双方同时发首消息",
+      "when": "commit",
+      "then": "一对地址仅一个 conversation，不漏消息",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T042",
+        "given": "双方同时发首消息",
+        "when": "commit",
+        "then": "一对地址仅一个 conversation，不漏消息",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_client_views.py::test_simultaneous_first_messages_share_one_conversation_and_preserve_both_authoritative_messages",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_views.py::test_simultaneous_first_messages_share_one_conversation_and_preserve_both_authoritative_messages",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T043",
+      "title": "跨设备已读",
+      "given": "同 actor 两设备",
+      "when": "读水位并发前进",
+      "then": "水位单调，晚到消息仍未读",
+      "tier": "P2_optional",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_p2_exact_scenarios.py::test_t043_two_device_service_cas_never_regresses_frontier_or_consumes_messages",
+          "current_passing_evidence": [
+            {
+              "run": "exact-completion-b",
+              "parameter_cases": 1
+            },
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T044",
+      "title": "个人未读不代表消费",
+      "given": "UI mark read",
+      "when": "查询 delivery/response",
+      "then": "Native 与 reply 状态不变",
+      "tier": "P2_optional",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_actor_state.py::test_private_view_updates_do_not_change_original_messages_consumption_or_replies",
+          "current_passing_evidence": [
+            {
+              "run": "p2-initial",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T045",
+      "title": "snapshot race",
+      "given": "snapshot 与新提交并发",
+      "when": "订阅返回 after_cursor",
+      "then": "所有后续可见事件到达",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T045",
+        "given": "snapshot 与新提交并发",
+        "when": "订阅返回 after_cursor",
+        "then": "所有后续可见事件到达",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_p1_exact_scenarios.py::test_t045_p1_message_commit_overlaps_real_rr_cut_and_all_postcut_messages_replay",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_p1_exact_scenarios.py::test_t045_p1_message_commit_overlaps_real_rr_cut_and_all_postcut_messages_replay",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T046",
+      "title": "replay 重复",
+      "given": "重连收到相同 event",
+      "when": "reducer 重放",
+      "then": "资源不重复追加/回滚",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T046",
+        "given": "重连收到相同 event",
+        "when": "reducer 重放",
+        "then": "资源不重复追加/回滚",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_client_events.py::test_actual_message_reply_and_delivery_changes_replay_as_stable_metadata_without_effects",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          },
+          {
+            "test": "sdk/tests/communication-stream.test.mjs",
+            "scope": "current210-case_SDK_pass",
+            "artifact": "p1-current-20261107/sdk-owner-port-20261107b.json"
+          },
+          {
+            "test": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_events.py::test_actual_message_reply_and_delivery_changes_replay_as_stable_metadata_without_effects",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test_module": "sdk/tests/communication-stream.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        },
+        {
+          "test": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T047",
+      "title": "订阅撤销",
+      "given": "已授权实时连接",
+      "when": "撤销并提交私信",
+      "then": "停止私密 payload，失效缓存",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T047",
+        "given": "已授权实时连接",
+        "when": "撤销并提交私信",
+        "then": "停止私密 payload，失效缓存",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_event_http.py::test_queued_frames_are_cleared_on_current_authority_loss_before_next_emit",
+            "passed_parameter_cases": 4,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          },
+          {
+            "test": "runtime_tests/test_communication_client_snapshot.py::test_live_revocation_prevents_cached_payload_disclosure",
+            "passed_parameter_cases": 2,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_event_http.py::test_queued_frames_are_cleared_on_current_authority_loss_before_next_emit",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 4
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication_client_snapshot.py::test_live_revocation_prevents_cached_payload_disclosure",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T048",
+      "title": "计数/错误泄漏",
+      "given": "不同 scope 查询 search/count",
+      "when": "无权请求",
+      "then": "不暴露私信存在和数量",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T048",
+        "given": "不同 scope 查询 search/count",
+        "when": "无权请求",
+        "then": "不暴露私信存在和数量",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_client_events.py::test_root_manager_cannot_observe_b_c_message_or_another_viewers_private_state",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          },
+          {
+            "test_module": "runtime_tests/test_communication_client_search.py",
+            "passed_cases": 9,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_events.py::test_root_manager_cannot_observe_b_c_message_or_another_viewers_private_state",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T049",
+      "title": "固定 snapshot 分页",
+      "given": "分页期间有新消息",
+      "when": "翻后续页面",
+      "then": "snapshot 视图固定，增量走 event",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T049",
+        "given": "分页期间有新消息",
+        "when": "翻后续页面",
+        "then": "snapshot 视图固定，增量走 event",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_client_snapshot.py::test_later_messages_replies_contact_names_and_personal_preferences_do_not_mix_into_cut",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          },
+          {
+            "test": "runtime_tests/test_communication_client_views.py::test_conversation_snapshot_orders_recent_activity_excludes_late_arrivals_and_binds_actor_filters",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_snapshot.py::test_later_messages_replies_contact_names_and_personal_preferences_do_not_mix_into_cut",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication_client_views.py::test_conversation_snapshot_orders_recent_activity_excludes_late_arrivals_and_binds_actor_filters",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T050",
+      "title": "游标过期",
+      "given": "过期 replay cursor",
+      "when": "重连",
+      "then": "410 + resnapshot，不静默跳到最新",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T050",
+        "given": "过期 replay cursor",
+        "when": "重连",
+        "then": "410 + resnapshot，不静默跳到最新",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_event_http.py::test_expired_replay_returns_http_410_before_sse_headers_and_bad_filters_are_400",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          },
+          {
+            "test": "sdk/tests/communication-stream.test.mjs",
+            "scope": "current210-case_SDK_pass",
+            "artifact": "p1-current-20261107/sdk-owner-port-20261107b.json"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_event_http.py::test_expired_replay_returns_http_410_before_sse_headers_and_bad_filters_are_400",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test_module": "sdk/tests/communication-stream.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T051",
+      "title": "附件受权读取",
+      "given": "附件 ready 且关联 A→B",
+      "when": "B 读取",
+      "then": "digest 正确且范围授权",
+      "tier": "P2_optional",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_attachments.py::test_message_participant_download_starts_only_after_atomic_actual_association",
+          "current_passing_evidence": [
+            {
+              "run": "p2-initial",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T052",
+      "title": "附件越权/SSRF",
+      "given": "C 猜 ID 或提交外部 URL",
+      "when": "下载或 fetch",
+      "then": "拒绝，无私有网请求",
+      "tier": "P2_optional",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_attachments.py::test_same_principal_slots_and_root_manager_cannot_read_private_uploads",
+          "current_passing_evidence": [
+            {
+              "run": "p2-initial",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication_attachment_ssrf.py::test_t052_attachment_url_fields_never_fetch_and_guessed_private_ids_are_not_readable",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T053",
+      "title": "双源 exact linkage",
+      "given": "一条 ACS 消息已入 Native",
+      "when": "组合视图",
+      "then": "source IDs 独立，显式 linkage 可关联",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T053",
+        "given": "一条 ACS 消息已入 Native",
+        "when": "组合视图",
+        "then": "source IDs 独立，显式 linkage 可关联",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_oauth_tcp_query_and_production_sdk_return_original_protocol_references",
+            "passed_parameter_cases": 2,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          },
+          {
+            "test": "sdk/tests/integration-ports.test.mjs",
+            "scope": "current210-case_SDK_pass",
+            "artifact": "p1-current-20261107/sdk-owner-port-20261107b.json"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_oauth_tcp_query_and_production_sdk_return_original_protocol_references",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        },
+        {
+          "test_module": "sdk/tests/integration-ports.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T054",
+      "title": "相同文本无 linkage",
+      "given": "用户自己写相同内容",
+      "when": "组合显示",
+      "then": "不按相似度合并/生成 reply",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T054",
+        "given": "用户自己写相同内容",
+        "when": "组合显示",
+        "then": "不按相似度合并/生成 reply",
+        "contract_assessment": "verified_controlled_port_with_actual_Host_gap",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_acs_with_controlled_host_delegate_keeps_provenance_nonce_and_native_settings_separate",
+            "passed_parameter_cases": 2,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_acs_with_controlled_host_delegate_keeps_provenance_nonce_and_native_settings_separate",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T055",
+      "title": "新旧入口一致",
+      "given": "相同受信 A",
+      "when": "MCP/HTTP 发等价消息",
+      "then": "同一领域规则和身份",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T055",
+        "given": "相同受信 A",
+        "when": "MCP/HTTP 发等价消息",
+        "then": "同一领域规则和身份",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_p1_exact_scenarios.py::test_t055_same_actor_mcp_and_http_equivalent_send_share_domain_identity_and_defaults",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_p1_exact_scenarios.py::test_t055_same_actor_mcp_and_http_equivalent_send_share_domain_identity_and_defaults",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T056",
+      "title": "HTTP 绕权",
+      "given": "普通 Agent 调 manager 动作",
+      "when": "HTTP 调用",
+      "then": "和 MCP 一样拒绝",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T056",
+        "given": "普通 Agent 调 manager 动作",
+        "when": "HTTP 调用",
+        "then": "和 MCP 一样拒绝",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_p1_exact_scenarios.py::test_t056_ordinary_agent_cannot_use_http_recovery_to_bypass_mcp_manager_policy",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_p1_exact_scenarios.py::test_t056_ordinary_agent_cannot_use_http_recovery_to_bypass_mcp_manager_policy",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T057",
+      "title": "有界背压",
+      "given": "慢 SSE 消费者/附件配额满",
+      "when": "超预算请求",
+      "then": "提前拒绝或要求 replay",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_event_http.py::test_stalled_synthetic_transport_resyncs_from_last_yielded_cursor_not_queued_producer_position",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T058",
+      "title": "已接受不可丢",
+      "given": "Outbox 队列压力",
+      "when": "后续维护",
+      "then": "消息保留，公平目标仍推进",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_lifecycle_maintenance_pg.py::test_backoff_yields_to_another_due_operation_without_changing_original_intent",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T059",
+      "title": "未知准确呈现",
+      "given": "receiver 观测 unknown",
+      "when": "UI snapshot",
+      "then": "unknown 不显示 idle",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T059",
+        "given": "receiver 观测 unknown",
+        "when": "UI snapshot",
+        "then": "unknown 不显示 idle",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_client_receivers.py::test_registered_active_endpoint_has_unknown_native_facts_without_lifecycle_or_legacy_ready_inference",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          },
+          {
+            "test": "runtime_tests/test_communication_client_receivers.py::test_stale_or_unqualified_evidence_never_reports_observed_ready",
+            "passed_parameter_cases": 4,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_receivers.py::test_registered_active_endpoint_has_unknown_native_facts_without_lifecycle_or_legacy_ready_inference",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication_client_receivers.py::test_stale_or_unqualified_evidence_never_reports_observed_ready",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 4
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T060",
+      "title": "缺字段事件",
+      "given": "旧 provider 未给状态",
+      "when": "映射新 DTO",
+      "then": "保持 unknown/unsupported",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T060",
+        "given": "旧 provider 未给状态",
+        "when": "映射新 DTO",
+        "then": "保持 unknown/unsupported",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_client_receivers.py::test_t060_legacy_provider_missing_state_publishes_unknown_observation_without_inventing_idle",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_receivers.py::test_t060_legacy_provider_missing_state_publishes_unknown_observation_without_inventing_idle",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T061",
+      "title": "已有 Native 回归",
+      "given": "安装 Codex/OpenCode 资格环境",
+      "when": "真实 A/B 收发",
+      "then": "一次发起、真实 B 显式回信",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_normal_send_native_read_reply_wait_and_history_do_not_need_task_tables",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "native_witness": "retained-native-evidence.json; E4 original A/B exchange, explicit reply and satisfied wait"
+    },
+    {
+      "id": "T062",
+      "title": "未验证平台",
+      "given": "Windows Shared 未跑",
+      "when": "生成支持矩阵",
+      "then": "标 unverified，不外推已通过",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_native_input_observations.py::test_shared_attached_never_proves_dedicated_input_or_absent_user_draft",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ],
+      "report_witness": "qualification-matrix.json; explicitly bounded evidence and unqualified configurations"
+    },
+    {
+      "id": "T063",
+      "title": "Orca 单输入 owner",
+      "given": "Orca owns Session",
+      "when": "ACS 通过 bridge 输入",
+      "then": "仅 host 一个调用者",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T063",
+        "given": "Orca owns Session",
+        "when": "ACS 通过 bridge 输入",
+        "then": "仅 host 一个调用者",
+        "contract_assessment": "verified_controlled_port_with_actual_Host_gap",
+        "current_evidence": [
+          {
+            "test": "sdk/tests/orca-receiver-port.test.mjs",
+            "scope": "current210-case_SDK_pass",
+            "artifact": "p1-current-20261107/sdk-owner-port-20261107b.json"
+          },
+          {
+            "test_module": "runtime_tests/test_signed_harness_adapter.py",
+            "passed_cases": 52,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test_module": "sdk/tests/orca-receiver-port.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T064",
+      "title": "双 adapter 竞争",
+      "given": "外部 Driver 与 Orca 同 Session",
+      "when": "并发 claim",
+      "then": "拒绝/配置冲突，不能双提交",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T064",
+        "given": "外部 Driver 与 Orca 同 Session",
+        "when": "并发 claim",
+        "then": "拒绝/配置冲突，不能双提交",
+        "contract_assessment": "verified_controlled_port_with_actual_Host_gap",
+        "current_evidence": [
+          {
+            "test": "sdk/tests/orca-receiver-port.test.mjs",
+            "scope": "current210-case_SDK_pass",
+            "artifact": "p1-current-20261107/sdk-owner-port-20261107b.json"
+          },
+          {
+            "test": "sdk/tests/orca-receiver-port.test.mjs",
+            "case": "an external Driver ownership claim during verification fences the Orca bridge before Host entry",
+            "scope": "controlled registry claim, zero Host admission/enqueue; actual external Driver/Host absent"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test_module": "sdk/tests/orca-receiver-port.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        },
+        {
+          "test_module": "sdk/tests/orca-receiver-port.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T065",
+      "title": "UI 功能闭环",
+      "given": "全部 UI matrix 行",
+      "when": "headless consumer 调用",
+      "then": "每行有真实服务或授权 delegate",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T065",
+        "given": "全部 UI matrix 行",
+        "when": "headless consumer 调用",
+        "then": "每行有真实服务或授权 delegate",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          },
+          {
+            "test": "sdk/tests/integration-ports.test.mjs",
+            "scope": "current210-case_SDK_pass",
+            "artifact": "p1-current-20261107/sdk-owner-port-20261107b.json"
+          },
+          {
+            "matrix": "ui-contract-evidence.json",
+            "scope": "26P1 rows:17 actual service-operation witnesses/9 controlled Host delegation witnesses;4P2 optional"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test_module": "sdk/tests/integration-ports.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T066",
+      "title": "Native 完成渲染",
+      "given": "tool/turn 结束",
+      "when": "通信列表更新",
+      "then": "不得自动添加 Agent reply",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T066",
+        "given": "tool/turn 结束",
+        "when": "通信列表更新",
+        "then": "不得自动添加 Agent reply",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_client_service.py::test_native_result_is_never_explicit_response_and_unknown_can_have_real_reply",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          },
+          {
+            "test": "sdk/tests/integration-ports.test.mjs",
+            "scope": "current210-case_SDK_pass",
+            "artifact": "p1-current-20261107/sdk-owner-port-20261107b.json"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_service.py::test_native_result_is_never_explicit_response_and_unknown_can_have_real_reply",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test_module": "sdk/tests/integration-ports.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T067",
+      "title": "插件能力缺口",
+      "given": "公开 API 无 transcript 替换",
+      "when": "建立宿主 port",
+      "then": "typed host_extension_required",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T067",
+        "given": "公开 API 无 transcript 替换",
+        "when": "建立宿主 port",
+        "then": "typed host_extension_required",
+        "contract_assessment": "verified_controlled_port_with_actual_Host_gap",
+        "current_evidence": [
+          {
+            "test": "sdk/tests/orca-receiver-port.test.mjs",
+            "scope": "current210-case_SDK_pass",
+            "artifact": "p1-current-20261107/sdk-owner-port-20261107b.json"
+          },
+          {
+            "test": "sdk/tests/integration-ports.test.mjs",
+            "scope": "current210-case_SDK_pass",
+            "artifact": "p1-current-20261107/sdk-owner-port-20261107b.json"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test_module": "sdk/tests/orca-receiver-port.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        },
+        {
+          "test_module": "sdk/tests/integration-ports.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T068",
+      "title": "私改 DB 取巧",
+      "given": "插件缺 API",
+      "when": "试图内部库注入",
+      "then": "实现不允许，资格不通过",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T068",
+        "given": "插件缺 API",
+        "when": "试图内部库注入",
+        "then": "实现不允许，资格不通过",
+        "contract_assessment": "verified_controlled_port_with_actual_Host_gap",
+        "current_evidence": [
+          {
+            "test": "sdk/tests/orca-receiver-port.test.mjs",
+            "case": "missing Host implementation cannot be supplied by database injection callbacks or body authority flags",
+            "scope": "strict invalid_contract plus absentHost refusal; no real private DB accessed"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test_module": "sdk/tests/orca-receiver-port.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T069",
+      "title": "additive 升级",
+      "given": "真实旧库备份",
+      "when": "迁移+backfill",
+      "then": "原 message/author/reply/key checksum 不变",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_archive.py::test_operator_dry_run_and_idempotent_adoption_preserve_exact_original_after_task_exit",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_driver_lifecycle_journal.py::test_explicit_adoption_preserves_every_legacy_byte_hash_result_event_and_sequence",
+          "current_passing_evidence": [
+            {
+              "run": "core-components-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T070",
+      "title": "迁移中断回滚",
+      "given": "含未决 Native operation",
+      "when": "恢复旧 app",
+      "then": "证据保留，不能重新发",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_driver_lifecycle_journal.py::test_failed_adoption_rolls_back_ddl_copy_metadata_and_old_evidence",
+          "current_passing_evidence": [
+            {
+              "run": "core-components-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_driver_lifecycle_journal.py::test_unknown_legacy_input_blocks_lifecycle_after_adoption_without_new_rows",
+          "current_passing_evidence": [
+            {
+              "run": "core-components-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T071",
+      "title": "恢复动作幂等",
+      "given": "受权 manager + revision",
+      "when": "同键 reconcile/resume",
+      "then": "同 operation result",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_recovery_operations.py::test_idempotent_replay_precedes_receiving_revision_cas_but_not_authorization",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T072",
+      "title": "过期配置恢复",
+      "given": "expected revision 旧",
+      "when": "rebind/恢复",
+      "then": "409，零新输入",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_recovery_operations.py::test_expected_revision_is_receiver_binding_not_attempt_or_team_revision",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T073",
+      "title": "诊断脱敏",
+      "given": "普通 actor/manager",
+      "when": "读取通信故障",
+      "then": "必要技术状态无私信/凭据",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_notices.py::test_arbitrary_diagnostic_text_never_enters_notice_payload",
+          "current_passing_evidence": [
+            {
+              "run": "p2-initial",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T074",
+      "title": "系统通知不能代答",
+      "given": "system notice 到 Inbox",
+      "when": "wait 原 Agent reply",
+      "then": "不匹配、无泄露",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_communication_fault_notice_is_not_an_agent_reply",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T075",
+      "title": "证据层次",
+      "given": "L0/fixture 通过",
+      "when": "写交付报告",
+      "then": "明确非 Native 资格",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_readonly_harness_adapter.py::test_readonly_describe_and_observe_do_not_prepare_or_claim_a_native_session",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ],
+      "report_witness": "qualification-matrix.json; explicitly bounded evidence and unqualified configurations"
+    },
+    {
+      "id": "T076",
+      "title": "缺真实环境",
+      "given": "无 credential/二进制",
+      "when": "资格汇总",
+      "then": "blocked/unverified，不填 pass",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_receivers.py::test_known_unsupported_capability_is_preserved_without_inventing_support",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "report_witness": "qualification-matrix.json; explicitly bounded evidence and unqualified configurations"
+    },
+    {
+      "id": "T077",
+      "title": "能力失效",
+      "given": "旧 binary/config 的 supported",
+      "when": "更换 execution host/version",
+      "then": "能力重新探测",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_evidence_native.py::test_changed_files_or_receiving_generation_return_unknown_without_preparation",
+          "current_passing_evidence": [
+            {
+              "run": "core-components-final",
+              "parameter_cases": 2
+            },
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T078",
+      "title": "缓存穿透",
+      "given": "旧 peer fingerprint 缓存",
+      "when": "重连不同 Node",
+      "then": "拒绝旧 capability 与身份",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_receiver_peer_continuity.py::test_every_represented_committed_peer_change_invalidates_cached_adapter",
+          "current_passing_evidence": [
+            {
+              "run": "core-components-final",
+              "parameter_cases": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T079",
+      "title": "独立 Core 可用",
+      "given": "不运行 Orca/UI",
+      "when": "已提交消息 wait/恢复",
+      "then": "维护器和历史持续",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_installed_maintenance.py::test_t090_installed_wheel_maintains_committed_message_after_its_client_process_exits",
+          "current_passing_evidence": [
+            {
+              "run": "exact-completion-b",
+              "parameter_cases": 1
+            },
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T080",
+      "title": "UI 关闭",
+      "given": "SSE/Orca 窗口退出",
+      "when": "后台接收回信",
+      "then": "不丢消息，不依赖 UI 轮询",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_installed_maintenance.py::test_t090_installed_wheel_maintains_committed_message_after_its_client_process_exits",
+          "current_passing_evidence": [
+            {
+              "run": "exact-completion-b",
+              "parameter_cases": 1
+            },
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication_event_http.py::test_heartbeats_have_no_effect_and_disconnect_cancels_producer_and_refresh",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T081",
+      "title": "真实 HTTP 客户端全链",
+      "given": "真实 ACS 服务与隔离 namespace",
+      "when": "运行 headless consumer 覆盖 HTTP/SSE/附件/个人状态",
+      "then": "不是 mock server；保存请求/响应/事件和 DB readback",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T081",
+        "given": "真实 ACS 服务与隔离 namespace",
+        "when": "运行 headless consumer 覆盖 HTTP/SSE/附件/个人状态",
+        "then": "不是 mock server；保存请求/响应/事件和 DB readback",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T082",
+      "title": "Orca 原生 transcript delegate",
+      "given": "指定宿主 native provider",
+      "when": "读取工具/Diff/子 Agent 等源块",
+      "then": "按宿主 ACL，未转 ACS message",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T082",
+        "given": "指定宿主 native provider",
+        "when": "读取工具/Diff/子 Agent 等源块",
+        "then": "按宿主 ACL，未转 ACS message",
+        "contract_assessment": "verified_controlled_port_with_actual_Host_gap",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_acs_with_controlled_host_delegate_keeps_provenance_nonce_and_native_settings_separate",
+            "passed_parameter_cases": 2,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_acs_with_controlled_host_delegate_keeps_provenance_nonce_and_native_settings_separate",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T083",
+      "title": "原生审批 stale nonce",
+      "given": "审批已被处理或原 turn 替换",
+      "when": "延迟 answer_approval",
+      "then": "宿主拒绝 stale action，不产生 ACS reply",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T083",
+        "given": "审批已被处理或原 turn 替换",
+        "when": "延迟 answer_approval",
+        "then": "宿主拒绝 stale action，不产生 ACS reply",
+        "contract_assessment": "verified_controlled_port_with_actual_Host_gap",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_acs_with_controlled_host_delegate_keeps_provenance_nonce_and_native_settings_separate",
+            "passed_parameter_cases": 2,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_acs_with_controlled_host_delegate_keeps_provenance_nonce_and_native_settings_separate",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T084",
+      "title": "draft CAS 冲突",
+      "given": "两设备同 revision draft",
+      "when": "同时编辑",
+      "then": "一方 409，原字节保留",
+      "tier": "P2_optional",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+          "current_passing_evidence": [
+            {
+              "run": "exact-completion-b",
+              "parameter_cases": 1
+            },
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T085",
+      "title": "附件上传断线",
+      "given": "已 reservation content 未完成",
+      "when": "重传同键后 finalize",
+      "then": "完整 digest 一致；不重复 ready 内容",
+      "tier": "P2_optional",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_attachment_live_http.py::test_real_asgi_disconnect_retains_exact_chunks_and_full_retry_resumes_original_plan",
+          "current_passing_evidence": [
+            {
+              "run": "p2-initial",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T086",
+      "title": "Native clear/compact",
+      "given": "Native 会话与 ACS linked",
+      "when": "原生 clear/compact 后继续通信",
+      "then": "ACS 历史和 identity 不变；新 native generation 精确记录",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T086",
+        "given": "Native 会话与 ACS linked",
+        "when": "原生 clear/compact 后继续通信",
+        "then": "ACS 历史和 identity 不变；新 native generation 精确记录",
+        "contract_assessment": "verified_controlled_port_with_actual_Host_gap",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_acs_with_controlled_host_delegate_keeps_provenance_nonce_and_native_settings_separate",
+            "passed_parameter_cases": 2,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_acs_with_controlled_host_delegate_keeps_provenance_nonce_and_native_settings_separate",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T087",
+      "title": "模型选择不改通信身份",
+      "given": "宿主支持 model/effort",
+      "when": "调用原生设置",
+      "then": "仅 Native 权威更新，sender 不变",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T087",
+        "given": "宿主支持 model/effort",
+        "when": "调用原生设置",
+        "then": "仅 Native 权威更新，sender 不变",
+        "contract_assessment": "verified_controlled_port_with_actual_Host_gap",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_acs_with_controlled_host_delegate_keeps_provenance_nonce_and_native_settings_separate",
+            "passed_parameter_cases": 2,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_native_source_live_http.py::test_actual_acs_with_controlled_host_delegate_keeps_provenance_nonce_and_native_settings_separate",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 2
+            }
+          ]
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T088",
+      "title": "通知重复与 seen",
+      "given": "同 notice replay",
+      "when": "mark seen 并断线重连",
+      "then": "个人 seen 单调，与 message/reply 无关",
+      "tier": "P2_optional",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+          "current_passing_evidence": [
+            {
+              "run": "exact-completion-b",
+              "parameter_cases": 1
+            },
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication_client_notices.py::test_notice_seen_replays_original_full_result_before_stale_cas",
+          "current_passing_evidence": [
+            {
+              "run": "p2-initial",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T089",
+      "title": "多项目隔离",
+      "given": "同 principal 两项目且 scope 不同",
+      "when": "交叉 cursor/handle/附件/NativeLink",
+      "then": "全部依权限裁剪，无越权",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_views.py::test_self_foreign_project_and_known_foreign_pair_refs_do_not_grant_membership",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_communication_attachment_drafts.py::test_valid_attachment_from_other_project_cannot_be_saved_in_this_private_draft",
+          "current_passing_evidence": [
+            {
+              "run": "p2-initial",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T090",
+      "title": "安装后的服务回归",
+      "given": "安装包/清单/服务真实可用",
+      "when": "关闭开发 shell/客户端",
+      "then": "已装维护器继续工作",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_installed_maintenance.py::test_t090_installed_wheel_maintains_committed_message_after_its_client_process_exits",
+          "current_passing_evidence": [
+            {
+              "run": "exact-completion-b",
+              "parameter_cases": 1
+            },
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ],
+      "scope": "Actual current wheel installed into a temporary isolated target; standalone service survives client exit. Controlled Native callback, not a production service-manager deployment."
+    },
+    {
+      "id": "T091",
+      "title": "历史 backfill 可恢复",
+      "given": "历史消息有缺旧作者和非连续 ID",
+      "when": "中断回填再继续",
+      "then": "不猜作者、无重复 conversation、checkpoint 正确",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_archive.py::test_t091_atomic_historical_adoption_resumes_after_rollback_without_guessing_missing_author",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T092",
+      "title": "只有接收资格未知",
+      "given": "Codex 或 OpenCode 尚未安装",
+      "when": "describe/activate",
+      "then": "支持 unknown/unavailable；message_only 不受影响",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_receivers.py::test_registered_active_endpoint_has_unknown_native_facts_without_lifecycle_or_legacy_ready_inference",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T093",
+      "title": "无意外写入启动",
+      "given": "旧 schema 未授权 adoption",
+      "when": "普通服务 startup",
+      "then": "仅校验并报 schema_adoption_required",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication_client_storage.py::test_missing_adoption_verification_is_read_only_and_base_still_valid",
+          "current_passing_evidence": [
+            {
+              "run": "p2-initial",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_driver_lifecycle_journal.py::test_default_open_preserves_legacy_schema_and_requires_explicit_adoption",
+          "current_passing_evidence": [
+            {
+              "run": "core-components-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T094",
+      "title": "大消息 ACK 独立续读",
+      "given": "原文和回复都超过预算",
+      "when": "read_message + wait continuations",
+      "then": "两正文完整、不同 handle、offset=0 可继续",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_communication.py::test_t094_large_original_and_reply_keep_independent_wait_read_continuations",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T095",
+      "title": "SSE 心跳不是消息",
+      "given": "空闲订阅",
+      "when": "观察 heartbeat 后断线",
+      "then": "没有 unread 变化、没有 Native wake",
+      "tier": "P1_required",
+      "original_gwt_preserved": true,
+      "status": "verified_P1_service_or_delegation_contract",
+      "prior_exact_audit": {
+        "id": "T095",
+        "given": "空闲订阅",
+        "when": "观察 heartbeat 后断线",
+        "then": "没有 unread 变化、没有 Native wake",
+        "contract_assessment": "verified_revised_P1_service_contract",
+        "current_evidence": [
+          {
+            "test": "runtime_tests/test_communication_event_http.py::test_heartbeats_have_no_effect_and_disconnect_cancels_producer_and_refresh",
+            "passed_parameter_cases": 1,
+            "raw_xml": "p1-current-20261107/p1-current-scenarios-pg-20261107h.xml"
+          },
+          {
+            "test": "sdk/tests/communication-stream.test.mjs",
+            "scope": "current210-case_SDK_pass",
+            "artifact": "p1-current-20261107/sdk-owner-port-20261107b.json"
+          }
+        ],
+        "physical_Host_qualified": false,
+        "scope_note": "Original GWT retained; v1.1 P1 requires service/delegation contract. Controlled registry/Host callback is not installed Orca or actual independent model qualification."
+      },
+      "current_evidence": [
+        {
+          "test": "runtime_tests/test_communication_event_http.py::test_heartbeats_have_no_effect_and_disconnect_cancels_producer_and_refresh",
+          "current_passing_evidence": [
+            {
+              "run": "p0-p1-final",
+              "parameter_cases": 1
+            }
+          ]
+        },
+        {
+          "test_module": "sdk/tests/communication-stream.test.mjs",
+          "current_passing_evidence": "sdk-verification.json (all 210 tests)"
+        }
+      ],
+      "actual_Orca_Host": false
+    },
+    {
+      "id": "T096",
+      "title": "关闭 adapter 中未决输入",
+      "given": "native submitting 无已知结果",
+      "when": "adapter shutdown/restart",
+      "then": "原 operation unknown，不能启动替代发送",
+      "tier": "P0_required",
+      "original_gwt_preserved": true,
+      "status": "verified_applicable_service_and_safety_contract",
+      "evidence": [
+        {
+          "test": "runtime_tests/test_driver_lifecycle_journal.py::test_uncertain_lifecycle_never_executes_again_or_allows_fresh_source",
+          "current_passing_evidence": [
+            {
+              "run": "core-components-final",
+              "parameter_cases": 2
+            }
+          ]
+        },
+        {
+          "test": "runtime_tests/test_native_handoff.py::test_unknown_handoff_reconciles_original_input_without_resubmission",
+          "current_passing_evidence": [
+            {
+              "run": "native-fences-components-final",
+              "parameter_cases": 4
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "milestones": {
+    "CORE_P0_QUALIFIED": "qualified_with_specific_blockers",
+    "CLIENT_P1_CONTRACT_READY": true,
+    "P2_EXTENSIONS_READY": true,
+    "ORCA_HOST_QUALIFIED": false
+  },
+  "limits": [
+    "Actual Orca Host input extension and remote original-journal reader are unavailable; typed Host/source fallback is verified.",
+    "Physical multi-machine, Windows Shared/restricted Native and automatic stopped-process cold recovery are not qualified.",
+    "WSL Native cleanup proves its owned process group, not complete descendant containment.",
+    "Current P2 service qualification does not claim Native attachment injection or a new Claude/Pi Driver.",
+    "Legacy T006 is deliberately resolved through the revision's higher-priority MCP compatibility invariant, not declared an exact old-scenario pass."
+  ],
+  "implementation_complete_within_declared_scope": true,
+  "production_changes": false
+}

@@ -1,0 +1,85 @@
+{
+  "schema_version": "acs-capabilities/1",
+  "default_support": "unknown",
+  "scope_keys": [
+    "adapter_version",
+    "harness_version",
+    "execution_host_ref",
+    "binary_digest",
+    "config_digest",
+    "connection_epoch",
+    "provider_generation"
+  ],
+  "capabilities": [
+    {
+      "name": "native.structured_input",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.operation_lookup",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.idempotency",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.safe_busy_enqueue",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.safe_steer",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.session_resume",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.receiver_prepare",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.input_consumed",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.observe_stream",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.transcript_read",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.approval_roundtrip",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.attachment_delivery",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.terminal_pointer",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    },
+    {
+      "name": "native.rebind_fence",
+      "mandatory_for_all_harnesses": false,
+      "evidence_required_for_supported": true
+    }
+  ]
+}

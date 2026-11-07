@@ -39,6 +39,7 @@ def schema(name):
         properties.update({"to": {"type": "string"}, "content": {"type": "string"},
             "client_request_id": {"type": "string"},
             "reply_to": {"type": "array", "items": {"type": "string"}, "maxItems": 32},
+            "attachment_refs": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 512}, "maxItems": 8, "uniqueItems": True},
             "activation": {"type": "string", "enum": ["invoke", "message_only"], "default": "invoke"},
             "response_mode": {"type": "string", "enum": ["async", "sync"], "default": "async"},
             "wait_timeout_seconds": {"type": ["integer", "null"], "minimum": 0},
@@ -175,7 +176,7 @@ def adopt_catalog(catalog):
                          ["resources.read"] if name == "read_resource" else
                          ["activity.read"] if name == "list_activity" else ["message.read"],
                      input_schema={"schema_version": "acs-mcp-" + name.replace("_", "-") + "/" +
-                                       {"read_resource": "6", "list_activity": "2", "read_message": "3"}.get(name, "2"),
+                                       {"read_resource": "6", "list_activity": "2", "read_message": "4", "send_message": "3"}.get(name, "2"),
                                    "required": contract["required"],
                                    "optional": [key for key in contract["properties"] if key not in contract["required"]],
                                    "json_schema": contract})
@@ -226,18 +227,18 @@ def adopt_catalog(catalog):
         "knowledge_indexes", "skills", "source_guidance", "context_completeness", "missing_context"]
     result_types["resource_snapshot"] = ["project_id", "handle"]
     result_types.update({"message_list": ["project_id", "items", "next_cursor", "resume_cursor"],
-        "message_snapshot": ["project_id", "message_handle", "content", "reply_to", "reply", "next_offset"],
+        "message_snapshot": ["project_id", "message_handle", "content", "reply_to", "attachment_refs", "reply", "next_offset"],
         "response_observation": ["project_id", "satisfied", "pending", "observations"],
         "message_submission": ["project_id", "message_handle", "response_handle", "from", "to", "native_status"],
         "team_configuration": ["project_id", "configuration_state", "team_revision", "native_sessions"]})
     result_types["root_configuration"] = ["project_id", "root_handle", "configuration_state", "manager_configuration"]
     used_types = {tool["result_type"] for tool in tools.values()}
     result_types = {kind: fields for kind, fields in result_types.items() if kind in used_types}
-    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/12", "surface_revision": "acs-communication/1",
+    return {**catalog, "schema_version": "acs-p2-mcp-tool-contract/13", "surface_revision": "acs-communication/2",
             "defaults": defaults, "receipt_order": ["accepted_by_authority", "target_inbox_committed",
                 "runtime_dispatched", "runtime_acknowledged"], "tools": tools, "profiles": profiles,
             "advanced_tools": [], "compatibility_aliases": {"configure_project": "configure_root"}, "tool_groups": groups, "result_types": result_types,
-            "result_revision": "acs-communication-results/2",
+            "result_revision": "acs-communication-results/3",
             "agent_organization_model": {"schema_version": "acs-agent-organization/2",
                 "management_levels": ["client", "root", "route"], "ordinary_slot_is_management_level": False},
             "access_modes": {"owner": {"authorization": "trusted Client or bound Slot; live identity and project checks"},

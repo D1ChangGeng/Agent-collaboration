@@ -1,0 +1,48 @@
+{
+  "schema_version": "acs-stage-agnostic-scope/1",
+  "revision_package_version": "1.1.0",
+  "scope_policy": "phase_independent_incremental_gap_closure",
+  "supersedes": {
+    "package": "ACS-Core-Cross-Harness-DevPack-v1.0.0",
+    "clauses": [
+      "docs/00_SCOPE_AND_DOD.md:mandatory-all-products",
+      "docs/13_WORK_PACKAGES.md:linear-gates",
+      "docs/14_ENGINEERING_ACCEPTANCE.md:all-P0-tests",
+      "START_HERE_CODEX.md:complete-attachment-personal-state-service"
+    ]
+  },
+  "tiers": {
+    "P0_required": "trusted_core_native_communication_correctness_and_supported_harness_coverage",
+    "P1_required": "acs_communication_client_surface_and_orca_headless_host_contract",
+    "P2_optional": "personal_chat_product_extensions_and_binary_attachments"
+  },
+  "declarations": {
+    "old_package_assumed_delivered": true,
+    "old_progress_unknown": true,
+    "do_not_reset_worktree": true,
+    "do_not_remove_implemented_P2": true,
+    "source_reference_is_not_required_checkout": true,
+    "core_standalone_without_orca": true,
+    "orchestration_not_mandatory_for_communication": true,
+    "native_session_owner_must_be_unique": true,
+    "no_native_ack_as_agent_reply": true,
+    "no_blind_retry_when_native_possible": true,
+    "production_writes_require_separate_user_approval": true
+  },
+  "validation_target": {
+    "requirements": 40,
+    "scenarios": 96,
+    "ui_features": 30,
+    "api_operations": 35
+  },
+  "status_vocabulary": [
+    "unassessed",
+    "retained_verified",
+    "implemented_needs_evidence",
+    "partial",
+    "absent",
+    "incompatible",
+    "blocked",
+    "out_of_scope_now"
+  ]
+}

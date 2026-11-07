@@ -1,0 +1,41 @@
+{
+  "baseline_catalog": "acs-p2-mcp-tool-contract/12",
+  "baseline_message": "acs-message/1",
+  "retained_tools": [
+    "read_profile",
+    "list_projects",
+    "configure_root",
+    "configure_team",
+    "list_collaborators",
+    "send_message",
+    "check_inbox",
+    "list_messages",
+    "read_message",
+    "wait_for_response",
+    "list_harnesses",
+    "list_routes",
+    "load_project"
+  ],
+  "retained_send_defaults": {
+    "activation": "invoke",
+    "response_mode": "async"
+  },
+  "unchanged_semantics": [
+    "read_does_not_consume",
+    "timeout_does_not_cancel",
+    "explicit_same_peer_reply_to",
+    "message_only_never_invokes",
+    "native_output_not_reply",
+    "trusted_client_not_inferred_from_null_slot",
+    "project_is_root_namespace",
+    "show_and_call_authorization_equal"
+  ],
+  "new_http_does_not_replace_mcp": true,
+  "forbidden_new_required_fields": [
+    "task_id",
+    "run_id",
+    "dispatch_id",
+    "gate_id",
+    "native_session_id"
+  ]
+}

@@ -74,6 +74,75 @@ def verify_project_schema(authority):
     try:
         with authority._connect() as connection:
             verify_core(connection)
+            has_wait_storage = connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-communication-wait-ingress'").fetchone() is not None
+            authority._wait_ingress_storage_available = has_wait_storage
+            if getattr(authority, "_wait_ingress_recovery_enabled", False) or has_wait_storage:
+                from runtime.communication_wait_ingress import verify_wait_ingress
+
+                verify_wait_ingress(connection)
+            if getattr(authority, "_notification_frontiers_enabled", False):
+                from runtime.communication_notifications import verify_notification_frontiers
+
+                verify_notification_frontiers(connection)
+            has_client_storage = connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-communication-client-storage'").fetchone() is not None
+            if getattr(authority, "_communication_client_api_enabled", False) or has_client_storage:
+                from runtime.communication_client_storage import verify_client_storage
+
+                verify_client_storage(connection)
+            has_viewer_storage = connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-client-viewer-ownership'").fetchone() is not None
+            if getattr(authority, "_communication_client_api_enabled", False) or has_viewer_storage:
+                from runtime.communication_client_viewer_storage import verify_viewer_storage
+
+                verify_viewer_storage(connection)
+            has_notice_storage = connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-communication-client-notices'").fetchone() is not None
+            if getattr(authority, "_communication_client_api_enabled", False) or has_notice_storage:
+                from runtime.communication_client_notice_storage import verify_notice_storage
+
+                verify_notice_storage(connection)
+            has_event_storage = connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-communication-events'").fetchone() is not None
+            has_native_link_storage = connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-communication-native-links'").fetchone() is not None
+            authority._communication_native_link_storage_available = has_native_link_storage
+            if has_native_link_storage or getattr(authority, "_communication_native_link_settings", None) is not None:
+                from runtime.communication_native_link_storage import verify_native_link_storage
+
+                verify_native_link_storage(connection)
+            has_attachment_storage = connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-communication-attachments'").fetchone() is not None
+            authority._communication_attachment_storage_available = has_attachment_storage
+            if getattr(authority, "_communication_attachment_settings", None) is not None or has_attachment_storage:
+                from runtime.communication_attachment_storage import verify_attachment_storage
+
+                verify_attachment_storage(connection)
+            has_attachment_events = connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-communication-attachment-events'").fetchone() is not None
+            authority._communication_attachment_event_storage_available = has_attachment_events
+            if has_attachment_events or getattr(authority, "_communication_attachment_settings", None) is not None and has_event_storage:
+                from runtime.communication_attachment_event_storage import (
+                    verify_attachment_event_storage,
+                )
+
+                verify_attachment_event_storage(connection)
+            for schema_name, attribute, module_name, function_name in (
+                ("acs-conversation-view-versions", "_communication_conversation_storage_available", "runtime.communication_conversation_storage", "verify_conversation_storage"),
+                ("acs-notice-projections", "_communication_notice_projection_available", "runtime.communication_notice_projection_storage", "verify_notice_projection_storage"),
+                ("acs-receiver-observations", "_communication_receiver_observation_available", "runtime.communication_receiver_observation_storage", "verify_receiver_observation_storage"),
+                ("acs-communication-projection-events", "_communication_projection_events_available", "runtime.communication_projection_event_storage", "verify_projection_event_storage"),
+            ):
+                present = connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name=%s", (schema_name,)).fetchone() is not None
+                setattr(authority, attribute, present)
+                if getattr(authority, "_communication_events_enabled", False) or present:
+                    from importlib import import_module
+
+                    getattr(import_module(module_name), function_name)(connection)
+            authority._communication_event_storage_available = has_event_storage
+            if getattr(authority, "_communication_events_enabled", False) or has_event_storage:
+                from runtime.communication_event_storage import verify_event_storage
+
+                verify_event_storage(connection)
+            has_snapshot_storage = connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-communication-snapshots'").fetchone() is not None
+            authority._communication_snapshot_storage_available = has_snapshot_storage
+            if getattr(authority, "_communication_events_enabled", False) or has_snapshot_storage:
+                from runtime.communication_snapshot_storage import verify_snapshot_storage
+
+                verify_snapshot_storage(connection)
             for filename, name, _label in SCHEMAS:
                 current = connection.execute("SELECT schema_version,schema_checksum FROM runtime_schema_metadata WHERE schema_name=%s", (name,)).fetchone()
                 if current not in definition(filename)[2]:

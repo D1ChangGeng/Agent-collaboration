@@ -1,0 +1,11 @@
+{
+  "schema_version": "acs-adapter/1",
+  "operation_id": "op:1",
+  "outcome": "unknown",
+  "effect_possible": true,
+  "evidence_ref": null,
+  "native_input_ref": null,
+  "binding_epoch": 1,
+  "provider_generation": "g:1",
+  "reason_code": "ack_lost"
+}

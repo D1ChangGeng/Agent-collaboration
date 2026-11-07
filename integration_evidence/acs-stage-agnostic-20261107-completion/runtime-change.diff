@@ -1,0 +1,12 @@
+--- a/runtime/communication_http.py
++++ b/runtime/communication_http.py
+@@ -558,7 +558,8 @@
+         offset = _integer(params, "offset", 0, 0, 2**63 - 1)
+         maximum = _integer(params, "max_inline_bytes", min(16384, limits.inline_bytes), 1, limits.inline_bytes)
+         return await result(request, instance, "read_message", "ReadMessageResponse", project_id, message_handle,
+-                            offset=offset, max_inline_bytes=maximum, include_native_source=include == "true")
++                            offset=offset, max_inline_bytes=maximum,
++                            **({"include_native_source": True} if include == "true" else {}))
+ 
+     @app.post(PREFIX + "/projects/{project_id}/waits")
+     async def wait(project_id: str, request: Request):

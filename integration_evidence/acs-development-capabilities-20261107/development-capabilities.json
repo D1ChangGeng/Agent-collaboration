@@ -1,0 +1,3376 @@
+{
+  "schema_version": "acs-development-capability-audit/1",
+  "observed_at": "2026-11-07T10:24:41.372110+00:00",
+  "source_state": {
+    "repository": "D:\\Chatgpt\\Agent-collaboration",
+    "branch": "codex/core-cleanup",
+    "head": "19d7881d49ee887315c54c5bc02e0cc424061376",
+    "tree": "8856b23e59d50eccb1198475e84937c48a71b0bb",
+    "tracked_binary_diff_sha256": "40e8ba83b1f2acec71da678380529b4ed99696b4ebf57d43192d88524b9c3851",
+    "working_tree": "dirty_uncommitted",
+    "committed": false,
+    "pushed": false,
+    "upstream": "origin/codex/core-cleanup",
+    "receiver_sync_action": "none",
+    "observed_at": "2026-11-07T10:24:41.372110+00:00"
+  },
+  "objective": "All P0/P1 and explicitly activated P2 development capabilities; qualification coverage is separate",
+  "development_status": "complete",
+  "change_item_counts": {
+    "P0_required": 11,
+    "P1_required": 10,
+    "P2_optional": 4
+  },
+  "requirement_count": 40,
+  "api_count": 35,
+  "ui_contract_count": 30,
+  "remaining_development_items": [],
+  "items": [
+    {
+      "id": "C01",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "通信核心/身份和回复不回归",
+      "present_baseline": "已有稳定 Slot/Client/Root/Route，send/reply/wait/Inbox/Outbox",
+      "required_delta": "对所有新路径核验信任边界、默认语义、回复严格关系",
+      "reuse_first": "runtime/communication.py; runtime/communication_management.py; current MCP domain",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-001",
+        "R-002",
+        "R-003",
+        "R-006",
+        "R-007",
+        "R-008",
+        "R-009",
+        "R-010"
+      ],
+      "test_ids": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T011",
+        "T012",
+        "T013",
+        "T015",
+        "T016",
+        "T017",
+        "T018",
+        "T019",
+        "T020",
+        "T094"
+      ],
+      "depends_on": [],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "MCP/HTTP share trusted ingress author and existing accepted Message/operation/Outbox facts; strict explicit reply, message_only, UTF-8 continuation and original request-key semantics remain intact.",
+      "observed_code": [
+        {
+          "path": "runtime/communication.py",
+          "sha256": "0d8dcf6cc17191d6a6561cb1a60a201eddcfcb59f50c3e5448cefb538440827b"
+        },
+        {
+          "path": "runtime/communication_management.py",
+          "sha256": "3a475c9352fab15132aca13c190e0d006a6aa70be71dbd4f489938814a44c524"
+        },
+        {
+          "path": "runtime/delivery.py",
+          "sha256": "a64127da4c7c5a0a7a9af1b21316ed6b2d62399ef2e2c65dea7817bfbeeeb0af"
+        },
+        {
+          "path": "runtime/delivery_models.py",
+          "sha256": "a99e8bc55149c3a6218485243d34551b5c177d2ae4b7527ca51781ea16e2fdc6"
+        },
+        {
+          "path": "runtime/delivery_node.py",
+          "sha256": "d85253e5a523d6f20ecf7bb6e0d0a43f5c26d074bd406a09fa793eb1b363cb86"
+        },
+        {
+          "path": "runtime_tests/test_communication.py",
+          "sha256": "ade3be6323da6eefddab2f3b384dd08a0cf0aa2b80bdec761bd263085d2961ab"
+        },
+        {
+          "path": "runtime_tests/test_communication_content.py",
+          "sha256": "27996605aec440cacbb9b54b6166c1ad5889726b8b990e77a0a0dd9172132531"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C02",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "Adapter 能力/证据声明",
+      "present_baseline": "已有 Codex/OpenCode Driver 和 list_harnesses",
+      "required_delta": "描述真实 Native 能力、观察来源/新鲜度/连接代次、unsupported",
+      "reuse_first": "existing receiver factory/Driver/Node callbacks; avoid duplicate adapter layer",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-017",
+        "R-039"
+      ],
+      "test_ids": [
+        "T033",
+        "T034",
+        "T077",
+        "T078"
+      ],
+      "depends_on": [
+        "C01"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Typed adapter describe/observe captures actual profile, account, host, generation, evidence freshness and independent readiness axes. Unsupported and unknown never imply idle or input authority.",
+      "observed_code": [
+        {
+          "path": "runtime/harness_adapter.py",
+          "sha256": "780768969df6667f866da84ad9cde3de7ae7ff12c97b9ce4f58665b108ac6c0d"
+        },
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb"
+        },
+        {
+          "path": "runtime/native_input_observations.py",
+          "sha256": "20339aacf6bc1c06c7a41c7676ff3b090a7072c6ba5b2e7de2ec3628719d10fd"
+        },
+        {
+          "path": "runtime/receiver_contract.py",
+          "sha256": "6af12bafd6939d02b34b66685a0673e5a8ee260952a7883010ed5ea534cadca5"
+        },
+        {
+          "path": "runtime/receiver_evidence.py",
+          "sha256": "36bef6d6be9c0933c8905c5f12e84c9423c0e9346b5e2a7e164fd714af74f4a9"
+        },
+        {
+          "path": "runtime/signed_harness_adapter.py",
+          "sha256": "99a5733727b387c8346691d49f96289475cea35ecc582d9f267721ded6584db3"
+        },
+        {
+          "path": "runtime_tests/test_native_input_observations.py",
+          "sha256": "c38840c1b6fe9272e06d1c9cad3db3b7ebd6500baf34510257f27d27903c0f06"
+        },
+        {
+          "path": "runtime_tests/test_receiver_contract.py",
+          "sha256": "f417c2d3070abac1b5a9923d6640cb6d627fc0aa441092ec062a36ff78230f95"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C03",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "最后输入准入",
+      "present_baseline": "已有 Native 接收/idle/受限 busy",
+      "required_delta": "在同 binding/operation/权限/Provider readiness 下安全提交，保护审批/用户草稿",
+      "reuse_first": "native_delivery.py; receiver_codex/opencode",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-015",
+        "R-016"
+      ],
+      "test_ids": [
+        "T029",
+        "T030",
+        "T031",
+        "T032"
+      ],
+      "depends_on": [
+        "C02"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Both concrete Drivers and signed Receiver recheck original operation, current authority, binding, owned transport and fresh readiness at the final handoff. Busy defers unless a separately proven Host queue is used; human blockers do not auto-submit.",
+      "observed_code": [
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "6a4d543769f2a28ff14d0ebd035f7ad35b91fb143093cb80c6d22ed4f05be9b8"
+        },
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb"
+        },
+        {
+          "path": "runtime/native_input_observations.py",
+          "sha256": "20339aacf6bc1c06c7a41c7676ff3b090a7072c6ba5b2e7de2ec3628719d10fd"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "52428f8454773c4b3b3e5d715cceae1a7e67a924af4c9e0376b050b1adf5687c"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "28383b9b16731fa02eac7fac2138480e0abd0db09a71338a687d1a8771e67680"
+        },
+        {
+          "path": "runtime/signed_harness_adapter.py",
+          "sha256": "99a5733727b387c8346691d49f96289475cea35ecc582d9f267721ded6584db3"
+        },
+        {
+          "path": "runtime_tests/test_native_handoff.py",
+          "sha256": "549456014385bb8378507832895056b5e4a42b7b3a1f39a8c9803e60ecd8db2a"
+        },
+        {
+          "path": "runtime_tests/test_native_input_observations.py",
+          "sha256": "c38840c1b6fe9272e06d1c9cad3db3b7ebd6500baf34510257f27d27903c0f06"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C04",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "Native 操作证据和未知调和",
+      "present_baseline": "已有 Outbox/operation/Node Journal/ACK 与防重",
+      "required_delta": "关联原操作和最后交接证据，未知时不重复原生副作用",
+      "reuse_first": "existing operations/Outbox/Node Journal; no second ledger",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-004",
+        "R-005",
+        "R-011",
+        "R-012",
+        "R-013"
+      ],
+      "test_ids": [
+        "T007",
+        "T008",
+        "T009",
+        "T010",
+        "T014",
+        "T021",
+        "T022",
+        "T023",
+        "T024",
+        "T025",
+        "T026",
+        "T096"
+      ],
+      "depends_on": [
+        "C01",
+        "C02"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Original dispatch/DriverJournal markers precede possible effects. Unknown ACK stays in its original dedup domain; exact query can repair that same receipt, without a new invocation or explicit Agent reply.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_delivery_observer.py",
+          "sha256": "3e00a546c50645363617d8f68e5225acdfa9a2ed4f2832f735884384d776e1fe"
+        },
+        {
+          "path": "runtime/delivery_node.py",
+          "sha256": "d85253e5a523d6f20ecf7bb6e0d0a43f5c26d074bd406a09fa793eb1b363cb86"
+        },
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb"
+        },
+        {
+          "path": "runtime/native_handoff.py",
+          "sha256": "ab6d2ad2fe0d191edf8405f87821e4326b210e8a6571c7017570826da3fec7e2"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "28383b9b16731fa02eac7fac2138480e0abd0db09a71338a687d1a8771e67680"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "629b75c6208d711a3a86bb01e61aa93e72bbadcd9f22c3ea66c02b367f28af90"
+        },
+        {
+          "path": "runtime_tests/test_local_native_reconcile.py",
+          "sha256": "8fd46b776cbee9220a6be2bb7a6623110538b3a0bd711489f444ab30b6023ee2"
+        },
+        {
+          "path": "runtime_tests/test_native_handoff.py",
+          "sha256": "549456014385bb8378507832895056b5e4a42b7b3a1f39a8c9803e60ecd8db2a"
+        },
+        {
+          "path": "runtime_tests/test_remote_readback_freshness.py",
+          "sha256": "0cc8438ef20182858f2de01e8fd9a5d32555a65b11e6c9f8b3c348d8c440c836"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C05",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "绑定代次与接收端 fencing",
+      "present_baseline": "已有 Slot、Endpoint、binding revision、per-Slot dispatch fence",
+      "required_delta": "旧 Native 实例不能收到新绑定消息、迟到 ACK 只证明旧操作",
+      "reuse_first": "current receiver config and Node/Runtime admission",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-003",
+        "R-014",
+        "R-018"
+      ],
+      "test_ids": [
+        "T005",
+        "T006",
+        "T027",
+        "T028",
+        "T035",
+        "T036"
+      ],
+      "depends_on": [
+        "C04"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Core binding CAS, enrolled Node/Runtime revisions, local boot/execution fences and actual owned child identity reject replaced bindings. Historical ACKs remain attached only to their original operation.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_management.py",
+          "sha256": "3a475c9352fab15132aca13c190e0d006a6aa70be71dbd4f489938814a44c524"
+        },
+        {
+          "path": "runtime/enrollment.py",
+          "sha256": "3f3986c21931244f39cdb761fa33090de2c1bd82897c511d14d51a0918960842"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "28383b9b16731fa02eac7fac2138480e0abd0db09a71338a687d1a8771e67680"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "629b75c6208d711a3a86bb01e61aa93e72bbadcd9f22c3ea66c02b367f28af90"
+        },
+        {
+          "path": "runtime/receiver_domain.py",
+          "sha256": "89921437e6d138b697fe1a2f180bb10c136ebe5820bcf01fc4bb37d465a79139"
+        },
+        {
+          "path": "runtime_deployment/receiver_authority.py",
+          "sha256": "b9096adc46ae60bd93e4a0ed4e4332f296de9abd3b4e67029b0de0e8fc59152e"
+        },
+        {
+          "path": "runtime_tests/test_receiver_connection_clock.py",
+          "sha256": "80712aa7c8e58dac8ed6880ba20cc8dc53dff04c58e02a26c1b9ee3ee7dd67c1"
+        },
+        {
+          "path": "runtime_tests/test_receiver_recovery_operations.py",
+          "sha256": "e2cbf386adebe1b5e0590569cb9fd3a91864fcfeaea44e4f26babecf7d90d0c6"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C06",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "支持条件下的安全唤醒/延期",
+      "present_baseline": "已有 busy 退避、maintenance、通知",
+      "required_delta": "运行时在合法就绪边缘推进，避免模型回合重入或重复唤醒",
+      "reuse_first": "default MCP maintenance, existing inbox and waits",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-020",
+        "R-029"
+      ],
+      "test_ids": [
+        "T039",
+        "T040",
+        "T057",
+        "T058"
+      ],
+      "depends_on": [
+        "C03",
+        "C04"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Independent maintenance advances due Messages under bounded scheduling and active-wait precedence. Repeated stopped-context restore archives lifecycle frames in the same Message Outbox, retaining original identity and possible-effect facts.",
+      "observed_code": [
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "6a4d543769f2a28ff14d0ebd035f7ad35b91fb143093cb80c6d22ed4f05be9b8"
+        },
+        {
+          "path": "runtime/communication.py",
+          "sha256": "0d8dcf6cc17191d6a6561cb1a60a201eddcfcb59f50c3e5448cefb538440827b"
+        },
+        {
+          "path": "runtime/communication_dispatch.py",
+          "sha256": "bfef356d25ba84ee45b4a7d8b9490b185be6ba1b88d3e94c58548e8ff02ec8e9"
+        },
+        {
+          "path": "runtime/communication_message_restore.py",
+          "sha256": "326d73827b5c91461d7892c6f609b2732ebbb05b06b27665d961f4832791e784"
+        },
+        {
+          "path": "runtime/communication_message_wake.py",
+          "sha256": "3becb00851834f0364a306b7a8859b424608f49ac2a0fd611c4e459de897504b"
+        },
+        {
+          "path": "runtime/communication_notifications.py",
+          "sha256": "4fa5b520672fc8ee3b12d8695dddf738753f18b1ab7fa78925a100499dc329a9"
+        },
+        {
+          "path": "runtime/communication_wait_ingress.py",
+          "sha256": "cd0965717dec01851d24cd596d88174ac8d461dd2fd3c59d36ea4538a163e0f0"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "52428f8454773c4b3b3e5d715cceae1a7e67a924af4c9e0376b050b1adf5687c"
+        },
+        {
+          "path": "runtime/receiver_lifecycle_maintenance.py",
+          "sha256": "e706897a096f88c1c5583665f625737314a1a3435e49f06ee610a5409b75235d"
+        },
+        {
+          "path": "runtime_tests/test_communication_maintenance.py",
+          "sha256": "4c383ba8e25e82106dce0472333ea8e470fe59768c5f382d5096835a5b56999e"
+        },
+        {
+          "path": "runtime_tests/test_message_cold_restore_pg.py",
+          "sha256": "c5bae813584d844c1c16ce6e865f135f15a496767264ec5f659e69db5fd3b024"
+        },
+        {
+          "path": "runtime_tests/test_notification_continuity.py",
+          "sha256": "4d00fba3c8c82d42feaf2ff01d2d2f3abd5bf7b63897183a5f94998438be0194"
+        },
+        {
+          "path": "runtime_tests/test_wait_ingress_recovery.py",
+          "sha256": "56bb7c3431a1424c0b43b433dab2217edde70b22249d51c4550c0dcdf5dd7f5b"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C07",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "受权 Session 续接与重新绑定",
+      "present_baseline": "稳定 Slot/Client 身份与基本 Session 准备",
+      "required_delta": "可证明恢复原会话；明确许可的新会话重绑；不伪造工作记忆",
+      "reuse_first": "current endpoint configuration/receiver lifecycle",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-019",
+        "R-036"
+      ],
+      "test_ids": [
+        "T037",
+        "T038",
+        "T071",
+        "T072"
+      ],
+      "depends_on": [
+        "C04",
+        "C05"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Signed restore restarts only the proven stopped transport and resumes the exact retained Native session, including a positively known replacement session. Reconstructed factories reattest Core/profile/account/journal/complete-stop evidence. Explicit ready-target rebind remains a separately authorized CAS.",
+      "observed_code": [
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "6a4d543769f2a28ff14d0ebd035f7ad35b91fb143093cb80c6d22ed4f05be9b8"
+        },
+        {
+          "path": "runtime/communication_client_recovery.py",
+          "sha256": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c"
+        },
+        {
+          "path": "runtime/communication_management.py",
+          "sha256": "3a475c9352fab15132aca13c190e0d006a6aa70be71dbd4f489938814a44c524"
+        },
+        {
+          "path": "runtime/native_restore.py",
+          "sha256": "d5c86630fe1cd0c1fc43864884b5118be2a2e19f2ece54208000e5c50d3f402f"
+        },
+        {
+          "path": "runtime/native_restore_origin.py",
+          "sha256": "5ae3ac5488f204b1402b72358455682fd9c7017cff8928dca39f99706c1f20c4"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "52428f8454773c4b3b3e5d715cceae1a7e67a924af4c9e0376b050b1adf5687c"
+        },
+        {
+          "path": "runtime/receiver_crypto.py",
+          "sha256": "2687065eea63b56af3db1fc54b7b9bbd1e812e7825ccaa489851f5ce8dddedd7"
+        },
+        {
+          "path": "runtime/receiver_lifecycle.py",
+          "sha256": "d298f64b0773900aaedc44283884992f81f1b154e2c8f6134009b7da581466b7"
+        },
+        {
+          "path": "runtime/receiver_lifecycle_capacity.py",
+          "sha256": "e6827d5ea9c684b8fd18c017d7f24223e351bd6a45846651f6d22fc0868c85ad"
+        },
+        {
+          "path": "runtime/receiver_lifecycle_contract.py",
+          "sha256": "1cac176dcbfbe6b8c1f41100f1b81532ad51b9f79201725c2dda0dfbd5a3b8f1"
+        },
+        {
+          "path": "runtime/receiver_lifecycle_issuance.py",
+          "sha256": "2bf9c30a9d67308ca4f038875fbb94ed3cb6a670ad98d5f421171917f3369879"
+        },
+        {
+          "path": "runtime/receiver_lifecycle_node.py",
+          "sha256": "2545580de4724b3c9b5fa7244eac4fac7a2ac35cf8d272a608c3cb5b7e3cc1b1"
+        },
+        {
+          "path": "runtime/receiver_models.py",
+          "sha256": "19f64a3bd11b3f29ce2fe1ad265cb6eecb796852e2bb1cd3e2a31934778bd8a4"
+        },
+        {
+          "path": "runtime/receiver_rebind.py",
+          "sha256": "770b2277412b8fa8ba4165fc8d83f5de9f9ae7a2851387424448c65e74879ccb"
+        },
+        {
+          "path": "runtime/receiver_recovery_operations.py",
+          "sha256": "5558980c064acb9cab591a6416ad33312e47038e197e559597c5ea03bcfd7de8"
+        },
+        {
+          "path": "runtime_deployment/receiver_authority.py",
+          "sha256": "b9096adc46ae60bd93e4a0ed4e4332f296de9abd3b4e67029b0de0e8fc59152e"
+        },
+        {
+          "path": "runtime_deployment/receiver_codex.py",
+          "sha256": "6ac3d881a26d82da3ccd060b351324852ad84d6bbf6a8e83c1c6111bb053e671"
+        },
+        {
+          "path": "runtime_deployment/receiver_lifecycle.py",
+          "sha256": "094d4a929b568d611ad51af306773b2758ad740905f3a1e66da1acc54b95379f"
+        },
+        {
+          "path": "runtime_deployment/receiver_opencode.py",
+          "sha256": "9a2587dae60d7a25a8406a5016072ae19cbca66d158956ba1b5da1df2381d8d0"
+        },
+        {
+          "path": "runtime_tests/test_driver_lifecycle_journal.py",
+          "sha256": "e7beacdcf01e4380b8b96789a943636bf25b6fac6214ebbcea6757539b563b26"
+        },
+        {
+          "path": "runtime_tests/test_native_cold_restore_transport.py",
+          "sha256": "ab496476942b61c36e97d551489981da5f495d1d18c49598740381dc39fa6841"
+        },
+        {
+          "path": "runtime_tests/test_native_restore_origin.py",
+          "sha256": "d456307fab3ec6a9abda2c333a347b7ee1837098839d8df674a83356c3f8b4a5"
+        },
+        {
+          "path": "runtime_tests/test_receiver_lifecycle_identity.py",
+          "sha256": "2a886f728c51a96d6f0f98160be10a55c21b7a4e8ecc9705d24d4a8dd1063fc4"
+        },
+        {
+          "path": "runtime_tests/test_receiver_restore_factory_pg.py",
+          "sha256": "369061c24d3454d3196c20d3e5ea9534777a838ed53e915ca1fb2ec2d081b634"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C08",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "跨主机/混合版本/限额",
+      "present_baseline": "已有 TLS/签名 Node/Receiver/Tunnel 与跨主机记录",
+      "required_delta": "核对对端能力代次、断线重试/ACK、受限公平调度",
+      "reuse_first": "existing remote receiver transport and system notice",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-031",
+        "R-037",
+        "R-040"
+      ],
+      "test_ids": [
+        "T061",
+        "T062",
+        "T073",
+        "T074",
+        "T079",
+        "T080",
+        "T089",
+        "T090",
+        "T092"
+      ],
+      "depends_on": [
+        "C04",
+        "C05"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Configured registered TLS peers retain original retry/ACK domains and bounded transport budgets. Current peer identity, signing-key/connection generation and readback are checked; absent mixed-version extensions fail typed and never fabricate an ACK.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_dispatch.py",
+          "sha256": "bfef356d25ba84ee45b4a7d8b9490b185be6ba1b88d3e94c58548e8ff02ec8e9"
+        },
+        {
+          "path": "runtime/receiver_config.py",
+          "sha256": "974d571469fbe60dfbf43501e9eb6016f7c523f5089c2304d6fe7a481d2ca873"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "629b75c6208d711a3a86bb01e61aa93e72bbadcd9f22c3ea66c02b367f28af90"
+        },
+        {
+          "path": "runtime/receiver_domain.py",
+          "sha256": "89921437e6d138b697fe1a2f180bb10c136ebe5820bcf01fc4bb37d465a79139"
+        },
+        {
+          "path": "runtime/receiver_models.py",
+          "sha256": "19f64a3bd11b3f29ce2fe1ad265cb6eecb796852e2bb1cd3e2a31934778bd8a4"
+        },
+        {
+          "path": "runtime/remote_endpoint.py",
+          "sha256": "449180f79d912c2695363809d41664ce74f8a961ab86a5715f5ec9b6b78f6ac9"
+        },
+        {
+          "path": "runtime_tests/test_communication_maintenance.py",
+          "sha256": "4c383ba8e25e82106dce0472333ea8e470fe59768c5f382d5096835a5b56999e"
+        },
+        {
+          "path": "runtime_tests/test_receiver_connection_clock.py",
+          "sha256": "80712aa7c8e58dac8ed6880ba20cc8dc53dff04c58e02a26c1b9ee3ee7dd67c1"
+        },
+        {
+          "path": "runtime_tests/test_receiver_peer_continuity.py",
+          "sha256": "e2b3147dcd596764cc68e22a5d3ca16cf4ae419bffa9934ac3872d213c4e2baf"
+        },
+        {
+          "path": "runtime_tests/test_remote_readback_freshness.py",
+          "sha256": "0cc8438ef20182858f2de01e8fd9a5d32555a65b11e6c9f8b3c348d8c440c836"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C09",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "安全迁移与历史保留",
+      "present_baseline": "现有 schema/version/adoption/历史消息",
+      "required_delta": "增量兼容迁移与回滚、不可丢 lost operation",
+      "reuse_first": "communication_core_schema.sql, existing upgrade tooling",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-035"
+      ],
+      "test_ids": [
+        "T069",
+        "T070",
+        "T091",
+        "T093"
+      ],
+      "depends_on": [
+        "C04"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Storage and DriverJournal adoption remain explicit and additive. Normal startup verifies. Existing namespaces with lost journals cannot be recreated; retained current/archived Core startup facts also prohibit reset.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_core_schema.sql",
+          "sha256": "8ff205fd4ba6472f1eb828354f95d598be5ec4bdc399b544e0369a04950b1ba8"
+        },
+        {
+          "path": "runtime/communication_storage.py",
+          "sha256": "8157b91b1dd6ffcf242af265dededb8156f43b3d7f34a772a96926853c8d5297"
+        },
+        {
+          "path": "runtime/project_schema_state.py",
+          "sha256": "19a0711895d263e8f3768d7adf08155fb4de2e265f2c6535d6c02bc7f5f8f92e"
+        },
+        {
+          "path": "runtime_deployment/receiver_lifecycle.py",
+          "sha256": "094d4a929b568d611ad51af306773b2758ad740905f3a1e66da1acc54b95379f"
+        },
+        {
+          "path": "runtime_tests/test_communication_storage.py",
+          "sha256": "914298e249f9a3531c41bc418a0731f1157eb61f9e57e564a802d13656cae89e"
+        },
+        {
+          "path": "runtime_tests/test_receiver_lifecycle_factory.py",
+          "sha256": "823f28fc10b1a2ecae95bba17cecc87d69b2fdb5cf55b36d4d3bad7c41163c24"
+        },
+        {
+          "path": "runtime_tests/test_receiver_restore_factory_pg.py",
+          "sha256": "369061c24d3454d3196c20d3e5ea9534777a838ed53e915ca1fb2ec2d081b634"
+        },
+        {
+          "path": "runtime_tests/test_receiver_schema_1_8.py",
+          "sha256": "99a9bfc91ea3e1d7442b58f8cfeaeb2b5d5966a1d86ad65e005d32bade9474c8"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C10",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "真实资格与原始证据",
+      "present_baseline": "已有 v2.3.1 受支持主链和历史证据",
+      "required_delta": "受影响版本正反/故障回归；明确 E0-E5 不互换",
+      "reuse_first": "runtime_tests and integration_evidence",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-038"
+      ],
+      "test_ids": [
+        "T075",
+        "T076"
+      ],
+      "depends_on": [
+        "C01"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Evidence runners record commands, source bytes, original failures, component/controlled-integration boundaries and candidate package identity. Actual Native/platform/Host qualification is separately pending after the current code changes, as excluded from this development stopping condition.",
+      "observed_code": [
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "6a4d543769f2a28ff14d0ebd035f7ad35b91fb143093cb80c6d22ed4f05be9b8"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "52428f8454773c4b3b3e5d715cceae1a7e67a924af4c9e0376b050b1adf5687c"
+        },
+        {
+          "path": "runtime_tests/native_e2e_isolation.py",
+          "sha256": "e9254d7e871887f1dc15cce73e103a9bc33efb6863cbb97acf5022a2cbd6386b"
+        },
+        {
+          "path": "runtime_tests/test_communication.py",
+          "sha256": "ade3be6323da6eefddab2f3b384dd08a0cf0aa2b80bdec761bd263085d2961ab"
+        },
+        {
+          "path": "runtime_tests/test_communication_installed_native.py",
+          "sha256": "22b93dfa3d9019440abff2589690ad9451d6651a8fbc7b56bb6416bcec38af4c"
+        },
+        {
+          "path": "tools/runtime/cross_harness_verify.py",
+          "sha256": "7e7ffe8c934d74ed6be087aee3f6f894321ebe4143c71950c16681e4e25f8dba"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C11",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "最小只读诊断/受控恢复",
+      "present_baseline": "已有 delivery/list_harnesses/notice",
+      "required_delta": "补足 unknown 原因/证据来源/受权 recovery，引入最少新 surface",
+      "reuse_first": "existing notice and result metadata",
+      "acceptance": "只读诊断/受权恢复/通知故障路径维持正确，个人 seen 的 T088 仍属 P2 可选；受控失败按原记录保存。",
+      "old_requirements": [
+        "R-037"
+      ],
+      "test_ids": [
+        "T073",
+        "T074"
+      ],
+      "depends_on": [
+        "C04",
+        "C07"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Participant-authorized diagnostics expose only technical layers/reasons/evidence. Inspect/reconcile query original work; recovery commands require current management authority, expected revision and durable idempotent acceptance.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_recovery.py",
+          "sha256": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c"
+        },
+        {
+          "path": "runtime/communication_client_service.py",
+          "sha256": "dd27d61c03cb4f0ea9fc97a08305e4fc0d0eeef75ce4abea97415aca8a296a75"
+        },
+        {
+          "path": "runtime/communication_delivery_observer.py",
+          "sha256": "3e00a546c50645363617d8f68e5225acdfa9a2ed4f2832f735884384d776e1fe"
+        },
+        {
+          "path": "runtime/communication_faults.py",
+          "sha256": "1920ecb7e4c8c98375362f115226d2de5cefa13056a886d9def98f4738c98e44"
+        },
+        {
+          "path": "runtime/communication_http.py",
+          "sha256": "023de773d23da0022f90292d8be22540a162b40a48346e3cf9465c5f8ff635f8"
+        },
+        {
+          "path": "runtime/receiver_recovery_operations.py",
+          "sha256": "5558980c064acb9cab591a6416ad33312e47038e197e559597c5ea03bcfd7de8"
+        },
+        {
+          "path": "runtime_tests/test_communication_client_recovery.py",
+          "sha256": "ebac920504eccb2330e96564cbaca70e5c9801230d5f4651dd7ef53277fbf4b2"
+        },
+        {
+          "path": "runtime_tests/test_receiver_recovery_operations.py",
+          "sha256": "e2cbf386adebe1b5e0590569cb9fd3a91864fcfeaea44e4f26babecf7d90d0c6"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C12",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "可信 HTTP facade",
+      "present_baseline": "MCP 已有领域服务和授权",
+      "required_delta": "P1 必需 endpoint 共享 Domain/Auth，不复写消息权威",
+      "reuse_first": "existing Project Service and auth",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-028"
+      ],
+      "test_ids": [
+        "T055",
+        "T056"
+      ],
+      "depends_on": [
+        "C01"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Authenticated HTTP facade calls the same Domain and current permissions as MCP, with scope checks, bounded paging/body budgets, typed errors and original write keys; no parallel message ledger.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_oauth.py",
+          "sha256": "7949135f85298d192b7badd83307e6c36dd0eeebaf51aa9ccfe712243af7d143"
+        },
+        {
+          "path": "runtime/communication_client_recovery.py",
+          "sha256": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c"
+        },
+        {
+          "path": "runtime/communication_http.py",
+          "sha256": "023de773d23da0022f90292d8be22540a162b40a48346e3cf9465c5f8ff635f8"
+        },
+        {
+          "path": "runtime/project_http.py",
+          "sha256": "b1c389acceb91b17f2d132130ffb1662d76253759eec2d3ef241f2f9f6adae14"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C13",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "可重建 Conversation 查询",
+      "present_baseline": "已有通信消息、contacts、project",
+      "required_delta": "双人会话/最近消息/空会话定位/历史分页与关系",
+      "reuse_first": "existing ordered message index and reader",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-021"
+      ],
+      "test_ids": [
+        "T041",
+        "T042"
+      ],
+      "depends_on": [
+        "C12"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Conversation is a rebuildable authorized participant-pair projection of actual Messages. Contacts support empty-history targets; send has no create-conversation prerequisite and history uses stable Authority order.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_queries.py",
+          "sha256": "8e5176cff493a2c17957c17c445c175a61cb8ecf75c66b2806ebc8d20708df23"
+        },
+        {
+          "path": "runtime/communication_client_views.py",
+          "sha256": "5d5427e08b92ff49732b6c33e31095634845b05a400d8b580e17f09ca4f69bae"
+        },
+        {
+          "path": "runtime/communication_conversation_storage.py",
+          "sha256": "7fc8bfdea4ef4767af03c26514afbf193ea91d2c96de2dca3ab34fe0b32e58da"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C14",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "客户端权限状态与技术状态",
+      "present_baseline": "MCP 已有 list/messages/delivery/notice",
+      "required_delta": "列出 profile/receivers/delivery/operation/notice 且可授权查询",
+      "reuse_first": "existing read_profile/list_harnesses/communication notices",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-030"
+      ],
+      "test_ids": [
+        "T059",
+        "T060"
+      ],
+      "depends_on": [
+        "C12",
+        "C02"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Current profile/contact/receiver/delivery/operation/notice projections preserve unknown fields, exact private visibility and conditional permitted recovery actions.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_notices.py",
+          "sha256": "318df9790565af788a2ee23d5f63b5224b2bb773a1baf137d696a9cc80c34ca3"
+        },
+        {
+          "path": "runtime/communication_client_receivers.py",
+          "sha256": "878787d59b20663604588ea3985cf0f3c38734e3feb721cea88a6233f1f8a142"
+        },
+        {
+          "path": "runtime/communication_client_service.py",
+          "sha256": "dd27d61c03cb4f0ea9fc97a08305e4fc0d0eeef75ce4abea97415aca8a296a75"
+        },
+        {
+          "path": "runtime/receiver_recovery_operations.py",
+          "sha256": "5558980c064acb9cab591a6416ad33312e47038e197e559597c5ea03bcfd7de8"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C15",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "一致快照与事件重放",
+      "present_baseline": "Authority commit sequence / Outbox 已存在",
+      "required_delta": "snapshot high-water + replay + auth revoke + cursor expired",
+      "reuse_first": "existing commit order and outbox; avoid second authority",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-023",
+        "R-024",
+        "R-025"
+      ],
+      "test_ids": [
+        "T045",
+        "T046",
+        "T047",
+        "T048",
+        "T049",
+        "T050",
+        "T095"
+      ],
+      "depends_on": [
+        "C12",
+        "C13"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Frozen snapshot and high-water share a consistency boundary. Replay cursors bind identity/filter/auth state; dedup, revocation, resync and bounded slow-consumer behavior preserve authoritative Messages.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_events.py",
+          "sha256": "0818d8b33a956700f28946591d5fad62510699b94c6f9a992bb5fdb00e774040"
+        },
+        {
+          "path": "runtime/communication_client_snapshot.py",
+          "sha256": "0eaf78a88ffc9e28fce119e3e630a79bec17e0afe1217539a05e5aa1c2552538"
+        },
+        {
+          "path": "runtime/communication_event_http.py",
+          "sha256": "549e1a51e9f1c852c5353d0585b770af08b4192084e523b4b0326b0c7c2ecd35"
+        },
+        {
+          "path": "runtime/communication_event_storage.py",
+          "sha256": "f2133abd07834f21e41a5d5a65ae2814f602d25b932e653542b4c8630090fed7"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C16",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "NativeLink 和两源 provenance",
+      "present_baseline": "已区分 ACS Message 和 Native Session",
+      "required_delta": "受权 link ACS 消息到真正 host operation；原生 transcript 不复制",
+      "reuse_first": "host native ref, existing message_handle",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-027"
+      ],
+      "test_ids": [
+        "T053",
+        "T054",
+        "T082"
+      ],
+      "depends_on": [
+        "C12"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Authorized NativeLink/source provenance follows exact original Core dispatch plus local DriverJournal or authenticated remote readback. Concrete Orca source derives from its original signed Host admission receipt. Separate identifiers/cursors/Host permissions remain intact; no text-similarity inference.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_native_links.py",
+          "sha256": "ba99379b7b16cf4f8e1103cc441908d43068f998bf87f117162b64cd3e1631de"
+        },
+        {
+          "path": "runtime/communication_client_native_source.py",
+          "sha256": "a4e2f5007ac1f3e05d0519d58861d920d50a102ca326231918625284af41e389"
+        },
+        {
+          "path": "runtime/communication_native_link_storage.py",
+          "sha256": "be17c2f07bcce1439fcd8949f722630481402da033a87c9a1ee092ddefe8c4be"
+        },
+        {
+          "path": "runtime/native_provider_registry.py",
+          "sha256": "f54438fcb4424c649636666acd17b539e2431269f7a74c68046f4428ac81513b"
+        },
+        {
+          "path": "runtime/native_source_links.py",
+          "sha256": "fd9921bcc653741dd2fdcbba3c3ae7930bffb927c1ab2c7516ddaa0988b090d6"
+        },
+        {
+          "path": "runtime/orca_receiver_backend.py",
+          "sha256": "62e163f97128368cddfbfec1b423216ecb4ce5b3465ad315341d2cb0d63d6470"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "629b75c6208d711a3a86bb01e61aa93e72bbadcd9f22c3ea66c02b367f28af90"
+        },
+        {
+          "path": "runtime/receiver_models.py",
+          "sha256": "19f64a3bd11b3f29ce2fe1ad265cb6eecb796852e2bb1cd3e2a31934778bd8a4"
+        },
+        {
+          "path": "runtime/remote_endpoint.py",
+          "sha256": "449180f79d912c2695363809d41664ce74f8a961ab86a5715f5ec9b6b78f6ac9"
+        },
+        {
+          "path": "runtime/remote_native_source.py",
+          "sha256": "9ebac3667e541f1b91920320b2e8c51898e8d718256163acf0e15307c02e809c"
+        },
+        {
+          "path": "runtime_tests/test_communication_remote_source_pg.py",
+          "sha256": "cbea5ff8a28ee34a9602358fee4ba8b74715b75c3f4b921daa91f24e9196b06b"
+        },
+        {
+          "path": "runtime_tests/test_remote_native_source_tls.py",
+          "sha256": "b79dcac41245ab166241cb2dfb9974f0a8067f899fccb3395d614e4fb3361ce7"
+        },
+        {
+          "path": "sdk/communication-client.ts",
+          "sha256": "bf9172a282af0ce3db5a8299339e17461eb75d0b4a512440b96bb43a62af53e2"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C17",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "Orca-owned Receiver 最小端口",
+      "present_baseline": "ACS Receiver、Orca Native Host 两种单独 owner",
+      "required_delta": "声明受信 admit/observe/reconcile，维持同 Native Session 单一写入者",
+      "reuse_first": "existing ACS Receiver + proposed host port",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-032",
+        "R-034"
+      ],
+      "test_ids": [
+        "T063",
+        "T064",
+        "T067",
+        "T068"
+      ],
+      "depends_on": [
+        "C03",
+        "C04"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "The TypeScript Orca port and concrete Python existing-Core verifier/router provide trusted observe/admit/original reconcile composition on the existing Receiver ledger/TLS operations. Host owns serialized input and independent authorization; ACS does not own its Native Driver/PTY or mutate Orca storage.",
+      "observed_code": [
+        {
+          "path": "runtime/orca_receiver_backend.py",
+          "sha256": "62e163f97128368cddfbfec1b423216ecb4ce5b3465ad315341d2cb0d63d6470"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "28383b9b16731fa02eac7fac2138480e0abd0db09a71338a687d1a8771e67680"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "629b75c6208d711a3a86bb01e61aa93e72bbadcd9f22c3ea66c02b367f28af90"
+        },
+        {
+          "path": "runtime/remote_endpoint.py",
+          "sha256": "449180f79d912c2695363809d41664ce74f8a961ab86a5715f5ec9b6b78f6ac9"
+        },
+        {
+          "path": "runtime/signed_harness_adapter.py",
+          "sha256": "99a5733727b387c8346691d49f96289475cea35ecc582d9f267721ded6584db3"
+        },
+        {
+          "path": "runtime_tests/test_communication_remote_source_pg.py",
+          "sha256": "cbea5ff8a28ee34a9602358fee4ba8b74715b75c3f4b921daa91f24e9196b06b"
+        },
+        {
+          "path": "runtime_tests/test_orca_receiver_backend.py",
+          "sha256": "6d1d39fdc39984f15880f7f7007d500d6d1813a82d79d9042b52113df9379335"
+        },
+        {
+          "path": "sdk/ORCA-RECEIVER-INTEGRATION.md",
+          "sha256": "0c3a8b9837be55d9d04fcc473f6215c04adac84d7731a4be841e2affedc9757b"
+        },
+        {
+          "path": "sdk/integration-ports.ts",
+          "sha256": "d383179c8b2fad6641721a19086d32ce9babdd369123aab8a8ca931db52d2617"
+        },
+        {
+          "path": "sdk/orca-receiver-port.ts",
+          "sha256": "da5cc156303e789c580e16c06d76061f2f8209e7f9931ad21cc3bbf79ce5bc99"
+        },
+        {
+          "path": "sdk/tests/orca-receiver-port.test.mjs",
+          "sha256": "77cb3337db0e4cf797e57a06ddb6fef815b5b9aab7488703a5c368cdd7e0d4e1"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C18",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "Orca Native delegate 合同",
+      "present_baseline": "Orca 自己显示 Tool/Diff/Approval/Session",
+      "required_delta": "界面仅连接 NativeViewProvider, ACS 不克隆原生数据",
+      "reuse_first": "Orca public plugin API / explicitly recorded host gap",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-033"
+      ],
+      "test_ids": [
+        "T066",
+        "T083",
+        "T086",
+        "T087"
+      ],
+      "depends_on": [
+        "C16",
+        "C17"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "NativeView/Workspace delegate contracts cover Host-owned transcript/tool/Diff/approval/model/session/attachment actions with independent live Host grants and typed missing-port behavior; they do not copy Native state into ACS.",
+      "observed_code": [
+        {
+          "path": "sdk/integration-ports.ts",
+          "sha256": "d383179c8b2fad6641721a19086d32ce9babdd369123aab8a8ca931db52d2617"
+        },
+        {
+          "path": "sdk/tests/integration-ports.test.mjs",
+          "sha256": "98d20e41a0bcbcb3f3ea0f44c32aa9b0f499b9dd99c6afd74d7b0188bdcef2a8"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C19",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "Headless 实际 ACS Client",
+      "present_baseline": "已有 HTTP/事件目标原型",
+      "required_delta": "验证从身份到收信、历史、事件和权限撤销的无 UI 端到端",
+      "reuse_first": "actual ACS HTTP/Authority + simulated native view clearly labeled",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-033"
+      ],
+      "test_ids": [
+        "T065",
+        "T081"
+      ],
+      "depends_on": [
+        "C12",
+        "C13",
+        "C14",
+        "C15",
+        "C16"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Production SDK headless consumers use actual OAuth HTTP/PG, all P1 operations, explicit replies, history/receipts, snapshots/events/reconnect/revocation and typed Native-source/delegate behavior.",
+      "observed_code": [
+        {
+          "path": "runtime_tests/test_communication_headless_live.py",
+          "sha256": "c043683d0a975998d574fddd004593f4237a2e8ab1ad9cacacc178562b69ecda"
+        },
+        {
+          "path": "runtime_tests/test_communication_p1_headless_live.py",
+          "sha256": "8373b8f41729a653c56bfcb7b1b62ffe742891bd46c7300f705609b7c231d755"
+        },
+        {
+          "path": "sdk/communication-client.ts",
+          "sha256": "bf9172a282af0ce3db5a8299339e17461eb75d0b4a512440b96bb43a62af53e2"
+        },
+        {
+          "path": "sdk/communication-state.ts",
+          "sha256": "b479564d95b4875344058daf216f4576c0cd5328adffadd845bda44db0a4f622"
+        },
+        {
+          "path": "sdk/communication-stream.ts",
+          "sha256": "b90c169c8359cf07c5b5ed3756f7d1976a30d1107a3102d4241e581dff1b6c57"
+        },
+        {
+          "path": "sdk/tests/communication-live-consumer.mjs",
+          "sha256": "4747086fa20a590109e2e048dcfbe4588e8aaa887bea4aceba90886c7beea45e"
+        },
+        {
+          "path": "sdk/tests/communication-p1-live-consumer.mjs",
+          "sha256": "a3fe12ff50d4a4aa5532fde01d56694d3a93df8dc976d3784fe463a9e7033e1f"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C20",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "完整 ACS 通信 UI 合同地图",
+      "present_baseline": "原包 30 项 UI 功能列表",
+      "required_delta": "逐项标 ACS/P2/Host delegate，验证功能降级和缺口",
+      "reuse_first": "current contracts/ui-feature-matrix.json",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-033"
+      ],
+      "test_ids": [
+        "T065",
+        "T081"
+      ],
+      "depends_on": [
+        "C12",
+        "C16",
+        "C18"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "All 30 source UI contracts map to ACS communication, activated P2 or an explicit Host delegate, with actions/data/events/degradation and contract witnesses. Product UI construction and actual Orca installation are not part of this backend pack.",
+      "observed_code": [
+        {
+          "path": "docs/client/communication-api-scope.json",
+          "sha256": "a0569a53dbb7efdb005d3a37b585ff57a632c1e74dd7515e409e489b377bcaf5"
+        },
+        {
+          "path": "docs/client/communication-openapi.yaml",
+          "sha256": "e46f06014136f1df00a9de8cf4ccdc0f802377dd905cec0fe830317ce672ec0d"
+        },
+        {
+          "path": "docs/client/communication-p1-openapi.yaml",
+          "sha256": "bba93038f1ae9d3de820630e4dc13de81b338ee725a94b445a9d2360e5387116"
+        },
+        {
+          "path": "tools/runtime/export_p1_openapi.py",
+          "sha256": "645f5d2e9ec975b9143f5b6caa03b1b3333857496e9749466d5ddb95f5f9c518"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C21",
+      "tier": "P1_required",
+      "kind": "correctness_guard",
+      "title": "客户端与宿主授权/来源隔离",
+      "present_baseline": "ACS/Host 属不同权限/生命周期",
+      "required_delta": "会话绑定权限、跨源不可推断、SSE 撤销与 metadata 不能提权",
+      "reuse_first": "existing ACS auth, host-claimed identity must revalidate",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-024",
+        "R-027",
+        "R-032"
+      ],
+      "test_ids": [
+        "T047",
+        "T048",
+        "T053",
+        "T054",
+        "T063",
+        "T064"
+      ],
+      "depends_on": [
+        "C15",
+        "C16"
+      ],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Current participant ACL and registration incarnation bracket local/remote source I/O; Receiver current technical-read policy is separate from expired input permission. Host read/control grants remain independent of ACS metadata or manager roles.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_native_links.py",
+          "sha256": "ba99379b7b16cf4f8e1103cc441908d43068f998bf87f117162b64cd3e1631de"
+        },
+        {
+          "path": "runtime/communication_client_native_source.py",
+          "sha256": "a4e2f5007ac1f3e05d0519d58861d920d50a102ca326231918625284af41e389"
+        },
+        {
+          "path": "runtime/native_provider_registry.py",
+          "sha256": "f54438fcb4424c649636666acd17b539e2431269f7a74c68046f4428ac81513b"
+        },
+        {
+          "path": "runtime/project_http.py",
+          "sha256": "b1c389acceb91b17f2d132130ffb1662d76253759eec2d3ef241f2f9f6adae14"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "28383b9b16731fa02eac7fac2138480e0abd0db09a71338a687d1a8771e67680"
+        },
+        {
+          "path": "runtime_deployment/receiver_authority.py",
+          "sha256": "b9096adc46ae60bd93e4a0ed4e4332f296de9abd3b4e67029b0de0e8fc59152e"
+        },
+        {
+          "path": "runtime_tests/test_communication_remote_source_pg.py",
+          "sha256": "cbea5ff8a28ee34a9602358fee4ba8b74715b75c3f4b921daa91f24e9196b06b"
+        },
+        {
+          "path": "runtime_tests/test_remote_native_source_tls.py",
+          "sha256": "b79dcac41245ab166241cb2dfb9974f0a8067f899fccb3395d614e4fb3361ce7"
+        },
+        {
+          "path": "sdk/integration-ports.ts",
+          "sha256": "d383179c8b2fad6641721a19086d32ce9babdd369123aab8a8ca931db52d2617"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C22",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "个人已读与通知 seen",
+      "present_baseline": "旧包目标设计，未断言实际完成",
+      "required_delta": "个人 read frontier/seen 与 Inbox 消费分离",
+      "reuse_first": "existing permission and message index",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-022"
+      ],
+      "test_ids": [
+        "T043",
+        "T044",
+        "T088"
+      ],
+      "depends_on": [],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Viewer-scoped monotonic read frontier, independent unread override and notice seen are isolated from Agent Inbox consumption and from other viewers.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_notice_storage.py",
+          "sha256": "09c8f7afa91c6824808dfc0d005bb95623c251b5bf80f0e17707328551ef9c4b"
+        },
+        {
+          "path": "runtime/communication_client_notices.py",
+          "sha256": "318df9790565af788a2ee23d5f63b5224b2bb773a1baf137d696a9cc80c34ca3"
+        },
+        {
+          "path": "runtime/communication_client_state.py",
+          "sha256": "f60d4adcd40424525d60b39906793a5ebd0071fdc001aff7a45141df4c87089d"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C23",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "个人草稿/偏好与静音归档",
+      "present_baseline": "旧包目标设计，未断言实际完成",
+      "required_delta": "个人可控 CAS/同步/无权限泄漏",
+      "reuse_first": "viewer-scoped state",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-022"
+      ],
+      "test_ids": [
+        "T084"
+      ],
+      "depends_on": [],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Viewer-scoped drafts/preferences/mute/archive use authenticated CAS and multi-device synchronization, preserving public conversation facts and current write/read permissions.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_state.py",
+          "sha256": "f60d4adcd40424525d60b39906793a5ebd0071fdc001aff7a45141df4c87089d"
+        },
+        {
+          "path": "runtime/communication_client_storage.py",
+          "sha256": "2eb652f03d23641673d04ed46c579e2ee6e52470710ba10c6bbacf93720c5eb9"
+        },
+        {
+          "path": "runtime/communication_client_viewer_storage.py",
+          "sha256": "0c289c651cb525151d3caa2f7967fe5dd6c0f6b798473d8df4e07f99de286685"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C24",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "附件二进制服务",
+      "present_baseline": "已有 Source/Artifact 引用，不等于附件传输",
+      "required_delta": "安全上传/finalize/ACL/digest/SSRF/生命周期",
+      "reuse_first": "SourceBinding and existing artifact ACL",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-026"
+      ],
+      "test_ids": [
+        "T051",
+        "T052",
+        "T085"
+      ],
+      "depends_on": [],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Actual binary reservation/upload/finalize/download validates digest/size/MIME, ACL, quotas and lifecycle on the admitted Scope CAS. Arbitrary URL/local-path fetch is rejected. Communication attachments remain retrievable by authorized recipients; Native attachment conversion requires independently proven Host reachability and otherwise refuses before Native input.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_attachment_content.py",
+          "sha256": "0a6bf4c2bd613da3ecfb4e7755e1ddcf0bc5a55e8bd16075675a1d494a415b44"
+        },
+        {
+          "path": "runtime/communication_attachment_http.py",
+          "sha256": "8466e79c125d81bf3eb9d7753633a105896bddf50c97cad103fd5daa68b4f2c9"
+        },
+        {
+          "path": "runtime/communication_attachment_storage.py",
+          "sha256": "c9b9e6dde655fb31bb80a1a1cd90a5936817f7ac7f029a54ba6f4642b9bf42eb"
+        },
+        {
+          "path": "runtime/communication_client_attachments.py",
+          "sha256": "9b9e91644fac03ca2fc4c6db0dabe97b07949d0b341e1cef1320e5edffd1b0dc"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    },
+    {
+      "id": "C25",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "全文消息搜索",
+      "present_baseline": "旧包目标设计，未断言实际完成",
+      "required_delta": "ACL-aware text index/cursor/search",
+      "reuse_first": "message index and viewer auth",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-026"
+      ],
+      "test_ids": [],
+      "depends_on": [],
+      "assessment_required": true,
+      "development_status": "complete",
+      "remaining_development_items": [],
+      "implementation_review": "Bounded indexed full-text Message search uses current participant ACL and stable authorized cursors; neither counts nor results expose inaccessible messages.",
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_search.py",
+          "sha256": "f56ef4494f13c28a3a850f42123fa1055be1cbf7c107c76af7b301703bc0668c"
+        },
+        {
+          "path": "runtime_tests/test_communication_client_search.py",
+          "sha256": "d9cedcb0585d8a8bf6d528384ba656d6614de50447ceba31e221b34fa073daa9"
+        }
+      ],
+      "current_regression": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+      "qualification": "separate; actual Native/Host/platform combinations are not inferred from controlled tests"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "R-001",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP01",
+      "original_statement": "`sender` 来自可信 ingress context；正文、HTTP 参数、Session 标题均不授予身份。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C01"
+      ],
+      "implementation_reviews": [
+        "MCP/HTTP share trusted ingress author and existing accepted Message/operation/Outbox facts; strict explicit reply, message_only, UTF-8 continuation and original request-key semantics remain intact."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-002",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP01",
+      "original_statement": "保留 Client/Root/Route/ordinary Slot 权限；未绑定不等于 Client；管理者不能默认读取私信。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C01"
+      ],
+      "implementation_reviews": [
+        "MCP/HTTP share trusted ingress author and existing accepted Message/operation/Outbox facts; strict explicit reply, message_only, UTF-8 continuation and original request-key semantics remain intact."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-003",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP01",
+      "original_statement": "to 是稳定授权地址，Native 目标解析只在接收侧完成，默认无需发送方指定 Harness。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C01",
+        "C05"
+      ],
+      "implementation_reviews": [
+        "MCP/HTTP share trusted ingress author and existing accepted Message/operation/Outbox facts; strict explicit reply, message_only, UTF-8 continuation and original request-key semantics remain intact.",
+        "Core binding CAS, enrolled Node/Runtime revisions, local boot/execution fences and actual owned child identity reject replaced bindings. Historical ACKs remain attached only to their original operation."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-004",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "消息提交、reply 索引、请求去重和 Outbox 同一事务；Authority ACK 只能在 commit 后发出。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C04"
+      ],
+      "implementation_reviews": [
+        "Original dispatch/DriverJournal markers precede possible effects. Unknown ACK stays in its original dedup domain; exact query can repair that same receipt, without a new invocation or explicit Agent reply."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-005",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "幂等键作用域 `(authority_incarnation, tenant, actor_address, operation_kind, client_request_id)`；规范化内容/目标/activation/reply_to/附件摘要不同则冲突；不同键同文是不同消息。",
+      "note": "旧合同提到 attachment digest 为可选扩展；未启用附件时不要为此强制开发二进制传输。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C04"
+      ],
+      "implementation_reviews": [
+        "Original dispatch/DriverJournal markers precede possible effects. Unknown ACK stays in its original dedup domain; exact query can repair that same receipt, without a new invocation or explicit Agent reply."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-006",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "reply_to 仅引用同一真实对端发给当前作者的请求；第三方委派使用新消息，不能代答。`sync` 与 wait 始终观察同一首个合法显式回复；澄清也是回复。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C01"
+      ],
+      "implementation_reviews": [
+        "MCP/HTTP share trusted ingress author and existing accepted Message/operation/Outbox facts; strict explicit reply, message_only, UTF-8 continuation and original request-key semantics remain intact."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-007",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "Native 接纳、Provider 消费、Native turn 完成、消息在 UI 展示/阅读均不构成显式回复。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C01"
+      ],
+      "implementation_reviews": [
+        "MCP/HTTP share trusted ingress author and existing accepted Message/operation/Outbox facts; strict explicit reply, message_only, UTF-8 continuation and original request-key semantics remain intact."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-008",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "message_only 不 Native 激活，包括与 sync 同时使用时。超时只停止 wait；消息、已触发操作和晚到回复保留。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C01"
+      ],
+      "implementation_reviews": [
+        "MCP/HTTP share trusted ingress author and existing accepted Message/operation/Outbox facts; strict explicit reply, message_only, UTF-8 continuation and original request-key semantics remain intact."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-009",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP05",
+      "original_statement": "读取历史不消费。UTF-8 字节续读保留原 handle 与 next_offset（含 0）；原文和内嵌回复各自预算/游标。",
+      "note": "旧 MCP 的 UTF-8/不消费为 P0 旧语义，新增 HTTP 映射属于 P1。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C01"
+      ],
+      "implementation_reviews": [
+        "MCP/HTTP share trusted ingress author and existing accepted Message/operation/Outbox facts; strict explicit reply, message_only, UTF-8 continuation and original request-key semantics remain intact."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-010",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP05",
+      "original_statement": "authority 接受顺序可用于消息/事件游标，但不是跨机器工作发生时间。",
+      "note": "旧 MCP stable cursor 属 P0；P1 新查询和事件必须共享同一提交顺序的安全规则。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C01"
+      ],
+      "implementation_reviews": [
+        "MCP/HTTP share trusted ingress author and existing accepted Message/operation/Outbox facts; strict explicit reply, message_only, UTF-8 continuation and original request-key semantics remain intact."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-011",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "每次 Native 可能副作用之前持久化 operation_id、message/delivery 引用、canonical hash、binding_epoch、provider_generation、权限校验依据。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C04"
+      ],
+      "implementation_reviews": [
+        "Original dispatch/DriverJournal markers precede possible effects. Unknown ACK stays in its original dedup domain; exact query can repair that same receipt, without a new invocation or explicit Agent reply."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-012",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "same operation 在 transport retry 使用同 ID；查询与 replay-safe retry 只能作用原 Native 实例/去重域。没有证据不能生成新 operation 来规避未知。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C04"
+      ],
+      "implementation_reviews": [
+        "Original dispatch/DriverJournal markers precede possible effects. Unknown ACK stays in its original dedup domain; exact query can repair that same receipt, without a new invocation or explicit Agent reply."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-013",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP04",
+      "original_statement": "超时/网络错误/进程退出后 outcome=unknown；reconcile 可返回 accepted/definitively_not_admitted/unknown。只有可验证未接纳或原生同去重域 replay-safe 才允许恢复发送。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C04"
+      ],
+      "implementation_reviews": [
+        "Original dispatch/DriverJournal markers precede possible effects. Unknown ACK stays in its original dedup domain; exact query can repair that same receipt, without a new invocation or explicit Agent reply."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-014",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP02",
+      "original_statement": "接收端原子检查当前 epoch/generation/operation authority；租约失效不足以阻止旧进程，必须有实际 receiver fence。无法 fence 的通路标低能力，未知时停住。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C05"
+      ],
+      "implementation_reviews": [
+        "Core binding CAS, enrolled Node/Runtime revisions, local boot/execution fences and actual owned child identity reject replaced bindings. Historical ACKs remain attached only to their original operation."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-015",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP03",
+      "original_statement": "准备前和原生 handoff 前重验授权与绑定；撤销在副作用之前阻止执行。已经发往 Provider 的输入不能承诺撤回，记录竞态事实。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C03"
+      ],
+      "implementation_reviews": [
+        "Both concrete Drivers and signed Receiver recheck original operation, current authority, binding, owned transport and fresh readiness at the final handoff. Busy defers unless a separately proven Host queue is used; human blockers do not auto-submit."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-016",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP03",
+      "original_statement": "busy 允许安全原生排队或延迟；approval/question/user draft/paused 默认禁止自动穿透；只依据已证明能力和明确策略例外。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C03"
+      ],
+      "implementation_reviews": [
+        "Both concrete Drivers and signed Receiver recheck original operation, current authority, binding, owned transport and fresh readiness at the final handoff. Busy defers unless a separately proven Host queue is used; human blockers do not auto-submit."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-017",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP01",
+      "original_statement": "unknown/stale observation 不是 idle；静默、标题、屏幕文字可作为推断，不能单独证明已消费或确定无副作用。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C02"
+      ],
+      "implementation_reviews": [
+        "Typed adapter describe/observe captures actual profile, account, host, generation, evidence freshness and independent readiness axes. Unsupported and unknown never imply idle or input authority."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-018",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP04",
+      "original_statement": "rebind 不改变历史作者/请求/消息；旧 epoch 回执保留历史证据但不允许旧实例接收新操作。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C05"
+      ],
+      "implementation_reviews": [
+        "Core binding CAS, enrolled Node/Runtime revisions, local boot/execution fences and actual owned child identity reject replaced bindings. Historical ACKs remain attached only to their original operation."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-019",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP04",
+      "original_statement": "重建 Session 需要配置授权；先恢复最小 ACS 身份、联系人、未读引用和回复规则，不声称恢复了模型工作记忆。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C07"
+      ],
+      "implementation_reviews": [
+        "Signed restore restarts only the proven stopped transport and resumes the exact retained Native session, including a positively known replacement session. Reconstructed factories reattest Core/profile/account/journal/complete-stop evidence. Explicit ready-target rebind remains a separately authorized CAS."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-020",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP04",
+      "original_statement": "唤醒是提示，可合并/去重，正文不可被合并丢弃。活动 ToolResult wait 优先交付回复，防止额外 Native 回合；wait 失效后回到 Inbox。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C06"
+      ],
+      "implementation_reviews": [
+        "Independent maintenance advances due Messages under bounded scheduling and active-wait precedence. Repeated stopped-context restore archives lifecycle frames in the same Message Outbox, retaining original identity and possible-effect facts."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-021",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP05",
+      "original_statement": "通信 conversation 是现有两端消息的可重建查询投影，不是发信前置；默认按 Project 和无序地址对唯一。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C13"
+      ],
+      "implementation_reviews": [
+        "Conversation is a rebuildable authorized participant-pair projection of actual Messages. Contacts support empty-history targets; send has no create-conversation prerequisite and history uses stable Authority order."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-022",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "original_work_package": "WP05",
+      "original_statement": "个人 read position 只属于实际 viewer/actor，读取 API 不自动 mark_read，不共享为模型已消费；前进操作单调，手动标未读独立标记。",
+      "note": "个人已读/草稿属于 P2；P0 仍禁止将 UI 读取当模型消费，P1 会话列表不能伪造对端已读。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C22",
+        "C23"
+      ],
+      "implementation_reviews": [
+        "Viewer-scoped monotonic read frontier, independent unread override and notice seen are isolated from Agent Inbox consumption and from other viewers.",
+        "Viewer-scoped drafts/preferences/mute/archive use authenticated CAS and multi-device synchronization, preserving public conversation facts and current write/read permissions."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-023",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP06",
+      "original_statement": "snapshot 与 event cursor 在同一一致性边界创建；重连 replay 支持重复和断档，cursor 绑定身份/筛选/授权版本。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C15"
+      ],
+      "implementation_reviews": [
+        "Frozen snapshot and high-water share a consistency boundary. Replay cursors bind identity/filter/auth state; dedup, revocation, resync and bounded slow-consumer behavior preserve authoritative Messages."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-024",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP06",
+      "original_statement": "订阅、检索、聚合计数、附件和错误同样复核授权；撤销后不得继续发送正文，缓存失效可明确通知当前连接。",
+      "note": "P1 新服务的鉴权/撤销必须完整；P0 既有 Domain/私信隔离不允许下降。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C15",
+        "C21"
+      ],
+      "implementation_reviews": [
+        "Frozen snapshot and high-water share a consistency boundary. Replay cursors bind identity/filter/auth state; dedup, revocation, resync and bounded slow-consumer behavior preserve authoritative Messages.",
+        "Current participant ACL and registration incarnation bracket local/remote source I/O; Receiver current technical-read policy is separate from expired input permission. Host read/control grants remain independent of ACS metadata or manager roles."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-025",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP06",
+      "original_statement": "分页 stable keyset；snapshot 边界固定，后续增量走游标；不可按客户端时钟翻页，不能暴露外域序号推断私信流量。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C15"
+      ],
+      "implementation_reviews": [
+        "Frozen snapshot and high-water share a consistency boundary. Replay cursors bind identity/filter/auth state; dedup, revocation, resync and bounded slow-consumer behavior preserve authoritative Messages."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-026",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "original_work_package": "WP07",
+      "original_statement": "正文搜索、附件和原生引用不扩大权限；附件需可信 digest、大小、content type 和传输到接收主机的可达性校验。",
+      "note": "二进制附件、全文搜索属于 P2；资源引用 ACL/真实原生数据访问仍受 P0 原安全约束。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C24",
+        "C25"
+      ],
+      "implementation_reviews": [
+        "Actual binary reservation/upload/finalize/download validates digest/size/MIME, ACL, quotas and lifecycle on the admitted Scope CAS. Arbitrary URL/local-path fetch is rejected. Communication attachments remain retrievable by authorized recipients; Native attachment conversion requires independently proven Host reachability and otherwise refuses before Native input.",
+        "Bounded indexed full-text Message search uses current participant ACL and stable authorized cursors; neither counts nor results expose inaccessible messages."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-027",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP07",
+      "original_statement": "ACS 消息与 native transcript 双源保留 distinct IDs、source、authority、独立 cursor；没有 linkage 不能靠正文相似度去重。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C16",
+        "C21"
+      ],
+      "implementation_reviews": [
+        "Authorized NativeLink/source provenance follows exact original Core dispatch plus local DriverJournal or authenticated remote readback. Concrete Orca source derives from its original signed Host admission receipt. Separate identifiers/cursors/Host permissions remain intact; no text-similarity inference.",
+        "Current participant ACL and registration incarnation bracket local/remote source I/O; Receiver current technical-read policy is separate from expired input permission. Host read/control grants remain independent of ACS metadata or manager roles."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-028",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP05",
+      "original_statement": "HTTP 新面与既有 MCP 使用同一领域服务和授权；客户端不能成为较弱入口。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C12"
+      ],
+      "implementation_reviews": [
+        "Authenticated HTTP facade calls the same Domain and current permissions as MCP, with scope checks, bounded paging/body budgets, typed errors and original write keys; no parallel message ledger."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-029",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP09",
+      "original_statement": "限制正文、分页、订阅缓冲、并发、重试与附件配额；背压必须可见，不能 ACK 后悄悄丢弃已提交消息。",
+      "note": "核心消息/投递的预算与背压为 P0；P2 二进制附件及个人事件的限额仅在模块启用时实施。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C06"
+      ],
+      "implementation_reviews": [
+        "Independent maintenance advances due Messages under bounded scheduling and active-wait precedence. Repeated stopped-context restore archives lifecycle frames in the same Message Outbox, retaining original identity and possible-effect facts."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-030",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP08",
+      "original_statement": "事件中字段缺失/unknown 保持未知；UI 不把“未观察”显示成空闲/完成。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C14"
+      ],
+      "implementation_reviews": [
+        "Current profile/contact/receiver/delivery/operation/notice projections preserve unknown fields, exact private visibility and conditional permitted recovery actions."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-031",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP03",
+      "original_statement": "Codex/OpenCode 现有真实 Native 接入保留；支持声明精确到 OS/接入面/版本/授权模式。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C08"
+      ],
+      "implementation_reviews": [
+        "Configured registered TLS peers retain original retry/ACK domains and bounded transport budgets. Current peer identity, signing-key/connection generation and readback are checked; absent mixed-version extensions fail typed and never fabricate an ACK."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-032",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP08",
+      "original_statement": "Orca Adapter 使用单一原生输入拥有者，不能与原生 Orchestration 同时投递同一消息。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C17",
+        "C21"
+      ],
+      "implementation_reviews": [
+        "The TypeScript Orca port and concrete Python existing-Core verifier/router provide trusted observe/admit/original reconcile composition on the existing Receiver ledger/TLS operations. Host owns serialized input and independent authorization; ACS does not own its Native Driver/PTY or mutate Orca storage.",
+        "Current participant ACL and registration incarnation bracket local/remote source I/O; Receiver current technical-read policy is separate from expired input permission. Host read/control grants remain independent of ACS metadata or manager roles."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-033",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP08",
+      "original_statement": "完整 UI 清单覆盖数据/操作/事件/降级/测试；原生工具、审批、Diff、模型选择仍由宿主拥有。",
+      "note": "UI 覆盖指 ACS 通信数据/动作与宿主 delegate/降级，非复制原生 Chat UI 后端；P2 功能仅标可选。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C18",
+        "C19",
+        "C20"
+      ],
+      "implementation_reviews": [
+        "NativeView/Workspace delegate contracts cover Host-owned transcript/tool/Diff/approval/model/session/attachment actions with independent live Host grants and typed missing-port behavior; they do not copy Native state into ACS.",
+        "Production SDK headless consumers use actual OAuth HTTP/PG, all P1 operations, explicit replies, history/receipts, snapshots/events/reconnect/revocation and typed Native-source/delegate behavior.",
+        "All 30 source UI contracts map to ACS communication, activated P2 or an explicit Host delegate, with actions/data/events/degradation and contract witnesses. Product UI construction and actual Orca installation are not part of this backend pack."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-034",
+      "tier": "P1_required",
+      "kind": "client_contract",
+      "original_work_package": "WP08",
+      "original_statement": "插件 API 不足不以手工 PTY 输入/内部数据库注入冒充完整集成；host gap 明确归类。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C17"
+      ],
+      "implementation_reviews": [
+        "The TypeScript Orca port and concrete Python existing-Core verifier/router provide trusted observe/admit/original reconcile composition on the existing Receiver ledger/TLS operations. Host owns serialized input and independent authorization; ACS does not own its Native Driver/PTY or mutate Orca storage."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-035",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP09",
+      "original_statement": "显式迁移、兼容 reader、原消息 checksum/作者/关系不变；默认启动只校验版本。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C09"
+      ],
+      "implementation_reviews": [
+        "Storage and DriverJournal adoption remain explicit and additive. Normal startup verifies. Existing namespaces with lost journals cannot be recreated; retained current/archived Core startup facts also prohibit reset."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-036",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP04",
+      "original_statement": "恢复操作受权、幂等、有 expected revision、安全准入，失败不自动创建业务 Task 或换人完成。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C07"
+      ],
+      "implementation_reviews": [
+        "Signed restore restarts only the proven stopped transport and resumes the exact retained Native session, including a positively known replacement session. Reconstructed factories reattest Core/profile/account/journal/complete-stop evidence. Explicit ready-target rebind remains a separately authorized CAS."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-037",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP09",
+      "original_statement": "诊断最小暴露；日志无凭据/私信正文默认关闭；Manager notice 不包含第三方私信内容。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C08",
+        "C11"
+      ],
+      "implementation_reviews": [
+        "Configured registered TLS peers retain original retry/ACK domains and bounded transport budgets. Current peer identity, signing-key/connection generation and readback are checked; absent mixed-version extensions fail typed and never fabricate an ACK.",
+        "Participant-authorized diagnostics expose only technical layers/reasons/evidence. Inspect/reconcile query original work; recovery commands require current management authority, expected revision and durable idempotent acceptance."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-038",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP10",
+      "original_statement": "真正模型/原生协议/受控 fixture/包自检证据分开；不可把模拟替代真实资格。",
+      "note": "开发证据分层在 P0/P1 各自强制，P2 不计入该轮两个完成 gate。",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C10"
+      ],
+      "implementation_reviews": [
+        "Evidence runners record commands, source bytes, original failures, component/controlled-integration boundaries and candidate package identity. Actual Native/platform/Host qualification is separately pending after the current code changes, as excluded from this development stopping condition."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-039",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP01",
+      "original_statement": "受信接收能力变更必须重新确认；版本、二进制、主机、账号或连接代次变化使旧能力证据失效。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C02"
+      ],
+      "implementation_reviews": [
+        "Typed adapter describe/observe captures actual profile, account, host, generation, evidence freshness and independent readiness axes. Unsupported and unknown never imply idle or input authority."
+      ],
+      "remaining_development_items": []
+    },
+    {
+      "id": "R-040",
+      "tier": "P0_required",
+      "kind": "existing_invariant",
+      "original_work_package": "WP09",
+      "original_statement": "Core 独立可用，关闭 Orca/UI 后消息持久性、等待恢复和维护器不消失。",
+      "note": "",
+      "source": "v1.0.0/contracts/requirements.json",
+      "prior_status_is_not_evidence": true,
+      "development_status": "complete",
+      "change_items": [
+        "C08"
+      ],
+      "implementation_reviews": [
+        "Configured registered TLS peers retain original retry/ACK domains and bounded transport budgets. Current peer identity, signing-key/connection generation and readback are checked; absent mixed-version extensions fail typed and never fabricate an ACK."
+      ],
+      "remaining_development_items": []
+    }
+  ],
+  "api_operations": [
+    {
+      "operation_id": "getMeta",
+      "method": "GET",
+      "path": "/meta",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "getProfile",
+      "method": "GET",
+      "path": "/profile",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "listProjects",
+      "method": "GET",
+      "path": "/projects",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "listRoutes",
+      "method": "GET",
+      "path": "/projects/{project_id}/routes",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "listContacts",
+      "method": "GET",
+      "path": "/projects/{project_id}/contacts",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "listConversations",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "getConversation",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "listMessages",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "sendMessage",
+      "method": "POST",
+      "path": "/projects/{project_id}/messages",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "readMessage",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages/{message_handle}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "getDelivery",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages/{message_handle}/delivery",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "waitForMessages",
+      "method": "POST",
+      "path": "/projects/{project_id}/waits",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "getOperation",
+      "method": "GET",
+      "path": "/projects/{project_id}/operations/{operation_id}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "listReceivers",
+      "method": "GET",
+      "path": "/projects/{project_id}/receivers",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "getReceiver",
+      "method": "GET",
+      "path": "/projects/{project_id}/receivers/{receiver_id}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "recoverReceiver",
+      "method": "POST",
+      "path": "/projects/{project_id}/receivers/{receiver_id}/actions",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "getSnapshot",
+      "method": "GET",
+      "path": "/projects/{project_id}/snapshot",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "subscribeEvents",
+      "method": "GET",
+      "path": "/projects/{project_id}/events",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "getReadState",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/read-state",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "markConversationRead",
+      "method": "PUT",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/read-state",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "getPreferences",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/preferences",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "setConversationPreferences",
+      "method": "PUT",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/preferences",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "getDraft",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/draft",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "saveDraft",
+      "method": "PUT",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/draft",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "listNotices",
+      "method": "GET",
+      "path": "/projects/{project_id}/notices",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "markNoticeSeen",
+      "method": "PUT",
+      "path": "/projects/{project_id}/notices/{notice_handle}/seen",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "searchMessages",
+      "method": "GET",
+      "path": "/projects/{project_id}/search",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "reserveAttachment",
+      "method": "POST",
+      "path": "/projects/{project_id}/attachments",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "getAttachment",
+      "method": "GET",
+      "path": "/projects/{project_id}/attachments/{attachment_id}",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "uploadAttachment",
+      "method": "PUT",
+      "path": "/projects/{project_id}/attachments/{attachment_id}/content",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "downloadAttachment",
+      "method": "GET",
+      "path": "/projects/{project_id}/attachments/{attachment_id}/content",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "finalizeAttachment",
+      "method": "POST",
+      "path": "/projects/{project_id}/attachments/{attachment_id}/finalize",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "listNativeLinks",
+      "method": "GET",
+      "path": "/projects/{project_id}/native-links",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "bindNativeLink",
+      "method": "PUT",
+      "path": "/projects/{project_id}/native-links/{link_id}",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    },
+    {
+      "operation_id": "resolveConversation",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/resolve",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required",
+      "status": "verified_current_service_contract",
+      "actual_witness": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+      "development_status": "complete",
+      "evidence": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+    }
+  ],
+  "ui_contracts": [
+    {
+      "id": "UI01",
+      "tier": "P1_required",
+      "feature": "可信身份与权限动作",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T003",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI02",
+      "tier": "P1_required",
+      "feature": "项目与 Route 导航",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T089",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI03",
+      "tier": "P1_required",
+      "feature": "联系人/收件地址",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T005",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI04",
+      "tier": "P1_required",
+      "feature": "通信会话列表/摘要",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T041",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI05",
+      "tier": "P1_required",
+      "feature": "历史分页/定位/长消息",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T017",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI06",
+      "tier": "P1_required",
+      "feature": "显式关联回复/线程",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T011",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI07",
+      "tier": "P1_required",
+      "feature": "普通发送/等待/不重复",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T009",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI08",
+      "tier": "P2_optional",
+      "feature": "个人未读/已读/静音/归档",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T043",
+        "T081"
+      ],
+      "note": "P2_personal_features_are_not_in_P1_DOD",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI09",
+      "tier": "P2_optional",
+      "feature": "草稿与多设备恢复",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T084",
+        "T081"
+      ],
+      "note": "P2_personal_features_are_not_in_P1_DOD",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI10",
+      "tier": "P2_optional",
+      "feature": "消息搜索与摘要",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T048",
+        "T081"
+      ],
+      "note": "P2_personal_features_are_not_in_P1_DOD",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI11",
+      "tier": "P1_required",
+      "feature": "原始送达状态与技术尝试",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T014",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI12",
+      "tier": "P1_required",
+      "feature": "能力/运行状态与证据",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T033",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI13",
+      "tier": "P1_required",
+      "feature": "故障诊断/恢复操作",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T071",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI14",
+      "tier": "P1_required",
+      "feature": "通知与个人 seen",
+      "authority": "ACS",
+      "delivery_mode": "p1_notice_list_p2_personal_seen",
+      "original_test_ids": [
+        "T088",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI15",
+      "tier": "P2_optional",
+      "feature": "附件/图片上传下载",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T085",
+        "T081"
+      ],
+      "note": "P2_personal_features_are_not_in_P1_DOD",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI16",
+      "tier": "P1_required",
+      "feature": "实时更新/重连/快照",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T045",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI17",
+      "tier": "P1_required",
+      "feature": "Native Session 关联",
+      "authority": "ACS+host",
+      "delivery_mode": "acs_and_host_linkage_contract",
+      "original_test_ids": [
+        "T053",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI18",
+      "tier": "P1_required",
+      "feature": "Native transcript/消息流",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T082",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI19",
+      "tier": "P1_required",
+      "feature": "工具调用/结果/进度/长输出",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T082",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI20",
+      "tier": "P1_required",
+      "feature": "原生 Diff 卡/文件打开",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T082",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI21",
+      "tier": "P1_required",
+      "feature": "子 Agent / 后台任务行",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T082",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI22",
+      "tier": "P1_required",
+      "feature": "原生问题/审批交互",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T083",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI23",
+      "tier": "P1_required",
+      "feature": "原生发送/stop/resume/排队编辑取消",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T032",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI24",
+      "tier": "P1_required",
+      "feature": "模型/effort/usage/上下文展示",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T087",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI25",
+      "tier": "P1_required",
+      "feature": "Native Session 历史/clear/compact",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T086",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI26",
+      "tier": "P1_required",
+      "feature": "工作区/Terminal/Git/编辑器定位",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T082",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI27",
+      "tier": "P1_required",
+      "feature": "Native 来源标识与去重链接",
+      "authority": "ACS+host",
+      "delivery_mode": "acs_and_host_linkage_contract",
+      "original_test_ids": [
+        "T054",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI28",
+      "tier": "P1_required",
+      "feature": "插件宿主能力与降级",
+      "authority": "integration",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T067",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI29",
+      "tier": "P1_required",
+      "feature": "权限变化与缓存失效",
+      "authority": "ACS+host",
+      "delivery_mode": "acs_and_host_linkage_contract",
+      "original_test_ids": [
+        "T047",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    },
+    {
+      "id": "UI30",
+      "tier": "P1_required",
+      "feature": "UI 关闭后连续通信",
+      "authority": "ACS",
+      "delivery_mode": "p0_core_independent_p1_client_projection",
+      "original_test_ids": [
+        "T080",
+        "T081"
+      ],
+      "note": "",
+      "development_status": "contract_complete",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": [
+        "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+        "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.xml"
+      ]
+    }
+  ],
+  "conditional_contracts": [
+    "Safe native queue/steer requires a proven provider; busy otherwise defers.",
+    "Actual Orca installs the independently authorized atomic Host extension; ACS-owned verifier/router is implemented.",
+    "Native attachment conversion is a Host delegate requiring actual destination reachability; ACS binary service is implemented.",
+    "Additional Claude/Pi full Drivers require an explicitly specified actual target/version and are conditional, outside the25 defined items."
+  ],
+  "verification": {
+    "integration": "integration_evidence/acs-development-capabilities-20261107/development-final-integration-b.json",
+    "counts": {
+      "tests": 76,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 76
+    },
+    "static": "integration_evidence/acs-development-capabilities-20261107/development-static-b.json",
+    "package": "integration_evidence/acs-development-capabilities-20261107/package-facts.json",
+    "supplementary_runs": [
+      {
+        "path": "integration_evidence/acs-development-capabilities-20261107/final-restore-source-components.json",
+        "counts": {
+          "tests": 285,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 1,
+          "passed": 284
+        },
+        "current_product_source_match": false,
+        "changed_sources_since_run": [
+          "runtime/remote_endpoint.py",
+          "runtime_tests/test_receiver_lifecycle_wire_pg.py",
+          "runtime_tests/test_remote_native_source_tls.py"
+        ],
+        "drift_review": "The replacement-session restore extension is covered by final-restore-source-components; technical-read callback wiring is covered by remote-source-current-read and final Core/TLS integration. The wire fixture now classifies original-session reads separately from mutations."
+      },
+      {
+        "path": "integration_evidence/acs-development-capabilities-20261107/remote-source-current-read.json",
+        "counts": {
+          "tests": 28,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 28
+        },
+        "current_product_source_match": true,
+        "changed_sources_since_run": [
+          "runtime_tests/test_receiver_lifecycle_wire_pg.py"
+        ],
+        "drift_review": "The replacement-session restore extension is covered by final-restore-source-components; technical-read callback wiring is covered by remote-source-current-read and final Core/TLS integration. The wire fixture now classifies original-session reads separately from mutations."
+      },
+      {
+        "path": "integration_evidence/acs-development-capabilities-20261107/driver-warm-compatibility.json",
+        "counts": {
+          "tests": 228,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 9,
+          "passed": 219
+        },
+        "current_product_source_match": true,
+        "changed_sources_since_run": [
+          "runtime_tests/test_receiver_lifecycle_wire_pg.py"
+        ],
+        "drift_review": "The replacement-session restore extension is covered by final-restore-source-components; technical-read callback wiring is covered by remote-source-current-read and final Core/TLS integration. The wire fixture now classifies original-session reads separately from mutations."
+      },
+      {
+        "path": "integration_evidence/acs-development-capabilities-20261107/wake-lost-ack-regression-b.json",
+        "counts": {
+          "tests": 31,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 31
+        },
+        "current_product_source_match": true,
+        "changed_sources_since_run": [],
+        "drift_review": "The replacement-session restore extension is covered by final-restore-source-components; technical-read callback wiring is covered by remote-source-current-read and final Core/TLS integration. The wire fixture now classifies original-session reads separately from mutations."
+      },
+      {
+        "path": "integration_evidence/acs-development-capabilities-20261107/orca-core-remote-source-c.json",
+        "counts": {
+          "tests": 2,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        },
+        "current_product_source_match": false,
+        "changed_sources_since_run": [
+          "runtime/native_restore.py",
+          "runtime/remote_endpoint.py",
+          "runtime_tests/test_native_cold_restore_transport.py",
+          "runtime_tests/test_receiver_lifecycle_wire_pg.py",
+          "runtime_tests/test_remote_native_source_tls.py"
+        ],
+        "drift_review": "The replacement-session restore extension is covered by final-restore-source-components; technical-read callback wiring is covered by remote-source-current-read and final Core/TLS integration. The wire fixture now classifies original-session reads separately from mutations."
+      },
+      {
+        "path": "integration_evidence/acs-development-capabilities-20261107/restore-factory-core-b.json",
+        "counts": {
+          "tests": 5,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        "current_product_source_match": false,
+        "changed_sources_since_run": [
+          "runtime/native_restore.py",
+          "runtime/remote_endpoint.py",
+          "runtime_tests/test_native_cold_restore_transport.py",
+          "runtime_tests/test_receiver_lifecycle_wire_pg.py",
+          "runtime_tests/test_remote_native_source_tls.py"
+        ],
+        "drift_review": "The replacement-session restore extension is covered by final-restore-source-components; technical-read callback wiring is covered by remote-source-current-read and final Core/TLS integration. The wire fixture now classifies original-session reads separately from mutations."
+      }
+    ],
+    "counting_rule": "Runs overlap; counts are not added into a single full-suite result. Current-source actual Native/Host qualification remains separate.",
+    "retained_failure_records": [
+      "integration_evidence/acs-development-capabilities-20261107/development-final-integration.json",
+      "integration_evidence/acs-development-capabilities-20261107/development-final-integration-interruption.json",
+      "integration_evidence/acs-development-capabilities-20261107/wake-lost-ack-regression-a.json",
+      "integration_evidence/acs-development-capabilities-20261107/orca-core-remote-source-a.json",
+      "integration_evidence/acs-development-capabilities-20261107/orca-core-remote-source-b.json",
+      "integration_evidence/acs-development-capabilities-20261107/restore-factory-core-a.json"
+    ]
+  },
+  "production_changes": false,
+  "actual_model_calls": 0
+}

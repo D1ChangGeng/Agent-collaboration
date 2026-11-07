@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="5" time="27.031" timestamp="2026-11-07T18:44:58.143705+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_receiver_restore_factory_pg" name="test_factory_reattests_current_enrollment_and_original_core_profile_before_restoration[False-False]" time="7.540"><failure message="AttributeError: 'types.SimpleNamespace' object has no attribute 'journal'">runtime_tests\test_receiver_restore_factory_pg.py:81: in unavailable
+    raise CapacityEvidenceUnavailable("retained_journal_requires_original_profile")
+E   runtime.receiver_lifecycle_capacity.CapacityEvidenceUnavailable: Node capacity evidence is unavailable
+
+During handling of the above exception, another exception occurred:
+runtime_tests\test_receiver_restore_factory_pg.py:101: in test_factory_reattests_current_enrollment_and_original_core_profile_before_restoration
+    controller = factory.attach_lifecycle_controller(capacity)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_deployment\receiver_lifecycle.py:192: in attach_lifecycle_controller
+    witness = recover_capacity_profile(capacity.driver, authorize_current=authorize,
+runtime_tests\test_receiver_restore_factory_pg.py:85: in recover
+    authorize_current(driver)  # Real current enrolled Runtime/Node/key/registration.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_deployment\receiver_lifecycle.py:147: in authorize
+    _namespace_authority(capacity, Path(driver.journal.path).parent, driver.binding_id, driver.identity)
+                                        ^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'journal'</failure></testcase><testcase classname="runtime_tests.test_receiver_restore_factory_pg" name="test_factory_reattests_current_enrollment_and_original_core_profile_before_restoration[False-True]" time="4.377"><failure message="AttributeError: 'types.SimpleNamespace' object has no attribute 'journal'">runtime_tests\test_receiver_restore_factory_pg.py:81: in unavailable
+    raise CapacityEvidenceUnavailable("retained_journal_requires_original_profile")
+E   runtime.receiver_lifecycle_capacity.CapacityEvidenceUnavailable: Node capacity evidence is unavailable
+
+During handling of the above exception, another exception occurred:
+runtime_tests\test_receiver_restore_factory_pg.py:101: in test_factory_reattests_current_enrollment_and_original_core_profile_before_restoration
+    controller = factory.attach_lifecycle_controller(capacity)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_deployment\receiver_lifecycle.py:192: in attach_lifecycle_controller
+    witness = recover_capacity_profile(capacity.driver, authorize_current=authorize,
+runtime_tests\test_receiver_restore_factory_pg.py:85: in recover
+    authorize_current(driver)  # Real current enrolled Runtime/Node/key/registration.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_deployment\receiver_lifecycle.py:147: in authorize
+    _namespace_authority(capacity, Path(driver.journal.path).parent, driver.binding_id, driver.identity)
+                                        ^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'journal'</failure></testcase><testcase classname="runtime_tests.test_receiver_restore_factory_pg" name="test_factory_reattests_current_enrollment_and_original_core_profile_before_restoration[True-False]" time="3.177"><failure message="AttributeError: 'types.SimpleNamespace' object has no attribute 'journal'">runtime_tests\test_receiver_restore_factory_pg.py:81: in unavailable
+    raise CapacityEvidenceUnavailable("retained_journal_requires_original_profile")
+E   runtime.receiver_lifecycle_capacity.CapacityEvidenceUnavailable: Node capacity evidence is unavailable
+
+During handling of the above exception, another exception occurred:
+runtime_tests\test_receiver_restore_factory_pg.py:101: in test_factory_reattests_current_enrollment_and_original_core_profile_before_restoration
+    controller = factory.attach_lifecycle_controller(capacity)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_deployment\receiver_lifecycle.py:192: in attach_lifecycle_controller
+    witness = recover_capacity_profile(capacity.driver, authorize_current=authorize,
+runtime_tests\test_receiver_restore_factory_pg.py:85: in recover
+    authorize_current(driver)  # Real current enrolled Runtime/Node/key/registration.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_deployment\receiver_lifecycle.py:147: in authorize
+    _namespace_authority(capacity, Path(driver.journal.path).parent, driver.binding_id, driver.identity)
+                                        ^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'journal'</failure></testcase><testcase classname="runtime_tests.test_receiver_restore_factory_pg" name="test_factory_reattests_current_enrollment_and_original_core_profile_before_restoration[True-True]" time="3.138"><failure message="AttributeError: 'types.SimpleNamespace' object has no attribute 'journal'">runtime_tests\test_receiver_restore_factory_pg.py:81: in unavailable
+    raise CapacityEvidenceUnavailable("retained_journal_requires_original_profile")
+E   runtime.receiver_lifecycle_capacity.CapacityEvidenceUnavailable: Node capacity evidence is unavailable
+
+During handling of the above exception, another exception occurred:
+runtime_tests\test_receiver_restore_factory_pg.py:101: in test_factory_reattests_current_enrollment_and_original_core_profile_before_restoration
+    controller = factory.attach_lifecycle_controller(capacity)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_deployment\receiver_lifecycle.py:192: in attach_lifecycle_controller
+    witness = recover_capacity_profile(capacity.driver, authorize_current=authorize,
+runtime_tests\test_receiver_restore_factory_pg.py:85: in recover
+    authorize_current(driver)  # Real current enrolled Runtime/Node/key/registration.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_deployment\receiver_lifecycle.py:147: in authorize
+    _namespace_authority(capacity, Path(driver.journal.path).parent, driver.binding_id, driver.identity)
+                                        ^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'journal'</failure></testcase><testcase classname="runtime_tests.test_message_cold_restore_pg" name="test_same_waiting_message_restores_original_context_twice_without_new_message_or_recovery" time="7.595" /></testsuite></testsuites>

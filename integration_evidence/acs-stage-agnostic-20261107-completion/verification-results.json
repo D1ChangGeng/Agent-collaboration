@@ -1,0 +1,166 @@
+{
+  "schema_version": "acs-v11-verification/2",
+  "observed_at": "2026-11-07T06:14:40.603779+00:00",
+  "runs": [
+    {
+      "id": "p2-initial",
+      "result": "p2-initial.json",
+      "log": "p2-initial.log",
+      "junit": "p2-initial.xml",
+      "counts": {
+        "tests": 343,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 343
+      },
+      "evidence_class": "E2_controlled_integration",
+      "source_files": 905,
+      "captured_files_match_current": false,
+      "reviewed_current_delta": [
+        "runtime/communication_http.py",
+        "runtime_tests/test_communication_http_auth.py"
+      ],
+      "delta_verification": "Current p0-p1-final reruns the complete P0/P1 batch plus exact P2/installed-package/SSRF and real SDK acceptance. Earlier component/storage evidence is retained on unchanged owning mechanisms."
+    },
+    {
+      "id": "exact-completion-b",
+      "result": "exact-completion-b.json",
+      "log": "exact-completion-b.log",
+      "junit": "exact-completion-b.xml",
+      "counts": {
+        "tests": 8,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 8
+      },
+      "evidence_class": "E2_controlled_integration",
+      "source_files": 908,
+      "captured_files_match_current": false,
+      "reviewed_current_delta": [
+        "runtime/communication_http.py",
+        "runtime_tests/test_communication_http_auth.py"
+      ],
+      "delta_verification": "Current p0-p1-final reruns the complete P0/P1 batch plus exact P2/installed-package/SSRF and real SDK acceptance. Earlier component/storage evidence is retained on unchanged owning mechanisms."
+    },
+    {
+      "id": "core-components-final",
+      "result": "core-components-final.json",
+      "log": "core-components-final.log",
+      "junit": "core-components-final.xml",
+      "counts": {
+        "tests": 1118,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 24,
+        "passed": 1094
+      },
+      "evidence_class": "E1_components",
+      "source_files": 908,
+      "captured_files_match_current": false,
+      "reviewed_current_delta": [
+        "runtime/communication_http.py",
+        "runtime_tests/test_communication_http_auth.py"
+      ],
+      "delta_verification": "Current p0-p1-final reruns the complete P0/P1 batch plus exact P2/installed-package/SSRF and real SDK acceptance. Earlier component/storage evidence is retained on unchanged owning mechanisms."
+    },
+    {
+      "id": "native-fences-components-final",
+      "result": "native-fences-components-final.json",
+      "log": "native-fences-components-final.log",
+      "junit": "native-fences-components-final.xml",
+      "counts": {
+        "tests": 198,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 7,
+        "passed": 191
+      },
+      "evidence_class": "E1_components",
+      "source_files": 908,
+      "captured_files_match_current": false,
+      "reviewed_current_delta": [
+        "runtime/communication_http.py",
+        "runtime_tests/test_communication_http_auth.py"
+      ],
+      "delta_verification": "Current p0-p1-final reruns the complete P0/P1 batch plus exact P2/installed-package/SSRF and real SDK acceptance. Earlier component/storage evidence is retained on unchanged owning mechanisms."
+    },
+    {
+      "id": "read-compatibility-final",
+      "result": "read-compatibility-final.json",
+      "log": "read-compatibility-final.log",
+      "junit": "read-compatibility-final.xml",
+      "counts": {
+        "tests": 3,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 3
+      },
+      "evidence_class": "E1_components",
+      "source_files": 909,
+      "captured_files_match_current": true,
+      "reviewed_current_delta": [],
+      "delta_verification": null
+    },
+    {
+      "id": "p0-p1-final",
+      "result": "p0-p1-final.json",
+      "log": "p0-p1-final.log",
+      "junit": "p0-p1-final.xml",
+      "counts": {
+        "tests": 522,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 3,
+        "passed": 519
+      },
+      "evidence_class": "E2_controlled_integration",
+      "source_files": 909,
+      "captured_files_match_current": true,
+      "reviewed_current_delta": [],
+      "delta_verification": null
+    }
+  ],
+  "sdk": {
+    "passed": 210,
+    "typescript_strict": "passed",
+    "artifact": "sdk-verification.json"
+  },
+  "qualification": {
+    "CORE_P0_QUALIFIED": "qualified_with_specific_blockers",
+    "CLIENT_P1_CONTRACT_READY": true,
+    "P2_EXTENSIONS_READY": true,
+    "ORCA_HOST_QUALIFIED": false
+  },
+  "source_state": {
+    "repository": "D:\\Chatgpt\\Agent-collaboration",
+    "branch": "codex/core-cleanup",
+    "head": "19d7881d49ee887315c54c5bc02e0cc424061376",
+    "tree": "8856b23e59d50eccb1198475e84937c48a71b0bb",
+    "tracked_binary_diff_sha256": "fba85437f8e8c1dda5a739b4717ab0d7d1236f4c8c8b488ccf3972c411136dd5",
+    "digest_format": "raw git diff --binary --no-ext-diff bytes",
+    "working_tree": "dirty_uncommitted",
+    "committed": false,
+    "pushed": false,
+    "upstream": "origin/codex/core-cleanup",
+    "receiver_sync_action": "none",
+    "observed_at": "2026-11-07T06:14:40.603779+00:00"
+  },
+  "retained_native": "retained-native-evidence.json",
+  "wheel": "package-facts.json",
+  "reviewed_source_delta": "source-impact-review.json",
+  "static_checks": "static-verification.json",
+  "failure_history": [
+    "core-components: optional YAML module missing at collection",
+    "core-components-with-contract-tools: stopped after sustained sandbox nonprogress; same selected suite passes in core-components-final",
+    "exact-completion-a: three test-fixture setup errors; all original assertions retained and pass in b",
+    "p0-p1-current: 500 passed/1 failed/3 skipped; ordinary HTTP read forwarded the optional false keyword; fixed without weakening the original assertion and covered by three current compatibility cases plus the final complete rerun",
+    "read-compatibility-fix: stopped sandbox ASGI nonprogress; all three same-source cases pass in read-compatibility-final",
+    "native-fences-components: one nonexistent target path; zero tests executed; corrected in final"
+  ],
+  "test_totals_are_separate_not_summed": true,
+  "production_changes": false,
+  "new_model_calls": 0
+}

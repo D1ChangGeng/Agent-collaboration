@@ -1,0 +1,16 @@
+{
+  "Reason": "Stopped the broad batch after two recorded failures to diagnose the original Message lost-start-ACK cases; focused rerun will follow.",
+  "Processes": [
+    {
+      "ProcessId": 3464,
+      "ParentProcessId": 29560,
+      "Name": "python.exe"
+    },
+    {
+      "ProcessId": 48116,
+      "ParentProcessId": 3464,
+      "Name": "python.exe"
+    }
+  ],
+  "ProductionAccess": false
+}

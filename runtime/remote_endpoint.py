@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import http.client
 import json
+import math
 import signal
 import socket
 import ssl
 import threading
+import time
+from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
@@ -13,6 +16,7 @@ from nacl.signing import SigningKey
 
 from runtime.connection_clock import ClockUnavailable, ConnectionClock
 from runtime.lifetimes import earliest
+from runtime.opencode_http import _DeadlineResponse
 from runtime.receiver import ReceiverRejected, ReceiverService
 from runtime.receiver_config import (
     ReceiverClientConfig,
@@ -28,13 +32,55 @@ class RemoteTransportRejected(RuntimeError):
     pass
 
 
+class RemotePeerChanged(RemoteTransportRejected):
+    """The reachable peer/configuration cannot establish the expected identity."""
+
+
+PEER_PROTOCOL = "acs-receiver-peer/1"
+
+
+def receiver_peer_identity(config: ReceiverClientConfig) -> str:
+    """Opaque common receiver context; no local paths, private keys or messages."""
+    return sha256({"protocol": PEER_PROTOCOL, "binding": config.binding.model_dump(mode="json"),
+        "authority_key_id": config.authority_key_id, "authority_key_revision": config.authority_key_revision,
+        "authority_public_key": config.authority_public_key,
+        "authority_public_key_fingerprint": config.authority_public_key_fingerprint,
+        "expected_boot_incarnation": config.expected_boot_incarnation,
+        "journal_generation": config.journal_generation, "old_boot_isolation_ref": config.old_boot_isolation_ref,
+        "access_mode": config.access_mode})
+
+
+def _request_budget(connection, deadline):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("receiver transport request duration expired")
+    connection.timeout = remaining
+    if connection.sock is not None:
+        connection.sock.settimeout(remaining)
+
+
 class RemoteNodeTransport:
     def __init__(self, config: ReceiverClientConfig, *, timeout: float = 5.0,
                  clock: ConnectionClock | None = None):
         config.validate()
         self.config = config
         self.clock = resolve_connection_clock(config, clock)
+        if (isinstance(timeout, bool) or not isinstance(timeout, (int, float))
+                or not math.isfinite(timeout) or not 0 < timeout <= 120):
+            raise ValueError("receiver request timeout must be finite and within 120 seconds")
         self.timeout = timeout
+        self._peer_identity = receiver_peer_identity(config)
+        self._bound_clock = self.clock
+        self._clock_identity = dict(self.clock.identity)
+        self._limits = (config.maximum_body_bytes, config.clock_skew_seconds)
+
+    def _assert_peer(self):
+        if (receiver_peer_identity(self.config) != self._peer_identity or self.clock is not self._bound_clock
+                or self.clock.identity != self._clock_identity
+                or (self.config.maximum_body_bytes, self.config.clock_skew_seconds) != self._limits
+                or isinstance(self.timeout, bool) or not isinstance(self.timeout, (int, float))
+                or not math.isfinite(self.timeout) or not 0 < self.timeout <= 120):
+            raise RemotePeerChanged("receiver transport binding changed; reconnect explicitly")
 
     @staticmethod
     def _context():
@@ -46,6 +92,7 @@ class RemoteNodeTransport:
         return context
 
     def send(self, request: SignedRequest) -> SignedReceipt:
+        self._assert_peer()
         registration = self.config.binding.registration
         try:
             self.clock.require_before(earliest(request.admission.deadline, None if self.config.access_mode == "owner" else registration.expires_at))
@@ -55,20 +102,27 @@ class RemoteNodeTransport:
             self.config.binding.locator_host, self.config.binding.locator_port,
             context=self._context(), timeout=self.timeout,
         )
+        deadline = time.monotonic() + self.timeout
+        connection.response_class = partial(_DeadlineResponse, deadline=deadline)
         try:
+            _request_budget(connection, deadline)
             connection.connect()
             certificate = connection.sock.getpeercert(binary_form=True)
             if tls_fingerprint(certificate) != registration.tls_certificate_sha256:
-                raise RemoteTransportRejected("receiver TLS fingerprint rejected")
+                raise RemotePeerChanged("receiver TLS fingerprint rejected")
             encoded = request.model_dump_json().encode()
             if len(encoded) > self.config.maximum_body_bytes:
                 raise RemoteTransportRejected("receiver request exceeds bound")
+            self._assert_peer()
+            _request_budget(connection, deadline)
             connection.request(
                 "POST", request.admission.path, body=encoded,
                 headers={"Content-Type": "application/json", "Content-Length": str(len(encoded))},
             )
+            _request_budget(connection, deadline)
             response = connection.getresponse()
             raw = response.read(self.config.maximum_body_bytes + 1)
+            _request_budget(connection, deadline)
             if response.status != 200 or len(raw) > self.config.maximum_body_bytes:
                 raise RemoteTransportRejected(f"receiver rejected request with status {response.status}")
             receipt = SignedReceipt.model_validate_json(raw, strict=True)
@@ -83,25 +137,82 @@ class RemoteNodeTransport:
             connection.close()
 
     def inspect_runtime(self):
+        self._assert_peer()
+        try:
+            self.clock.require_before(None if self.config.access_mode == "owner" else self.config.binding.registration.expires_at)
+        except ClockUnavailable as error:
+            raise RemoteTransportRejected("receiver health Authority time unavailable or expired") from error
         connection = http.client.HTTPSConnection(self.config.binding.locator_host,
             self.config.binding.locator_port, context=self._context(), timeout=self.timeout)
+        deadline = time.monotonic() + self.timeout
+        connection.response_class = partial(_DeadlineResponse, deadline=deadline)
         try:
+            _request_budget(connection, deadline)
             connection.connect()
             if tls_fingerprint(connection.sock.getpeercert(binary_form=True)) != self.config.binding.registration.tls_certificate_sha256:
-                raise RemoteTransportRejected("receiver TLS fingerprint rejected")
+                raise RemotePeerChanged("receiver TLS fingerprint rejected")
+            self._assert_peer()
+            _request_budget(connection, deadline)
             connection.request("GET", "/healthz")
+            _request_budget(connection, deadline)
             response = connection.getresponse()
             data = response.read(16385)
+            _request_budget(connection, deadline)
             if response.status != 200 or len(data) > 16384:
                 raise RemoteTransportRejected("receiver health readback unavailable")
             value = json.loads(data)
-            if value.get("state") not in {"idle", "busy", "online", "unknown", "offline"}:
+            if not isinstance(value, dict) or value.get("state") not in {"idle", "busy", "online", "unknown", "offline"}:
                 raise RemoteTransportRejected("receiver health state rejected")
+            self._assert_peer()
+            if "peer_identity" not in value:
+                return {"state": "unknown", "harness": "unknown", "version": "unknown",
+                        "session_ref": None, "peer_verification": "unavailable"}
+            if value.get("peer_protocol") != PEER_PROTOCOL or value["peer_identity"] != self._peer_identity:
+                raise RemotePeerChanged("receiver health belongs to a different peer generation")
+            value["peer_verification"] = "current"
             return value
         finally:
             connection.close()
 
+    def exchange_lifecycle(self, path, encoded, valid_until):
+        """Bounded lifecycle bytes over this same registered TLS-pinned peer."""
+        from runtime.receiver_lifecycle_transport import PATHS
+
+        self._assert_peer()
+        if path not in PATHS or type(encoded) is not bytes or len(encoded) > self.config.maximum_body_bytes:
+            raise RemoteTransportRejected("lifecycle wire bounds rejected")
+        registration = self.config.binding.registration
+        self.clock.require_before(earliest(valid_until,
+            None if self.config.access_mode == "owner" else registration.expires_at))
+        connection = http.client.HTTPSConnection(self.config.binding.locator_host, self.config.binding.locator_port,
+            context=self._context(), timeout=self.timeout)
+        deadline = time.monotonic() + self.timeout
+        connection.response_class = partial(_DeadlineResponse, deadline=deadline)
+        try:
+            _request_budget(connection, deadline)
+            connection.connect()
+            if tls_fingerprint(connection.sock.getpeercert(binary_form=True)) != registration.tls_certificate_sha256:
+                raise RemotePeerChanged("receiver lifecycle TLS fingerprint rejected")
+            self._assert_peer()
+            self.clock.require_before(valid_until)
+            _request_budget(connection, deadline)
+            connection.request("POST", path, body=encoded,
+                headers={"Content-Type": "application/json", "Content-Length": str(len(encoded))})
+            _request_budget(connection, deadline)
+            response = connection.getresponse()
+            raw = response.read(self.config.maximum_body_bytes + 1)
+            _request_budget(connection, deadline)
+            self._assert_peer()
+            if response.status != 200 or len(raw) > self.config.maximum_body_bytes:
+                raise RemoteTransportRejected("receiver lifecycle response rejected")
+            return raw
+        except (OSError, TimeoutError, ssl.SSLError, http.client.HTTPException, ValueError) as error:
+            raise RemoteTransportRejected("receiver lifecycle observation unavailable") from error
+        finally:
+            connection.close()
+
     def validate_receipt(self, request: SignedRequest, receipt: SignedReceipt) -> None:
+        self._assert_peer()
         verify(self.config.binding.node_public_key, receipt.signature, receipt.receipt)
         admission = request.admission
         observed = receipt.receipt
@@ -160,9 +271,12 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
 
     def __init__(self, config: ReceiverRuntimeConfig, node_signing_key: SigningKey,
                  authorize_current, native_invoke, shutdown_callback=None, native_readiness=None,
-                 clock: ConnectionClock | None = None):
+                 clock: ConnectionClock | None = None, lifecycle_node=None, *, receiver_router_factory=None,
+                 authorize_source_read=None):
         if not callable(native_invoke):
             raise RemoteTransportRejected("receiver native adapter callback is required")
+        if authorize_source_read is not None and not callable(authorize_source_read):
+            raise TypeError("current technical-source read authority must be a trusted callback")
         config.validate()
         try:
             cert_identity = validated_file_identity(config.tls_cert_path, private=False)
@@ -170,6 +284,9 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
         except PathSecurityRejected:
             raise RemoteTransportRejected("receiver TLS path admission rejected") from None
         self.config = config
+        from runtime.receiver_lifecycle_transport import LifecycleReceiverRouter
+
+        self.lifecycle = LifecycleReceiverRouter(config, lifecycle_node) if lifecycle_node is not None else None
         self._native_invoke = native_invoke
         self.native_readiness = native_readiness
         self._shutdown_callback = shutdown_callback
@@ -177,6 +294,8 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
         self._response_fault_used = False
         self.service = ReceiverService(
             config, node_signing_key, authorize_current=authorize_current, clock=clock,
+            authorize_source_read=(authorize_source_read if authorize_source_read is not None else
+                getattr(getattr(native_invoke, "__self__", None), "authorize_native_source_read", None)),
         )
         from runtime.filesystem_transport import NodeFilesystemService
         provider = getattr(native_invoke, "__self__", None)
@@ -189,6 +308,16 @@ class ReceiverHTTPServer(ThreadingHTTPServer):
             config.expected_boot_incarnation, config.journal_generation,
             old_boot_isolation_ref=config.old_boot_isolation_ref,
         )
+        self.receiver_router = None
+        if receiver_router_factory is not None:
+            from runtime.orca_receiver_backend import OrcaReceiverRouter
+
+            if not callable(receiver_router_factory):
+                raise TypeError("a trusted Host Receiver router factory is required")
+            router = receiver_router_factory(self.service)
+            if not isinstance(router, OrcaReceiverRouter) or router.backend.service is not self.service:
+                raise TypeError("the Host router must use this existing Receiver service and ledger")
+            self.receiver_router = router
         listen = (
             config.listen_host or config.binding.locator_host,
             config.listen_port or config.binding.locator_port,
@@ -257,7 +386,13 @@ class ReceiverHandler(BaseHTTPRequestHandler):
             value = provider() if callable(provider) else {"state": "online", "harness": "unknown", "version": "unknown"}
         except Exception:  # noqa: BLE001 -- health output never contains private errors
             value = {"state": "unknown", "harness": "unknown", "version": "unknown"}
+        if not isinstance(value, dict):
+            value = {"state": "unknown", "harness": "unknown", "version": "unknown"}
+        value = {**value, "peer_protocol": PEER_PROTOCOL, "peer_identity": receiver_peer_identity(self.server.config)}
         encoded = json.dumps(value).encode()
+        if len(encoded) > 16384:
+            encoded = json.dumps({"state": "unknown", "harness": "unknown", "version": "unknown",
+                "peer_protocol": PEER_PROTOCOL, "peer_identity": value["peer_identity"]}).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(encoded)))
@@ -272,6 +407,28 @@ class ReceiverHandler(BaseHTTPRequestHandler):
             if not 0 <= length <= self.server.config.maximum_body_bytes:
                 raise ReceiverRejected("body length rejected")
             raw = self.rfile.read(length)
+            if len(raw) != length:
+                raise ReceiverRejected("request body incomplete")
+            if self.path.startswith("/v1/lifecycle/"):
+                if self.server.lifecycle is None:
+                    raise ReceiverRejected("lifecycle port is unavailable")
+                try:
+                    result = self.server.lifecycle.handle(self.path, raw)
+                except Exception:  # noqa: BLE001 - do not expose private Core/Node failures on the wire.
+                    raise ReceiverRejected("lifecycle request rejected") from None
+                encoded = result.model_dump_json().encode()
+                if len(encoded) > self.server.config.maximum_body_bytes:
+                    raise ReceiverRejected("lifecycle response exceeds bound")
+                if self.server.drop_response(self.path):
+                    self.close_connection = True
+                    self.connection.close()
+                    return
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+                return
             if self.path == "/v1/filesystem":
                 from runtime.machine_filesystem import FilesystemError
                 if self.server.filesystem is None:
@@ -296,9 +453,11 @@ class ReceiverHandler(BaseHTTPRequestHandler):
             request = SignedRequest.model_validate_json(raw, strict=True)
             if request.admission.path != self.path:
                 raise ReceiverRejected("request path rejected")
-            receipt = self.server.service.handle(request, self.server.native_invoke,
+            receipt = (self.server.receiver_router.handle(request) if self.server.receiver_router is not None else
+                       self.server.service.handle(request, self.server.native_invoke,
                                                  native_readiness=self.server.native_readiness,
-                                                 response_reader=getattr(getattr(self.server._native_invoke, "__self__", None), "read_response_artifact", None))
+                                                 response_reader=getattr(getattr(self.server._native_invoke, "__self__", None), "read_response_artifact", None),
+                                                 native_source_reader=getattr(getattr(self.server._native_invoke, "__self__", None), "read_native_source", None)))
             if self.server.drop_response(request.admission.purpose):
                 self.close_connection = True
                 try:
@@ -331,12 +490,13 @@ def fixture_authority_current(_admission):
 
 
 def serve(config: ReceiverRuntimeConfig, ready=None, authorize_current=None, native_invoke=None,
-          ready_check=None, shutdown_callback=None, native_readiness=None, clock: ConnectionClock | None = None):
+          ready_check=None, shutdown_callback=None, native_readiness=None, clock: ConnectionClock | None = None,
+          lifecycle_node=None):
     if not callable(authorize_current):
         raise RemoteTransportRejected("receiver current-authority callback is required")
     server = ReceiverHTTPServer(
         config, load_owner_signing_key(config.node_signing_key_path), authorize_current,
-        native_invoke, shutdown_callback, native_readiness, clock=clock,
+        native_invoke, shutdown_callback, native_readiness, clock=clock, lifecycle_node=lifecycle_node,
     )
     worker = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
     worker.start()

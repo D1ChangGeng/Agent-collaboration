@@ -1,0 +1,13 @@
+........                                                                 [100%]
+============================== warnings summary ===============================
+runtime_tests/test_communication_p2_exact_scenarios.py::test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections
+  runtime_tests\test_communication_p2_exact_scenarios.py:98: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections(attached, monkeypatch, record_property):
+
+runtime_tests/test_communication_installed_maintenance.py::test_t090_installed_wheel_maintains_committed_message_after_its_client_process_exits
+  runtime_tests\test_communication_installed_maintenance.py:88: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_t090_installed_wheel_maintains_committed_message_after_its_client_process_exits(comm, tmp_path, record_property):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-stage-agnostic-20261107-completion\exact-completion-b.xml -
+8 passed, 2 warnings in 41.29s

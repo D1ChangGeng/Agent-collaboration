@@ -1,0 +1,23 @@
+FF........                                                               [100%]
+================================== FAILURES ===================================
+_ test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[codex] _
+runtime_tests\test_native_restore_origin.py:94: in test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact
+    assert receipt.outcome == "acknowledged" and receipt.native_session_ref == created.native_session_ref, (
+E   AssertionError: (('LifecycleNodeRejected', 'lifecycle_exclusive_ownership_changed'), {'action': 'resume', 'binding_id': 'actual-driver...mmand', 'deadline': None, ...}, 'input_hash': 'fefc4de6bba91c20ad7f56c8136444fc56a60c330cb3fb6f0b5afad8ab048c03', ...})
+E   assert ('unknown' == 'acknowledged'
+E     
+E     - acknowledged
+E     + unknown)
+_ test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[opencode] _
+runtime_tests\test_native_restore_origin.py:94: in test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact
+    assert receipt.outcome == "acknowledged" and receipt.native_session_ref == created.native_session_ref, (
+E   AssertionError: (('DriverRejected', None), {'action': 'resume', 'binding_id': 'actual-driver-binding', 'input': {'action': 'resume', '...mmand', 'deadline': None, ...}, 'input_hash': '8d058805dd3c26fafdc1b8e60c586327c680b7dca2f1603e8eda35f1d83277c2', ...})
+E   assert ('unknown' == 'acknowledged'
+E     
+E     - acknowledged
+E     + unknown)
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-development-capabilities-20261107\durable-restore-diagnostic.xml -
+=========================== short test summary info ===========================
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[codex]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[opencode]
+2 failed, 8 passed in 4.66s

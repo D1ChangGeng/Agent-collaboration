@@ -19,6 +19,7 @@ from runtime.delivery_models import (
     NoticePacket,
 )
 from runtime.delivery_node import (
+    NATIVE_ATTACHMENT_UNSUPPORTED,
     DeliveryBoundaryRejected,
     DeliveryTransportError,
     InvocationDeferred,
@@ -140,7 +141,10 @@ class DeliveryService:
         endpoint_id: str,
         binding_revision: int,
         operation_id: str | None = None,
+        max_packet_bytes: int = 65536,
     ):
+        if type(max_packet_bytes) is not int or not 65536 <= max_packet_bytes <= 8 * 1024 * 1024:
+            raise ValueError("invalid trusted packet byte limit")
         if command.command_type != "message.send" or command.target_kind != "message":
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         from runtime.delivery_models import PACKET
@@ -151,9 +155,10 @@ class DeliveryService:
             raise AuthorizationDenied(command.principal_ref, command.grant_ref)
         if ((packet.deadline is not None and command.deadline is not None
              and packet.deadline > command.deadline)
-                or len(packet.model_dump_json().encode()) > 65536):
+                or len(packet.model_dump_json().encode()) > max_packet_bytes):
             raise DeliveryRejected("packet_bound_exceeded")
         direct_inbox = isinstance(packet, MessagePacket) and (packet.recipient.startswith("client:") or packet.activation == "message_only")
+        attachment_hold = isinstance(packet, MessagePacket) and bool(packet.attachment_refs) and packet.activation == "invoke" and not direct_inbox
         if not direct_inbox and (not endpoint_id or type(binding_revision) is not int or binding_revision < 1):
             raise DeliveryRejected("invalid_endpoint_selection")
         extra = {"packet": packet.model_dump(mode="json"), "endpoint_id": endpoint_id, "binding_revision": binding_revision}
@@ -207,9 +212,10 @@ class DeliveryService:
                              "accepted_revision": getattr(packet, "accepted_revision", None),
                              "accepted_state_digest": accepted_state_digest})),
             )
-            if direct_inbox:
-                cursor.execute("UPDATE delivery_messages SET state='delivered',receipt_high_water='target_inbox_committed' "
-                               "WHERE tenant_id=%s AND message_id=%s", (command.tenant_id, command.target_id))
+            if direct_inbox or attachment_hold:
+                cursor.execute("UPDATE delivery_messages SET state=%s,receipt_high_water='target_inbox_committed',last_error=%s "
+                               "WHERE tenant_id=%s AND message_id=%s", ("blocked" if attachment_hold else "delivered",
+                               "native_attachment_delivery_unsupported" if attachment_hold else None, command.tenant_id, command.target_id))
                 cursor.execute("INSERT INTO delivery_receipts(tenant_id,message_id,receipt_id,layer,evidence_json) "
                                "VALUES (%s,%s,%s,'target_inbox_committed',%s)",
                                (command.tenant_id, command.target_id, f"delivery:{command.target_id}:target_inbox_committed",
@@ -294,7 +300,7 @@ class DeliveryDispatcher:
         elif isinstance(error, AuthorizationDenied):
             status, code = "blocked", "current_grant_denied"
         elif isinstance(error, InvocationPreCallRejected):
-            status, code = "blocked", "native_pre_call_rejected"
+            status, code = "blocked", NATIVE_ATTACHMENT_UNSUPPORTED if str(error) == NATIVE_ATTACHMENT_UNSUPPORTED else "native_pre_call_rejected"
         elif isinstance(error, (DeliveryBoundaryRejected, OperationIdentityConflict)):
             status, code = "blocked", "node_boundary_rejected"
         else:
@@ -335,10 +341,12 @@ class DeliveryDispatcher:
             )
             return [dict(zip(("tenant_id", "message_id", "operation_id"), row, strict=True)) for row in cursor.fetchall()]
 
-    def _load(self, cursor, identity):
+    def _load(self, cursor, identity, *, lock=True):
+        if type(lock) is not bool:
+            raise TypeError("Core ledger locking must be selected by trusted code")
         cursor.execute(
             "SELECT to_jsonb(m) FROM delivery_messages m WHERE m.tenant_id=%s "
-            "AND m.message_id=%s AND m.operation_id=%s FOR UPDATE",
+            "AND m.message_id=%s AND m.operation_id=%s" + (" FOR UPDATE" if lock else ""),
             (identity["tenant_id"], identity["message_id"], identity["operation_id"]),
         )
         row = cursor.fetchone()
@@ -387,7 +395,10 @@ class DeliveryDispatcher:
         expected_receipt_id = f"delivery:{message['message_id']}:accepted_by_authority"
         receipt_evidence = accepted_receipt[1] if accepted_receipt else None
         if (
-            outbox is None or outbox[0] != "message.delivery" or outbox[1] != expected_identity
+            outbox is None or outbox[0] != "message.delivery"
+            or {key: value for key, value in outbox[1].items() if key != "receiver_wake"} != expected_identity
+            or ("receiver_wake" in outbox[1] and (type(outbox[1]["receiver_wake"]) is not dict
+                or outbox[1]["receiver_wake"].get("schema_version") != "acs-message-wake/1"))
             or operation is None
             or operation != (message["command_id"], "temporal", expected_workflow, "committed")
             or dedup is None or dedup[0] != message["canonical_hash"]
@@ -403,6 +414,8 @@ class DeliveryDispatcher:
             or receipt_evidence.get("accepted_state_digest") != message["accepted_state_digest"]
         ):
             raise DeliveryRejected("domain_ledger_conflict")
+        if "receiver_wake" in outbox[1]:
+            message["_receiver_wake"] = outbox[1]["receiver_wake"]  # Technical Outbox metadata, not packet content.
         return message
 
     def _authorize(self, cursor, row):
@@ -419,6 +432,8 @@ class DeliveryDispatcher:
             "authority_id", "authority_incarnation", "principal_ref", "grant_ref",
         )):
             raise DeliveryRejected("durable_authorization_reference_mismatch")
+        if envelope.packet.deadline is not None and envelope.packet.deadline <= self.service._now(cursor):
+            raise DeliveryRejected("deadline_expired", "expired")
         from runtime.communication_permissions import committed_delivery_context
         ctx = committed_delivery_context(cursor, command, envelope.packet)
         # Only the trusted committed ledger creates this recovery context.
@@ -635,6 +650,16 @@ class DeliveryDispatcher:
                     row = self._load(cursor, identity)
                     if row["state"] in TERMINAL_STATES:
                         return {"status": row["state"], "message_id": row["message_id"]}
+                    if ((getattr(self.service.authority, "_wait_ingress_recovery_enabled", False)
+                         or getattr(self.service.authority, "_wait_ingress_storage_available", False))
+                            and row["packet_json"].get("schema_version") == "acs-message/1"):
+                        from runtime.communication_wait_ingress import gate
+
+                        if gate(cursor, row["tenant_id"], row["packet_json"]["project_id"], row["message_id"]):
+                            return {"status": "retry_wait", "retry_after_seconds": 1}
+                        # A released reservation can make the original operation
+                        # due now; use the updated durable scheduling fact.
+                        row = self._load(cursor, identity)
                     attempt = self._load_attempt(cursor, row)
                     if self.attempt_id is not None and attempt["attempt_id"] != self.attempt_id:
                         raise DeliveryRejected("attempt_id_reused")
@@ -801,6 +826,35 @@ class DeliveryDispatcher:
                 return {"status": "busy", "retry_after_seconds": 1}
             slot_key = None
             try:
+                # A startup may have happened before any Message input was
+                # admitted. Read that original fact even if this Message has
+                # since expired or lost runtime.invoke; never turn it into a
+                # second preparation or require renewed mutation permission.
+                cursor.execute("SELECT payload->'receiver_wake' FROM outbox WHERE tenant_id=%s "
+                    "AND operation_id=%s AND topic='message.delivery'", (identity["tenant_id"], identity["operation_id"]))
+                startup = cursor.fetchone()
+                startup = startup[0] if startup else None
+                if isinstance(startup, dict) and startup.get("lifecycle", {}).get("phase") == "executing":
+                    from runtime.communication_message_wake import advance_message_wake
+
+                    try:
+                        original_wake = advance_message_wake(self.service, identity)
+                    except Exception:  # noqa: BLE001 - only original readback is possible in this phase.
+                        original_wake = None
+                    if original_wake is None or original_wake["state"] != "completed":
+                        with connection.transaction():
+                            current = self._load(cursor, identity)
+                            deadline = current["packet_json"].get("deadline")
+                            if (current["state"] not in TERMINAL_STATES and deadline is not None
+                                    and datetime.fromisoformat(deadline) <= self.service._now(cursor)):
+                                self._finish(cursor, current, "expired", "deadline_expired")
+                                return {"status": "expired", "message_id": current["message_id"]}
+                            if current["state"] in TERMINAL_STATES:
+                                cursor.execute("UPDATE delivery_messages SET next_attempt_at=clock_timestamp()+"
+                                    "retry_delay_seconds*interval '1 second' WHERE tenant_id=%s AND message_id=%s",
+                                    (identity["tenant_id"], identity["message_id"]))
+                                return {"status": current["state"], "message_id": current["message_id"]}
+                            return self._defer_prepared(cursor, current, "receiver_wake_original_readback_required")
                 new_attempt = False
                 with connection.transaction():
                     try:
@@ -820,6 +874,14 @@ class DeliveryDispatcher:
                                 "attempts": row["attempts"]}
                     if row["state"] in TERMINAL_STATES:
                         return {"status": row["state"], "message_id": row["message_id"]}
+                    if ((getattr(self.service.authority, "_wait_ingress_recovery_enabled", False)
+                         or getattr(self.service.authority, "_wait_ingress_storage_available", False))
+                            and row["packet_json"].get("schema_version") == "acs-message/1"):
+                        from runtime.communication_wait_ingress import gate
+
+                        if gate(cursor, row["tenant_id"], row["packet_json"]["project_id"], row["message_id"]):
+                            return {"status": "retry_wait", "retry_after_seconds": 1}
+                        row = self._load(cursor, identity)
                     if self.service._now(cursor) < datetime.fromisoformat(row["next_attempt_at"]):
                         return {"status": "retry_wait", "retry_after_seconds": row["retry_delay_seconds"]}
                     # A Core lost after the durable dispatch marker cannot create
@@ -935,6 +997,8 @@ class DeliveryDispatcher:
                 def mark_dispatched(invocation, evidence):
                     with self.service.authority._connect() as mark_connection, mark_connection.cursor() as mark_cursor:
                         current = self._load(mark_cursor, identity)
+                        if current["packet_json"].get("schema_version") == "acs-message/1" and current["state"] == "delivered":
+                            raise InvocationPreCallRejected("message_already_routed_to_inbox")
                         current_attempt = self._load_attempt(mark_cursor, current)
                         selected_envelope, _ = self._selected_endpoint(mark_cursor, current, current_attempt)
                         stored = InvocationRequest.model_validate_json(
@@ -996,6 +1060,24 @@ class DeliveryDispatcher:
                             json.dumps(attempt["invocation_json"]), strict=True,
                         )
                                       if attempt["invocation_json"] is not None else None)
+                    if invocation is not None and envelope.packet.schema_version == "acs-message/1":
+                        from runtime.communication_message_wake import (
+                            MessageWakeUnavailable,
+                            advance_message_wake,
+                            enabled,
+                        )
+
+                        if row.get("_receiver_wake") is not None or enabled(self.service.authority, envelope.endpoint_id):
+                            try:
+                                wake = advance_message_wake(self.service, identity)
+                                reason = None if wake is None or wake["state"] == "completed" else (
+                                    "receiver_wake_" + wake["state"])
+                            except MessageWakeUnavailable as unavailable:
+                                reason = str(unavailable)
+                            if reason is not None:
+                                with self.service.authority._connect() as deferred, deferred.cursor() as deferred_cursor:
+                                    current = self._load(deferred_cursor, identity)
+                                    return self._defer_prepared(deferred_cursor, current, reason)
                     observation = endpoint.deliver(
                         envelope, authorize_selected, invocation=invocation,
                         mark_dispatched=mark_dispatched if invocation is not None else None,
@@ -1011,6 +1093,7 @@ class DeliveryDispatcher:
                         )
                 except Exception as error:  # noqa: BLE001 - classify every Adapter outcome against the durable Native marker.
                     if (isinstance(error, InvocationPreCallRejected) and not isinstance(error, InvocationDeferred)
+                            and str(error) != NATIVE_ATTACHMENT_UNSUPPORTED
                             and self.service.endpoint_resolver is not None):
                         try:
                             resolved = self._resolve_pre_call(
@@ -1050,6 +1133,15 @@ class DeliveryDispatcher:
                             return {"status": "uncertain", "message_id": row["message_id"],
                                     "attempts": row["attempts"]}
                         if isinstance(error, InvocationPreCallRejected) and endpoint is not None:
+                            if str(error) == NATIVE_ATTACHMENT_UNSUPPORTED:
+                                fail_cursor.execute("SELECT evidence_json->>'source' FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s "
+                                    "AND layer='target_inbox_committed'", (row["tenant_id"], row["message_id"]))
+                                committed_inbox = fail_cursor.fetchone()
+                                if committed_inbox == ("authority_inbox",):
+                                    # The real Core Inbox is already committed.
+                                    # A later Node Inbox is a distinct proof;
+                                    # do not overwrite the original receipt.
+                                    return self._failure(fail_cursor, row, error)
                             observed = endpoint.inspect_delivery(row["operation_id"], "blocked")
                             if observed["receipts"]:
                                 self._project(fail_cursor, row, observed)

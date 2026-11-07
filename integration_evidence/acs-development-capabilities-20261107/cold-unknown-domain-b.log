@@ -1,0 +1,30 @@
+......FF................................................................ [ 72%]
+...........................                                              [100%]
+================================== FAILURES ===================================
+_ test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay[codex] _
+runtime_tests\test_native_cold_restore_transport.py:149: in test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay
+    driver.invoke(f.module.operation("new-input-cannot-bypass"), "Do not admit this")
+runtime\codex_driver.py:1249: in invoke
+    return self._run(operation, "invoke", payload, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:777: in _run
+    record = self.journal.begin(
+runtime\codex_driver.py:573: in begin
+    raise OutcomeUncertain("binding has unresolved operation: " + pending_id)
+E   runtime.codex_driver.OutcomeUncertain: binding has unresolved operation: uncertain-original-input
+_ test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay[opencode] _
+runtime_tests\test_native_cold_restore_transport.py:149: in test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay
+    driver.invoke(f.module.operation("new-input-cannot-bypass"), "Do not admit this")
+runtime\opencode_driver.py:1019: in invoke
+    return self._run(operation, "invoke", payload, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\opencode_driver.py:341: in _run
+    record = self.journal.begin(operation, self.binding_id, action,
+runtime\codex_driver.py:573: in begin
+    raise OutcomeUncertain("binding has unresolved operation: " + pending_id)
+E   runtime.codex_driver.OutcomeUncertain: binding has unresolved operation: uncertain-original-input
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-development-capabilities-20261107\cold-unknown-domain-b.xml -
+=========================== short test summary info ===========================
+FAILED runtime_tests/test_native_cold_restore_transport.py::test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay[codex]
+FAILED runtime_tests/test_native_cold_restore_transport.py::test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay[opencode]
+2 failed, 97 passed in 11.71s

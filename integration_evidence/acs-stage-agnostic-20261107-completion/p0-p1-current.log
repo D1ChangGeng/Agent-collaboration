@@ -1,0 +1,22 @@
+......................................s..................s.............. [ 14%]
+.....s.................................................................. [ 28%]
+........................................................................ [ 42%]
+........................................................................ [ 57%]
+........................................................................ [ 71%]
+........................................................................ [ 85%]
+........................................F............................... [100%]
+================================== FAILURES ===================================
+_____ test_read_continuation_zero_and_independent_reply_are_not_rewritten _____
+runtime_tests\test_communication_http_auth.py:306: in test_read_continuation_zero_and_independent_reply_are_not_rewritten
+    assert f.service.calls[-1] == ("read_message", "p", "message:p:one", {"offset": 0, "max_inline_bytes": 1})
+E   AssertionError: assert ('read_messag... 'offset': 0}) == ('read_messag... 'offset': 0})
+E     
+E     At index 3 diff: {'offset': 0, 'max_inline_bytes': 1, 'include_native_source': False} != {'offset': 0, 'max_inline_bytes': 1}
+E     Use -v to get more diff
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-stage-agnostic-20261107-completion\p0-p1-current.xml -
+=========================== short test summary info ===========================
+SKIPPED [1] runtime_tests\test_communication.py:824: real independent Codex experiment is opt-in
+SKIPPED [1] runtime_tests\test_communication_content.py:176: one actual reader model plus a scripted peer is opt-in
+SKIPPED [1] runtime_tests\test_communication_receiver.py:184: actual production factory session probe is opt-in
+FAILED runtime_tests/test_communication_http_auth.py::test_read_continuation_zero_and_independent_reply_are_not_rewritten
+1 failed, 500 passed, 3 skipped in 1449.66s (0:24:09)

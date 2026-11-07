@@ -1,0 +1,2 @@
+# Optional OpenAPI tooling only; not a Runtime deployment dependency.
+PyYAML>=6,<7

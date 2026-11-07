@@ -77,6 +77,41 @@ class ArtifactSettings(ConfigModel):
         return value
 
 
+class CommunicationAttachmentSettings(ConfigModel):
+    file_bytes: int = Field(default=20 * 1024 * 1024, ge=1, le=256 * 1024 * 1024)
+    message_count: int = Field(default=8, ge=1, le=8)
+    message_bytes: int = Field(default=50 * 1024 * 1024, ge=1, le=1024**3)
+    viewer_staging_bytes: int = Field(default=100 * 1024 * 1024, ge=1, le=8 * 1024**3)
+    project_staging_bytes: int = Field(default=1024 * 1024 * 1024, ge=1, le=64 * 1024**3)
+    staging_seconds: int = Field(default=24 * 3600, ge=60, le=7 * 86400)
+
+    @model_validator(mode="after")
+    def admit_one_file(self):
+        if min(self.message_bytes, self.viewer_staging_bytes, self.project_staging_bytes) < self.file_bytes:
+            raise ValueError("attachment budgets must admit the configured per-file limit")
+        return self
+
+    def to_limits(self):
+        from runtime.communication_attachment_storage import AttachmentLimits
+
+        return AttachmentLimits(file_bytes=self.file_bytes, attachments_per_message=self.message_count,
+            message_bytes=self.message_bytes, viewer_bytes=self.viewer_staging_bytes,
+            project_bytes=self.project_staging_bytes, reservation_ttl_seconds=self.staging_seconds,
+            chunk_bytes=65536, upload_lease_seconds=min(900, self.staging_seconds))
+
+
+class CommunicationNativeLinkSettings(ConfigModel):
+    links_per_scope: int = Field(default=1024, ge=1, le=1000000)
+    history_per_link: int = Field(default=4096, ge=1, le=1000000)
+    requests_per_viewer: int = Field(default=16384, ge=1, le=10000000)
+    metadata_bytes: int = Field(default=65536, ge=1, le=262144)
+
+    def to_limits(self):
+        from runtime.communication_native_link_storage import NativeLinkLimits
+
+        return NativeLinkLimits(**self.model_dump())
+
+
 class EffectSettings(ConfigModel):
     root: str
     scope_id: str
@@ -97,6 +132,14 @@ class RemoteEndpointSettings(ConfigModel):
     request_timeout_seconds: int = Field(default=30, ge=1, le=120, strict=True)
     old_boot_isolation_ref: str | None = None
     prepare_argv: tuple[str, ...] = Field(default=(), max_length=64)
+    lifecycle_control: bool = Field(default=False, strict=True)
+    message_wake: bool = Field(default=False, strict=True)
+
+    @model_validator(mode="after")
+    def wake_requires_control(self):
+        if self.message_wake and not self.lifecycle_control:
+            raise ValueError("message wake requires the fenced lifecycle transport")
+        return self
 
     @field_validator("prepare_argv")
     @classmethod
@@ -148,6 +191,13 @@ class SurfaceSettings(ConfigModel):
     filesystem: FilesystemSettings = Field(default_factory=FilesystemSettings)
     temporal_endpoint: str | None = None
     delivery_maintenance: Literal["auto", "external"] = "auto"
+    receiver_evidence: bool = False
+    wait_ingress_recovery: bool = False
+    notification_frontiers: bool = False
+    communication_client_api: bool = False
+    communication_event_stream: bool = False
+    communication_attachments: CommunicationAttachmentSettings | None = None
+    communication_native_links: CommunicationNativeLinkSettings | None = None
     presentation_timezone: str = "UTC"
 
     @field_validator("presentation_timezone")
@@ -167,6 +217,14 @@ class SurfaceSettings(ConfigModel):
         scopes = [item.scope_id for item in self.artifact_configs()]
         if len(scopes) != len(set(scopes)):
             raise ValueError("duplicate artifact Scope configuration")
+        if self.communication_attachments is not None:
+            if not self.communication_client_api:
+                raise ValueError("attachment service requires the communication client facade")
+            stores = self.artifact_configs()
+            if not stores or any(store.max_bytes < self.communication_attachments.file_bytes for store in stores):
+                raise ValueError("attachment service requires explicit Scope CAS capacity for its file limit")
+        if self.communication_native_links is not None and not self.communication_client_api:
+            raise ValueError("Native links require the communication client facade")
         return self
 
     def artifact_configs(self):
@@ -233,6 +291,15 @@ def configured_service(path, *, delivery_endpoints=None, expected_settings=None)
                                  node_response_reader=trusted_local_node_response_reader(delivery_endpoints))
         domain._filesystem_settings = settings.filesystem
         domain._communication_maintenance_mode = settings.delivery_maintenance
+        domain._receiver_evidence_enabled = settings.receiver_evidence
+        domain._wait_ingress_recovery_enabled = settings.wait_ingress_recovery
+        domain._notification_frontiers_enabled = settings.notification_frontiers
+        domain._communication_client_api_enabled = settings.communication_client_api
+        domain._communication_events_enabled = settings.communication_event_stream
+        domain._communication_attachment_settings = settings.communication_attachments
+        domain._communication_attachments_enabled = settings.communication_attachments is not None
+        domain._communication_native_link_settings = settings.communication_native_links
+        domain._communication_native_links_enabled = settings.communication_native_links is not None
         if settings.remote_endpoints:
             from runtime.machine_connections import ConfiguredRemoteEndpoint
 
@@ -247,9 +314,24 @@ def configured_service(path, *, delivery_endpoints=None, expected_settings=None)
                     raise ConfigurationError("configured endpoint changed; reconnect this client")
                 return matches[0]
 
+            def message_wake_enabled(endpoint_id):
+                if endpoint_id not in {item.endpoint_id for item in settings.remote_endpoints}:
+                    return False
+                selected = current_endpoint(endpoint_id)
+                return selected.lifecycle_control and selected.message_wake
+
+            domain._receiver_message_wake_policy = message_wake_enabled
+
             for target in settings.remote_endpoints:
                 if target.endpoint_id in domain._delivery_endpoints:
                     raise ConfigurationError("duplicate configured execution endpoint")
                 domain._delivery_endpoints[target.endpoint_id] = ConfiguredRemoteEndpoint(
                     domain, target, settings_provider=current_endpoint)
+                if target.lifecycle_control:
+                    from runtime.receiver_lifecycle_transport import ConfiguredLifecycleTransport
+
+                    if not hasattr(domain, "_receiver_lifecycle_transports"):
+                        domain._receiver_lifecycle_transports = {}
+                    domain._receiver_lifecycle_transports[target.endpoint_id] = ConfiguredLifecycleTransport(
+                        domain._delivery_endpoints[target.endpoint_id])
         yield SharedService(domain, LocalCredentialAuthenticator(context)), settings

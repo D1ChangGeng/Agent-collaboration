@@ -1,0 +1,109 @@
+{
+  "schema_version": "acs-qualification-separation/1",
+  "observed_at": "2026-11-07T10:24:41.372110+00:00",
+  "current_source": {
+    "repository": "D:\\Chatgpt\\Agent-collaboration",
+    "branch": "codex/core-cleanup",
+    "head": "19d7881d49ee887315c54c5bc02e0cc424061376",
+    "tree": "8856b23e59d50eccb1198475e84937c48a71b0bb",
+    "tracked_binary_diff_sha256": "40e8ba83b1f2acec71da678380529b4ed99696b4ebf57d43192d88524b9c3851",
+    "working_tree": "dirty_uncommitted",
+    "committed": false,
+    "pushed": false,
+    "upstream": "origin/codex/core-cleanup",
+    "receiver_sync_action": "none",
+    "observed_at": "2026-11-07T10:24:41.372110+00:00"
+  },
+  "current_component_and_controlled_integration": {
+    "tests": 76,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 76
+  },
+  "current_source_Native_or_actual_Orca_qualified": false,
+  "limits": [
+    "The modified Driver/lifecycle stack needs fresh actual Native/version/OS qualification; historical E3/E4 is retained as historical evidence only.",
+    "Actual Orca Host installation and E5 are unmeasured; current Host effects/lookup in regressions are explicit doubles.",
+    "Physical two-machine and unmeasured Shared/restricted/platform combinations are not qualified by loopback TLS or Windows-to-WSL history.",
+    "A POSIX owned-process-group stop proves that containment only, not escaped-descendant containment.",
+    "The original96 scenarios are not all claimed to have executed unchanged; legacy MCP compatibility and conditional Native capability rules remain authoritative."
+  ],
+  "historical_artifacts": [
+    {
+      "path": "integration_evidence/acs-stage-agnostic-20261106/native-agent-e2e-20261107/native-e2e-e.json",
+      "original_returncode": 0,
+      "changed_current_product_sources": [
+        "runtime/codex_driver.py",
+        "runtime/communication_client_native_source.py",
+        "runtime/communication_http.py",
+        "runtime/communication_message_wake.py",
+        "runtime/native_provider_registry.py",
+        "runtime/opencode_driver.py",
+        "runtime/receiver.py",
+        "runtime/receiver_delivery.py",
+        "runtime/receiver_lifecycle.py",
+        "runtime/receiver_lifecycle_capacity.py",
+        "runtime/receiver_lifecycle_contract.py",
+        "runtime/receiver_lifecycle_issuance.py",
+        "runtime/receiver_lifecycle_node.py",
+        "runtime/receiver_models.py",
+        "runtime/remote_endpoint.py",
+        "runtime_deployment/receiver_authority.py",
+        "runtime_deployment/receiver_lifecycle.py"
+      ],
+      "current_source_status": "requalification_required"
+    },
+    {
+      "path": "integration_evidence/acs-stage-agnostic-20261106/native-history-contract-20261107/actual-native-lifecycle-pg-g.json",
+      "original_returncode": 0,
+      "changed_current_product_sources": [
+        "runtime/codex_driver.py",
+        "runtime/communication.py",
+        "runtime/communication_client_native_source.py",
+        "runtime/communication_http.py",
+        "runtime/communication_message_wake.py",
+        "runtime/native_provider_registry.py",
+        "runtime/opencode_driver.py",
+        "runtime/receiver.py",
+        "runtime/receiver_delivery.py",
+        "runtime/receiver_lifecycle.py",
+        "runtime/receiver_lifecycle_capacity.py",
+        "runtime/receiver_lifecycle_contract.py",
+        "runtime/receiver_lifecycle_issuance.py",
+        "runtime/receiver_lifecycle_node.py",
+        "runtime/receiver_models.py",
+        "runtime/remote_endpoint.py",
+        "runtime_deployment/receiver_authority.py",
+        "runtime_deployment/receiver_lifecycle.py"
+      ],
+      "current_source_status": "requalification_required"
+    },
+    {
+      "path": "integration_evidence/acs-stage-agnostic-20261106/native-history-contract-20261107/opencode-wsl-lifecycle-pg-b.json",
+      "original_returncode": 0,
+      "changed_current_product_sources": [
+        "runtime/codex_driver.py",
+        "runtime/communication.py",
+        "runtime/communication_client_native_source.py",
+        "runtime/communication_http.py",
+        "runtime/communication_message_wake.py",
+        "runtime/native_provider_registry.py",
+        "runtime/opencode_driver.py",
+        "runtime/receiver.py",
+        "runtime/receiver_delivery.py",
+        "runtime/receiver_lifecycle.py",
+        "runtime/receiver_lifecycle_capacity.py",
+        "runtime/receiver_lifecycle_contract.py",
+        "runtime/receiver_lifecycle_issuance.py",
+        "runtime/receiver_lifecycle_node.py",
+        "runtime/receiver_models.py",
+        "runtime/remote_endpoint.py",
+        "runtime_deployment/receiver_authority.py",
+        "runtime_deployment/receiver_lifecycle.py"
+      ],
+      "current_source_status": "requalification_required"
+    }
+  ],
+  "development_blockers": []
+}

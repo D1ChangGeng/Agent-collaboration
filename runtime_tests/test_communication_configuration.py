@@ -1,4 +1,4 @@
-"""Concurrent public configuration on real PG; Native preparation is a labeled fixture."""
+"""Concurrent public configuration on real PG; legacy observation is controlled."""
 
 from __future__ import annotations
 
@@ -6,6 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import timedelta
 from threading import Event
+
+import pytest
 
 from runtime.auth import LocalCredentialAuthenticator
 from runtime.delivery_models import EndpointBindingRequest
@@ -43,26 +45,25 @@ def independent_manager(comm, *, owner=False, bound=False):
 
 def receivers(comm, tmp_path):
     calls = []
+
+    def observe(endpoint, session):
+        # A physical reader can acquire the team row while Host observation is
+        # in progress: the configuration transaction has actually ended.
+        with comm.authority._connect() as connection:
+            assert connection.execute("SELECT revision FROM collaboration_teams WHERE tenant_id=%s "
+                "AND project_id='project-alpha' AND scope_id='local-scope' FOR UPDATE NOWAIT",
+                (comm.authority.tenant_id,)).fetchone() is not None
+        calls.append(endpoint)
+        return {"state": "idle", "session_ref": session, "observation": "native_driver_readback"}
+
     first = comm.authority._delivery_endpoints["endpoint-b"]
-    first.driver.prepare_runtime = lambda: (
-        calls.append("endpoint-b")
-        or {
-            "state": "idle",
-            "session_ref": "fixture-session-first",
-            "observation": "native_driver_readback",
-        }
-    )
+    first.driver.prepare_runtime = lambda: pytest.fail("unfenced legacy preparation was entered")
+    first.driver.inspect_runtime = lambda: observe("endpoint-b", "fixture-session-first")
     second = LocalNodeEndpoint(
         NodeJournal(tmp_path / "second.sqlite"), "local-scope", "slot-b", AcceptingDriver()
     )
-    second.driver.prepare_runtime = lambda: (
-        calls.append("endpoint-second")
-        or {
-            "state": "idle",
-            "session_ref": "fixture-session-second",
-            "observation": "native_driver_readback",
-        }
-    )
+    second.driver.prepare_runtime = lambda: pytest.fail("unfenced legacy preparation was entered")
+    second.driver.inspect_runtime = lambda: observe("endpoint-second", "fixture-session-second")
     comm.authority._delivery_endpoints["endpoint-second"] = second
     comm.dispatcher.service.endpoints["endpoint-second"] = second
     comm.dispatcher.service.bind_endpoint(
@@ -74,6 +75,16 @@ def receivers(comm, tmp_path):
         ),
     )
     return calls
+
+
+def test_unfenced_legacy_receiver_never_creates_a_native_session_for_configuration(comm):
+    endpoint = comm.authority._delivery_endpoints["endpoint-b"]
+    endpoint.driver.prepare_runtime = lambda: pytest.fail("legacy creation is not an admitted lifecycle operation")
+    result = call(comm, "a", "configure_team", members=[{"agent_slot_id": "slot-b",
+        "principal_ref": "agent:b", "endpoint_id": "endpoint-b"}])
+    item = result["data"]["native_sessions"][0]
+    assert item["session_ref"] is None and item["receiver_state"] == "unknown"
+    assert item["preparation"] == "unsupported" and item["reason_code"] == "lifecycle_transport_unavailable"
 
 
 def paused_preparation(comm, monkeypatch):
@@ -323,14 +334,14 @@ def test_change_during_preparation_does_not_present_the_old_session_as_current(c
     other = independent_manager(comm, owner=True, bound=True)
     entered, release = Event(), Event()
     endpoint = comm.authority._delivery_endpoints["endpoint-b"]
-    original = endpoint.driver.prepare_runtime
+    original = endpoint.driver.inspect_runtime
 
     def held():
         entered.set()
         assert release.wait(8), "test must release actual fixture preparation"
         return original()
 
-    endpoint.driver.prepare_runtime = held
+    endpoint.driver.inspect_runtime = held
     with ThreadPoolExecutor(max_workers=1) as pool:
         first = pool.submit(
             call,

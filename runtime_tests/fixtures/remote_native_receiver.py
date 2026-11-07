@@ -332,8 +332,9 @@ def main():
                 native = {"mcp": {}, "plugin": [], "permission": {"*": "deny"}}
                 if request.get("provider_key"):
                     os.environ["ACS_B_PROVIDER_KEY"] = request["provider_key"]
+                    model_id = request.get("model_id", "gpt-6.1-sol")
                     native.update(
-                        model="acs-test/gpt-6.1-sol",
+                        model="acs-test/"+model_id,
                         default_agent="acs-peer",
                         provider={
                             "acs-test": {
@@ -343,7 +344,7 @@ def main():
                                     "baseURL": "https://api.payapionline.top/v1",
                                     "apiKey": "{env:ACS_B_PROVIDER_KEY}",
                                 },
-                                "models": {"gpt-6.1-sol": {"name": "gpt-6.1-sol"}},
+                                "models": {model_id: {"name": model_id}},
                             }
                         },
                         agent={

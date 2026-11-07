@@ -1,0 +1,21 @@
+{
+  "message_handle": "message:project-test:0001",
+  "project_id": "project-test",
+  "conversation_id": "conversation:ab",
+  "sender": "slot:A",
+  "to": "slot:B",
+  "content": {
+    "text": "请核对接口。",
+    "offset": 0,
+    "next_offset": null,
+    "total_bytes": 18,
+    "digest": "7b3160d9d439fc25af6565eddb3d5976178efbe9c0184441a04ed55bf4785768"
+  },
+  "reply_to": [],
+  "attachment_refs": [],
+  "conversation_sequence": "1",
+  "committed_at": "2026-11-06T02:00:00Z",
+  "revision": 1,
+  "source": "acs_agent",
+  "first_reply_handle": null
+}

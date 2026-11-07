@@ -1,0 +1,188 @@
+{
+  "schema_version": "acs-ui-readiness/1",
+  "core_contract_ready": false,
+  "orca_host_qualified": false,
+  "features": [
+    {
+      "id": "UI01",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI02",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI03",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI04",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI05",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI06",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI07",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI08",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI09",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI10",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI11",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI12",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI13",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI14",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI15",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI16",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI17",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI18",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI19",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI20",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI21",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI22",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI23",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI24",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI25",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI26",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI27",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI28",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI29",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    },
+    {
+      "id": "UI30",
+      "status": "not_implemented",
+      "evidence_refs": [],
+      "notes": ""
+    }
+  ],
+  "note": "To be completed by Codex after implementation; not this package validation."
+}

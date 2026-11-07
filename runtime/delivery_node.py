@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable
+from contextlib import closing
 from datetime import UTC, datetime
 from typing import Protocol
 
@@ -20,6 +21,19 @@ class DeliveryBoundaryRejected(RuntimeError):
 
 class InvocationPreCallRejected(DeliveryBoundaryRejected):
     """The Driver rejected immutable input before any native I/O was admitted."""
+
+
+NATIVE_ATTACHMENT_UNSUPPORTED = "native_attachment_delivery_unsupported"
+
+
+def has_native_attachments(packet):
+    return getattr(packet, "schema_version", None) == "acs-message/1" and bool(getattr(packet, "attachment_refs", ()))
+
+
+def reject_native_attachments(invocation):
+    """No installed Driver has a qualified attachment preparation/input port."""
+    if has_native_attachments(invocation.envelope.packet):
+        raise InvocationPreCallRejected(NATIVE_ATTACHMENT_UNSUPPORTED)
 
 
 class InvocationDeferred(InvocationPreCallRejected):
@@ -134,6 +148,22 @@ class LocalNodeEndpoint:
         prepare = getattr(self.driver, "prepare_runtime", None)
         return prepare() if callable(prepare) else {"state": "unknown", "harness": "unknown", "session_ref": None,
                                                    "preparation": "unavailable"}
+
+    def receiver_snapshot(self, binding):
+        """Observe the bound Native adapter without preparing or invoking it."""
+        from runtime.receiver_evidence import unknown_receiver
+
+        if (binding.execution_host_ref != self.identity.machine_id
+                or binding.actor_address.rsplit(":", 1)[-1] != self.agent_slot_id):
+            raise DeliveryBoundaryRejected("receiver_projection_binding_changed")
+        native_identity = getattr(getattr(self.driver, "driver", None), "identity", None)
+        if native_identity is not None and (
+                native_identity.node_id, native_identity.node_boot_id, native_identity.agent_slot_id) != (
+                self.identity.node_id, self.identity.boot_incarnation, self.agent_slot_id):
+            raise DeliveryBoundaryRejected("receiver_projection_node_changed")
+        read = getattr(self.driver, "receiver_snapshot", None)
+        return read(binding) if callable(read) else unknown_receiver(
+            binding, reason="native_adapter_contract_unavailable")
 
     def _check(self, envelope, authorize):
         if (envelope.machine_id != self.identity.machine_id or envelope.node_id != self.identity.node_id
@@ -263,6 +293,13 @@ class LocalNodeEndpoint:
             expected_invocation = self.invocation(envelope, invocation.attempt_id)
             if invocation != expected_invocation:
                 raise DeliveryBoundaryRejected("immutable_invocation_changed")
+            if has_native_attachments(envelope.packet):
+                # An earlier Domain marker is possible effect evidence even
+                # when this Node still has only its prepared identity.
+                if ((read_dispatch_marker is not None and read_dispatch_marker(invocation) is not False)
+                        or prior is not None and read_dispatch_marker is None):
+                    return self.inspect_delivery(envelope.operation_id, "uncertain")
+                reject_native_attachments(invocation)
             if not prior:
                 if self.driver is None:
                     raise DeliveryBoundaryRejected("invoke_endpoint_unavailable")
@@ -428,9 +465,125 @@ class LocalNodeEndpoint:
             return self.inspect_delivery(envelope.operation_id, "uncertain")
         return self.inspect_delivery(envelope.operation_id, "delivered" if observation.native_ack_ref else "uncertain")
 
-    def inspect_delivery(self, operation_id, status):
+    def _reconcile_snapshot(self, connection, invocation):
+        """Validate persisted input/marker without renewing permission to invoke."""
+        envelope = invocation.envelope
+        if (envelope.machine_id != self.identity.machine_id or envelope.node_id != self.identity.node_id
+                or envelope.boot_incarnation != self.identity.boot_incarnation
+                or envelope.packet.target_scope_id != self.scope_id
+                or envelope.packet.target_agent_slot_id != self.agent_slot_id):
+            raise DeliveryBoundaryRejected("node_reconciliation_target_changed")
+        boot = connection.execute("SELECT value FROM node_meta WHERE key='boot_incarnation'").fetchone()
+        if boot is None or boot[0] != self.identity.boot_incarnation:
+            raise DeliveryBoundaryRejected("node_reconciliation_boot_retired")
+        record = connection.execute("SELECT operation_id,invocation_id,dispatch_id,runtime_dispatched_receipt_id,"
+            "request_json,state FROM delivery_invocations WHERE operation_id=?", (invocation.operation_id,)).fetchone()
+        if record is None:
+            return None, False
+        stored = InvocationRequest.model_validate_json(record["request_json"], strict=True)
+        if (stored != invocation or stored != invocation_for(stored.envelope, stored.attempt_id)
+                or (record["invocation_id"], record["dispatch_id"], record["runtime_dispatched_receipt_id"]) !=
+                   (invocation.invocation_id, invocation.dispatch_id, invocation.runtime_dispatched_receipt_id)):
+            raise DeliveryBoundaryRejected("node_reconciliation_invocation_changed")
+        logical = self.journal.payload_digest(logical_payload(envelope))
+        journal = connection.execute("SELECT command_id,message_id,operation_kind,payload_sha256 FROM journal "
+                                     "WHERE operation_id=?", (invocation.operation_id,)).fetchone()
+        if journal is None or tuple(journal) != (invocation.command_id, invocation.message_id, "delivery", logical):
+            raise DeliveryBoundaryRejected("node_reconciliation_payload_changed")
+        marker = connection.execute("SELECT receipt_id,evidence_json FROM lifecycle_receipts "
+            "WHERE operation_id=? AND layer='runtime_dispatched'", (invocation.operation_id,)).fetchone()
+        if marker is None:
+            return record, False
+        evidence = json.loads(marker["evidence_json"])
+        expected = {"invocation_id": invocation.invocation_id, "attempt_id": invocation.attempt_id,
+            "dispatch_id": invocation.dispatch_id, "receipt_id": invocation.runtime_dispatched_receipt_id,
+            "operation_id": invocation.operation_id, "command_id": invocation.command_id,
+            "message_id": invocation.message_id, "envelope_digest": invocation.envelope_digest,
+            "logical_payload_digest": invocation.logical_payload_digest,
+            "selection_digest": invocation.selection_digest, "accepted_revision": invocation.accepted_revision,
+            "accepted_state_digest": invocation.accepted_state_digest}
+        if (marker["receipt_id"] != invocation.runtime_dispatched_receipt_id
+                or any(evidence.get(key) != value for key, value in expected.items())
+                or evidence.get("source") != getattr(self.driver, "evidence_class", None)):
+            raise DeliveryBoundaryRejected("node_reconciliation_dispatch_marker_changed")
+        if record["state"] not in {"runtime_dispatched", "uncertain", "acknowledged"}:
+            raise DeliveryBoundaryRejected("node_reconciliation_marker_state_conflict")
+        return record, True
+
+    def reconcile_delivery(self, invocation):
+        """Read the ORIGINAL input, adding only a positively observed missing ACK.
+
+        Trusted Core callers authorize the actual message reader before entry.
+        This method never prepares, invokes, resumes or retries Native input. It
+        closes its SQLite read snapshot before any provider readback and rechecks
+        the original Node/request/marker before committing additional evidence.
+        """
+        from runtime.native_delivery import NativeDeliveryAdapter
+        from runtime.receiver_contract import NativeAdmissionResult
+
+        invocation = InvocationRequest.model_validate_json(invocation.model_dump_json(), strict=True)
+        if (invocation != invocation_for(invocation.envelope, invocation.attempt_id)
+                or invocation.envelope.packet.schema_version not in {"acs-message/1", "acs-notice/1"}
+                or invocation.envelope.packet.activation != "invoke"):
+            raise DeliveryBoundaryRejected("node_reconciliation_requires_original_natural_invocation")
+        with closing(self.journal._connect()) as connection:
+            connection.execute("BEGIN")
+            record, marked = self._reconcile_snapshot(connection, invocation)
+        if record is None or not marked:
+            return {**self.inspect_delivery(invocation.operation_id, "uncertain"),
+                "reason_code": "node_invocation_unavailable" if record is None else "node_dispatch_marker_unavailable"}
+        if not isinstance(self.driver, NativeDeliveryAdapter):
+            return {**self.inspect_delivery(invocation.operation_id, "uncertain"),
+                    "reason_code": "native_reconciliation_unavailable"}
+        result = NativeAdmissionResult.model_validate_json(self.driver.reconcile_input(invocation).model_dump_json())
+        if result.operation_id != invocation.invocation_id:
+            raise DeliveryBoundaryRejected("native_reconciliation_operation_changed")
+        if (result.outcome == "accepted" and (result.binding_epoch not in {0, invocation.envelope.binding_revision}
+                or result.binding_epoch == 0 and (result.provider_generation is not None or
+                    result.reason_code != "legacy_receiving_epoch_unrecorded"))):
+            raise DeliveryBoundaryRejected("native_reconciliation_receipt_binding_changed")
+        if result.outcome != "accepted":
+            return {**self.inspect_delivery(invocation.operation_id, "uncertain"),
+                    "native_outcome": result.model_dump(mode="json")}
+        with self.journal._transaction() as connection:
+            current, marked = self._reconcile_snapshot(connection, invocation)
+            if current is None or not marked:
+                raise DeliveryBoundaryRejected("node_reconciliation_marker_changed_during_observation")
+            self.driver.observation_operation(invocation)
+            previous = connection.execute("SELECT evidence_json FROM lifecycle_receipts "
+                "WHERE operation_id=? AND layer='runtime_acknowledged'", (invocation.operation_id,)).fetchone()
+            if previous is not None:
+                evidence = json.loads(previous[0])
+                if (evidence.get("invocation_id") != invocation.invocation_id
+                        or evidence.get("dispatch_id") != invocation.dispatch_id
+                        or evidence.get("dispatch_receipt_id") != invocation.runtime_dispatched_receipt_id
+                        or not isinstance(evidence.get("native_ack_ref"), str) or not evidence["native_ack_ref"]):
+                    raise DeliveryBoundaryRejected("node_reconciliation_ack_identity_changed")
+            else:
+                evidence = {"invocation_id": invocation.invocation_id, "dispatch_id": invocation.dispatch_id,
+                    "dispatch_receipt_id": invocation.runtime_dispatched_receipt_id,
+                    "native_dispatch_ref": result.evidence_ref, "native_ack_ref": result.evidence_ref,
+                    "native_input_ref": result.native_input_ref, "source": self.driver.evidence_class,
+                    "reconciliation": "original_native_input_query"}
+                self._receipt(connection, invocation.envelope, "runtime_acknowledged", evidence)
+            connection.execute("UPDATE delivery_invocations SET state='acknowledged' WHERE operation_id=?",
+                               (invocation.operation_id,))
+        return {**self.inspect_delivery(invocation.operation_id, "uncertain"),
+                "native_outcome": result.model_dump(mode="json")}
+
+    def inspect_delivery(self, operation_id, status="uncertain"):
         receipts = [{"receipt_id": item.receipt_id, "layer": item.layer, "evidence": dict(item.evidence)}
                     for item in self.journal.receipts(operation_id)]
+        if any(item["layer"] == "runtime_acknowledged" for item in receipts):
+            status = "delivered"
+        elif status == "delivered":
+            # Inbox-only messages need no Native ACK. An invoking delivery does;
+            # a caller-supplied optimistic status is not positive Native proof.
+            with closing(self.journal._connect()) as connection:
+                row = connection.execute("SELECT payload_json FROM mailbox WHERE operation_id=?", (operation_id,)).fetchone()
+            packet = json.loads(row[0]).get("value", {}).get("packet", {}) if row else {}
+            if packet.get("activation") != "message_only":
+                status = "uncertain"
         return {"status": status, "receipts": receipts}
 
     def collect_response(self, operation_id: str):

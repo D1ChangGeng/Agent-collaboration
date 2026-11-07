@@ -6,10 +6,11 @@ from copy import copy
 from datetime import timedelta
 
 from runtime.auth import AuthenticatedContext
-from runtime.codex_driver import AuthorizedOperation, BindingIdentity
+from runtime.codex_driver import AuthorizedObservation, AuthorizedOperation, BindingIdentity
 from runtime.communication_permissions import committed_delivery_context
 from runtime.delivery_models import InvocationRequest
 from runtime.delivery_node import InvocationPreCallRejected
+from runtime.errors import RuntimeErrorBase
 from runtime.lifetimes import earliest
 from runtime.models import CommandEnvelope
 
@@ -38,8 +39,47 @@ def bind_registered_receiver(authority, registration, deployment_policy_sha256, 
 
 
 class NativeReceiverAuthority:
+    def _observation_current(self, operation):
+        prefix = "native-observation:delivery-invocation:"
+        if (not isinstance(operation, AuthorizedObservation) or not operation.operation_id.startswith(prefix)
+                or operation.grant_ref != self.authority.context.grant_ref):
+            raise NativeReceiverRejected("Native observation capability differs")
+        attempt = operation.operation_id.removeprefix(prefix)
+        with self.authority._connect() as connection, connection.cursor() as cursor:
+            runtime, _node, _binding, _key, valid_until = self.authority.enrollment._active_runtime(cursor, self.binding.runtime_id)
+            if (runtime["observer_ref"] != self.authority.context.principal_ref
+                    or runtime["observer_grant_ref"] != operation.grant_ref):
+                raise NativeReceiverRejected("Native observer is not the enrolled Runtime observer")
+            cursor.execute("SELECT invocation_json FROM delivery_attempts WHERE tenant_id=%s AND attempt_id=%s",
+                           (self.authority.tenant_id, attempt))
+            row = cursor.fetchone()
+        if row is None:
+            raise NativeReceiverRejected("original Native invocation is unavailable")
+        invocation = InvocationRequest.model_validate_json(json.dumps(row[0]), strict=True)
+        packet = invocation.envelope.packet
+        if ((invocation.invocation_id, invocation.command_id, invocation.message_id,
+             packet.target_scope_id, packet.target_agent_slot_id) !=
+                (operation.operation_id.removeprefix("native-observation:"), operation.command_id,
+                 operation.message_id, runtime["scope_id"], self.binding.agent_slot_id)
+                or packet.schema_version not in {"acs-message/1", "acs-notice/1"}):
+            raise NativeReceiverRejected("Native observation belongs to another receiving Slot")
+        if valid_until is not None:
+            self.clock.require_before(valid_until)
+        return invocation
+
+    def _authorize_observation(self, invocation, observed):
+        if observed != self.binding:
+            raise NativeReceiverRejected("Native observation binding changed")
+        operation = AuthorizedObservation("native-observation:" + invocation.invocation_id,
+            invocation.command_id, invocation.message_id, self.authority.context.grant_ref, None)
+        if self._observation_current(operation) != invocation:
+            raise NativeReceiverRejected("Native observation differs from the original invocation")
+        return operation
+
     def _lifecycle_operation(self, action: str) -> AuthorizedOperation:
-        prefix = "spawn" if action == "spawn" else "close"
+        if action not in ("spawn", "close"):
+            raise NativeReceiverRejected("Native bootstrap lifecycle action is unsupported")
+        prefix = action
         return AuthorizedOperation(
             self.settings[prefix + "_operation_id"],
             self.settings[prefix + "_command_id"],
@@ -94,6 +134,9 @@ class NativeReceiverAuthority:
     def _current(self, operation: AuthorizedOperation, observed: BindingIdentity) -> None:
         if observed != self.binding:
             raise NativeReceiverRejected("Native receiver Driver binding changed")
+        if isinstance(operation, AuthorizedObservation):
+            self._observation_current(operation)
+            return
         with self.authority._connect() as connection, connection.cursor() as cursor:
             self.authority.enrollment._active_runtime(cursor, self.binding.runtime_id)
         if operation.operation_id in {
@@ -130,10 +173,34 @@ class NativeReceiverAuthority:
     def readiness(self, admission):
         return self.bridge.readiness(admission)
 
+    def read_native_source(self, admission, provider):
+        return self.bridge.read_native_source(admission, provider)
+
+    def authorize_native_source_read(self, admission):
+        """Technical reader owns this receiving Slot, not the old sender Grant.
+
+        The Core's signed request delegates an already checked message ACL.
+        Current enrolled-Node/runtime/endpoint trust is still checked locally
+        before and after the refs-only journal read.
+        """
+        try:
+            invocation = self.bridge._invocation(admission)
+            self._authorize_observation(invocation, self.binding)
+            registration = self.config.binding.registration
+            with self.authority._connect() as connection:
+                row = connection.execute("SELECT registration_json,status FROM delivery_endpoint_registrations "
+                    "WHERE tenant_id=%s AND endpoint_id=%s", (registration.tenant_id, registration.endpoint_id)).fetchone()
+            return row is not None and row[1] == "active" and row[0] == registration.model_dump(mode="json")
+        except (NativeReceiverRejected, ValueError, RuntimeError, RuntimeErrorBase):
+            return False
+
     def close(self):
         if self._closed:
             return
         self._closed = True
+        controller = getattr(self, "lifecycle_node", None)
+        if controller is not None:
+            controller.close()
         try:
             if self.driver.owned is not None and self.driver.owned.process.poll() is None:
                 self.driver.terminate(self._lifecycle_operation("close"))

@@ -122,6 +122,11 @@ class ResponseReadbackBody(ReadbackBody):
     max_bytes: int = Field(default=32768, ge=1, le=32768, strict=True)
 
 
+class NativeSourceReadbackBody(ReadbackBody):
+    native_source: Literal[True]
+    provider_admission: dict[str, Any]
+
+
 class ReadinessBody(FrozenModel):
     prepare_request_id: str
 

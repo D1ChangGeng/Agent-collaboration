@@ -1,0 +1,23 @@
+..................FF........                                             [100%]
+================================== FAILURES ===================================
+____ test_actual_core_remote_provenance_and_original_host_reconcile[False] ____
+runtime_tests\test_communication_remote_source_pg.py:107: in test_actual_core_remote_provenance_and_original_host_reconcile
+    assert result["status"] == ("uncertain" if lost_host_ack else "delivered"), result
+E   AssertionError: {'attempts': 1, 'message_id': 'message-b21d230ea4c04fb988f9ae3fb1559ab3', 'retry_after_seconds': 1, 'status': 'blocked'}
+E   assert 'blocked' == 'delivered'
+E     
+E     - delivered
+E     + blocked
+____ test_actual_core_remote_provenance_and_original_host_reconcile[True] _____
+runtime_tests\test_communication_remote_source_pg.py:107: in test_actual_core_remote_provenance_and_original_host_reconcile
+    assert result["status"] == ("uncertain" if lost_host_ack else "delivered"), result
+E   AssertionError: {'attempts': 1, 'message_id': 'message-3e939e2d5ed9438985ae6ab1916e653d', 'retry_after_seconds': 1, 'status': 'blocked'}
+E   assert 'blocked' == 'uncertain'
+E     
+E     - uncertain
+E     + blocked
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-development-capabilities-20261107\orca-core-remote-source-a.xml -
+=========================== short test summary info ===========================
+FAILED runtime_tests/test_communication_remote_source_pg.py::test_actual_core_remote_provenance_and_original_host_reconcile[False]
+FAILED runtime_tests/test_communication_remote_source_pg.py::test_actual_core_remote_provenance_and_original_host_reconcile[True]
+2 failed, 26 passed in 62.34s (0:01:02)

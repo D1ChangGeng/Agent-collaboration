@@ -1,0 +1,77 @@
+FFFF....FF........                                                       [100%]
+================================== FAILURES ===================================
+_ test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver[codex-accepted] _
+runtime_tests\test_orca_receiver_backend.py:67: in test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver
+    assert original["session"] == verified["session"] and original["command"] == verified["command"]
+E   AssertionError: assert ({'authority':...rovider', ...} == {'authority':...rovider', ...}
+E     
+E     Omitting 5 identical items, use -vv to show
+E     Use -v to get more diff and {'auth_revisi...e': None, ...} == {'auth_revisi...e': None, ...}
+E     
+E     Omitting 10 identical items, use -vv to show
+E     Differing items:
+E     {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...ODJjYmJlMjk1NDU2OGYwYmE1ZGVkMDE1MDdkNTlmNTY5NTE2YzA3In0=', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}} != {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...ODJjYmJlMjk1NDU2OGYwYmE1ZGVkMDE1MDdkNTlmNTY5NTE2YzA3In0=', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}}
+E     Use -v to get more diff)
+_ test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver[codex-queued] _
+runtime_tests\test_orca_receiver_backend.py:67: in test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver
+    assert original["session"] == verified["session"] and original["command"] == verified["command"]
+E   AssertionError: assert ({'authority':...rovider', ...} == {'authority':...rovider', ...}
+E     
+E     Omitting 5 identical items, use -vv to show
+E     Use -v to get more diff and {'auth_revisi...e': None, ...} == {'auth_revisi...e': None, ...}
+E     
+E     Omitting 10 identical items, use -vv to show
+E     Differing items:
+E     {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...ZThmZmExMWE1NjgyNWI4ZmI2OTQ5MDZhYTZlMjBiY2MwODRkNTBmIn0=', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}} != {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...ZThmZmExMWE1NjgyNWI4ZmI2OTQ5MDZhYTZlMjBiY2MwODRkNTBmIn0=', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}}
+E     Use -v to get more diff)
+_ test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver[opencode-accepted] _
+runtime_tests\test_orca_receiver_backend.py:67: in test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver
+    assert original["session"] == verified["session"] and original["command"] == verified["command"]
+E   AssertionError: assert ({'authority':...rovider', ...} == {'authority':...rovider', ...}
+E     
+E     Omitting 5 identical items, use -vv to show
+E     Use -v to get more diff and {'auth_revisi...e': None, ...} == {'auth_revisi...e': None, ...}
+E     
+E     Omitting 10 identical items, use -vv to show
+E     Differing items:
+E     {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...ZmFlOGNhZTVkNTNmNTEwM2YwYTQzNmJlZjcxZGE3YTAzYTViMGMifQ==', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}} != {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...ZmFlOGNhZTVkNTNmNTEwM2YwYTQzNmJlZjcxZGE3YTAzYTViMGMifQ==', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}}
+E     Use -v to get more diff)
+_ test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver[opencode-queued] _
+runtime_tests\test_orca_receiver_backend.py:67: in test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver
+    assert original["session"] == verified["session"] and original["command"] == verified["command"]
+E   AssertionError: assert ({'authority':...rovider', ...} == {'authority':...rovider', ...}
+E     
+E     Omitting 5 identical items, use -vv to show
+E     Use -v to get more diff and {'auth_revisi...e': None, ...} == {'auth_revisi...e': None, ...}
+E     
+E     Omitting 10 identical items, use -vv to show
+E     Differing items:
+E     {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...ZTk1YTYyMjg4MWFhZmMxZmMwYWRhMzI0MzJjZTViYWFlMTc0MGYifQ==', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}} != {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...ZTk1YTYyMjg4MWFhZmMxZmMwYWRhMzI0MzJjZTViYWFlMTc0MGYifQ==', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}}
+E     Use -v to get more diff)
+_ test_host_uncertainty_preserves_original_dispatch_and_never_replays[codex] __
+runtime_tests\test_orca_receiver_backend.py:112: in test_host_uncertainty_preserves_original_dispatch_and_never_replays
+    assert port.resolve_original(command.operation_id)["command"] == command.model_dump(mode="json")
+E   AssertionError: assert {'auth_revisi...e': None, ...} == {'auth_revisi...e': None, ...}
+E     
+E     Omitting 10 identical items, use -vv to show
+E     Differing items:
+E     {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...NDJiM2UwNDk1MjhhMjU1NzE1MjgxMDIwODljNjVkZDZmNjY3NjA2In0=', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}} != {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...NDJiM2UwNDk1MjhhMjU1NzE1MjgxMDIwODljNjVkZDZmNjY3NjA2In0=', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}}
+E     Use -v to get more diff
+_ test_host_uncertainty_preserves_original_dispatch_and_never_replays[opencode] _
+runtime_tests\test_orca_receiver_backend.py:112: in test_host_uncertainty_preserves_original_dispatch_and_never_replays
+    assert port.resolve_original(command.operation_id)["command"] == command.model_dump(mode="json")
+E   AssertionError: assert {'auth_revisi...e': None, ...} == {'auth_revisi...e': None, ...}
+E     
+E     Omitting 10 identical items, use -vv to show
+E     Differing items:
+E     {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...M2Y2NzViYTkwZjI3ODU0ZWRmNmZlMGEyZWUyNjlkY2QyNDY2MDIifQ==', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}} != {'sealed_envelope': {'data': 'eyJhZG1pc3Npb24iOnsic2NoZW1hX3ZlcnNpb24iOiJhY3MtZGVsaXZlcnktYWRtaXNzaW9uLzEiLCJwdXJwb3Nl...M2Y2NzViYTkwZjI3ODU0ZWRmNmZlMGEyZWUyNjlkY2QyNDY2MDIifQ==', 'encoding': 'base64', 'format': 'acs-delivery-admission/1'}}
+E     Use -v to get more diff
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-development-capabilities-20261107\orca-concrete-backend-b.xml -
+=========================== short test summary info ===========================
+FAILED runtime_tests/test_orca_receiver_backend.py::test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver[codex-accepted]
+FAILED runtime_tests/test_orca_receiver_backend.py::test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver[codex-queued]
+FAILED runtime_tests/test_orca_receiver_backend.py::test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver[opencode-accepted]
+FAILED runtime_tests/test_orca_receiver_backend.py::test_concrete_verifier_uses_existing_prepare_and_dispatch_ledger_without_native_driver[opencode-queued]
+FAILED runtime_tests/test_orca_receiver_backend.py::test_host_uncertainty_preserves_original_dispatch_and_never_replays[codex]
+FAILED runtime_tests/test_orca_receiver_backend.py::test_host_uncertainty_preserves_original_dispatch_and_never_replays[opencode]
+6 failed, 12 passed in 40.06s

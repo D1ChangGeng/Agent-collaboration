@@ -1,0 +1,287 @@
+{
+  "schema_version": "acs-operation-scope/1",
+  "source": "v1.0.0/contracts/openapi.yaml",
+  "api_prefix": "/api/communication/v1",
+  "operations": [
+    {
+      "operation_id": "getMeta",
+      "method": "GET",
+      "path": "/meta",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "getProfile",
+      "method": "GET",
+      "path": "/profile",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "listProjects",
+      "method": "GET",
+      "path": "/projects",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "listRoutes",
+      "method": "GET",
+      "path": "/projects/{project_id}/routes",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "listContacts",
+      "method": "GET",
+      "path": "/projects/{project_id}/contacts",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "listConversations",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "getConversation",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "listMessages",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "sendMessage",
+      "method": "POST",
+      "path": "/projects/{project_id}/messages",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "readMessage",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages/{message_handle}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "getDelivery",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages/{message_handle}/delivery",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "waitForMessages",
+      "method": "POST",
+      "path": "/projects/{project_id}/waits",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "getOperation",
+      "method": "GET",
+      "path": "/projects/{project_id}/operations/{operation_id}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "listReceivers",
+      "method": "GET",
+      "path": "/projects/{project_id}/receivers",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "getReceiver",
+      "method": "GET",
+      "path": "/projects/{project_id}/receivers/{receiver_id}",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "recoverReceiver",
+      "method": "POST",
+      "path": "/projects/{project_id}/receivers/{receiver_id}/actions",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "getSnapshot",
+      "method": "GET",
+      "path": "/projects/{project_id}/snapshot",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "subscribeEvents",
+      "method": "GET",
+      "path": "/projects/{project_id}/events",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "getReadState",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/read-state",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "markConversationRead",
+      "method": "PUT",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/read-state",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "getPreferences",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/preferences",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "setConversationPreferences",
+      "method": "PUT",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/preferences",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "getDraft",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/draft",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "saveDraft",
+      "method": "PUT",
+      "path": "/projects/{project_id}/conversations/{conversation_id}/draft",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "listNotices",
+      "method": "GET",
+      "path": "/projects/{project_id}/notices",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "markNoticeSeen",
+      "method": "PUT",
+      "path": "/projects/{project_id}/notices/{notice_handle}/seen",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "searchMessages",
+      "method": "GET",
+      "path": "/projects/{project_id}/search",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "reserveAttachment",
+      "method": "POST",
+      "path": "/projects/{project_id}/attachments",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "getAttachment",
+      "method": "GET",
+      "path": "/projects/{project_id}/attachments/{attachment_id}",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "uploadAttachment",
+      "method": "PUT",
+      "path": "/projects/{project_id}/attachments/{attachment_id}/content",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "downloadAttachment",
+      "method": "GET",
+      "path": "/projects/{project_id}/attachments/{attachment_id}/content",
+      "tier": "P2_optional",
+      "read_only": true,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "finalizeAttachment",
+      "method": "POST",
+      "path": "/projects/{project_id}/attachments/{attachment_id}/finalize",
+      "tier": "P2_optional",
+      "read_only": false,
+      "note": "may_remain_declared_but_must_not_be_advertised_available_without_impl"
+    },
+    {
+      "operation_id": "listNativeLinks",
+      "method": "GET",
+      "path": "/projects/{project_id}/native-links",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "bindNativeLink",
+      "method": "PUT",
+      "path": "/projects/{project_id}/native-links/{link_id}",
+      "tier": "P1_required",
+      "read_only": false,
+      "note": "domain_auth_and_real_service_tests_required"
+    },
+    {
+      "operation_id": "resolveConversation",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/resolve",
+      "tier": "P1_required",
+      "read_only": true,
+      "note": "domain_auth_and_real_service_tests_required"
+    }
+  ]
+}

@@ -83,6 +83,27 @@ def test_codex_receiver_settings_are_exact_and_bounded(tmp_path):
             validate_settings(changed)
 
 
+@pytest.mark.parametrize("version,history,accepted", [("0.166.0", "paginated", True),
+    ("0.163.0", "paginated", False), ("0.166.0", "legacy", False), ("0.166.0", "unknown", False)])
+def test_native_factory_admits_only_explicit_reviewed_history_contract(tmp_path, monkeypatch, version, history, accepted):
+    value = settings(tmp_path)
+    value["history_mode"] = history
+    monkeypatch.setattr("runtime_deployment.receiver_codex.subprocess.run",
+                        lambda *_args, **_kwargs: SimpleNamespace(stdout="codex-cli "+version))
+    if accepted:
+        assert validate_settings(value, execution_mode="native")["history_mode"] == "paginated"
+    else:
+        with pytest.raises(CodexReceiverRejected, match="reviewed Codex 0.166.0 Native"):
+            validate_settings(value, execution_mode="native")
+
+
+def test_shared_factory_does_not_acquire_native_history_override(tmp_path):
+    value = settings(tmp_path)
+    value["history_mode"] = "paginated"
+    with pytest.raises(CodexReceiverRejected, match="reviewed Codex 0.166.0 Native"):
+        validate_settings(value)
+
+
 @pytest.mark.skipif(os.name != "posix", reason="Codex 0.163 Shared receiver is qualified on Linux")
 @pytest.mark.parametrize("references", [
     {"PATH": {"kind": "environment", "name": "UNTRUSTED_PATH"}},

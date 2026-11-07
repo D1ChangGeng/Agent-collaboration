@@ -1,0 +1,8 @@
+........................................................................ [ 25%]
+........................................................................ [ 50%]
+........................................................................ [ 75%]
+..........................s..........................................    [100%]
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-development-capabilities-20261107\final-restore-source-components.xml -
+=========================== short test summary info ===========================
+SKIPPED [1] runtime_tests\test_receiver_lifecycle_node.py:616: OpenCode http_response-specific journal history
+284 passed, 1 skipped in 120.49s (0:02:00)

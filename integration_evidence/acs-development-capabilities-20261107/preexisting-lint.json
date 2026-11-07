@@ -1,0 +1,67 @@
+{
+  "observed_at": "2026-11-07T10:26:23.921924+00:00",
+  "full_repo_lint_returncode": 1,
+  "preexisting_findings": [
+    {
+      "path": "runtime/__init__.py",
+      "code": "PLE0605",
+      "message": "Invalid format for `__all__`, must be `tuple` or `list`",
+      "location": {
+        "column": 1,
+        "row": 5
+      },
+      "unchanged_from_HEAD": true
+    },
+    {
+      "path": "runtime/filesystem_locks.py",
+      "code": "I001",
+      "message": "Import block is un-sorted or un-formatted",
+      "location": {
+        "column": 1,
+        "row": 2
+      },
+      "unchanged_from_HEAD": true
+    },
+    {
+      "path": "runtime/filesystem_schema.py",
+      "code": "I001",
+      "message": "Import block is un-sorted or un-formatted",
+      "location": {
+        "column": 1,
+        "row": 2
+      },
+      "unchanged_from_HEAD": true
+    },
+    {
+      "path": "runtime/filesystem_transport.py",
+      "code": "I001",
+      "message": "Import block is un-sorted or un-formatted",
+      "location": {
+        "column": 1,
+        "row": 2
+      },
+      "unchanged_from_HEAD": true
+    },
+    {
+      "path": "runtime/machine_filesystem.py",
+      "code": "TRY004",
+      "message": "Prefer `TypeError` exception for invalid type",
+      "location": {
+        "column": 13,
+        "row": 43
+      },
+      "unchanged_from_HEAD": true
+    },
+    {
+      "path": "runtime/owner_dispatch.py",
+      "code": "I001",
+      "message": "Import block is un-sorted or un-formatted",
+      "location": {
+        "column": 1,
+        "row": 2
+      },
+      "unchanged_from_HEAD": true
+    }
+  ],
+  "changed_scope_lint": "development-static-b.json:passed"
+}

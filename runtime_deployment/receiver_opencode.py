@@ -25,12 +25,18 @@ from runtime_deployment.receiver_authority import (
     NativeReceiverRejected,
     bind_registered_receiver,
 )
+from runtime_deployment.receiver_lifecycle import (
+    LIFECYCLE_OPTIONAL,
+    attach_lifecycle_controller,
+    lifecycle_journal,
+    validate_lifecycle_settings,
+)
 
 SCHEMA = "acs-receiver-opencode-factory/1"
 REQUIRED = {"schema_version", "binding_id", "capacity_attempt_id", "executable", "cwd",
             "driver_journal", "node_journal", "runtime_id"}
 OPTIONAL = {"home", "config_root", "data_root", "state_root", "cache_root", "temp_root",
-            "agent", "provider_id", "model_id", "schema_path"}
+            "agent", "provider_id", "model_id", "schema_path", "record_handoff", *LIFECYCLE_OPTIONAL}
 SHARED_REQUIRED = {"executable_sha256", "opencode_version", "schema_sha256", "config_sha256",
                    "agent", "provider_id", "model_id", "collaboration_server", "systemd_environment_dir"}
 SHARED_OPTIONAL = {"environment_refs"}
@@ -64,6 +70,9 @@ def validate_settings(settings):
         raise NativeReceiverRejected("OpenCode receiver settings differ")
     if settings.get("schema_version") != SCHEMA:
         raise NativeReceiverRejected("OpenCode receiver schema differs")
+    if type(settings.get("record_handoff", False)) is not bool:
+        raise NativeReceiverRejected("record_handoff must be a boolean")
+    validate_lifecycle_settings(settings)
     current = dict(settings)
     for name in REQUIRED - {"schema_version"}:
         value = current[name]
@@ -111,10 +120,10 @@ class OpenCodeReceiverCapacity(NativeReceiverAuthority):
         registration = config.binding.registration
         self.binding = bind_registered_receiver(self.authority, registration, deployment_policy_sha256,
                                                self.settings["runtime_id"], self.settings["capacity_attempt_id"])
+        self.clock = ConnectionClock.from_authority(self.authority, identity=receiver_clock_identity(config))
+        self.journal = lifecycle_journal(self, journal_class=DriverJournal)
         self.node = NodeJournal(self.settings["node_journal"], machine_id=registration.machine_id,
             node_id=registration.node_id, boot_incarnation=registration.boot_incarnation)
-        self.clock = ConnectionClock.from_authority(self.authority, identity=receiver_clock_identity(config))
-        self.journal = DriverJournal(self.settings["driver_journal"], clock=self.clock)
         for name in ("home", "config_root", "data_root", "state_root", "cache_root", "temp_root"):
             Path(self.settings[name]).mkdir(mode=0o700, parents=True, exist_ok=True)
         binary = self.settings["executable"]
@@ -150,10 +159,18 @@ class OpenCodeReceiverCapacity(NativeReceiverAuthority):
         self._closed = False
         try:
             self.adapter = NativeDeliveryAdapter(self.driver, authorize_invocation=self._authorize_invocation,
-                clock=self.clock, configure_runtime=self._prepare_runtime, inspect_runtime=self.health)
+                authorize_observation=self._authorize_observation if settings.get("record_handoff", False) else None,
+                clock=self.clock, configure_runtime=self._prepare_runtime,
+                inspect_runtime=None if self.settings.get("lifecycle_control", False) else self.health,
+                record_handoff=self.settings.get("record_handoff", False),
+                observe_input=self._observe_input if self.settings.get("record_handoff", False) else None)
             self.bridge = ReceiverNativeDeliveryBridge(config.ledger_path, self.adapter,
                 read_domain_marker=self.authority.receiver_transport.dispatch_marker_current)
-            self.driver.spawn(self._lifecycle_operation("spawn"))
+            if self.settings.get("lifecycle_control", False):
+                self.lifecycle_node = attach_lifecycle_controller(self)
+            else:
+                self.lifecycle_node = None
+                self.driver.spawn(self._lifecycle_operation("spawn"))
         except BaseException:
             try:
                 if self.driver.owned is not None:
@@ -163,7 +180,15 @@ class OpenCodeReceiverCapacity(NativeReceiverAuthority):
                 self.supervisor.close()
             raise
 
+    def _observe_input(self):
+        from runtime.native_input_observations import observe_native_input
+
+        return observe_native_input(self.driver, self._lifecycle_operation("spawn"))
+
     def health(self):
+        if self.settings.get("lifecycle_control", False):
+            return {"state": "unknown", "harness": "opencode", "version": self.driver.profile.version,
+                "session_ref": self.driver.session_id, "observation": "binding_record_only"}
         operation = self._lifecycle_operation("spawn")
         with self.authority._connect() as connection, connection.cursor() as cursor:
             self.authority.enrollment._active_runtime(cursor, self.binding.runtime_id)
@@ -187,6 +212,8 @@ class OpenCodeReceiverCapacity(NativeReceiverAuthority):
             "observation": "native_driver_readback"}
 
     def _prepare_runtime(self):
+        if self.settings.get("lifecycle_control", False):
+            raise NativeReceiverRejected("signed lifecycle operation is required for Native preparation")
         if self.driver.session_id is None:
             self.driver.spawn(self._lifecycle_operation("spawn"))
         return self.health()
@@ -198,4 +225,5 @@ def callbacks(config, deployment_policy_sha256, settings):
     return DeploymentCallbacks(deployment_policy_sha256=deployment_policy_sha256,
         endpoint_id=registration.endpoint_id, runtime_id=registration.runtime_id,
         authorize_current=capacity.authorize_current, native_invoke=capacity.native_invoke,
-        readiness=capacity.readiness, close=capacity.close, clock=capacity.clock)
+        readiness=capacity.readiness, close=capacity.close, clock=capacity.clock,
+        lifecycle_node=getattr(capacity, "lifecycle_node", None))

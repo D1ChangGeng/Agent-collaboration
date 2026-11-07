@@ -6,7 +6,7 @@ import os
 import re
 import subprocess
 import uuid
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any
 
 from runtime.codex_driver import (
@@ -30,6 +30,12 @@ from runtime_deployment.receiver_authority import (
     NativeReceiverRejected,
     bind_registered_receiver,
 )
+from runtime_deployment.receiver_lifecycle import (
+    LIFECYCLE_OPTIONAL,
+    attach_lifecycle_controller,
+    lifecycle_journal,
+    validate_lifecycle_settings,
+)
 
 SCHEMA = "acs-receiver-codex-factory/1"
 FIELDS = {
@@ -44,6 +50,8 @@ FIELDS = {
 }
 RETIRED_FIELDS = {"artifact_root", "collector_max_reads", "collector_interval_seconds"}
 SHARED_OPTIONAL = {"environment_refs", "collaboration_server"}
+ADAPTER_OPTIONAL = {"record_handoff", *LIFECYCLE_OPTIONAL}
+NATIVE_OPTIONAL = {"history_mode"}
 
 
 CodexReceiverRejected = NativeReceiverRejected
@@ -67,8 +75,12 @@ def native_settings(settings):
     """Resolve the selected environment at preparation time; digests are observations."""
     required = {"schema_version", "binding_id", "capacity_attempt_id", "executable", "cwd", "codex_home",
                 "driver_journal", "node_journal", "runtime_id"}
-    if not isinstance(settings, dict) or not required <= set(settings) or set(settings)-FIELDS:
+    if (not isinstance(settings, dict) or not required <= set(settings)
+            or set(settings)-FIELDS-ADAPTER_OPTIONAL-NATIVE_OPTIONAL):
         raise CodexReceiverRejected("native receiver environment is incomplete")
+    if type(settings.get("record_handoff", False)) is not bool:
+        raise CodexReceiverRejected("record_handoff must be a boolean")
+    validate_lifecycle_settings(settings)
     current = dict(settings)
     private = Path(current["driver_journal"]).parent
     current.setdefault("protocol_schema", str(private/"api-schema.json"))
@@ -94,8 +106,16 @@ def native_settings(settings):
 def validate_settings(settings: object, *, execution_mode="restricted") -> dict[str, Any]:
     if execution_mode == "native":
         settings = native_settings(settings)
-    if not isinstance(settings, dict) or not FIELDS-RETIRED_FIELDS <= set(settings) or set(settings)-FIELDS-SHARED_OPTIONAL:
+    if (not isinstance(settings, dict) or not FIELDS-RETIRED_FIELDS <= set(settings)
+            or set(settings)-FIELDS-SHARED_OPTIONAL-ADAPTER_OPTIONAL-NATIVE_OPTIONAL):
         raise CodexReceiverRejected("Codex receiver factory settings differ")
+    if "history_mode" in settings and (
+        execution_mode != "native" or settings["codex_version"] != "0.166.0" or settings["history_mode"] != "paginated"
+    ):
+        raise CodexReceiverRejected("explicit paginated history requires the reviewed Codex 0.166.0 Native contract")
+    if type(settings.get("record_handoff", False)) is not bool:
+        raise CodexReceiverRejected("record_handoff must be a boolean")
+    validate_lifecycle_settings(settings)
     if settings.get("schema_version") != SCHEMA:
         raise CodexReceiverRejected("Codex receiver factory schema differs")
     for name in (
@@ -173,6 +193,22 @@ def validate_settings(settings: object, *, execution_mode="restricted") -> dict[
     return dict(settings)
 
 
+def _restricted_windows_environment(settings):
+    """Keep the restricted allowlist and the OS drive required by MXC."""
+    system_root = PureWindowsPath(os.environ.get("SystemRoot", r"C:\Windows"))
+    if not system_root.is_absolute() or len(system_root.drive) != 2 or system_root.drive[1] != ":":
+        raise CodexReceiverRejected("restricted Windows SystemRoot must be a local absolute path")
+    native_path = str(PureWindowsPath(settings["executable"]).parent)
+    private_root = PureWindowsPath(settings["codex_home"]).parent
+    return {
+        "PATH": native_path + ";" + str(system_root/"System32"),
+        "HOME": str(private_root/"home"), "TMP": str(private_root/"tmp"), "TEMP": str(private_root/"tmp"),
+        "SystemRoot": str(system_root), "SystemDrive": system_root.drive,
+        "USERPROFILE": os.environ.get("USERPROFILE", ""),
+        "APPDATA": os.environ.get("APPDATA", ""), "LOCALAPPDATA": os.environ.get("LOCALAPPDATA", ""),
+    }
+
+
 class CodexReceiverCapacity(NativeReceiverAuthority):
     def __init__(self, config, deployment_policy_sha256: str, settings: dict[str, Any]):
         self.config = config
@@ -190,23 +226,13 @@ class CodexReceiverCapacity(NativeReceiverAuthority):
         registration = config.binding.registration
         self.binding = bind_registered_receiver(self.authority, registration, deployment_policy_sha256,
                                                 self.settings["runtime_id"], self.settings["capacity_attempt_id"])
+        self.journal = lifecycle_journal(self, journal_class=DriverJournal)
         self.node = NodeJournal(
             self.settings["node_journal"], machine_id=registration.machine_id,
             node_id=registration.node_id, boot_incarnation=registration.boot_incarnation,
         )
-        self.journal = DriverJournal(self.settings["driver_journal"])
         if os.name == "nt":
-            native_path = str(Path(self.settings["executable"]).parent)
-            environment = {
-                "PATH": native_path + os.pathsep + os.environ.get("SystemRoot", r"C:\Windows") + r"\System32",
-                "HOME": str(Path(self.settings["codex_home"]).parent / "home"),
-                "TMP": str(Path(self.settings["codex_home"]).parent / "tmp"),
-                "TEMP": str(Path(self.settings["codex_home"]).parent / "tmp"),
-                "SystemRoot": os.environ.get("SystemRoot", r"C:\Windows"),
-                "USERPROFILE": os.environ.get("USERPROFILE", ""),
-                "APPDATA": os.environ.get("APPDATA", ""),
-                "LOCALAPPDATA": os.environ.get("LOCALAPPDATA", ""),
-            }
+            environment = _restricted_windows_environment(self.settings)
         else:
             environment = {
                 "PATH": (
@@ -234,6 +260,7 @@ class CodexReceiverCapacity(NativeReceiverAuthority):
             self.settings.get("model"),
             **({"execution_mode": "native"} if getattr(config, "access_mode", "shared") == "owner" else {}),
             collaboration_server=self.settings.get("collaboration_server"),
+            history_mode=self.settings.get("history_mode"),
         )
         self.supervisor = (
             WindowsJobSupervisor(max_processes=None if getattr(config, "access_mode", "shared") == "owner" else 64, termination_timeout=10)
@@ -256,8 +283,12 @@ class CodexReceiverCapacity(NativeReceiverAuthority):
         )
         self.adapter = NativeDeliveryAdapter(
             self.driver, authorize_invocation=self._authorize_invocation,
+            authorize_observation=self._authorize_observation if self.settings.get("record_handoff", False) else None,
             clock=self.clock,
-            configure_runtime=self._prepare_runtime, inspect_runtime=self.health,
+            configure_runtime=self._prepare_runtime,
+            inspect_runtime=None if self.settings.get("lifecycle_control", False) else self.health,
+            record_handoff=self.settings.get("record_handoff", False),
+            observe_input=self._observe_input if self.settings.get("record_handoff", False) else None,
         )
         self.bridge = ReceiverNativeDeliveryBridge(
             config.ledger_path, self.adapter,
@@ -265,7 +296,11 @@ class CodexReceiverCapacity(NativeReceiverAuthority):
         )
         self._closed = False
         try:
-            self.driver.spawn(self._lifecycle_operation("spawn"))
+            if self.settings.get("lifecycle_control", False):
+                self.lifecycle_node = attach_lifecycle_controller(self)
+            else:
+                self.lifecycle_node = None
+                self.driver.spawn(self._lifecycle_operation("spawn"))
         except BaseException:
             # A failed native spawn may already own a supervised process tree
             # and a kernel Driver claim.  Constructor failure must not orphan
@@ -279,7 +314,15 @@ class CodexReceiverCapacity(NativeReceiverAuthority):
                 self.supervisor.close()
             raise
 
+    def _observe_input(self):
+        from runtime.native_input_observations import observe_native_input
+
+        return observe_native_input(self.driver, self._lifecycle_operation("spawn"))
+
     def health(self):
+        if self.settings.get("lifecycle_control", False):
+            return {"state": "unknown", "harness": "codex", "version": self.driver.profile.version,
+                "session_ref": self.driver.thread_id, "observation": "binding_record_only"}
         operation = self._lifecycle_operation("spawn")
         with self.authority._connect() as connection, connection.cursor() as cursor:
             self.authority.enrollment._active_runtime(cursor, self.config.binding.registration.runtime_id)
@@ -291,6 +334,8 @@ class CodexReceiverCapacity(NativeReceiverAuthority):
                 "session_ref": self.driver.thread_id, "observation": "native_driver_readback"}
 
     def _prepare_runtime(self):
+        if self.settings.get("lifecycle_control", False):
+            raise CodexReceiverRejected("signed lifecycle operation is required for Native preparation")
         if self.driver.thread_id is None:
             self.driver.spawn(self._lifecycle_operation("spawn"))
         return self.health()
@@ -318,4 +363,5 @@ def callbacks(config, deployment_policy_sha256, settings):
         readiness=capacity.readiness,
         close=capacity.close,
         clock=capacity.clock,
+        lifecycle_node=getattr(capacity, "lifecycle_node", None),
     )

@@ -310,6 +310,50 @@ def test_read_preserves_inbox_and_long_utf8_content_continues(comm):
     assert call(comm, "b", "check_inbox")["data"]["items"] == before
 
 
+def test_t094_large_original_and_reply_keep_independent_wait_read_continuations(comm):
+    original_text, reply_text = "A" + "🧭请求甲" * 2000, "🙂回复乙" * 2000
+    assert 16384 < len(original_text.encode()) <= 32768
+    assert 16384 < len(reply_text.encode()) <= 32768
+    original = send(comm, content=original_text, activation="message_only")["data"]
+    reply = send(comm, "b", "a", reply_text, reply_to=[original["message_handle"]], activation="message_only")["data"]
+    assert original["message_handle"] != reply["message_handle"]
+    client = comm.clients["a"]
+    state, data, actions = client.service.execute("wait_for_response", {"project_id":"project-alpha",
+        "handles":[original["message_handle"]], "timeout_seconds":0}, client.credential_provider())
+    assert state == "satisfied" and data["pending"] == []
+    observed = data["observations"][0]
+    assert observed["message_handle"] == original["message_handle"]
+    assert observed["reply"]["message_handle"] == reply["message_handle"]
+    continuations = {item["arguments"]["handle"]:item["arguments"] for item in actions}
+    assert set(continuations) == {original["message_handle"], reply["message_handle"]}
+
+    def complete(reference, initial, continuation):
+        parts, offset = [initial["content"]], continuation["offset"]
+        assert offset == len(initial["content"].encode())
+        while True:
+            result = call(comm,"a","read_message",handle=reference,offset=offset,max_inline_bytes=continuation["max_inline_bytes"])["data"]
+            assert result["message_handle"] == reference
+            parts.append(result["content"])
+            if result["next_offset"] is None:
+                break
+            assert result["next_offset"] > offset
+            offset = result["next_offset"]
+        return "".join(parts)
+
+    assert complete(original["message_handle"], observed, continuations[original["message_handle"]]) == original_text
+    assert complete(reply["message_handle"], observed["reply"], continuations[reply["message_handle"]]) == reply_text
+    # Explicit tiny budget leaves a multi-byte reply at byte0, with a usable
+    # reply-specific continuation rather than a synthetic consumed/ACK state.
+    _state, tiny, next_actions = client.service.execute("read_message", {"project_id":"project-alpha",
+        "handle":original["message_handle"], "max_inline_bytes":1}, client.credential_provider())
+    retry = next(item["arguments"] for item in next_actions if item["arguments"]["handle"] == reply["message_handle"])
+    assert tiny["content"] == "A" and tiny["reply"]["content"] == ""
+    assert retry["offset"] == 0 and retry["max_inline_bytes"] >= 4
+    zero = call(comm,"a","read_message",handle=reply["message_handle"],offset=0,max_inline_bytes=retry["max_inline_bytes"])["data"]
+    assert reply_text.startswith(zero["content"]) and zero["next_offset"] is not None
+    assert not any(driver.calls for driver in comm.drivers.values())
+
+
 def test_inbox_and_history_page_in_authority_order_with_concurrent_senders(comm):
     with ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(lambda i: send(comm, "a" if i % 2 else "c", "b", f"message {i}", activation="message_only"), range(8)))

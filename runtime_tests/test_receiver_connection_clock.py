@@ -337,7 +337,8 @@ def test_recovery_readback_uses_bound_authority_clock_across_host_skew(temporal,
     adapter.config, adapter.clock, adapter._signing_key = config, clock, temporal.authority_key
     adapter.store = SimpleNamespace(dispatch_admission=lambda _operation: dispatch,
                                     admission=lambda _request: None,
-                                    persist_admission=captured.append)
+                                    persist_admission=captured.append,
+                                    prepared_recovery_evidence=lambda *_identity: None)
 
     def send(request):
         receipt = signed_receipt(temporal, request, clock.now()).receipt.model_copy(

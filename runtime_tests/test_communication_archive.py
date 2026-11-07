@@ -87,3 +87,38 @@ def test_conflicting_index_is_reported_without_overwriting_source_or_prior_recor
         with pytest.raises(ValueError, match="operator review"):
             adopt_legacy_index(cursor, project.authority.tenant_id)
         assert cursor.execute("SELECT author_principal_ref FROM communication_archives WHERE message_id=%s", (identity["message_id"],)).fetchone()[0] == "conflicting-stored-subject"
+
+
+def test_t091_atomic_historical_adoption_resumes_after_rollback_without_guessing_missing_author(project):
+    f = project
+    first, _packet = seed_legacy(f)
+    second, _command, _packet, _result = legacy_send(f)
+    assert first["message_id"] != second["message_id"]  # Original UUID IDs, no numeric frontier.
+    with psycopg.connect(f.dsn) as connection:
+        # Explicit old-source fixture: historical command did not retain an
+        # author field. Adoption must neither manufacture it nor rewrite bytes.
+        connection.execute("UPDATE delivery_messages SET command_json=command_json-'principal_ref' WHERE message_id=%s",
+            (first["message_id"],))
+        before = connection.execute("SELECT message_id,packet_json,command_json,canonical_hash,state FROM delivery_messages ORDER BY message_id").fetchall()
+        plan = archive_plan(connection.cursor(), f.authority.tenant_id)
+        assert plan["known_associations"] == 2 and plan["author_principal_unknown"] == 1
+        original_natural = connection.execute("SELECT count(*) FROM communication_messages").fetchone()
+        original_replies = connection.execute("SELECT count(*) FROM communication_replies").fetchone()
+    with pytest.raises(RuntimeError, match="controlled adoption interruption"), psycopg.connect(f.dsn) as connection:
+        result = adopt_legacy_index(connection.cursor(), f.authority.tenant_id, expected_plan_sha256=plan["plan_sha256"])
+        assert result["indexed_associations"] == 2
+        raise RuntimeError("controlled adoption interruption before commit")
+    with psycopg.connect(f.dsn) as connection:
+        assert connection.execute("SELECT count(*) FROM communication_archives").fetchone() == (0,)
+        assert archive_plan(connection.cursor(), f.authority.tenant_id)["plan_sha256"] == plan["plan_sha256"]
+        assert adopt_legacy_index(connection.cursor(), f.authority.tenant_id,
+            expected_plan_sha256=plan["plan_sha256"])["indexed_associations"] == 2
+    with psycopg.connect(f.dsn) as connection:
+        assert adopt_legacy_index(connection.cursor(), f.authority.tenant_id)["indexed_associations"] == 0
+        archived = connection.execute("SELECT message_id,author_principal_ref FROM communication_archives ORDER BY message_id").fetchall()
+        assert len(archived) == 2 and dict(archived)[first["message_id"]] is None
+        assert dict(archived)[second["message_id"]] == f.authority.context.principal_ref
+        assert connection.execute("SELECT message_id,packet_json,command_json,canonical_hash,state FROM delivery_messages ORDER BY message_id").fetchall() == before
+        assert connection.execute("SELECT count(*) FROM communication_messages").fetchone() == original_natural
+        assert connection.execute("SELECT count(*) FROM communication_replies").fetchone() == original_replies
+    assert f.driver.calls == []

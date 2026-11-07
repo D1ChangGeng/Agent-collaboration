@@ -1,0 +1,59 @@
+{
+  "schema_version": "acs-retained-native-evidence/1",
+  "checked_at": "2026-11-07T06:12:01.403137+00:00",
+  "artifact": "integration_evidence/acs-stage-agnostic-20261106/native-agent-e2e-20261107/native-e2e-e.json",
+  "sha256": "221c6654f3e0c6f2898300a7cdb1bd7479a0f8d7d08e2f32046187cc6f25f86c",
+  "captured_files": 901,
+  "all_captured_files_match_current": false,
+  "reviewed_delta": [
+    "runtime/communication_http.py",
+    "runtime_tests/test_communication_http_auth.py"
+  ],
+  "delta_impact": "Only the ordinary communication HTTP read facade and its regression fixture changed. The Native effect stack, signed receiver transport and actual Project/MCP send/reply/wait path used in e are byte-identical. The facade change is independently exercised in read-compatibility-final and p0-p1-final; this is not a newly executed E4 run.",
+  "new_test_files_not_in_original_capture": [
+    "runtime_tests/test_communication_p2_exact_scenarios.py",
+    "runtime_tests/test_communication_commit_crash.py",
+    "runtime_tests/test_communication_installed_maintenance.py",
+    "runtime_tests/test_communication_attachment_ssrf.py"
+  ],
+  "facts": {
+    "schema_version": "acs-current-cross-harness-result/1",
+    "evidence": "native-e2e-e.json",
+    "source_before_after_equal": true,
+    "installed_sender": "Windows Codex0.166.0",
+    "installed_receiver": "WSL OpenCode1.18.34",
+    "execution_mode": "owner/native",
+    "topology": "same hardware Windows→WSL; not physical multi-machine",
+    "ordinary_A_B": true,
+    "messages": 2,
+    "explicit_reply_relations": 1,
+    "receiver_Native_prompt_count": 1,
+    "Core_work_table": null,
+    "actual_A_wait_results": [
+      {
+        "ok": true,
+        "state": "satisfied"
+      }
+    ],
+    "source_manifest_sha256": "0cf8025f724f535b86daa31888d1cda254e14b2d242ec265a534d23beaeae8c1",
+    "Windows_parent_Job_empty": true,
+    "receiver_stop": {
+      "verified": true,
+      "containment_id": "process-session:3218029:linux:3218029:58474525",
+      "birth_ref": "linux:3218029:58474525",
+      "backend": "posix-process-session",
+      "scope": "owned_process_group",
+      "subtree_containment": false,
+      "alive": false,
+      "pid": 3218029,
+      "members": [],
+      "root_pid": 3218029,
+      "root_exited": true,
+      "remaining_pids": [],
+      "root_exit_code": -15,
+      "remaining_group_members": []
+    },
+    "scope_limit": "WSL owned process group only; subtree_containment false; no Shared/Orca/in-place-production-cold-recovery inference"
+  },
+  "note": "Historical run retained on exact captured bytes; no model/API call was repeated by this continuation."
+}

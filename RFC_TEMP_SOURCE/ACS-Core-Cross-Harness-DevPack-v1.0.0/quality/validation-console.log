@@ -1,0 +1,32 @@
+{
+  "package_version": "1.0.0",
+  "evidence_class": "package_validation",
+  "passed": true,
+  "checks": [
+    "all_json_parse",
+    "json_schema_draft_2020_12",
+    "positive_negative_schema_fixtures",
+    "openapi_paths_and_internal_refs",
+    "canonical_schema_parity",
+    "requirements_test_workpackage_traceability",
+    "ui_coverage_and_source_lock",
+    "delivery_safety_graph",
+    "adapter_protocol_python_compile",
+    "handoff_entries_present"
+  ],
+  "issues": [],
+  "counts": {
+    "requirements": 40,
+    "scenarios": 96,
+    "work_packages": 11,
+    "ui_features": 30,
+    "schemas": 56,
+    "api_operations": 35,
+    "schema_fixtures": 21
+  },
+  "limitations": [
+    "No ACS implementation tests executed",
+    "No native Harness or Orca host executed",
+    "OpenAPI structural/ref/parity check, not a full external OpenAPI conformance validator"
+  ]
+}

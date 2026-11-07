@@ -1,0 +1,25 @@
+{
+  "schema_version": "acs-qualification/1",
+  "records": [],
+  "required_fields": [
+    "harness_kind",
+    "harness_version",
+    "os",
+    "host_ref",
+    "surface",
+    "transport",
+    "auth_mode",
+    "adapter_version",
+    "capability",
+    "result",
+    "evidence_refs"
+  ],
+  "permitted_results": [
+    "passed",
+    "failed",
+    "unsupported_verified",
+    "unverified",
+    "blocked"
+  ],
+  "note": "No native runtime was executed while preparing this package."
+}

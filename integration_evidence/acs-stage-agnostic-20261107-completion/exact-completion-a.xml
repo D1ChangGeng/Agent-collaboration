@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="8" time="21.169" timestamp="2026-11-07T14:12:14.307419+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="runtime_tests.test_communication_p2_exact_scenarios" name="test_t043_two_device_service_cas_never_regresses_frontier_or_consumes_messages" time="2.025" /><testcase classname="runtime_tests.test_communication_p2_exact_scenarios" name="test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections" time="4.908"><failure message="AssertionError: {&quot;message&quot;:{&quot;message_handle&quot;:&quot;message:project-alpha:message-0076ce281d144f7da04d02031e54ce56&quot;,&quot;project_id&quot;:&quot;project-alpha&quot;,&quot;conversation_id&quot;:&quot;conversation-e2f293846a3435b2a09cb67e83f97a7a3a0395fd9f0648a003bf08f899f3199b&quot;,&quot;sender&quot;:&quot;collaborator:project-alpha:local-slot&quot;,&quot;to&quot;:&quot;collaborator:project-alpha:slot-b&quot;,&quot;content&quot;:{&quot;text&quot;:&quot;P2_FULL_BODY_SEARCH_汉字#x1F9ED&quot;,&quot;offset&quot;:0,&quot;next_offset&quot;:null,&quot;total_bytes&quot;:30,&quot;digest&quot;:&quot;7d80715f26c374ca789979e7909b5f59fb7a66105a7a00bd5bb3e7ef06cc51f5&quot;},&quot;reply_to&quot;:[],&quot;attachment_refs&quot;:[{&quot;name&quot;:&quot;p2-complete.bin&quot;,&quot;bytes&quot;:131082,&quot;sha256&quot;:&quot;cc72c450eaada27b66b3927793b1e9e601e26e065c46b976761938273d6c29a9&quot;,&quot;media_type&quot;:&quot;application/octet-stream&quot;,&quot;attachment_id&quot;:&quot;attachment-2aebd60ba36841f8b488cbe7ba33cd0b&quot;}],&quot;conversation_sequence&quot;:&quot;2&quot;,&quot;committed_at&quot;:&quot;2026-11-07T05:12:21.813769+00:00&quot;,&quot;revision&quot;:1,&quot;source&quot;:&quot;acs_agent&quot;,&quot;first_reply_handle&quot;:null},&quot;delivery&quot;:{&quot;message_handle&quot;:&quot;message:project-alpha:message-0076ce281d144f7da04d02031e54ce56&quot;,&quot;accepted_by_authority&quot;:true,&quot;target_inbox_committed&quot;:true,&quot;native&quot;:{&quot;state&quot;:&quot;not_requested&quot;,&quot;operation_ref&quot;:&quot;op-c220c369-181e-42ea-b9bd-053ef3412ccd&quot;,&quot;binding_epoch&quot;:null,&quot;provider_generation&quot;:null,&quot;evidence_ref&quot;:null,&quot;native_input_ref&quot;:null,&quot;reason_code&quot;:null},&quot;consumption&quot;:{&quot;state&quot;:&quot;unobservable&quot;,&quot;semantics&quot;:&quot;provider_input_consumed&quot;,&quot;evidence_ref&quot;:null},&quot;response&quot;:{&quot;present&quot;:false,&quot;message_handle&quot;:null},&quot;revision&quot;:4},&quot;operation_ref&quot;:&quot;op-c220c369-181e-42ea-b9bd-053ef3412ccd&quot;,&quot;duplicate&quot;:false,&quot;wait&quot;:{&quot;state&quot;:&quot;not_requested&quot;,&quot;satisfied_handles&quot;:[],&quot;pending_handles&quot;:[]}}&#10;assert 201 == 202&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code">runtime_tests\test_communication_p2_exact_scenarios.py:135: in test_all_thirteen_p2_apis_and_t084_draft_conflict_across_real_http_connections
+    assert sent.status_code == 202, sent.text
+E   AssertionError: {"message":{"message_handle":"message:project-alpha:message-0076ce281d144f7da04d02031e54ce56","project_id":"project-alpha","conversation_id":"conversation-e2f293846a3435b2a09cb67e83f97a7a3a0395fd9f0648a003bf08f899f3199b","sender":"collaborator:project-alpha:local-slot","to":"collaborator:project-alpha:slot-b","content":{"text":"P2_FULL_BODY_SEARCH_汉字#x1F9ED","offset":0,"next_offset":null,"total_bytes":30,"digest":"7d80715f26c374ca789979e7909b5f59fb7a66105a7a00bd5bb3e7ef06cc51f5"},"reply_to":[],"attachment_refs":[{"name":"p2-complete.bin","bytes":131082,"sha256":"cc72c450eaada27b66b3927793b1e9e601e26e065c46b976761938273d6c29a9","media_type":"application/octet-stream","attachment_id":"attachment-2aebd60ba36841f8b488cbe7ba33cd0b"}],"conversation_sequence":"2","committed_at":"2026-11-07T05:12:21.813769+00:00","revision":1,"source":"acs_agent","first_reply_handle":null},"delivery":{"message_handle":"message:project-alpha:message-0076ce281d144f7da04d02031e54ce56","accepted_by_authority":true,"target_inbox_committed":true,"native":{"state":"not_requested","operation_ref":"op-c220c369-181e-42ea-b9bd-053ef3412ccd","binding_epoch":null,"provider_generation":null,"evidence_ref":null,"native_input_ref":null,"reason_code":null},"consumption":{"state":"unobservable","semantics":"provider_input_consumed","evidence_ref":null},"response":{"present":false,"message_handle":null},"revision":4},"operation_ref":"op-c220c369-181e-42ea-b9bd-053ef3412ccd","duplicate":false,"wait":{"state":"not_requested","satisfied_handles":[],"pending_handles":[]}}
+E   assert 201 == 202
+E    +  where 201 = &lt;Response [201 Created]&gt;.status_code</failure></testcase><testcase classname="runtime_tests.test_communication_commit_crash" name="test_t008_killed_writer_cannot_ack_or_leave_partial_message_reply_outbox_or_event[delivery_messages]" time="2.521" /><testcase classname="runtime_tests.test_communication_commit_crash" name="test_t008_killed_writer_cannot_ack_or_leave_partial_message_reply_outbox_or_event[communication_messages]" time="2.616" /><testcase classname="runtime_tests.test_communication_commit_crash" name="test_t008_killed_writer_cannot_ack_or_leave_partial_message_reply_outbox_or_event[communication_replies]" time="2.636" /><testcase classname="runtime_tests.test_communication_commit_crash" name="test_t008_killed_writer_cannot_ack_or_leave_partial_message_reply_outbox_or_event[collaboration_commands]" time="2.758" /><testcase classname="runtime_tests.test_communication_commit_crash" name="test_t009_same_request_key_across_device_connections_has_one_committed_operation" time="1.148"><failure message="runtime.communication_http.CommunicationHttpError: Message committed; resume the original operation">runtime\communication_client_service.py:355: in send
+    return self._validate("SendResponse", {"message": self.read_message(project, reference)["message"],
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\communication_client_service.py:218: in read_message
+    result = self._transaction(project, "read_message", selected)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\communication_client_service.py:59: in _transaction
+    result = callback(bound, cursor, root, command)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\communication_client_service.py:202: in selected
+    self._lock_delivery_version(cur, bound, project, identifier)
+runtime\communication_client_service.py:186: in _lock_delivery_version
+    cursor.execute("SELECT revision,updated_at FROM communication_delivery_versions "
+.venv\Lib\site-packages\psycopg\cursor.py:117: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.UndefinedTable: relation "communication_delivery_versions" does not exist
+E   LINE 1: SELECT revision,updated_at FROM communication_delivery_versi...
+E                                           ^
+
+The above exception was the direct cause of the following exception:
+runtime_tests\test_communication_commit_crash.py:124: in test_t009_same_request_key_across_device_connections_has_one_committed_operation
+    accepted = list(pool.map(submit, (0, 1)))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py:625: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py:318: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py:460: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py:402: in __get_result
+    raise self._exception
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_communication_commit_crash.py:121: in submit
+    return devices[number].send("project-alpha", arguments, client_request_id="t009-shared-key")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\communication_client_service.py:358: in send
+    raise CommunicationHttpError("observation_unavailable", "Message committed; resume the original operation",
+E   runtime.communication_http.CommunicationHttpError: Message committed; resume the original operation</failure></testcase><testcase classname="runtime_tests.test_communication_installed_maintenance" name="test_t090_installed_wheel_maintains_committed_message_after_its_client_process_exits" time="1.003"><failure message="AttributeError: 'NodeJournal' object has no attribute 'path'">runtime_tests\test_communication_installed_maintenance.py:95: in test_t090_installed_wheel_maintains_committed_message_after_its_client_process_exits
+    reference: {"journal": str(endpoint.journal.path), "descriptor": endpoint.descriptor()}
+                               ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NodeJournal' object has no attribute 'path'</failure></testcase></testsuite></testsuites>

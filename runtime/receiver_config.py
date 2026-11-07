@@ -171,6 +171,7 @@ class ReceiverRuntimeConfig(ReceiverClientConfig):
                 raise BootstrapRejected("receiver local listener override must be loopback")
         if self.drop_response_after_commit_once not in {
             None, "delivery.prepare", "delivery.dispatch", "delivery.readback", "delivery.recover",
+            "/v1/lifecycle/observe", "/v1/lifecycle/execute", "/v1/lifecycle/readback",
         }:
             raise BootstrapRejected("receiver response fault purpose is invalid")
 
