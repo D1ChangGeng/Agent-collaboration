@@ -1,0 +1,1188 @@
+{
+  "schema_version": "acs-p1-api-assessment/1",
+  "observed_at_utc": "2026-11-06T22:29:20.621133+00:00",
+  "scope_source": "docs/client/communication-api-scope.json",
+  "scope_source_sha256": "a0569a53dbb7efdb005d3a37b585ff57a632c1e74dd7515e409e489b377bcaf5",
+  "normative_revision": "RFC_TEMP_SOURCE/ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0/docs/04_P1_CLIENT_SURFACES.md",
+  "repository": {
+    "branch": "codex/core-cleanup",
+    "head": "19d7881d49ee887315c54c5bc02e0cc424061376",
+    "working_tree": "shared_uncommitted_changes_preserved",
+    "snapshot": "integration_evidence/acs-stage-agnostic-20261106/source-observation.json"
+  },
+  "method": [
+    "Read actual route/service and consumer call chains.",
+    "Bind named raw logs to exact source manifests where available; compare SHA256 to current files.",
+    "Separate real PG/ASGI/TCP, controlled provider evidence, mock response tests, and unexecuted cases.",
+    "No PG, escalation, Runtime edit or external communication performed for this assessment."
+  ],
+  "summary": {
+    "p1_operations": 22,
+    "route_service_declarations_inspected": 22,
+    "currently_qualified_all_p1_episode": true,
+    "executed_headless_tcp_operation_count": 22,
+    "executed_headless_missing_operations": [],
+    "new_native_http_cases_executed": 11,
+    "physical_host_qualification": false,
+    "model_qualification": false,
+    "public_tls_qualification": false,
+    "current_p1_episode_qualification_class": "E2_local_protocol_only",
+    "CLIENT_P1_CONTRACT_READY": true,
+    "contract_ready_scope": "v1.1 local ACS service and bounded Host delegation/unavailable contract, E1/E2; actual Host is not a P1 prerequisite."
+  },
+  "source_hashes_at_assessment": {
+    "runtime/client_models.schema.json": "33251e2fb264d996d4e14822ff1ca8dd6d3fdc2382786a61371cbee025e425ee",
+    "runtime/communication_client_native_links.py": "007cbc0c6432644094cecfe338675068454bb27b027f88d544582548c83570eb",
+    "runtime/communication_client_notices.py": "221b20e60aa24dc29c728579646ae487d8456e1d58918277278127923afcba7d",
+    "runtime/communication_client_oauth.py": "b73a27440758c3c3c8c2eaf13f05c5e8645d01c6a2475cee192721384283fae9",
+    "runtime/communication_client_receivers.py": "95534e05cca60c3ec090ae3e2bf74ed3475cc6c3ee1f8188ecb7412f786f4f88",
+    "runtime/communication_client_recovery.py": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c",
+    "runtime/communication_client_service.py": "e2577571444ea8443515e92fb17327da18337e49ad0bd8d3d1db0d8d6184c70c",
+    "runtime/communication_client_snapshot.py": "0eaf78a88ffc9e28fce119e3e630a79bec17e0afe1217539a05e5aa1c2552538",
+    "runtime/communication_client_views.py": "5865854f3a90a42b3c78e4016af8d1cf7e9b41f132208cf514409f438730c953",
+    "runtime/communication_event_http.py": "549e1a51e9f1c852c5353d0585b770af08b4192084e523b4b0326b0c7c2ecd35",
+    "runtime/communication_http.py": "6a92de66fc4521344c5c00545c5448d0d18b68bced46a9c57574eec5f068d05c",
+    "runtime/project_http.py": "8c9b04f9ba0cdb507811af7d64463e7b3c4ac25be342e7df19cfaa692f370c58",
+    "sdk/communication-client.ts": "d31f93e8ecf40bb466d1483d23270d4ca9fc40c3a87280918c3c9defc29f105a",
+    "sdk/communication-http.ts": "21143d094df142677653609667f487d0affbdfc6b8bed72928a80cb36888f31b",
+    "sdk/communication-stream.ts": "b90c169c8359cf07c5b5ed3756f7d1976a30d1107a3102d4241e581dff1b6c57",
+    "sdk/tests/communication-live-consumer.mjs": "4747086fa20a590109e2e048dcfbe4588e8aaa887bea4aceba90886c7beea45e",
+    "sdk/tests/native-link-live-consumer.mjs": "86d66e64a6e1596d3ee91d9727fe871a0135836e48750a9e481d6ea0c41be6e3"
+  },
+  "evidence": [
+    {
+      "id": "broad80",
+      "class": "actual_pg_service_and_asgi_mixed",
+      "raw_log": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-regression.log",
+      "source_manifest": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-test-source-manifest.json",
+      "result": {
+        "passed": 1790,
+        "failed": 3,
+        "skipped": 155
+      },
+      "freshness": "stale_source_changed",
+      "limits": "Whole run was not green. Headless observer, post-commit effect response and historical receiver fixture failed; isolated corrections have separate lineage.",
+      "changed_source_file_count": 15,
+      "changed_relevant_owner_examples": [
+        "runtime/communication_client_events.py",
+        "runtime/communication_client_oauth.py",
+        "runtime/communication_client_service.py",
+        "runtime/communication_http.py",
+        "runtime/project_http.py",
+        "runtime/receiver_recovery_operations.py"
+      ]
+    },
+    {
+      "id": "oauth4",
+      "class": "mounted_oauth_asgi_actual_pg",
+      "raw_log": ".tmp/client-oauth-child-20261106c.log",
+      "result": {
+        "passed": 4
+      },
+      "freshness": "historical_pass_no_dedicated_exact_current_source_binding",
+      "limits": "Synthetic issuer; no public TLS/real consent/Host/model qualification."
+    },
+    {
+      "id": "views7",
+      "class": "actual_pg_service_plus_one_mounted_oauth_asgi_episode",
+      "raw_log": ".tmp/client-views-final-20261106.log",
+      "result": {
+        "passed": 7
+      },
+      "freshness": "historical_pass_not_current_http_source"
+    },
+    {
+      "id": "queries6",
+      "class": "mounted_oauth_asgi_actual_pg",
+      "raw_log": ".tmp/client-http-queries-retry-20261106.log",
+      "result": {
+        "passed": 6
+      },
+      "freshness": "historical_pass_not_current_http_source"
+    },
+    {
+      "id": "receivers53",
+      "class": "actual_pg_storage_and_receiver_service",
+      "raw_log": ".tmp/receiver-freshness-fences-20261106.log",
+      "result": {
+        "passed": 53
+      },
+      "freshness": "historical_pass_not_current_http_source",
+      "limits": "Controlled receiver observations; no installed-host or model qualification."
+    },
+    {
+      "id": "sdk_tcp7",
+      "class": "production_sdk_real_fetch_tcp_oauth_actual_pg",
+      "raw_log": ".tmp/headless-production-sdk-attachments-pg-20261106.log",
+      "source_manifest": ".tmp/headless-production-sdk-attachments-pg-20261106-source-before.json",
+      "source_after": ".tmp/headless-production-sdk-attachments-pg-20261106-source-after.json",
+      "episode_json": ".tmp/communication-headless-attachments-live-20261106.json",
+      "result": {
+        "passed": 7,
+        "actual_tcp_episodes": 1,
+        "pure_observer_cases": 6
+      },
+      "freshness": "stale_source_changed",
+      "limits": "Synthetic issuer, controlled Native boundary, P2 attachment/personal-state dependencies; not a P1-only or installed-host qualification.",
+      "changed_source_file_count": 10,
+      "changed_relevant_owner_examples": [
+        "runtime/communication_client_events.py",
+        "runtime/communication_client_native_links.py",
+        "runtime/communication_client_service.py",
+        "runtime/communication_http.py",
+        "runtime/communication_native_link_storage.py",
+        "runtime/project_http.py",
+        "runtime/receiver_recovery_operations.py",
+        "sdk/communication-client.ts"
+      ]
+    },
+    {
+      "id": "native_facade42",
+      "class": "actual_pg_core_facade_with_real_localnode_adapter_controlled_readback",
+      "raw_log": ".tmp/native-link-facade-pg-20261106c.log",
+      "source_manifest": ".tmp/native-link-facade-source-20261106c.json",
+      "result": {
+        "passed": 42,
+        "failed": 2
+      },
+      "freshness": "stale_source_changed",
+      "limits": "Two new reassignment tests stopped at an invalid fixture bind epoch; old42 passed. No HTTP transport, OAuth or installed-host qualification.",
+      "changed_source_file_count": 7,
+      "changed_relevant_owner_examples": [
+        "runtime/communication_client_native_links.py",
+        "runtime/communication_client_service.py",
+        "runtime/communication_http.py",
+        "runtime/project_http.py",
+        "runtime/receiver_recovery_operations.py"
+      ]
+    },
+    {
+      "id": "native_replay2",
+      "class": "actual_pg_core_facade_real_delivery_bind_reassignment",
+      "raw_log": ".tmp/native-link-replay-pg-20261106d.log",
+      "source_manifest": ".tmp/native-link-replay-source-20261106d.json",
+      "source_after": ".tmp/native-link-replay-source-check-20261106d.json",
+      "result": {
+        "passed": 2
+      },
+      "freshness": "stale_source_changed",
+      "limits": "Fixture-only bind epoch corrected; production matched preceding42-pass run. Original outcomes survived real Scope/Slot/epoch reassignment without Host reads. Latest OAuth scope guard was added afterward.",
+      "changed_source_file_count": 6,
+      "changed_relevant_owner_examples": [
+        "runtime/communication_client_native_links.py",
+        "runtime/communication_client_service.py",
+        "runtime/communication_http.py",
+        "runtime/project_http.py",
+        "runtime/receiver_recovery_operations.py"
+      ]
+    },
+    {
+      "id": "native_http11",
+      "class": "planned_mounted_oauth_asgi_and_production_sdk_tcp_actual_pg",
+      "source_manifest": ".tmp/native-link-live-http-source-20261106a.json",
+      "source_after": ".tmp/native-link-live-http-source-check-20261106a-blocked.json",
+      "tests": "runtime_tests/test_communication_native_link_live_http.py",
+      "consumer": "sdk/tests/native-link-live-consumer.mjs",
+      "result": {
+        "collected": 11,
+        "executed": 0
+      },
+      "freshness": "unexecuted_environment_blocked",
+      "raw_log": null,
+      "junit": null,
+      "episode_json": null,
+      "limits": "Two escalated CreateProcess approval reviews exceeded deadline; permitted retry exhausted. Default sandbox then reported isolated_test_environment_unavailable before pytest. 834/834 captured files unchanged. Do not count collection/syntax as acceptance.",
+      "changed_source_file_count": 4,
+      "changed_relevant_owner_examples": [
+        "runtime/communication_client_service.py",
+        "runtime/communication_http.py",
+        "runtime/receiver_recovery_operations.py"
+      ]
+    },
+    {
+      "id": "sdk_mock124",
+      "class": "pure_node_injected_http_response_contract",
+      "raw_log": ".tmp/sdk-native-links-integrated-20261106.log",
+      "result": {
+        "passed": 124
+      },
+      "freshness": "historical_pure_contract_only",
+      "limits": "Validates SDK request/response/context contracts using injected responses; does not qualify actual mounted service or recovery endpoint."
+    },
+    {
+      "id": "recovery_new_pure_parent_report",
+      "class": "pure_facade_and_mounted_handler_stubs",
+      "raw_log": null,
+      "result": {
+        "passed_reported_by_root": 59
+      },
+      "freshness": "parent_reported_no_exact_raw_source_binding_in_this_assessment",
+      "limits": "Root reported current scope/recovery/identity pure checks; no actual OAuth+PG action chain. Raw71-pass older http-recovery-unit-final.log is not silently substituted for this59-case report."
+    },
+    {
+      "id": "sdk_recovery18",
+      "class": "pure_node_injected_http_response_contract",
+      "raw_log": ".tmp/sdk-recovery-focused-20261106b.log",
+      "result": {
+        "passed": 18
+      },
+      "freshness": "current_wrapper_bytes_measured",
+      "source_sha256": {
+        "sdk/communication-client.ts": "1121bfd2ad9204eb6e4a79b307d145af9656b1f6dd433068a60bc1b076c8b87a",
+        "sdk/tests/recovery.test.mjs": "b2e61664be4ae3892d3a4fefadbd9c6c5ccd732177df7e74a885e6345c5a1e23"
+      },
+      "limits": "No actual server/DB/Host. Exactreceiver/epoch/kind, body/key capture,403none, committed operation/error and no-retry cases."
+    },
+    {
+      "id": "sdk_all169_default",
+      "class": "mixed_pure_node_and_owned_loopback_protocol",
+      "raw_log": ".tmp/sdk-recovery-all-20261106.log",
+      "result": {
+        "passed": 166,
+        "failed": 3
+      },
+      "freshness": "earlier_C17_28case_snapshot",
+      "limits": "All3 failures were owned real-fetch TCP cases in default sandbox. Independent localhost control with proxy disabled reported EACCES. Not a full green SDK run; final integrated run owned by handoff_review."
+    },
+    {
+      "id": "sdk_strict_tsc",
+      "class": "strict_typescript_static",
+      "raw_log": ".tmp/sdk-recovery-typescript-20261106.log",
+      "result": {
+        "exit_code": 0
+      },
+      "freshness": "static_only",
+      "limits": "Offline TypeScript5.9.3 strict noEmit over all SDK.ts; no transport/authorization qualification."
+    },
+    {
+      "id": "native_http11_20261107b",
+      "class": "mounted_oauth_asgi_actual_pg_and_production_sdk_real_tcp",
+      "raw_log": ".tmp/native-link-live-http-pg-20261107b.log",
+      "junit": ".tmp/native-link-live-http-20261107b.junit.xml",
+      "result_json": ".tmp/native-link-live-http-result-20261107b.json",
+      "source_manifest": ".tmp/native-link-live-http-source-20261107b.json",
+      "source_after": ".tmp/native-link-live-http-source-check-20261107b.json",
+      "episode_json": ".tmp/native-link-live-sdk-evidence-20261107b.json",
+      "result": {
+        "executed": 11,
+        "passed": 11,
+        "failed": 0,
+        "seconds": 46.53
+      },
+      "freshness": "measured_selected_frozen_scope_unchanged_856_of856",
+      "scope": "855 coordinator-selected shared paths plus helper; new unmounted lifecycle/domain/capacity work and new tests excluded; no whole-tree claim",
+      "limits": "E2 local protocol only. Synthetic issuer/controlled existing Native readback; no installedHost/model/public ingress qualification. Full22-operation P1-only candidate not run."
+    },
+    {
+      "id": "p1_only22_20261107d",
+      "class": "E2_local_actual_productionSDK_TCP_OAuth_PG_P1_only_episode",
+      "raw_log": ".tmp/communication-p1-live-pg-20261107d.log",
+      "junit": ".tmp/communication-p1-live-20261107d.junit.xml",
+      "result_json": ".tmp/communication-p1-live-result-20261107d.json",
+      "source_manifest": ".tmp/communication-p1-live-source-20261107d.json",
+      "source_after": ".tmp/communication-p1-live-source-check-20261107d.json",
+      "episode_json": ".tmp/communication-p1-live-evidence-20261107d.json",
+      "result": {
+        "passed": 1,
+        "seconds": 20.11,
+        "p1_operation_calls_observed": 22,
+        "p2_calls": 0,
+        "native_input_calls": 0
+      },
+      "freshness": "exact_selected855_shared_paths_plus_helper856_of856_unchanged",
+      "limits": "One actual P1 happy-flow episode; not every endpoint fault combination, not new unmounted lifecycle work, not whole-tree or installedHost/model/public-ingress qualification. Prior c failed WaitResponse mapping before Runtime fix remains separately logged."
+    },
+    {
+      "id": "p1_paging63_20261107e",
+      "class": "actual_pg_four_affected_service_paging_families",
+      "raw_log": ".tmp/p1-paging-pg-20261107e.log",
+      "junit": ".tmp/p1-paging-20261107e.junit.xml",
+      "result_json": ".tmp/p1-paging-result-20261107e.json",
+      "source_manifest": ".tmp/p1-paging-source-20261107e.json",
+      "source_after": ".tmp/p1-paging-source-check-20261107e.json",
+      "result": {
+        "passed": 63,
+        "seconds": 126.08,
+        "by_family": {
+          "service": 14,
+          "views": 7,
+          "receivers": 20,
+          "notices": 22
+        }
+      },
+      "freshness": "exact_selected855_shared_paths_plus_helper856_of856_unchanged",
+      "limits": "Affected regression scope only; controlled provider observations, no installedHost/model/public ingress qualification. Separate P1-only22 episode retains own d evidence."
+    }
+  ],
+  "operations": [
+    {
+      "operation_id": "getMeta",
+      "method": "GET",
+      "path": "/meta",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "meta",
+        "line": 368
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_oauth.py",
+        "symbol": "create_oauth_communication_app",
+        "line": 51
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_oauth.py::test_enabled_oauth_client_serves_actual_dtos_and_large_send_alongside_mcp",
+        "runtime_tests/test_communication_http_queries.py::test_meta_advertises_real_query_routes_and_unbound_or_wrong_scope_tokens_never_inherit_context"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "oauth4",
+        "sdk_tcp7",
+        "native_http11_20261107b",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": true,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "native_link_tcp_episode_status": "executed_pass20261107b",
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "getProfile",
+      "method": "GET",
+      "path": "/profile",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "profile",
+        "line": 383
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_service.py",
+        "symbol": "profile",
+        "line": 59
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_oauth.py::test_enabled_oauth_client_serves_actual_dtos_and_large_send_alongside_mcp",
+        "runtime_tests/test_communication_client_service.py::test_global_profile_preserves_actual_client_null_slot_and_bound_agent_identity"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "oauth4",
+        "sdk_tcp7",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "listProjects",
+      "method": "GET",
+      "path": "/projects",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "projects",
+        "line": 389
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_service.py",
+        "symbol": "projects",
+        "line": 81
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_oauth.py::test_enabled_oauth_client_serves_actual_dtos_and_large_send_alongside_mcp",
+        "runtime_tests/test_communication_client_service.py::test_shared_engineer_default_profile_denies_projects_and_explicit_profile_tracks_narrowed_grant"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "oauth4",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "listRoutes",
+      "method": "GET",
+      "path": "/projects/{project_id}/routes",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "routes",
+        "line": 394
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_service.py",
+        "symbol": "routes",
+        "line": 109
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_oauth.py::test_enabled_oauth_client_serves_actual_dtos_and_large_send_alongside_mcp",
+        "runtime_tests/test_communication_client_service.py::test_projects_routes_and_contacts_are_target_dtos_from_owning_metadata"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "oauth4",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "listContacts",
+      "method": "GET",
+      "path": "/projects/{project_id}/contacts",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "contacts",
+        "line": 399
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_service.py",
+        "symbol": "contacts",
+        "line": 118
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_oauth.py::test_enabled_oauth_client_serves_actual_dtos_and_large_send_alongside_mcp",
+        "runtime_tests/test_communication_client_service.py::test_projects_routes_and_contacts_are_target_dtos_from_owning_metadata"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "oauth4",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "listConversations",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "conversations",
+        "line": 483
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_views.py",
+        "symbol": "conversations",
+        "line": 39
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_views.py::test_conversation_snapshot_orders_recent_activity_excludes_late_arrivals_and_binds_actor_filters",
+        "runtime_tests/test_communication_client_views.py::test_real_oauth_http_personal_routes_enforce_quoted_versions_and_independent_200_409_writes"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "views7",
+        "p1_only22_20261107d",
+        "p1_paging63_20261107e"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "paging_fix_status": "fixed_verified_affected_pg63",
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "getConversation",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/{conversation_id}",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "conversation",
+        "line": 501
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_views.py",
+        "symbol": "conversation",
+        "line": 187
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_views.py::test_self_foreign_project_and_known_foreign_pair_refs_do_not_grant_membership"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "views7",
+        "sdk_tcp7",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "listMessages",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "messages",
+        "line": 405
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_service.py",
+        "symbol": "messages",
+        "line": 213
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_oauth.py::test_enabled_oauth_client_serves_actual_dtos_and_large_send_alongside_mcp",
+        "runtime_tests/test_communication_client_service.py::test_message_snapshot_cursor_excludes_late_arrivals_and_is_actor_filter_bound"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "oauth4",
+        "p1_only22_20261107d",
+        "p1_paging63_20261107e"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "paging_fix_status": "fixed_verified_affected_pg63",
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "sendMessage",
+      "method": "POST",
+      "path": "/projects/{project_id}/messages",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "send",
+        "line": 570
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_service.py",
+        "symbol": "send",
+        "line": 311
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_oauth.py::test_enabled_oauth_client_serves_actual_dtos_and_large_send_alongside_mcp",
+        "runtime_tests/test_communication_client_service.py::test_client_send_defaults_and_duplicate_preserve_original_message_operation"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "oauth4",
+        "sdk_tcp7",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "readMessage",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages/{message_handle}",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "read_message",
+        "line": 548
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_service.py",
+        "symbol": "read_message",
+        "line": 188
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_oauth.py::test_enabled_oauth_client_serves_actual_dtos_and_large_send_alongside_mcp",
+        "runtime_tests/test_communication_client_service.py::test_original_and_embedded_reply_utf8_metadata_have_independent_continuations"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "oauth4",
+        "sdk_tcp7",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "getDelivery",
+      "method": "GET",
+      "path": "/projects/{project_id}/messages/{message_handle}/delivery",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "delivery",
+        "line": 542
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_service.py",
+        "symbol": "delivery",
+        "line": 273
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_oauth.py::test_enabled_oauth_client_serves_actual_dtos_and_large_send_alongside_mcp",
+        "runtime_tests/test_communication_client_queries.py::test_pg_delivery_facts_do_not_turn_native_ack_or_reads_into_peer_reply_or_consumption"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "oauth4",
+        "sdk_tcp7",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "waitForMessages",
+      "method": "POST",
+      "path": "/projects/{project_id}/waits",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "wait",
+        "line": 557
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_service.py",
+        "symbol": "wait",
+        "line": 303
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_queries.py::test_pg_wait_uses_explicit_reply_and_retains_continuations_without_resending",
+        "runtime_tests/test_communication_http_auth.py::test_wait_is_only_one_observation_and_operation_read_is_project_scoped"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "getOperation",
+      "method": "GET",
+      "path": "/projects/{project_id}/operations/{operation_id}",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "operation",
+        "line": 564
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_service.py",
+        "symbol": "operation",
+        "line": 341
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_oauth.py::test_enabled_oauth_client_serves_actual_dtos_and_large_send_alongside_mcp",
+        "runtime_tests/test_communication_client_service.py::test_operation_versions_and_timestamps_come_from_owning_delivery_projection"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "oauth4",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "listReceivers",
+      "method": "GET",
+      "path": "/projects/{project_id}/receivers",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "receivers",
+        "line": 428
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_receivers.py",
+        "symbol": "receivers",
+        "line": 79
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_http_queries.py::test_http_receivers_with_evidence_flag_off_preserve_unknown_without_any_provider_or_lifecycle_call",
+        "runtime_tests/test_communication_client_receivers.py::test_provider_io_is_page_bounded_and_cursors_are_actor_and_binding_bound"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "queries6",
+        "receivers53",
+        "p1_only22_20261107d",
+        "p1_paging63_20261107e"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "paging_fix_status": "fixed_verified_affected_pg63",
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "getReceiver",
+      "method": "GET",
+      "path": "/projects/{project_id}/receivers/{receiver_id}",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "receiver",
+        "line": 446
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_receivers.py",
+        "symbol": "receiver",
+        "line": 146
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_http_queries.py::test_http_receiver_detail_preserves_legal_long_opaque_source_reference_including_encoded_slash",
+        "runtime_tests/test_communication_client_receivers.py::test_receiver_metadata_does_not_grant_access_to_private_message_operations"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "queries6",
+        "receivers53",
+        "sdk_tcp7",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "recoverReceiver",
+      "method": "POST",
+      "path": "/projects/{project_id}/receivers/{receiver_id}/actions",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "recover_receiver",
+        "line": 433
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_recovery.py",
+        "symbol": "recover_receiver",
+        "line": 9
+      },
+      "implementation_observation": "new_HTTP_facade_and_SDK_wrapper_implemented_pure_checks_only",
+      "specific_tests": [
+        "runtime_tests/test_receiver_recovery_operations.py::test_submit_commits_separate_recovery_operation_before_provider_inspection",
+        "runtime_tests/test_receiver_recovery_operations.py::test_idempotent_replay_precedes_receiving_revision_cas_but_not_authorization",
+        "runtime_tests/test_communication_client_recovery.py::test_recovery_reuses_the_existing_command_before_advancing_its_exact_operation",
+        "runtime_tests/test_communication_client_recovery.py::test_mounted_action_accepts_exact_body_and_idempotency_key_and_returns_202"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "recovery_new_pure_parent_report",
+        "sdk_recovery18",
+        "sdk_strict_tsc",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "owning_sdk": {
+        "file": "sdk/communication-client.ts",
+        "symbol": "HttpCommunicationClient.recoverReceiver"
+      },
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "getSnapshot",
+      "method": "GET",
+      "path": "/projects/{project_id}/snapshot",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "snapshot",
+        "line": 421
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_snapshot.py",
+        "symbol": "snapshot",
+        "line": 80
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_snapshot.py::test_real_rr_cut_keeps_source_state_and_event_boundary_from_one_view",
+        "runtime_tests/test_communication_client_snapshot.py::test_http_snapshot_schema_frozen_paging_and_expiry_410"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "sdk_tcp7",
+        "native_http11_20261107b",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": true,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "native_link_tcp_episode_status": "executed_pass20261107b",
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "subscribeEvents",
+      "method": "GET",
+      "path": "/projects/{project_id}/events",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_event_http.py",
+        "symbol": "register_event_routes",
+        "line": 72
+      },
+      "owning_service": {
+        "file": "runtime/communication_event_http.py",
+        "symbol": "register_event_routes",
+        "line": 72
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_event_http.py::test_actual_tcp_snapshot_anchor_replay_last_event_id_and_kind_filter_are_readonly",
+        "runtime_tests/test_communication_event_http.py::test_queued_frames_are_cleared_on_current_authority_loss_before_next_emit"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "sdk_tcp7",
+        "native_http11_20261107b",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": true,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "native_link_tcp_episode_status": "executed_pass20261107b",
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "listNotices",
+      "method": "GET",
+      "path": "/projects/{project_id}/notices",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "notices",
+        "line": 452
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_notices.py",
+        "symbol": "notices",
+        "line": 166
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_http_queries.py::test_http_notice_mailbox_recipient_acl_seen_hash_and_original_replay_after_source_changes",
+        "runtime_tests/test_communication_http_queries.py::test_http_legacy_notice_preserves_unknown_creation_and_missing_own_delivery_after_real_adoption"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "queries6",
+        "sdk_tcp7",
+        "p1_only22_20261107d",
+        "p1_paging63_20261107e"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "paging_fix_status": "fixed_verified_affected_pg63",
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "listNativeLinks",
+      "method": "GET",
+      "path": "/projects/{project_id}/native-links",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "native_links",
+        "line": 466
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_native_links.py",
+        "symbol": "native_links",
+        "line": 84
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_native_links.py::test_compact_pagination_checks_current_cut_filter_authorization_and_stale_cursor",
+        "runtime_tests/test_communication_native_link_live_http.py::test_production_sdk_real_tcp_oauth_metadata_paging_events_and_original_replay"
+      ],
+      "evidence_ids": [
+        "native_facade42",
+        "native_replay2",
+        "native_http11",
+        "sdk_mock124",
+        "native_http11_20261107b",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": true,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "native_link_tcp_episode_status": "executed_pass20261107b",
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "bindNativeLink",
+      "method": "PUT",
+      "path": "/projects/{project_id}/native-links/{link_id}",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "native_link_write",
+        "line": 472
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_native_links.py",
+        "symbol": "write_native_link",
+        "line": 246
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_native_links.py::test_original_scope_and_address_authorize_replay_after_real_endpoint_id_reassignment",
+        "runtime_tests/test_communication_native_link_live_http.py::test_current_oauth_write_permission_is_required_even_when_core_grant_retains_it",
+        "runtime_tests/test_communication_native_link_live_http.py::test_production_sdk_real_tcp_oauth_metadata_paging_events_and_original_replay"
+      ],
+      "evidence_ids": [
+        "native_facade42",
+        "native_replay2",
+        "native_http11",
+        "sdk_mock124",
+        "native_http11_20261107b",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": true,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "native_link_tcp_episode_status": "executed_pass20261107b",
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    },
+    {
+      "operation_id": "resolveConversation",
+      "method": "GET",
+      "path": "/projects/{project_id}/conversations/resolve",
+      "tier": "P1_required",
+      "owning_route": {
+        "file": "runtime/communication_http.py",
+        "symbol": "resolve_conversation",
+        "line": 493
+      },
+      "owning_service": {
+        "file": "runtime/communication_client_views.py",
+        "symbol": "resolve_conversation",
+        "line": 174
+      },
+      "implementation_observation": "route_and_service_control_flow_inspected_not_acceptance",
+      "specific_tests": [
+        "runtime_tests/test_communication_client_views.py::test_empty_resolve_uses_real_contact_without_materializing_domain_conversation_or_native",
+        "runtime_tests/test_communication_client_views.py::test_real_oauth_http_personal_routes_enforce_quoted_versions_and_independent_200_409_writes"
+      ],
+      "evidence_ids": [
+        "broad80",
+        "views7",
+        "sdk_tcp7",
+        "p1_only22_20261107d"
+      ],
+      "actual_evidence_status": "actual_P1_only_SDK_TCP_PG_pass_selected_current_source_scope",
+      "executed_headless_tcp_call": true,
+      "planned_native_tcp_call_unexecuted": false,
+      "remaining_coverage": [
+        "Per-endpoint fault/role permutations retain their separately scoped evidence; this episode alone does not certify every branch or installed Host/model/public ingress."
+      ],
+      "current_local_E2_p1_only_episode": "passed20261107d"
+    }
+  ],
+  "findings": [
+    {
+      "id": "P1_RECOVERY_BOUNDARY",
+      "priority": "P1",
+      "kind": "product_gap_being_closed",
+      "detail": "Initial missing route/facade/SDK was closed in source during this assessment: Root added Runtime boundary; recoverReceiver SDK wrapper has18pure passing tests. No actual OAuth+PG recovery chain has executed against these new bytes.",
+      "next": "Retain historical P2 consumer and earlier failure lineage; keep physical Host/model/public ingress qualification separate.",
+      "status": "resolved_local_E2_P1_only22_episode",
+      "current_evidence": "p1_only22_20261107d"
+    },
+    {
+      "id": "P1_EPISODE_COUPLED_TO_P2",
+      "priority": "P1",
+      "kind": "verification_gap",
+      "detail": "Executed production SDK consumer asserts attachments available, uploads/downloads, writes read-state/preferences/drafts/seen, and drives reconnect using draft events. This cannot qualify P1 when optional P2 is disabled.",
+      "next": "Retain historical P2 consumer and earlier failure lineage; keep physical Host/model/public ingress qualification separate.",
+      "status": "resolved_local_E2_P1_only22_episode",
+      "current_evidence": "p1_only22_20261107d"
+    },
+    {
+      "id": "P1_TCP_SURFACE_COVERAGE",
+      "priority": "P1",
+      "kind": "verification_gap",
+      "detail": "Existing executed headless consumer calls 11 of22 P1 operations. Snapshot embedded rows do not count as calls to page/list endpoints. The new NativeLink-only consumer is unexecuted and does not close all other missing operations.",
+      "next": "Retain historical P2 consumer and earlier failure lineage; keep physical Host/model/public ingress qualification separate.",
+      "status": "resolved_local_E2_P1_only22_episode",
+      "current_evidence": "p1_only22_20261107d"
+    },
+    {
+      "id": "P1_NATIVE_LINK_HTTP_UNEXECUTED",
+      "priority": "P1",
+      "kind": "closed_local_protocol_verification_gap",
+      "detail": "User-approved same11 metadata cases now pass against frozen selected855paths plus helper856/856 unchanged. Initial20261107a7pass4fail retained; typed missing-scope403 fix and consumer-only ASCII request-key correction produced11/11 b pass.",
+      "next": "Use the separate full22-operation P1-only candidate for remaining P1 episode coverage; do not upgrade localE2 to installedHost/model/public-ingress qualification.",
+      "status": "resolved_local_E2_11case_pass"
+    },
+    {
+      "id": "P1_SOURCE_FRESHNESS",
+      "priority": "P1",
+      "kind": "verification_gap",
+      "detail": "Common HTTP/auth/facade and SDK source differs from measured raw-run manifests. Existing service evidence remains useful historical evidence but does not qualify every current endpoint byte.",
+      "next": "After P1 changes settle, capture source, execute focused current P1 acceptance and compare hashes; publish per-class limits, not one inferred complete flag."
+    },
+    {
+      "id": "P1_PAGING_SNAPSHOT_ID_CHURN",
+      "priority": "P1",
+      "kind": "closed_affected_pg_paging_regression",
+      "detail": "Common client_snapshot_token fix now has actual-PG regression evidence across messages, conversations, receivers and notices. Exact caller snapshot byte identity and page-cursor-as-snapshot rejection pass, retaining earlier actor/filter/source/freshness/notice assertions.",
+      "owning_code": [
+        "runtime/communication_client_views.py::client_snapshot_token",
+        "runtime/communication_client_service.py::CommunicationClientService.messages",
+        "runtime/communication_client_views.py::ClientConversationViews.conversations",
+        "runtime/communication_client_receivers.py::ReceiverQueryService.receivers",
+        "runtime/communication_client_notices.py::NoticeQueryService.notices"
+      ],
+      "next": "Retain scoped63 regression and separate P1-only22 happy-flow evidence; neither alone implies physical Host/model/public ingress qualification.",
+      "status": "fixed_verified_affected_pg63",
+      "regression_tests": [
+        "runtime_tests/test_communication_client_service.py::test_message_snapshot_cursor_excludes_late_arrivals_and_is_actor_filter_bound",
+        "runtime_tests/test_communication_client_views.py::test_conversation_snapshot_orders_recent_activity_excludes_late_arrivals_and_binds_actor_filters",
+        "runtime_tests/test_communication_client_receivers.py::test_provider_io_is_page_bounded_and_cursors_are_actor_and_binding_bound",
+        "runtime_tests/test_communication_client_notices.py"
+      ],
+      "reported_pure_cases": 32,
+      "assessment_updated_at_utc": "2026-11-06T15:26:25.942700+00:00",
+      "partial_E2_verification": "P1 episode verified real MessagePage page2 with supplied snapshot and materialized snapshot family pages; dedicated live conversation/receiver/notice page regressions remain separately pending.",
+      "current_evidence": "p1_paging63_20261107e"
+    }
+  ],
+  "nonblocking_p2": [
+    "Search/fulltext, communication attachments, personal read-state/preferences/drafts and notice seen writes are preserved existing work, not v1.1 P1 acceptance prerequisites."
+  ],
+  "qualification_limits": "Controlled existing-session Native readback and typed unavailable Host delegates are not installed Orca/real Native process/model qualification. API/DTO declarations and file presence are not completion evidence.",
+  "candidate_p1_only_episode": {
+    "test": "runtime_tests/test_communication_p1_headless_live.py::test_actual_production_sdk_p1_episode_covers22_operations_without_any_p2_calls",
+    "consumer": "sdk/tests/communication-p1-live-consumer.mjs",
+    "status": "executed_pass20261107d",
+    "declared_operation_assertions": 22,
+    "p2_calls_intended": 0,
+    "attachment_flag": false,
+    "evidence_target": "E2_local_protocol_not_installed_host_model_public_ingress",
+    "raw_log": ".tmp/communication-p1-live-pg-20261107d.log",
+    "qualification": "E2_local_protocol_only",
+    "episode_json": ".tmp/communication-p1-live-evidence-20261107d.json",
+    "current_evidence": "p1_only22_20261107d"
+  },
+  "assessment_addendum": {
+    "observed_at_utc": "2026-11-06T15:49:37.436984+00:00",
+    "p1_only22_episode": "passed20261107d_E2_only",
+    "paging_fix_status": "fixed_verified_affected_pg63_20261107e",
+    "paging_evidence": "p1_paging63_20261107e",
+    "selected_source_fingerprints": "856_of856_unchanged",
+    "scope_limit": "Only fixed855 coordinator paths plus helper; new unmounted work excluded. No fullP1 milestone or installedHost/model/publicIngress inference from this63-case run."
+  },
+  "current_source_increment": {
+    "evidence": "source-link-20261107/progress.json",
+    "optional_read_query": "include_native_source",
+    "public_operation_count": 22,
+    "models": 59,
+    "p1_episode_retested_in": "source-link-20261107/p1-scenario-pg-20261107a.json",
+    "source_boundary": "Actual local Core/PG/OAuth/TCP/SDK; Native protocol/readiness doubles, no real Native/Host qualification. Prior hash table remains historical, not overwritten."
+  },
+  "current_exit_audit": "p1-current-20261107/p1-exit-audit.json"
+}

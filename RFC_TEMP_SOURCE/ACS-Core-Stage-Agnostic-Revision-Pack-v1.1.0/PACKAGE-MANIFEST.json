@@ -1,0 +1,259 @@
+{
+  "schema_version": "acs-package-manifest/2",
+  "package_name": "ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0",
+  "version": "1.1.0",
+  "description": "Phase-independent authoritative scope revision for ACS Core cross-Harness development. Source code is not modified by this package.",
+  "reference_baseline": "ACS-Core-Cross-Harness-DevPack-v1.0.0.zip",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 696,
+      "sha256": "d3dd6fe114384eca37028f410cab1300071e0461b934b968a1faf6481d8d756d"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3156,
+      "sha256": "d7735f6bfee1d479e30b2dc40988f681b86aa3a09ea38276d315ae9a6950b293"
+    },
+    {
+      "path": "START_HERE_CODEX.md",
+      "bytes": 6212,
+      "sha256": "e54c3d5181463076bd1024f2266ec17208f52741271543670dd21657d6b4db62"
+    },
+    {
+      "path": "contracts/adapter-wire.schema.json",
+      "bytes": 363,
+      "sha256": "7ee14512f1b7c43a5a70a4f16afd7a367a5540b0c1378de7e9ef957699353aa6"
+    },
+    {
+      "path": "contracts/adapter_protocol.py",
+      "bytes": 4283,
+      "sha256": "379a0ff0e79fbd0c6fc4b5bb2797b359d56a074d69625e8c787aa0c883cf56f6"
+    },
+    {
+      "path": "contracts/api-scope.json",
+      "bytes": 9260,
+      "sha256": "4e49d1a4c0ea4c42c677c4f576ffc79e5d05b0fb446f979dd98c19249eb2f3cc"
+    },
+    {
+      "path": "contracts/capability-registry.json",
+      "bytes": 2288,
+      "sha256": "019166987496b3af29f64ecae4ad635f87032d088d3a550dd56ef25a503cba07"
+    },
+    {
+      "path": "contracts/change-items.json",
+      "bytes": 18981,
+      "sha256": "f918c4a279256ec8bc8aa62270439960029be7caa72d84608ba400fde9210361"
+    },
+    {
+      "path": "contracts/delivery-transitions.json",
+      "bytes": 2942,
+      "sha256": "6eb716fb3f1eef6db929bb083faf35dc3ab65d32f51d4f0fa848f32a395e782e"
+    },
+    {
+      "path": "contracts/error-codes.json",
+      "bytes": 3106,
+      "sha256": "500063e8df375f6892f54f07c614674c189bef681c85faac9fdc12d3b4225d62"
+    },
+    {
+      "path": "contracts/events-p1-registry.json",
+      "bytes": 1715,
+      "sha256": "91ab2ceb131165a0cc1eb22078bd056f5af6472a8f3d1bbf3baf184257e30da1"
+    },
+    {
+      "path": "contracts/legacy-mcp-compatibility.json",
+      "bytes": 975,
+      "sha256": "9c092a2a156ff6d86aa90a34741204b835097e45f682eb25f429ca58c9d34e8a"
+    },
+    {
+      "path": "contracts/models-p1.schema.json",
+      "bytes": 65209,
+      "sha256": "2625089ee55ea434ba6ea758843569b12e8b49e6b8ee84f65f5817b860e0f799"
+    },
+    {
+      "path": "contracts/openapi-p1.yaml",
+      "bytes": 99277,
+      "sha256": "fbfd72dcf7e2a331ed34175883ed522bed6ccb71a3117d0a007fb1abb8a21841"
+    },
+    {
+      "path": "contracts/orca_integration.ts",
+      "bytes": 7363,
+      "sha256": "707eb9e1b5c93b77094204d6d0534b566bbc7b3ea9b917ccefec183c6b5de988"
+    },
+    {
+      "path": "contracts/requirements-scope.json",
+      "bytes": 17745,
+      "sha256": "2fc5c65169ea528f1e564e5de6d40f872768760ed5feb5b009a37e5fbab34865"
+    },
+    {
+      "path": "contracts/scenario-scope.json",
+      "bytes": 42248,
+      "sha256": "1109a7bfcff20dead75193900481529f0bbe5274f692e54f445a72a6de5df280"
+    },
+    {
+      "path": "contracts/scope.json",
+      "bytes": 1622,
+      "sha256": "67c5a893fec8c1fadfc1109700f468d1c2e927084181dece9e1dd83f0bbb7bb6"
+    },
+    {
+      "path": "contracts/ui-scope.json",
+      "bytes": 8799,
+      "sha256": "28a2fb93ce2f69f539b3b8175b4dac0b2120792a023bf27408dd2a6311d636fb"
+    },
+    {
+      "path": "docs/00_GOVERNANCE.md",
+      "bytes": 3574,
+      "sha256": "95887e3ad6f98884b172c626e086d9a19f63465324fc185224868e5787ec20cb"
+    },
+    {
+      "path": "docs/01_ANY_STAGE_EXECUTION.md",
+      "bytes": 3902,
+      "sha256": "a11621d6c58ca9a3abea8745966d5d5f204517eba56b3c3f92fcad11156c5d7e"
+    },
+    {
+      "path": "docs/02_CHANGE_SURFACES.md",
+      "bytes": 3545,
+      "sha256": "c8fc5c1fccee819aab893f871ab51245f2aca383947d999dc2c258a573ce9cbf"
+    },
+    {
+      "path": "docs/03_P0_HARNESS_RUNTIME.md",
+      "bytes": 4679,
+      "sha256": "7dcf2254ad870d15cd29efa11a44cfb16d2c0d97bda8db8e58bd603ea1d9e358"
+    },
+    {
+      "path": "docs/04_P1_CLIENT_SURFACES.md",
+      "bytes": 3826,
+      "sha256": "59456312b28778d293bc7ac61cbab303c711dc95f7c300b55b38798e1f5685d6"
+    },
+    {
+      "path": "docs/05_P2_DEFERRED.md",
+      "bytes": 2649,
+      "sha256": "91bf963071bdd83d54bf638b3548a97dccfd81bd3f831ee1e7a582bc695f2c8d"
+    },
+    {
+      "path": "docs/06_CORRECTNESS_AND_SECURITY.md",
+      "bytes": 4185,
+      "sha256": "9b96240c06921d8ba31aaeb904fca5510e80baa82ba167e040583b6d45a1367e"
+    },
+    {
+      "path": "docs/07_ORCA_ENGINEERING_REFERENCES.md",
+      "bytes": 3309,
+      "sha256": "e57801fca04d38c43b7247489a1b4b7514b667b37f0517e2b2eb5a94935d5458"
+    },
+    {
+      "path": "docs/08_MIGRATION_AND_COMPATIBILITY.md",
+      "bytes": 2123,
+      "sha256": "bbc9518526e06aeaa2497d015137e1847ff62432a5985963913ceeb39aa0e3d7"
+    },
+    {
+      "path": "docs/09_VERIFICATION_AND_QUALIFICATION.md",
+      "bytes": 3249,
+      "sha256": "c462cecfb1c5a56c2ddd5552412440b211690696f63878ae22749841def45cc6"
+    },
+    {
+      "path": "docs/10_OLD_TO_NEW_MAPPING.md",
+      "bytes": 2236,
+      "sha256": "54a14a08b30fc0ec4899396d3b2d41c5502ca857eedeb510faaed1352ce18f59"
+    },
+    {
+      "path": "docs/11_IMPLEMENTATION_MATRIX.md",
+      "bytes": 5101,
+      "sha256": "86f151ed7a75ef23adb5dbaf7083ccf02bb7367e822e9c7ba36897c83be06a83"
+    },
+    {
+      "path": "docs/12_API_AND_UI_MATRIX.md",
+      "bytes": 5753,
+      "sha256": "b2b6bf01fd7a7fb661be2ddee9f2b187e270ca44f60de774e82d473685a3c70a"
+    },
+    {
+      "path": "handoff/ADOPTION_STATE_TEMPLATE.json",
+      "bytes": 4544,
+      "sha256": "a19b728faf14189071c2c28ec32aaeb3fbc0ebf25ad27b82c0d513c158e7ba1c"
+    },
+    {
+      "path": "handoff/DECISION_LOG_TEMPLATE.md",
+      "bytes": 567,
+      "sha256": "8fc0d791246621cf933d859a3dad9607b1456ecd7a20f52d2d39fa288b7d186c"
+    },
+    {
+      "path": "handoff/EVIDENCE_RULES.md",
+      "bytes": 889,
+      "sha256": "cfd46fe217114cf4878f9e6c36df2bd716ef41f277fb373e8d57441430fca956"
+    },
+    {
+      "path": "handoff/FINAL_REPORT_TEMPLATE.md",
+      "bytes": 2980,
+      "sha256": "c66ce8850e913c6e4d064c85cbc22a3580d77c3201e7d8fe73d44ffaf3f031cc"
+    },
+    {
+      "path": "handoff/QUALIFICATION_TEMPLATE.json",
+      "bytes": 506,
+      "sha256": "bf25bcf8bcc46891c952aba593a493b36900016a6f0dc0a63f5959bd94823128"
+    },
+    {
+      "path": "handoff/SCOPE_DELTA_REPORT_TEMPLATE.md",
+      "bytes": 541,
+      "sha256": "3ac6c35018be81b5b5ab0ccfb3880686a7ceb5eb1434b651329673e66fcad0fa"
+    },
+    {
+      "path": "quality/VALIDATION_REPORT.md",
+      "bytes": 2094,
+      "sha256": "11df16979bd27390735e06892b6604839b2a6234a227e7aeccb7812afb2b239a"
+    },
+    {
+      "path": "quality/typescript-check.log",
+      "bytes": 31,
+      "sha256": "a7eeae54192481da13318cdc8f6dd0da6b3b83110efd21d2a467ec974828daf4"
+    },
+    {
+      "path": "quality/unittest-output.log",
+      "bytes": 1160,
+      "sha256": "26d486f8863119807bd232e87de0fb17a83966967be8b31354fba656fa00c969"
+    },
+    {
+      "path": "quality/validation-result.json",
+      "bytes": 484,
+      "sha256": "22550b7f1979609c88c5a7ce7ca2f99ebb92672e4f5d8ef4223805bfab23e94f"
+    },
+    {
+      "path": "reference/ACS-Core-Cross-Harness-DevPack-v1.0.0.zip",
+      "bytes": 141183,
+      "sha256": "ecac22fec0cdd0ff8f848110af154eb52387d2b654ee788dff66f115664d59b2"
+    },
+    {
+      "path": "reference/REFERENCE_POLICY.md",
+      "bytes": 1060,
+      "sha256": "2779ca4603b2e9e0b8ce456edbf932d9530ebf7413d687ddbd26415cdd076a75"
+    },
+    {
+      "path": "requirements-validation.txt",
+      "bytes": 13,
+      "sha256": "865bbefc83398c2d53d4d494e8c0ad2302c93e657b78b860a1eba3ac71044309"
+    },
+    {
+      "path": "tests/test_revision_contract.py",
+      "bytes": 1942,
+      "sha256": "9d1f9ea528a7f653b0a5a996ebe4dd176eebc995f8966eb8cd8a0cf0307b673e"
+    },
+    {
+      "path": "tools/capture_state.py",
+      "bytes": 3244,
+      "sha256": "5d3f545c0ad30595d8c88c1c42ad53e9892d00d14ac1153f08c1edb757904927"
+    },
+    {
+      "path": "tools/plan_gaps.py",
+      "bytes": 1506,
+      "sha256": "cdde6a4f5a37689dbf6f4a5d6d5baf058b8b9216774f93e5114ac9530835c4fa"
+    },
+    {
+      "path": "tools/validate_pack.py",
+      "bytes": 4804,
+      "sha256": "aea7465b06a8c0c00c52d1d1a5c9c878ffaf8bac676002d2d4ccf88fa44d2b71"
+    },
+    {
+      "path": "tools/verify_checksums.py",
+      "bytes": 1600,
+      "sha256": "1109adccf2ef41731a6cabcd34663f3f50563ba4c550de0b6fc75427df0a9df2"
+    }
+  ]
+}

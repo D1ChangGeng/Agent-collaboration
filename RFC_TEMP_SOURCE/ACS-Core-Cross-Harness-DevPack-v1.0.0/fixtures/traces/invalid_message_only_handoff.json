@@ -1,0 +1,41 @@
+[
+  {
+    "type": "binding",
+    "receiver": "r1",
+    "epoch": 1
+  },
+  {
+    "type": "message_committed",
+    "message": "message:project-test:0001",
+    "sender": "slot:A",
+    "to": "slot:B",
+    "activation": "message_only"
+  },
+  {
+    "type": "intent",
+    "operation": "op1",
+    "message": "message:project-test:0001",
+    "receiver": "r1",
+    "epoch": 1,
+    "dedup_scope": "scope1"
+  },
+  {
+    "type": "handoff",
+    "operation": "op1",
+    "epoch": 1
+  },
+  {
+    "type": "outcome",
+    "operation": "op1",
+    "state": "unknown"
+  },
+  {
+    "type": "reply",
+    "message": "message:reply",
+    "sender": "slot:B",
+    "to": "slot:A",
+    "reply_to": [
+      "message:project-test:0001"
+    ]
+  }
+]

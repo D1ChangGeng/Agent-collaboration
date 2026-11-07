@@ -1,0 +1,11 @@
+........................................................................ [ 36%]
+............................................sssssss..................... [ 72%]
+......................................................                   [100%]
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-stage-agnostic-20261107-completion\native-fences-components-final.xml -
+=========================== short test summary info ===========================
+SKIPPED [1] runtime_tests\test_native_observer_authority.py:126: isolated PostgreSQL unavailable: ACS_COMMUNICATION_TEST_DSN is missing
+SKIPPED [1] runtime_tests\test_native_observer_authority.py:137: isolated PostgreSQL unavailable: ACS_COMMUNICATION_TEST_DSN is missing
+SKIPPED [1] runtime_tests\test_native_observer_authority.py:148: isolated PostgreSQL unavailable: ACS_COMMUNICATION_TEST_DSN is missing
+SKIPPED [3] runtime_tests\test_native_observer_authority.py:158: isolated PostgreSQL unavailable: ACS_COMMUNICATION_TEST_DSN is missing
+SKIPPED [1] runtime_tests\test_native_observer_authority.py:174: isolated PostgreSQL unavailable: ACS_COMMUNICATION_TEST_DSN is missing
+191 passed, 7 skipped in 78.30s (0:01:18)

@@ -60,7 +60,7 @@ class DomainAuthority:
         self._transaction_connection: psycopg.Connection | None = None
 
     def send_message(self, command: CommandEnvelope, packet: Any, *, endpoint_id: str,
-                     binding_revision: int) -> CommandResult:
+                     binding_revision: int, max_packet_bytes: int = 65536) -> CommandResult:
         from runtime.delivery import DeliveryService
 
         if getattr(packet, "schema_version", None) not in {"acs-message/1", "acs-notice/1"}:
@@ -68,7 +68,7 @@ class DomainAuthority:
             raise DeliveryRejected("historical_delivery_read_only")
 
         return DeliveryService(self, self._delivery_endpoints).send_message(
-            command, packet, endpoint_id=endpoint_id, binding_revision=binding_revision,
+            command, packet, endpoint_id=endpoint_id, binding_revision=binding_revision, max_packet_bytes=max_packet_bytes,
         )
 
     def bind_message_endpoint(self, command: CommandEnvelope, request: Any) -> CommandResult:

@@ -19,3 +19,7 @@ agent-collaboration-setup-v0.1.0.tar.gz
 # Machine-local capability records.
 /agent-collabration/.agents/runtime/*
 # ACHP-NESTED:agent-collabration:END
+
+# Local Git working copies and history-rewrite scratch data.
+/.worktrees/
+/.git-rewrite/

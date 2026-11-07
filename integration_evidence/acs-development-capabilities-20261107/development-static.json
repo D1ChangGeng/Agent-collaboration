@@ -1,0 +1,166 @@
+{
+  "started_at": "2026-11-07T09:54:25.457054+00:00",
+  "checks": [
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "RFC_TEMP_SOURCE/ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0/tools/verify_checksums.py"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "RFC_TEMP_SOURCE/ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0/tools/validate_pack.py"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "tools/runtime/export_client_contracts.py",
+        "--check"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "tools/runtime/export_receiver_contracts.py",
+        "--check"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "tools/runtime/export_sdk_runtime_contracts.py",
+        "--check"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "tools/runtime/export_p1_openapi.py",
+        "--check"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "-m",
+        "ruff",
+        "check",
+        "runtime/codex_driver.py",
+        "runtime/opencode_driver.py",
+        "runtime/native_restore.py",
+        "runtime/native_restore_origin.py",
+        "runtime/receiver_lifecycle.py",
+        "runtime/receiver_lifecycle_contract.py",
+        "runtime/receiver_lifecycle_capacity.py",
+        "runtime/receiver_lifecycle_node.py",
+        "runtime/receiver_lifecycle_issuance.py",
+        "runtime/communication_message_wake.py",
+        "runtime/communication_message_restore.py",
+        "runtime/receiver.py",
+        "runtime/receiver_models.py",
+        "runtime/receiver_delivery.py",
+        "runtime/remote_endpoint.py",
+        "runtime/native_provider_registry.py",
+        "runtime/remote_native_source.py",
+        "runtime/communication_client_native_source.py",
+        "runtime/orca_receiver_backend.py",
+        "runtime_deployment/receiver_lifecycle.py",
+        "runtime_deployment/receiver_authority.py",
+        "runtime_tests/test_receiver_cold_restore.py",
+        "runtime_tests/test_native_cold_restore_transport.py",
+        "runtime_tests/test_native_restore_origin.py",
+        "runtime_tests/test_message_cold_restore_pg.py",
+        "runtime_tests/test_receiver_restore_factory_pg.py",
+        "runtime_tests/test_remote_native_source.py",
+        "runtime_tests/test_remote_native_source_tls.py",
+        "runtime_tests/test_orca_receiver_backend.py",
+        "runtime_tests/test_communication_remote_source_pg.py"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "--",
+        "runtime/codex_driver.py",
+        "runtime/opencode_driver.py",
+        "runtime/native_restore.py",
+        "runtime/native_restore_origin.py",
+        "runtime/receiver_lifecycle.py",
+        "runtime/receiver_lifecycle_contract.py",
+        "runtime/receiver_lifecycle_capacity.py",
+        "runtime/receiver_lifecycle_node.py",
+        "runtime/receiver_lifecycle_issuance.py",
+        "runtime/communication_message_wake.py",
+        "runtime/communication_message_restore.py",
+        "runtime/receiver.py",
+        "runtime/receiver_models.py",
+        "runtime/receiver_delivery.py",
+        "runtime/remote_endpoint.py",
+        "runtime/native_provider_registry.py",
+        "runtime/remote_native_source.py",
+        "runtime/communication_client_native_source.py",
+        "runtime/orca_receiver_backend.py",
+        "runtime_deployment/receiver_lifecycle.py",
+        "runtime_deployment/receiver_authority.py",
+        "runtime_tests/test_receiver_cold_restore.py",
+        "runtime_tests/test_native_cold_restore_transport.py",
+        "runtime_tests/test_native_restore_origin.py",
+        "runtime_tests/test_message_cold_restore_pg.py",
+        "runtime_tests/test_receiver_restore_factory_pg.py",
+        "runtime_tests/test_remote_native_source.py",
+        "runtime_tests/test_remote_native_source_tls.py",
+        "runtime_tests/test_orca_receiver_backend.py",
+        "runtime_tests/test_communication_remote_source_pg.py"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "sdk/tests/*.test.mjs"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "node",
+        ".tmp/tsc-package/compiler/package/bin/tsc",
+        "--noEmit",
+        "--strict",
+        "--target",
+        "es2022",
+        "--module",
+        "esnext",
+        "--moduleResolution",
+        "bundler",
+        "--allowImportingTsExtensions",
+        "--lib",
+        "es2022,dom,dom.iterable",
+        "sdk/client-contracts.ts",
+        "sdk/client-runtime-schema.ts",
+        "sdk/client-validation.ts",
+        "sdk/communication-client.ts",
+        "sdk/communication-http.ts",
+        "sdk/communication-state.ts",
+        "sdk/communication-stream.ts",
+        "sdk/integration-ports.ts",
+        "sdk/orca-receiver-port.ts",
+        "sdk/receiver-evidence.ts"
+      ],
+      "returncode": 0
+    }
+  ],
+  "completed_at": "2026-11-07T09:54:36.082152+00:00"
+}

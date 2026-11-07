@@ -90,6 +90,69 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
             adopt_project_schema(connection)
             from runtime.communication_archive import adopt_legacy_index
             adopt_legacy_index(connection.cursor(), self.context.tenant_id)
+            if getattr(self.service.authority, "_wait_ingress_recovery_enabled", False):
+                from runtime.communication_wait_ingress import adopt_wait_ingress
+
+                adopt_wait_ingress(connection)
+                self.service.authority._wait_ingress_storage_available = True
+            if getattr(self.service.authority, "_notification_frontiers_enabled", False):
+                from runtime.communication_notifications import adopt_notification_frontiers
+
+                adopt_notification_frontiers(connection)
+            if (getattr(self.service.authority, "_communication_client_api_enabled", False)
+                    or getattr(self.service.authority, "_communication_events_enabled", False)):
+                from runtime.communication_client_storage import adopt_client_storage
+
+                adopt_client_storage(connection)
+                from runtime.communication_client_viewer_storage import adopt_viewer_storage
+
+                adopt_viewer_storage(connection)
+                from runtime.communication_client_notice_storage import adopt_notice_storage
+
+                adopt_notice_storage(connection)
+            if getattr(self.service.authority, "_communication_events_enabled", False):
+                from runtime.communication_conversation_storage import adopt_conversation_storage
+                from runtime.communication_notice_projection_storage import (
+                    adopt_notice_projection_storage,
+                )
+                from runtime.communication_receiver_observation_storage import (
+                    adopt_receiver_observation_storage,
+                )
+
+                adopt_conversation_storage(connection)
+                self.service.authority._communication_conversation_storage_available = True
+                adopt_notice_projection_storage(connection)
+                self.service.authority._communication_notice_projection_available = True
+                adopt_receiver_observation_storage(connection)
+                self.service.authority._communication_receiver_observation_available = True
+                from runtime.communication_event_storage import adopt_event_storage
+
+                adopt_event_storage(connection)
+                from runtime.communication_projection_event_storage import (
+                    adopt_projection_event_storage,
+                )
+
+                adopt_projection_event_storage(connection)
+                from runtime.communication_snapshot_storage import adopt_snapshot_storage
+
+                adopt_snapshot_storage(connection)
+            if getattr(self.service.authority, "_communication_attachment_settings", None) is not None:
+                from runtime.communication_attachment_storage import adopt_attachment_storage
+
+                adopt_attachment_storage(connection)
+                self.service.authority._communication_attachment_storage_available = True
+                if connection.execute("SELECT 1 FROM runtime_schema_metadata WHERE schema_name='acs-communication-events'").fetchone():
+                    from runtime.communication_attachment_event_storage import (
+                        adopt_attachment_event_storage,
+                    )
+
+                    adopt_attachment_event_storage(connection)
+                    self.service.authority._communication_attachment_event_storage_available = True
+            if getattr(self.service.authority, "_communication_native_link_settings", None) is not None:
+                from runtime.communication_native_link_storage import adopt_native_link_storage
+
+                adopt_native_link_storage(connection)
+                self.service.authority._communication_native_link_storage_available = True
 
     def admit_project(self, command: CommandEnvelope, *, project_id: str, root_id: str,
                       scope_id: str, agent_slot_id: str | None, name: str,
@@ -465,14 +528,18 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
                     break
         return available
 
-    def execute(self, name: str, args: dict[str, Any], credential: str):
-        self.service.authenticate(credential)
+    def _check_tool_policy(self, name):
+        """The same trusted Profile eligibility for calls and client projections."""
         if name not in self.IMPLEMENTED:
             raise ValueError("tool is unavailable in the authenticated Profile")
         if name == "configure_project" and not self.context.trusted_client and self.profile not in {"root_manager", "operator"}:
             raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
         if self.service.authority.access_mode != "owner" and name not in self.catalog["profiles"][self.profile]:
             raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+
+    def execute(self, name: str, args: dict[str, Any], credential: str):
+        self.service.authenticate(credential)
+        self._check_tool_policy(name)
         if name == "read_resource" and args.get("handle", "").split(":", 1)[0] not in {"project", "route", "artifact", "message", "response", "notification"}:
             raise InvalidToolArgument("handle", "Use a Project, Route, source Artifact or communication handle. Business task records are outside ACS.")
 
@@ -509,6 +576,8 @@ class ProjectService(RootManagement, CurrentProjectContext, CommunicationActions
         if name == "wait_for_response":
             return self._wait(args, credential)
         if name == "send_message":
+            if type(args.get("attachment_refs")) is list and not args["attachment_refs"]:
+                args = {key: value for key, value in args.items() if key != "attachment_refs"}
             self._validate_send_observation(args)
         project_id = args["project_id"]
         if not IDENTIFIER.fullmatch(project_id):

@@ -1,0 +1,1526 @@
+{
+  "schema_version": "acs-stage-p0-assessment/1",
+  "revision_package_version": "1.1.0",
+  "assessed_at_utc": "2026-11-06T14:23:58Z",
+  "assessment_scope": "C01-C11 only; no product changes or test/Host/PG execution by this assessment",
+  "source_state": {
+    "branch": "codex/core-cleanup",
+    "head": "19d7881d49ee887315c54c5bc02e0cc424061376",
+    "tracked_dirty_patch_sha256": "23d08e842ae26b9aa852c26d718d04bfd68171f9f6a94d53e837f484e2faf6fc",
+    "tracked_diff_excludes_untracked": true,
+    "untracked_product_evidence": "Exact current selected source hashes appear per item; no inference from file existence.",
+    "source_observation_ref": "E-STATE",
+    "observed_working_tree": "shared dirty, uncommitted; no push/tag/deploy/production migration",
+    "software_version_note": "Source package, installed distribution and deployed service are separate; no current installed/deployed version was queried."
+  },
+  "authority": {
+    "change_items": {
+      "path": "RFC_TEMP_SOURCE/ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0/contracts/change-items.json",
+      "sha256": "f918c4a279256ec8bc8aa62270439960029be7caa72d84608ba400fde9210361"
+    },
+    "evidence_rules": {
+      "path": "RFC_TEMP_SOURCE/ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0/handoff/EVIDENCE_RULES.md",
+      "sha256": "cfd46fe217114cf4878f9e6c36df2bd716ef41f277fb373e8d57441430fca956"
+    },
+    "scope_rule": "P0 correctness and qualified Native coverage first. Existing P2 retained and safety-regressed, not a P0/P1 completion gate. Old WP order is not replayed."
+  },
+  "overall": {
+    "CORE_P0_QUALIFIED": false,
+    "reason": "Source-confirmed C05/C06/C07/C11 lifecycle gaps and incomplete current E3/E4/multi-host/migration coverage.",
+    "CLIENT_P1_CONTRACT_READY": "outside_this_file_scope",
+    "ORCA_HOST_QUALIFIED": false,
+    "p2_unchanged": "Preserve attachments, drafts, personal state, search and prior data; no deletion/reversion requested or performed."
+  },
+  "evidence_policy": {
+    "retained_verified_scope": "A retained verdict below is limited to specifically evidenced E2 Core invariants and byte-matched source; it is not a global P0 qualification claim.",
+    "no_evidence_promotion": "Package/types/unit/controlled peers are not E3, E4 or E5.",
+    "failure_history": "The1790/155/3 broad run remains failed. Scoped corrected results are independent records.",
+    "not_claimed": "No tests were executed to create this assessment; no real Host/Native/model/production contacted.",
+    "scenario_mapping": "Scenario IDs and required evidence come from v1.1. File-level/regression evidence is not an automatic one-to-one T-ID pass certificate."
+  },
+  "ranked_next_work": [
+    {
+      "rank": 1,
+      "id": "P0-SAFETY-01",
+      "items": [
+        "C05",
+        "C07"
+      ],
+      "action": "Remove in-transaction legacy prepare_runtime effect route by integrating a committed original-issuer lifecycle permit and actual Node effect fence."
+    },
+    {
+      "rank": 2,
+      "id": "P0-LIFECYCLE-02",
+      "items": [
+        "C07",
+        "C04"
+      ],
+      "action": "Add message-less typed lifecycle authority and explicit SAME DriverJournal shape migration; no fake Message/Attempt and no second Core ledger."
+    },
+    {
+      "rank": 3,
+      "id": "P0-WAKE-03",
+      "items": [
+        "C06"
+      ],
+      "action": "Use existing maintenance/Inbox and only qualified same-session resume/readiness; unresolved Native effects remain unreplayed."
+    },
+    {
+      "rank": 4,
+      "id": "P0-RECOVERY-04",
+      "items": [
+        "C11"
+      ],
+      "action": "Finish new public recovery controlled PG/OAuth verification; share the lifecycle executor and preserve original operation/error effect facts."
+    },
+    {
+      "rank": 5,
+      "id": "P0-QUALIFICATION-05",
+      "items": [
+        "C02",
+        "C03",
+        "C08",
+        "C10"
+      ],
+      "action": "Acquire current exact-profile Codex/OpenCode E3/E4 and cross-host/platform fault evidence; list actual unavailable combinations as blockers without inventing success."
+    },
+    {
+      "rank": 6,
+      "id": "P0-MIGRATION-06",
+      "items": [
+        "C09"
+      ],
+      "action": "Bind current migration rollback/interruption/history scenarios to raw evidence, including the new local lifecycle journal migration."
+    }
+  ],
+  "lifecycle_seam_proposal": {
+    "state": "proposal_only_not_implemented",
+    "new_modules": [
+      "runtime/receiver_lifecycle.py",
+      "runtime/receiver_lifecycle_domain.py"
+    ],
+    "signatures": [
+      "issue_lifecycle_permit(cursor, committed_recovery_payload, actual_selection, action, *, authority_signing_key) -> SignedLifecyclePermit",
+      "verify_lifecycle_permit(signed_permit, actual_node_config, actual_driver_binding, *, clock, authorize_current) -> AuthorizedLifecycleOperation",
+      "current_lifecycle_authority(cursor, permit) -> current original-issuer/enrollment admission facts",
+      "before_lifecycle_effect(operation, actual_binding, native_stage) -> None; commits original Core possible-effect and local marker before actual process/RPC/HTTP effect"
+    ],
+    "source_identity": "Original recovery/configuration command and operation only; no fabricated message_id/attempt_id/dispatch_id. Existing real input actions still require their real Message/Attempt lineage.",
+    "permit_fields": [
+      "purpose/action/phase",
+      "original recovery operation_ref + command_id + immutable request/issuer/profile/Grant lineage digest",
+      "tenant/project/Scope/Slot",
+      "endpoint epoch + actual registration/connection",
+      "Node key revision/boot/journal generation",
+      "Runtime ID/revision + actual driver/capacity binding",
+      "binary/config/schema profile digests",
+      "expected same-session/generation for resume; proven fresh owned capacity for spawn",
+      "Authority key ID/revision, nonce, issued_at/deadline, body digest"
+    ],
+    "reuse": [
+      "receiver_crypto canonical/sha256/sign/verify",
+      "authority_transport_keys",
+      "EndpointRegistration",
+      "enrollment._active_runtime/_active_node",
+      "ConnectionClock",
+      "existing recovery outbox and DriverJournal"
+    ],
+    "driver_journal_constraint": "driver_operations.message_id is currently TEXT NOT NULL UNIQUE; begin hashes deadline/message_id and both _run paths emit message_id. Explicit same-journal nullable message/source-kind migration is required. Preserve old rows/JSON; do not silently renew a hashed deadline or invent placeholder messages.",
+    "authorization_boundaries": [
+      "Core short admission transaction checks original issuer/profile/Grant and exact enrolled selection, persists permit in original outbox.",
+      "Node verifies signature/selection/time and original current authority; technical observer Grant is not manager authority.",
+      "After lock waits, before process launch or mutating native RPC/HTTP, commit possible-effect and durable local marker. Close SQL before host work.",
+      "Allow only the permitted lifecycle driver action/protocol methods; lifecycle authority must not authorize invoke/turn_start/prompt_async.",
+      "Signed correlated result/readback updates the original operation. Unknown never authorizes a fresh process/session or new native input identity."
+    ],
+    "v11_mapping": "C05/C06/C07/C11 required conditional lifecycle. Safe unsupported is retained until a real port is qualified, but is not recorded as completed lifecycle implementation."
+  },
+  "items": [
+    {
+      "id": "C01",
+      "title": "通信核心/身份和回复不回归",
+      "tier": "P0_required",
+      "status": "retained_verified",
+      "evidence_level": "E2_controlled_integration",
+      "old_requirements": [
+        "R-001",
+        "R-002",
+        "R-003",
+        "R-006",
+        "R-007",
+        "R-008",
+        "R-009",
+        "R-010"
+      ],
+      "test_ids": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T011",
+        "T012",
+        "T013",
+        "T015",
+        "T016",
+        "T017",
+        "T018",
+        "T019",
+        "T020",
+        "T094"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T001",
+          "title": "可信作者从入口解析",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T002",
+          "title": "伪造作者字段",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T003",
+          "title": "可信 Client 无 Slot",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T004",
+          "title": "未绑定不提权",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T011",
+          "title": "合法多引用回复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T012",
+          "title": "第三方不能代答",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T013",
+          "title": "Native 成功不冒充回复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T015",
+          "title": "message_only + sync",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T016",
+          "title": "超时不撤销",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T017",
+          "title": "UTF-8 长正文",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T018",
+          "title": "read 不消费",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T019",
+          "title": "提交序号分页",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T020",
+          "title": "游标过滤改变",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T094",
+          "title": "大消息 ACK 独立续读",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication.py",
+          "sha256": "0bbd801a1dce18319d13106c0081b1a3c4519419614886bef1bec8f3e0c33930",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/delivery.py",
+          "sha256": "7dbfd8985345e1a1fb408c6445c5f03737121890b3e812dc229cb19e012afdf3",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/delivery_models.py",
+          "sha256": "a99e8bc55149c3a6218485243d34551b5c177d2ae4b7527ca51781ea16e2fdc6",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/delivery_node.py",
+          "sha256": "d85253e5a523d6f20ecf7bb6e0d0a43f5c26d074bd406a09fa793eb1b363cb86",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_communication.py",
+          "sha256": "72cd79c3b0bef816cc741a9bcfa057ffeb61bcb99f03d1fec85200cec7a1916e",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_communication_content.py",
+          "sha256": "27996605aec440cacbb9b54b6166c1ad5889726b8b990e77a0a0dd9172132531",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-AUTH-56",
+        "E-MIGRATION-8"
+      ],
+      "verified_behavior": [
+        "Actual trusted Slot/Client authorship, private participant reply/read rules, explicit reply_to, message_only, timeout retention and non-consuming UTF-8 reads have concrete controlled regression coverage.",
+        "Core communication/delivery source files listed here remain byte-identical to the broad run. Existing source and messages are retained; no Task/Run/Dispatch business prerequisite is reintroduced."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "This retained verdict is scoped to tested Core invariants at E2, not an E3/E4 or all-platform qualification statement. T094 large ACK/body continuations need explicit supported-combination coverage mapping before global P0 exit."
+      ],
+      "next_actions": [
+        "Retain the implementation. Run only affected Core regressions when new lifecycle/public-recovery changes touch these paths; do not restart WP00."
+      ]
+    },
+    {
+      "id": "C02",
+      "title": "Adapter 能力/证据声明",
+      "tier": "P0_required",
+      "status": "implemented_needs_evidence",
+      "evidence_level": "E2_controlled_integration; historical narrow E3 observation",
+      "old_requirements": [
+        "R-017",
+        "R-039"
+      ],
+      "test_ids": [
+        "T033",
+        "T034",
+        "T077",
+        "T078"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T033",
+          "title": "状态过期",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T034",
+          "title": "终端静默",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T077",
+          "title": "能力失效",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T078",
+          "title": "缓存穿透",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/receiver_contract.py",
+          "sha256": "6af12bafd6939d02b34b66685a0673e5a8ee260952a7883010ed5ea534cadca5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_evidence.py",
+          "sha256": "36bef6d6be9c0933c8905c5f12e84c9423c0e9346b5e2a7e164fd714af74f4a9",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/native_input_observations.py",
+          "sha256": "20339aacf6bc1c06c7a41c7676ff3b090a7072c6ba5b2e7de2ec3628719d10fd",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/harness_adapter.py",
+          "sha256": "780768969df6667f866da84ad9cde3de7ae7ff12c97b9ce4f58665b108ac6c0d",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/signed_harness_adapter.py",
+          "sha256": "99a5733727b387c8346691d49f96289475cea35ecc582d9f267721ded6584db3",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_native_input_observations.py",
+          "sha256": "c38840c1b6fe9272e06d1c9cad3db3b7ebd6500baf34510257f27d27903c0f06",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_contract.py",
+          "sha256": "f417c2d3070abac1b5a9923d6640cb6d627fc0aa441092ec062a36ff78230f95",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-INPUT-CONTROLLED",
+        "E-CODEX-OBSERVATION",
+        "E-CODEX-DISCOVERY"
+      ],
+      "verified_behavior": [
+        "Typed support/availability/evidence/freshness and complete capability scope exist; unknown is distinct from idle. Cache identity includes real executable/config/Host/epoch/generation metadata.",
+        "Changed generation, stale proof, attached/shared ownership, human blockers and malformed Native inventories have controlled negative tests."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Current affected Codex/OpenCode versions/OS/authorization modes have not been E3/E4-qualified by this assessment. Historical Codex0.166.0 observations requested zero model turns.",
+        "Remote providers without full generation/qualified read ports must remain unknown/unsupported, not be filled from brand or peer hashes."
+      ],
+      "next_actions": [
+        "Keep the current contracts and safe fallback. Bind fresh supported-combination Native evidence to current source/profile hashes; test only the combinations actually claimed."
+      ]
+    },
+    {
+      "id": "C03",
+      "title": "最后输入准入",
+      "tier": "P0_required",
+      "status": "implemented_needs_evidence",
+      "evidence_level": "E2_controlled_integration",
+      "old_requirements": [
+        "R-015",
+        "R-016"
+      ],
+      "test_ids": [
+        "T029",
+        "T030",
+        "T031",
+        "T032"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T029",
+          "title": "绑定前后重验",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T030",
+          "title": "撤销撞上外部输入",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T031",
+          "title": "忙时安全排队",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T032",
+          "title": "审批/草稿保护",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/native_input_observations.py",
+          "sha256": "20339aacf6bc1c06c7a41c7676ff3b090a7072c6ba5b2e7de2ec3628719d10fd",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "9336250ecdab6184cc540ac90ce76d8ef9376a65dd39dcec011f42ba51222216",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "031d057731c33eb0f6e31358edf3f389ff3626a5576bae4536f3f78f40d7850a",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/signed_harness_adapter.py",
+          "sha256": "99a5733727b387c8346691d49f96289475cea35ecc582d9f267721ded6584db3",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "43fc6d5e21c34ee099ac4c0d7775d4e891d547c6656bf01bc3e8cf08e03eecc5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_native_handoff.py",
+          "sha256": "549456014385bb8378507832895056b5e4a42b7b3a1f39a8c9803e60ecd8db2a",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_native_input_observations.py",
+          "sha256": "c38840c1b6fe9272e06d1c9cad3db3b7ebd6500baf34510257f27d27903c0f06",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-INPUT-CONTROLLED",
+        "E-ATTACHMENT-GUARDS"
+      ],
+      "verified_behavior": [
+        "Existing input paths recheck immutable invocation/current owner/readiness before Provider effects, retain busy/deferred behavior, and preserve human approval/question/draft barriers.",
+        "Safe queue/steer is not inferred from a generic busy/idle response; unsupported or unqualified behavior remains explicit."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Need current installed-Harness positive input and controlled last-boundary revocation/blocker fault evidence in the exact qualified profiles. E1/E2 no-model fixtures are insufficient for E3/E4."
+      ],
+      "next_actions": [
+        "Preserve current input ownership and guard behavior while adding the separately authorized lifecycle path. Re-run affected real Native admission cases after lifecycle integration."
+      ]
+    },
+    {
+      "id": "C04",
+      "title": "Native 操作证据和未知调和",
+      "tier": "P0_required",
+      "status": "retained_verified",
+      "evidence_level": "E2_controlled_integration",
+      "old_requirements": [
+        "R-004",
+        "R-005",
+        "R-011",
+        "R-012",
+        "R-013"
+      ],
+      "test_ids": [
+        "T007",
+        "T008",
+        "T009",
+        "T010",
+        "T014",
+        "T021",
+        "T022",
+        "T023",
+        "T024",
+        "T025",
+        "T026",
+        "T096"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T007",
+          "title": "提交原子性",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T008",
+          "title": "提交窗口崩溃",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T009",
+          "title": "同键恢复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T010",
+          "title": "同键异文冲突",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T014",
+          "title": "未知 ACK 仍有回复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T021",
+          "title": "handoff 前落盘",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T022",
+          "title": "intent 后崩溃",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T023",
+          "title": "原操作重放",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T024",
+          "title": "去重域变化",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T025",
+          "title": "核验未知结果",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T026",
+          "title": "无查询能力",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T096",
+          "title": "关闭 adapter 中未决输入",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/native_handoff.py",
+          "sha256": "ab6d2ad2fe0d191edf8405f87821e4326b210e8a6571c7017570826da3fec7e2",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/delivery_node.py",
+          "sha256": "d85253e5a523d6f20ecf7bb6e0d0a43f5c26d074bd406a09fa793eb1b363cb86",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "43fc6d5e21c34ee099ac4c0d7775d4e891d547c6656bf01bc3e8cf08e03eecc5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "46861d26f3f00b19aedf62bf2461375459c044440de984bfb94e05e9355d8ae5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_delivery_observer.py",
+          "sha256": "3e00a546c50645363617d8f68e5225acdfa9a2ed4f2832f735884384d776e1fe",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_native_handoff.py",
+          "sha256": "549456014385bb8378507832895056b5e4a42b7b3a1f39a8c9803e60ecd8db2a",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_local_native_reconcile.py",
+          "sha256": "8fd46b776cbee9220a6be2bb7a6623110538b3a0bd711489f444ab30b6023ee2",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_remote_readback_freshness.py",
+          "sha256": "0cc8438ef20182858f2de01e8fd9a5d32555a65b11e6c9f8b3c348d8c440c836",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-RECOVERY-155",
+        "E-RACES-59",
+        "E-RECOVERY-389"
+      ],
+      "verified_behavior": [
+        "Durable input handoff precedes Native dispatch; exact original operation/journal identity is retained through uncertainty and readback.",
+        "Missing markers/history are not negative proof. Positive old ACK and possible effects survive generation changes without input resubmission or fabricated reply.",
+        "Listed primary input/reconciliation source files remain byte-identical to the broad run."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Verdict covers tested input-operation safety at E2. Current physical cross-host ACK-loss and independent model qualification remain C08/C10 gaps.",
+        "A future lifecycle operation must use the same Core operation ownership and explicitly migrate message-only DriverJournal constraints, not create a parallel Domain ledger."
+      ],
+      "next_actions": [
+        "Retain tested reconciliation. For new lifecycle actions, add message-less typed source identity and preserve unknown/no-blind-retry invariants."
+      ]
+    },
+    {
+      "id": "C05",
+      "title": "绑定代次与接收端 fencing",
+      "tier": "P0_required",
+      "status": "partial",
+      "evidence_level": "E2_controlled_integration plus source-confirmed gap",
+      "old_requirements": [
+        "R-003",
+        "R-014",
+        "R-018"
+      ],
+      "test_ids": [
+        "T005",
+        "T006",
+        "T027",
+        "T028",
+        "T035",
+        "T036"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T005",
+          "title": "稳定地址跨 Session",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T006",
+          "title": "多接收端歧义",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T027",
+          "title": "旧 worker fence",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T028",
+          "title": "无原生 fence",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T035",
+          "title": "重绑保留历史",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T036",
+          "title": "旧回执晚到",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_management.py",
+          "sha256": "49c896e9ca0d39c947f8e1aed083380be2b23a57b1124f5dc32c54b320837553",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "43fc6d5e21c34ee099ac4c0d7775d4e891d547c6656bf01bc3e8cf08e03eecc5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_domain.py",
+          "sha256": "89921437e6d138b697fe1a2f180bb10c136ebe5820bcf01fc4bb37d465a79139",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "46861d26f3f00b19aedf62bf2461375459c044440de984bfb94e05e9355d8ae5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/enrollment.py",
+          "sha256": "d93d33751f140d56d45fea2aad74ccc4e0ac42a81bcb6e8fbd143a98f75b324f",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_deployment/receiver_authority.py",
+          "sha256": "8c4c820d1fc2f6c4bce912c6df73251db84e31502581a2dd1cc7281d54b8b56b",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime_tests/test_receiver_recovery_operations.py",
+          "sha256": "a72cf812f57649471f320b246b31e574d593381f678909dd77a44030aa5fb3c4",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_connection_clock.py",
+          "sha256": "80712aa7c8e58dac8ed6880ba20cc8dc53dff04c58e02a26c1b9ee3ee7dd67c1",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-RECOVERY-155",
+        "E-LIFECYCLE-AUDIT",
+        "E-RECOVERY-NEW"
+      ],
+      "verified_behavior": [
+        "Natural input endpoint/Node/boot/runtime/owner fencing and old-ACK isolation are implemented and tested.",
+        "Bootstrap helper now accepts only spawn/close; unknown action no longer aliases close (new E1 evidence)."
+      ],
+      "implementation_gaps": [
+        "P0-SAFETY-01: _prepare_communication_sessions still calls provider.prepare_runtime inside an authority transaction; the subsequent configuration check cannot fence the earlier Native effect.",
+        "No signed original-manager lifecycle permit/current-authority branch reaches the actual process-launch or resume boundary. Bootstrap Node-observer authority does not replace the original issuer."
+      ],
+      "qualification_or_coverage_gaps": [
+        "POSIX-only signed receiver cases are skipped in the Windows broad run; they require their applicable platform run."
+      ],
+      "next_actions": [
+        "Highest priority: replace configuration preparation with a committed, original-issuer/selection-bound lifecycle permit and Node effect fence; no SQL transaction across Host work."
+      ]
+    },
+    {
+      "id": "C06",
+      "title": "支持条件下的安全唤醒/延期",
+      "tier": "P0_required",
+      "status": "partial",
+      "evidence_level": "E2_controlled_integration",
+      "old_requirements": [
+        "R-020",
+        "R-029"
+      ],
+      "test_ids": [
+        "T039",
+        "T040",
+        "T057",
+        "T058"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T039",
+          "title": "wait 与 wake 去重",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T040",
+          "title": "唤醒合并不丢正文",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T057",
+          "title": "有界背压",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T058",
+          "title": "已接受不可丢",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_dispatch.py",
+          "sha256": "d00a55212d694d6e3180d106d0e086c02daa2d3ecf63d46439fcb54ea919ae60",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_wait_ingress.py",
+          "sha256": "cd0965717dec01851d24cd596d88174ac8d461dd2fd3c59d36ea4538a163e0f0",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_notifications.py",
+          "sha256": "4fa5b520672fc8ee3b12d8695dddf738753f18b1ab7fa78925a100499dc329a9",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication.py",
+          "sha256": "0bbd801a1dce18319d13106c0081b1a3c4519419614886bef1bec8f3e0c33930",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "9336250ecdab6184cc540ac90ce76d8ef9376a65dd39dcec011f42ba51222216",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "031d057731c33eb0f6e31358edf3f389ff3626a5576bae4536f3f78f40d7850a",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_communication_maintenance.py",
+          "sha256": "4c383ba8e25e82106dce0472333ea8e470fe59768c5f382d5096835a5b56999e",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_wait_ingress_recovery.py",
+          "sha256": "56bb7c3431a1424c0b43b433dab2217edde70b22249d51c4550c0dcdf5dd7f5b",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_notification_continuity.py",
+          "sha256": "4d00fba3c8c82d42feaf2ff01d2d2f3abd5bf7b63897183a5f94998438be0194",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-RACES-59",
+        "E-RECOVERY-389"
+      ],
+      "verified_behavior": [
+        "Bounded maintenance, busy pacing, independent-peer progress, wait-lease cleanup, durable messages and coalesced hints exist.",
+        "Reply/wait recovery does not imply a second Native turn; message_only and explicit reply remain separate facts."
+      ],
+      "implementation_gaps": [
+        "Conditional frozen-session wake/resume has no original-command fenced lifecycle path. Existing supported driver resume methods are not safely exposed as that path.",
+        "Permanent unsupported would not complete conditional liveness where the actual configured Host supports safe resume."
+      ],
+      "qualification_or_coverage_gaps": [
+        "Actual frozen/wake and disconnect/reconnect qualification for current supported Native combinations is not established."
+      ],
+      "next_actions": [
+        "After C05/C07, integrate only qualified same-session resume/readiness progression into the existing maintenance/Inbox mechanism; never wake by creating another session for unknown input."
+      ]
+    },
+    {
+      "id": "C07",
+      "title": "受权 Session 续接与重新绑定",
+      "tier": "P0_required",
+      "status": "partial",
+      "evidence_level": "E1/E2 existing paths; source-confirmed missing lifecycle",
+      "old_requirements": [
+        "R-019",
+        "R-036"
+      ],
+      "test_ids": [
+        "T037",
+        "T038",
+        "T071",
+        "T072"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T037",
+          "title": "受权 Session 恢复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T038",
+          "title": "无恢复权限",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T071",
+          "title": "恢复动作幂等",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T072",
+          "title": "过期配置恢复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/receiver_recovery_operations.py",
+          "sha256": "3aafd87df609cf064ad560f036491f93cf404cc3e575e0b33a13fce72effb274",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime/communication_client_recovery.py",
+          "sha256": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c",
+          "current_vs_broad": "not_in_broad_capture"
+        },
+        {
+          "path": "runtime/communication_management.py",
+          "sha256": "49c896e9ca0d39c947f8e1aed083380be2b23a57b1124f5dc32c54b320837553",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "9336250ecdab6184cc540ac90ce76d8ef9376a65dd39dcec011f42ba51222216",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "031d057731c33eb0f6e31358edf3f389ff3626a5576bae4536f3f78f40d7850a",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_models.py",
+          "sha256": "6b4679c422bb52667adcefb51a6714439ae4713535d2fa95e22bab148595a7a0",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_crypto.py",
+          "sha256": "2687065eea63b56af3db1fc54b7b9bbd1e812e7825ccaa489851f5ce8dddedd7",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_deployment/receiver_authority.py",
+          "sha256": "8c4c820d1fc2f6c4bce912c6df73251db84e31502581a2dd1cc7281d54b8b56b",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime_deployment/receiver_codex.py",
+          "sha256": "830244eaa61db18b2b1c5edb96ebfc3db04dd5d3846fc9a351f4a66f153d7424",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_deployment/receiver_opencode.py",
+          "sha256": "4ef57effec2d649b09e5c7547f5fb11e815c53a3f54a6e13f65058f6b7efb82f",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_lifecycle_identity.py",
+          "sha256": "2a886f728c51a96d6f0f98160be10a55c21b7a4e8ecc9705d24d4a8dd1063fc4",
+          "current_vs_broad": "not_in_broad_capture"
+        }
+      ],
+      "evidence_refs": [
+        "E-LIFECYCLE-AUDIT",
+        "E-RECOVERY-NEW",
+        "E-RECOVERY-155"
+      ],
+      "verified_behavior": [
+        "Existing Codex thread/resume, OpenCode same-session observation/resume and restricted empty-idle replace_session code are present.",
+        "Recovery commands preserve original issuer/Grant and stable idempotency. Unsafe legacy lifecycle callbacks are deliberately rejected before effect.",
+        "Latest bootstrap alias hardening is implemented; prepare/resume OAuth scopes explicitly require runtime.invoke."
+      ],
+      "implementation_gaps": [
+        "P0-LIFECYCLE-02: new signed message-less LifecyclePermit, Node verifier and AuthorizedLifecycleOperation are not implemented.",
+        "DriverJournal currently requires unique non-null message_id; delivery SignedRequest/Receipt and receiver_requests require delivery Attempt/dispatch fields. These cannot honestly store a message-less lifecycle operation unchanged.",
+        "Current deployment constructors eagerly spawn; offline control-plane startup needs a fenced/deferred Native bootstrap path.",
+        "Explicit new-session rebind needs actual target/owner authorization and unknown-input isolation, not a brand-selected replacement."
+      ],
+      "qualification_or_coverage_gaps": [
+        "New public recovery wrapper has E1 only so far; Root reports current PG/WSL approval/timeouts, not a passing DB result.",
+        "No fresh current-session E3/E4 restore/rebind qualification."
+      ],
+      "next_actions": [
+        "Implement the two narrowly scoped lifecycle modules described below, migrate the existing DriverJournal explicitly, and wire existing recovery/configuration execution. Keep unsupported until the actual effect boundary is qualified."
+      ]
+    },
+    {
+      "id": "C08",
+      "title": "跨主机/混合版本/限额",
+      "tier": "P0_required",
+      "status": "partial",
+      "evidence_level": "E2_controlled_integration",
+      "old_requirements": [
+        "R-031",
+        "R-037",
+        "R-040"
+      ],
+      "test_ids": [
+        "T061",
+        "T062",
+        "T073",
+        "T074",
+        "T079",
+        "T080",
+        "T089",
+        "T090",
+        "T092"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T061",
+          "title": "已有 Native 回归",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T062",
+          "title": "未验证平台",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T073",
+          "title": "诊断脱敏",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T074",
+          "title": "系统通知不能代答",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T079",
+          "title": "独立 Core 可用",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T080",
+          "title": "UI 关闭",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T089",
+          "title": "多项目隔离",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        },
+        {
+          "id": "T090",
+          "title": "安装后的服务回归",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        },
+        {
+          "id": "T092",
+          "title": "只有接收资格未知",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/receiver_domain.py",
+          "sha256": "89921437e6d138b697fe1a2f180bb10c136ebe5820bcf01fc4bb37d465a79139",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "46861d26f3f00b19aedf62bf2461375459c044440de984bfb94e05e9355d8ae5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_config.py",
+          "sha256": "b829a97a65ec0a011a633eefcdd46bf728c4031b41dadd17fbb82a2d337ab2d4",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/remote_endpoint.py",
+          "sha256": "7bb4d24cf5cbcab2488476043ce0fce136eead4a352d2a378020acb35ea1dca0",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_dispatch.py",
+          "sha256": "d00a55212d694d6e3180d106d0e086c02daa2d3ecf63d46439fcb54ea919ae60",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_models.py",
+          "sha256": "6b4679c422bb52667adcefb51a6714439ae4713535d2fa95e22bab148595a7a0",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_peer_continuity.py",
+          "sha256": "f835888f04bbce1522ba2f44c0a698baef8059c431fff40a62a13eab73c087a3",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_connection_clock.py",
+          "sha256": "80712aa7c8e58dac8ed6880ba20cc8dc53dff04c58e02a26c1b9ee3ee7dd67c1",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_remote_readback_freshness.py",
+          "sha256": "0cc8438ef20182858f2de01e8fd9a5d32555a65b11e6c9f8b3c348d8c440c836",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_communication_maintenance.py",
+          "sha256": "4c383ba8e25e82106dce0472333ea8e470fe59768c5f382d5096835a5b56999e",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-RECOVERY-155",
+        "E-RECOVERY-389",
+        "E-BROAD",
+        "E-CROSS-HOST-LIMITS"
+      ],
+      "verified_behavior": [
+        "Authenticated registration/key/TLS/peer continuity, bounded scheduling and clock-aware signed readback have controlled coverage.",
+        "Mixed/stale identity is not silently upgraded; unqualified remote generation/Host capability remains unavailable."
+      ],
+      "implementation_gaps": [
+        "Remote lifecycle/read-journal capability proof is not an installed, authorized cross-host path; do not turn peer/cache hashes into a Native generation.",
+        "Supported-version negotiation and fair progress need an explicit currently qualified multi-host matrix rather than assuming a Harness name implies capability."
+      ],
+      "qualification_or_coverage_gaps": [
+        "No physical cross-host model exchange or production switch was run for these increments. Historical release records are not current dirty-tree qualification.",
+        "Windows broad run skips POSIX descriptor admission cases; untested OS/mode pairs remain unqualified."
+      ],
+      "next_actions": [
+        "Reuse existing signed/TLS/Node paths for a narrow capability/read-only lifecycle journal extension where needed; qualify current declared combinations and retain bounded independent-peer behavior."
+      ]
+    },
+    {
+      "id": "C09",
+      "title": "安全迁移与历史保留",
+      "tier": "P0_required",
+      "status": "implemented_needs_evidence",
+      "evidence_level": "E2_controlled_integration for explicit known migrations",
+      "old_requirements": [
+        "R-035"
+      ],
+      "test_ids": [
+        "T069",
+        "T070",
+        "T091",
+        "T093"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T069",
+          "title": "additive 升级",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T070",
+          "title": "迁移中断回滚",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T091",
+          "title": "历史 backfill 可恢复",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        },
+        {
+          "id": "T093",
+          "title": "无意外写入启动",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_storage.py",
+          "sha256": "8157b91b1dd6ffcf242af265dededb8156f43b3d7f34a772a96926853c8d5297",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_core_schema.sql",
+          "sha256": "8ff205fd4ba6472f1eb828354f95d598be5ec4bdc399b544e0369a04950b1ba8",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/project_schema_state.py",
+          "sha256": "19a0711895d263e8f3768d7adf08155fb4de2e265f2c6535d6c02bc7f5f8f92e",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime_tests/test_communication_storage.py",
+          "sha256": "914298e249f9a3531c41bc418a0731f1157eb61f9e57e564a802d13656cae89e",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_schema_1_8.py",
+          "sha256": "99a9bfc91ea3e1d7442b58f8cfeaeb2b5d5966a1d86ad65e005d32bade9474c8",
+          "current_vs_broad": "changed_since_broad"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-MIGRATION-8",
+        "E-LEGACY-BASELINE"
+      ],
+      "verified_behavior": [
+        "Explicit checksum-bound additive adoption, history preservation, unknown-checksum rejection and read-only startup exist.",
+        "The old broad1.8 fixture failure is retained; the scoped migration correction uses explicit pinned1.8→1.13 fixture import followed by current Core adoption, not restoration of retired Task semantics."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Map T070 migration-interruption/rollback and T091 recoverable history to exact current raw cases before declaring all required migration scenarios qualified.",
+        "New lifecycle DriverJournal schema migration is still future work and needs its own preservation/interruption/rollback evidence. No production migration or rollback was executed."
+      ],
+      "next_actions": [
+        "Retain known additive migrations. Add only the necessary explicit local DriverJournal shape migration, preserve all historical bytes, and verify interrupted/repeated adoption."
+      ]
+    },
+    {
+      "id": "C10",
+      "title": "真实资格与原始证据",
+      "tier": "P0_required",
+      "status": "implemented_needs_evidence",
+      "evidence_level": "E1/E2 plus historical limited E3",
+      "old_requirements": [
+        "R-038"
+      ],
+      "test_ids": [
+        "T075",
+        "T076"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T075",
+          "title": "证据层次",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T076",
+          "title": "缺真实环境",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime_tests/test_communication.py",
+          "sha256": "72cd79c3b0bef816cc741a9bcfa057ffeb61bcb99f03d1fec85200cec7a1916e",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_communication_installed_native.py",
+          "sha256": "22b93dfa3d9019440abff2589690ad9451d6651a8fbc7b56bb6416bcec38af4c",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "9336250ecdab6184cc540ac90ce76d8ef9376a65dd39dcec011f42ba51222216",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "031d057731c33eb0f6e31358edf3f389ff3626a5576bae4536f3f78f40d7850a",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-CODEX-OBSERVATION",
+        "E-CODEX-DISCOVERY",
+        "E-CROSS-HOST-LIMITS",
+        "E-STATE"
+      ],
+      "verified_behavior": [
+        "Raw failures/skips and scoped reruns are retained without rewriting the original broad result.",
+        "At least an installed Codex protocol observation exists, clearly showing zero model turns."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "No current full Codex↔OpenCode E3 receive/input + E4 independent correlated reply/wait-reconnect chain is established by the inspected current evidence.",
+        "Old protocol observations are source/profile/version limited and cannot qualify modified receiver/driver code automatically.",
+        "Complete each claimed run's source/dirty-tree digest, binary/profile/OS/mode, command, exit code, raw trace and failure limits; no E5/Orca claim."
+      ],
+      "next_actions": [
+        "After P0 code gaps close, obtain the minimum current supported-combination E3/E4 chain and fault regressions in authorized isolated development environments. Mark genuinely inaccessible combinations blocked with concrete evidence; this read-only assessment did not probe hosts or credentials."
+      ]
+    },
+    {
+      "id": "C11",
+      "title": "最小只读诊断/受控恢复",
+      "tier": "P0_required",
+      "status": "partial",
+      "evidence_level": "E2 existing diagnostics; E1 new public recovery",
+      "old_requirements": [
+        "R-037"
+      ],
+      "test_ids": [
+        "T073",
+        "T074"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T073",
+          "title": "诊断脱敏",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T074",
+          "title": "系统通知不能代答",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_faults.py",
+          "sha256": "1920ecb7e4c8c98375362f115226d2de5cefa13056a886d9def98f4738c98e44",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_delivery_observer.py",
+          "sha256": "3e00a546c50645363617d8f68e5225acdfa9a2ed4f2832f735884384d776e1fe",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_recovery_operations.py",
+          "sha256": "3aafd87df609cf064ad560f036491f93cf404cc3e575e0b33a13fce72effb274",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime/communication_client_recovery.py",
+          "sha256": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c",
+          "current_vs_broad": "not_in_broad_capture"
+        },
+        {
+          "path": "runtime/communication_http.py",
+          "sha256": "6a92de66fc4521344c5c00545c5448d0d18b68bced46a9c57574eec5f068d05c",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime/communication_client_service.py",
+          "sha256": "e2577571444ea8443515e92fb17327da18337e49ad0bd8d3d1db0d8d6184c70c",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime_tests/test_communication_client_recovery.py",
+          "sha256": "ebac920504eccb2330e96564cbaca70e5c9801230d5f4651dd7ef53277fbf4b2",
+          "current_vs_broad": "not_in_broad_capture"
+        },
+        {
+          "path": "runtime_tests/test_receiver_recovery_operations.py",
+          "sha256": "a72cf812f57649471f320b246b31e574d593381f678909dd77a44030aa5fb3c4",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-RECOVERY-155",
+        "E-RACES-59",
+        "E-BROAD",
+        "E-RECOVERY-NEW"
+      ],
+      "verified_behavior": [
+        "Delivery/receiver evidence and redacted system fault notices distinguish technical acceptance from explicit Agent reply.",
+        "Latest ClientRecoveryService + POST202 mounts existing submit→same-operation advance, with committed/unknown errors retaining operation_ref. It adds no operation ledger."
+      ],
+      "implementation_gaps": [
+        "Public recovery integration now exists, superseding the earlier 'API absent' audit finding, but its new real-service/PG/OAuth path is not yet verified.",
+        "Required authorized lifecycle prepare/resume/rebind remains safely unsupported; no autonomous executor for interrupted queued/preparing lifecycle work has been qualified."
+      ],
+      "qualification_or_coverage_gaps": [
+        "Root reports two approval deadlines/default WSL unavailable for the pending new PG run. This is a run-specific external verification blocker, not proof of missing code or a test pass."
+      ],
+      "next_actions": [
+        "Complete pending controlled real-service recovery tests, then share the C05/C07 lifecycle executor. Notice seen/personal state remain P2 and do not block this item."
+      ]
+    }
+  ],
+  "evidence_catalog": [
+    {
+      "id": "E-BROAD",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-regression.log",
+      "sha256": "d9c6a756841192fe21ebfc24e1e6ee73799a943ec704d3417d6ded2fde400f3f",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "1790 passed, 155 skipped, 3 failed; exit 1. Actual isolated PostgreSQL, local processes/SQLite/protocol fixtures.",
+      "limitations": "Not an all-green run; synthetic Native peers are not installed Harness/model qualification. POSIX-only receiver cases and real-model cases skipped.",
+      "result": {
+        "passed": 1790,
+        "skipped": 155,
+        "failed": 3,
+        "exit_code": 1
+      },
+      "source_manifest": {
+        "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-test-source-manifest.json",
+        "sha256": "1ca4cf675b37440623048a02870a07c1ebf0703a8e7b9819f722db6daffa91a8"
+      },
+      "result_record": {
+        "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-result.json",
+        "sha256": "4da9e664171a86489f7d678167bb76d841da5ac75d40c8d5ba6e4e809949bfef"
+      },
+      "failure_names": [
+        "runtime_tests/test_communication_headless_live.py::test_actual_node_headless_sdk_uses_live_oauth_http_sse_core_and_preserves_local_work_after_revocation",
+        "runtime_tests/test_communication_http_auth.py::test_refresh_failure_after_send_commit_preserves_handle_and_never_replays",
+        "runtime_tests/test_receiver_schema_1_8.py::test_exact_1_8_to_1_9_repeat_safe_and_preserves_rows"
+      ]
+    },
+    {
+      "id": "E-RECOVERY-155",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp04-recovery-integration.log",
+      "sha256": "89ef7a03669250eaefa3b6211fc5d39343a274cd165eb17c62c2680526cf895e",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "155 passed, 6 warnings; actual PG/SQLite/Ed25519 and controlled local/remote Native peers.",
+      "limitations": "Historical working-tree cut. No physical cross-host model exchange; currentness must use per-source hash comparison."
+    },
+    {
+      "id": "E-RACES-59",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp04-final-races-recheck.log",
+      "sha256": "9698641b004af65345865e2e7d36d483c23b291764b736214cdaf95c36cc2fa6",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "59 passed, including wait/notification/reconciliation and bound Authority-clock races.",
+      "limitations": "Historical scoped run; not universal Native or network qualification."
+    },
+    {
+      "id": "E-RECOVERY-389",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp04-regression-recheck.log",
+      "sha256": "b3be72f87780a583a3ce1e3c2a89b4871bf2689b1f03c3fcd7e13b52d8d3121a",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "389 passed, 5 skipped, 6 warnings.",
+      "limitations": "Historical scoped source manifest; real-model/platform skips remain."
+    },
+    {
+      "id": "E-INPUT-CONTROLLED",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp03-regression-corrected.log",
+      "sha256": "6f348ca0b975082c0317a011810df7544d75861219707a633176db8764d9312e",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "Controlled Native input/observation and handoff regression recorded before later source changes.",
+      "limitations": "Controlled peers cannot establish E3/E4; historical source cut, retain exact raw result."
+    },
+    {
+      "id": "E-CODEX-OBSERVATION",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp03-installed-codex-input-final.json",
+      "sha256": "8a25e41dc4ed45d226663e7578c6cf5eafa57b1e54d955d17cc1e41ba654613d",
+      "evidence_class": "E3_native_protocol",
+      "summary": "Installed Codex 0.166.0: one thread start, zero turn starts, measured current input/connection/process/session/blocker, stable generation and verified process stop.",
+      "limitations": "An observational no-model probe, not actual input acceptance or independent Agent reply. Probe JSON lacks complete command/source/OS/mode metadata; associated wp03 source cut is historical. Not current whole-tree qualification.",
+      "currentness": "stale_or_incompletely_bound_for_current_modified_tree",
+      "model_turns_requested": 0,
+      "thread_start_count": 1,
+      "turn_start_count": 0,
+      "provider_version": "0.166.0",
+      "source_manifest": {
+        "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp03-source-manifest.json",
+        "sha256": "80c45173def69fc202910f012a5ec12413f051b8e89ae2573727bb9f3a4301ea"
+      }
+    },
+    {
+      "id": "E-CODEX-DISCOVERY",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp02-installed-codex-receiver.json",
+      "sha256": "a53019468c44211fb3fbede3bafe1920da00a1d47f3ec33572caddbafe43d196",
+      "evidence_class": "E3_native_protocol",
+      "summary": "Earlier installed Codex 0.166.0 receiver observation; zero model turns.",
+      "limitations": "Historical observation only; not an independent model exchange or current OpenCode qualification."
+    },
+    {
+      "id": "E-AUTH-56",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-auth-admission-final.log",
+      "sha256": "450ee5f83a9e5b36456c082cc60cd5e74af5cd5e10a600a0f690e4bf69e72485",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "56 synthetic ASGI authentication/commit-boundary cases passed; no database.",
+      "limitations": "Corrected timing fixture; does not relabel the original broad failure or prove live issuer/Host behavior."
+    },
+    {
+      "id": "E-MIGRATION-8",
+      "path": ".tmp/headless-observer-migration-pg-20261106b.log",
+      "sha256": "76209b1b564312f2458061eacf15fe97a685690bb353d5bb5ba8fec590f258bf",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "8 passed in 52.80s; actual headless local TCP/HTTP/SSE and explicit pinned legacy migration tests.",
+      "limitations": "Scoped rerun, not a rerun of all 1948 broad cases; no Native/model input.",
+      "source_manifest": {
+        "path": ".tmp/headless-observer-migration-source-20261106b.json",
+        "sha256": "7d2f58aba82c64b9f8ba9a6fc36c9d65d68c5635f437a4aa0353c282cf622f49"
+      },
+      "source_check": {
+        "path": ".tmp/headless-observer-migration-source-check-20261106b.json",
+        "sha256": "c9554f1e24ccd074bba2077ff56a5085cbbdd9267469e4370bc74cd98f51d3f2"
+      }
+    },
+    {
+      "id": "E-ATTACHMENT-GUARDS",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-attachment-native-integrity-final-20261106.log",
+      "sha256": "19932ebea0a183b7da572b238fb5973469697826509e41c17ad341f8d17bc318",
+      "evidence_class": "E1_unit",
+      "summary": "30 pure attachment Native guard/integrity regressions recorded.",
+      "limitations": "Existing P2 safety regression is retained; it is not a P0 attachment delivery requirement or a Native qualification result."
+    },
+    {
+      "id": "E-RECOVERY-NEW",
+      "path": "integration_evidence/acs-stage-agnostic-20261106/pure-recovery-scope-isolated.json",
+      "sha256": "a2aa7f40da0b9aba1cc6d1332ec05cf4cdb1f23910123eabdafb3a0469c5bf99",
+      "evidence_class": "E1_unit",
+      "summary": "59 pure public recovery/scope/bootstrap/fence cases passed with exit 0, captured source unchanged.",
+      "limitations": "No PostgreSQL, Native or Orca Host qualification. New public POST and OAuth narrowing need controlled real-service/PG confirmation.",
+      "raw_log": {
+        "path": "integration_evidence/acs-stage-agnostic-20261106/pure-recovery-scope-isolated.log",
+        "sha256": "5c7163dc6e6322c9f1a179a99f39a668050096a4cb79f462705f5a62eb4ef12e"
+      }
+    },
+    {
+      "id": "E-CROSS-HOST-LIMITS",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/cross-host-report.md",
+      "sha256": "f6c3fc502c496b6ea48a4eb9b8151a6af8fa6d0169d29838149b85f044ee22dc",
+      "evidence_class": "source_review",
+      "summary": "Explicit record that the WP04 increment did not execute a physical cross-host model exchange or production receiver switch.",
+      "limitations": "A limitation report, not test-pass or qualification evidence."
+    },
+    {
+      "id": "E-LIFECYCLE-AUDIT",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/WP04_LIFECYCLE_SEAM_AUDIT.md",
+      "sha256": "175be14a5557baf11a5d1f553b7aecc630e20f339e30ab4bcc7857cc738b39a9",
+      "evidence_class": "source_review",
+      "summary": "Identified lifecycle bootstrap/current-authority/driver seams and missing fenced runtime recovery.",
+      "limitations": "Source-only. The old non-spawn-to-close alias described here is now fixed; current E-RECOVERY-NEW supersedes that specific finding."
+    },
+    {
+      "id": "E-LEGACY-BASELINE",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-legacy18-source-baseline.json",
+      "sha256": "9bd2a7f5d4d46c2b6611ac377db65d0019923a3c7f444b318a184fbb4814552f",
+      "evidence_class": "source_review",
+      "summary": "Historical baseline confirms original Core initializer/legacy test relationship and pinned legacy1.13 fixture hash.",
+      "limitations": "Pre-correction baseline observation. It does not assert that the corrected current test remains HEAD-identical."
+    },
+    {
+      "id": "E-STATE",
+      "path": "integration_evidence/acs-stage-agnostic-20261106/source-observation.json",
+      "sha256": "d723d23e2c5a60720988146bbb40fed802bfd09639766b9f1a5bdc98ab212f26",
+      "evidence_class": "source_review",
+      "summary": "Read-only git/path observation for the v1.1 continuation.",
+      "limitations": "Discovery hints only; paths and git status do not prove implementation or qualification."
+    }
+  ]
+}

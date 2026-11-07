@@ -1,0 +1,123 @@
+{
+  "schema_version": "acs-delivery-transitions/1",
+  "initial": "queued",
+  "states": [
+    "queued",
+    "deferred",
+    "preparing",
+    "submitting",
+    "accepted",
+    "definitively_rejected",
+    "unknown",
+    "superseded",
+    "cancelled_before_submit"
+  ],
+  "edges": [
+    {
+      "from": "queued",
+      "to": "deferred",
+      "requires": "not_ready_or_temporarily_unavailable"
+    },
+    {
+      "from": "queued",
+      "to": "preparing",
+      "requires": "authorized_prepare_supported"
+    },
+    {
+      "from": "queued",
+      "to": "submitting",
+      "requires": "current_binding_and_input_ready"
+    },
+    {
+      "from": "queued",
+      "to": "cancelled_before_submit",
+      "requires": "proven_no_native_effect"
+    },
+    {
+      "from": "queued",
+      "to": "superseded",
+      "requires": "binding_replaced_before_handoff"
+    },
+    {
+      "from": "deferred",
+      "to": "queued",
+      "requires": "eligible_and_authorized"
+    },
+    {
+      "from": "deferred",
+      "to": "cancelled_before_submit",
+      "requires": "proven_no_native_effect"
+    },
+    {
+      "from": "deferred",
+      "to": "superseded",
+      "requires": "binding_replaced_before_handoff"
+    },
+    {
+      "from": "preparing",
+      "to": "queued",
+      "requires": "real_session_prepared"
+    },
+    {
+      "from": "preparing",
+      "to": "deferred",
+      "requires": "temporary_blocker"
+    },
+    {
+      "from": "preparing",
+      "to": "definitively_rejected",
+      "requires": "definitive_prepare_refusal"
+    },
+    {
+      "from": "preparing",
+      "to": "unknown",
+      "requires": "prepare_outcome_not_proven"
+    },
+    {
+      "from": "preparing",
+      "to": "superseded",
+      "requires": "binding_changed"
+    },
+    {
+      "from": "submitting",
+      "to": "accepted",
+      "requires": "correlated_native_admission_evidence"
+    },
+    {
+      "from": "submitting",
+      "to": "definitively_rejected",
+      "requires": "correlated_non_admission_evidence"
+    },
+    {
+      "from": "submitting",
+      "to": "unknown",
+      "requires": "native_effect_cannot_be_excluded"
+    },
+    {
+      "from": "unknown",
+      "to": "accepted",
+      "requires": "reconciled_admission_evidence"
+    },
+    {
+      "from": "unknown",
+      "to": "definitively_rejected",
+      "requires": "reconciled_non_admission_evidence"
+    },
+    {
+      "from": "definitively_rejected",
+      "to": "queued",
+      "requires": "retryable_and_live_authorization_and_same_operation"
+    },
+    {
+      "from": "definitively_rejected",
+      "to": "cancelled_before_submit",
+      "requires": "no_effect_and_user_cancels"
+    }
+  ],
+  "forbidden_shortcuts": [
+    "unknown->queued",
+    "accepted->queued",
+    "unknown->submitting"
+  ],
+  "native_replay_rule": "May replay same native idempotency key only if original native dedup scope and live identity are proved; record replay as evidence, not a second logical operation."
+}

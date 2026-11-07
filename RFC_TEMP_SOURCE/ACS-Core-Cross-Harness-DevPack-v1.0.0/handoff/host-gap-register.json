@@ -1,0 +1,21 @@
+{
+  "schema_version": "acs-host-gaps/1",
+  "items": [
+    {
+      "id": "HG01",
+      "feature": "Native session transcript and action port",
+      "status": "implementation_check",
+      "source": "O02",
+      "core_obligation": "Implement NativeViewProvider contract and tested delegation, not a second transcript authority",
+      "host_obligation": "Verify current published API; if missing, name exact integration insertion point and required permission/source semantics"
+    },
+    {
+      "id": "HG02",
+      "feature": "Replaceable communication receiver provider",
+      "status": "implementation_check",
+      "source": "O02",
+      "core_obligation": "Implement OrcaReceiverPort and single-input-owner policy",
+      "host_obligation": "Confirm a supported host API or record minimal upstream/fork hook; no internal DB injection"
+    }
+  ]
+}

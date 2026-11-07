@@ -1,0 +1,1350 @@
+{
+  "schema_version": "acs-acceptance-scenarios/1",
+  "kind": "engineering_test_spec_not_comparison_experiment",
+  "scenarios": [
+    {
+      "id": "T001",
+      "requirements": [
+        "R-001"
+      ],
+      "work_package": "WP01",
+      "title": "可信作者从入口解析",
+      "given": "已认证 A",
+      "when": "A 发送没有 sender 字段的消息",
+      "then": "原包作者为真实 A；receipt 可从新连接读回",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T002",
+      "requirements": [
+        "R-001"
+      ],
+      "work_package": "WP01",
+      "title": "伪造作者字段",
+      "given": "正文/参数声称 Root",
+      "when": "普通 A 尝试传入 sender/角色",
+      "then": "参数拒绝或仅作文本；权限不提高",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T003",
+      "requirements": [
+        "R-002"
+      ],
+      "work_package": "WP01",
+      "title": "可信 Client 无 Slot",
+      "given": "合法 trusted Client",
+      "when": "首次 profile 与发信",
+      "then": "null Slot 可通信，身份不合成",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T004",
+      "requirements": [
+        "R-002"
+      ],
+      "work_package": "WP01",
+      "title": "未绑定不提权",
+      "given": "普通 subject 无 Slot",
+      "when": "省略 Slot 或加载 Root context",
+      "then": "拒绝歧义/无权，非 Client",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T005",
+      "requirements": [
+        "R-003"
+      ],
+      "work_package": "WP01",
+      "title": "稳定地址跨 Session",
+      "given": "已有 B 地址且明确新绑定",
+      "when": "A 向 B 发普通消息",
+      "then": "不需 Harness 名或 Task；按当前合法绑定接收",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T006",
+      "requirements": [
+        "R-003"
+      ],
+      "work_package": "WP01",
+      "title": "多接收端歧义",
+      "given": "B 有两个候选 receiver 无显式选择",
+      "when": "invoke 发送",
+      "then": "Inbox 提交，激活明确 selection_required；零广播",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T007",
+      "requirements": [
+        "R-004"
+      ],
+      "work_package": "WP02",
+      "title": "提交原子性",
+      "given": "可用真实 PG",
+      "when": "提交消息/reply/outbox/event intent",
+      "then": "所有记录同 commit；ACK 仅 commit 后",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T008",
+      "requirements": [
+        "R-004"
+      ],
+      "work_package": "WP02",
+      "title": "提交窗口崩溃",
+      "given": "在 T1 各写入点故障注入",
+      "when": "杀死写进程后重连",
+      "then": "不存在半条消息或丢 Outbox 的 ACK",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T009",
+      "requirements": [
+        "R-005"
+      ],
+      "work_package": "WP02",
+      "title": "同键恢复",
+      "given": "A 同键同文跨连接",
+      "when": "并发重试发送",
+      "then": "只一个 message 与一个逻辑操作",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T010",
+      "requirements": [
+        "R-005"
+      ],
+      "work_package": "WP02",
+      "title": "同键异文冲突",
+      "given": "已有 request key",
+      "when": "修改正文/目标/activation/附件重用 key",
+      "then": "409，无新增副作用",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T011",
+      "requirements": [
+        "R-006"
+      ],
+      "work_package": "WP02",
+      "title": "合法多引用回复",
+      "given": "B 收到 A 的多条请求",
+      "when": "B 对同 A 提交多 reply_to",
+      "then": "关系准确；首合法澄清满足 wait",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T012",
+      "requirements": [
+        "R-006"
+      ],
+      "work_package": "WP02",
+      "title": "第三方不能代答",
+      "given": "C 可见某资源但非原收件人",
+      "when": "C reply_to A→B 私信",
+      "then": "拒绝且不泄露不存在/无权差别",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T013",
+      "requirements": [
+        "R-007"
+      ],
+      "work_package": "WP02",
+      "title": "Native 成功不冒充回复",
+      "given": "Provider 完成 turn",
+      "when": "查询 wait",
+      "then": "没有显式回信则仍 pending",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T014",
+      "requirements": [
+        "R-007"
+      ],
+      "work_package": "WP02",
+      "title": "未知 ACK 仍有回复",
+      "given": "ACK 丢失但 B 独立回信",
+      "when": "read/wait 查询原消息",
+      "then": "wait satisfied，native unknown 保留",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T015",
+      "requirements": [
+        "R-008"
+      ],
+      "work_package": "WP02",
+      "title": "message_only + sync",
+      "given": "无 Native endpoint",
+      "when": "发送 message_only 并 wait 超时",
+      "then": "Inbox 保存、Native 调用数 0",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T016",
+      "requirements": [
+        "R-008"
+      ],
+      "work_package": "WP02",
+      "title": "超时不撤销",
+      "given": "A wait 超时 B 晚回",
+      "when": "新进程继续原 handle",
+      "then": "同一回复可见，A 未重发",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T017",
+      "requirements": [
+        "R-009"
+      ],
+      "work_package": "WP05",
+      "title": "UTF-8 长正文",
+      "given": "多字节正文和长回复",
+      "when": "小 byte budget 分别续读",
+      "then": "完整重建同 digest，next_offset=0 正确继续",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T018",
+      "requirements": [
+        "R-009"
+      ],
+      "work_package": "WP05",
+      "title": "read 不消费",
+      "given": "消息多次 list/read",
+      "when": "再次 read 和 native wait",
+      "then": "消息仍存在，无 mark_read 或激活",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T019",
+      "requirements": [
+        "R-010"
+      ],
+      "work_package": "WP05",
+      "title": "提交序号分页",
+      "given": "并发 PG 写者提交交错",
+      "when": "稳定 cursor 分页",
+      "then": "不漏后提交消息，不按 UUID/本地钟排序",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T020",
+      "requirements": [
+        "R-010"
+      ],
+      "work_package": "WP05",
+      "title": "游标过滤改变",
+      "given": "已有 A-peer cursor",
+      "when": "用于其他 peer/filter",
+      "then": "scope mismatch，不串历史",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T021",
+      "requirements": [
+        "R-011"
+      ],
+      "work_package": "WP02",
+      "title": "handoff 前落盘",
+      "given": "接收端无历史 operation",
+      "when": "发原生输入",
+      "then": "durable intent 先于外部调用",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T022",
+      "requirements": [
+        "R-011"
+      ],
+      "work_package": "WP02",
+      "title": "intent 后崩溃",
+      "given": "intent 已存原生结果不明",
+      "when": "重启 receiver",
+      "then": "unknown/reconcile，不盲重",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T023",
+      "requirements": [
+        "R-012"
+      ],
+      "work_package": "WP02",
+      "title": "原操作重放",
+      "given": "Provider 原去重域支持 key",
+      "when": "相同 operation 运输重试",
+      "then": "同 receipt，不二次逻辑输入",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T024",
+      "requirements": [
+        "R-012"
+      ],
+      "work_package": "WP02",
+      "title": "去重域变化",
+      "given": "原 Session unknown 后新建",
+      "when": "复用 operation 到新 Session",
+      "then": "拒绝无证据重放",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T025",
+      "requirements": [
+        "R-013"
+      ],
+      "work_package": "WP04",
+      "title": "核验未知结果",
+      "given": "原生查询返回 correlated ACK",
+      "when": "reconcile",
+      "then": "unknown→accepted 并保留证据",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T026",
+      "requirements": [
+        "R-013"
+      ],
+      "work_package": "WP04",
+      "title": "无查询能力",
+      "given": "Native 超时且不能查询",
+      "when": "恢复/重试按钮",
+      "then": "unknown 可见、零新输入",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T027",
+      "requirements": [
+        "R-014"
+      ],
+      "work_package": "WP02",
+      "title": "旧 worker fence",
+      "given": "lease 已过期新 worker 取得",
+      "when": "旧进程继续 handoff",
+      "then": "receiver 拒绝旧 epoch",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T028",
+      "requirements": [
+        "R-014"
+      ],
+      "work_package": "WP02",
+      "title": "无原生 fence",
+      "given": "仅 PTY 可写",
+      "when": "声明支持自动并发接管",
+      "then": "能力降级；不能伪造 fenced 支持",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T029",
+      "requirements": [
+        "R-015"
+      ],
+      "work_package": "WP03",
+      "title": "绑定前后重验",
+      "given": "prepare 开始后被 revoke",
+      "when": "到 native admission 前",
+      "then": "拒绝新副作用",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T030",
+      "requirements": [
+        "R-015"
+      ],
+      "work_package": "WP03",
+      "title": "撤销撞上外部输入",
+      "given": "Provider 已可能接收才 revoke",
+      "when": "查询结果",
+      "then": "记录 native_possible/unknown，不假称已撤回",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T031",
+      "requirements": [
+        "R-016"
+      ],
+      "work_package": "WP03",
+      "title": "忙时安全排队",
+      "given": "verified native enqueue",
+      "when": "busy 接收新消息",
+      "then": "queued receipt 非 consumed",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T032",
+      "requirements": [
+        "R-016"
+      ],
+      "work_package": "WP03",
+      "title": "审批/草稿保护",
+      "given": "用户正在审批或有未提交文字",
+      "when": "自动 wake",
+      "then": "延迟，无回车/覆盖/自动批准",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T033",
+      "requirements": [
+        "R-017"
+      ],
+      "work_package": "WP01",
+      "title": "状态过期",
+      "given": "之前 observed idle 已过 expires",
+      "when": "invoke",
+      "then": "重新观察/延迟",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T034",
+      "requirements": [
+        "R-017"
+      ],
+      "work_package": "WP01",
+      "title": "终端静默",
+      "given": "没有可信 hook/native 状态",
+      "when": "infer quiet",
+      "then": "标 inferred/unknown，不证明 idle/consumed",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T035",
+      "requirements": [
+        "R-018"
+      ],
+      "work_package": "WP04",
+      "title": "重绑保留历史",
+      "given": "旧 epoch 有 receipt/message",
+      "when": "合法 rebind",
+      "then": "作者/关系不变，历史归旧 epoch",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T036",
+      "requirements": [
+        "R-018"
+      ],
+      "work_package": "WP04",
+      "title": "旧回执晚到",
+      "given": "旧 generation ACK 晚到",
+      "when": "新绑定已有消息",
+      "then": "只关联原 operation，不污染新 Session",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T037",
+      "requirements": [
+        "R-019"
+      ],
+      "work_package": "WP04",
+      "title": "受权 Session 恢复",
+      "given": "resume 能力与授权有效",
+      "when": "恢复接收端",
+      "then": "真实 session readback 与最小上下文",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T038",
+      "requirements": [
+        "R-019"
+      ],
+      "work_package": "WP04",
+      "title": "无恢复权限",
+      "given": "原 Session 不存在",
+      "when": "list/read 状态",
+      "then": "不 spawn，不合成新 session",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T039",
+      "requirements": [
+        "R-020"
+      ],
+      "work_package": "WP04",
+      "title": "wait 与 wake 去重",
+      "given": "A 正活动等待 B",
+      "when": "B 回信",
+      "then": "ToolResult 返回且不重复启动 A",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T040",
+      "requirements": [
+        "R-020"
+      ],
+      "work_package": "WP04",
+      "title": "唤醒合并不丢正文",
+      "given": "连续多条 incoming",
+      "when": "合并 wake 提示",
+      "then": "全部 message IDs 在 Inbox 保持独立",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T041",
+      "requirements": [
+        "R-021"
+      ],
+      "work_package": "WP05",
+      "title": "无会话前置",
+      "given": "联系人存在但无 conversation",
+      "when": "send",
+      "then": "自动投影唯一 conversation",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T042",
+      "requirements": [
+        "R-021"
+      ],
+      "work_package": "WP05",
+      "title": "并发创建投影",
+      "given": "双方同时发首消息",
+      "when": "commit",
+      "then": "一对地址仅一个 conversation，不漏消息",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T043",
+      "requirements": [
+        "R-022"
+      ],
+      "work_package": "WP05",
+      "title": "跨设备已读",
+      "given": "同 actor 两设备",
+      "when": "读水位并发前进",
+      "then": "水位单调，晚到消息仍未读",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T044",
+      "requirements": [
+        "R-022"
+      ],
+      "work_package": "WP05",
+      "title": "个人未读不代表消费",
+      "given": "UI mark read",
+      "when": "查询 delivery/response",
+      "then": "Native 与 reply 状态不变",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T045",
+      "requirements": [
+        "R-023"
+      ],
+      "work_package": "WP06",
+      "title": "snapshot race",
+      "given": "snapshot 与新提交并发",
+      "when": "订阅返回 after_cursor",
+      "then": "所有后续可见事件到达",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T046",
+      "requirements": [
+        "R-023"
+      ],
+      "work_package": "WP06",
+      "title": "replay 重复",
+      "given": "重连收到相同 event",
+      "when": "reducer 重放",
+      "then": "资源不重复追加/回滚",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T047",
+      "requirements": [
+        "R-024"
+      ],
+      "work_package": "WP06",
+      "title": "订阅撤销",
+      "given": "已授权实时连接",
+      "when": "撤销并提交私信",
+      "then": "停止私密 payload，失效缓存",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T048",
+      "requirements": [
+        "R-024"
+      ],
+      "work_package": "WP06",
+      "title": "计数/错误泄漏",
+      "given": "不同 scope 查询 search/count",
+      "when": "无权请求",
+      "then": "不暴露私信存在和数量",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T049",
+      "requirements": [
+        "R-025"
+      ],
+      "work_package": "WP06",
+      "title": "固定 snapshot 分页",
+      "given": "分页期间有新消息",
+      "when": "翻后续页面",
+      "then": "snapshot 视图固定，增量走 event",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T050",
+      "requirements": [
+        "R-025"
+      ],
+      "work_package": "WP06",
+      "title": "游标过期",
+      "given": "过期 replay cursor",
+      "when": "重连",
+      "then": "410 + resnapshot，不静默跳到最新",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T051",
+      "requirements": [
+        "R-026"
+      ],
+      "work_package": "WP07",
+      "title": "附件受权读取",
+      "given": "附件 ready 且关联 A→B",
+      "when": "B 读取",
+      "then": "digest 正确且范围授权",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T052",
+      "requirements": [
+        "R-026"
+      ],
+      "work_package": "WP07",
+      "title": "附件越权/SSRF",
+      "given": "C 猜 ID 或提交外部 URL",
+      "when": "下载或 fetch",
+      "then": "拒绝，无私有网请求",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T053",
+      "requirements": [
+        "R-027"
+      ],
+      "work_package": "WP07",
+      "title": "双源 exact linkage",
+      "given": "一条 ACS 消息已入 Native",
+      "when": "组合视图",
+      "then": "source IDs 独立，显式 linkage 可关联",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T054",
+      "requirements": [
+        "R-027"
+      ],
+      "work_package": "WP07",
+      "title": "相同文本无 linkage",
+      "given": "用户自己写相同内容",
+      "when": "组合显示",
+      "then": "不按相似度合并/生成 reply",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T055",
+      "requirements": [
+        "R-028"
+      ],
+      "work_package": "WP05",
+      "title": "新旧入口一致",
+      "given": "相同受信 A",
+      "when": "MCP/HTTP 发等价消息",
+      "then": "同一领域规则和身份",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T056",
+      "requirements": [
+        "R-028"
+      ],
+      "work_package": "WP05",
+      "title": "HTTP 绕权",
+      "given": "普通 Agent 调 manager 动作",
+      "when": "HTTP 调用",
+      "then": "和 MCP 一样拒绝",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T057",
+      "requirements": [
+        "R-029"
+      ],
+      "work_package": "WP09",
+      "title": "有界背压",
+      "given": "慢 SSE 消费者/附件配额满",
+      "when": "超预算请求",
+      "then": "提前拒绝或要求 replay",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T058",
+      "requirements": [
+        "R-029"
+      ],
+      "work_package": "WP09",
+      "title": "已接受不可丢",
+      "given": "Outbox 队列压力",
+      "when": "后续维护",
+      "then": "消息保留，公平目标仍推进",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T059",
+      "requirements": [
+        "R-030"
+      ],
+      "work_package": "WP08",
+      "title": "未知准确呈现",
+      "given": "receiver 观测 unknown",
+      "when": "UI snapshot",
+      "then": "unknown 不显示 idle",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T060",
+      "requirements": [
+        "R-030"
+      ],
+      "work_package": "WP08",
+      "title": "缺字段事件",
+      "given": "旧 provider 未给状态",
+      "when": "映射新 DTO",
+      "then": "保持 unknown/unsupported",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T061",
+      "requirements": [
+        "R-031"
+      ],
+      "work_package": "WP03",
+      "title": "已有 Native 回归",
+      "given": "安装 Codex/OpenCode 资格环境",
+      "when": "真实 A/B 收发",
+      "then": "一次发起、真实 B 显式回信",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T062",
+      "requirements": [
+        "R-031"
+      ],
+      "work_package": "WP03",
+      "title": "未验证平台",
+      "given": "Windows Shared 未跑",
+      "when": "生成支持矩阵",
+      "then": "标 unverified，不外推已通过",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T063",
+      "requirements": [
+        "R-032"
+      ],
+      "work_package": "WP08",
+      "title": "Orca 单输入 owner",
+      "given": "Orca owns Session",
+      "when": "ACS 通过 bridge 输入",
+      "then": "仅 host 一个调用者",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T064",
+      "requirements": [
+        "R-032"
+      ],
+      "work_package": "WP08",
+      "title": "双 adapter 竞争",
+      "given": "外部 Driver 与 Orca 同 Session",
+      "when": "并发 claim",
+      "then": "拒绝/配置冲突，不能双提交",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T065",
+      "requirements": [
+        "R-033"
+      ],
+      "work_package": "WP08",
+      "title": "UI 功能闭环",
+      "given": "全部 UI matrix 行",
+      "when": "headless consumer 调用",
+      "then": "每行有真实服务或授权 delegate",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T066",
+      "requirements": [
+        "R-033"
+      ],
+      "work_package": "WP08",
+      "title": "Native 完成渲染",
+      "given": "tool/turn 结束",
+      "when": "通信列表更新",
+      "then": "不得自动添加 Agent reply",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T067",
+      "requirements": [
+        "R-034"
+      ],
+      "work_package": "WP08",
+      "title": "插件能力缺口",
+      "given": "公开 API 无 transcript 替换",
+      "when": "建立宿主 port",
+      "then": "typed host_extension_required",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T068",
+      "requirements": [
+        "R-034"
+      ],
+      "work_package": "WP08",
+      "title": "私改 DB 取巧",
+      "given": "插件缺 API",
+      "when": "试图内部库注入",
+      "then": "实现不允许，资格不通过",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T069",
+      "requirements": [
+        "R-035"
+      ],
+      "work_package": "WP09",
+      "title": "additive 升级",
+      "given": "真实旧库备份",
+      "when": "迁移+backfill",
+      "then": "原 message/author/reply/key checksum 不变",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T070",
+      "requirements": [
+        "R-035"
+      ],
+      "work_package": "WP09",
+      "title": "迁移中断回滚",
+      "given": "含未决 Native operation",
+      "when": "恢复旧 app",
+      "then": "证据保留，不能重新发",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T071",
+      "requirements": [
+        "R-036"
+      ],
+      "work_package": "WP04",
+      "title": "恢复动作幂等",
+      "given": "受权 manager + revision",
+      "when": "同键 reconcile/resume",
+      "then": "同 operation result",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T072",
+      "requirements": [
+        "R-036"
+      ],
+      "work_package": "WP04",
+      "title": "过期配置恢复",
+      "given": "expected revision 旧",
+      "when": "rebind/恢复",
+      "then": "409，零新输入",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T073",
+      "requirements": [
+        "R-037"
+      ],
+      "work_package": "WP09",
+      "title": "诊断脱敏",
+      "given": "普通 actor/manager",
+      "when": "读取通信故障",
+      "then": "必要技术状态无私信/凭据",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T074",
+      "requirements": [
+        "R-037"
+      ],
+      "work_package": "WP09",
+      "title": "系统通知不能代答",
+      "given": "system notice 到 Inbox",
+      "when": "wait 原 Agent reply",
+      "then": "不匹配、无泄露",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T075",
+      "requirements": [
+        "R-038"
+      ],
+      "work_package": "WP10",
+      "title": "证据层次",
+      "given": "L0/fixture 通过",
+      "when": "写交付报告",
+      "then": "明确非 Native 资格",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T076",
+      "requirements": [
+        "R-038"
+      ],
+      "work_package": "WP10",
+      "title": "缺真实环境",
+      "given": "无 credential/二进制",
+      "when": "资格汇总",
+      "then": "blocked/unverified，不填 pass",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T077",
+      "requirements": [
+        "R-039"
+      ],
+      "work_package": "WP01",
+      "title": "能力失效",
+      "given": "旧 binary/config 的 supported",
+      "when": "更换 execution host/version",
+      "then": "能力重新探测",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T078",
+      "requirements": [
+        "R-039"
+      ],
+      "work_package": "WP01",
+      "title": "缓存穿透",
+      "given": "旧 peer fingerprint 缓存",
+      "when": "重连不同 Node",
+      "then": "拒绝旧 capability 与身份",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T079",
+      "requirements": [
+        "R-040"
+      ],
+      "work_package": "WP09",
+      "title": "独立 Core 可用",
+      "given": "不运行 Orca/UI",
+      "when": "已提交消息 wait/恢复",
+      "then": "维护器和历史持续",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T080",
+      "requirements": [
+        "R-040"
+      ],
+      "work_package": "WP09",
+      "title": "UI 关闭",
+      "given": "SSE/Orca 窗口退出",
+      "when": "后台接收回信",
+      "then": "不丢消息，不依赖 UI 轮询",
+      "priority": "P0",
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "status": "not_executed"
+    },
+    {
+      "id": "T081",
+      "requirements": [
+        "R-033"
+      ],
+      "work_package": "WP08",
+      "title": "真实 HTTP 客户端全链",
+      "given": "真实 ACS 服务与隔离 namespace",
+      "when": "运行 headless consumer 覆盖 HTTP/SSE/附件/个人状态",
+      "then": "不是 mock server；保存请求/响应/事件和 DB readback",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T082",
+      "requirements": [
+        "R-027"
+      ],
+      "work_package": "WP08",
+      "title": "Orca 原生 transcript delegate",
+      "given": "指定宿主 native provider",
+      "when": "读取工具/Diff/子 Agent 等源块",
+      "then": "按宿主 ACL，未转 ACS message",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T083",
+      "requirements": [
+        "R-033"
+      ],
+      "work_package": "WP08",
+      "title": "原生审批 stale nonce",
+      "given": "审批已被处理或原 turn 替换",
+      "when": "延迟 answer_approval",
+      "then": "宿主拒绝 stale action，不产生 ACS reply",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T084",
+      "requirements": [
+        "R-022"
+      ],
+      "work_package": "WP05",
+      "title": "draft CAS 冲突",
+      "given": "两设备同 revision draft",
+      "when": "同时编辑",
+      "then": "一方 409，原字节保留",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T085",
+      "requirements": [
+        "R-026"
+      ],
+      "work_package": "WP07",
+      "title": "附件上传断线",
+      "given": "已 reservation content 未完成",
+      "when": "重传同键后 finalize",
+      "then": "完整 digest 一致；不重复 ready 内容",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T086",
+      "requirements": [
+        "R-033"
+      ],
+      "work_package": "WP08",
+      "title": "Native clear/compact",
+      "given": "Native 会话与 ACS linked",
+      "when": "原生 clear/compact 后继续通信",
+      "then": "ACS 历史和 identity 不变；新 native generation 精确记录",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T087",
+      "requirements": [
+        "R-033"
+      ],
+      "work_package": "WP08",
+      "title": "模型选择不改通信身份",
+      "given": "宿主支持 model/effort",
+      "when": "调用原生设置",
+      "then": "仅 Native 权威更新，sender 不变",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T088",
+      "requirements": [
+        "R-037"
+      ],
+      "work_package": "WP05",
+      "title": "通知重复与 seen",
+      "given": "同 notice replay",
+      "when": "mark seen 并断线重连",
+      "then": "个人 seen 单调，与 message/reply 无关",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T089",
+      "requirements": [
+        "R-024"
+      ],
+      "work_package": "WP09",
+      "title": "多项目隔离",
+      "given": "同 principal 两项目且 scope 不同",
+      "when": "交叉 cursor/handle/附件/NativeLink",
+      "then": "全部依权限裁剪，无越权",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T090",
+      "requirements": [
+        "R-040"
+      ],
+      "work_package": "WP09",
+      "title": "安装后的服务回归",
+      "given": "安装包/清单/服务真实可用",
+      "when": "关闭开发 shell/客户端",
+      "then": "已装维护器继续工作",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T091",
+      "requirements": [
+        "R-035"
+      ],
+      "work_package": "WP09",
+      "title": "历史 backfill 可恢复",
+      "given": "历史消息有缺旧作者和非连续 ID",
+      "when": "中断回填再继续",
+      "then": "不猜作者、无重复 conversation、checkpoint 正确",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T092",
+      "requirements": [
+        "R-031"
+      ],
+      "work_package": "WP03",
+      "title": "只有接收资格未知",
+      "given": "Codex 或 OpenCode 尚未安装",
+      "when": "describe/activate",
+      "then": "支持 unknown/unavailable；message_only 不受影响",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T093",
+      "requirements": [
+        "R-035"
+      ],
+      "work_package": "WP09",
+      "title": "无意外写入启动",
+      "given": "旧 schema 未授权 adoption",
+      "when": "普通服务 startup",
+      "then": "仅校验并报 schema_adoption_required",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T094",
+      "requirements": [
+        "R-009"
+      ],
+      "work_package": "WP05",
+      "title": "大消息 ACK 独立续读",
+      "given": "原文和回复都超过预算",
+      "when": "read_message + wait continuations",
+      "then": "两正文完整、不同 handle、offset=0 可继续",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T095",
+      "requirements": [
+        "R-023"
+      ],
+      "work_package": "WP06",
+      "title": "SSE 心跳不是消息",
+      "given": "空闲订阅",
+      "when": "观察 heartbeat 后断线",
+      "then": "没有 unread 变化、没有 Native wake",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    },
+    {
+      "id": "T096",
+      "requirements": [
+        "R-013"
+      ],
+      "work_package": "WP04",
+      "title": "关闭 adapter 中未决输入",
+      "given": "native submitting 无已知结果",
+      "when": "adapter shutdown/restart",
+      "then": "原 operation unknown，不能启动替代发送",
+      "priority": "P0",
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "status": "not_executed"
+    }
+  ]
+}

@@ -1,0 +1,2048 @@
+{
+  "schema_version": "acs-adoption-state/1",
+  "revision_package_version": "1.1.0",
+  "observed_at": "2026-11-07T06:14:40.603779+00:00",
+  "source_version": "2.3.1 source/candidate wheel; installed production is a separate observation",
+  "source_head": "19d7881d49ee887315c54c5bc02e0cc424061376",
+  "source_tree": "8856b23e59d50eccb1198475e84937c48a71b0bb",
+  "branch": "codex/core-cleanup",
+  "dirty_patch_digest": "fba85437f8e8c1dda5a739b4717ab0d7d1236f4c8c8b488ccf3972c411136dd5",
+  "source_state": {
+    "repository": "D:\\Chatgpt\\Agent-collaboration",
+    "branch": "codex/core-cleanup",
+    "head": "19d7881d49ee887315c54c5bc02e0cc424061376",
+    "tree": "8856b23e59d50eccb1198475e84937c48a71b0bb",
+    "tracked_binary_diff_sha256": "fba85437f8e8c1dda5a739b4717ab0d7d1236f4c8c8b488ccf3972c411136dd5",
+    "digest_format": "raw git diff --binary --no-ext-diff bytes",
+    "working_tree": "dirty_uncommitted",
+    "committed": false,
+    "pushed": false,
+    "upstream": "origin/codex/core-cleanup",
+    "receiver_sync_action": "none",
+    "observed_at": "2026-11-07T06:14:40.603779+00:00"
+  },
+  "development_status": "complete_in_declared_scope_with_explicit_qualification_limits",
+  "request_scope": "P0 and P1 plus user-requested P2 extensions C22-C25",
+  "prior_intent": "ACS-Core-Cross-Harness-DevPack-v1.0.0",
+  "old_package_execution_stage": "not_assumed",
+  "items": [
+    {
+      "id": "C01",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "通信核心/身份和回复不回归",
+      "present_baseline": "已有稳定 Slot/Client/Root/Route，send/reply/wait/Inbox/Outbox",
+      "required_delta": "对所有新路径核验信任边界、默认语义、回复严格关系",
+      "reuse_first": "runtime/communication.py; runtime/communication_management.py; current MCP domain",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-001",
+        "R-002",
+        "R-003",
+        "R-006",
+        "R-007",
+        "R-008",
+        "R-009",
+        "R-010"
+      ],
+      "test_ids": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T011",
+        "T012",
+        "T013",
+        "T015",
+        "T016",
+        "T017",
+        "T018",
+        "T019",
+        "T020",
+        "T094"
+      ],
+      "depends_on": [],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T001",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T002",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T003",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T004",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T011",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T012",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T013",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T015",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T016",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T017",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T018",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T019",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T020",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T094",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication.py",
+          "sha256": "0d8dcf6cc17191d6a6561cb1a60a201eddcfcb59f50c3e5448cefb538440827b"
+        },
+        {
+          "path": "runtime/communication_management.py",
+          "sha256": "3a475c9352fab15132aca13c190e0d006a6aa70be71dbd4f489938814a44c524"
+        },
+        {
+          "path": "runtime/delivery.py",
+          "sha256": "a64127da4c7c5a0a7a9af1b21316ed6b2d62399ef2e2c65dea7817bfbeeeb0af"
+        },
+        {
+          "path": "runtime/delivery_models.py",
+          "sha256": "a99e8bc55149c3a6218485243d34551b5c177d2ae4b7527ca51781ea16e2fdc6"
+        },
+        {
+          "path": "runtime/delivery_node.py",
+          "sha256": "d85253e5a523d6f20ecf7bb6e0d0a43f5c26d074bd406a09fa793eb1b363cb86"
+        },
+        {
+          "path": "runtime_tests/test_communication.py",
+          "sha256": "ade3be6323da6eefddab2f3b384dd08a0cf0aa2b80bdec761bd263085d2961ab"
+        },
+        {
+          "path": "runtime_tests/test_communication_content.py",
+          "sha256": "27996605aec440cacbb9b54b6166c1ad5889726b8b990e77a0a0dd9172132531"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C01",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C02",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "Adapter 能力/证据声明",
+      "present_baseline": "已有 Codex/OpenCode Driver 和 list_harnesses",
+      "required_delta": "描述真实 Native 能力、观察来源/新鲜度/连接代次、unsupported",
+      "reuse_first": "existing receiver factory/Driver/Node callbacks; avoid duplicate adapter layer",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-017",
+        "R-039"
+      ],
+      "test_ids": [
+        "T033",
+        "T034",
+        "T077",
+        "T078"
+      ],
+      "depends_on": [
+        "C01"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T033",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T034",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T077",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T078",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/harness_adapter.py",
+          "sha256": "780768969df6667f866da84ad9cde3de7ae7ff12c97b9ce4f58665b108ac6c0d"
+        },
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb"
+        },
+        {
+          "path": "runtime/native_input_observations.py",
+          "sha256": "20339aacf6bc1c06c7a41c7676ff3b090a7072c6ba5b2e7de2ec3628719d10fd"
+        },
+        {
+          "path": "runtime/receiver_contract.py",
+          "sha256": "6af12bafd6939d02b34b66685a0673e5a8ee260952a7883010ed5ea534cadca5"
+        },
+        {
+          "path": "runtime/receiver_evidence.py",
+          "sha256": "36bef6d6be9c0933c8905c5f12e84c9423c0e9346b5e2a7e164fd714af74f4a9"
+        },
+        {
+          "path": "runtime/signed_harness_adapter.py",
+          "sha256": "99a5733727b387c8346691d49f96289475cea35ecc582d9f267721ded6584db3"
+        },
+        {
+          "path": "runtime_tests/test_native_input_observations.py",
+          "sha256": "c38840c1b6fe9272e06d1c9cad3db3b7ebd6500baf34510257f27d27903c0f06"
+        },
+        {
+          "path": "runtime_tests/test_receiver_contract.py",
+          "sha256": "f417c2d3070abac1b5a9923d6640cb6d627fc0aa441092ec062a36ff78230f95"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C02",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C03",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "最后输入准入",
+      "present_baseline": "已有 Native 接收/idle/受限 busy",
+      "required_delta": "在同 binding/operation/权限/Provider readiness 下安全提交，保护审批/用户草稿",
+      "reuse_first": "native_delivery.py; receiver_codex/opencode",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-015",
+        "R-016"
+      ],
+      "test_ids": [
+        "T029",
+        "T030",
+        "T031",
+        "T032"
+      ],
+      "depends_on": [
+        "C02"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T029",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T030",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T031",
+          "status": "unsupported_verified",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T032",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "6649146c93f76e288a4859635a029a9cbc6419f763abefff915583e758eb8917"
+        },
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb"
+        },
+        {
+          "path": "runtime/native_input_observations.py",
+          "sha256": "20339aacf6bc1c06c7a41c7676ff3b090a7072c6ba5b2e7de2ec3628719d10fd"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "f93bc6b32bf9ac103aef6f15bbbb94d0d585c77697dcad43fa72307ee08f11f2"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "43fc6d5e21c34ee099ac4c0d7775d4e891d547c6656bf01bc3e8cf08e03eecc5"
+        },
+        {
+          "path": "runtime/signed_harness_adapter.py",
+          "sha256": "99a5733727b387c8346691d49f96289475cea35ecc582d9f267721ded6584db3"
+        },
+        {
+          "path": "runtime_tests/test_native_handoff.py",
+          "sha256": "549456014385bb8378507832895056b5e4a42b7b3a1f39a8c9803e60ecd8db2a"
+        },
+        {
+          "path": "runtime_tests/test_native_input_observations.py",
+          "sha256": "c38840c1b6fe9272e06d1c9cad3db3b7ebd6500baf34510257f27d27903c0f06"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C03",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C04",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "Native 操作证据和未知调和",
+      "present_baseline": "已有 Outbox/operation/Node Journal/ACK 与防重",
+      "required_delta": "关联原操作和最后交接证据，未知时不重复原生副作用",
+      "reuse_first": "existing operations/Outbox/Node Journal; no second ledger",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-004",
+        "R-005",
+        "R-011",
+        "R-012",
+        "R-013"
+      ],
+      "test_ids": [
+        "T007",
+        "T008",
+        "T009",
+        "T010",
+        "T014",
+        "T021",
+        "T022",
+        "T023",
+        "T024",
+        "T025",
+        "T026",
+        "T096"
+      ],
+      "depends_on": [
+        "C01",
+        "C02"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T007",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T008",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T009",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T010",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T014",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T021",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T022",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T023",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T024",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T025",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T026",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T096",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_delivery_observer.py",
+          "sha256": "3e00a546c50645363617d8f68e5225acdfa9a2ed4f2832f735884384d776e1fe"
+        },
+        {
+          "path": "runtime/delivery_node.py",
+          "sha256": "d85253e5a523d6f20ecf7bb6e0d0a43f5c26d074bd406a09fa793eb1b363cb86"
+        },
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb"
+        },
+        {
+          "path": "runtime/native_handoff.py",
+          "sha256": "ab6d2ad2fe0d191edf8405f87821e4326b210e8a6571c7017570826da3fec7e2"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "43fc6d5e21c34ee099ac4c0d7775d4e891d547c6656bf01bc3e8cf08e03eecc5"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "46861d26f3f00b19aedf62bf2461375459c044440de984bfb94e05e9355d8ae5"
+        },
+        {
+          "path": "runtime_tests/test_local_native_reconcile.py",
+          "sha256": "8fd46b776cbee9220a6be2bb7a6623110538b3a0bd711489f444ab30b6023ee2"
+        },
+        {
+          "path": "runtime_tests/test_native_handoff.py",
+          "sha256": "549456014385bb8378507832895056b5e4a42b7b3a1f39a8c9803e60ecd8db2a"
+        },
+        {
+          "path": "runtime_tests/test_remote_readback_freshness.py",
+          "sha256": "0cc8438ef20182858f2de01e8fd9a5d32555a65b11e6c9f8b3c348d8c440c836"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C04",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C05",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "绑定代次与接收端 fencing",
+      "present_baseline": "已有 Slot、Endpoint、binding revision、per-Slot dispatch fence",
+      "required_delta": "旧 Native 实例不能收到新绑定消息、迟到 ACK 只证明旧操作",
+      "reuse_first": "current receiver config and Node/Runtime admission",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-003",
+        "R-014",
+        "R-018"
+      ],
+      "test_ids": [
+        "T005",
+        "T006",
+        "T027",
+        "T028",
+        "T035",
+        "T036"
+      ],
+      "depends_on": [
+        "C04"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T005",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T006",
+          "status": "verified_revised_legacy_compatibility",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T027",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T028",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T035",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T036",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_management.py",
+          "sha256": "3a475c9352fab15132aca13c190e0d006a6aa70be71dbd4f489938814a44c524"
+        },
+        {
+          "path": "runtime/enrollment.py",
+          "sha256": "3f3986c21931244f39cdb761fa33090de2c1bd82897c511d14d51a0918960842"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "43fc6d5e21c34ee099ac4c0d7775d4e891d547c6656bf01bc3e8cf08e03eecc5"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "46861d26f3f00b19aedf62bf2461375459c044440de984bfb94e05e9355d8ae5"
+        },
+        {
+          "path": "runtime/receiver_domain.py",
+          "sha256": "89921437e6d138b697fe1a2f180bb10c136ebe5820bcf01fc4bb37d465a79139"
+        },
+        {
+          "path": "runtime_deployment/receiver_authority.py",
+          "sha256": "45ce1ebee5781e9da082c79318e579b555b420d690fa872b79d5e6f7fdd0f730"
+        },
+        {
+          "path": "runtime_tests/test_receiver_connection_clock.py",
+          "sha256": "80712aa7c8e58dac8ed6880ba20cc8dc53dff04c58e02a26c1b9ee3ee7dd67c1"
+        },
+        {
+          "path": "runtime_tests/test_receiver_recovery_operations.py",
+          "sha256": "e2cbf386adebe1b5e0590569cb9fd3a91864fcfeaea44e4f26babecf7d90d0c6"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C05",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C06",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "支持条件下的安全唤醒/延期",
+      "present_baseline": "已有 busy 退避、maintenance、通知",
+      "required_delta": "运行时在合法就绪边缘推进，避免模型回合重入或重复唤醒",
+      "reuse_first": "default MCP maintenance, existing inbox and waits",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-020",
+        "R-029"
+      ],
+      "test_ids": [
+        "T039",
+        "T040",
+        "T057",
+        "T058"
+      ],
+      "depends_on": [
+        "C03",
+        "C04"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T039",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T040",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T057",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T058",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "6649146c93f76e288a4859635a029a9cbc6419f763abefff915583e758eb8917"
+        },
+        {
+          "path": "runtime/communication.py",
+          "sha256": "0d8dcf6cc17191d6a6561cb1a60a201eddcfcb59f50c3e5448cefb538440827b"
+        },
+        {
+          "path": "runtime/communication_dispatch.py",
+          "sha256": "bfef356d25ba84ee45b4a7d8b9490b185be6ba1b88d3e94c58548e8ff02ec8e9"
+        },
+        {
+          "path": "runtime/communication_notifications.py",
+          "sha256": "4fa5b520672fc8ee3b12d8695dddf738753f18b1ab7fa78925a100499dc329a9"
+        },
+        {
+          "path": "runtime/communication_wait_ingress.py",
+          "sha256": "cd0965717dec01851d24cd596d88174ac8d461dd2fd3c59d36ea4538a163e0f0"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "f93bc6b32bf9ac103aef6f15bbbb94d0d585c77697dcad43fa72307ee08f11f2"
+        },
+        {
+          "path": "runtime_tests/test_communication_maintenance.py",
+          "sha256": "4c383ba8e25e82106dce0472333ea8e470fe59768c5f382d5096835a5b56999e"
+        },
+        {
+          "path": "runtime_tests/test_notification_continuity.py",
+          "sha256": "4d00fba3c8c82d42feaf2ff01d2d2f3abd5bf7b63897183a5f94998438be0194"
+        },
+        {
+          "path": "runtime_tests/test_wait_ingress_recovery.py",
+          "sha256": "56bb7c3431a1424c0b43b433dab2217edde70b22249d51c4550c0dcdf5dd7f5b"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C06",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C07",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "受权 Session 续接与重新绑定",
+      "present_baseline": "稳定 Slot/Client 身份与基本 Session 准备",
+      "required_delta": "可证明恢复原会话；明确许可的新会话重绑；不伪造工作记忆",
+      "reuse_first": "current endpoint configuration/receiver lifecycle",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-019",
+        "R-036"
+      ],
+      "test_ids": [
+        "T037",
+        "T038",
+        "T071",
+        "T072"
+      ],
+      "depends_on": [
+        "C04",
+        "C05"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T037",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T038",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T071",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T072",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "6649146c93f76e288a4859635a029a9cbc6419f763abefff915583e758eb8917"
+        },
+        {
+          "path": "runtime/communication_client_recovery.py",
+          "sha256": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c"
+        },
+        {
+          "path": "runtime/communication_management.py",
+          "sha256": "3a475c9352fab15132aca13c190e0d006a6aa70be71dbd4f489938814a44c524"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "f93bc6b32bf9ac103aef6f15bbbb94d0d585c77697dcad43fa72307ee08f11f2"
+        },
+        {
+          "path": "runtime/receiver_crypto.py",
+          "sha256": "2687065eea63b56af3db1fc54b7b9bbd1e812e7825ccaa489851f5ce8dddedd7"
+        },
+        {
+          "path": "runtime/receiver_lifecycle.py",
+          "sha256": "c9b286dc4bea0aeec98aa9df1a4bc909f8d082b924c8b91b7cbb8f21bbce0736"
+        },
+        {
+          "path": "runtime/receiver_models.py",
+          "sha256": "6b4679c422bb52667adcefb51a6714439ae4713535d2fa95e22bab148595a7a0"
+        },
+        {
+          "path": "runtime/receiver_rebind.py",
+          "sha256": "770b2277412b8fa8ba4165fc8d83f5de9f9ae7a2851387424448c65e74879ccb"
+        },
+        {
+          "path": "runtime/receiver_recovery_operations.py",
+          "sha256": "5558980c064acb9cab591a6416ad33312e47038e197e559597c5ea03bcfd7de8"
+        },
+        {
+          "path": "runtime_deployment/receiver_authority.py",
+          "sha256": "45ce1ebee5781e9da082c79318e579b555b420d690fa872b79d5e6f7fdd0f730"
+        },
+        {
+          "path": "runtime_deployment/receiver_codex.py",
+          "sha256": "6ac3d881a26d82da3ccd060b351324852ad84d6bbf6a8e83c1c6111bb053e671"
+        },
+        {
+          "path": "runtime_deployment/receiver_opencode.py",
+          "sha256": "9a2587dae60d7a25a8406a5016072ae19cbca66d158956ba1b5da1df2381d8d0"
+        },
+        {
+          "path": "runtime_tests/test_driver_lifecycle_journal.py",
+          "sha256": "e7beacdcf01e4380b8b96789a943636bf25b6fac6214ebbcea6757539b563b26"
+        },
+        {
+          "path": "runtime_tests/test_receiver_lifecycle_identity.py",
+          "sha256": "2a886f728c51a96d6f0f98160be10a55c21b7a4e8ecc9705d24d4a8dd1063fc4"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C07",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C08",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "跨主机/混合版本/限额",
+      "present_baseline": "已有 TLS/签名 Node/Receiver/Tunnel 与跨主机记录",
+      "required_delta": "核对对端能力代次、断线重试/ACK、受限公平调度",
+      "reuse_first": "existing remote receiver transport and system notice",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-031",
+        "R-037",
+        "R-040"
+      ],
+      "test_ids": [
+        "T061",
+        "T062",
+        "T073",
+        "T074",
+        "T079",
+        "T080",
+        "T089",
+        "T090",
+        "T092"
+      ],
+      "depends_on": [
+        "C04",
+        "C05"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T061",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T062",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T073",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T074",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T079",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T080",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T089",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T090",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T092",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_dispatch.py",
+          "sha256": "bfef356d25ba84ee45b4a7d8b9490b185be6ba1b88d3e94c58548e8ff02ec8e9"
+        },
+        {
+          "path": "runtime/receiver_config.py",
+          "sha256": "974d571469fbe60dfbf43501e9eb6016f7c523f5089c2304d6fe7a481d2ca873"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "46861d26f3f00b19aedf62bf2461375459c044440de984bfb94e05e9355d8ae5"
+        },
+        {
+          "path": "runtime/receiver_domain.py",
+          "sha256": "89921437e6d138b697fe1a2f180bb10c136ebe5820bcf01fc4bb37d465a79139"
+        },
+        {
+          "path": "runtime/receiver_models.py",
+          "sha256": "6b4679c422bb52667adcefb51a6714439ae4713535d2fa95e22bab148595a7a0"
+        },
+        {
+          "path": "runtime/remote_endpoint.py",
+          "sha256": "e00bed38b904723d1ed2ac3211b5468a9606c373a64eb3663f32efb8f804dd5d"
+        },
+        {
+          "path": "runtime_tests/test_communication_maintenance.py",
+          "sha256": "4c383ba8e25e82106dce0472333ea8e470fe59768c5f382d5096835a5b56999e"
+        },
+        {
+          "path": "runtime_tests/test_receiver_connection_clock.py",
+          "sha256": "80712aa7c8e58dac8ed6880ba20cc8dc53dff04c58e02a26c1b9ee3ee7dd67c1"
+        },
+        {
+          "path": "runtime_tests/test_receiver_peer_continuity.py",
+          "sha256": "e2b3147dcd596764cc68e22a5d3ca16cf4ae419bffa9934ac3872d213c4e2baf"
+        },
+        {
+          "path": "runtime_tests/test_remote_readback_freshness.py",
+          "sha256": "0cc8438ef20182858f2de01e8fd9a5d32555a65b11e6c9f8b3c348d8c440c836"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C08",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C09",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "安全迁移与历史保留",
+      "present_baseline": "现有 schema/version/adoption/历史消息",
+      "required_delta": "增量兼容迁移与回滚、不可丢 lost operation",
+      "reuse_first": "communication_core_schema.sql, existing upgrade tooling",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-035"
+      ],
+      "test_ids": [
+        "T069",
+        "T070",
+        "T091",
+        "T093"
+      ],
+      "depends_on": [
+        "C04"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T069",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T070",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T091",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T093",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_core_schema.sql",
+          "sha256": "8ff205fd4ba6472f1eb828354f95d598be5ec4bdc399b544e0369a04950b1ba8"
+        },
+        {
+          "path": "runtime/communication_storage.py",
+          "sha256": "8157b91b1dd6ffcf242af265dededb8156f43b3d7f34a772a96926853c8d5297"
+        },
+        {
+          "path": "runtime/project_schema_state.py",
+          "sha256": "19a0711895d263e8f3768d7adf08155fb4de2e265f2c6535d6c02bc7f5f8f92e"
+        },
+        {
+          "path": "runtime_tests/test_communication_storage.py",
+          "sha256": "914298e249f9a3531c41bc418a0731f1157eb61f9e57e564a802d13656cae89e"
+        },
+        {
+          "path": "runtime_tests/test_receiver_schema_1_8.py",
+          "sha256": "99a9bfc91ea3e1d7442b58f8cfeaeb2b5d5966a1d86ad65e005d32bade9474c8"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C09",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C10",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "真实资格与原始证据",
+      "present_baseline": "已有 v2.3.1 受支持主链和历史证据",
+      "required_delta": "受影响版本正反/故障回归；明确 E0-E5 不互换",
+      "reuse_first": "runtime_tests and integration_evidence",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-038"
+      ],
+      "test_ids": [
+        "T075",
+        "T076"
+      ],
+      "depends_on": [
+        "C01"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T075",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T076",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "6649146c93f76e288a4859635a029a9cbc6419f763abefff915583e758eb8917"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "f93bc6b32bf9ac103aef6f15bbbb94d0d585c77697dcad43fa72307ee08f11f2"
+        },
+        {
+          "path": "runtime_tests/test_communication.py",
+          "sha256": "ade3be6323da6eefddab2f3b384dd08a0cf0aa2b80bdec761bd263085d2961ab"
+        },
+        {
+          "path": "runtime_tests/test_communication_installed_native.py",
+          "sha256": "22b93dfa3d9019440abff2589690ad9451d6651a8fbc7b56bb6416bcec38af4c"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C10",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C11",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "最小只读诊断/受控恢复",
+      "present_baseline": "已有 delivery/list_harnesses/notice",
+      "required_delta": "补足 unknown 原因/证据来源/受权 recovery，引入最少新 surface",
+      "reuse_first": "existing notice and result metadata",
+      "acceptance": "只读诊断/受权恢复/通知故障路径维持正确，个人 seen 的 T088 仍属 P2 可选；受控失败按原记录保存。",
+      "old_requirements": [
+        "R-037"
+      ],
+      "test_ids": [
+        "T073",
+        "T074"
+      ],
+      "depends_on": [
+        "C04",
+        "C07"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T073",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T074",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_recovery.py",
+          "sha256": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c"
+        },
+        {
+          "path": "runtime/communication_client_service.py",
+          "sha256": "dd27d61c03cb4f0ea9fc97a08305e4fc0d0eeef75ce4abea97415aca8a296a75"
+        },
+        {
+          "path": "runtime/communication_delivery_observer.py",
+          "sha256": "3e00a546c50645363617d8f68e5225acdfa9a2ed4f2832f735884384d776e1fe"
+        },
+        {
+          "path": "runtime/communication_faults.py",
+          "sha256": "1920ecb7e4c8c98375362f115226d2de5cefa13056a886d9def98f4738c98e44"
+        },
+        {
+          "path": "runtime/communication_http.py",
+          "sha256": "023de773d23da0022f90292d8be22540a162b40a48346e3cf9465c5f8ff635f8"
+        },
+        {
+          "path": "runtime/receiver_recovery_operations.py",
+          "sha256": "5558980c064acb9cab591a6416ad33312e47038e197e559597c5ea03bcfd7de8"
+        },
+        {
+          "path": "runtime_tests/test_communication_client_recovery.py",
+          "sha256": "ebac920504eccb2330e96564cbaca70e5c9801230d5f4651dd7ef53277fbf4b2"
+        },
+        {
+          "path": "runtime_tests/test_receiver_recovery_operations.py",
+          "sha256": "e2cbf386adebe1b5e0590569cb9fd3a91864fcfeaea44e4f26babecf7d90d0c6"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C11",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C12",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "可信 HTTP facade",
+      "present_baseline": "MCP 已有领域服务和授权",
+      "required_delta": "P1 必需 endpoint 共享 Domain/Auth，不复写消息权威",
+      "reuse_first": "existing Project Service and auth",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-028"
+      ],
+      "test_ids": [
+        "T055",
+        "T056"
+      ],
+      "depends_on": [
+        "C01"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T055",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T056",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_oauth.py",
+          "sha256": "7949135f85298d192b7badd83307e6c36dd0eeebaf51aa9ccfe712243af7d143"
+        },
+        {
+          "path": "runtime/communication_client_recovery.py",
+          "sha256": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c"
+        },
+        {
+          "path": "runtime/communication_http.py",
+          "sha256": "023de773d23da0022f90292d8be22540a162b40a48346e3cf9465c5f8ff635f8"
+        },
+        {
+          "path": "runtime/project_http.py",
+          "sha256": "b1c389acceb91b17f2d132130ffb1662d76253759eec2d3ef241f2f9f6adae14"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C12",
+      "qualification_limit": null,
+      "next_actions": []
+    },
+    {
+      "id": "C13",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "可重建 Conversation 查询",
+      "present_baseline": "已有通信消息、contacts、project",
+      "required_delta": "双人会话/最近消息/空会话定位/历史分页与关系",
+      "reuse_first": "existing ordered message index and reader",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-021"
+      ],
+      "test_ids": [
+        "T041",
+        "T042"
+      ],
+      "depends_on": [
+        "C12"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T041",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T042",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_queries.py",
+          "sha256": "8e5176cff493a2c17957c17c445c175a61cb8ecf75c66b2806ebc8d20708df23"
+        },
+        {
+          "path": "runtime/communication_client_views.py",
+          "sha256": "5d5427e08b92ff49732b6c33e31095634845b05a400d8b580e17f09ca4f69bae"
+        },
+        {
+          "path": "runtime/communication_conversation_storage.py",
+          "sha256": "7fc8bfdea4ef4767af03c26514afbf193ea91d2c96de2dca3ab34fe0b32e58da"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C13",
+      "qualification_limit": null,
+      "next_actions": []
+    },
+    {
+      "id": "C14",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "客户端权限状态与技术状态",
+      "present_baseline": "MCP 已有 list/messages/delivery/notice",
+      "required_delta": "列出 profile/receivers/delivery/operation/notice 且可授权查询",
+      "reuse_first": "existing read_profile/list_harnesses/communication notices",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-030"
+      ],
+      "test_ids": [
+        "T059",
+        "T060"
+      ],
+      "depends_on": [
+        "C12",
+        "C02"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T059",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T060",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_notices.py",
+          "sha256": "318df9790565af788a2ee23d5f63b5224b2bb773a1baf137d696a9cc80c34ca3"
+        },
+        {
+          "path": "runtime/communication_client_receivers.py",
+          "sha256": "878787d59b20663604588ea3985cf0f3c38734e3feb721cea88a6233f1f8a142"
+        },
+        {
+          "path": "runtime/communication_client_service.py",
+          "sha256": "dd27d61c03cb4f0ea9fc97a08305e4fc0d0eeef75ce4abea97415aca8a296a75"
+        },
+        {
+          "path": "runtime/receiver_recovery_operations.py",
+          "sha256": "5558980c064acb9cab591a6416ad33312e47038e197e559597c5ea03bcfd7de8"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C14",
+      "qualification_limit": null,
+      "next_actions": []
+    },
+    {
+      "id": "C15",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "一致快照与事件重放",
+      "present_baseline": "Authority commit sequence / Outbox 已存在",
+      "required_delta": "snapshot high-water + replay + auth revoke + cursor expired",
+      "reuse_first": "existing commit order and outbox; avoid second authority",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-023",
+        "R-024",
+        "R-025"
+      ],
+      "test_ids": [
+        "T045",
+        "T046",
+        "T047",
+        "T048",
+        "T049",
+        "T050",
+        "T095"
+      ],
+      "depends_on": [
+        "C12",
+        "C13"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T045",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T046",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T047",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T048",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T049",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T050",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T095",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_events.py",
+          "sha256": "0818d8b33a956700f28946591d5fad62510699b94c6f9a992bb5fdb00e774040"
+        },
+        {
+          "path": "runtime/communication_client_snapshot.py",
+          "sha256": "0eaf78a88ffc9e28fce119e3e630a79bec17e0afe1217539a05e5aa1c2552538"
+        },
+        {
+          "path": "runtime/communication_event_http.py",
+          "sha256": "549e1a51e9f1c852c5353d0585b770af08b4192084e523b4b0326b0c7c2ecd35"
+        },
+        {
+          "path": "runtime/communication_event_storage.py",
+          "sha256": "f2133abd07834f21e41a5d5a65ae2814f602d25b932e653542b4c8630090fed7"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C15",
+      "qualification_limit": null,
+      "next_actions": []
+    },
+    {
+      "id": "C16",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "NativeLink 和两源 provenance",
+      "present_baseline": "已区分 ACS Message 和 Native Session",
+      "required_delta": "受权 link ACS 消息到真正 host operation；原生 transcript 不复制",
+      "reuse_first": "host native ref, existing message_handle",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-027"
+      ],
+      "test_ids": [
+        "T053",
+        "T054",
+        "T082"
+      ],
+      "depends_on": [
+        "C12"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T053",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T054",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T082",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_native_links.py",
+          "sha256": "ba99379b7b16cf4f8e1103cc441908d43068f998bf87f117162b64cd3e1631de"
+        },
+        {
+          "path": "runtime/communication_native_link_storage.py",
+          "sha256": "be17c2f07bcce1439fcd8949f722630481402da033a87c9a1ee092ddefe8c4be"
+        },
+        {
+          "path": "runtime/native_provider_registry.py",
+          "sha256": "c914a1404786a1776071a82fe98d8511632dea108221d861a6e12adf6564faba"
+        },
+        {
+          "path": "sdk/communication-client.ts",
+          "sha256": "bf9172a282af0ce3db5a8299339e17461eb75d0b4a512440b96bb43a62af53e2"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C16",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C17",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "Orca-owned Receiver 最小端口",
+      "present_baseline": "ACS Receiver、Orca Native Host 两种单独 owner",
+      "required_delta": "声明受信 admit/observe/reconcile，维持同 Native Session 单一写入者",
+      "reuse_first": "existing ACS Receiver + proposed host port",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-032",
+        "R-034"
+      ],
+      "test_ids": [
+        "T063",
+        "T064",
+        "T067",
+        "T068"
+      ],
+      "depends_on": [
+        "C03",
+        "C04"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T063",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T064",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T067",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T068",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "43fc6d5e21c34ee099ac4c0d7775d4e891d547c6656bf01bc3e8cf08e03eecc5"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "46861d26f3f00b19aedf62bf2461375459c044440de984bfb94e05e9355d8ae5"
+        },
+        {
+          "path": "runtime/signed_harness_adapter.py",
+          "sha256": "99a5733727b387c8346691d49f96289475cea35ecc582d9f267721ded6584db3"
+        },
+        {
+          "path": "sdk/ORCA-RECEIVER-INTEGRATION.md",
+          "sha256": "9b3bb2917f0d5c578fc76cc027d2304ee4c4bd92dd377754b65eae1d47b658c0"
+        },
+        {
+          "path": "sdk/integration-ports.ts",
+          "sha256": "d383179c8b2fad6641721a19086d32ce9babdd369123aab8a8ca931db52d2617"
+        },
+        {
+          "path": "sdk/orca-receiver-port.ts",
+          "sha256": "da5cc156303e789c580e16c06d76061f2f8209e7f9931ad21cc3bbf79ce5bc99"
+        },
+        {
+          "path": "sdk/tests/orca-receiver-port.test.mjs",
+          "sha256": "77cb3337db0e4cf797e57a06ddb6fef815b5b9aab7488703a5c368cdd7e0d4e1"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C17",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C18",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "Orca Native delegate 合同",
+      "present_baseline": "Orca 自己显示 Tool/Diff/Approval/Session",
+      "required_delta": "界面仅连接 NativeViewProvider, ACS 不克隆原生数据",
+      "reuse_first": "Orca public plugin API / explicitly recorded host gap",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-033"
+      ],
+      "test_ids": [
+        "T066",
+        "T083",
+        "T086",
+        "T087"
+      ],
+      "depends_on": [
+        "C16",
+        "C17"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T066",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T083",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T086",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T087",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "sdk/integration-ports.ts",
+          "sha256": "d383179c8b2fad6641721a19086d32ce9babdd369123aab8a8ca931db52d2617"
+        },
+        {
+          "path": "sdk/tests/integration-ports.test.mjs",
+          "sha256": "98d20e41a0bcbcb3f3ea0f44c32aa9b0f499b9dd99c6afd74d7b0188bdcef2a8"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C18",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C19",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "Headless 实际 ACS Client",
+      "present_baseline": "已有 HTTP/事件目标原型",
+      "required_delta": "验证从身份到收信、历史、事件和权限撤销的无 UI 端到端",
+      "reuse_first": "actual ACS HTTP/Authority + simulated native view clearly labeled",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-033"
+      ],
+      "test_ids": [
+        "T065",
+        "T081"
+      ],
+      "depends_on": [
+        "C12",
+        "C13",
+        "C14",
+        "C15",
+        "C16"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T065",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T081",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime_tests/test_communication_headless_live.py",
+          "sha256": "c043683d0a975998d574fddd004593f4237a2e8ab1ad9cacacc178562b69ecda"
+        },
+        {
+          "path": "runtime_tests/test_communication_p1_headless_live.py",
+          "sha256": "8373b8f41729a653c56bfcb7b1b62ffe742891bd46c7300f705609b7c231d755"
+        },
+        {
+          "path": "sdk/communication-client.ts",
+          "sha256": "bf9172a282af0ce3db5a8299339e17461eb75d0b4a512440b96bb43a62af53e2"
+        },
+        {
+          "path": "sdk/communication-state.ts",
+          "sha256": "b479564d95b4875344058daf216f4576c0cd5328adffadd845bda44db0a4f622"
+        },
+        {
+          "path": "sdk/communication-stream.ts",
+          "sha256": "b90c169c8359cf07c5b5ed3756f7d1976a30d1107a3102d4241e581dff1b6c57"
+        },
+        {
+          "path": "sdk/tests/communication-live-consumer.mjs",
+          "sha256": "4747086fa20a590109e2e048dcfbe4588e8aaa887bea4aceba90886c7beea45e"
+        },
+        {
+          "path": "sdk/tests/communication-p1-live-consumer.mjs",
+          "sha256": "a3fe12ff50d4a4aa5532fde01d56694d3a93df8dc976d3784fe463a9e7033e1f"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C19",
+      "qualification_limit": null,
+      "next_actions": []
+    },
+    {
+      "id": "C20",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "完整 ACS 通信 UI 合同地图",
+      "present_baseline": "原包 30 项 UI 功能列表",
+      "required_delta": "逐项标 ACS/P2/Host delegate，验证功能降级和缺口",
+      "reuse_first": "current contracts/ui-feature-matrix.json",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-033"
+      ],
+      "test_ids": [
+        "T065",
+        "T081"
+      ],
+      "depends_on": [
+        "C12",
+        "C16",
+        "C18"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T065",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T081",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "docs/client/communication-api-scope.json",
+          "sha256": "a0569a53dbb7efdb005d3a37b585ff57a632c1e74dd7515e409e489b377bcaf5"
+        },
+        {
+          "path": "docs/client/communication-openapi.yaml",
+          "sha256": "e46f06014136f1df00a9de8cf4ccdc0f802377dd905cec0fe830317ce672ec0d"
+        },
+        {
+          "path": "docs/client/communication-p1-openapi.yaml",
+          "sha256": "bba93038f1ae9d3de820630e4dc13de81b338ee725a94b445a9d2360e5387116"
+        },
+        {
+          "path": "tools/runtime/export_p1_openapi.py",
+          "sha256": "645f5d2e9ec975b9143f5b6caa03b1b3333857496e9749466d5ddb95f5f9c518"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C20",
+      "qualification_limit": null,
+      "next_actions": []
+    },
+    {
+      "id": "C21",
+      "tier": "P1_required",
+      "kind": "correctness_guard",
+      "title": "客户端与宿主授权/来源隔离",
+      "present_baseline": "ACS/Host 属不同权限/生命周期",
+      "required_delta": "会话绑定权限、跨源不可推断、SSE 撤销与 metadata 不能提权",
+      "reuse_first": "existing ACS auth, host-claimed identity must revalidate",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-024",
+        "R-027",
+        "R-032"
+      ],
+      "test_ids": [
+        "T047",
+        "T048",
+        "T053",
+        "T054",
+        "T063",
+        "T064"
+      ],
+      "depends_on": [
+        "C15",
+        "C16"
+      ],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T047",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T048",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T053",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T054",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T063",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T064",
+          "status": "verified_P1_service_or_delegation_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_native_links.py",
+          "sha256": "ba99379b7b16cf4f8e1103cc441908d43068f998bf87f117162b64cd3e1631de"
+        },
+        {
+          "path": "runtime/native_provider_registry.py",
+          "sha256": "c914a1404786a1776071a82fe98d8511632dea108221d861a6e12adf6564faba"
+        },
+        {
+          "path": "runtime/project_http.py",
+          "sha256": "b1c389acceb91b17f2d132130ffb1662d76253759eec2d3ef241f2f9f6adae14"
+        },
+        {
+          "path": "sdk/integration-ports.ts",
+          "sha256": "d383179c8b2fad6641721a19086d32ce9babdd369123aab8a8ca931db52d2617"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C21",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C22",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "个人已读与通知 seen",
+      "present_baseline": "旧包目标设计，未断言实际完成",
+      "required_delta": "个人 read frontier/seen 与 Inbox 消费分离",
+      "reuse_first": "existing permission and message index",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-022"
+      ],
+      "test_ids": [
+        "T043",
+        "T044",
+        "T088"
+      ],
+      "depends_on": [],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T043",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T044",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T088",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_notice_storage.py",
+          "sha256": "09c8f7afa91c6824808dfc0d005bb95623c251b5bf80f0e17707328551ef9c4b"
+        },
+        {
+          "path": "runtime/communication_client_notices.py",
+          "sha256": "318df9790565af788a2ee23d5f63b5224b2bb773a1baf137d696a9cc80c34ca3"
+        },
+        {
+          "path": "runtime/communication_client_state.py",
+          "sha256": "f60d4adcd40424525d60b39906793a5ebd0071fdc001aff7a45141df4c87089d"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C22",
+      "qualification_limit": null,
+      "next_actions": []
+    },
+    {
+      "id": "C23",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "个人草稿/偏好与静音归档",
+      "present_baseline": "旧包目标设计，未断言实际完成",
+      "required_delta": "个人可控 CAS/同步/无权限泄漏",
+      "reuse_first": "viewer-scoped state",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-022"
+      ],
+      "test_ids": [
+        "T084"
+      ],
+      "depends_on": [],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T084",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_state.py",
+          "sha256": "f60d4adcd40424525d60b39906793a5ebd0071fdc001aff7a45141df4c87089d"
+        },
+        {
+          "path": "runtime/communication_client_storage.py",
+          "sha256": "2eb652f03d23641673d04ed46c579e2ee6e52470710ba10c6bbacf93720c5eb9"
+        },
+        {
+          "path": "runtime/communication_client_viewer_storage.py",
+          "sha256": "0c289c651cb525151d3caa2f7967fe5dd6c0f6b798473d8df4e07f99de286685"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C23",
+      "qualification_limit": null,
+      "next_actions": []
+    },
+    {
+      "id": "C24",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "附件二进制服务",
+      "present_baseline": "已有 Source/Artifact 引用，不等于附件传输",
+      "required_delta": "安全上传/finalize/ACL/digest/SSRF/生命周期",
+      "reuse_first": "SourceBinding and existing artifact ACL",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-026"
+      ],
+      "test_ids": [
+        "T051",
+        "T052",
+        "T085"
+      ],
+      "depends_on": [],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [
+        {
+          "id": "T051",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T052",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        },
+        {
+          "id": "T085",
+          "status": "verified_applicable_service_and_safety_contract",
+          "detail": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_attachment_content.py",
+          "sha256": "0a6bf4c2bd613da3ecfb4e7755e1ddcf0bc5a55e8bd16075675a1d494a415b44"
+        },
+        {
+          "path": "runtime/communication_attachment_http.py",
+          "sha256": "8466e79c125d81bf3eb9d7753633a105896bddf50c97cad103fd5daa68b4f2c9"
+        },
+        {
+          "path": "runtime/communication_attachment_storage.py",
+          "sha256": "c9b9e6dde655fb31bb80a1a1cd90a5936817f7ac7f029a54ba6f4642b9bf42eb"
+        },
+        {
+          "path": "runtime/communication_client_attachments.py",
+          "sha256": "9b9e91644fac03ca2fc4c6db0dabe97b07949d0b341e1cef1320e5edffd1b0dc"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C24",
+      "qualification_limit": "qualification-matrix.json",
+      "next_actions": []
+    },
+    {
+      "id": "C25",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "全文消息搜索",
+      "present_baseline": "旧包目标设计，未断言实际完成",
+      "required_delta": "ACL-aware text index/cursor/search",
+      "reuse_first": "message index and viewer auth",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-026"
+      ],
+      "test_ids": [],
+      "depends_on": [],
+      "assessment_required": true,
+      "status": "retained_verified",
+      "assessed_at": "2026-11-07T06:14:40.603779+00:00",
+      "assessment_scope": "v1.1 current supported service/Native configurations; qualification-matrix.json retains unqualified combinations",
+      "implementation_gaps_in_declared_scope": [],
+      "scenario_evidence": [],
+      "observed_code": [
+        {
+          "path": "runtime/communication_client_search.py",
+          "sha256": "f56ef4494f13c28a3a850f42123fa1055be1cbf7c107c76af7b301703bc0668c"
+        },
+        {
+          "path": "runtime_tests/test_communication_client_search.py",
+          "sha256": "d9cedcb0585d8a8bf6d528384ba656d6614de50447ceba31e221b34fa073daa9"
+        }
+      ],
+      "prior_assessment": "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json#C25",
+      "qualification_limit": null,
+      "next_actions": []
+    }
+  ],
+  "milestones": {
+    "CORE_P0_QUALIFIED": "qualified_with_specific_blockers",
+    "CLIENT_P1_CONTRACT_READY": true,
+    "P2_EXTENSIONS_READY": true,
+    "ORCA_HOST_QUALIFIED": false
+  },
+  "acceptance_audit": "integration_evidence/acs-stage-agnostic-20261107-completion/acceptance-audit.json",
+  "qualification_matrix": "integration_evidence/acs-stage-agnostic-20261107-completion/qualification-matrix.json",
+  "final_report": "integration_evidence/acs-stage-agnostic-20261107-completion/FINAL_REPORT.md",
+  "prior_assessment_history": [
+    "integration_evidence/acs-stage-agnostic-20261107-completion/prior-assessments/adoption-state.json"
+  ],
+  "milestone_reason": "Current real-service/SDK/installation/fault acceptance and exact-byte Native evidence are bound per scenario. P0 is qualified only for the named combinations; actual Orca and untested Native combinations are not claimed.",
+  "external_qualification_limits": [
+    "Actual Orca Host input extension and remote original-journal reader are unavailable; typed Host/source fallback is verified.",
+    "Physical multi-machine, Windows Shared/restricted Native and automatic stopped-process cold recovery are not qualified.",
+    "WSL Native cleanup proves its owned process group, not complete descendant containment.",
+    "Current P2 service qualification does not claim Native attachment injection or a new Claude/Pi Driver.",
+    "Legacy T006 is deliberately resolved through the revision's higher-priority MCP compatibility invariant, not declared an exact old-scenario pass."
+  ],
+  "active_runners": [],
+  "pg_lease": "none",
+  "production_changes": false,
+  "new_model_calls_in_this_continuation": 0
+}

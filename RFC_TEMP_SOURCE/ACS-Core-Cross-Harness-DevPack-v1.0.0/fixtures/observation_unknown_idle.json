@@ -1,0 +1,12 @@
+{
+  "knowledge": "unknown",
+  "axis": "input",
+  "value": "idle",
+  "source": "none",
+  "observed_at": null,
+  "expires_at": null,
+  "binding_epoch": 1,
+  "provider_generation": null,
+  "evidence_ref": null,
+  "reason_code": "not_observed"
+}

@@ -1,0 +1,272 @@
+["D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe", "RFC_TEMP_SOURCE/ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0/tools/verify_checksums.py"]
+PASS: 50 payload files + manifest integrity (product behavior not tested)
+
+["D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe", "RFC_TEMP_SOURCE/ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0/tools/validate_pack.py"]
+{
+  "pass": true,
+  "requirements": {
+    "P0_required": 28,
+    "P1_required": 10,
+    "P2_optional": 2
+  },
+  "scenarios": {
+    "P0_required": 63,
+    "P1_required": 26,
+    "P2_optional": 7
+  },
+  "ui": {
+    "P1_required": 26,
+    "P2_optional": 4
+  },
+  "operations": {
+    "P1_required": 22,
+    "P2_optional": 13
+  },
+  "change_items": {
+    "P0_required": 11,
+    "P1_required": 10,
+    "P2_optional": 4
+  },
+  "note": "Package static only; no ACS implementation verified"
+}
+
+["D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe", "tools/runtime/export_client_contracts.py", "--check"]
+
+["D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe", "tools/runtime/export_receiver_contracts.py", "--check"]
+
+["D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe", "tools/runtime/export_sdk_runtime_contracts.py", "--check"]
+
+["D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe", "tools/runtime/export_p1_openapi.py", "--check"]
+
+["D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe", "-m", "ruff", "check", "runtime/codex_driver.py", "runtime/opencode_driver.py", "runtime/native_restore.py", "runtime/native_restore_origin.py", "runtime/receiver_lifecycle.py", "runtime/receiver_lifecycle_contract.py", "runtime/receiver_lifecycle_capacity.py", "runtime/receiver_lifecycle_node.py", "runtime/receiver_lifecycle_issuance.py", "runtime/communication_message_wake.py", "runtime/communication_message_restore.py", "runtime/receiver.py", "runtime/receiver_models.py", "runtime/receiver_delivery.py", "runtime/remote_endpoint.py", "runtime/native_provider_registry.py", "runtime/remote_native_source.py", "runtime/communication_client_native_source.py", "runtime/orca_receiver_backend.py", "runtime_deployment/receiver_lifecycle.py", "runtime_deployment/receiver_authority.py", "runtime_tests/test_receiver_cold_restore.py", "runtime_tests/test_native_cold_restore_transport.py", "runtime_tests/test_native_restore_origin.py", "runtime_tests/test_message_cold_restore_pg.py", "runtime_tests/test_receiver_restore_factory_pg.py", "runtime_tests/test_remote_native_source.py", "runtime_tests/test_remote_native_source_tls.py", "runtime_tests/test_orca_receiver_backend.py", "runtime_tests/test_communication_remote_source_pg.py", "runtime_tests/test_receiver_lifecycle_wire_pg.py"]
+All checks passed!
+
+["git", "diff", "--check", "--", "runtime/codex_driver.py", "runtime/opencode_driver.py", "runtime/native_restore.py", "runtime/native_restore_origin.py", "runtime/receiver_lifecycle.py", "runtime/receiver_lifecycle_contract.py", "runtime/receiver_lifecycle_capacity.py", "runtime/receiver_lifecycle_node.py", "runtime/receiver_lifecycle_issuance.py", "runtime/communication_message_wake.py", "runtime/communication_message_restore.py", "runtime/receiver.py", "runtime/receiver_models.py", "runtime/receiver_delivery.py", "runtime/remote_endpoint.py", "runtime/native_provider_registry.py", "runtime/remote_native_source.py", "runtime/communication_client_native_source.py", "runtime/orca_receiver_backend.py", "runtime_deployment/receiver_lifecycle.py", "runtime_deployment/receiver_authority.py", "runtime_tests/test_receiver_cold_restore.py", "runtime_tests/test_native_cold_restore_transport.py", "runtime_tests/test_native_restore_origin.py", "runtime_tests/test_message_cold_restore_pg.py", "runtime_tests/test_receiver_restore_factory_pg.py", "runtime_tests/test_remote_native_source.py", "runtime_tests/test_remote_native_source_tls.py", "runtime_tests/test_orca_receiver_backend.py", "runtime_tests/test_communication_remote_source_pg.py", "runtime_tests/test_receiver_lifecycle_wire_pg.py"]
+warning: in the working copy of 'runtime/codex_driver.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'runtime/opencode_driver.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'runtime/receiver.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'runtime/receiver_models.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'runtime/remote_endpoint.py', LF will be replaced by CRLF the next time Git touches it
+
+["node", "--test", "sdk/tests/*.test.mjs"]
+✔ generated validation graph is the admitted Runtime schema and is deeply immutable (70.8068ms)
+✔ conditional branches, minimum properties, uniqueness and source evidence remain enforced (3.2013ms)
+✔ aware calendar timestamps match Runtime strict dates instead of Date.parse normalization (1.0855ms)
+✔ strict JSON rejects duplicate keys, non-finite/unsafe numbers, bad syntax and Unicode (2.5138ms)
+✔ JSON depth, cycles and non-JSON prototypes fail before DTO acceptance (0.9447ms)
+✔ sealed write JSON cannot invoke accessors or hidden toJSON to change the approved intent (0.9624ms)
+✔ optional original Native source queries preserve separate provenance and reject another message (34.3566ms)
+✔ all existing REST method families use owned paths, current DTOs, explicit keys and the right CAS headers (45.6655ms)
+✔ mutable send body and options cannot alter an in-flight idempotent intent (3.8378ms)
+✔ complete message uses UTF-8 byte boundaries and verifies the complete immutable digest (33.9122ms)
+✔ complete body fails closed on digest (5.2525ms)
+✔ complete body fails closed on total (2.3246ms)
+✔ complete body fails closed on progress (1.2759ms)
+✔ complete body fails closed on identity (1.2828ms)
+✔ complete body fails closed on budget (1.0571ms)
+✔ complete body fails closed on pages (3.7283ms)
+✔ attachment PUT is one explicit operation with sealed Buffer bytes, no hidden reserve/finalize or If-Match (9.5461ms)
+✔ attachment download requires all bytes and exact media/ETag/digest before exposing content (5.2432ms)
+✔ owner-changing snapshot fences prior in-flight reads and pending writes instead of publishing them to the new actor (4.6271ms)
+✔ slot reset during asynchronous digest fences the whole complete_read operation (7.1112ms)
+✔ project reset during asynchronous digest fences the whole complete_read operation (8.2206ms)
+✔ auth_revision reset during asynchronous digest fences the whole complete_read operation (6.1372ms)
+✔ auth_loss reset during asynchronous digest fences the whole complete_read operation (18.7124ms)
+✔ close reset during asynchronous digest fences the whole complete_read operation (7.0175ms)
+✔ slot reset during asynchronous digest fences the whole upload operation (4.6926ms)
+✔ project reset during asynchronous digest fences the whole upload operation (5.1033ms)
+✔ auth_revision reset during asynchronous digest fences the whole upload operation (4.4051ms)
+✔ auth_loss reset during asynchronous digest fences the whole upload operation (5.2324ms)
+✔ close reset during asynchronous digest fences the whole upload operation (7.9803ms)
+✔ delivery and SendResponse cannot attach another message's Native facts to the requested message (4.2141ms)
+✔ frozen pages must match the explicitly requested snapshot and preserve it through pagination (5.0433ms)
+✔ a completed PUT cannot change immutable reservation name or MIME (3.5776ms)
+✔ integration port maps actual receipt facts without turning Native status into an explicit reply (5.1123ms)
+✔ SSE adapter reuses the production parser, fetch injection, exact cursor pair and snapshot auth fence (13.3233ms)
+✔ wrong-project successful write DTO remains unknown, while snapshot identity mismatch is rejected (3.6585ms)
+✔ owned local HTTP protocol server exercises reserve/PUT/finalize/download through real fetch (179.8748ms)
+✔ owned local body server enforces the UTF-8 codepoint boundary without client truncation or automatic retry (40.1005ms)
+✔ endpoint/bearer admission and encoded references preserve the owned endpoint (10.9157ms)
+✔ one request uses current bearer, manual redirect policy and no ambient credentials (76.3919ms)
+✔ attempted POST/PUT/DELETE network errors are unknown and never retried (6.4893ms)
+✔ validated Problem preserves known effects while malformed and bad 2xx DTO writes stay unknown (12.3485ms)
+✔ request bytes are sealed before awaiting bearer acquisition (5.3528ms)
+✔ response reader enforces actual bytes, declared length, fatal UTF-8 and cancels oversized streams (6.8969ms)
+✔ owner/context reset fences a late successful response and does not turn an attempted write into none (5.5409ms)
+✔ nativeLinks sends the actual address/page filters and returns all twelve metadata fields (30.7594ms)
+✔ NativeLink PUT seals all nine fields before awaiting credentials and keeps revision in the body (5.5737ms)
+✔ required NativeLink proof expectation cannot omit expected_host_ref (1.2177ms)
+✔ required NativeLink proof expectation cannot omit expected_provider_generation (0.4108ms)
+✔ caller Native permissions are rejected as extra write fields before any HTTP call (0.6894ms)
+✔ successful NativeLink write result must correlate link_id (2.9738ms)
+✔ successful NativeLink write result must correlate project_id (3.5315ms)
+✔ successful NativeLink write result must correlate address (2.4436ms)
+✔ successful NativeLink write result must correlate receiver_ref (3.2599ms)
+✔ successful NativeLink write result must correlate binding_epoch (2.8149ms)
+✔ successful NativeLink write result must correlate provider_ref (2.223ms)
+✔ successful NativeLink write result must correlate native_session_ref (6.9045ms)
+✔ successful NativeLink write result must correlate native_authority (2.7793ms)
+✔ successful NativeLink write result must correlate host_ref (3.3003ms)
+✔ successful NativeLink write result must correlate provider_generation (1.8ms)
+✔ NativeLink twelve-field DTO validation rejects missing_host without resending (2.2928ms)
+✔ NativeLink twelve-field DTO validation rejects extra_transcript without resending (2.6669ms)
+✔ NativeLink list rejects response project outside the requested scope/cut (3.0951ms)
+✔ NativeLink list rejects response address outside the requested scope/cut (1.2431ms)
+✔ NativeLink list rejects response snapshot outside the requested scope/cut (1.4012ms)
+✔ slow NativeLink proof HTTP result cannot cross a slot context reset (7.9164ms)
+✔ slow NativeLink proof HTTP result cannot cross a project context reset (3.6483ms)
+✔ slow NativeLink proof HTTP result cannot cross a auth_revision context reset (2.5822ms)
+✔ a missing NativeLink capability stays an explicit server refusal instead of a fake empty list (1.5601ms)
+✔ owned loopback HTTP server checks real NativeLink list/PUT wire without conferring a Host grant (202.0438ms)
+✔ a snapshot is required before metadata events can populate private state (11.9673ms)
+✔ message and delivery versions never overwrite one another or synthesize replies (3.0608ms)
+✔ draft/read/preferences have independent versions and conversation source signals do not become composite revisions (1.4207ms)
+✔ bounded event-id LRU and per-resource versions prevent duplicate or evicted stale rollback (1.1027ms)
+✔ permission/resync/auth loss clears server state and cursors but preserves unsent drafts and exact pending commands (1.3756ms)
+✔ ACS and each Native source keep separate opaque positions with no numeric or lexical ordering (0.9037ms)
+✔ a late snapshot cannot rewind live projections or a consumed stream position (1.6579ms)
+✔ unsafe event metadata or another project cannot introduce DTO bodies or Driver journals (5.0388ms)
+✔ server-cache capacity fails closed while preserving caller-owned local work (0.94ms)
+✔ same-principal Slot switches archive local work instead of inheriting a mutual conversation's draft or command (3.5232ms)
+✔ other principals and different Client addresses do not inherit active local work (1.1023ms)
+✔ same-viewer authorization refresh keeps active local work without archiving or changing its owner key (0.8866ms)
+✔ work created before any viewer snapshot remains in an explicit unowned bucket (0.9142ms)
+✔ archive owner and byte quotas throw without deleting any prior or active local work (1.5124ms)
+✔ acknowledged noncomparable same-revision refresh stores the authorized new Receiver DTO defensively (0.9081ms)
+✔ SSE parses UTF-8 byte boundaries, BOM, multiline data and split CRLF exactly (8.1961ms)
+✔ comments and id-only heartbeats never emit a domain event or advance the emitted cursor (13.8284ms)
+✔ mixed line endings and deterministic arbitrary byte fragmentation preserve every complete frame (73.5288ms)
+✔ an incomplete event or UTF-8 sequence fails closed from the last delivered parser cursor (2.2725ms)
+✔ SSE bounds queued events at 256 and bytes at one MiB without skipping unconsumed positions (6.1999ms)
+✔ caller bearer and matching opaque Last-Event-ID/after_cursor form one explicit GET connection (88.1705ms)
+✔ conflicting caller cursors and URL credentials are rejected before token lookup or fetch (1.3433ms)
+✔ HTTP 410 requires a new snapshot and 401/403 clear the reconnect cursor (5.9806ms)
+✔ a network interruption replays from the last emitted position and never reconnects automatically (9.3962ms)
+✔ slow-consumer overflow never promotes the newest queued server cursor (7.9873ms)
+✔ invalid envelope, foreign project and SSE-id mismatch never advance the client checkpoint (5.2825ms)
+✔ permission/resync controls reach the reducer once then close with a snapshot requirement (4.4522ms)
+✔ authorization revision changes require resnapshot rather than accepting a new private context (1.2851ms)
+✔ a permission control carrying private identifiers is not delivered to the consumer (1.1347ms)
+✔ explicit abort cancels a stalled read and keeps the last emitted checkpoint (2.0689ms)
+✔ consumer return closes the read-only transport without another request (1.0839ms)
+✔ Stream Project IDs use the admitted 512-character limit including supplementary Unicode (4.7714ms)
+✔ metadata Event and state resource references preserve maximum-length supplementary characters (11.0608ms)
+✔ Unicode character compatibility does not increase incremental SSE byte budgets (1.7989ms)
+✔ unconfigured native operations explicitly require a host extension, including watch (9.8672ms)
+✔ a configured method does not establish capabilities or host authorization (1.7779ms)
+✔ the exact providerRef binding is checked before authorization and delegation (0.7659ms)
+✔ the exact sessionRef binding is checked before authorization and delegation (0.3666ms)
+✔ the exact hostRef binding is checked before authorization and delegation (0.4436ms)
+✔ the exact generation binding is checked before authorization and delegation (0.2833ms)
+✔ the exact authority binding is checked before authorization and delegation (0.321ms)
+✔ denial is preserved without invoking host operations or granting from ACS-looking extra fields (0.9349ms)
+✔ malformed authorizer success fails closed (0.7552ms)
+✔ host capabilities and unverified row provenance are passed through without inventing ACS replies (1.6683ms)
+✔ injected host SourceLink evidence remains unchanged and separate from communication cursors (1.2011ms)
+✔ an action and session are captured before asynchronous host authorization (3.9085ms)
+✔ each call rechecks host authorization and action-specific denial returns no accepted receipt (1.4915ms)
+✔ watch forwards only the native cursor, original AbortSignal and exact host events (2.0909ms)
+✔ watch rejects an event for another generation before releasing it (0.7521ms)
+✔ watch rechecks live host authorization before every event and closes on revocation (1.0435ms)
+✔ workspace listing has a separate exact scope and host authorization gate (1.1228ms)
+✔ workspace state/resources/attachment/reveal delegates preserve host results and arguments (1.1918ms)
+✔ native provider failures propagate rather than becoming empty transcripts or successful receipts (0.8437ms)
+✔ all absent management tools signal typed unavailability, including prototype names (0.9848ms)
+✔ management delegates only configured tools with exact arguments and existing authorization failures (0.9354ms)
+✔ invalid session registry bindings are refused during construction (0.6845ms)
+✔ capabilities cannot release Host data after revocation during its delegate (4.7175ms)
+✔ read cannot release Host data after revocation during its delegate (0.768ms)
+✔ state cannot release Host data after revocation during its delegate (0.6451ms)
+✔ readResource cannot release Host data after revocation during its delegate (2.6162ms)
+✔ Native reads capture independent immutable data before their final asynchronous check (1.0113ms)
+✔ workspace listing rechecks actual scope authorization after asynchronous data retrieval (1.82ms)
+✔ watch releases a captured original frame when the delegate mutates it during awaited authorization (1.1163ms)
+✔ watch does not yield a captured private frame when the final Host authorization is denied (2.2869ms)
+✔ Native invalidation clears Native cursors and links while preserving the ACS replay position (3.6299ms)
+✔ describe/observe use actual supplied read callbacks and never perform admission (29.8414ms)
+✔ missing verifier is typed host_extension_required with zero Native effects (5.8547ms)
+✔ missing atomic_host is typed host_extension_required with zero Native effects (4.0547ms)
+✔ missing observation is typed host_extension_required with zero Native effects (2.0341ms)
+✔ Core signature/body verification precedes the atomic Host entry, with exact original fields (37.6825ms)
+✔ forged sealed bytes cannot be authorized by body flags or reach the Host (7.9943ms)
+✔ verified original cannot substitute outer operation_id (10.4134ms)
+✔ verified original cannot substitute outer receiver_id (6.3433ms)
+✔ verified original cannot substitute outer message_handles (7.6448ms)
+✔ verified original cannot substitute outer canonical_hash (4.6258ms)
+✔ verified original cannot substitute outer binding_epoch (5.2204ms)
+✔ verified original cannot substitute outer provider_generation (4.8412ms)
+✔ verified original cannot substitute outer auth_revision (3.9808ms)
+✔ message_only never reaches Host admission even with valid signing and independent Host authorization (4.9169ms)
+✔ mutable command and verifier byte arguments cannot change the captured sealed intent (6.7051ms)
+✔ owner change after Core verification blocks before Host mutation (5.005ms)
+✔ principal change after Core verification blocks before Host mutation (4.222ms)
+✔ grant change after Core verification blocks before Host mutation (3.5845ms)
+✔ same_value_registration change after Core verification blocks before Host mutation (3.3821ms)
+✔ an external Driver ownership claim during verification fences the Orca bridge before Host entry (5.9875ms)
+✔ missing Host implementation cannot be supplied by database injection callbacks or body authority flags (3.0692ms)
+✔ live Host grant is checked again inside prepared-input admission before synchronous enqueue (7.3999ms)
+✔ throw_after_enqueue preserves original unknown and never resubmits (4.8915ms)
+✔ auth_loss_after_enqueue preserves original unknown and never resubmits (5.0108ms)
+✔ raw_pending preserves original unknown and never resubmits (5.4386ms)
+✔ wrong_result_operation preserves original unknown and never resubmits (4.796ms)
+✔ original reconciliation reads historical ACK after deadline/rebind without admitting into the new generation (6.2134ms)
+✔ reconcile exact original operation and generation are validated rather than resubmitted (4.4903ms)
+✔ reconcile wrong original scopeRef is unavailable before Host read, not a foreign unknown receipt (3.0478ms)
+✔ reconcile wrong original address is unavailable before Host read, not a foreign unknown receipt (3.1119ms)
+✔ reconcile wrong original authorityId is unavailable before Host read, not a foreign unknown receipt (3.6195ms)
+✔ reconcile wrong original authorityIncarnation is unavailable before Host read, not a foreign unknown receipt (4.8059ms)
+✔ reconcile wrong original hostPrincipalRef is unavailable before Host read, not a foreign unknown receipt (4.2818ms)
+✔ original Host READ denial before reconcile entry has no available possible-effect receipt (3.5067ms)
+✔ original readback loss after authorized reconcile entry stays unknown for the requested operation only (3.8221ms)
+✔ unavailable verifier is bounded; close during a possible Host effect stays unknown and terminal (27.0866ms)
+✔ wrong observation identity and JSON-only authorization success cannot expose data or admit (4.345ms)
+✔ Host authorization must bind the exact targetProviderRef namespace (1.3825ms)
+✔ Host authorization must bind the exact targetHostRef namespace (1.3403ms)
+✔ Host authorization must bind the exact targetAuthority namespace (1.6361ms)
+✔ recovery posts the admitted body with an explicit stable key and receiver epoch, without If-Match (80.8555ms)
+✔ invalid recovery identity, action scope or required fields fail before credential/network access: {"action":"inspect","expected_revision":4,"reason":"Inspect the registered receiving capacity","actor_ref":"untrusted"} (1.4812ms)
+✔ invalid recovery identity, action scope or required fields fail before credential/network access: {"action":"inspect","expected_revision":true,"reason":"Inspect the registered receiving capacity"} (0.7701ms)
+✔ invalid recovery identity, action scope or required fields fail before credential/network access: {"action":"inspect","expected_revision":4,"reason":" \n\t"} (1.2583ms)
+✔ invalid recovery identity, action scope or required fields fail before credential/network access: {"action":"arbitrary_host_control","expected_revision":4,"reason":"Inspect the registered receiving capacity"} (0.9772ms)
+✔ invalid recovery identity, action scope or required fields fail before credential/network access: {"action":"reconcile","expected_revision":4,"reason":"Reconcile"} (0.6933ms)
+✔ invalid recovery identity, action scope or required fields fail before credential/network access: {"action":"retry_delivery","expected_revision":4,"reason":"Retry"} (0.3979ms)
+✔ invalid recovery identity, action scope or required fields fail before credential/network access: {"action":"rebind_receiver","expected_revision":4,"reason":"Rebind"} (0.4234ms)
+✔ reconcile and rebind retain their explicit original operation or target reference (4.5805ms)
+✔ another receiver, epoch or operation kind is an unknown write outcome: {"receiver_ref":"another-receiver"} (3.0122ms)
+✔ another receiver, epoch or operation kind is an unknown write outcome: {"binding_epoch":5} (1.8557ms)
+✔ another receiver, epoch or operation kind is an unknown write outcome: {"binding_epoch":null} (1.6713ms)
+✔ another receiver, epoch or operation kind is an unknown write outcome: {"kind":"send"} (1.8215ms)
+✔ recovery captures mutable request fields before asynchronous bearer acquisition (2.1816ms)
+✔ lost response never silently retries a recovery command (1.4496ms)
+✔ a committed server problem retains its original operation for explicit caller recovery (2.4218ms)
+✔ a current scope refusal remains403 with no effect and no automatic retry (2.2468ms)
+✔ closing the caller context rejects a late recovery result with conservative write effect (1.8709ms)
+✔ UI18 required Host methods stay unavailable without an installed delegate (11.7782ms)
+✔ UI18 Host methods carry exact native scope and stop before callbacks on denial (3.8859ms)
+✔ UI19 required Host methods stay unavailable without an installed delegate (0.7075ms)
+✔ UI19 Host methods carry exact native scope and stop before callbacks on denial (1.3284ms)
+✔ UI20 required Host methods stay unavailable without an installed delegate (1.4389ms)
+✔ UI20 Host methods carry exact native scope and stop before callbacks on denial (1.8492ms)
+✔ UI21 required Host methods stay unavailable without an installed delegate (1.3432ms)
+✔ UI21 Host methods carry exact native scope and stop before callbacks on denial (1.8839ms)
+✔ UI22 required Host methods stay unavailable without an installed delegate (0.8774ms)
+✔ UI22 Host methods carry exact native scope and stop before callbacks on denial (1.5766ms)
+✔ UI23 required Host methods stay unavailable without an installed delegate (0.8802ms)
+✔ UI23 Host methods carry exact native scope and stop before callbacks on denial (1.8475ms)
+✔ UI24 required Host methods stay unavailable without an installed delegate (0.5013ms)
+✔ UI24 Host methods carry exact native scope and stop before callbacks on denial (1.014ms)
+✔ UI25 required Host methods stay unavailable without an installed delegate (0.7893ms)
+✔ UI25 Host methods carry exact native scope and stop before callbacks on denial (3.6359ms)
+✔ UI26 required Host methods stay unavailable without an installed delegate (0.4184ms)
+✔ UI26 Host methods carry exact native scope and stop before callbacks on denial (0.6716ms)
+ℹ tests 210
+ℹ suites 0
+ℹ pass 210
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 997.8877
+
+["node", ".tmp/tsc-package/compiler/package/bin/tsc", "--noEmit", "--strict", "--target", "es2022", "--module", "esnext", "--moduleResolution", "bundler", "--allowImportingTsExtensions", "--lib", "es2022,dom,dom.iterable", "sdk/client-contracts.ts", "sdk/client-runtime-schema.ts", "sdk/client-validation.ts", "sdk/communication-client.ts", "sdk/communication-http.ts", "sdk/communication-state.ts", "sdk/communication-stream.ts", "sdk/integration-ports.ts", "sdk/orca-receiver-port.ts", "sdk/receiver-evidence.ts"]
+

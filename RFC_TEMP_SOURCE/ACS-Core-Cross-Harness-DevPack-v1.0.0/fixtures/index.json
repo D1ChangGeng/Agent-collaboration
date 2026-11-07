@@ -1,0 +1,131 @@
+{
+  "fixtures": [
+    {
+      "path": "fixtures/send_minimal.json",
+      "definition": "SendRequest",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/send_message_only_sync.json",
+      "definition": "SendRequest",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/message_utf8.json",
+      "definition": "Message",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/delivery_unknown_with_reply.json",
+      "definition": "DeliveryFacts",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/delivery_accepted.json",
+      "definition": "DeliveryFacts",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/delivery_message_only.json",
+      "definition": "DeliveryFacts",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/send_forged_sender.json",
+      "definition": "SendRequest",
+      "expected_valid": false,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/send_task_required_field.json",
+      "definition": "SendRequest",
+      "expected_valid": false,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/delivery_fake_native_ack.json",
+      "definition": "DeliveryFacts",
+      "expected_valid": false,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/consumption_without_evidence.json",
+      "definition": "DeliveryFacts",
+      "expected_valid": false,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/reply_without_message.json",
+      "definition": "DeliveryFacts",
+      "expected_valid": false,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/inbox_without_acceptance.json",
+      "definition": "DeliveryFacts",
+      "expected_valid": false,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/observation_unknown.json",
+      "definition": "Observation",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/observation_unknown_idle.json",
+      "definition": "Observation",
+      "expected_valid": false,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/capability_unknown.json",
+      "definition": "Capability",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/capability_supported_without_evidence.json",
+      "definition": "Capability",
+      "expected_valid": false,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/event_metadata_only.json",
+      "definition": "Event",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/recovery_missing_operation.json",
+      "definition": "RecoveryRequest",
+      "expected_valid": false,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/recovery_inspect.json",
+      "definition": "RecoveryRequest",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/native_result_unknown.json",
+      "definition": "NativeAdmissionResult",
+      "expected_valid": true,
+      "evidence_class": "synthetic_fixture"
+    },
+    {
+      "path": "fixtures/native_result_fake_ack.json",
+      "definition": "NativeAdmissionResult",
+      "expected_valid": false,
+      "evidence_class": "synthetic_fixture"
+    }
+  ],
+  "notice": "Synthetic examples. None prove native integration."
+}

@@ -32,6 +32,7 @@ class DeploymentCallbacks:
     close: object | None = None
     readiness: object | None = None
     clock: ConnectionClock | None = None
+    lifecycle_node: object | None = None
 
 
 def load_process_config(path: str | Path) -> ReceiverProcessConfig:
@@ -150,6 +151,7 @@ def main(argv=None):
             native_invoke=callbacks.native_invoke,
             native_readiness=callbacks.readiness,
             clock=callbacks.clock,
+            lifecycle_node=callbacks.lifecycle_node,
             ready_check=ready_check,
             shutdown_callback=close_once,
         )

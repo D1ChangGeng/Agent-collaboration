@@ -1,0 +1,255 @@
+{
+  "schema_version": "acs-qualification-revision/1",
+  "observed_at": "2026-11-07T05:48:03.286988+00:00",
+  "records": [
+    {
+      "capability": "signed prepare; lost-start ACK readback; same-owned-session warm resume; zero model prompts",
+      "harness": "Codex",
+      "version": "0.166.0",
+      "os": "Windows",
+      "host": "local isolated development capacity",
+      "auth_mode": "owner/native",
+      "adapter_version": {
+        "runtime/codex_driver.py": "6649146c93f76e288a4859635a029a9cbc6419f763abefff915583e758eb8917",
+        "runtime/opencode_driver.py": "f93bc6b32bf9ac103aef6f15bbbb94d0d585c77697dcad43fa72307ee08f11f2",
+        "runtime/native_handoff.py": "ab6d2ad2fe0d191edf8405f87821e4326b210e8a6571c7017570826da3fec7e2",
+        "runtime/receiver_lifecycle_node.py": "1b4a895409b0a34f7a51d7017e3c7085a584182d6e7a4b4e4522b683efc17fb3",
+        "runtime/receiver_lifecycle_issuance.py": "47a5475c983ef5fdc944d83957eba5655c9e589ed9110cca7b1403e639b6c5fc",
+        "runtime_deployment/receiver_codex.py": "6ac3d881a26d82da3ccd060b351324852ad84d6bbf6a8e83c1c6111bb053e671",
+        "runtime_deployment/receiver_opencode.py": "9a2587dae60d7a25a8406a5016072ae19cbca66d158956ba1b5da1df2381d8d0",
+        "runtime_deployment/receiver_lifecycle.py": "ef3da5cb3d12f16661dabc3976649e6b86e6c9507c8af5f2ccb358682c6f2e74"
+      },
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "native_protocol",
+      "actual_command_and_artifacts": {
+        "command": [
+          "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "pytest",
+          "runtime_tests/test_receiver_lifecycle_native_pg.py",
+          "-q",
+          "-x",
+          "-ra",
+          "--tb=short",
+          "-o",
+          "faulthandler_timeout=60",
+          "--basetemp=.tmp/actual-native-lifecycle-pg-g",
+          "--junitxml=D:\\Chatgpt\\Agent-collaboration\\integration_evidence\\acs-stage-agnostic-20261106\\native-history-contract-20261107\\actual-native-lifecycle-pg-g.xml"
+        ],
+        "result": "integration_evidence/acs-stage-agnostic-20261106/native-history-contract-20261107/actual-native-lifecycle-pg-g.json"
+      },
+      "result": "passed",
+      "current_scope": "Exact current Native/lifecycle stack hashes. Does not requalify changed Core wait code by itself.",
+      "changed_product_files_since_run": [
+        "runtime/communication.py",
+        "runtime/communication_http.py"
+      ],
+      "current_Core_wait_coverage": "E4 cross-Harness result-e with reviewed unrelated HTTP-only delta, plus p0-p1-final wait connection/revocation/disconnect cases"
+    },
+    {
+      "capability": "signed receiver lifecycle and actual existing session/MCP; zero model prompts",
+      "harness": "OpenCode",
+      "version": "1.18.34",
+      "os": "Ubuntu WSL on the same Windows hardware",
+      "host": "local isolated development capacity",
+      "auth_mode": "owner/native",
+      "adapter_version": {
+        "runtime/codex_driver.py": "6649146c93f76e288a4859635a029a9cbc6419f763abefff915583e758eb8917",
+        "runtime/opencode_driver.py": "f93bc6b32bf9ac103aef6f15bbbb94d0d585c77697dcad43fa72307ee08f11f2",
+        "runtime/native_handoff.py": "ab6d2ad2fe0d191edf8405f87821e4326b210e8a6571c7017570826da3fec7e2",
+        "runtime/receiver_lifecycle_node.py": "1b4a895409b0a34f7a51d7017e3c7085a584182d6e7a4b4e4522b683efc17fb3",
+        "runtime/receiver_lifecycle_issuance.py": "47a5475c983ef5fdc944d83957eba5655c9e589ed9110cca7b1403e639b6c5fc",
+        "runtime_deployment/receiver_codex.py": "6ac3d881a26d82da3ccd060b351324852ad84d6bbf6a8e83c1c6111bb053e671",
+        "runtime_deployment/receiver_opencode.py": "9a2587dae60d7a25a8406a5016072ae19cbca66d158956ba1b5da1df2381d8d0",
+        "runtime_deployment/receiver_lifecycle.py": "ef3da5cb3d12f16661dabc3976649e6b86e6c9507c8af5f2ccb358682c6f2e74"
+      },
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "native_protocol",
+      "actual_command_and_artifacts": {
+        "command": [
+          "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+          "-m",
+          "pytest",
+          "runtime_tests/test_communication_remote_native.py::test_physical_signed_receiver_and_independent_reply[lifecycle]",
+          "-q",
+          "-x",
+          "-ra",
+          "--tb=short",
+          "-o",
+          "faulthandler_timeout=60",
+          "--basetemp=.tmp/opencode-wsl-lifecycle-pg-b",
+          "--junitxml=D:\\Chatgpt\\Agent-collaboration\\integration_evidence\\acs-stage-agnostic-20261106\\native-history-contract-20261107\\opencode-wsl-lifecycle-pg-b.xml"
+        ],
+        "result": "integration_evidence/acs-stage-agnostic-20261106/native-history-contract-20261107/opencode-wsl-lifecycle-pg-b.json"
+      },
+      "result": "passed",
+      "current_scope": "Exact current Native/lifecycle stack hashes. Does not requalify changed Core wait code by itself.",
+      "changed_product_files_since_run": [
+        "runtime/communication.py",
+        "runtime/communication_http.py"
+      ],
+      "current_Core_wait_coverage": "E4 cross-Harness result-e with reviewed unrelated HTTP-only delta, plus p0-p1-final wait connection/revocation/disconnect cases"
+    },
+    {
+      "capability": "ordinary independent A to B; one receiving Native prompt; explicit reply_to and actual satisfied MCP wait",
+      "harness": "Codex -> OpenCode",
+      "version": "0.166.0 -> 1.18.34",
+      "os": "Windows -> Ubuntu WSL",
+      "host": "same physical hardware, separate OS/processes",
+      "auth_mode": "owner/native",
+      "adapter_version": {
+        "runtime/codex_driver.py": "6649146c93f76e288a4859635a029a9cbc6419f763abefff915583e758eb8917",
+        "runtime/opencode_driver.py": "f93bc6b32bf9ac103aef6f15bbbb94d0d585c77697dcad43fa72307ee08f11f2",
+        "runtime/native_handoff.py": "ab6d2ad2fe0d191edf8405f87821e4326b210e8a6571c7017570826da3fec7e2",
+        "runtime/receiver_lifecycle_node.py": "1b4a895409b0a34f7a51d7017e3c7085a584182d6e7a4b4e4522b683efc17fb3",
+        "runtime/receiver_lifecycle_issuance.py": "47a5475c983ef5fdc944d83957eba5655c9e589ed9110cca7b1403e639b6c5fc",
+        "runtime_deployment/receiver_codex.py": "6ac3d881a26d82da3ccd060b351324852ad84d6bbf6a8e83c1c6111bb053e671",
+        "runtime_deployment/receiver_opencode.py": "9a2587dae60d7a25a8406a5016072ae19cbca66d158956ba1b5da1df2381d8d0",
+        "runtime_deployment/receiver_lifecycle.py": "ef3da5cb3d12f16661dabc3976649e6b86e6c9507c8af5f2ccb358682c6f2e74"
+      },
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "independent_agent_e2e",
+      "actual_command_and_artifacts": "integration_evidence/acs-stage-agnostic-20261106/native-agent-e2e-20261107/native-e2e-e.json",
+      "result": "passed",
+      "all_901_original_source_files_match_current": false,
+      "reviewed_source_delta": [
+        "runtime/communication_http.py",
+        "runtime_tests/test_communication_http_auth.py"
+      ],
+      "retention_scope": "Native/signed-receiver/Project-MCP send/reply/wait mechanisms remain identical; ordinary HTTP facade default-keyword compatibility is separately requalified. No single new E4 run is claimed.",
+      "cleanup": "Windows owned Job empty; WSL owned process group empty; subtree_containment=false on WSL",
+      "new_model_call_in_this_continuation": false
+    },
+    {
+      "capability": "actual Codex receiving factory; independent ordinary B replies through its own MCP; one Native input",
+      "harness": "Codex -> Codex",
+      "version": "0.166.0",
+      "os": "Windows",
+      "host": "local isolated development capacities",
+      "auth_mode": "owner/native",
+      "adapter_version": {
+        "runtime/codex_driver.py": "6649146c93f76e288a4859635a029a9cbc6419f763abefff915583e758eb8917",
+        "runtime/opencode_driver.py": "f93bc6b32bf9ac103aef6f15bbbb94d0d585c77697dcad43fa72307ee08f11f2",
+        "runtime/native_handoff.py": "ab6d2ad2fe0d191edf8405f87821e4326b210e8a6571c7017570826da3fec7e2",
+        "runtime/receiver_lifecycle_node.py": "1b4a895409b0a34f7a51d7017e3c7085a584182d6e7a4b4e4522b683efc17fb3",
+        "runtime/receiver_lifecycle_issuance.py": "47a5475c983ef5fdc944d83957eba5655c9e589ed9110cca7b1403e639b6c5fc",
+        "runtime_deployment/receiver_codex.py": "6ac3d881a26d82da3ccd060b351324852ad84d6bbf6a8e83c1c6111bb053e671",
+        "runtime_deployment/receiver_opencode.py": "9a2587dae60d7a25a8406a5016072ae19cbca66d158956ba1b5da1df2381d8d0",
+        "runtime_deployment/receiver_lifecycle.py": "ef3da5cb3d12f16661dabc3976649e6b86e6c9507c8af5f2ccb358682c6f2e74"
+      },
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "independent_agent_e2e",
+      "actual_command_and_artifacts": {
+        "result": "integration_evidence/acs-stage-agnostic-20261106/native-agent-e2e-20261107/native-e2e-b.json",
+        "facts": "integration_evidence/acs-stage-agnostic-20261106/native-agent-e2e-20261107/actor-evidence-b/invoke-0d90cf25d3a7/native-invoke-facts.json"
+      },
+      "result": "passed",
+      "facts_sha256": "f916cfd90cbc0dd03db46e0d8ea01c5e7e8b6eea198086a39dc8db35b0cf50f6",
+      "scope_limit": "Retains receiving/input/explicit-reply evidence on identical Native stack hashes. Core wait changed later; b alone does not qualify the final wait path or prove a single combined later run.",
+      "changed_product_files_since_run": [
+        "runtime/communication.py",
+        "runtime/communication_http.py"
+      ],
+      "current_wait_evidence": "Separate exact-byte full cross-Harness E4 result-e and current PG wait cases",
+      "new_model_call_in_this_continuation": false
+    },
+    {
+      "capability": "actual Host integration",
+      "harness": "Orca",
+      "version": "not-qualified",
+      "os": "not-qualified",
+      "host": "not-qualified",
+      "auth_mode": "not-qualified",
+      "adapter_version": "current source candidate",
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "controlled_integration_or_scope_record",
+      "actual_command_and_artifacts": "acceptance-audit.json",
+      "result": "blocked",
+      "reason": "No installed authorized Orca Host extension was exercised. P1 delegation/typed-unavailable contracts are separately verified."
+    },
+    {
+      "capability": "physical two-machine Native exchange",
+      "harness": "Codex/OpenCode",
+      "version": "not-qualified",
+      "os": "not-qualified",
+      "host": "not-qualified",
+      "auth_mode": "not-qualified",
+      "adapter_version": "current source candidate",
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "controlled_integration_or_scope_record",
+      "actual_command_and_artifacts": "acceptance-audit.json",
+      "result": "unverified",
+      "reason": "Current Native evidence is Windows/WSL on one physical machine; no isolated second machine was qualified for this dirty candidate."
+    },
+    {
+      "capability": "Shared/restricted Windows Native",
+      "harness": "Codex",
+      "version": "not-qualified",
+      "os": "not-qualified",
+      "host": "not-qualified",
+      "auth_mode": "not-qualified",
+      "adapter_version": "current source candidate",
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "controlled_integration_or_scope_record",
+      "actual_command_and_artifacts": "acceptance-audit.json",
+      "result": "unverified",
+      "reason": "No current E3/E4 qualification for these profiles; owner/native results do not widen their permissions or reviewed version allowlist."
+    },
+    {
+      "capability": "automatic stopped-process cold resume",
+      "harness": "Codex/OpenCode",
+      "version": "not-qualified",
+      "os": "not-qualified",
+      "host": "not-qualified",
+      "auth_mode": "not-qualified",
+      "adapter_version": "current source candidate",
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "controlled_integration_or_scope_record",
+      "actual_command_and_artifacts": "acceptance-audit.json",
+      "result": "unsupported_verified",
+      "reason": "Production recovery requires the original owned process/session/generation evidence. Separate empty-session CLI probing is not an installed safe recovery path; missing proof stays unknown/unsupported."
+    },
+    {
+      "capability": "safe Native enqueue/steer",
+      "harness": "Codex/OpenCode",
+      "version": "not-qualified",
+      "os": "not-qualified",
+      "host": "not-qualified",
+      "auth_mode": "not-qualified",
+      "adapter_version": "current source candidate",
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "controlled_integration_or_scope_record",
+      "actual_command_and_artifacts": "acceptance-audit.json",
+      "result": "unsupported_verified",
+      "reason": "No attested enqueue profile in the current support set; busy is deferred and queue/steer unsupported."
+    },
+    {
+      "capability": "Native binary attachment injection",
+      "harness": "Codex/OpenCode",
+      "version": "not-qualified",
+      "os": "not-qualified",
+      "host": "not-qualified",
+      "auth_mode": "not-qualified",
+      "adapter_version": "current source candidate",
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "controlled_integration_or_scope_record",
+      "actual_command_and_artifacts": "acceptance-audit.json",
+      "result": "unsupported_verified",
+      "reason": "HTTP/CAS attachment service is verified; Native attachment delivery is explicitly held unsupported without changing Inbox facts."
+    },
+    {
+      "capability": "additional full Driver",
+      "harness": "Claude/Pi",
+      "version": "not-qualified",
+      "os": "not-qualified",
+      "host": "not-qualified",
+      "auth_mode": "not-qualified",
+      "adapter_version": "current source candidate",
+      "runtime_version": "2.3.1 dirty candidate",
+      "evidence_class": "controlled_integration_or_scope_record",
+      "actual_command_and_artifacts": "acceptance-audit.json",
+      "result": "unverified",
+      "reason": "Conditional extension has no exact installed/versioned/authorized target in this package's 25 change items. Typed fallback is retained; no support is advertised."
+    }
+  ]
+}

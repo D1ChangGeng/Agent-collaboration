@@ -1,0 +1,7 @@
+{
+  "to": "slot:B",
+  "content": "请核对接口。",
+  "activation": "message_only",
+  "response_mode": "sync",
+  "wait_timeout_seconds": 1
+}

@@ -1,28 +1,33 @@
 """Trusted endpoint refresh preserves cache, identity and read-only boundaries."""
 import json
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
-from nacl.signing import SigningKey
 
 from runtime.machine_connections import ConfiguredRemoteEndpoint
-from runtime.surface_config import ConfigurationError, RemoteEndpointSettings, configured_service
+from runtime.surface_config import ConfigurationError, configured_service
+from runtime_tests.test_receiver_peer_continuity import peer as peer_fixture
 from runtime_tests.test_surfaces import profile
 
+peer = peer_fixture
 
-def test_generation_change_invalidates_cached_adapter_without_registration_change(monkeypatch):
+
+def test_generation_change_invalidates_cached_adapter_without_registration_change(peer, monkeypatch):
     import runtime.machine_connections as module
-    monkeypatch.setenv('ACS_TEST_REFRESH_KEY', SigningKey.generate().encode().hex())
-    original = RemoteEndpointSettings(endpoint_id='endpoint',
-        authority_signing_key_ref={'kind': 'environment', 'name': 'ACS_TEST_REFRESH_KEY'})
+    monkeypatch.setenv('ACS_TEST_REFRESH_KEY', peer.authority_key.encode().hex())
+    original = peer.settings.model_copy(update={"authority_signing_key_ref": peer.settings.authority_signing_key_ref.model_copy(
+        update={"name": "ACS_TEST_REFRESH_KEY"})})
     current = {'value': original}
-    authority = SimpleNamespace(receiver_transport=SimpleNamespace(load_endpoint=lambda _: {
-        'registration': {'endpoint_revision': 7, 'registration_sha256': 'hash', 'boot_incarnation': 'boot'}}))
+    authority = peer.authority
     deployments = []
 
     def adapter(_authority, _endpoint, deployment, *, timeout):
         deployments.append(deployment)
-        return SimpleNamespace(generation=deployment.journal_generation)
+        config = replace(peer.config, journal_generation=deployment.journal_generation,
+            old_boot_isolation_ref=deployment.old_boot_isolation_ref)
+        config.validate()
+        return SimpleNamespace(generation=deployment.journal_generation, config=config)
 
     monkeypatch.setattr(module, 'RemoteNodeEndpointAdapter', adapter)
     endpoint = ConfiguredRemoteEndpoint(authority, original, settings_provider=lambda _: current['value'])

@@ -8,18 +8,23 @@ import secrets
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 
 from nacl.signing import SigningKey
 
 from runtime.connection_clock import ConnectionClock
 from runtime.delivery_models import TRANSPORT_READINESS_SECONDS, InvocationRequest
 from runtime.delivery_node import (
+    NATIVE_ATTACHMENT_UNSUPPORTED,
     DeliveryTransportError,
     InvocationDeferred,
     InvocationPreCallRejected,
+    has_native_attachments,
     logical_payload,
+    reject_native_attachments,
 )
 from runtime.node import NodeJournal
+from runtime.receiver import verified_prepare_body
 from runtime.receiver_config import (
     ReceiverClientConfig,
     ReceiverRuntimeConfig,
@@ -30,6 +35,7 @@ from runtime.receiver_models import (
     DispatchBody,
     EndpointBinding,
     EndpointRegistration,
+    NativeSourceReadbackBody,
     PrepareBody,
     ReadbackBody,
     ReadinessBody,
@@ -93,16 +99,18 @@ class ReceiverNativeDeliveryBridge:
         self.response_collector = response_collector
 
     def _invocation(self, admission):
-        with sqlite3.connect(self.ledger_path) as connection:
+        with sqlite3.connect(Path(self.ledger_path).absolute().as_uri() + "?mode=ro", uri=True) as connection:
+            connection.row_factory = sqlite3.Row
             row = connection.execute(
-                "SELECT body_json FROM receiver_requests WHERE operation_id=? AND attempt_id=? "
+                "SELECT * FROM receiver_requests WHERE operation_id=? AND attempt_id=? "
                 "AND dispatch_id=? AND purpose='delivery.prepare'",
                 (admission.operation_id, admission.attempt_id, admission.dispatch_id),
             ).fetchone()
         if row is None:
             raise RuntimeError("receiver prepared invocation is unavailable")
+        body = verified_prepare_body(row)
         invocation = InvocationRequest.model_validate_json(
-            json.dumps(json.loads(row[0])["invocation"]), strict=True,
+            json.dumps(body.invocation), strict=True,
         )
         if (invocation.operation_id, invocation.attempt_id, invocation.dispatch_id,
                 invocation.message_id, invocation.command_id) != (
@@ -137,6 +145,7 @@ class ReceiverNativeDeliveryBridge:
 
     def __call__(self, admission):
         invocation = self._invocation(admission)
+        reject_native_attachments(invocation)
         self.native_adapter.prepare(invocation)
 
         def dispatch_readback():
@@ -149,8 +158,38 @@ class ReceiverNativeDeliveryBridge:
         return {"native_observation": observation.model_dump(mode="json")}
 
     def readiness(self, admission):
+        invocation = self._invocation(admission)
+        reject_native_attachments(invocation)
         observe = getattr(self.native_adapter, "transport_readiness", self.native_adapter.readiness)
-        return observe(self._invocation(admission))
+        return observe(invocation)
+
+    def read_native_source(self, admission, provider):
+        from runtime.native_source_links import NativeSourceLinkPort
+        from runtime.native_view_models import ProviderAdmission
+
+        original = self._invocation(admission)
+        provider = ProviderAdmission.model_validate_json(json.dumps(provider), strict=True)
+        if provider.native_authority != "harness":
+            raise RuntimeError("a Core-owned Driver cannot attest Orca-owned Native provenance")
+        selected, envelope = provider.selection, original.envelope
+        if ((selected.tenant_id, selected.project_id, selected.scope_id, selected.agent_slot_id, selected.node_id,
+                selected.boot_incarnation, selected.binding.receiver_id, selected.binding.actor_address, selected.binding.binding_epoch,
+                selected.binding.authority_id, selected.binding.authority_incarnation, selected.host_ref) !=
+                (envelope.tenant_id, envelope.packet.project_id, envelope.packet.target_scope_id, envelope.packet.target_agent_slot_id,
+                 envelope.node_id, envelope.boot_incarnation, envelope.endpoint_id, envelope.packet.recipient, envelope.binding_revision,
+                 envelope.authority_id, envelope.authority_incarnation, envelope.machine_id)):
+            raise RuntimeError("native source provider differs from the original receiving scope")
+
+        def unchanged(invocation):
+            if invocation != original or self._invocation(admission) != original:
+                raise RuntimeError("original native source invocation changed")
+
+        port = NativeSourceLinkPort(read_original=lambda _handle, _operation: original,
+            original_provider=lambda _invocation: provider, journal_for=lambda _invocation: self.native_adapter.driver.journal,
+            authorize_original=unchanged)
+        result = port.read("message:" + envelope.packet.project_id + ":" + original.message_id, original.operation_id)
+        return {"available": result.available, "value": result.value.as_client() if result.available else None,
+                "reason_code": result.reason_code, "evidence_ref": result.evidence_ref}
 
     def collect_response(self, admission):
         """Project a delayed terminal response without invoking or resuming native work."""
@@ -329,6 +368,11 @@ class RemoteNodeEndpointAdapter:
         if (authorized != envelope or logical_payload(authorized) != logical_payload(envelope)
                 or invocation is None or mark_dispatched is None):
             raise InvocationPreCallRejected("receiver committed authorization differs")
+        if has_native_attachments(envelope.packet):
+            previous = self.store.dispatch_admission(invocation.operation_id)
+            possible = read_dispatch_marker(invocation) if read_dispatch_marker is not None else previous is not None
+            if previous is not None or possible is not False:
+                return self.inspect_delivery(invocation.operation_id, "uncertain")
         prepare_body = PrepareBody(
             envelope=envelope.model_dump(mode="json"),
             invocation=invocation.model_dump(mode="json"),
@@ -338,6 +382,7 @@ class RemoteNodeEndpointAdapter:
             prepared = self._send(self._issue(invocation, "delivery.prepare", prepare_body))
         except (RemoteTransportRejected, ValueError, RuntimeError) as error:
             raise InvocationPreCallRejected("receiver prepare rejected before Domain marker") from error
+        reject_native_attachments(invocation)
         # A process-restart probe may stop the Core only after both the receiver
         # SQLite preparation and its PostgreSQL admission/receipt are durable.
         # Ordinary callers leave this bounded fault seam unset.
@@ -362,6 +407,8 @@ class RemoteNodeEndpointAdapter:
                     fresh = self.clock.fresh(observed_at, expires_at, max_lifetime=TRANSPORT_READINESS_SECONDS)
             except (RemoteTransportRejected, ValueError, RuntimeError, KeyError, TypeError):
                 raise InvocationDeferred("unknown") from None
+            if observation.get("reason_code") == NATIVE_ATTACHMENT_UNSUPPORTED:
+                raise InvocationPreCallRejected(NATIVE_ATTACHMENT_UNSUPPORTED)
             if not fresh or observation.get("activity") != "idle":
                 activity = observation.get("activity", "unknown") if fresh else "unknown"
                 raise InvocationDeferred(activity)
@@ -409,22 +456,55 @@ class RemoteNodeEndpointAdapter:
             invocation_digest=admission.invocation_digest, deadline=admission.deadline,
         )
         body = ReadbackBody(operation_id=operation_id, dispatch_id=admission.dispatch_id)
-        request_id = f"receiver:{admission.attempt_id}:{admission.dispatch_id}:delivery.readback"
-        request = self.store.admission(request_id)
-        if request is None:
-            request = AdmissionFactory(self.config, self._signing_key, identity, clock=self.clock).request(
-                "delivery.readback", body, request_id=request_id, nonce=secrets.token_hex(32),
-                boot_incarnation=admission.boot_incarnation,
-                journal_generation=admission.journal_generation,
-            )
-            self.store.persist_admission(request)
+        # Observation requests have fresh identities, while the observed native
+        # operation/attempt/dispatch never changes. Reusing the first readback
+        # request would replay an old uncertain snapshot forever at the receiver.
+        request_id = f"receiver:{admission.attempt_id}:{admission.dispatch_id}:delivery.readback:{secrets.token_hex(8)}"
+        request = AdmissionFactory(self.config, self._signing_key, identity, clock=self.clock).request(
+            "delivery.readback", body, request_id=request_id, nonce=secrets.token_hex(32),
+            boot_incarnation=admission.boot_incarnation,
+            journal_generation=admission.journal_generation,
+        )
+        self.store.persist_admission(request)
         try:
             readback = self._send(request)
         except (RemoteTransportRejected, ValueError, RuntimeError):
             return {"status": status, "receipts": []}
         stored_state = readback.receipt.evidence.get("stored_state")
         observed_status = "delivered" if stored_state == "runtime_acknowledged" else stored_state or status
-        return self._projection([readback], observed_status)
+        prepare = self.store.prepared_recovery_evidence(operation_id, admission.attempt_id, admission.dispatch_id)
+        return self._projection([prepare[1], readback] if prepare is not None else [readback], observed_status)
+
+    def read_native_source(self, invocation, provider):
+        """Read exact provenance through the existing signed readback protocol."""
+        from runtime.client_contracts import ClientContracts
+
+        if type(invocation) is not InvocationRequest:
+            raise DeliveryTransportError("original native source invocation is required")
+        dispatch = self.store.dispatch_admission(invocation.operation_id, dispatch_id=invocation.dispatch_id)
+        if (dispatch is None or dispatch.admission.invocation_digest != sha256(invocation)
+                or (dispatch.admission.message_id, dispatch.admission.attempt_id, dispatch.admission.endpoint_id) !=
+                (invocation.message_id, invocation.attempt_id, invocation.envelope.endpoint_id)):
+            raise DeliveryTransportError("original signed native dispatch is unavailable")
+        admission = dispatch.admission
+        values = {name: getattr(admission, name) for name in DeliveryIdentity.__dataclass_fields__}
+        values["deadline"] = None  # Fresh read window, never an input authorization renewal.
+        body = NativeSourceReadbackBody(operation_id=invocation.operation_id, dispatch_id=invocation.dispatch_id,
+                                      native_source=True, provider_admission=provider.model_dump(mode="json"))
+        request = AdmissionFactory(self.config, self._signing_key, DeliveryIdentity(**values), clock=self.clock).request(
+            "delivery.readback", body, request_id="native-source-read-" + secrets.token_hex(16), nonce=secrets.token_hex(32),
+            boot_incarnation=admission.boot_incarnation, journal_generation=admission.journal_generation)
+        self.store.persist_admission(request)
+        receipt = self._send(request)
+        value = ClientContracts().validate("NativeSourceLookup", receipt.receipt.evidence.get("native_source"))
+        if value["available"]:
+            source = value["value"]
+            if (source["messageHandle"] != "message:" + invocation.envelope.packet.project_id + ":" + invocation.message_id
+                    or source["operationId"] != invocation.operation_id or source["bindingEpoch"] != invocation.envelope.binding_revision
+                    or (source["nativeSession"]["providerRef"], source["nativeSession"]["hostRef"], source["nativeSession"]["authority"]) !=
+                    (provider.provider_ref, provider.selection.host_ref, provider.native_authority)):
+                raise DeliveryTransportError("native source reply differs from the original authorized selection")
+        return value
 
     def fetch_response_artifact(self, operation_id, response_digest, *, max_bytes, dispatch_id=None):
         dispatch = self.store.dispatch_admission(operation_id, dispatch_id=dispatch_id)
@@ -558,6 +638,10 @@ class RemoteNodeEndpointAdapter:
                 or not self.config.old_boot_isolation_ref):
             raise InvocationPreCallRejected("receiver recovery identity rejected")
         prior = self.store.dispatch_admission(invocation.operation_id)
+        if has_native_attachments(invocation.envelope.packet):
+            if prior is not None:
+                return self.inspect_delivery(invocation.operation_id, "uncertain")
+            reject_native_attachments(invocation)
         if prior is not None and prior.admission.purpose != "delivery.recover":
             raise InvocationPreCallRejected("marked receiver dispatch cannot recover")
         body = RecoveryBody(

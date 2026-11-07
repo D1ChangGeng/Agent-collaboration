@@ -1,0 +1,213 @@
+{
+  "schema_version": "acs-adoption-state/1",
+  "revision_package_version": "1.1.0",
+  "source_version": null,
+  "source_tree": null,
+  "dirty_patch_digest": null,
+  "read_only_observation": "This is a blank template. Source must be inspected and all item statuses are unassessed. No results are claimed.",
+  "items": [
+    {
+      "id": "C01",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C02",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C03",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C04",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C05",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C06",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C07",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C08",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C09",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C10",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C11",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C12",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C13",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C14",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C15",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C16",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C17",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C18",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C19",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C20",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C21",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C22",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C23",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C24",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    },
+    {
+      "id": "C25",
+      "status": "unassessed",
+      "observed_code_paths": [],
+      "evidence_refs": [],
+      "notes": "",
+      "next_action": ""
+    }
+  ],
+  "external_blockers": [],
+  "old_package_execution_stage": "not_assumed",
+  "decisions": []
+}

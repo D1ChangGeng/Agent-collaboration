@@ -1,0 +1,24 @@
+{
+  "message_handle": "message:project-test:0001",
+  "accepted_by_authority": true,
+  "target_inbox_committed": true,
+  "native": {
+    "state": "accepted",
+    "operation_ref": "operation:o1",
+    "binding_epoch": 1,
+    "provider_generation": "generation:g1",
+    "evidence_ref": "evidence:native-ack",
+    "native_input_ref": null,
+    "reason_code": null
+  },
+  "consumption": {
+    "state": "unobservable",
+    "semantics": "provider_input_consumed",
+    "evidence_ref": null
+  },
+  "response": {
+    "present": false,
+    "message_handle": null
+  },
+  "revision": 1
+}

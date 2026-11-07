@@ -43,11 +43,15 @@ class PosixProcessSupervisor(_Ownership):
                 continue
         return sorted(members)
 
-    def launch(self, argv, *, cwd, env, label):
+    def launch(self, argv, *, cwd, env, label, before_start=None):
+        if before_start is not None and not callable(before_start):
+            raise TypeError("launch authorization must be a trusted callback")
         if not isinstance(label, str) or not label or "\0" in label:
             raise ValueError("operation label is invalid")
         process_label = "acs-native-"+hashlib.sha256(label.encode()).hexdigest()[:32]
         arguments = _validate_launch(argv, env, process_label)
+        if before_start is not None:
+            before_start()
         process = subprocess.Popen(arguments, cwd=cwd, env=dict(env), start_new_session=True,
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         birth = _proc_birth(process.pid)

@@ -370,15 +370,19 @@ class SystemdUserSupervisor(_Ownership):
         self._validate_policy(values)
 
     def launch(
-        self, argv: Sequence[str], *, cwd: str, env: Mapping[str, str], label: str
+        self, argv: Sequence[str], *, cwd: str, env: Mapping[str, str], label: str, before_start=None
     ) -> OwnedProcess:
         with self._lifecycle_lock:
             if self._closed:
                 raise ContainmentUnavailable("SystemdUserSupervisor is closed")
-            return self._launch(argv, cwd=cwd, env=env, label=label)
+            if before_start is None:
+                return self._launch(argv, cwd=cwd, env=env, label=label)
+            if not callable(before_start):
+                raise TypeError("launch authorization must be a trusted callback")
+            return self._launch(argv, cwd=cwd, env=env, label=label, before_start=before_start)
 
     def _launch(
-        self, argv: Sequence[str], *, cwd: str, env: Mapping[str, str], label: str
+        self, argv: Sequence[str], *, cwd: str, env: Mapping[str, str], label: str, before_start=None
     ) -> OwnedProcess:
         args = _validate_launch(argv, env, label)
         executable = Path(args[0])
@@ -430,6 +434,8 @@ class SystemdUserSupervisor(_Ownership):
         wrapper_environment = {**connection_environment, "LANG": "C.UTF-8"}
         transport = None
         try:
+            if before_start is not None:
+                before_start()
             transport = subprocess.Popen(
                 command,
                 stdin=subprocess.PIPE,
@@ -473,8 +479,8 @@ class SystemdUserSupervisor(_Ownership):
                 self._records[owned.containment_id] = _Record(owned, unit, label, details)
             return owned
         except BaseException:
-            self._run_systemctl(("stop", unit), check=False)
             if transport is not None:
+                self._run_systemctl(("stop", unit), check=False)
                 try:
                     transport.wait(timeout=self.termination_timeout)
                 except subprocess.TimeoutExpired:

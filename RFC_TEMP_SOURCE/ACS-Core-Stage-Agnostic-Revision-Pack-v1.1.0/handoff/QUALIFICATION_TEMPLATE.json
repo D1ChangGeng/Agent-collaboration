@@ -1,0 +1,25 @@
+{
+  "schema_version": "acs-qualification-revision/1",
+  "records": [],
+  "required": [
+    "capability",
+    "harness",
+    "version",
+    "os",
+    "host",
+    "auth_mode",
+    "adapter_version",
+    "runtime_version",
+    "evidence_class",
+    "actual_command_and_artifacts",
+    "result"
+  ],
+  "allowed_results": [
+    "passed",
+    "failed",
+    "unsupported_verified",
+    "blocked",
+    "unverified"
+  ],
+  "note": "No actual ACS/Orca qualification runs were performed by preparing this package."
+}

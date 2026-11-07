@@ -9,9 +9,12 @@ import base64
 import json
 import time
 import uuid
+from copy import copy
+from dataclasses import asdict
 from datetime import datetime
 
 import anyio
+from psycopg.pq import TransactionStatus
 
 from runtime.delivery import DeliveryRejected, digest
 from runtime.delivery_models import MessagePacket, NoticePacket
@@ -21,6 +24,19 @@ from runtime.project_common import handle, parse_handle
 CONTACTS = "(SELECT m.tenant_id,m.project_id,m.principal_ref,m.profile,m.grant_ref,m.agent_slot_id FROM collaboration_memberships m " \
     "WHERE NOT EXISTS(SELECT 1 FROM collaboration_team_members t WHERE t.tenant_id=m.tenant_id AND t.project_id=m.project_id AND t.agent_slot_id=m.agent_slot_id) " \
     "UNION SELECT tenant_id,project_id,principal_ref,profile,grant_ref,agent_slot_id FROM collaboration_team_members WHERE status='active')"
+
+
+def prepare_sender_attachments(cursor, authority, command, project_id, root_scope, sender, identifiers):
+    from runtime.communication_attachment_policy import attachment_owner
+    from runtime.communication_attachment_storage import prepare_message_attachments
+
+    settings = getattr(authority, "_communication_attachment_settings", None)
+    if settings is None or not getattr(authority, "_communication_attachments_enabled", False):
+        raise DeliveryRejected("attachment_service_unavailable")
+    owner = attachment_owner(cursor, authority.context, project_id, sender, root_scope)
+    authority._authorize(command, cursor, "artifact.read", owner.scope_id)
+    limits = settings.to_limits()
+    return owner, prepare_message_attachments(cursor, owner, identifiers, limits=limits), limits
 
 
 def communication_boundary(cursor, authority, command, packet, endpoint_id, revision, *, recovery=False):
@@ -34,7 +50,8 @@ def communication_boundary(cursor, authority, command, packet, endpoint_id, revi
         raise DeliveryRejected("deadline_expired", "expired")
     cursor.execute("SELECT scope_id FROM collaboration_projects WHERE tenant_id=%s AND project_id=%s AND state='active'",
                    (command.tenant_id, packet.project_id))
-    if cursor.fetchone() is None:
+    project = cursor.fetchone()
+    if project is None:
         raise DeliveryRejected("project_unavailable")
     if isinstance(packet, NoticePacket):
         from runtime.communication_faults import authorize_notice
@@ -55,6 +72,11 @@ def communication_boundary(cursor, authority, command, packet, endpoint_id, revi
                         command.grant_ref))
     if not isinstance(packet, NoticePacket) and cursor.fetchone() is None:
         raise AuthorizationDenied(command.principal_ref, command.grant_ref)
+    if isinstance(packet, MessagePacket) and packet.attachment_refs:
+        _owner, references, _limits = prepare_sender_attachments(cursor, authority, command, packet.project_id,
+            project[0], packet.sender, [reference.attachment_id for reference in packet.attachment_refs])
+        if references != [reference.model_dump(mode="json") for reference in packet.attachment_refs]:
+            raise DeliveryRejected("attachment_packet_identity_changed")
     if packet.recipient.startswith("client:"):
         cursor.execute("SELECT 1 FROM communication_clients WHERE tenant_id=%s AND project_id=%s AND address=%s",
                        (command.tenant_id, packet.project_id, packet.recipient))
@@ -146,12 +168,21 @@ def _page_message_content(data, maximum, offset=0, *, reference=False):
 class CommunicationActions:
     def bind_notification_session(self, project_id, session_ref, connection_ref, credential):
         """Bind an explicitly subscribed transport to its authenticated owner."""
+        from runtime.communication_notifications import notification_owner
+
+        if any(not isinstance(value, str) or not 1 <= len(value) <= 512
+               or any(ord(character) < 32 for character in value) for value in (session_ref, connection_ref)):
+            raise ValueError("notification session references are invalid")
         self.service.authenticate(credential)
         with (self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor):
             self._authorize(authority, cursor, project_id, "check_inbox", {"project_id": project_id})
+            address = self._communication_address(cursor, project_id)
+            owner = notification_owner(self.context.principal_ref, address)
+            cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                           ("notification-owner:" + self.context.tenant_id + ":" + project_id + ":" + owner,))
             cursor.execute("SELECT state,revision,connection_ref FROM collaboration_notification_sessions WHERE tenant_id=%s "
                            "AND project_id=%s AND owner_ref=%s AND session_ref=%s FOR UPDATE",
-                           (self.context.tenant_id, project_id, self.context.principal_ref, session_ref))
+                           (self.context.tenant_id, project_id, owner, session_ref))
             prior = cursor.fetchone()
             if prior and prior[0] == "retired":
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
@@ -159,23 +190,25 @@ class CommunicationActions:
                 cursor.execute("UPDATE collaboration_notification_sessions SET expires_at="
                                "CASE WHEN %s THEN NULL ELSE clock_timestamp()+interval '300 seconds' END WHERE tenant_id=%s "
                                "AND project_id=%s AND owner_ref=%s AND session_ref=%s",
-                               (authority.access_mode == "owner", self.context.tenant_id, project_id, self.context.principal_ref, session_ref))
+                               (authority.access_mode == "owner", self.context.tenant_id, project_id, owner, session_ref))
+                self._authorize(authority, cursor, project_id, "check_inbox", {"project_id": project_id})
                 return prior[1]
             cursor.execute("SELECT COALESCE(MAX(revision),0) FROM collaboration_notification_sessions "
                            "WHERE tenant_id=%s AND project_id=%s AND owner_ref=%s",
-                           (self.context.tenant_id, project_id, self.context.principal_ref))
+                           (self.context.tenant_id, project_id, owner))
             revision = cursor.fetchone()[0] + 1
             cursor.execute("UPDATE collaboration_notification_sessions SET state='retired' WHERE tenant_id=%s "
                            "AND project_id=%s AND owner_ref=%s AND session_ref<>%s AND state='active'",
-                           (self.context.tenant_id, project_id, self.context.principal_ref, session_ref))
+                           (self.context.tenant_id, project_id, owner, session_ref))
             cursor.execute("INSERT INTO collaboration_notification_sessions(tenant_id,project_id,owner_ref,"
                            "session_ref,connection_ref,revision,state,expires_at) "
                            "VALUES (%s,%s,%s,%s,%s,%s,'active',CASE WHEN %s THEN NULL ELSE clock_timestamp()+interval '300 seconds' END) "
                            "ON CONFLICT(tenant_id,project_id,owner_ref,session_ref) DO UPDATE "
                            "SET connection_ref=EXCLUDED.connection_ref,revision=EXCLUDED.revision,"
                            "expires_at=EXCLUDED.expires_at",
-                           (self.context.tenant_id, project_id, self.context.principal_ref,
+                           (self.context.tenant_id, project_id, owner,
                             session_ref, connection_ref, revision, authority.access_mode == "owner"))
+            self._authorize(authority, cursor, project_id, "check_inbox", {"project_id": project_id})
         return revision
 
     @staticmethod
@@ -188,9 +221,13 @@ class CommunicationActions:
     def _list_harnesses(self, authority, cursor, project, command, args, _credential):
         from runtime.codex_driver import AuthorizedOperation
         from runtime.native_delivery import NativeDeliveryAdapter
+        limit = args.get("limit", 20)
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise ValueError("invalid Harness page size")
+        receiver_projections = 0
         scopes = self._visible_scopes(authority, cursor, project)
         scope = self._scope(cursor, self.context.tenant_id, args["project_id"], args["scope_handle"]) if args.get("scope_handle") else None
-        cursor.execute("SELECT e.endpoint_id,e.agent_slot_id,e.scope_id,e.machine_id,e.node_id,e.revision,e.supports_invoke "
+        cursor.execute("SELECT e.endpoint_id,e.agent_slot_id,e.scope_id,e.machine_id,e.node_id,e.revision,e.supports_invoke,e.boot_incarnation "
                        "FROM delivery_endpoints e WHERE e.tenant_id=%s AND e.status='active' "
                        "AND (%s OR e.expires_at>clock_timestamp()) AND (%s::text IS NULL OR e.scope_id=%s) "
                        "AND (%s::text[] IS NULL OR e.scope_id=ANY(%s)) AND (e.scope_id=%s OR EXISTS "
@@ -198,7 +235,7 @@ class CommunicationActions:
                        "ORDER BY e.endpoint_id", (self.context.tenant_id, authority.access_mode == "owner", scope, scope,
                             scopes, scopes, project[0], args["project_id"]))
         items = []
-        for endpoint_id, slot, scope_id, machine, node, revision, invoke in cursor.fetchall():
+        for endpoint_id, slot, scope_id, machine, node, revision, invoke, boot in cursor.fetchall():
             capabilities = ["message", "invoke"] if invoke else ["message"]
             if not set(args.get("required_capabilities", [])) <= set(capabilities):
                 continue
@@ -225,23 +262,42 @@ class CommunicationActions:
                 "agent_slot_id": slot, "scope_handle": handle("scope", args["project_id"], scope_id), "machine_id": machine,
                 "node_id": node, "binding_revision": revision, "capabilities": capabilities, "runtime_state": observed["state"],
                 "harness": observed["harness"], "session_ref": observed.get("session_ref"), "observation": "read_only_snapshot"})
-        limit = args.get("limit", 20)
-        if type(limit) is not int or not 1 <= limit <= 100:
-            raise ValueError("invalid Harness page size")
+            if (getattr(authority, "_receiver_evidence_enabled", False) and receiver_projections < limit
+                    and (not args.get("cursor") or endpoint_id > args["cursor"])):
+                from runtime.receiver_contract import ReceiverBinding
+                from runtime.receiver_evidence import project_receiver, unknown_receiver
+
+                binding = ReceiverBinding(receiver_id=endpoint_id,
+                    actor_address=handle("collaborator", args["project_id"], slot), binding_epoch=revision,
+                    provider_generation=None, native_session_ref=None, authority_id=command.authority_id,
+                    authority_incarnation=command.authority_incarnation, execution_host_ref=machine)
+                receiver = project_receiver(provider, binding, lambda: authority.canonical_now(cursor),
+                    expected_node={"machine_id": machine, "node_id": node, "boot_incarnation": boot})
+                # Recheck the same receiving selection after the readback. This
+                # query is read-only; a changed selection cannot be auto-repaired.
+                cursor.execute("SELECT revision,machine_id,node_id,boot_incarnation FROM delivery_endpoints "
+                    "WHERE tenant_id=%s AND endpoint_id=%s AND status='active'",
+                    (self.context.tenant_id, endpoint_id))
+                if cursor.fetchone() != (revision, machine, node, boot):
+                    receiver = unknown_receiver(binding, reason="receiver_binding_changed")
+                items[-1]["receiver"] = receiver.model_dump(mode="json")
+                receiver_projections += 1
         items = [item for item in items if not args.get("cursor") or item["endpoint_id"] > args["cursor"]]
         return "observed", {"project_id": args["project_id"], "items": items[:limit],
                             "next_cursor": items[limit-1]["endpoint_id"] if len(items) > limit else None}, []
 
     def pending_wake_keys(self, project_id, session_ref, connection_ref, credential):
+        from runtime.communication_notifications import (
+            due_publication_keys,
+            stored_publication_boundary,
+        )
+
         self.service.authenticate(credential)
         with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
             self._authorize(authority, cursor, project_id, "check_inbox", {"project_id": project_id})
-            address = self._communication_address(cursor, project_id)
-            cursor.execute("SELECT 1 FROM collaboration_notification_sessions WHERE tenant_id=%s AND project_id=%s "
-                           "AND owner_ref=%s AND session_ref=%s AND connection_ref=%s AND state='active' "
-                           "AND (expires_at IS NULL OR expires_at>clock_timestamp())",
-                           (self.context.tenant_id, project_id, self.context.principal_ref, session_ref, connection_ref))
-            if cursor.fetchone() is None:
+            address, owner, revision = self._notification_publication_binding(
+                authority, cursor, project_id, session_ref, connection_ref)
+            if revision is None:
                 return []
             cursor.execute("SELECT sequence FROM communication_messages WHERE tenant_id=%s AND project_id=%s "
                            "AND recipient=%s ORDER BY sequence DESC LIMIT 1", (self.context.tenant_id, project_id, address))
@@ -250,7 +306,64 @@ class CommunicationActions:
             cursor.execute("SELECT sequence FROM communication_notices WHERE tenant_id=%s AND project_id=%s "
                            "AND recipient=%s ORDER BY sequence DESC LIMIT 1", (self.context.tenant_id, project_id, address))
             notice = cursor.fetchone()
-            return keys + (["notice:" + str(notice[0])] if notice else [])
+            keys += ["notice:" + str(notice[0])] if notice else []
+            if getattr(authority, "_notification_frontiers_enabled", False):
+                identity = (self.context.tenant_id, project_id, owner, session_ref, revision)
+                keys = due_publication_keys(keys, stored_publication_boundary(cursor, identity))
+            self._authorize(authority, cursor, project_id, "check_inbox", {"project_id": project_id})
+            return keys
+
+    def _notification_publication_binding(self, authority, cursor, project_id, session_ref, connection_ref):
+        """Renew only a live, authenticated matching connection, never retired state."""
+        from runtime.communication_notifications import notification_owner
+
+        address = self._communication_address(cursor, project_id)
+        owner = notification_owner(self.context.principal_ref, address)
+        cursor.execute("SELECT revision FROM collaboration_notification_sessions WHERE tenant_id=%s AND project_id=%s "
+                       "AND owner_ref=%s AND session_ref=%s AND connection_ref=%s AND state='active' FOR UPDATE",
+                       (self.context.tenant_id, project_id, owner, session_ref, connection_ref))
+        row = cursor.fetchone()
+        if row is not None:
+            cursor.execute("UPDATE collaboration_notification_sessions SET expires_at="
+                "CASE WHEN %s THEN NULL ELSE clock_timestamp()+interval '300 seconds' END "
+                "WHERE tenant_id=%s AND project_id=%s AND owner_ref=%s AND session_ref=%s AND revision=%s",
+                (authority.access_mode == "owner", self.context.tenant_id, project_id, owner, session_ref, row[0]))
+        return address, owner, row[0] if row else None
+
+    def acknowledge_wake_publication(self, project_id, session_ref, connection_ref, keys, credential):
+        """Record transport publication, not reading or model consumption."""
+        return self._wake_publication(project_id, session_ref, connection_ref, keys, credential, persist=True)
+
+    def authorize_wake_publication(self, project_id, session_ref, connection_ref, keys, credential):
+        """Check the exact current read/channel binding immediately before emit."""
+        return self._wake_publication(project_id, session_ref, connection_ref, keys, credential, persist=False)
+
+    def _wake_publication(self, project_id, session_ref, connection_ref, keys, credential, *, persist):
+        from runtime.communication_notifications import (
+            publication_boundary,
+            record_publication_boundary,
+        )
+
+        boundary = publication_boundary(keys)
+        self.service.authenticate(credential)
+        with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
+            self._authorize(authority, cursor, project_id, "check_inbox", {"project_id": project_id})
+            address, owner, revision = self._notification_publication_binding(
+                authority, cursor, project_id, session_ref, connection_ref)
+            if revision is None:
+                return False
+            for kind, sequence in boundary.items():
+                if sequence == 0:
+                    continue
+                table = "communication_messages" if kind == "message" else "communication_notices"
+                cursor.execute("SELECT 1 FROM " + table + " WHERE tenant_id=%s AND project_id=%s AND recipient=%s AND sequence=%s",
+                               (self.context.tenant_id, project_id, address, sequence))
+                if cursor.fetchone() is None:
+                    raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+            if persist and getattr(authority, "_notification_frontiers_enabled", False):
+                record_publication_boundary(cursor, (self.context.tenant_id, project_id, owner, session_ref, revision), keys)
+            self._authorize(authority, cursor, project_id, "check_inbox", {"project_id": project_id})
+            return True
 
     def _list_collaborators(self, authority, cursor, project, _command, args, _credential):
         address = self._communication_address(cursor, args["project_id"])
@@ -335,10 +448,15 @@ class CommunicationActions:
         row = cursor.fetchone()
         if row is None:
             raise NotFound("message", message_id)
-        address = self._communication_address(cursor, args["project_id"])
-        if address not in row[:2]:
-            raise AuthorizationDenied(self.context.principal_ref, authority.context.grant_ref)
+        self._communication_participant(authority, cursor, args["project_id"], row[0], row[1])
         return row
+
+    def _communication_participant(self, authority, cursor, project_id, sender, recipient):
+        """The same participant rule for body reads and metadata-only event ACL."""
+        address = self._communication_address(cursor, project_id)
+        if address not in (sender, recipient):
+            raise AuthorizationDenied(self.context.principal_ref, authority.context.grant_ref)
+        return address
 
     @staticmethod
     def _communication_view(project_id, message_id, row):
@@ -347,7 +465,7 @@ class CommunicationActions:
                 "message_handle": handle("message", project_id, message_id),
                 "response_handle": handle("response", project_id, message_id),
                 "from": row[0], "to": row[1], "sequence": row[2], "content": packet["content"],
-                "reply_to": packet["reply_to"], "response_mode_at_send": packet["response_mode"],
+                "reply_to": packet["reply_to"], "attachment_refs": packet.get("attachment_refs", []), "response_mode_at_send": packet["response_mode"],
                 "activation": packet["activation"], "state": row[4], "receipt_high_water": row[5],
                 "operation_id": row[6], "consumed": False, "model_consumption": "unconfirmed",
                 "delivery": {"state": row[4], "error_code": row[7], "attempts": row[8]}}
@@ -360,13 +478,21 @@ class CommunicationActions:
         if client_target:
             parse_handle(args["to"], "client", project_id)
         content = args["content"]
-        if not isinstance(content, str) or not content.strip() or len(content.encode()) > 32768:
-            raise InvalidToolArgument("content", "Provide nonempty message text within the 32768-byte UTF-8 limit.")
+        content_limit = getattr(self, "_client_content_limit", 32768)
+        if not isinstance(content, str) or not content.strip() or len(content.encode()) > content_limit:
+            raise InvalidToolArgument("content", f"Provide nonempty message text within the {content_limit}-byte UTF-8 limit.")
         relations = args.get("reply_to", [])
         if (not isinstance(relations, list) or len(relations) > 32
                 or len(set(relations)) != len(relations)):
             raise ValueError("invalid reply references")
         self._communication_lock(cursor, self.context.tenant_id, project_id)
+        if (getattr(authority, "_communication_conversation_storage_available", False)
+                or getattr(authority, "_communication_events_enabled", False)):
+            from runtime.communication_client_queries import conversation_view_id
+            from runtime.communication_conversation_storage import register_conversation_pair
+
+            register_conversation_pair(cursor, authority.tenant_id, project_id,
+                conversation_view_id(authority.tenant_id, project_id, sender, args["to"]), sender, args["to"])
         if self.context.trusted_client:
             cursor.execute("INSERT INTO communication_clients VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING",
                            (self.context.tenant_id, project_id, sender, self.context.principal_ref))
@@ -401,40 +527,69 @@ class CommunicationActions:
         if declared.get("endpoint_id"):
             endpoints = [item for item in endpoints if item[0] == declared["endpoint_id"]]
         direct_inbox = client_target or args.get("activation", "invoke") == "message_only"
+        token = getattr(self, "token_authorization", None)
+        if not direct_inbox and token is not None:
+            token.authorize_permissions(("runtime.invoke",))
         if len(endpoints) != 1 and not direct_inbox:
             raise DeliveryRejected("endpoint_binding_missing" if not endpoints else "endpoint_binding_ambiguous")
         if direct_inbox:
             endpoints = [(None, None)]
+        attachment_owner, attachment_refs, attachment_limits = None, [], None
+        if args.get("attachment_refs"):
+            attachment_owner, attachment_refs, attachment_limits = prepare_sender_attachments(cursor, authority, command,
+                project_id, project[0], sender, args["attachment_refs"])
         packet = MessagePacket(project_id=project_id, sender=sender, recipient=args["to"], content=content,
             reply_to=tuple(relations), response_mode=args.get("response_mode", "async"),
             target_scope_id=scope, target_agent_slot_id=target, activation=args.get("activation", "invoke"),
-            deadline=datetime.fromisoformat(args["deadline"]) if args.get("deadline") else None)
+            deadline=datetime.fromisoformat(args["deadline"]) if args.get("deadline") else None,
+            attachment_refs=tuple(attachment_refs))
         message_id = "message-" + uuid.uuid4().hex
+        issuer_context = asdict(self.context)
+        issuer_context.pop("credential_hash", None)
         send_command = command.model_copy(update={"command_type": "message.send", "target_kind": "message",
                                                   "target_id": message_id, "deadline": packet.deadline,
-                                                  "payload": {"schema_version": "acs-message/1", "communication_project_id": project_id}})
-        result = authority.send_message(send_command, packet, endpoint_id=endpoints[0][0], binding_revision=endpoints[0][1])
+                                                  "payload": {"schema_version": "acs-message/1", "communication_project_id": project_id,
+                                                      "lifecycle_source": {"schema_version": "acs-message-lifecycle-source/1",
+                                                          "profile": self.profile, "issuer_context": issuer_context}}})
+        # HTTP's opt-in, trusted service budget includes worst-case JSON escaping
+        # plus envelope metadata. The legacy MCP path keeps the old packet cap.
+        packet_budget = {"max_packet_bytes": max(65536, content_limit * 6 + 65536)} if hasattr(self, "_client_content_limit") else {}
+        result = authority.send_message(send_command, packet, endpoint_id=endpoints[0][0], binding_revision=endpoints[0][1], **packet_budget)
         cursor.execute("INSERT INTO communication_messages(tenant_id,project_id,message_id,sender,recipient) "
                        "VALUES (%s,%s,%s,%s,%s) RETURNING sequence",
                        (self.context.tenant_id, project_id, message_id, sender, args["to"]))
         sequence = cursor.fetchone()[0]
+        if attachment_refs:
+            from runtime.communication_attachment_storage import associate_attachments
+
+            if associate_attachments(cursor, attachment_owner, message_id, args["attachment_refs"], limits=attachment_limits) != attachment_refs:
+                raise DeliveryRejected("attachment_packet_identity_changed")
         for request_id in request_ids:
             cursor.execute("INSERT INTO communication_replies VALUES (%s,%s,%s,%s)",
                            (self.context.tenant_id, project_id, request_id, message_id))
-        cursor.execute("SELECT 1 FROM communication_waits w WHERE w.tenant_id=%s AND w.project_id=%s "
+        cursor.execute("SELECT MAX(w.expires_at) FROM communication_waits w WHERE w.tenant_id=%s AND w.project_id=%s "
                        "AND w.address=%s AND w.request_id=ANY(%s) AND w.expires_at>clock_timestamp() "
                        "AND NOT EXISTS(SELECT 1 FROM communication_replies r WHERE r.tenant_id=w.tenant_id "
-                       "AND r.project_id=w.project_id AND r.request_id=w.request_id AND r.reply_id<>%s) LIMIT 1",
+                   "AND r.project_id=w.project_id AND r.request_id=w.request_id AND r.reply_id<>%s)",
                        (self.context.tenant_id, project_id, args["to"], request_ids, message_id))
-        through_wait = cursor.fetchone() is not None
-        if through_wait and not direct_inbox:
-            cursor.execute("UPDATE delivery_messages SET state='delivered',receipt_high_water='target_inbox_committed' "
-                           "WHERE tenant_id=%s AND message_id=%s", (self.context.tenant_id, message_id))
-            cursor.execute("INSERT INTO delivery_receipts(tenant_id,message_id,receipt_id,layer,evidence_json) "
-                           "VALUES (%s,%s,%s,'target_inbox_committed',%s)",
-                           (self.context.tenant_id, message_id, f"delivery:{message_id}:target_inbox_committed",
-                            __import__('json').dumps({"source": "authority_inbox", "ingress": "active_wait",
-                                "model_consumption": "unconfirmed"})))
+        wait_expiry = cursor.fetchone()[0]
+        through_wait = wait_expiry is not None
+        attachment_hold = bool(packet.attachment_refs) and packet.activation == "invoke" and not client_target
+        reserved = through_wait and not direct_inbox and not attachment_hold and getattr(authority, "_wait_ingress_recovery_enabled", False)
+        if through_wait and not direct_inbox and not attachment_hold:
+            if reserved:
+                from runtime.communication_wait_ingress import reserve
+
+                reserve(cursor, self.context.tenant_id, project_id, message_id, args["to"], request_ids, wait_expiry)
+            else:
+                cursor.execute("UPDATE delivery_messages SET state='delivered',receipt_high_water='target_inbox_committed' "
+                               "WHERE tenant_id=%s AND message_id=%s", (self.context.tenant_id, message_id))
+            if not reserved:
+                cursor.execute("INSERT INTO delivery_receipts(tenant_id,message_id,receipt_id,layer,evidence_json) "
+                               "VALUES (%s,%s,%s,'target_inbox_committed',%s)",
+                               (self.context.tenant_id, message_id, f"delivery:{message_id}:target_inbox_committed",
+                                __import__('json').dumps({"source": "authority_inbox", "ingress": "active_wait",
+                                    "model_consumption": "unconfirmed"})))
         # Inbox is a view of the authoritative, committed message. Native
         # delivery to a remote node remains an independently recorded fact.
         message_handle = handle("message", project_id, message_id)
@@ -444,7 +599,8 @@ class CommunicationActions:
                 "message_handle": message_handle, "response_handle": response_handle, "sequence": sequence,
                 "from": sender, "to": args["to"], "activation": packet.activation,
                 "native_status": "client_inbox" if client_target else "not_requested" if packet.activation == "message_only"
-                    else "active_wait_ingress" if through_wait else "pending",
+                    else "native_attachment_delivery_unsupported" if packet.attachment_refs
+                    else "wait_result_reserved" if reserved else "active_wait_ingress" if through_wait else "pending",
                 "client_request_id": args.get("client_request_id"),
                 "delivery_recovery": "active" if getattr(self.service.authority, "_communication_maintenance_running", False)
                     else "external_dispatcher_configured" if getattr(self.service.authority, "_communication_maintenance_mode", "auto") == "external"
@@ -584,12 +740,24 @@ class CommunicationActions:
             raise ValueError("invalid wait options")
         end = None if timeout is None else time.monotonic() + timeout
         waiter_id = uuid.uuid4().hex
-        try:
-            return self._observe_messages(args, credential, references, mode, until, end, waiter_id)
-        finally:
-            with self.service.authority._connect() as connection:
-                connection.execute("DELETE FROM communication_waits WHERE tenant_id=%s AND project_id=%s AND waiter_id=%s",
-                                   (self.context.tenant_id, args["project_id"], waiter_id))
+        # The request owns this connection, but each observation still uses
+        # separate committed transactions and rechecks current authorization.
+        # Never put it on the shared service used by other MCP calls/maintenance.
+        with self.service.authority._connect() as connection:
+            if connection.info.transaction_status != TransactionStatus.IDLE:
+                raise RuntimeError("a wait cannot borrow an active transaction")
+            authority = copy(self.service.authority)
+            authority._transaction_connection = connection
+            shared, request = copy(self.service), copy(self)
+            shared.authority, request.service = authority, shared
+            try:
+                return request._observe_messages(args, credential, references, mode, until, end, waiter_id)
+            finally:
+                # Commit technical lease cleanup even when authorization or
+                # cancellation is propagating through the outer connection.
+                with connection.transaction():
+                    connection.execute("DELETE FROM communication_waits WHERE tenant_id=%s AND project_id=%s AND waiter_id=%s",
+                                       (self.context.tenant_id, args["project_id"], waiter_id))
 
     def _observe_messages(self, args, credential, references, mode, until, end, waiter_id):
         while True:
@@ -643,13 +811,13 @@ class CommunicationActions:
             ready = not pending if mode == "all" else bool(satisfied)
             if ready or (end is not None and time.monotonic() >= end):
                 if until == "response_received":
-                    self._retain_wait_ingress(args, credential, observations)
+                    self._retain_wait_ingress(args, credential, observations, waiter_id=waiter_id)
                 continuations = {digest(action["arguments"]): action for page in pages for action in page[2]}
                 return "satisfied" if ready else "timeout", {"project_id": args["project_id"],
                     "satisfied": satisfied, "pending": pending, "observations": observations}, list(continuations.values())
             time.sleep(0.1 if end is None else min(0.1, max(0, end-time.monotonic())))
 
-    def _retain_wait_ingress(self, args, credential, observations):
+    def _retain_wait_ingress(self, args, credential, observations, *, waiter_id=None):
         """Keep a reply selected for this Tool Result from later starting Native.
 
         This closes the lease-expiry/read race. It records a chosen ingress,
@@ -658,19 +826,31 @@ class CommunicationActions:
         with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
             self._authorize(authority, cursor, args["project_id"], "wait_for_response", args)
             self.service.authenticate(credential)
+            if (getattr(authority, "_wait_ingress_recovery_enabled", False)
+                    or getattr(authority, "_wait_ingress_storage_available", False)):
+                self._communication_lock(cursor, self.context.tenant_id, args["project_id"])
             for observation in observations:
                 reply = observation.get("reply")
                 if reply is None:
                     continue
-                cursor.execute("SELECT state FROM delivery_messages WHERE tenant_id=%s AND message_id=%s FOR UPDATE",
+                cursor.execute("SELECT state,packet_json FROM delivery_messages WHERE tenant_id=%s AND message_id=%s FOR UPDATE",
                                (self.context.tenant_id, reply["message_id"]))
-                cursor.fetchone()
+                selected_delivery = cursor.fetchone()
+                if (selected_delivery is not None and selected_delivery[1].get("attachment_refs")
+                        and selected_delivery[1].get("activation") == "invoke"):
+                    continue  # A Tool Result cannot enable unsupported Native attachment input.
                 cursor.execute("SELECT 1 FROM delivery_receipts WHERE tenant_id=%s AND message_id=%s AND layer='runtime_dispatched'",
                                (self.context.tenant_id, reply["message_id"]))
                 if cursor.fetchone():
                     continue  # Preserve an already possible Native effect and its evidence.
                 cursor.execute("UPDATE delivery_messages SET state='delivered',receipt_high_water='target_inbox_committed' "
                                "WHERE tenant_id=%s AND message_id=%s", (self.context.tenant_id, reply["message_id"]))
+                if (getattr(authority, "_wait_ingress_recovery_enabled", False)
+                        or getattr(authority, "_wait_ingress_storage_available", False)):
+                    from runtime.communication_wait_ingress import select
+
+                    select(cursor, self.context.tenant_id, args["project_id"], reply["message_id"],
+                        self._communication_address(cursor, args["project_id"]), [observation["message_id"]], waiter_id)
                 cursor.execute("INSERT INTO delivery_receipts(tenant_id,message_id,receipt_id,layer,evidence_json) "
                     "VALUES (%s,%s,%s,'target_inbox_committed',%s) ON CONFLICT DO NOTHING", (self.context.tenant_id,
                         reply["message_id"], f"delivery:{reply['message_id']}:target_inbox_committed",

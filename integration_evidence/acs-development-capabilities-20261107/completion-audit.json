@@ -1,0 +1,12 @@
+{
+  "development_items": 25,
+  "requirements": 40,
+  "api_operations": 35,
+  "ui_contracts": 30,
+  "remaining_development_items": 0,
+  "current_source_changed_since_final_integration": [],
+  "final_integration_passed": 76,
+  "source_wheel_package_files": 191,
+  "reports_and_state_links_valid": true,
+  "production_changes": false
+}

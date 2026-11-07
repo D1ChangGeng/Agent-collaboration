@@ -44,6 +44,7 @@ def main(argv=None, *, delivery_endpoints=None):
         with configured_service(args.config, delivery_endpoints=delivery_endpoints) as (
             service, settings,
         ), ExitStack() as resources:
+            service.authority._receiver_lifecycle_catalog = catalog
             sources = None
             configs = settings.artifact_configs()
             if configs and any(item.authorized_source_roots for item in configs):

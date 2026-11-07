@@ -1,0 +1,174 @@
+{
+  "observed_at": "2026-11-07T06:14:40.603779+00:00",
+  "decisions": [
+    {
+      "id": "D01",
+      "change_item": "C01,C04,C06",
+      "actual_ACS_paths": [
+        "runtime/communication.py",
+        "runtime/communication_dispatch.py",
+        "runtime/delivery.py"
+      ],
+      "actual_Orca_paths_or_revision": {
+        "revision": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+        "paths": "mailbox-notification-coordinator.ts; structured-mailbox-pointer-delivery.ts",
+        "provenance": "existing pinned inspection/documentation in sdk/ORCA-RECEIVER-INTEGRATION.md; not a new claim about current upstream"
+      },
+      "already_implemented": true,
+      "gap": "按当前源码和场景核验，未另建同义模块",
+      "reuse_first_option": "现有 Domain、Driver/Receiver、SDK 和存储边界",
+      "chosen_delta": "复用现有 Message/operation/Outbox/NodeJournal 和维护器，按缺口验证，不引入任务编排权威",
+      "why_minimal": "保留已满足合同的实现，仅修改被失败直接证明的HTTP调用及补齐验收",
+      "security_impact": "消息、Native ACK 和显式 reply 保持分层；活动 wait 不重复 Native 唤醒",
+      "tests": "acceptance-audit.json 的对应场景/真实服务/SDK证据",
+      "evidence_refs": [
+        "acceptance-audit.json",
+        "source-impact-review.json",
+        "qualification-matrix.json"
+      ],
+      "migration_needed": false
+    },
+    {
+      "id": "D02",
+      "change_item": "C02-C08",
+      "actual_ACS_paths": [
+        "runtime/native_handoff.py",
+        "runtime/native_input_observations.py",
+        "runtime/receiver_lifecycle_node.py"
+      ],
+      "actual_Orca_paths_or_revision": {
+        "revision": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+        "paths": "structured-agent-session-input-readiness.ts; terminal-authority/",
+        "provenance": "existing pinned inspection/documentation in sdk/ORCA-RECEIVER-INTEGRATION.md; not a new claim about current upstream"
+      },
+      "already_implemented": true,
+      "gap": "按当前源码和场景核验，未另建同义模块",
+      "reuse_first_option": "现有 Domain、Driver/Receiver、SDK 和存储边界",
+      "chosen_delta": "保留当前受信准入、签名生命周期和原操作回查；按真实版本限定支持",
+      "why_minimal": "保留已满足合同的实现，仅修改被失败直接证明的HTTP调用及补齐验收",
+      "security_impact": "unknown 不重投，busy/审批/draft 保持保护，旧代次不能产生新输入",
+      "tests": "acceptance-audit.json 的对应场景/真实服务/SDK证据",
+      "evidence_refs": [
+        "acceptance-audit.json",
+        "source-impact-review.json",
+        "qualification-matrix.json"
+      ],
+      "migration_needed": false
+    },
+    {
+      "id": "D03",
+      "change_item": "C16-C21",
+      "actual_ACS_paths": [
+        "sdk/orca-receiver-port.ts",
+        "sdk/integration-ports.ts",
+        "runtime/signed_harness_adapter.py"
+      ],
+      "actual_Orca_paths_or_revision": {
+        "revision": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+        "paths": "docs/reference/plugin-host-api.md; structured-agent-session-input-handover.ts",
+        "provenance": "existing pinned inspection/documentation in sdk/ORCA-RECEIVER-INTEGRATION.md; not a new claim about current upstream"
+      },
+      "already_implemented": true,
+      "gap": "按当前源码和场景核验，未另建同义模块",
+      "reuse_first_option": "现有 Domain、Driver/Receiver、SDK 和存储边界",
+      "chosen_delta": "采用现有受权端口与委托合同；缺实际 Host 注册/原子入口时 typed host_extension_required",
+      "why_minimal": "保留已满足合同的实现，仅修改被失败直接证明的HTTP调用及补齐验收",
+      "security_impact": "Core/Host 授权独立且 Native 单输入 owner；Native transcript 不成为 ACS 消息权威",
+      "tests": "acceptance-audit.json 的对应场景/真实服务/SDK证据",
+      "evidence_refs": [
+        "acceptance-audit.json",
+        "source-impact-review.json",
+        "qualification-matrix.json"
+      ],
+      "migration_needed": false
+    },
+    {
+      "id": "D04",
+      "change_item": "C22-C25",
+      "actual_ACS_paths": [
+        "runtime/communication_client_state.py",
+        "runtime/communication_client_search.py",
+        "runtime/communication_client_attachments.py"
+      ],
+      "actual_Orca_paths_or_revision": null,
+      "already_implemented": true,
+      "gap": "按当前源码和场景核验，未另建同义模块",
+      "reuse_first_option": "现有 Domain、Driver/Receiver、SDK 和存储边界",
+      "chosen_delta": "当前用户明确要求交付 P2，核验全部13操作、7场景和4个来源条目",
+      "why_minimal": "保留已满足合同的实现，仅修改被失败直接证明的HTTP调用及补齐验收",
+      "security_impact": "个人状态按 viewer 隔离；CAS、digest、实时 ACL 和附件生命周期保持",
+      "tests": "acceptance-audit.json 的对应场景/真实服务/SDK证据",
+      "evidence_refs": [
+        "acceptance-audit.json",
+        "source-impact-review.json",
+        "qualification-matrix.json"
+      ],
+      "migration_needed": false
+    },
+    {
+      "id": "D05",
+      "change_item": "C01,C12,C16",
+      "actual_ACS_paths": [
+        "runtime/communication_http.py",
+        "runtime_tests/test_communication_http_auth.py"
+      ],
+      "actual_Orca_paths_or_revision": null,
+      "already_implemented": true,
+      "gap": "缺精确运行证据；D05另有已复现的旧调用形状兼容缺陷",
+      "reuse_first_option": "现有 Domain、Driver/Receiver、SDK 和存储边界",
+      "chosen_delta": "仅在 include_native_source=true 时向 facade 转交新增关键字；新增默认/false/true 回归",
+      "why_minimal": "保留已满足合同的实现，仅修改被失败直接证明的HTTP调用及补齐验收",
+      "security_impact": "保持旧读取调用形状、原文与独立续读；没有权限或 schema 扩张",
+      "tests": "acceptance-audit.json 的对应场景/真实服务/SDK证据",
+      "evidence_refs": [
+        "acceptance-audit.json",
+        "source-impact-review.json",
+        "qualification-matrix.json"
+      ],
+      "migration_needed": false
+    },
+    {
+      "id": "D06",
+      "change_item": "C01,C05",
+      "actual_ACS_paths": [
+        "runtime/communication.py",
+        "runtime_tests/test_communication.py"
+      ],
+      "actual_Orca_paths_or_revision": null,
+      "already_implemented": true,
+      "gap": "按当前源码和场景核验，未另建同义模块",
+      "reuse_first_option": "现有 Domain、Driver/Receiver、SDK 和存储边界",
+      "chosen_delta": "T006 按 v1.1 P0-01 的旧 MCP 兼容优先级裁决，保留提交前歧义拒绝与显式选择",
+      "why_minimal": "保留已满足合同的实现，仅修改被失败直接证明的HTTP调用及补齐验收",
+      "security_impact": "零广播；不冒称原先先落 Inbox 的 GWT 已原样通过",
+      "tests": "acceptance-audit.json 的对应场景/真实服务/SDK证据",
+      "evidence_refs": [
+        "acceptance-audit.json",
+        "source-impact-review.json",
+        "qualification-matrix.json"
+      ],
+      "migration_needed": false
+    },
+    {
+      "id": "D07",
+      "change_item": "C10",
+      "actual_ACS_paths": [
+        "runtime/communication_http.py"
+      ],
+      "actual_Orca_paths_or_revision": null,
+      "already_implemented": true,
+      "gap": "按当前源码和场景核验，未另建同义模块",
+      "reuse_first_option": "现有 Domain、Driver/Receiver、SDK 和存储边界",
+      "chosen_delta": "对历史 Native 记录使用逐文件差异与影响分析；HTTP-only 变更由当前组合重验",
+      "why_minimal": "保留已满足合同的实现，仅修改被失败直接证明的HTTP调用及补齐验收",
+      "security_impact": "不拼接为一轮新 Native 结果、不外推 Shared/物理双机/实际 Orca/cold recovery",
+      "tests": "acceptance-audit.json 的对应场景/真实服务/SDK证据",
+      "evidence_refs": [
+        "acceptance-audit.json",
+        "source-impact-review.json",
+        "qualification-matrix.json"
+      ],
+      "migration_needed": false
+    }
+  ]
+}

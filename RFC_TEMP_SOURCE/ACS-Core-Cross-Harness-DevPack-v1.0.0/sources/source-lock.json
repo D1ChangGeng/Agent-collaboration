@@ -1,0 +1,291 @@
+{
+  "recorded_date": "2026-11-06",
+  "acs_commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+  "orca_commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+  "status": "reference_snapshot_not_deployment_attestation",
+  "sources": [
+    {
+      "id": "A01",
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+      "path": "pyproject.toml",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/19d7881d49ee887315c54c5bc02e0cc424061376/pyproject.toml",
+      "inspection": "source_read",
+      "read_range": "1-end",
+      "blob_sha": "5e94dc3418c8d3d1e119479ce2ebed384302ee2d",
+      "note": "包版本与 Python/依赖/entry 基线；不是生产运行版本证明"
+    },
+    {
+      "id": "A02",
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+      "path": "docs/runtime/COMMUNICATION.md",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/19d7881d49ee887315c54c5bc02e0cc424061376/docs/runtime/COMMUNICATION.md",
+      "inspection": "source_read",
+      "read_range": "1-197",
+      "blob_sha": "44ce1eae5971f93fca7a3f6ee42c731487722522",
+      "note": "自然消息、可信身份、Root namespace、原子提交、wait/notice/Native 边界"
+    },
+    {
+      "id": "A03",
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+      "path": "docs/runtime/COMMUNICATION-STATUS.md",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/19d7881d49ee887315c54c5bc02e0cc424061376/docs/runtime/COMMUNICATION-STATUS.md",
+      "inspection": "source_read",
+      "read_range": "1-107",
+      "blob_sha": null,
+      "note": "已声明证据层次、主链与支持限制；本包未重新执行这些证据"
+    },
+    {
+      "id": "A04",
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+      "path": "docs/runtime/ROOT-MANAGEMENT.md",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/19d7881d49ee887315c54c5bc02e0cc424061376/docs/runtime/ROOT-MANAGEMENT.md",
+      "inspection": "implementation_check",
+      "read_range": "re-read current full file",
+      "blob_sha": null,
+      "note": "历史对话已读；本包执行时重验当前配置/权限调用链"
+    },
+    {
+      "id": "A05",
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+      "path": "runtime/communication.py",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/19d7881d49ee887315c54c5bc02e0cc424061376/runtime/communication.py",
+      "inspection": "implementation_check",
+      "read_range": "full call graph",
+      "blob_sha": null,
+      "note": "既有消息权威入口，必须复用"
+    },
+    {
+      "id": "A06",
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+      "path": "runtime/native_delivery.py",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/19d7881d49ee887315c54c5bc02e0cc424061376/runtime/native_delivery.py",
+      "inspection": "implementation_check",
+      "read_range": "full call graph",
+      "blob_sha": null,
+      "note": "最小 Native 发起，旧路径回归"
+    },
+    {
+      "id": "A07",
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+      "path": "runtime/communication_dispatch.py",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/19d7881d49ee887315c54c5bc02e0cc424061376/runtime/communication_dispatch.py",
+      "inspection": "implementation_check",
+      "read_range": "full call graph",
+      "blob_sha": null,
+      "note": "Outbox/维护器/默认并发与 fence"
+    },
+    {
+      "id": "A08",
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+      "path": "runtime/codex_driver.py",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/19d7881d49ee887315c54c5bc02e0cc424061376/runtime/codex_driver.py",
+      "inspection": "implementation_check",
+      "read_range": "protocol entrypoints",
+      "blob_sha": null,
+      "note": "目录已见；实际原生版本/receipt 由 Codex 核对"
+    },
+    {
+      "id": "A09",
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+      "path": "runtime/opencode_driver.py",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/19d7881d49ee887315c54c5bc02e0cc424061376/runtime/opencode_driver.py",
+      "inspection": "implementation_check",
+      "read_range": "locate via git ls-files",
+      "blob_sha": null,
+      "note": "现有 OpenCode Driver 定位线索"
+    },
+    {
+      "id": "A10",
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "commit": "19d7881d49ee887315c54c5bc02e0cc424061376",
+      "path": "runtime_deployment/receiver_authority.py",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/19d7881d49ee887315c54c5bc02e0cc424061376/runtime_deployment/receiver_authority.py",
+      "inspection": "implementation_check",
+      "read_range": "full call graph",
+      "blob_sha": null,
+      "note": "接收端 Node/发送方验证线索"
+    },
+    {
+      "id": "O01",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/shared/native-chat/native-chat-types.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/shared/native-chat/native-chat-types.ts",
+      "inspection": "source_read",
+      "read_range": "1-240",
+      "blob_sha": "8208a3b68c05dab7e2b654f667d3112e3693409d",
+      "note": "NativeChatMessage/Block/source/linkage，原生执行数据不属 ACS"
+    },
+    {
+      "id": "O02",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "docs/reference/plugin-host-api.md",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/docs/reference/plugin-host-api.md",
+      "inspection": "source_read",
+      "read_range": "1-45",
+      "blob_sha": "f5e2c6e36bbbf2d2dec34fcae18e21c02ea549d9",
+      "note": "Host API 1.4 公共方法/权限/surface；不证明通信引擎可替换"
+    },
+    {
+      "id": "O03",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/main/native-chat/agent-session-wire/structured-agent-session-input-readiness.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/main/native-chat/agent-session-wire/structured-agent-session-input-readiness.ts",
+      "inspection": "source_read",
+      "read_range": "full",
+      "blob_sha": "c424401a407689796d00abee1bab0202fa622917",
+      "note": "当前 child/ready/stopping/command/prompt 再准入检查"
+    },
+    {
+      "id": "O04",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/main/runtime/orchestration/mailbox-notification-coordinator.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/main/runtime/orchestration/mailbox-notification-coordinator.ts",
+      "inspection": "implementation_check",
+      "read_range": "full + tests",
+      "blob_sha": null,
+      "note": "waiter 与 native 提醒协调；历史已读，固定提交需重验"
+    },
+    {
+      "id": "O05",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/main/runtime/orchestration/mailbox-pointer-delivery.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/main/runtime/orchestration/mailbox-pointer-delivery.ts",
+      "inspection": "implementation_check",
+      "read_range": "stage/submit/resume + tests",
+      "blob_sha": null,
+      "note": "terminal 输入与未知回车副作用"
+    },
+    {
+      "id": "O06",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/main/runtime/orchestration/structured-mailbox-pointer-delivery.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/main/runtime/orchestration/structured-mailbox-pointer-delivery.ts",
+      "inspection": "implementation_check",
+      "read_range": "full + tests",
+      "blob_sha": null,
+      "note": "结构化队列和原操作核对，不复制 dispatch 生存期"
+    },
+    {
+      "id": "O07",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/main/runtime/orchestration/structured-mail-custody.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/main/runtime/orchestration/structured-mail-custody.ts",
+      "inspection": "implementation_check",
+      "read_range": "full + tests",
+      "blob_sha": null,
+      "note": "消息接管与输入待处理证据"
+    },
+    {
+      "id": "O08",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/main/runtime/agent-state-rules/agent-state-rules-schema.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/main/runtime/agent-state-rules/agent-state-rules-schema.ts",
+      "inspection": "implementation_check",
+      "read_range": "rules and hook callers",
+      "blob_sha": null,
+      "note": "多来源状态、强弱推断"
+    },
+    {
+      "id": "O09",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/main/runtime/orchestration/federation-sync-capability.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/main/runtime/orchestration/federation-sync-capability.ts",
+      "inspection": "implementation_check",
+      "read_range": "relay family + tests",
+      "blob_sha": null,
+      "note": "对端能力缓存与代次失效"
+    },
+    {
+      "id": "O10",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/main/runtime/orchestration/db/federation/federation-relay-enqueue.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/main/runtime/orchestration/db/federation/federation-relay-enqueue.ts",
+      "inspection": "implementation_check",
+      "read_range": "enqueue/ack/import",
+      "blob_sha": null,
+      "note": "有界 relay、sequence 与 ACK"
+    },
+    {
+      "id": "O11",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/main/runtime/rpc/methods/orchestration/messaging/send-point-to-point.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/main/runtime/rpc/methods/orchestration/messaging/send-point-to-point.ts",
+      "inspection": "implementation_check",
+      "read_range": "full + lifecycle callers",
+      "blob_sha": null,
+      "note": "普通消息与任务状态耦合点，只提取通信机制"
+    },
+    {
+      "id": "O12",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/renderer/src/components/native-chat/NativeChatStructuredSession.tsx",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/renderer/src/components/native-chat/NativeChatStructuredSession.tsx",
+      "inspection": "implementation_check",
+      "read_range": "renderer hook graph",
+      "blob_sha": null,
+      "note": "完整 Chat UI 数据依赖的实施清单"
+    },
+    {
+      "id": "O13",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "src/shared/agent-session/agent-session-message-source.ts",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/src/shared/agent-session/agent-session-message-source.ts",
+      "inspection": "implementation_check",
+      "read_range": "source provenance",
+      "blob_sha": null,
+      "note": "原生消息来源和 ACS exact linkage 映射"
+    },
+    {
+      "id": "O14",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "docs/reference/plugin-manifest.md",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/docs/reference/plugin-manifest.md",
+      "inspection": "implementation_check",
+      "read_range": "capabilities/replaces/hooks",
+      "blob_sha": null,
+      "note": "公开插件能力与 host gap 核对"
+    },
+    {
+      "id": "O15",
+      "repository": "stablyai/orca",
+      "commit": "53fbfded41b8b0462d7ccd029475f89d12aa9bf5",
+      "path": "docs/reference/plugin-authoring.md",
+      "url": "https://github.com/stablyai/orca/blob/53fbfded41b8b0462d7ccd029475f89d12aa9bf5/docs/reference/plugin-authoring.md",
+      "inspection": "implementation_check",
+      "read_range": "workers/requests/security",
+      "blob_sha": null,
+      "note": "worker/Panel 通道，不能以 action replacement 替换 core"
+    }
+  ],
+  "official_web": [
+    {
+      "id": "W01",
+      "url": "https://www.onorca.dev/docs/agents/native-chat",
+      "observed_date": "2026-11-06",
+      "usage": "Supplemental current product capabilities; unpinned, implementation uses source revision."
+    }
+  ]
+}

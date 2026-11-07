@@ -1,0 +1,459 @@
+{
+  "observed_at": "2026-11-07T06:14:40.603779+00:00",
+  "features": [
+    {
+      "id": "UI01",
+      "tier": "P1_required",
+      "feature": "可信身份与权限动作",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T003",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI02",
+      "tier": "P1_required",
+      "feature": "项目与 Route 导航",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T089",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI03",
+      "tier": "P1_required",
+      "feature": "联系人/收件地址",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T005",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI04",
+      "tier": "P1_required",
+      "feature": "通信会话列表/摘要",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T041",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI05",
+      "tier": "P1_required",
+      "feature": "历史分页/定位/长消息",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T017",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI06",
+      "tier": "P1_required",
+      "feature": "显式关联回复/线程",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T011",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI07",
+      "tier": "P1_required",
+      "feature": "普通发送/等待/不重复",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T009",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI08",
+      "tier": "P2_optional",
+      "feature": "个人未读/已读/静音/归档",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T043",
+        "T081"
+      ],
+      "note": "P2_personal_features_are_not_in_P1_DOD",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "p0-p1-final.xml; p2-initial.xml (reviewed HTTP-only delta)",
+      "activation": "explicit_current_user_request"
+    },
+    {
+      "id": "UI09",
+      "tier": "P2_optional",
+      "feature": "草稿与多设备恢复",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T084",
+        "T081"
+      ],
+      "note": "P2_personal_features_are_not_in_P1_DOD",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "p0-p1-final.xml; p2-initial.xml (reviewed HTTP-only delta)",
+      "activation": "explicit_current_user_request"
+    },
+    {
+      "id": "UI10",
+      "tier": "P2_optional",
+      "feature": "消息搜索与摘要",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T048",
+        "T081"
+      ],
+      "note": "P2_personal_features_are_not_in_P1_DOD",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "p0-p1-final.xml; p2-initial.xml (reviewed HTTP-only delta)",
+      "activation": "explicit_current_user_request"
+    },
+    {
+      "id": "UI11",
+      "tier": "P1_required",
+      "feature": "原始送达状态与技术尝试",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T014",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI12",
+      "tier": "P1_required",
+      "feature": "能力/运行状态与证据",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T033",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI13",
+      "tier": "P1_required",
+      "feature": "故障诊断/恢复操作",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T071",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI14",
+      "tier": "P1_required",
+      "feature": "通知与个人 seen",
+      "authority": "ACS",
+      "delivery_mode": "p1_notice_list_p2_personal_seen",
+      "original_test_ids": [
+        "T088",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI15",
+      "tier": "P2_optional",
+      "feature": "附件/图片上传下载",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T085",
+        "T081"
+      ],
+      "note": "P2_personal_features_are_not_in_P1_DOD",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "p0-p1-final.xml; p2-initial.xml (reviewed HTTP-only delta)",
+      "activation": "explicit_current_user_request"
+    },
+    {
+      "id": "UI16",
+      "tier": "P1_required",
+      "feature": "实时更新/重连/快照",
+      "authority": "ACS",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T045",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI17",
+      "tier": "P1_required",
+      "feature": "Native Session 关联",
+      "authority": "ACS+host",
+      "delivery_mode": "acs_and_host_linkage_contract",
+      "original_test_ids": [
+        "T053",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI18",
+      "tier": "P1_required",
+      "feature": "Native transcript/消息流",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T082",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI19",
+      "tier": "P1_required",
+      "feature": "工具调用/结果/进度/长输出",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T082",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI20",
+      "tier": "P1_required",
+      "feature": "原生 Diff 卡/文件打开",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T082",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI21",
+      "tier": "P1_required",
+      "feature": "子 Agent / 后台任务行",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T082",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI22",
+      "tier": "P1_required",
+      "feature": "原生问题/审批交互",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T083",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI23",
+      "tier": "P1_required",
+      "feature": "原生发送/stop/resume/排队编辑取消",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T032",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI24",
+      "tier": "P1_required",
+      "feature": "模型/effort/usage/上下文展示",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T087",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI25",
+      "tier": "P1_required",
+      "feature": "Native Session 历史/clear/compact",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T086",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI26",
+      "tier": "P1_required",
+      "feature": "工作区/Terminal/Git/编辑器定位",
+      "authority": "host",
+      "delivery_mode": "host_delegation_contract",
+      "original_test_ids": [
+        "T082",
+        "T081"
+      ],
+      "note": "do_not_clone_native_chat_in_ACS",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI27",
+      "tier": "P1_required",
+      "feature": "Native 来源标识与去重链接",
+      "authority": "ACS+host",
+      "delivery_mode": "acs_and_host_linkage_contract",
+      "original_test_ids": [
+        "T054",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI28",
+      "tier": "P1_required",
+      "feature": "插件宿主能力与降级",
+      "authority": "integration",
+      "delivery_mode": "acs_communication_service",
+      "original_test_ids": [
+        "T067",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI29",
+      "tier": "P1_required",
+      "feature": "权限变化与缓存失效",
+      "authority": "ACS+host",
+      "delivery_mode": "acs_and_host_linkage_contract",
+      "original_test_ids": [
+        "T047",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_delegation_and_typed_unavailable_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    },
+    {
+      "id": "UI30",
+      "tier": "P1_required",
+      "feature": "UI 关闭后连续通信",
+      "authority": "ACS",
+      "delivery_mode": "p0_core_independent_p1_client_projection",
+      "original_test_ids": [
+        "T080",
+        "T081"
+      ],
+      "note": "",
+      "status": "verified_service_contract",
+      "actual_UI_or_Orca_Host_qualification": false,
+      "evidence": "acceptance-audit.json; sdk-verification.json"
+    }
+  ]
+}

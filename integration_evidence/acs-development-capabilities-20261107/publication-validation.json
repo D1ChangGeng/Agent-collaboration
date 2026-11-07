@@ -1,0 +1,115 @@
+{
+  "started_at": "2026-11-07T14:45:28.099212+00:00",
+  "cwd": "D:\\Chatgpt\\Agent-collaboration\\.tmp\\acs-publication-20261107\\staged-checkout",
+  "checks": [
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "-c",
+        "import runtime;from pathlib import Path;assert Path(runtime.__file__).resolve().is_relative_to(Path.cwd());print('staged Runtime import verified')"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "RFC_TEMP_SOURCE/ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0/tools/verify_checksums.py"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "RFC_TEMP_SOURCE/ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0/tools/validate_pack.py"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "tools/runtime/export_client_contracts.py",
+        "--check"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "tools/runtime/export_receiver_contracts.py",
+        "--check"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "tools/runtime/export_sdk_runtime_contracts.py",
+        "--check"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "tools/runtime/export_p1_openapi.py",
+        "--check"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\Chatgpt\\Agent-collaboration\\.venv\\Scripts\\python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "addopts=",
+        "--tb=short",
+        "--basetemp=D:\\Chatgpt\\Agent-collaboration\\.tmp\\acs-publication-20261107\\contract-tests",
+        "--junitxml=D:\\Chatgpt\\Agent-collaboration\\.tmp\\acs-publication-20261107\\contract-tests.xml",
+        "runtime_tests/test_client_contracts.py",
+        "runtime_tests/test_receiver_contract.py",
+        "tools/runtime/tests/test_communication_scope_contract.py"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "sdk/tests/*.test.mjs"
+      ],
+      "returncode": 0
+    },
+    {
+      "command": [
+        "node",
+        "D:\\Chatgpt\\Agent-collaboration\\.tmp\\tsc-package\\compiler\\package\\bin\\tsc",
+        "--noEmit",
+        "--strict",
+        "--target",
+        "es2022",
+        "--module",
+        "esnext",
+        "--moduleResolution",
+        "bundler",
+        "--allowImportingTsExtensions",
+        "--lib",
+        "es2022,dom,dom.iterable",
+        "sdk/client-contracts.ts",
+        "sdk/client-runtime-schema.ts",
+        "sdk/client-validation.ts",
+        "sdk/communication-client.ts",
+        "sdk/communication-http.ts",
+        "sdk/communication-state.ts",
+        "sdk/communication-stream.ts",
+        "sdk/integration-ports.ts",
+        "sdk/orca-receiver-port.ts",
+        "sdk/receiver-evidence.ts"
+      ],
+      "returncode": 0
+    }
+  ],
+  "completed_at": "2026-11-07T14:45:48.616338+00:00",
+  "staged_diff_check": 0
+}

@@ -1,0 +1,3242 @@
+{
+  "schema_version": "acs-adoption-state/1",
+  "revision_package_version": "1.1.0",
+  "observed_at": "2026-11-06T23:40:21.961747+00:00",
+  "source_version": "2.3.1 (source metadata; installed/runtime versions separate)",
+  "source_head": "19d7881d49ee887315c54c5bc02e0cc424061376",
+  "source_tree": "8856b23e59d50eccb1198475e84937c48a71b0bb",
+  "branch": "codex/core-cleanup",
+  "dirty_patch_digest": "f2ad0103e1e6ff8ec22ab0b379f86b6258d5233ddea4a283503ed27b926880d4",
+  "read_only_observation": "Actual source plus named test artifacts; file existence is not qualification. New evidence is explicitly graded.",
+  "old_package_execution_stage": "not_assumed",
+  "prior_intent": "ACS-Core-Cross-Harness-DevPack-v1.0.0",
+  "items": [
+    {
+      "id": "C01",
+      "title": "通信核心/身份和回复不回归",
+      "tier": "P0_required",
+      "status": "retained_verified",
+      "evidence_level": "E2_controlled_integration",
+      "old_requirements": [
+        "R-001",
+        "R-002",
+        "R-003",
+        "R-006",
+        "R-007",
+        "R-008",
+        "R-009",
+        "R-010"
+      ],
+      "test_ids": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T011",
+        "T012",
+        "T013",
+        "T015",
+        "T016",
+        "T017",
+        "T018",
+        "T019",
+        "T020",
+        "T094"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T001",
+          "title": "可信作者从入口解析",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T002",
+          "title": "伪造作者字段",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T003",
+          "title": "可信 Client 无 Slot",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T004",
+          "title": "未绑定不提权",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T011",
+          "title": "合法多引用回复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T012",
+          "title": "第三方不能代答",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T013",
+          "title": "Native 成功不冒充回复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T015",
+          "title": "message_only + sync",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T016",
+          "title": "超时不撤销",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T017",
+          "title": "UTF-8 长正文",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T018",
+          "title": "read 不消费",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T019",
+          "title": "提交序号分页",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T020",
+          "title": "游标过滤改变",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T094",
+          "title": "大消息 ACK 独立续读",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication.py",
+          "sha256": "0bbd801a1dce18319d13106c0081b1a3c4519419614886bef1bec8f3e0c33930",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/delivery.py",
+          "sha256": "7dbfd8985345e1a1fb408c6445c5f03737121890b3e812dc229cb19e012afdf3",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/delivery_models.py",
+          "sha256": "a99e8bc55149c3a6218485243d34551b5c177d2ae4b7527ca51781ea16e2fdc6",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/delivery_node.py",
+          "sha256": "d85253e5a523d6f20ecf7bb6e0d0a43f5c26d074bd406a09fa793eb1b363cb86",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_communication.py",
+          "sha256": "72cd79c3b0bef816cc741a9bcfa057ffeb61bcb99f03d1fec85200cec7a1916e",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_communication_content.py",
+          "sha256": "27996605aec440cacbb9b54b6166c1ad5889726b8b990e77a0a0dd9172132531",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-AUTH-56",
+        "E-MIGRATION-8",
+        "E-P0-T094-2"
+      ],
+      "verified_behavior": [
+        "Actual trusted Slot/Client authorship, private participant reply/read rules, explicit reply_to, message_only, timeout retention and non-consuming UTF-8 reads have concrete controlled regression coverage.",
+        "Core communication/delivery source files listed here remain byte-identical to the broad run. Existing source and messages are retained; no Task/Run/Dispatch business prerequisite is reintroduced."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Core invariants including exact T094 dual-body continuation have E2 evidence; current installed Native/independent model supported combinations remain C10 qualification."
+      ],
+      "next_actions": [
+        "Retain the implementation. Run only affected Core regressions when new lifecycle/public-recovery changes touch these paths; do not restart WP00."
+      ],
+      "observed_code_paths": [
+        "runtime/communication.py",
+        "runtime/delivery.py",
+        "runtime/delivery_models.py",
+        "runtime/delivery_node.py",
+        "runtime_tests/test_communication.py",
+        "runtime_tests/test_communication_content.py"
+      ],
+      "next_action": "Retain the implementation. Run only affected Core regressions when new lifecycle/public-recovery changes touch these paths; do not restart WP00.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": [],
+      "prior_assessment_history": [
+        {
+          "implementation_gaps": [],
+          "qualification_or_coverage_gaps": [
+            "This retained verdict is scoped to tested Core invariants at E2, not an E3/E4 or all-platform qualification statement. T094 large ACK/body continuations need explicit supported-combination coverage mapping before global P0 exit."
+          ],
+          "next_action": "Retain the implementation. Run only affected Core regressions when new lifecycle/public-recovery changes touch these paths; do not restart WP00.",
+          "superseded_by": "p0-evidence-audit-20261107/progress.json"
+        }
+      ]
+    },
+    {
+      "id": "C02",
+      "title": "Adapter 能力/证据声明",
+      "tier": "P0_required",
+      "status": "implemented_needs_evidence",
+      "evidence_level": "E2_controlled_integration; historical narrow E3 observation",
+      "old_requirements": [
+        "R-017",
+        "R-039"
+      ],
+      "test_ids": [
+        "T033",
+        "T034",
+        "T077",
+        "T078"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T033",
+          "title": "状态过期",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T034",
+          "title": "终端静默",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T077",
+          "title": "能力失效",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T078",
+          "title": "缓存穿透",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/receiver_contract.py",
+          "sha256": "6af12bafd6939d02b34b66685a0673e5a8ee260952a7883010ed5ea534cadca5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_evidence.py",
+          "sha256": "36bef6d6be9c0933c8905c5f12e84c9423c0e9346b5e2a7e164fd714af74f4a9",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/native_input_observations.py",
+          "sha256": "20339aacf6bc1c06c7a41c7676ff3b090a7072c6ba5b2e7de2ec3628719d10fd",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/harness_adapter.py",
+          "sha256": "780768969df6667f866da84ad9cde3de7ae7ff12c97b9ce4f58665b108ac6c0d",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/signed_harness_adapter.py",
+          "sha256": "99a5733727b387c8346691d49f96289475cea35ecc582d9f267721ded6584db3",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_native_input_observations.py",
+          "sha256": "c38840c1b6fe9272e06d1c9cad3db3b7ebd6500baf34510257f27d27903c0f06",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_contract.py",
+          "sha256": "f417c2d3070abac1b5a9923d6640cb6d627fc0aa441092ec062a36ff78230f95",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-INPUT-CONTROLLED",
+        "E-CODEX-OBSERVATION",
+        "E-CODEX-DISCOVERY",
+        "E-ACTUAL-CODEX-0166-METADATA",
+        "native-history-contract-20261107/REPORT.md",
+        "native-agent-e2e-20261107/CURRENT_STATE.json"
+      ],
+      "verified_behavior": [
+        "Typed support/availability/evidence/freshness and complete capability scope exist; unknown is distinct from idle. Cache identity includes real executable/config/Host/epoch/generation metadata.",
+        "Changed generation, stale proof, attached/shared ownership, human blockers and malformed Native inventories have controlled negative tests."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Current affected Codex/OpenCode versions/OS/authorization modes have not been E3/E4-qualified by this assessment. Historical Codex0.166.0 observations requested zero model turns.",
+        "Remote providers without full generation/qualified read ports must remain unknown/unsupported, not be filled from brand or peer hashes."
+      ],
+      "next_actions": [
+        "Keep the current contracts and safe fallback. Bind fresh supported-combination Native evidence to current source/profile hashes; test only the combinations actually claimed."
+      ],
+      "observed_code_paths": [
+        "runtime/receiver_contract.py",
+        "runtime/receiver_evidence.py",
+        "runtime/native_input_observations.py",
+        "runtime/native_delivery.py",
+        "runtime/harness_adapter.py",
+        "runtime/signed_harness_adapter.py",
+        "runtime_tests/test_native_input_observations.py",
+        "runtime_tests/test_receiver_contract.py"
+      ],
+      "next_action": "Keep the current contracts and safe fallback. Bind fresh supported-combination Native evidence to current source/profile hashes; test only the combinations actually claimed.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": [],
+      "current_native_supported_scope_evidence": {
+        "artifact_root": "native-agent-e2e-20261107",
+        "Codex0166_Windows_owner": "b actual full independentA/B passed;2messages/1reply/1NativeBturn/productionfactory/ACS-only inventory/WindowsJob cleanup",
+        "OpenCode11834_WSL_owner": "lifecycle passed; d actual independent correlated reply +1Native dispatch verified offline; process-group cleanup only, no subtree claim",
+        "wait_continuity": "Codex b passed; cross-harness d returned service_unavailable twice then Inbox/read_message recovered explicit reply; full wait chain not qualified",
+        "scope": "same-machine Windows/WSL and existing approved development Provider only; no remote-host/shared/Orca inference"
+      }
+    },
+    {
+      "id": "C03",
+      "title": "最后输入准入",
+      "tier": "P0_required",
+      "status": "implemented_needs_evidence",
+      "evidence_level": "E2_controlled_integration",
+      "old_requirements": [
+        "R-015",
+        "R-016"
+      ],
+      "test_ids": [
+        "T029",
+        "T030",
+        "T031",
+        "T032"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T029",
+          "title": "绑定前后重验",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T030",
+          "title": "撤销撞上外部输入",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T031",
+          "title": "忙时安全排队",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T032",
+          "title": "审批/草稿保护",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/native_input_observations.py",
+          "sha256": "20339aacf6bc1c06c7a41c7676ff3b090a7072c6ba5b2e7de2ec3628719d10fd",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "9336250ecdab6184cc540ac90ce76d8ef9376a65dd39dcec011f42ba51222216",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "031d057731c33eb0f6e31358edf3f389ff3626a5576bae4536f3f78f40d7850a",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/signed_harness_adapter.py",
+          "sha256": "99a5733727b387c8346691d49f96289475cea35ecc582d9f267721ded6584db3",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "43fc6d5e21c34ee099ac4c0d7775d4e891d547c6656bf01bc3e8cf08e03eecc5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_native_handoff.py",
+          "sha256": "549456014385bb8378507832895056b5e4a42b7b3a1f39a8c9803e60ecd8db2a",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_native_input_observations.py",
+          "sha256": "c38840c1b6fe9272e06d1c9cad3db3b7ebd6500baf34510257f27d27903c0f06",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-INPUT-CONTROLLED",
+        "E-ATTACHMENT-GUARDS",
+        "native-history-contract-20261107/REPORT.md",
+        "native-agent-e2e-20261107/CURRENT_STATE.json"
+      ],
+      "verified_behavior": [
+        "Existing input paths recheck immutable invocation/current owner/readiness before Provider effects, retain busy/deferred behavior, and preserve human approval/question/draft barriers.",
+        "Safe queue/steer is not inferred from a generic busy/idle response; unsupported or unqualified behavior remains explicit."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Need current installed-Harness positive input and controlled last-boundary revocation/blocker fault evidence in the exact qualified profiles. E1/E2 no-model fixtures are insufficient for E3/E4."
+      ],
+      "next_actions": [
+        "Preserve current input ownership and guard behavior while adding the separately authorized lifecycle path. Re-run affected real Native admission cases after lifecycle integration."
+      ],
+      "observed_code_paths": [
+        "runtime/native_delivery.py",
+        "runtime/native_input_observations.py",
+        "runtime/codex_driver.py",
+        "runtime/opencode_driver.py",
+        "runtime/signed_harness_adapter.py",
+        "runtime/receiver.py",
+        "runtime_tests/test_native_handoff.py",
+        "runtime_tests/test_native_input_observations.py"
+      ],
+      "next_action": "Preserve current input ownership and guard behavior while adding the separately authorized lifecycle path. Re-run affected real Native admission cases after lifecycle integration.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": [
+        "runtime/codex_driver.py",
+        "runtime/opencode_driver.py"
+      ],
+      "current_native_supported_scope_evidence": {
+        "artifact_root": "native-agent-e2e-20261107",
+        "Codex0166_Windows_owner": "b actual full independentA/B passed;2messages/1reply/1NativeBturn/productionfactory/ACS-only inventory/WindowsJob cleanup",
+        "OpenCode11834_WSL_owner": "lifecycle passed; d actual independent correlated reply +1Native dispatch verified offline; process-group cleanup only, no subtree claim",
+        "wait_continuity": "Codex b passed; cross-harness d returned service_unavailable twice then Inbox/read_message recovered explicit reply; full wait chain not qualified",
+        "scope": "same-machine Windows/WSL and existing approved development Provider only; no remote-host/shared/Orca inference"
+      }
+    },
+    {
+      "id": "C04",
+      "title": "Native 操作证据和未知调和",
+      "tier": "P0_required",
+      "status": "retained_verified",
+      "evidence_level": "E2_controlled_integration",
+      "old_requirements": [
+        "R-004",
+        "R-005",
+        "R-011",
+        "R-012",
+        "R-013"
+      ],
+      "test_ids": [
+        "T007",
+        "T008",
+        "T009",
+        "T010",
+        "T014",
+        "T021",
+        "T022",
+        "T023",
+        "T024",
+        "T025",
+        "T026",
+        "T096"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T007",
+          "title": "提交原子性",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T008",
+          "title": "提交窗口崩溃",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T009",
+          "title": "同键恢复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T010",
+          "title": "同键异文冲突",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T014",
+          "title": "未知 ACK 仍有回复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T021",
+          "title": "handoff 前落盘",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T022",
+          "title": "intent 后崩溃",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T023",
+          "title": "原操作重放",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T024",
+          "title": "去重域变化",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T025",
+          "title": "核验未知结果",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T026",
+          "title": "无查询能力",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T096",
+          "title": "关闭 adapter 中未决输入",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/native_handoff.py",
+          "sha256": "ab6d2ad2fe0d191edf8405f87821e4326b210e8a6571c7017570826da3fec7e2",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/native_delivery.py",
+          "sha256": "5a0b851452a12e1e371751ce1c0a159edc6e68e258c664713c64c5671e60a1fb",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/delivery_node.py",
+          "sha256": "d85253e5a523d6f20ecf7bb6e0d0a43f5c26d074bd406a09fa793eb1b363cb86",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "43fc6d5e21c34ee099ac4c0d7775d4e891d547c6656bf01bc3e8cf08e03eecc5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "46861d26f3f00b19aedf62bf2461375459c044440de984bfb94e05e9355d8ae5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_delivery_observer.py",
+          "sha256": "3e00a546c50645363617d8f68e5225acdfa9a2ed4f2832f735884384d776e1fe",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_native_handoff.py",
+          "sha256": "549456014385bb8378507832895056b5e4a42b7b3a1f39a8c9803e60ecd8db2a",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_local_native_reconcile.py",
+          "sha256": "8fd46b776cbee9220a6be2bb7a6623110538b3a0bd711489f444ab30b6023ee2",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_remote_readback_freshness.py",
+          "sha256": "0cc8438ef20182858f2de01e8fd9a5d32555a65b11e6c9f8b3c348d8c440c836",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-RECOVERY-155",
+        "E-RACES-59",
+        "E-RECOVERY-389",
+        "integration_evidence/acs-stage-agnostic-20261106/current-pure-contract-lifecycle-postreview.json"
+      ],
+      "verified_behavior": [
+        "Durable input handoff precedes Native dispatch; exact original operation/journal identity is retained through uncertainty and readback.",
+        "Missing markers/history are not negative proof. Positive old ACK and possible effects survive generation changes without input resubmission or fabricated reply.",
+        "Listed primary input/reconciliation source files remain byte-identical to the broad run."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Verdict covers tested input-operation safety at E2. Current physical cross-host ACK-loss and independent model qualification remain C08/C10 gaps.",
+        "A future lifecycle operation must use the same Core operation ownership and explicitly migrate message-only DriverJournal constraints, not create a parallel Domain ledger."
+      ],
+      "next_actions": [
+        "Retain tested reconciliation. For new lifecycle actions, add message-less typed source identity and preserve unknown/no-blind-retry invariants."
+      ],
+      "observed_code_paths": [
+        "runtime/native_handoff.py",
+        "runtime/native_delivery.py",
+        "runtime/delivery_node.py",
+        "runtime/receiver.py",
+        "runtime/receiver_delivery.py",
+        "runtime/communication_delivery_observer.py",
+        "runtime_tests/test_native_handoff.py",
+        "runtime_tests/test_local_native_reconcile.py",
+        "runtime_tests/test_remote_readback_freshness.py"
+      ],
+      "next_action": "Retain tested reconciliation. For new lifecycle actions, add message-less typed source identity and preserve unknown/no-blind-retry invariants.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": []
+    },
+    {
+      "id": "C05",
+      "title": "绑定代次与接收端 fencing",
+      "tier": "P0_required",
+      "status": "implemented_needs_evidence",
+      "evidence_level": "E2_controlled_integration plus source-confirmed gap",
+      "old_requirements": [
+        "R-003",
+        "R-014",
+        "R-018"
+      ],
+      "test_ids": [
+        "T005",
+        "T006",
+        "T027",
+        "T028",
+        "T035",
+        "T036"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T005",
+          "title": "稳定地址跨 Session",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T006",
+          "title": "多接收端歧义",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T027",
+          "title": "旧 worker fence",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T028",
+          "title": "无原生 fence",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T035",
+          "title": "重绑保留历史",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T036",
+          "title": "旧回执晚到",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_management.py",
+          "sha256": "49c896e9ca0d39c947f8e1aed083380be2b23a57b1124f5dc32c54b320837553",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver.py",
+          "sha256": "43fc6d5e21c34ee099ac4c0d7775d4e891d547c6656bf01bc3e8cf08e03eecc5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_domain.py",
+          "sha256": "89921437e6d138b697fe1a2f180bb10c136ebe5820bcf01fc4bb37d465a79139",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "46861d26f3f00b19aedf62bf2461375459c044440de984bfb94e05e9355d8ae5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/enrollment.py",
+          "sha256": "d93d33751f140d56d45fea2aad74ccc4e0ac42a81bcb6e8fbd143a98f75b324f",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_deployment/receiver_authority.py",
+          "sha256": "8c4c820d1fc2f6c4bce912c6df73251db84e31502581a2dd1cc7281d54b8b56b",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime_tests/test_receiver_recovery_operations.py",
+          "sha256": "a72cf812f57649471f320b246b31e574d593381f678909dd77a44030aa5fb3c4",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_connection_clock.py",
+          "sha256": "80712aa7c8e58dac8ed6880ba20cc8dc53dff04c58e02a26c1b9ee3ee7dd67c1",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-RECOVERY-155",
+        "E-LIFECYCLE-AUDIT",
+        "E-RECOVERY-NEW",
+        "integration_evidence/acs-stage-agnostic-20261106/current-pure-contract-lifecycle-postreview.json",
+        "E-LIFECYCLE-CONFIGURATION-PG-18",
+        "E-LIFECYCLE-WIRE-PG-4",
+        "E-LIFECYCLE-CURRENT-PG-45",
+        "E-LIFECYCLE-FINAL-PG-19",
+        "E-LIFECYCLE-CURRENT-CORE-881",
+        "E-LIFECYCLE-MAINTENANCE-PG-27",
+        "E-LIFECYCLE-MAINTENANCE-CORE-884",
+        "native-history-contract-20261107/REPORT.md",
+        "native-agent-e2e-20261107/CURRENT_STATE.json"
+      ],
+      "verified_behavior": [
+        "Natural input endpoint/Node/boot/runtime/owner fencing and old-ACK isolation are implemented and tested.",
+        "Bootstrap helper now accepts only spawn/close; unknown action no longer aliases close (new E1 evidence)."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Final current source has actual local PG/TLS/Node and final-launch component evidence. Real supported Native/OS/mode qualification is still separate; POSIX paths were not physically run from this Windows session."
+      ],
+      "next_actions": [
+        "Highest priority: replace configuration preparation with a committed, original-issuer/selection-bound lifecycle permit and Node effect fence; no SQL transaction across Host work."
+      ],
+      "observed_code_paths": [
+        "runtime/communication_management.py",
+        "runtime/receiver.py",
+        "runtime/receiver_domain.py",
+        "runtime/receiver_delivery.py",
+        "runtime/enrollment.py",
+        "runtime_deployment/receiver_authority.py",
+        "runtime_tests/test_receiver_recovery_operations.py",
+        "runtime_tests/test_receiver_connection_clock.py"
+      ],
+      "next_action": "Retain current verified wiring. Continue C16 public provenance and P1 scenario mapping; actual supported Native/independent Agent/Orca qualifications remain separate.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": [],
+      "current_wiring_increment": "Signed lifecycle wire mounted in existing TLS Receiver; opt-in concrete deferred factories and trusted sender config; configure_team uses the same committed recovery executor, legacy only observes outside SQL. Request-local Core connection reuse has no transaction across Native I/O. Fresh private capacity window is operator-bounded1-30 seconds, existing Native state expiry unchanged.",
+      "current_wiring_verified": "Signed lifecycle/deferred factory/trusted sender/configure_team wiring; no SQL across Native I/O. Original ACK survives controller reconstruction; missing original spawn history remains unknown; expired pre-permit facts return the same deferred operation. 881 component pass/14skip, PG45 and final PG19 have separate raw manifests.",
+      "prior_assessment_history": [
+        {
+          "superseded_by": "lifecycle-20261107/wiring-checkpoint-20261107.json",
+          "implementation_gaps": [
+            "P0-SAFETY-01: _prepare_communication_sessions still calls provider.prepare_runtime inside an authority transaction; the subsequent configuration check cannot fence the earlier Native effect.",
+            "No signed original-manager lifecycle permit/current-authority branch reaches the actual process-launch or resume boundary. Bootstrap Node-observer authority does not replace the original issuer."
+          ],
+          "qualification_or_coverage_gaps": [
+            "POSIX-only signed receiver cases are skipped in the Windows broad run; they require their applicable platform run."
+          ]
+        }
+      ],
+      "current_maintenance_increment": "Auto maintenance deterministically advances accepted prepare/resume recovery intents using original issuer/current authority and the same Node fence. Existing Outbox leases/backoff/owner tokens; cancellation retains inflight lease; corrupt due rows paced. Native possible is original-readback-only, even when runtime.invoke removed and runtime.read retained. HTTP/stdio install operator catalog; external mode does not advance Native. PG27/component884+14skip source scopes separate.",
+      "current_native_supported_scope_evidence": {
+        "artifact_root": "native-agent-e2e-20261107",
+        "Codex0166_Windows_owner": "b actual full independentA/B passed;2messages/1reply/1NativeBturn/productionfactory/ACS-only inventory/WindowsJob cleanup",
+        "OpenCode11834_WSL_owner": "lifecycle passed; d actual independent correlated reply +1Native dispatch verified offline; process-group cleanup only, no subtree claim",
+        "wait_continuity": "Codex b passed; cross-harness d returned service_unavailable twice then Inbox/read_message recovered explicit reply; full wait chain not qualified",
+        "scope": "same-machine Windows/WSL and existing approved development Provider only; no remote-host/shared/Orca inference"
+      }
+    },
+    {
+      "id": "C06",
+      "title": "支持条件下的安全唤醒/延期",
+      "tier": "P0_required",
+      "status": "partial",
+      "evidence_level": "E1/E2 actual Message/PG/TLS/Node with controlled Native; installed qualified combinations remain open",
+      "old_requirements": [
+        "R-020",
+        "R-029"
+      ],
+      "test_ids": [
+        "T039",
+        "T040",
+        "T057",
+        "T058"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T039",
+          "title": "wait 与 wake 去重",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T040",
+          "title": "唤醒合并不丢正文",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T057",
+          "title": "有界背压",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T058",
+          "title": "已接受不可丢",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_dispatch.py",
+          "sha256": "d00a55212d694d6e3180d106d0e086c02daa2d3ecf63d46439fcb54ea919ae60",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_wait_ingress.py",
+          "sha256": "cd0965717dec01851d24cd596d88174ac8d461dd2fd3c59d36ea4538a163e0f0",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_notifications.py",
+          "sha256": "4fa5b520672fc8ee3b12d8695dddf738753f18b1ab7fa78925a100499dc329a9",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication.py",
+          "sha256": "0bbd801a1dce18319d13106c0081b1a3c4519419614886bef1bec8f3e0c33930",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "9336250ecdab6184cc540ac90ce76d8ef9376a65dd39dcec011f42ba51222216",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "031d057731c33eb0f6e31358edf3f389ff3626a5576bae4536f3f78f40d7850a",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_communication_maintenance.py",
+          "sha256": "4c383ba8e25e82106dce0472333ea8e470fe59768c5f382d5096835a5b56999e",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_wait_ingress_recovery.py",
+          "sha256": "56bb7c3431a1424c0b43b433dab2217edde70b22249d51c4550c0dcdf5dd7f5b",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_notification_continuity.py",
+          "sha256": "4d00fba3c8c82d42feaf2ff01d2d2f3abd5bf7b63897183a5f94998438be0194",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-RACES-59",
+        "E-RECOVERY-389",
+        "E-LIFECYCLE-CONFIGURATION-PG-18",
+        "E-LIFECYCLE-WIRE-PG-4",
+        "E-LIFECYCLE-CURRENT-PG-45",
+        "E-LIFECYCLE-FINAL-PG-19",
+        "E-LIFECYCLE-CURRENT-CORE-881",
+        "E-LIFECYCLE-MAINTENANCE-PG-27",
+        "E-LIFECYCLE-MAINTENANCE-CORE-884",
+        "E-RECEIVER-REBIND-PG-73",
+        "E-MESSAGE-WAKE-CURRENT-PG-220",
+        "E-MESSAGE-WAKE-CURRENT-CORE-888",
+        "native-history-contract-20261107/REPORT.md",
+        "native-agent-e2e-20261107/CURRENT_STATE.json"
+      ],
+      "verified_behavior": [
+        "Bounded maintenance, busy pacing, independent-peer progress, wait-lease cleanup, durable messages and coalesced hints exist.",
+        "Reply/wait recovery does not imply a second Native turn; message_only and explicit reply remain separate facts.",
+        "220-pass current-source PG batch proves real Message operation/command/Outbox ownership, wait/message_only isolation, explicit OAuth invoke scope, startup readback after invoke removal/expiry, namespace history, maintenance and prior paths. No synthetic recovery command or startup-as-message ACK."
+      ],
+      "implementation_gaps": [
+        "Original-message conditional first preparation and ready-capacity continuation now implemented under explicit opt-in. Stopped-process/same-Session restoration still requires positive evidence and installed qualification; missing history remains unknown, never replacement."
+      ],
+      "qualification_or_coverage_gaps": [
+        "Actual frozen/wake and disconnect/reconnect qualification for current supported Native combinations is not established."
+      ],
+      "next_actions": [
+        "After C05/C07, integrate only qualified same-session resume/readiness progression into the existing maintenance/Inbox mechanism; never wake by creating another session for unknown input."
+      ],
+      "observed_code_paths": [
+        "runtime/communication_dispatch.py",
+        "runtime/communication_wait_ingress.py",
+        "runtime/communication_notifications.py",
+        "runtime/communication.py",
+        "runtime/codex_driver.py",
+        "runtime/opencode_driver.py",
+        "runtime_tests/test_communication_maintenance.py",
+        "runtime_tests/test_wait_ingress_recovery.py",
+        "runtime_tests/test_notification_continuity.py"
+      ],
+      "next_action": "Retain actual-source wake and safety boundaries; qualify installed supported Native combinations separately. Continue P1 exact assertions.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": [
+        "runtime/codex_driver.py",
+        "runtime/opencode_driver.py"
+      ],
+      "current_wiring_increment": "Signed lifecycle wire mounted in existing TLS Receiver; opt-in concrete deferred factories and trusted sender config; configure_team uses the same committed recovery executor, legacy only observes outside SQL. Request-local Core connection reuse has no transaction across Native I/O. Fresh private capacity window is operator-bounded1-30 seconds, existing Native state expiry unchanged.",
+      "current_wiring_verified": "Signed lifecycle/deferred factory/trusted sender/configure_team wiring; no SQL across Native I/O. Original ACK survives controller reconstruction; missing original spawn history remains unknown; expired pre-permit facts return the same deferred operation. 881 component pass/14skip, PG45 and final PG19 have separate raw manifests.",
+      "prior_assessment_history": [
+        {
+          "superseded_by": "lifecycle-20261107/wiring-checkpoint-20261107.json",
+          "implementation_gaps": [
+            "Conditional frozen-session wake/resume has no original-command fenced lifecycle path. Existing supported driver resume methods are not safely exposed as that path.",
+            "Permanent unsupported would not complete conditional liveness where the actual configured Host supports safe resume."
+          ],
+          "qualification_or_coverage_gaps": [
+            "Actual frozen/wake and disconnect/reconnect qualification for current supported Native combinations is not established."
+          ]
+        },
+        {
+          "superseded_by": "message-wake-20261107/progress.json",
+          "implementation_gaps": [
+            "Accepted prepare/resume/ready-target rebind automatically continues; ordinary-message-derived safe wake still needs its own original source, current observation and ownership contract."
+          ]
+        }
+      ],
+      "current_maintenance_increment": "Auto maintenance deterministically advances accepted prepare/resume recovery intents using original issuer/current authority and the same Node fence. Existing Outbox leases/backoff/owner tokens; cancellation retains inflight lease; corrupt due rows paced. Native possible is original-readback-only, even when runtime.invoke removed and runtime.read retained. HTTP/stdio install operator catalog; external mode does not advance Native. PG27/component884+14skip source scopes separate.",
+      "current_rebind_increment": "Accepted ready-target rebind now participates in the same bounded Outbox maintenance alongside prepare/resume. Natural-message-derived conditional wake is still incomplete.",
+      "current_native_supported_scope_evidence": {
+        "artifact_root": "native-agent-e2e-20261107",
+        "Codex0166_Windows_owner": "b actual full independentA/B passed;2messages/1reply/1NativeBturn/productionfactory/ACS-only inventory/WindowsJob cleanup",
+        "OpenCode11834_WSL_owner": "lifecycle passed; d actual independent correlated reply +1Native dispatch verified offline; process-group cleanup only, no subtree claim",
+        "wait_continuity": "Codex b passed; cross-harness d returned service_unavailable twice then Inbox/read_message recovered explicit reply; full wait chain not qualified",
+        "scope": "same-machine Windows/WSL and existing approved development Provider only; no remote-host/shared/Orca inference"
+      }
+    },
+    {
+      "id": "C07",
+      "title": "受权 Session 续接与重新绑定",
+      "tier": "P0_required",
+      "status": "partial",
+      "evidence_level": "E1/E2 current ready-target management rebind; installed Harness qualification remains open",
+      "old_requirements": [
+        "R-019",
+        "R-036"
+      ],
+      "test_ids": [
+        "T037",
+        "T038",
+        "T071",
+        "T072"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T037",
+          "title": "受权 Session 恢复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T038",
+          "title": "无恢复权限",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T071",
+          "title": "恢复动作幂等",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T072",
+          "title": "过期配置恢复",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/receiver_recovery_operations.py",
+          "sha256": "3aafd87df609cf064ad560f036491f93cf404cc3e575e0b33a13fce72effb274",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime/communication_client_recovery.py",
+          "sha256": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c",
+          "current_vs_broad": "not_in_broad_capture"
+        },
+        {
+          "path": "runtime/communication_management.py",
+          "sha256": "49c896e9ca0d39c947f8e1aed083380be2b23a57b1124f5dc32c54b320837553",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "9336250ecdab6184cc540ac90ce76d8ef9376a65dd39dcec011f42ba51222216",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "031d057731c33eb0f6e31358edf3f389ff3626a5576bae4536f3f78f40d7850a",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_models.py",
+          "sha256": "6b4679c422bb52667adcefb51a6714439ae4713535d2fa95e22bab148595a7a0",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_crypto.py",
+          "sha256": "2687065eea63b56af3db1fc54b7b9bbd1e812e7825ccaa489851f5ce8dddedd7",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_deployment/receiver_authority.py",
+          "sha256": "8c4c820d1fc2f6c4bce912c6df73251db84e31502581a2dd1cc7281d54b8b56b",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime_deployment/receiver_codex.py",
+          "sha256": "830244eaa61db18b2b1c5edb96ebfc3db04dd5d3846fc9a351f4a66f153d7424",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_deployment/receiver_opencode.py",
+          "sha256": "4ef57effec2d649b09e5c7547f5fb11e815c53a3f54a6e13f65058f6b7efb82f",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_lifecycle_identity.py",
+          "sha256": "2a886f728c51a96d6f0f98160be10a55c21b7a4e8ecc9705d24d4a8dd1063fc4",
+          "current_vs_broad": "not_in_broad_capture"
+        },
+        {
+          "path": "runtime/receiver_rebind.py",
+          "sha256": "770b2277412b8fa8ba4165fc8d83f5de9f9ae7a2851387424448c65e74879ccb",
+          "evidence": "E-RECEIVER-REBIND-PG-73"
+        }
+      ],
+      "evidence_refs": [
+        "E-LIFECYCLE-AUDIT",
+        "E-RECOVERY-NEW",
+        "E-RECOVERY-155",
+        "integration_evidence/acs-stage-agnostic-20261106/current-pure-contract-lifecycle-postreview.json",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/lifecycle-journal-postreview-20261106.log",
+        "integration_evidence/acs-stage-agnostic-20261106/LIFECYCLE-FOUNDATION.md",
+        "E-LIFECYCLE-CONFIGURATION-PG-18",
+        "E-LIFECYCLE-WIRE-PG-4",
+        "E-LIFECYCLE-CURRENT-PG-45",
+        "E-LIFECYCLE-FINAL-PG-19",
+        "E-LIFECYCLE-CURRENT-CORE-881",
+        "E-LIFECYCLE-MAINTENANCE-PG-27",
+        "E-LIFECYCLE-MAINTENANCE-CORE-884",
+        "E-RECEIVER-REBIND-PG-73",
+        "E-RECEIVER-REBIND-CORE-884",
+        "native-history-contract-20261107/REPORT.md",
+        "native-agent-e2e-20261107/CURRENT_STATE.json"
+      ],
+      "verified_behavior": [
+        "Existing Codex thread/resume, OpenCode same-session observation/resume and restricted empty-idle replace_session code are present.",
+        "Recovery commands preserve original issuer/Grant and stable idempotency. Unsafe legacy lifecycle callbacks are deliberately rejected before effect.",
+        "Latest bootstrap alias hardening is implemented; prepare/resume OAuth scopes explicitly require runtime.invoke.",
+        "Current same-Slot ready-target rebind and original unknown isolation have73-case actual PG/controlled signed capacity regression; no Native permit or execution in rebind."
+      ],
+      "implementation_gaps": [
+        "New target preparation and explicit rebind are separate authorized operations. Rebind never migrates or retries an old unknown input. Actual installed Native rebind/independent model qualification is not established by controlled capacity facts."
+      ],
+      "qualification_or_coverage_gaps": [
+        "Current lifecycle setup/adoption, Core/Node/wire and recovery have E1 plus actual isolated PG/TLS evidence. Actual Native/controller restart/resume/rebind and independent Agent E3/E4 qualifications are not established."
+      ],
+      "next_actions": [
+        "Implement the two narrowly scoped lifecycle modules described below, migrate the existing DriverJournal explicitly, and wire existing recovery/configuration execution. Keep unsupported until the actual effect boundary is qualified."
+      ],
+      "observed_code_paths": [
+        "runtime/receiver_recovery_operations.py",
+        "runtime/communication_client_recovery.py",
+        "runtime/communication_management.py",
+        "runtime/codex_driver.py",
+        "runtime/opencode_driver.py",
+        "runtime/receiver_models.py",
+        "runtime/receiver_crypto.py",
+        "runtime_deployment/receiver_authority.py",
+        "runtime_deployment/receiver_codex.py",
+        "runtime_deployment/receiver_opencode.py",
+        "runtime_tests/test_receiver_lifecycle_identity.py",
+        "runtime/receiver_lifecycle.py",
+        "runtime_tests/test_driver_lifecycle_journal.py"
+      ],
+      "next_action": "Complete actual installed Native/protocol/independent reply qualification separately. No new-session replay of old unknown operations.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": [
+        "runtime/receiver_recovery_operations.py",
+        "runtime/codex_driver.py",
+        "runtime/opencode_driver.py"
+      ],
+      "incremental_implementation": {
+        "scope": "Same DriverJournal explicit lifecycle adoption and typed message-less Driver boundary only.",
+        "evidence": "77 focused cases; postreview combined274 passed with captured sources unchanged.",
+        "review": "Independent review closed subtype, readonlyMCP and physical-row/canonical-body consistency findings.",
+        "remaining": "Original-issuer signed permit, Node current verifier/effect fence, production factory and configure_team integration.",
+        "operator_adoption_executed_on_production": false
+      },
+      "current_increment": "Signed lifecycle contracts81E1; Node capacity observation/provisioning/profile witnesses116E1; Core issuance43E1, coherent original-issuer/PKI snapshot and readonly-cap Driver integration. Node controller is in progress; actual deferred factories, transport/executor/configure_team mounting and Native qualification remain open.",
+      "new_executor_status": "Runtime-installed fenced transport registry dispatch and commit-before-Node executor implemented;10E1+actualPG5passed. Native factory/HTTP transport/configure_team mounting and real Native qualification remain open.",
+      "current_wiring_increment": "Signed lifecycle wire mounted in existing TLS Receiver; opt-in concrete deferred factories and trusted sender config; configure_team uses the same committed recovery executor, legacy only observes outside SQL. Request-local Core connection reuse has no transaction across Native I/O. Fresh private capacity window is operator-bounded1-30 seconds, existing Native state expiry unchanged.",
+      "current_wiring_verified": "Signed lifecycle/deferred factory/trusted sender/configure_team wiring; no SQL across Native I/O. Original ACK survives controller reconstruction; missing original spawn history remains unknown; expired pre-permit facts return the same deferred operation. 881 component pass/14skip, PG45 and final PG19 have separate raw manifests.",
+      "prior_assessment_history": [
+        {
+          "superseded_by": "lifecycle-20261107/wiring-checkpoint-20261107.json",
+          "implementation_gaps": [
+            "P0-LIFECYCLE-02: new signed message-less LifecyclePermit, Node verifier and AuthorizedLifecycleOperation are not implemented.",
+            "DriverJournal currently requires unique non-null message_id; delivery SignedRequest/Receipt and receiver_requests require delivery Attempt/dispatch fields. These cannot honestly store a message-less lifecycle operation unchanged.",
+            "Current deployment constructors eagerly spawn; offline control-plane startup needs a fenced/deferred Native bootstrap path.",
+            "Explicit new-session rebind needs actual target/owner authorization and unknown-input isolation, not a brand-selected replacement."
+          ],
+          "qualification_or_coverage_gaps": [
+            "New public recovery wrapper has E1 only so far; Root reports current PG/WSL approval/timeouts, not a passing DB result.",
+            "No fresh current-session E3/E4 restore/rebind qualification."
+          ]
+        },
+        {
+          "superseded_by": "rebind-20261107/progress.json",
+          "implementation_gaps": [
+            "Explicit new-session rebind remains unsupported pending exact target/owner authorization and isolation of unknown original input; the implemented prepare/same-session-resume path does not grant replacement authority."
+          ],
+          "evidence_level": "E1/E2 existing paths; source-confirmed missing lifecycle"
+        }
+      ],
+      "current_maintenance_increment": "Auto maintenance deterministically advances accepted prepare/resume recovery intents using original issuer/current authority and the same Node fence. Existing Outbox leases/backoff/owner tokens; cancellation retains inflight lease; corrupt due rows paced. Native possible is original-readback-only, even when runtime.invoke removed and runtime.read retained. HTTP/stdio install operator catalog; external mode does not advance Native. PG27/component884+14skip source scopes separate.",
+      "current_rebind_increment": "Explicit same-Slot target; target/old source/Slot/team/enrollment fences; original issuer and OAuth permissions; signed ready observation only; atomic retirement/new epoch/team preference; maintenance resumes the same command; old execution denied while original history reads remain authorized.",
+      "current_native_supported_scope_evidence": {
+        "artifact_root": "native-agent-e2e-20261107",
+        "Codex0166_Windows_owner": "b actual full independentA/B passed;2messages/1reply/1NativeBturn/productionfactory/ACS-only inventory/WindowsJob cleanup",
+        "OpenCode11834_WSL_owner": "lifecycle passed; d actual independent correlated reply +1Native dispatch verified offline; process-group cleanup only, no subtree claim",
+        "wait_continuity": "Codex b passed; cross-harness d returned service_unavailable twice then Inbox/read_message recovered explicit reply; full wait chain not qualified",
+        "scope": "same-machine Windows/WSL and existing approved development Provider only; no remote-host/shared/Orca inference"
+      }
+    },
+    {
+      "id": "C08",
+      "title": "跨主机/混合版本/限额",
+      "tier": "P0_required",
+      "status": "partial",
+      "evidence_level": "E2_controlled_integration",
+      "old_requirements": [
+        "R-031",
+        "R-037",
+        "R-040"
+      ],
+      "test_ids": [
+        "T061",
+        "T062",
+        "T073",
+        "T074",
+        "T079",
+        "T080",
+        "T089",
+        "T090",
+        "T092"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T061",
+          "title": "已有 Native 回归",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T062",
+          "title": "未验证平台",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T073",
+          "title": "诊断脱敏",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T074",
+          "title": "系统通知不能代答",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T079",
+          "title": "独立 Core 可用",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T080",
+          "title": "UI 关闭",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T089",
+          "title": "多项目隔离",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        },
+        {
+          "id": "T090",
+          "title": "安装后的服务回归",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        },
+        {
+          "id": "T092",
+          "title": "只有接收资格未知",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/receiver_domain.py",
+          "sha256": "89921437e6d138b697fe1a2f180bb10c136ebe5820bcf01fc4bb37d465a79139",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_delivery.py",
+          "sha256": "46861d26f3f00b19aedf62bf2461375459c044440de984bfb94e05e9355d8ae5",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_config.py",
+          "sha256": "b829a97a65ec0a011a633eefcdd46bf728c4031b41dadd17fbb82a2d337ab2d4",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/remote_endpoint.py",
+          "sha256": "7bb4d24cf5cbcab2488476043ce0fce136eead4a352d2a378020acb35ea1dca0",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_dispatch.py",
+          "sha256": "d00a55212d694d6e3180d106d0e086c02daa2d3ecf63d46439fcb54ea919ae60",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_models.py",
+          "sha256": "6b4679c422bb52667adcefb51a6714439ae4713535d2fa95e22bab148595a7a0",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_peer_continuity.py",
+          "sha256": "f835888f04bbce1522ba2f44c0a698baef8059c431fff40a62a13eab73c087a3",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_connection_clock.py",
+          "sha256": "80712aa7c8e58dac8ed6880ba20cc8dc53dff04c58e02a26c1b9ee3ee7dd67c1",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_remote_readback_freshness.py",
+          "sha256": "0cc8438ef20182858f2de01e8fd9a5d32555a65b11e6c9f8b3c348d8c440c836",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_communication_maintenance.py",
+          "sha256": "4c383ba8e25e82106dce0472333ea8e470fe59768c5f382d5096835a5b56999e",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-RECOVERY-155",
+        "E-RECOVERY-389",
+        "E-BROAD",
+        "E-CROSS-HOST-LIMITS",
+        "E-LIFECYCLE-CONFIGURATION-PG-18",
+        "E-LIFECYCLE-WIRE-PG-4",
+        "E-LIFECYCLE-CURRENT-PG-45",
+        "E-LIFECYCLE-FINAL-PG-19",
+        "E-LIFECYCLE-CURRENT-CORE-881",
+        "E-LIFECYCLE-MAINTENANCE-PG-27",
+        "E-LIFECYCLE-MAINTENANCE-CORE-884",
+        "native-history-contract-20261107/REPORT.md",
+        "native-agent-e2e-20261107/CURRENT_STATE.json"
+      ],
+      "verified_behavior": [
+        "Authenticated registration/key/TLS/peer continuity, bounded scheduling and clock-aware signed readback have controlled coverage.",
+        "Mixed/stale identity is not silently upgraded; unqualified remote generation/Host capability remains unavailable."
+      ],
+      "implementation_gaps": [
+        "Lifecycle wire/readback is installed and tested through local TLS. SourceLink provenance still lacks an authenticated remote original-journal reader; mixed-version capability declarations and fair progress must be reconciled against the explicit supported matrix."
+      ],
+      "qualification_or_coverage_gaps": [
+        "No physical cross-host model exchange or production switch was run for these increments. Historical release records are not current dirty-tree qualification.",
+        "Windows broad run skips POSIX descriptor admission cases; untested OS/mode pairs remain unqualified."
+      ],
+      "next_actions": [
+        "Reuse existing signed/TLS/Node paths for a narrow capability/read-only lifecycle journal extension where needed; qualify current declared combinations and retain bounded independent-peer behavior."
+      ],
+      "observed_code_paths": [
+        "runtime/receiver_domain.py",
+        "runtime/receiver_delivery.py",
+        "runtime/receiver_config.py",
+        "runtime/remote_endpoint.py",
+        "runtime/communication_dispatch.py",
+        "runtime/receiver_models.py",
+        "runtime_tests/test_receiver_peer_continuity.py",
+        "runtime_tests/test_receiver_connection_clock.py",
+        "runtime_tests/test_remote_readback_freshness.py",
+        "runtime_tests/test_communication_maintenance.py"
+      ],
+      "next_action": "Retain current verified wiring. Continue C16 public provenance and P1 scenario mapping; actual supported Native/independent Agent/Orca qualifications remain separate.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": [],
+      "current_wiring_increment": "Signed lifecycle wire mounted in existing TLS Receiver; opt-in concrete deferred factories and trusted sender config; configure_team uses the same committed recovery executor, legacy only observes outside SQL. Request-local Core connection reuse has no transaction across Native I/O. Fresh private capacity window is operator-bounded1-30 seconds, existing Native state expiry unchanged.",
+      "current_wiring_verified": "Signed lifecycle/deferred factory/trusted sender/configure_team wiring; no SQL across Native I/O. Original ACK survives controller reconstruction; missing original spawn history remains unknown; expired pre-permit facts return the same deferred operation. 881 component pass/14skip, PG45 and final PG19 have separate raw manifests.",
+      "prior_assessment_history": [
+        {
+          "superseded_by": "lifecycle-20261107/wiring-checkpoint-20261107.json",
+          "implementation_gaps": [
+            "Remote lifecycle/read-journal capability proof is not an installed, authorized cross-host path; do not turn peer/cache hashes into a Native generation.",
+            "Supported-version negotiation and fair progress need an explicit currently qualified multi-host matrix rather than assuming a Harness name implies capability."
+          ],
+          "qualification_or_coverage_gaps": [
+            "No physical cross-host model exchange or production switch was run for these increments. Historical release records are not current dirty-tree qualification.",
+            "Windows broad run skips POSIX descriptor admission cases; untested OS/mode pairs remain unqualified."
+          ]
+        }
+      ],
+      "current_maintenance_increment": "Auto maintenance deterministically advances accepted prepare/resume recovery intents using original issuer/current authority and the same Node fence. Existing Outbox leases/backoff/owner tokens; cancellation retains inflight lease; corrupt due rows paced. Native possible is original-readback-only, even when runtime.invoke removed and runtime.read retained. HTTP/stdio install operator catalog; external mode does not advance Native. PG27/component884+14skip source scopes separate.",
+      "current_native_supported_scope_evidence": {
+        "artifact_root": "native-agent-e2e-20261107",
+        "Codex0166_Windows_owner": "b actual full independentA/B passed;2messages/1reply/1NativeBturn/productionfactory/ACS-only inventory/WindowsJob cleanup",
+        "OpenCode11834_WSL_owner": "lifecycle passed; d actual independent correlated reply +1Native dispatch verified offline; process-group cleanup only, no subtree claim",
+        "wait_continuity": "Codex b passed; cross-harness d returned service_unavailable twice then Inbox/read_message recovered explicit reply; full wait chain not qualified",
+        "scope": "same-machine Windows/WSL and existing approved development Provider only; no remote-host/shared/Orca inference"
+      }
+    },
+    {
+      "id": "C09",
+      "title": "安全迁移与历史保留",
+      "tier": "P0_required",
+      "status": "retained_verified",
+      "evidence_level": "E2_controlled_integration for explicit known migrations",
+      "old_requirements": [
+        "R-035"
+      ],
+      "test_ids": [
+        "T069",
+        "T070",
+        "T091",
+        "T093"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T069",
+          "title": "additive 升级",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T070",
+          "title": "迁移中断回滚",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T091",
+          "title": "历史 backfill 可恢复",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        },
+        {
+          "id": "T093",
+          "title": "无意外写入启动",
+          "required_evidence": "controlled_integration + native/host qualification where claimed"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_storage.py",
+          "sha256": "8157b91b1dd6ffcf242af265dededb8156f43b3d7f34a772a96926853c8d5297",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_core_schema.sql",
+          "sha256": "8ff205fd4ba6472f1eb828354f95d598be5ec4bdc399b544e0369a04950b1ba8",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/project_schema_state.py",
+          "sha256": "19a0711895d263e8f3768d7adf08155fb4de2e265f2c6535d6c02bc7f5f8f92e",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime_tests/test_communication_storage.py",
+          "sha256": "914298e249f9a3531c41bc418a0731f1157eb61f9e57e564a802d13656cae89e",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_receiver_schema_1_8.py",
+          "sha256": "99a9bfc91ea3e1d7442b58f8cfeaeb2b5d5966a1d86ad65e005d32bade9474c8",
+          "current_vs_broad": "changed_since_broad"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-MIGRATION-8",
+        "E-LEGACY-BASELINE",
+        "integration_evidence/acs-stage-agnostic-20261106/current-pure-contract-lifecycle-postreview.json",
+        "E-LIFECYCLE-CURRENT-PG-45",
+        "E-LIFECYCLE-FINAL-PG-19",
+        "E-LIFECYCLE-CURRENT-CORE-881",
+        "E-P0-HISTORY-6"
+      ],
+      "verified_behavior": [
+        "Explicit checksum-bound additive adoption, history preservation, unknown-checksum rejection and read-only startup exist.",
+        "The old broad1.8 fixture failure is retained; the scoped migration correction uses explicit pinned1.8→1.13 fixture import followed by current Core adoption, not restoration of retired Task semantics."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "No production migration/downgrade/rollback. No chunk-backfill process is claimed; T091 checkpoint is actual atomic transaction commit."
+      ],
+      "next_actions": [
+        "Retain known additive migrations. Add only the necessary explicit local DriverJournal shape migration, preserve all historical bytes, and verify interrupted/repeated adoption."
+      ],
+      "observed_code_paths": [
+        "runtime/communication_storage.py",
+        "runtime/communication_core_schema.sql",
+        "runtime/project_schema_state.py",
+        "runtime_tests/test_communication_storage.py",
+        "runtime_tests/test_receiver_schema_1_8.py"
+      ],
+      "next_action": "Retain original migration/index safety and history; no duplicate checkpoint ledger.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": [],
+      "current_wiring_verified": "Signed lifecycle/deferred factory/trusted sender/configure_team wiring; no SQL across Native I/O. Original ACK survives controller reconstruction; missing original spawn history remains unknown; expired pre-permit facts return the same deferred operation. 881 component pass/14skip, PG45 and final PG19 have separate raw manifests.",
+      "prior_assessment_history": [
+        {
+          "superseded_by": "lifecycle-20261107/wiring-checkpoint-20261107.json",
+          "implementation_gaps": [],
+          "qualification_or_coverage_gaps": [
+            "Map T070 migration-interruption/rollback and T091 recoverable history to exact current raw cases before declaring all required migration scenarios qualified.",
+            "New lifecycle DriverJournal schema migration is still future work and needs its own preservation/interruption/rollback evidence. No production migration or rollback was executed."
+          ]
+        },
+        {
+          "implementation_gaps": [],
+          "qualification_or_coverage_gaps": [
+            "Explicit schema2 adoption and preservation/interruption/rollback are implemented and included in current component regression. Map T070/T091 to exact raw cases; no production migration or rollback was authorized or executed."
+          ],
+          "next_action": "Retain current verified wiring. Continue C16 public provenance and P1 scenario mapping; actual supported Native/independent Agent/Orca qualifications remain separate.",
+          "superseded_by": "p0-evidence-audit-20261107/progress.json"
+        }
+      ],
+      "notes": "Explicit additive historical index and DriverJournal schema2 migration are interruption-safe in the claimed atomic transaction configuration. Missing author preserved, no natural message/reply rewrite, unknown old operations retain fences."
+    },
+    {
+      "id": "C10",
+      "title": "真实资格与原始证据",
+      "tier": "P0_required",
+      "status": "implemented_needs_evidence",
+      "evidence_level": "E1/E2 plus historical limited E3",
+      "old_requirements": [
+        "R-038"
+      ],
+      "test_ids": [
+        "T075",
+        "T076"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T075",
+          "title": "证据层次",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T076",
+          "title": "缺真实环境",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime_tests/test_communication.py",
+          "sha256": "72cd79c3b0bef816cc741a9bcfa057ffeb61bcb99f03d1fec85200cec7a1916e",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime_tests/test_communication_installed_native.py",
+          "sha256": "22b93dfa3d9019440abff2589690ad9451d6651a8fbc7b56bb6416bcec38af4c",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/codex_driver.py",
+          "sha256": "9336250ecdab6184cc540ac90ce76d8ef9376a65dd39dcec011f42ba51222216",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/opencode_driver.py",
+          "sha256": "031d057731c33eb0f6e31358edf3f389ff3626a5576bae4536f3f78f40d7850a",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-BROAD",
+        "E-CODEX-OBSERVATION",
+        "E-CODEX-DISCOVERY",
+        "E-CROSS-HOST-LIMITS",
+        "E-STATE",
+        "E-ACTUAL-CODEX-0166-METADATA",
+        "native-history-contract-20261107/REPORT.md",
+        "native-agent-e2e-20261107/CURRENT_STATE.json"
+      ],
+      "verified_behavior": [
+        "Raw failures/skips and scoped reruns are retained without rewriting the original broad result.",
+        "At least an installed Codex protocol observation exists, clearly showing zero model turns."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "No current full Codex↔OpenCode E3 receive/input + E4 independent correlated reply/wait-reconnect chain is established by the inspected current evidence.",
+        "Old protocol observations are source/profile/version limited and cannot qualify modified receiver/driver code automatically.",
+        "Complete each claimed run's source/dirty-tree digest, binary/profile/OS/mode, command, exit code, raw trace and failure limits; no E5/Orca claim."
+      ],
+      "next_actions": [
+        "After P0 code gaps close, obtain the minimum current supported-combination E3/E4 chain and fault regressions in authorized isolated development environments. Mark genuinely inaccessible combinations blocked with concrete evidence; this read-only assessment did not probe hosts or credentials."
+      ],
+      "observed_code_paths": [
+        "runtime_tests/test_communication.py",
+        "runtime_tests/test_communication_installed_native.py",
+        "runtime/codex_driver.py",
+        "runtime/opencode_driver.py"
+      ],
+      "next_action": "After P0 code gaps close, obtain the minimum current supported-combination E3/E4 chain and fault regressions in authorized isolated development environments. Mark genuinely inaccessible combinations blocked with concrete evidence; this read-only assessment did not probe hosts or credentials.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": [
+        "runtime/codex_driver.py",
+        "runtime/opencode_driver.py"
+      ],
+      "current_native_supported_scope_evidence": {
+        "artifact_root": "native-agent-e2e-20261107",
+        "Codex0166_Windows_owner": "b actual full independentA/B passed;2messages/1reply/1NativeBturn/productionfactory/ACS-only inventory/WindowsJob cleanup",
+        "OpenCode11834_WSL_owner": "lifecycle passed; d actual independent correlated reply +1Native dispatch verified offline; process-group cleanup only, no subtree claim",
+        "wait_continuity": "Codex b passed; cross-harness d returned service_unavailable twice then Inbox/read_message recovered explicit reply; full wait chain not qualified",
+        "scope": "same-machine Windows/WSL and existing approved development Provider only; no remote-host/shared/Orca inference"
+      }
+    },
+    {
+      "id": "C11",
+      "title": "最小只读诊断/受控恢复",
+      "tier": "P0_required",
+      "status": "partial",
+      "evidence_level": "E2 existing diagnostics; E1 new public recovery",
+      "old_requirements": [
+        "R-037"
+      ],
+      "test_ids": [
+        "T073",
+        "T074"
+      ],
+      "scenario_requirements": [
+        {
+          "id": "T073",
+          "title": "诊断脱敏",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        },
+        {
+          "id": "T074",
+          "title": "系统通知不能代答",
+          "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e"
+        }
+      ],
+      "observed_code": [
+        {
+          "path": "runtime/communication_faults.py",
+          "sha256": "1920ecb7e4c8c98375362f115226d2de5cefa13056a886d9def98f4738c98e44",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/communication_delivery_observer.py",
+          "sha256": "3e00a546c50645363617d8f68e5225acdfa9a2ed4f2832f735884384d776e1fe",
+          "current_vs_broad": "byte_identical"
+        },
+        {
+          "path": "runtime/receiver_recovery_operations.py",
+          "sha256": "3aafd87df609cf064ad560f036491f93cf404cc3e575e0b33a13fce72effb274",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime/communication_client_recovery.py",
+          "sha256": "ab60e726f7c8b0f471e1ecf0945c5da025fd33e55ef181ee5de28d0ca5f3034c",
+          "current_vs_broad": "not_in_broad_capture"
+        },
+        {
+          "path": "runtime/communication_http.py",
+          "sha256": "6a92de66fc4521344c5c00545c5448d0d18b68bced46a9c57574eec5f068d05c",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime/communication_client_service.py",
+          "sha256": "e2577571444ea8443515e92fb17327da18337e49ad0bd8d3d1db0d8d6184c70c",
+          "current_vs_broad": "changed_since_broad"
+        },
+        {
+          "path": "runtime_tests/test_communication_client_recovery.py",
+          "sha256": "ebac920504eccb2330e96564cbaca70e5c9801230d5f4651dd7ef53277fbf4b2",
+          "current_vs_broad": "not_in_broad_capture"
+        },
+        {
+          "path": "runtime_tests/test_receiver_recovery_operations.py",
+          "sha256": "a72cf812f57649471f320b246b31e574d593381f678909dd77a44030aa5fb3c4",
+          "current_vs_broad": "byte_identical"
+        }
+      ],
+      "evidence_refs": [
+        "E-RECOVERY-155",
+        "E-RACES-59",
+        "E-BROAD",
+        "E-RECOVERY-NEW",
+        "integration_evidence/acs-stage-agnostic-20261106/current-pure-contract-lifecycle-postreview.json",
+        "E-LIFECYCLE-CONFIGURATION-PG-18",
+        "E-LIFECYCLE-WIRE-PG-4",
+        "E-LIFECYCLE-CURRENT-PG-45",
+        "E-LIFECYCLE-FINAL-PG-19",
+        "E-LIFECYCLE-CURRENT-CORE-881",
+        "E-LIFECYCLE-MAINTENANCE-PG-27",
+        "E-LIFECYCLE-MAINTENANCE-CORE-884",
+        "native-history-contract-20261107/REPORT.md",
+        "native-agent-e2e-20261107/CURRENT_STATE.json"
+      ],
+      "verified_behavior": [
+        "Delivery/receiver evidence and redacted system fault notices distinguish technical acceptance from explicit Agent reply.",
+        "Latest ClientRecoveryService + POST202 mounts existing submit→same-operation advance, with committed/unknown errors retaining operation_ref. It adds no operation ledger."
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Stopped-process/same-Session restoration and actual installed Native combinations remain unqualified; no substitute Session for old unknown input."
+      ],
+      "next_actions": [
+        "Complete pending controlled real-service recovery tests, then share the C05/C07 lifecycle executor. Notice seen/personal state remain P2 and do not block this item."
+      ],
+      "observed_code_paths": [
+        "runtime/communication_faults.py",
+        "runtime/communication_delivery_observer.py",
+        "runtime/receiver_recovery_operations.py",
+        "runtime/communication_client_recovery.py",
+        "runtime/communication_http.py",
+        "runtime/communication_client_service.py",
+        "runtime_tests/test_communication_client_recovery.py",
+        "runtime_tests/test_receiver_recovery_operations.py"
+      ],
+      "next_action": "Obtain actual supported-combination evidence under confirmed scope; keep unknown/unsupported and diagnostics truthful.",
+      "assessment_source": "integration_evidence/acs-stage-agnostic-20261106/p0-assessment.json",
+      "assessed_source_drift": [
+        "runtime/receiver_recovery_operations.py",
+        "runtime/communication_client_service.py"
+      ],
+      "current_wiring_increment": "Signed lifecycle wire mounted in existing TLS Receiver; opt-in concrete deferred factories and trusted sender config; configure_team uses the same committed recovery executor, legacy only observes outside SQL. Request-local Core connection reuse has no transaction across Native I/O. Fresh private capacity window is operator-bounded1-30 seconds, existing Native state expiry unchanged.",
+      "current_wiring_verified": "Signed lifecycle/deferred factory/trusted sender/configure_team wiring; no SQL across Native I/O. Original ACK survives controller reconstruction; missing original spawn history remains unknown; expired pre-permit facts return the same deferred operation. 881 component pass/14skip, PG45 and final PG19 have separate raw manifests.",
+      "prior_assessment_history": [
+        {
+          "superseded_by": "lifecycle-20261107/wiring-checkpoint-20261107.json",
+          "implementation_gaps": [
+            "Public recovery integration now exists, superseding the earlier 'API absent' audit finding, but its new real-service/PG/OAuth path is not yet verified.",
+            "Required authorized lifecycle prepare/resume/rebind remains safely unsupported; no autonomous executor for interrupted queued/preparing lifecycle work has been qualified."
+          ],
+          "qualification_or_coverage_gaps": [
+            "Root reports two approval deadlines/default WSL unavailable for the pending new PG run. This is a run-specific external verification blocker, not proof of missing code or a test pass."
+          ]
+        },
+        {
+          "implementation_gaps": [
+            "Accepted recovery operations now have bounded automatic continuation. Natural-message-derived frozen wake and authorized new-session rebind remain incomplete separate paths."
+          ],
+          "qualification_or_coverage_gaps": [
+            "User approved isolated tests and all recorded PG/TLS batches completed. Real Native/Host combinations remain separately unqualified; no current sandbox/WSL approval blocker remains."
+          ],
+          "next_action": "Retain current verified wiring. Continue C16 public provenance and P1 scenario mapping; actual supported Native/independent Agent/Orca qualifications remain separate.",
+          "superseded_by": "p0-evidence-audit-20261107/progress.json"
+        }
+      ],
+      "current_maintenance_increment": "Auto maintenance deterministically advances accepted prepare/resume recovery intents using original issuer/current authority and the same Node fence. Existing Outbox leases/backoff/owner tokens; cancellation retains inflight lease; corrupt due rows paced. Native possible is original-readback-only, even when runtime.invoke removed and runtime.read retained. HTTP/stdio install operator catalog; external mode does not advance Native. PG27/component884+14skip source scopes separate.",
+      "notes": "Readonly diagnostics and original recovery handles exist. Accepted recovery maintenance, original-message conditional initial preparation and explicit ready-target rebind are now implemented/tested; older missing-path assessment superseded.",
+      "current_native_supported_scope_evidence": {
+        "artifact_root": "native-agent-e2e-20261107",
+        "Codex0166_Windows_owner": "b actual full independentA/B passed;2messages/1reply/1NativeBturn/productionfactory/ACS-only inventory/WindowsJob cleanup",
+        "OpenCode11834_WSL_owner": "lifecycle passed; d actual independent correlated reply +1Native dispatch verified offline; process-group cleanup only, no subtree claim",
+        "wait_continuity": "Codex b passed; cross-harness d returned service_unavailable twice then Inbox/read_message recovered explicit reply; full wait chain not qualified",
+        "scope": "same-machine Windows/WSL and existing approved development Provider only; no remote-host/shared/Orca inference"
+      }
+    },
+    {
+      "id": "C12",
+      "tier": "P1_required",
+      "status": "retained_verified",
+      "observed_code_paths": [
+        "runtime/communication_http.py",
+        "runtime/communication_client_oauth.py",
+        "runtime/communication_client_recovery.py",
+        "runtime/project_http.py"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp07-auth-admission-final.log",
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp05-verification-results.json",
+        "integration_evidence/acs-stage-agnostic-20261106/pure-recovery-scope-isolated.json",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/sdk-recovery-focused-20261106b.log",
+        "E-P1-CURRENT-SCENARIOS-156",
+        "E-P1-CURRENT-SDK-210",
+        "E-UI-MATRIX-ACS-17"
+      ],
+      "notes": "Actual OAuth/HTTP and MCP share original Domain; same-actor identity/defaults, ordinary-Agent denial, invoke scope precommit403/none and committed observation errors have current evidence.",
+      "next_action": "Preserve source-scoped contracts. Runtime use of Host ports requires the separately declared real Host/verifier dependencies and qualification.",
+      "verified_subscopes": [
+        "Actual P1-only22operation episode +four-familypaging63 passed; source scope recorded separately."
+      ],
+      "prior_assessment_history": [
+        {
+          "status": "partial",
+          "notes": "Existing authenticated facade has E1/E2 evidence. New recovery mount/facade and action-specific OAuth narrowing are unit-tested; actual mounted OAuth/PG acceptance remains unexecuted.",
+          "next_action": "Run source-bound OAuth/PG recovery acceptance, including revoked permissions, exact retry and post-commit auth loss.",
+          "implementation_gaps": null,
+          "qualification_or_coverage_gaps": null,
+          "superseded_by": "p1-current-20261107/p1-exit-audit.json"
+        }
+      ],
+      "title": "可信 HTTP facade",
+      "required_delta": "P1 必需 endpoint 共享 Domain/Auth，不复写消息权威",
+      "depends_on": [
+        "C01"
+      ],
+      "evidence_level": "E1/E2_current_contract_scope",
+      "assessment_scope": "v1.1 P1 local ACS service/delegation/unavailable contracts only; not installed Host/Native qualification",
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": []
+    },
+    {
+      "id": "C13",
+      "tier": "P1_required",
+      "status": "retained_verified",
+      "observed_code_paths": [
+        "runtime/communication_client_views.py",
+        "runtime/communication_client_queries.py",
+        "runtime/communication_conversation_storage.py"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-regression.log",
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp06-producers-postreview-regression.log",
+        "E-P1-EXACT-CURRENT-7",
+        "E-P1-CURRENT-SCENARIOS-156",
+        "E-P1-CURRENT-SDK-210",
+        "E-UI-MATRIX-ACS-17"
+      ],
+      "notes": "Actual participant-pair projection, empty resolve then first message identity, concurrent uniqueness, immutable pagination/history/reply scope. No second communication authority.",
+      "next_action": "Preserve source-scoped contracts. Runtime use of Host ports requires the separately declared real Host/verifier dependencies and qualification.",
+      "verified_subscopes": [
+        "Actual P1-only22operation episode +four-familypaging63 passed; source scope recorded separately."
+      ],
+      "current_exact_scenario_increment": "Actual7-case PG/OAuth/TCP/SDK batch,890 captured files unchanged: T045 P1-only RR/message race, T055 same-A MCP/HTTP equivalent packets, T056 ordinary-B manager denial/no outbox effect; original Native source and controlled Host same-text/stale approval/settings/clear-compact isolation. Actual22-operation episode proves reducer duplicate stability (3 duplicates, no P2 state rows). Host implementations remain unqualified.",
+      "prior_assessment_history": [
+        {
+          "status": "partial",
+          "notes": "Conversation projection and query paths have controlled-integration regressions; API-by-API P1 coverage and current-source matching are being reconciled. No new Conversation authority is introduced. P1-only consumer preparation exposed token reminting: messages/conversations/receivers/notices now share full-cut anchor validation and preserve the caller snapshot bytes;32 cryptographic boundary checks passed. Actual PG paging regressions were strengthened and await execution.",
+          "next_action": "Complete the per-operation evidence map and P1-only production-SDK consumer episode.",
+          "implementation_gaps": null,
+          "qualification_or_coverage_gaps": null,
+          "superseded_by": "p1-current-20261107/p1-exit-audit.json"
+        }
+      ],
+      "title": "可重建 Conversation 查询",
+      "required_delta": "双人会话/最近消息/空会话定位/历史分页与关系",
+      "depends_on": [
+        "C12"
+      ],
+      "evidence_level": "E1/E2_current_contract_scope",
+      "assessment_scope": "v1.1 P1 local ACS service/delegation/unavailable contracts only; not installed Host/Native qualification",
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": []
+    },
+    {
+      "id": "C14",
+      "tier": "P1_required",
+      "status": "retained_verified",
+      "observed_code_paths": [
+        "runtime/communication_client_service.py",
+        "runtime/communication_client_receivers.py",
+        "runtime/communication_client_notices.py",
+        "runtime/receiver_recovery_operations.py"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-regression.log",
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp06-producers-verification-results.json",
+        "integration_evidence/acs-stage-agnostic-20261106/pure-recovery-scope-isolated.json",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/sdk-recovery-focused-20261106b.log",
+        "E-P1-CURRENT-SCENARIOS-156",
+        "E-P1-CURRENT-SDK-210",
+        "E-UI-MATRIX-ACS-17"
+      ],
+      "notes": "Actual profile/receiver/delivery/operation/notice and recovery queries consumed in22-op episode; missing provider state stays unknown and publishes ref-only events, never inferred idle/reply.",
+      "next_action": "Preserve source-scoped contracts. Runtime use of Host ports requires the separately declared real Host/verifier dependencies and qualification.",
+      "verified_subscopes": [
+        "Actual P1-only22operation episode +four-familypaging63 passed; source scope recorded separately."
+      ],
+      "prior_assessment_history": [
+        {
+          "status": "partial",
+          "notes": "Identity, technical delivery, receiver and notice queries exist with E1/E2 evidence. Recovery POST now uses the same original command/outbox and advances that operation only; unsupported lifecycle remains explicit.",
+          "next_action": "Validate the newly mounted action through real OAuth/PG and include these reads in independent P1 headless coverage.",
+          "implementation_gaps": null,
+          "qualification_or_coverage_gaps": null,
+          "superseded_by": "p1-current-20261107/p1-exit-audit.json"
+        }
+      ],
+      "title": "客户端权限状态与技术状态",
+      "required_delta": "列出 profile/receivers/delivery/operation/notice 且可授权查询",
+      "depends_on": [
+        "C12",
+        "C02"
+      ],
+      "evidence_level": "E1/E2_current_contract_scope",
+      "assessment_scope": "v1.1 P1 local ACS service/delegation/unavailable contracts only; not installed Host/Native qualification",
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": []
+    },
+    {
+      "id": "C15",
+      "tier": "P1_required",
+      "status": "retained_verified",
+      "observed_code_paths": [
+        "runtime/communication_client_snapshot.py",
+        "runtime/communication_client_events.py",
+        "runtime/communication_event_http.py",
+        "runtime/communication_event_storage.py"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp06-producers-verification-results.json",
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-regression.log",
+        "E-P1-EXACT-CURRENT-7",
+        "E-P1-CURRENT-SCENARIOS-156",
+        "E-P1-CURRENT-SDK-210",
+        "E-UI-MATRIX-ACS-17"
+      ],
+      "notes": "Current snapshot/replay/revoke/privacy/cursor410/heartbeat tests pass. Each family and pre/post callback remain authorized; same-bound digest reused only within a pass, distinct Route grants independent.",
+      "next_action": "Preserve source-scoped contracts. Runtime use of Host ports requires the separately declared real Host/verifier dependencies and qualification.",
+      "verified_subscopes": [
+        "Actual P1-only22operation episode +four-familypaging63 passed; source scope recorded separately."
+      ],
+      "current_exact_scenario_increment": "Actual7-case PG/OAuth/TCP/SDK batch,890 captured files unchanged: T045 P1-only RR/message race, T055 same-A MCP/HTTP equivalent packets, T056 ordinary-B manager denial/no outbox effect; original Native source and controlled Host same-text/stale approval/settings/clear-compact isolation. Actual22-operation episode proves reducer duplicate stability (3 duplicates, no P2 state rows). Host implementations remain unqualified.",
+      "prior_assessment_history": [
+        {
+          "status": "partial",
+          "notes": "Immutable snapshot/highwater, metadata event replay, current object ACL, backpressure and revocation have E1/E2 evidence. Latest broad run retains its three original failures and separate focused corrections; no single full-green run is claimed.",
+          "next_action": "Retain current-source replay evidence and exercise event recovery without requiring optional P2 features.",
+          "implementation_gaps": null,
+          "qualification_or_coverage_gaps": null,
+          "superseded_by": "p1-current-20261107/p1-exit-audit.json"
+        }
+      ],
+      "title": "一致快照与事件重放",
+      "required_delta": "snapshot high-water + replay + auth revoke + cursor expired",
+      "depends_on": [
+        "C12",
+        "C13"
+      ],
+      "evidence_level": "E1/E2_current_contract_scope",
+      "assessment_scope": "v1.1 P1 local ACS service/delegation/unavailable contracts only; not installed Host/Native qualification",
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": []
+    },
+    {
+      "id": "C16",
+      "tier": "P1_required",
+      "status": "retained_verified",
+      "observed_code_paths": [
+        "runtime/communication_native_link_storage.py",
+        "runtime/communication_client_native_links.py",
+        "runtime/native_provider_registry.py",
+        "sdk/communication-client.ts"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/native-link-storage-pg-20261106.log",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/native-link-facade-pg-20261106b.log",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/native-link-replay-pg-20261106d.log",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/provider-registry-fence-20261106.log",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/native-link-live-http-source-check-20261106a-blocked.json",
+        "E-NATIVE-SOURCE-SERVICE-10",
+        "E-NATIVE-SOURCE-HTTP-2",
+        "E-NATIVE-SOURCE-REGRESSION-43",
+        "E-NATIVE-SOURCE-CONTRACT-210",
+        "E-P1-EXACT-CURRENT-7",
+        "E-P1-CURRENT-SCENARIOS-156",
+        "E-P1-CURRENT-SDK-210",
+        "E-UI-MATRIX-ACS-17"
+      ],
+      "notes": "Local original Message→actual original invocation/handoff/journal provenance and NativeLink are authorized; no text inference or shared Native/ACS cursor. Unsupported remote source readers do not infer Host permissions.",
+      "next_action": "Preserve source-scoped contracts. Runtime use of Host ports requires the separately declared real Host/verifier dependencies and qualification.",
+      "projection_status": "Original per-message SourceLink is mounted on local public readMessage with current ACL and original provider/readonly journal fences. Authenticated remote original-journal reader remains unavailable; installed Native/Host qualification remains separate.",
+      "prior_assessment_history": [
+        {
+          "superseded_by": "source-link-20261107/progress.json",
+          "implementation_gaps": [],
+          "notes": "NativeLink11 actual local OAuth/PG/TCP/SDK tests passed with856/856 fixed-scope bytes unchanged. Metadata proof, scope403none, registry/Grant race, immutable paging/events and original replay after reassignment verified. Evidence-backed per-message SourceLink projection from original native handoff/journal is still being implemented; session association alone does not close C16."
+        },
+        {
+          "projection_status": "Original Core invocation/handoff/Driver ACK/protocol evidence projection26E1passed. Refs-only port, before/after ACL, original provider+target. Public/remote provenance port still unmounted.",
+          "superseded_by": "source-link-20261107/progress.json"
+        },
+        {
+          "status": "implemented_needs_evidence",
+          "notes": "Mounted optional include_native_source on existing readMessage; original immutable dispatch receipt selects exact attempt. Current participant ACL and registry fences bracket readonly journal reads. Original protocol refs/generation are independent of current NativeLink/session. Same-text/message_only has no inferred linkage; missing logs are not created. Valid token missing tool scope403, invalid/expired authentication401. 59 DTOs and22 P1 operations retained with additive extension.",
+          "next_action": "Complete current P1 scenario evidence reconciliation and retain explicit remote/Host gaps; do not report E3/E4/E5 from controlled protocols.",
+          "implementation_gaps": [
+            "An authenticated remote original-journal reader is not installed; unsupported remote sources remain explicitly unavailable. No remote transcript or Host permission is inferred."
+          ],
+          "qualification_or_coverage_gaps": [
+            "Current local public message provenance is verified through actual Core dispatch/PG/DriverJournal and OAuth/TCP/SDK for both controlled Native protocols. Actual Native/model/Orca Host and remote journal qualification are separate."
+          ],
+          "superseded_by": "p1-current-20261107/p1-exit-audit.json"
+        }
+      ],
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Actual installed Native/Orca, serialized Host extension/Python verifier adapter and unavailable remote readers are separate; no runtime capability is inferred."
+      ],
+      "current_exact_scenario_increment": "Actual7-case PG/OAuth/TCP/SDK batch,890 captured files unchanged: T045 P1-only RR/message race, T055 same-A MCP/HTTP equivalent packets, T056 ordinary-B manager denial/no outbox effect; original Native source and controlled Host same-text/stale approval/settings/clear-compact isolation. Actual22-operation episode proves reducer duplicate stability (3 duplicates, no P2 state rows). Host implementations remain unqualified.",
+      "title": "NativeLink 和两源 provenance",
+      "required_delta": "受权 link ACS 消息到真正 host operation；原生 transcript 不复制",
+      "depends_on": [
+        "C12"
+      ],
+      "evidence_level": "E1/E2_current_contract_scope",
+      "assessment_scope": "v1.1 P1 local ACS service/delegation/unavailable contracts only; not installed Host/Native qualification"
+    },
+    {
+      "id": "C17",
+      "tier": "P1_required",
+      "status": "retained_verified",
+      "observed_code_paths": [
+        "sdk/integration-ports.ts",
+        "runtime/signed_harness_adapter.py",
+        "runtime/receiver_delivery.py",
+        "runtime/receiver.py",
+        "sdk/orca-receiver-port.ts",
+        "sdk/tests/orca-receiver-port.test.mjs",
+        "sdk/ORCA-RECEIVER-INTEGRATION.md"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-cross-harness-devpack-20261106/WP08_ORCA_HOST_PORT_MAP.md",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/sdk-orca-receiver-port-20261106c.log",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/sdk-orca-receiver-port-postrun-manifest-20261106.json",
+        "E-P1-CURRENT-SCENARIOS-156",
+        "E-P1-CURRENT-SDK-210",
+        "E-UI-MATRIX-ACS-17"
+      ],
+      "notes": "Stable Orca Receiver admit/observe/reconcile/unsupported contracts verified in current signed/ownership/Host-grant protocol tests, including external-owner registry claim and invalid-body/injection refusal. Runtime needs actual Python verifier/prepared ledger adapter and serialized Host extension; absent dependencies typed host_extension_required, no installed Host claim.",
+      "next_action": "Preserve source-scoped contracts. Runtime use of Host ports requires the separately declared real Host/verifier dependencies and qualification.",
+      "prior_assessment_history": [
+        {
+          "status": "partial",
+          "notes": "Bounded trusted Orca Receiver bridge is implemented:38 focused E1 tests and strictTypeScript passed. Existing signed-verifier adapter and atomic current-child Host extension are required external dependencies; missing ports are explicit, historical reconciliation has independent current Host read authority, unknown never re-enters admission. No actual Python verifier adapter or Orca Host/E5 qualification.",
+          "next_action": "Complete the bridge auth/protocol tests using the existing signed verifier seam; register the exact Host extension gap without claiming E5.",
+          "implementation_gaps": null,
+          "qualification_or_coverage_gaps": null,
+          "superseded_by": "p1-current-20261107/p1-exit-audit.json"
+        }
+      ],
+      "title": "Orca-owned Receiver 最小端口",
+      "required_delta": "声明受信 admit/observe/reconcile，维持同 Native Session 单一写入者",
+      "depends_on": [
+        "C03",
+        "C04"
+      ],
+      "evidence_level": "E1/E2_current_contract_scope",
+      "assessment_scope": "v1.1 P1 local ACS service/delegation/unavailable contracts only; not installed Host/Native qualification",
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Actual installed Native/Orca, serialized Host extension/Python verifier adapter and unavailable remote readers are separate; no runtime capability is inferred."
+      ]
+    },
+    {
+      "id": "C18",
+      "tier": "P1_required",
+      "status": "retained_verified",
+      "observed_code_paths": [
+        "sdk/integration-ports.ts",
+        "sdk/tests/integration-ports.test.mjs"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/sdk-native-links-integrated-20261106.log",
+        "integration_evidence/acs-cross-harness-devpack-20261106/WP08_ORCA_HOST_PORT_MAP.md",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/sdk-v11-c17-integrated-20261106.log",
+        "E-P1-EXACT-CURRENT-7",
+        "E-P1-CURRENT-SCENARIOS-156",
+        "E-P1-CURRENT-SDK-210",
+        "E-UI-MATRIX-ACS-17"
+      ],
+      "notes": "NativeView/Workspace preserves actual Host authority/session/generation/cursor. Controlled child ACL, stale approval, model/effort, clear/compact, no automatic ACS reply tested with actual ACS/TCP/SDK. Actual Host is external.",
+      "next_action": "Preserve source-scoped contracts. Runtime use of Host ports requires the separately declared real Host/verifier dependencies and qualification.",
+      "new_current_fix": "Generic Native read/list results reauthorize after async retrieval; frames captured immutable before awaited authorization; Native cursor/session/link cache reset independent of ACS cursor.31 focused SDK tests and strictTypeScript passed. Actual Host E5 and C16 provenance remain separate.",
+      "current_sdk_evidence": "All189 current SDK tests passed after async read/list/frame authorization fixes; strictTSC passed separately.",
+      "current_exact_scenario_increment": "Actual7-case PG/OAuth/TCP/SDK batch,890 captured files unchanged: T045 P1-only RR/message race, T055 same-A MCP/HTTP equivalent packets, T056 ordinary-B manager denial/no outbox effect; original Native source and controlled Host same-text/stale approval/settings/clear-compact isolation. Actual22-operation episode proves reducer duplicate stability (3 duplicates, no P2 state rows). Host implementations remain unqualified.",
+      "prior_assessment_history": [
+        {
+          "status": "partial",
+          "notes": "Native delegate contracts, exact session scope, independent Host auth and unavailable behavior have E1 tests. Actual Orca Host integration is not established. New rich Native backend and binary destination transfer are not expanded under this revision. The177-case integrated Node snapshot passed before the final three Host-grant namespace cases; the current changed bridge was then rechecked in its38-case focused suite. These are separate snapshots, not a claimed single180-case whole run.",
+          "next_action": "Retain tested delegate contracts; complete minimal bridge integration and explicit source/current Host-gap register.",
+          "implementation_gaps": null,
+          "qualification_or_coverage_gaps": null,
+          "superseded_by": "p1-current-20261107/p1-exit-audit.json"
+        }
+      ],
+      "title": "Orca Native delegate 合同",
+      "required_delta": "界面仅连接 NativeViewProvider, ACS 不克隆原生数据",
+      "depends_on": [
+        "C16",
+        "C17"
+      ],
+      "evidence_level": "E1/E2_current_contract_scope",
+      "assessment_scope": "v1.1 P1 local ACS service/delegation/unavailable contracts only; not installed Host/Native qualification",
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Actual installed Native/Orca, serialized Host extension/Python verifier adapter and unavailable remote readers are separate; no runtime capability is inferred."
+      ]
+    },
+    {
+      "id": "C19",
+      "tier": "P1_required",
+      "status": "retained_verified",
+      "observed_code_paths": [
+        "sdk/communication-client.ts",
+        "sdk/communication-state.ts",
+        "sdk/communication-stream.ts",
+        "runtime_tests/test_communication_headless_live.py",
+        "sdk/tests/communication-live-consumer.mjs",
+        "runtime_tests/test_communication_p1_headless_live.py",
+        "sdk/tests/communication-p1-live-consumer.mjs"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/headless-production-sdk-attachments-pg-20261106.log",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/communication-headless-attachments-live-20261106.json",
+        "E-P1-EXACT-CURRENT-7",
+        "E-P1-CURRENT-SCENARIOS-156",
+        "E-P1-CURRENT-SDK-210",
+        "E-UI-MATRIX-ACS-17"
+      ],
+      "notes": "Actual ACS/OAuth/HTTP/SSE/PG production SDK covers22operations, explicit controlled peer reply, key/recovery replay, events and revoke/DB readback. P2calls/writes0, Nativeinput0, realHost/model claimsfalse.",
+      "next_action": "Preserve source-scoped contracts. Runtime use of Host ports requires the separately declared real Host/verifier dependencies and qualification.",
+      "current_exact_scenario_increment": "Actual7-case PG/OAuth/TCP/SDK batch,890 captured files unchanged: T045 P1-only RR/message race, T055 same-A MCP/HTTP equivalent packets, T056 ordinary-B manager denial/no outbox effect; original Native source and controlled Host same-text/stale approval/settings/clear-compact isolation. Actual22-operation episode proves reducer duplicate stability (3 duplicates, no P2 state rows). Host implementations remain unqualified.",
+      "prior_assessment_history": [
+        {
+          "status": "partial",
+          "notes": "Independent P1-only actual production-SDK/HTTP/OAuth/PG episode passed:22/22 operations; P2calls/statewrites0, attachmentsOFF,3Coremessages/1explicitcontrolledB reply, nativeinputs0, wait/send/recovery original-id replay, SSE replay and revocation verified. E2 only; no Host/model qualification.",
+          "next_action": "Retain the source-scoped E2 episode; reconcile complete P1 scenario coverage and new provenance/Host boundary changes.",
+          "implementation_gaps": null,
+          "qualification_or_coverage_gaps": null,
+          "superseded_by": "p1-current-20261107/p1-exit-audit.json"
+        }
+      ],
+      "title": "Headless 实际 ACS Client",
+      "required_delta": "验证从身份到收信、历史、事件和权限撤销的无 UI 端到端",
+      "depends_on": [
+        "C12",
+        "C13",
+        "C14",
+        "C15",
+        "C16"
+      ],
+      "evidence_level": "E1/E2_current_contract_scope",
+      "assessment_scope": "v1.1 P1 local ACS service/delegation/unavailable contracts only; not installed Host/Native qualification",
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": []
+    },
+    {
+      "id": "C20",
+      "tier": "P1_required",
+      "status": "retained_verified",
+      "observed_code_paths": [
+        "docs/client/communication-api-scope.json",
+        "docs/client/communication-openapi.yaml",
+        "docs/client/communication-p1-openapi.yaml",
+        "tools/runtime/export_p1_openapi.py"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-stage-agnostic-20261106/ui-readiness.json",
+        "E-P1-EXACT-CURRENT-7",
+        "E-P1-CURRENT-SCENARIOS-156",
+        "E-P1-CURRENT-SDK-210",
+        "E-UI-MATRIX-ACS-17"
+      ],
+      "notes": "30 UI-source rows preserve tier/authority/query/command/event mapping:17 actual service-operation witnesses,9 Host delegation/deny/unavailable rows,4 optional P2. No UI implemented.",
+      "next_action": "Preserve source-scoped contracts. Runtime use of Host ports requires the separately declared real Host/verifier dependencies and qualification.",
+      "current_exact_scenario_increment": "Actual7-case PG/OAuth/TCP/SDK batch,890 captured files unchanged: T045 P1-only RR/message race, T055 same-A MCP/HTTP equivalent packets, T056 ordinary-B manager denial/no outbox effect; original Native source and controlled Host same-text/stale approval/settings/clear-compact isolation. Actual22-operation episode proves reducer duplicate stability (3 duplicates, no P2 state rows). Host implementations remain unqualified.",
+      "prior_assessment_history": [
+        {
+          "status": "implemented_needs_evidence",
+          "notes": "All35 API and30 UI entries are mapped to revision tiers and actual ACS/P2/Host owners. The22-operation P1 OpenAPI is reproducible and7 tooling checks passed. Current behavior/Host fallback still requires the independent P1 consumer evidence.",
+          "next_action": "Run the P1-only consumer and reconcile its actual operation/degradation evidence to the completed mapping.",
+          "implementation_gaps": null,
+          "qualification_or_coverage_gaps": null,
+          "superseded_by": "p1-current-20261107/p1-exit-audit.json"
+        }
+      ],
+      "title": "完整 ACS 通信 UI 合同地图",
+      "required_delta": "逐项标 ACS/P2/Host delegate，验证功能降级和缺口",
+      "depends_on": [
+        "C12",
+        "C16",
+        "C18"
+      ],
+      "evidence_level": "E1/E2_current_contract_scope",
+      "assessment_scope": "v1.1 P1 local ACS service/delegation/unavailable contracts only; not installed Host/Native qualification",
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": []
+    },
+    {
+      "id": "C21",
+      "tier": "P1_required",
+      "status": "retained_verified",
+      "observed_code_paths": [
+        "runtime/project_http.py",
+        "runtime/communication_client_native_links.py",
+        "runtime/native_provider_registry.py",
+        "sdk/integration-ports.ts"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp07-auth-admission-final.log",
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp06-producers-verification-results.json",
+        "integration_evidence/acs-stage-agnostic-20261106/pure-recovery-scope-isolated.json",
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/sdk-recovery-focused-20261106b.log",
+        "E-LIFECYCLE-CONFIGURATION-PG-18",
+        "E-LIFECYCLE-WIRE-PG-4",
+        "E-LIFECYCLE-CURRENT-PG-45",
+        "E-LIFECYCLE-FINAL-PG-19",
+        "E-LIFECYCLE-CURRENT-CORE-881",
+        "E-P1-EXACT-CURRENT-7",
+        "E-LIFECYCLE-MAINTENANCE-PG-27",
+        "E-LIFECYCLE-MAINTENANCE-CORE-884",
+        "E-P1-CURRENT-SCENARIOS-156",
+        "E-P1-CURRENT-SDK-210",
+        "E-UI-MATRIX-ACS-17"
+      ],
+      "notes": "Current participant/scope/Slot/event ACL, source metadata no Host permission, exact child/generation and independent Host grant have E1/E2 negative tests; strings/role labels do not grant authority.",
+      "next_action": "Preserve source-scoped contracts. Runtime use of Host ports requires the separately declared real Host/verifier dependencies and qualification.",
+      "new_current_fix": "Generic Native read/list results reauthorize after async retrieval; frames captured immutable before awaited authorization; Native cursor/session/link cache reset independent of ACS cursor.31 focused SDK tests and strictTypeScript passed. Actual Host E5 and C16 provenance remain separate.",
+      "current_sdk_evidence": "All189 current SDK tests passed after async read/list/frame authorization fixes; strictTSC passed separately.",
+      "current_wiring_increment": "Signed lifecycle wire mounted in existing TLS Receiver; opt-in concrete deferred factories and trusted sender config; configure_team uses the same committed recovery executor, legacy only observes outside SQL. Request-local Core connection reuse has no transaction across Native I/O. Fresh private capacity window is operator-bounded1-30 seconds, existing Native state expiry unchanged.",
+      "current_wiring_verified": "Signed lifecycle/deferred factory/trusted sender/configure_team wiring; no SQL across Native I/O. Original ACK survives controller reconstruction; missing original spawn history remains unknown; expired pre-permit facts return the same deferred operation. 881 component pass/14skip, PG45 and final PG19 have separate raw manifests.",
+      "current_exact_scenario_increment": "Actual7-case PG/OAuth/TCP/SDK batch,890 captured files unchanged: T045 P1-only RR/message race, T055 same-A MCP/HTTP equivalent packets, T056 ordinary-B manager denial/no outbox effect; original Native source and controlled Host same-text/stale approval/settings/clear-compact isolation. Actual22-operation episode proves reducer duplicate stability (3 duplicates, no P2 state rows). Host implementations remain unqualified.",
+      "current_maintenance_increment": "Auto maintenance deterministically advances accepted prepare/resume recovery intents using original issuer/current authority and the same Node fence. Existing Outbox leases/backoff/owner tokens; cancellation retains inflight lease; corrupt due rows paced. Native possible is original-readback-only, even when runtime.invoke removed and runtime.read retained. HTTP/stdio install operator catalog; external mode does not advance Native. PG27/component884+14skip source scopes separate.",
+      "prior_assessment_history": [
+        {
+          "status": "partial",
+          "notes": "Current caller/Scope/Slot and event ACL checks have E1/E2 evidence; NativeLink grants no Host authority. Newly mounted recovery and Orca bridge changes still need their complete affected-path evidence.",
+          "next_action": "Retain current verified wiring. Continue C16 public provenance and P1 scenario mapping; actual supported Native/independent Agent/Orca qualifications remain separate.",
+          "implementation_gaps": null,
+          "qualification_or_coverage_gaps": null,
+          "superseded_by": "p1-current-20261107/p1-exit-audit.json"
+        }
+      ],
+      "title": "客户端与宿主授权/来源隔离",
+      "required_delta": "会话绑定权限、跨源不可推断、SSE 撤销与 metadata 不能提权",
+      "depends_on": [
+        "C15",
+        "C16"
+      ],
+      "evidence_level": "E1/E2_current_contract_scope",
+      "assessment_scope": "v1.1 P1 local ACS service/delegation/unavailable contracts only; not installed Host/Native qualification",
+      "implementation_gaps": [],
+      "qualification_or_coverage_gaps": [
+        "Actual installed Native/Orca, serialized Host extension/Python verifier adapter and unavailable remote readers are separate; no runtime capability is inferred."
+      ]
+    },
+    {
+      "id": "C22",
+      "tier": "P2_optional",
+      "status": "partial",
+      "observed_code_paths": [
+        "runtime/communication_client_state.py",
+        "runtime/communication_client_notices.py",
+        "runtime/communication_client_notice_storage.py"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-regression.log",
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp06-producers-verification-results.json"
+      ],
+      "notes": "Existing viewer-owned read frontier and notice seen implementations are retained with their security invariants. Optional P2; not a P0/P1 gate.",
+      "next_action": "Preserve compatibility and run affected safety regressions when shared code changes; no new P2 expansion."
+    },
+    {
+      "id": "C23",
+      "tier": "P2_optional",
+      "status": "partial",
+      "observed_code_paths": [
+        "runtime/communication_client_state.py",
+        "runtime/communication_client_storage.py",
+        "runtime/communication_client_viewer_storage.py"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-regression.log"
+      ],
+      "notes": "Existing drafts/preferences and owner-isolated state are retained. Optional P2; not a P0/P1 gate. Final migration/resource qualification remains separate.",
+      "next_action": "Preserve current data/CAS semantics and shared-change safety; defer further product expansion."
+    },
+    {
+      "id": "C24",
+      "tier": "P2_optional",
+      "status": "partial",
+      "observed_code_paths": [
+        "runtime/communication_attachment_storage.py",
+        "runtime/communication_attachment_content.py",
+        "runtime/communication_client_attachments.py",
+        "runtime/communication_attachment_http.py"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-stage-agnostic-20261106/inherited/headless-production-sdk-attachments-pg-20261106.log",
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp07-http-content-regression.log",
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp07-wheel-verification.json"
+      ],
+      "notes": "Implemented private staging, verified CAS/finalize/download, immutable message pins and Native unsupported guard are retained with targeted E1/E2 evidence. Large/small-file/cross-host qualification is incomplete and nonblocking for P0/P1.",
+      "next_action": "Keep tested behavior and safety/compatibility; do not expand binary service or Host transfer for P0/P1 completion."
+    },
+    {
+      "id": "C25",
+      "tier": "P2_optional",
+      "status": "partial",
+      "observed_code_paths": [
+        "runtime/communication_client_search.py",
+        "runtime_tests/test_communication_client_search.py"
+      ],
+      "evidence_refs": [
+        "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-regression.log"
+      ],
+      "notes": "Existing literal ACL-aware message search implementation and tests are retained. Optional P2; not a P0/P1 gate.",
+      "next_action": "Preserve ACL/cursor behavior; defer additional full-text search work."
+    }
+  ],
+  "evidence_catalog": [
+    {
+      "id": "E-BROAD",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-regression.log",
+      "sha256": "d9c6a756841192fe21ebfc24e1e6ee73799a943ec704d3417d6ded2fde400f3f",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "1790 passed, 155 skipped, 3 failed; exit 1. Actual isolated PostgreSQL, local processes/SQLite/protocol fixtures.",
+      "limitations": "Not an all-green run; synthetic Native peers are not installed Harness/model qualification. POSIX-only receiver cases and real-model cases skipped.",
+      "result": {
+        "passed": 1790,
+        "skipped": 155,
+        "failed": 3,
+        "exit_code": 1
+      },
+      "source_manifest": {
+        "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-test-source-manifest.json",
+        "sha256": "1ca4cf675b37440623048a02870a07c1ebf0703a8e7b9819f722db6daffa91a8"
+      },
+      "result_record": {
+        "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-final-related-result.json",
+        "sha256": "4da9e664171a86489f7d678167bb76d841da5ac75d40c8d5ba6e4e809949bfef"
+      },
+      "failure_names": [
+        "runtime_tests/test_communication_headless_live.py::test_actual_node_headless_sdk_uses_live_oauth_http_sse_core_and_preserves_local_work_after_revocation",
+        "runtime_tests/test_communication_http_auth.py::test_refresh_failure_after_send_commit_preserves_handle_and_never_replays",
+        "runtime_tests/test_receiver_schema_1_8.py::test_exact_1_8_to_1_9_repeat_safe_and_preserves_rows"
+      ]
+    },
+    {
+      "id": "E-RECOVERY-155",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp04-recovery-integration.log",
+      "sha256": "89ef7a03669250eaefa3b6211fc5d39343a274cd165eb17c62c2680526cf895e",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "155 passed, 6 warnings; actual PG/SQLite/Ed25519 and controlled local/remote Native peers.",
+      "limitations": "Historical working-tree cut. No physical cross-host model exchange; currentness must use per-source hash comparison."
+    },
+    {
+      "id": "E-RACES-59",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp04-final-races-recheck.log",
+      "sha256": "9698641b004af65345865e2e7d36d483c23b291764b736214cdaf95c36cc2fa6",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "59 passed, including wait/notification/reconciliation and bound Authority-clock races.",
+      "limitations": "Historical scoped run; not universal Native or network qualification."
+    },
+    {
+      "id": "E-RECOVERY-389",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp04-regression-recheck.log",
+      "sha256": "b3be72f87780a583a3ce1e3c2a89b4871bf2689b1f03c3fcd7e13b52d8d3121a",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "389 passed, 5 skipped, 6 warnings.",
+      "limitations": "Historical scoped source manifest; real-model/platform skips remain."
+    },
+    {
+      "id": "E-INPUT-CONTROLLED",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp03-regression-corrected.log",
+      "sha256": "6f348ca0b975082c0317a011810df7544d75861219707a633176db8764d9312e",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "Controlled Native input/observation and handoff regression recorded before later source changes.",
+      "limitations": "Controlled peers cannot establish E3/E4; historical source cut, retain exact raw result."
+    },
+    {
+      "id": "E-CODEX-OBSERVATION",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp03-installed-codex-input-final.json",
+      "sha256": "8a25e41dc4ed45d226663e7578c6cf5eafa57b1e54d955d17cc1e41ba654613d",
+      "evidence_class": "E3_native_protocol",
+      "summary": "Installed Codex 0.166.0: one thread start, zero turn starts, measured current input/connection/process/session/blocker, stable generation and verified process stop.",
+      "limitations": "An observational no-model probe, not actual input acceptance or independent Agent reply. Probe JSON lacks complete command/source/OS/mode metadata; associated wp03 source cut is historical. Not current whole-tree qualification.",
+      "currentness": "stale_or_incompletely_bound_for_current_modified_tree",
+      "model_turns_requested": 0,
+      "thread_start_count": 1,
+      "turn_start_count": 0,
+      "provider_version": "0.166.0",
+      "source_manifest": {
+        "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp03-source-manifest.json",
+        "sha256": "80c45173def69fc202910f012a5ec12413f051b8e89ae2573727bb9f3a4301ea"
+      }
+    },
+    {
+      "id": "E-CODEX-DISCOVERY",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp02-installed-codex-receiver.json",
+      "sha256": "a53019468c44211fb3fbede3bafe1920da00a1d47f3ec33572caddbafe43d196",
+      "evidence_class": "E3_native_protocol",
+      "summary": "Earlier installed Codex 0.166.0 receiver observation; zero model turns.",
+      "limitations": "Historical observation only; not an independent model exchange or current OpenCode qualification."
+    },
+    {
+      "id": "E-AUTH-56",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-auth-admission-final.log",
+      "sha256": "450ee5f83a9e5b36456c082cc60cd5e74af5cd5e10a600a0f690e4bf69e72485",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "56 synthetic ASGI authentication/commit-boundary cases passed; no database.",
+      "limitations": "Corrected timing fixture; does not relabel the original broad failure or prove live issuer/Host behavior."
+    },
+    {
+      "id": "E-MIGRATION-8",
+      "path": ".tmp/headless-observer-migration-pg-20261106b.log",
+      "sha256": "76209b1b564312f2458061eacf15fe97a685690bb353d5bb5ba8fec590f258bf",
+      "evidence_class": "E2_controlled_integration",
+      "summary": "8 passed in 52.80s; actual headless local TCP/HTTP/SSE and explicit pinned legacy migration tests.",
+      "limitations": "Scoped rerun, not a rerun of all 1948 broad cases; no Native/model input.",
+      "source_manifest": {
+        "path": ".tmp/headless-observer-migration-source-20261106b.json",
+        "sha256": "7d2f58aba82c64b9f8ba9a6fc36c9d65d68c5635f437a4aa0353c282cf622f49"
+      },
+      "source_check": {
+        "path": ".tmp/headless-observer-migration-source-check-20261106b.json",
+        "sha256": "c9554f1e24ccd074bba2077ff56a5085cbbdd9267469e4370bc74cd98f51d3f2"
+      }
+    },
+    {
+      "id": "E-ATTACHMENT-GUARDS",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-attachment-native-integrity-final-20261106.log",
+      "sha256": "19932ebea0a183b7da572b238fb5973469697826509e41c17ad341f8d17bc318",
+      "evidence_class": "E1_unit",
+      "summary": "30 pure attachment Native guard/integrity regressions recorded.",
+      "limitations": "Existing P2 safety regression is retained; it is not a P0 attachment delivery requirement or a Native qualification result."
+    },
+    {
+      "id": "E-RECOVERY-NEW",
+      "path": "integration_evidence/acs-stage-agnostic-20261106/pure-recovery-scope-isolated.json",
+      "sha256": "a2aa7f40da0b9aba1cc6d1332ec05cf4cdb1f23910123eabdafb3a0469c5bf99",
+      "evidence_class": "E1_unit",
+      "summary": "59 pure public recovery/scope/bootstrap/fence cases passed with exit 0, captured source unchanged.",
+      "limitations": "No PostgreSQL, Native or Orca Host qualification. New public POST and OAuth narrowing need controlled real-service/PG confirmation.",
+      "raw_log": {
+        "path": "integration_evidence/acs-stage-agnostic-20261106/pure-recovery-scope-isolated.log",
+        "sha256": "5c7163dc6e6322c9f1a179a99f39a668050096a4cb79f462705f5a62eb4ef12e"
+      }
+    },
+    {
+      "id": "E-CROSS-HOST-LIMITS",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/cross-host-report.md",
+      "sha256": "f6c3fc502c496b6ea48a4eb9b8151a6af8fa6d0169d29838149b85f044ee22dc",
+      "evidence_class": "source_review",
+      "summary": "Explicit record that the WP04 increment did not execute a physical cross-host model exchange or production receiver switch.",
+      "limitations": "A limitation report, not test-pass or qualification evidence."
+    },
+    {
+      "id": "E-LIFECYCLE-AUDIT",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/WP04_LIFECYCLE_SEAM_AUDIT.md",
+      "sha256": "175be14a5557baf11a5d1f553b7aecc630e20f339e30ab4bcc7857cc738b39a9",
+      "evidence_class": "source_review",
+      "summary": "Identified lifecycle bootstrap/current-authority/driver seams and missing fenced runtime recovery.",
+      "limitations": "Source-only. The old non-spawn-to-close alias described here is now fixed; current E-RECOVERY-NEW supersedes that specific finding."
+    },
+    {
+      "id": "E-LEGACY-BASELINE",
+      "path": "integration_evidence/acs-cross-harness-devpack-20261106/wp07-legacy18-source-baseline.json",
+      "sha256": "9bd2a7f5d4d46c2b6611ac377db65d0019923a3c7f444b318a184fbb4814552f",
+      "evidence_class": "source_review",
+      "summary": "Historical baseline confirms original Core initializer/legacy test relationship and pinned legacy1.13 fixture hash.",
+      "limitations": "Pre-correction baseline observation. It does not assert that the corrected current test remains HEAD-identical."
+    },
+    {
+      "id": "E-STATE",
+      "path": "integration_evidence/acs-stage-agnostic-20261106/source-observation.json",
+      "sha256": "d723d23e2c5a60720988146bbb40fed802bfd09639766b9f1a5bdc98ab212f26",
+      "evidence_class": "source_review",
+      "summary": "Read-only git/path observation for the v1.1 continuation.",
+      "limitations": "Discovery hints only; paths and git status do not prove implementation or qualification."
+    },
+    {
+      "id": "E-LIFECYCLE-CONFIGURATION-PG-18",
+      "evidence_class": "E2_actual_local_PG_controlled_capacity",
+      "raw_result": "lifecycle-20261107/lifecycle-configuration-pg-20261107c.json",
+      "raw_log": "lifecycle-20261107/lifecycle-configuration-pg-20261107c.log",
+      "result": {
+        "tests": 18,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 18,
+        "seconds": 108.264
+      },
+      "qualification_limit": "No actual Native process/model/independent Agent/Orca Host. Failure history retained separately."
+    },
+    {
+      "id": "E-LIFECYCLE-WIRE-PG-4",
+      "evidence_class": "E2_actual_local_PG_TLS_controlled_Native",
+      "raw_result": "lifecycle-20261107/lifecycle-wire-pg-20261107m.json",
+      "raw_log": "lifecycle-20261107/lifecycle-wire-pg-20261107m.log",
+      "result": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 4,
+        "seconds": 110.85
+      },
+      "qualification_limit": "No actual Native process/model/independent Agent/Orca Host. Failure history retained separately."
+    },
+    {
+      "id": "E-LIFECYCLE-CURRENT-PG-45",
+      "evidence_class": "E2_actual_PG",
+      "raw_result": "lifecycle-20261107/lifecycle-current-pg-20261107n.json",
+      "raw_log": "lifecycle-20261107/lifecycle-current-pg-20261107n.log",
+      "result": {
+        "tests": 45,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 45
+      },
+      "qualification_limit": "No physical Native/model/independent Agent/Orca Host; source scopes and skips retained."
+    },
+    {
+      "id": "E-LIFECYCLE-FINAL-PG-19",
+      "evidence_class": "E2_actual_PG_TLS_controlled_Native",
+      "raw_result": "lifecycle-20261107/lifecycle-final-pg-20261107o.json",
+      "raw_log": "lifecycle-20261107/lifecycle-final-pg-20261107o.log",
+      "result": {
+        "tests": 19,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 19
+      },
+      "qualification_limit": "No physical Native/model/independent Agent/Orca Host; source scopes and skips retained."
+    },
+    {
+      "id": "E-LIFECYCLE-CURRENT-CORE-881",
+      "evidence_class": "E1_component",
+      "raw_result": "lifecycle-20261107/core-current-wiring.json",
+      "raw_log": "lifecycle-20261107/core-current-wiring.log",
+      "result": {
+        "tests": 895,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 14,
+        "passed": 881
+      },
+      "qualification_limit": "No physical Native/model/independent Agent/Orca Host; source scopes and skips retained."
+    },
+    {
+      "id": "E-NATIVE-SOURCE-SERVICE-10",
+      "evidence_class": "E2_actual_PG_DriverJournal_controlled_Native",
+      "raw_log": "source-link-20261107/native-source-pg-20261107d.log",
+      "raw_result": "source-link-20261107/native-source-pg-20261107d.json",
+      "result": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 10
+      },
+      "qualification_limit": "No physical Native/model/independent Agent/Orca Host. Each source manifest is separate; failed earlier runs retained."
+    },
+    {
+      "id": "E-NATIVE-SOURCE-HTTP-2",
+      "evidence_class": "E2_actual_OAuth_TCP_production_SDK_controlled_Native",
+      "raw_log": "source-link-20261107/native-source-pg-20261107f.log",
+      "raw_result": "source-link-20261107/native-source-pg-20261107f.json",
+      "result": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 2
+      },
+      "qualification_limit": "No physical Native/model/independent Agent/Orca Host. Each source manifest is separate; failed earlier runs retained."
+    },
+    {
+      "id": "E-NATIVE-SOURCE-REGRESSION-43",
+      "evidence_class": "E2_actual_PG_OAuth_TCP_SDK_controlled_Native",
+      "raw_log": "source-link-20261107/native-source-pg-20261107g.log",
+      "raw_result": "source-link-20261107/native-source-pg-20261107g.json",
+      "result": {
+        "tests": 43,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 43
+      },
+      "qualification_limit": "No physical Native/model/independent Agent/Orca Host. Each source manifest is separate; failed earlier runs retained."
+    },
+    {
+      "id": "E-NATIVE-SOURCE-CONTRACT-210",
+      "evidence_class": "E0_E1_contract_registry_component",
+      "raw_log": null,
+      "raw_result": "source-link-20261107/native-source-contract-20261107c.xml",
+      "result": {
+        "tests": 210,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 210
+      },
+      "qualification_limit": "No physical Native/model/independent Agent/Orca Host. Each source manifest is separate; failed earlier runs retained."
+    },
+    {
+      "id": "E-P1-SCENARIO-CURRENT-PG",
+      "evidence_class": "E2_actual_PG_HTTP_SSE_controlled_provider",
+      "raw_result": "source-link-20261107/p1-scenario-pg-20261107a.json",
+      "raw_log": "source-link-20261107/p1-scenario-pg-20261107a.log",
+      "result": {
+        "tests": 102,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 102
+      },
+      "qualification_limit": "Candidate scenario evidence; no physical Native/model/Host qualification."
+    },
+    {
+      "id": "E-P1-EXACT-CURRENT-7",
+      "evidence_class": "E2_actual_PG_OAuth_TCP_SDK_controlled_Host_delegate",
+      "raw_result": "p1-exact-20261107/p1-exact-pg-20261107b.json",
+      "raw_log": "p1-exact-20261107/p1-exact-pg-20261107b.log",
+      "result": {
+        "tests": 7,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "passed": 7
+      },
+      "qualification_limit": "No real Native/Orca Host/model; controlled delegate is explicit."
+    },
+    {
+      "id": "E-LIFECYCLE-MAINTENANCE-PG-27",
+      "raw_result": "maintenance-20261107/lifecycle-maintenance-pg-20261107c.json",
+      "raw_log": "maintenance-20261107/lifecycle-maintenance-pg-20261107c.log",
+      "result": {
+        "tests": 27,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "passed": 27
+      },
+      "qualification_limit": "Current captured source; controlled Native/metadata, no actual Host/model. Platform/opt-in skips explicit."
+    },
+    {
+      "id": "E-LIFECYCLE-MAINTENANCE-CORE-884",
+      "raw_result": "lifecycle-20261107/core-current-maintenance.json",
+      "raw_log": "lifecycle-20261107/core-current-maintenance.log",
+      "result": {
+        "tests": 898,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 14,
+        "passed": 884
+      },
+      "qualification_limit": "Current captured source; controlled Native/metadata, no actual Host/model. Platform/opt-in skips explicit."
+    },
+    {
+      "id": "E-RECEIVER-REBIND-PG-73",
+      "path": "rebind-20261107/receiver-rebind-pg-20261107b.json",
+      "evidence_class": "E2_controlled_integration",
+      "result": {
+        "tests": 73,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "passed": 73
+      },
+      "source_unchanged": true
+    },
+    {
+      "id": "E-RECEIVER-REBIND-CORE-884",
+      "path": "rebind-20261107/core-current-rebind.json",
+      "evidence_class": "E1_unit",
+      "result": {
+        "tests": 898,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 14,
+        "passed": 884
+      },
+      "source_unchanged": true
+    },
+    {
+      "id": "E-INSTALLED-CODEX-0166-SCHEMA",
+      "path": "message-wake-20261107/installed-codex-schema-evidence.json",
+      "evidence_class": "E0_actual_binary_static_schema",
+      "physical_native_qualified": false
+    },
+    {
+      "id": "E-MESSAGE-WAKE-CURRENT-PG-220",
+      "path": "message-wake-20261107/message-wake-current-pg-20261107i.json",
+      "evidence_class": "E2_controlled_integration",
+      "result": {
+        "tests": 222,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 2,
+        "passed": 220
+      },
+      "source_unchanged": true
+    },
+    {
+      "id": "E-MESSAGE-WAKE-CURRENT-CORE-888",
+      "path": "message-wake-20261107/core-current-message-wake-final.json",
+      "evidence_class": "E1_unit",
+      "result": {
+        "tests": 902,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 14,
+        "passed": 888
+      },
+      "source_unchanged": true
+    },
+    {
+      "id": "E-P1-PRECISE-GAP-4",
+      "path": "p1-precise-20261107/p1-precise-gap-pg-20261107b.json",
+      "evidence_class": "E2_actual_service_controlled_Host",
+      "result": {
+        "tests": 4,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "passed": 4
+      },
+      "source_unchanged": true
+    },
+    {
+      "id": "E-UI-MATRIX-ACS-17",
+      "path": "p1-ui-matrix-20261107/p1-ui-matrix-pg-20261107a.json",
+      "evidence_class": "E2_actual_ACS_HTTP_SSE_SDK_PG",
+      "passed": 1,
+      "source_unchanged": true
+    },
+    {
+      "id": "E-UI-MATRIX-SDK-208",
+      "path": "p1-ui-matrix-20261107/sdk-ui-matrix-20261107a.json",
+      "evidence_class": "E1_controlled_Host_and_SDK",
+      "passed": 208,
+      "source_unchanged": true
+    },
+    {
+      "id": "E-P1-CURRENT-SCENARIOS-156",
+      "path": "p1-current-20261107/p1-current-scenarios-pg-20261107h.json",
+      "evidence_class": "E2_actual_service_controlled_providers",
+      "passed": 156,
+      "source_unchanged": true
+    },
+    {
+      "id": "E-P1-CURRENT-SDK-210",
+      "path": "p1-current-20261107/sdk-owner-port-20261107b.json",
+      "evidence_class": "E1_controlled_Host_and_SDK",
+      "passed": 210,
+      "source_unchanged": true
+    },
+    {
+      "id": "E-P0-T094-2",
+      "path": "p0-evidence-audit-20261107/p0-t094-pg-20261107b.json",
+      "passed": 2,
+      "evidence_class": "E2_actual_PG_zeroNative"
+    },
+    {
+      "id": "E-P0-HISTORY-6",
+      "path": "p0-evidence-audit-20261107/p0-history-pg-20261107a.json",
+      "passed": 6,
+      "evidence_class": "E2_PG_E1_SQLite"
+    },
+    {
+      "id": "E-ACTUAL-CODEX-0166-METADATA",
+      "path": "native-metadata-probe-20261107/executed-state.json",
+      "evidence_class": "actual_CLI_metadata_and_Windows_Job_cleanup",
+      "receiving_or_model_qualified": false
+    }
+  ],
+  "p1_api_assessment": "integration_evidence/acs-stage-agnostic-20261106/p1-api-assessment.json",
+  "ui_readiness": "integration_evidence/acs-stage-agnostic-20261106/ui-readiness.json",
+  "current_pure_evidence": "integration_evidence/acs-stage-agnostic-20261106/current-pure-contract-lifecycle-postreview.json",
+  "milestones": {
+    "CORE_P0_QUALIFIED": false,
+    "CLIENT_P1_CONTRACT_READY": true,
+    "ORCA_HOST_QUALIFIED": false
+  },
+  "external_blockers": [
+    {
+      "scope": "Orca E5",
+      "status": "host_extension_required",
+      "reason": "Pinned Orca public API lacks verified sealed/current-input-owner admission. Ordinary expectedRuntimeFence is ignored in the reviewed mutation envelope; actual Host connection and E5 not established."
+    }
+  ],
+  "decisions": [
+    "v1.1.0 tier maps supersede old WP full-delivery gating; implement current P0/P1 gaps, do not redo completed work.",
+    "Preserve all existing P2 implementations/data/evidence and their safety checks; stop expanding optional product scope.",
+    "Keep Core P0, Client P1 and actual Orca Host qualification separate. E1/E2 never imply E3-E5.",
+    "RecoverReceiver reuses the existing recovery operation/outbox and exactly the original command; no new message or operation authority."
+  ],
+  "source_state": {
+    "committed": false,
+    "push": "not_performed",
+    "receiver_sync_action": "none; local work only",
+    "production_adoption": false,
+    "active_runners": [],
+    "pg_lease": "none"
+  },
+  "isolated_test_authorization": "User explicitly allowed isolated testing; same existing local test container/loopback boundaries. No production/real Native/model permission inferred.",
+  "current_e2_evidence": {
+    "native_link": "lifecycle-20261107/native-link-live-http-result-20261107b.json",
+    "p1_only_consumer": "lifecycle-20261107/communication-p1-live-result-20261107d.json",
+    "p1_22_episode": "lifecycle-20261107/communication-p1-live-evidence-20261107d.json",
+    "paging_63": "lifecycle-20261107/p1-paging-result-20261107e.json",
+    "scope": "Each run captures fixed855 shared paths plus isolated helper; new unmounted lifecycle work excluded. Later Driver/read-cap changes are separate."
+  },
+  "milestone_reason": "P1 v1.1 service/delegation contract exit is proven by current156/210 cases,22 actual operations,26 original scenarios and30-row tiered witnesses. CORE_P0 and actual ORCA_HOST remain false; full objective is not complete.",
+  "current_integrated_evidence": {
+    "path": "lifecycle-20261107/core-current-maintenance.json",
+    "passed": 884,
+    "skipped": 14,
+    "source_unchanged": true,
+    "qualification": "component; actual PG/TLS27 is separate"
+  },
+  "current_wiring_evidence": {
+    "runs": {
+      "lifecycle-configuration-pg-20261107c": {
+        "tests": 18,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 18,
+        "seconds": 108.264
+      },
+      "lifecycle-wire-pg-20261107m": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 4,
+        "seconds": 110.85
+      },
+      "lifecycle-current-authority-20261107b": {
+        "tests": 249,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "passed": 248,
+        "seconds": 95.484
+      },
+      "lifecycle-tls-20261107b": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 8,
+        "seconds": 12.974
+      }
+    },
+    "raw_directory": "lifecycle-20261107",
+    "actual_native_process": false,
+    "model": false,
+    "physical_host": false,
+    "tls_wire_configuration": "30-second operator-selected fresh reservation; existing Native input expiry unchanged",
+    "pending": "SourceLink public provenance; P1 scenario map; declared real Native/Host qualifications.",
+    "final_runs": {
+      "core-current-wiring": {
+        "tests": 895,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 14,
+        "passed": 881
+      },
+      "lifecycle-current-pg-20261107n": {
+        "tests": 45,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 45
+      },
+      "lifecycle-final-pg-20261107o": {
+        "tests": 19,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 19
+      }
+    },
+    "active_runners": [],
+    "pg_lease": "none",
+    "source_scopes": "Each raw result has its own manifest. Final PG19 captures current product bytes/860 unchanged files. PG45 precedes final history/error fixes. E1 881pass/14skip has unchanged captured sources; later change is only a separately exercised PG test file. No combined all-pass total."
+  },
+  "current_native_source_evidence": {
+    "runs": {
+      "native-source-pg-20261107d": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 10
+      },
+      "native-source-pg-20261107f": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 2
+      },
+      "native-source-pg-20261107g": {
+        "tests": 43,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 43
+      },
+      "native-source-contract-20261107c": {
+        "tests": 210,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 210
+      }
+    },
+    "sdk_full": {
+      "passed": 190,
+      "failed": 0,
+      "raw_log": "source-link-20261107/sdk-native-source-full-20261107.log"
+    },
+    "strict_typescript": "passed_current",
+    "public_api": "existing readMessage optional include_native_source",
+    "p1_operations": 22,
+    "models": 59,
+    "pending": "P1 exact scenario gaps and real Native/Host qualification remain; no active runner."
+  },
+  "current_p1_scenario_evidence": {
+    "mapping": "p1-scenario-evidence.json",
+    "result": {
+      "tests": 102,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 102
+    },
+    "scope": "Original26 Given/When/Then preserved; candidate cases and remaining evidence gaps explicit.",
+    "active_runners": [],
+    "pg_lease": "none"
+  },
+  "current_p1_exact_evidence": {
+    "result": {
+      "tests": 7,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "passed": 7
+    },
+    "artifact": "p1-exact-20261107/p1-exact-pg-20261107b.json",
+    "captured_files": 890,
+    "active_runners": [],
+    "pg_lease": "none",
+    "physical_host_qualified": false
+  },
+  "current_lifecycle_maintenance_evidence": {
+    "results": {
+      "pg": {
+        "tests": 27,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "passed": 27
+      },
+      "components": {
+        "tests": 898,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 14,
+        "passed": 884
+      }
+    },
+    "source_files_pg": 892,
+    "active_runners": [],
+    "pg_lease": "none",
+    "scope": "Historical accepted prepare/resume continuation batch; ready-target rebind was added and reverified in current_receiver_rebind_evidence. Natural-message wake and actual Native/Host qualification remain open."
+  },
+  "current_receiver_rebind_evidence": {
+    "observed_at": "2026-11-06T20:20:07.608042+00:00",
+    "results": {
+      "pg": {
+        "tests": 73,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "passed": 73
+      },
+      "components": {
+        "tests": 898,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 14,
+        "passed": 884
+      }
+    },
+    "source_files_pg": 894,
+    "source_unchanged_pg": true,
+    "source_unchanged_components": true,
+    "active_runners": [],
+    "pg_lease": "none",
+    "scope": "18 ready-target rebind PG cases + 28 original recovery + 10 maintenance + 12 executor + 4 existing Core/TLS/Node/controlled-Native + 1 team regression. Rebind itself uses controlled signed capacity; no new real-Node rebind or installed Harness/Host qualification.",
+    "qualification": {
+      "CORE_P0_QUALIFIED": false,
+      "CLIENT_P1_CONTRACT_READY": false,
+      "ORCA_HOST_QUALIFIED": false
+    },
+    "history": {
+      "initial_pg": {
+        "passed": 44,
+        "artifact": "receiver-rebind-pg-20261107a.json",
+        "before_slot_fence": true
+      },
+      "failures_in_these_rebind_batches": 0
+    },
+    "native_environment_observation": {
+      "default_wsl_path_codex": "/usr/local/bin/codex",
+      "default_wsl_path_opencode": "not_found_on_inspected_PATH",
+      "installed_versions": "unverified",
+      "sessions_or_models_started": false
+    },
+    "artifact": "rebind-20261107/progress.json"
+  },
+  "observed_code_policy": "Per-item observed_code retains historical assessment snapshots; use the newest named evidence manifest for exact current file hashes. HEAD and tracked diff do not include new untracked product files.",
+  "current_native_environment_observation": {
+    "probe": "cold-resume-offline-analysis-0166e.json",
+    "windows_codex": "0.166.0",
+    "wsl_codex": "0.146.0",
+    "opencode": "actual workspace ELF1.18.34 found and version confirmed; WSL SourceReceiver lifecycle executed",
+    "schema": "installed-codex-schema-evidence.json",
+    "schema_extracted_from_actual_binary": true,
+    "restricted_profile_0_166": "not_in_reviewed_allowlist",
+    "Native_Session_or_model_started": true,
+    "physical_native_qualified": false,
+    "evidence_directory": "native-empty-session-probe-20261107",
+    "observed_at": "2026-11-07T00:33:35.244485+00:00",
+    "actual_Native_Sessions_acknowledged": 1,
+    "actual_model_prompts": 0,
+    "empty_session_cold_resume_protocol_verified": true,
+    "production_driver_cold_recovery_implemented": false,
+    "opencode_previous_PATH_only_observation": "not_found_in_inspected_PATH/common_locations was narrow and is superseded by workspace discovery",
+    "actual_model_exchange": true,
+    "model_provider_authorization": "explicit user confirmation including fourth extra round; credentials only env; never recorded"
+  },
+  "current_message_wake_evidence": {
+    "observed_at": "2026-11-06T21:34:00.256027+00:00",
+    "results": {
+      "pg": {
+        "tests": 222,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 2,
+        "passed": 220
+      },
+      "components": {
+        "tests": 902,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 14,
+        "passed": 888
+      }
+    },
+    "source_files_pg": 897,
+    "source_unchanged_pg": true,
+    "source_unchanged_components": true,
+    "active_runners": [],
+    "pg_lease": "none",
+    "qualification": {
+      "CORE_P0_QUALIFIED": false,
+      "CLIENT_P1_CONTRACT_READY": false,
+      "ORCA_HOST_QUALIFIED": false
+    },
+    "scope": "22 original-message wake;8 actual PG/TLS/Node/DriverJournal with controlled protocols;18 rebind;28 recovery;10 maintenance;12 executor;38 communication;4 OAuth;20 source provenance;59 legacy delivery;3 exact P1. Native/Host/model remain unqualified.",
+    "skips_pg": [
+      "independent Codex Agent experiment opt-in",
+      "actual Temporal endpoint/namespace absent"
+    ],
+    "failure_history": [
+      "a:deferred challenge not reset to observing",
+      "c:fixture PROJECT import",
+      "d:deadline classified blocked",
+      "e:fixture client schema order",
+      "f:fixture error envelope access",
+      "g:precommit OAuth refusal incorrectly unknown"
+    ],
+    "next_action": "Update reports/current task state, then T041/T060/T082 and row-level P1 matrix audit; actual Native/independent Agent/Orca qualification remains separate.",
+    "artifact": "message-wake-20261107/progress.json"
+  },
+  "current_p1_precise_gap_evidence": {
+    "observed_at": "2026-11-06T21:39:58.503958+00:00",
+    "result": {
+      "tests": 4,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "passed": 4
+    },
+    "source_files": 897,
+    "source_unchanged": true,
+    "delta_from_C06": [
+      ".tmp/run_message_wake_current_pg_i.py",
+      "runtime_tests/test_communication_client_receivers.py",
+      "runtime_tests/test_communication_client_views.py",
+      "runtime_tests/test_communication_native_source_live_http.py",
+      "sdk/tests/native-delegate-live-consumer.mjs"
+    ],
+    "production_source_delta": false,
+    "scope": "T041 exact view/send linkage;T060 actual receiver observation events and unknown DTO;T082 controlled Host child source/ACL with actual ACS/OAuth/TCP/SDK for both protocols. No real Orca qualification.",
+    "active_runners": [],
+    "pg_lease": "none",
+    "physical_Host_qualified": false,
+    "failure_history": "a:1pass/1 fixture field-name failure; use b for current4-case result",
+    "artifact": "p1-precise-20261107/progress.json"
+  },
+  "current_ui_contract_evidence": {
+    "matrix": "ui-contract-evidence.json",
+    "progress": "p1-ui-matrix-20261107/progress.json",
+    "service_rows": 17,
+    "Host_contract_rows": 9,
+    "P2_optional_rows": 4,
+    "sdk_passed": 208,
+    "actual_service_consumer_passed": 1,
+    "physical_Host_qualified": false,
+    "active_runners": [],
+    "pg_lease": "none"
+  },
+  "milestone_scope": {
+    "CLIENT_P1_CONTRACT_READY": "v1.1 local ACS service and bounded Host delegation/unavailable contract, E1/E2; actual Host is not a P1 prerequisite.",
+    "CORE_P0_QUALIFIED": "false: current installed Native/independent Agent and stopped-process/same-Session supported combinations remain unqualified",
+    "ORCA_HOST_QUALIFIED": "false: real Python verifier adapter/serialized Host extension/deployment not installed or tested"
+  },
+  "current_final_p1_evidence": {
+    "artifact": "p1-current-20261107/p1-exit-audit.json",
+    "pg_passed": 156,
+    "pg_skipped": 0,
+    "sdk_passed": 210,
+    "source_files": 898,
+    "source_unchanged": true,
+    "active_runners": [],
+    "pg_lease": "none",
+    "classification": "service/delegation contract ready, not physical Host/model/Native qualification"
+  },
+  "current_p0_additional_evidence": {
+    "artifact": "p0-evidence-audit-20261107/progress.json",
+    "observed_at": "2026-11-06T22:55:00.926706+00:00",
+    "results": {
+      "T094": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 2
+      },
+      "history": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 6
+      }
+    },
+    "source_files": 899,
+    "source_unchanged_within_each_run": true,
+    "current_delta_after_run": {
+      "T094": [
+        "runtime_tests/test_communication_archive.py"
+      ],
+      "history": []
+    },
+    "current_production_source_unchanged": true,
+    "scope": {
+      "T094": "Actual PG/MCP zeroNative: both bodies>16384 bytes, exact independent wait/read reconstruction, distinct handles,1byte reference offset0 continuation usable.",
+      "T070": "Temporary real SQLite schema2 adoption rollback and unknown input fencing, not production downgrade.",
+      "T091": "Actual PG additive historical index: UUID IDs need no contiguous frontier, missing authorNULL, interruption before atomic commit rolls back all, repeated adoption idempotent, no natural message/reply creation. Claimed checkpoint is transaction commit, not chunk backfill."
+    },
+    "active_runners": [],
+    "pg_lease": "none",
+    "actual_Native_qualified": false,
+    "pending_approval": "Real no-Session CLI metadata process probe not yet approved/executed."
+  },
+  "current_actual_CLI_metadata_probe": {
+    "artifact": "native-metadata-probe-20261107/executed-state.json",
+    "status": "metadata_complete",
+    "explicit_user_authorization": true,
+    "RPC": [
+      "initialize",
+      "experimentalFeature/list",
+      "permissionProfile/list"
+    ],
+    "owned_tree_stopped": true,
+    "Native_Sessions": 0,
+    "model_prompts": 0,
+    "qualification": "actual CLI metadata only, not P0 receiving/restore/model or restricted profile qualification"
+  },
+  "current_actual_empty_session_probe": {
+    "observed_at": "2026-11-07T00:33:35.244500+00:00",
+    "executed_plans": [
+      "0166a",
+      "0166b",
+      "0166c",
+      "0166d",
+      "0166e"
+    ],
+    "scope": "actual Windows Codex0.166.0 empty Session create/settings and exact original cold resume with metadata API and local rollout; no model or ACS delivery",
+    "known_Sessions_created": 1,
+    "model_prompts": 0,
+    "all_owned_trees_stopped": true,
+    "actual_native_cold_resume_acknowledged": true,
+    "actual_metadata_readback_same_identity": true,
+    "offline_empty_rollout_recheck": true,
+    "raw_e_status_preserved": "cold_resume_incomplete; strict reader misclassified native settings metadata",
+    "summary": "native-empty-session-probe-20261107/REPORT.md",
+    "offline_proof": "native-empty-session-probe-20261107/cold-resume-offline-analysis-0166e.json",
+    "qualification_change": false,
+    "authorization": "user authorized follow-up local isolated diagnosis/fixes/retests without repeated confirmation"
+  },
+  "native_environment_observation_history": [
+    {
+      "probe": "cli-metadata-probe.json",
+      "windows_codex": "0.166.0",
+      "wsl_codex": "0.146.0",
+      "opencode": "not_found_in_inspected_PATH_and_common_user_locations",
+      "schema": "installed-codex-schema-evidence.json",
+      "schema_extracted_from_actual_binary": true,
+      "restricted_profile_0_166": "not_in_reviewed_allowlist",
+      "Native_Session_or_model_started": false,
+      "physical_native_qualified": false,
+      "evidence_directory": "message-wake-20261107",
+      "observed_at": "2026-11-06T21:27:04.877775+00:00"
+    }
+  ],
+  "current_windows_native_environment_fix": {
+    "product_file": "runtime_deployment/receiver_codex.py",
+    "change": "derive SystemDrive from validated local absolute SystemRoot in restricted Windows allowlist",
+    "scope": "Windows bootstrap environment; no 0.166 whitelist or production cold-recovery admission change",
+    "verification": "native-empty-session-probe-20261107/windows-native-environment-b.json",
+    "passed": 159,
+    "skipped": 3,
+    "failed": 0,
+    "captured_sources_unchanged": true,
+    "prior_p1_broad_manifest_delta": [
+      "runtime_deployment/receiver_codex.py"
+    ]
+  },
+  "current_native_history_and_lifecycle_evidence": {
+    "observed_at": "2026-11-07T01:34:51.038775+00:00",
+    "artifacts": "native-history-contract-20261107/",
+    "explicit_owner_native_0166_history_mode": "paginated positive start/resume readback",
+    "restricted_0166_allowlist_changed": false,
+    "actual_Core_TLS_Node_Codex": {
+      "passed": 2,
+      "artifact": "actual-native-lifecycle-pg-g.json",
+      "covers": [
+        "one actual creation",
+        "lost ACK original readback",
+        "existing ready prepare without new creation",
+        "same identity warm resume"
+      ],
+      "models": 0
+    },
+    "related_PG": {
+      "passed": 123,
+      "skipped": 0,
+      "source_files": 903,
+      "changed_sources": []
+    },
+    "contract_node_transport": {
+      "passed": 189,
+      "skipped": 1
+    },
+    "driver_factory": {
+      "passed": 175,
+      "skipped": 7
+    },
+    "capacity": {
+      "passed": 127,
+      "skipped": 0
+    },
+    "scope_limit": "no independent model exchange or production cold-process recovery in this evidence"
+  },
+  "current_native_e2e_preparation": {
+    "artifact": "native-agent-e2e-20261107/current-cross-harness-result-e.json",
+    "codex_round_b": "actual independent A/B passed",
+    "opencode_lifecycle": "actual current source lifecycle passed",
+    "opencode_cross_harness_round_c": "not qualified, transient evaluator DB timeout",
+    "round4": "explicit additional approval received and one execution completed",
+    "model_rounds_executed": 5,
+    "all_owned_process_cleanup_verified_for_declared_scopes": true,
+    "CORE_P0_QUALIFIED": false,
+    "status": "latest crossHarness e full actual test passed; same original handle wait satisfied",
+    "active_runners": null
+  },
+  "current_wait_connection_recovery": {
+    "artifact": "wait-continuity-20261107/CURRENT_STATE.json",
+    "product_file": "runtime/communication.py",
+    "source_sha256": "0d8dcf6cc17191d6a6561cb1a60a201eddcfcb59f50c3e5448cefb538440827b",
+    "request_private_connection": true,
+    "transactions_released_between_polls": true,
+    "current_authorization_every_iteration": true,
+    "exception_cleanup_independently_committed": true,
+    "PG_related_passed": 102,
+    "PG_related_skipped": 1,
+    "database_disconnect_exact_handle_cases_passed": 6,
+    "Native_or_model_in_this_evidence": false,
+    "cross_harness_model_wait_fully_qualified": false
+  },
+  "current_native_supported_combination_evidence": {
+    "schema_version": "acs-current-cross-harness-result/1",
+    "evidence": "native-e2e-e.json",
+    "source_before_after_equal": true,
+    "installed_sender": "Windows Codex0.166.0",
+    "installed_receiver": "WSL OpenCode1.18.34",
+    "execution_mode": "owner/native",
+    "topology": "same hardware Windows→WSL; not physical multi-machine",
+    "ordinary_A_B": true,
+    "messages": 2,
+    "explicit_reply_relations": 1,
+    "receiver_Native_prompt_count": 1,
+    "Core_work_table": null,
+    "actual_A_wait_results": [
+      {
+        "ok": true,
+        "state": "satisfied"
+      }
+    ],
+    "source_manifest_sha256": "0cf8025f724f535b86daa31888d1cda254e14b2d242ec265a534d23beaeae8c1",
+    "Windows_parent_Job_empty": true,
+    "receiver_stop": {
+      "verified": true,
+      "containment_id": "process-session:3218029:linux:3218029:58474525",
+      "birth_ref": "linux:3218029:58474525",
+      "backend": "posix-process-session",
+      "scope": "owned_process_group",
+      "subtree_containment": false,
+      "alive": false,
+      "pid": 3218029,
+      "members": [],
+      "root_pid": 3218029,
+      "root_exited": true,
+      "remaining_pids": [],
+      "root_exit_code": -15,
+      "remaining_group_members": []
+    },
+    "scope_limit": "WSL owned process group only; subtree_containment false; no Shared/Orca/in-place-production-cold-recovery inference"
+  },
+  "model_authorization": {
+    "round_limit": "explicitly removed by user",
+    "user_text": "后续不再单独处理轮次数量限制,只需达到目标",
+    "unchanged_scope": "same approved Provider/model/testdata/2Actor420seconds; no production/existingcontacts/sourcehistoryoutbound/credentialretention"
+  }
+}

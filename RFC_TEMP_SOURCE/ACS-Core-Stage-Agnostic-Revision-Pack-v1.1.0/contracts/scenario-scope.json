@@ -1,0 +1,1158 @@
+{
+  "schema_version": "acs-scenario-scope/1",
+  "source": "v1.0.0/tests/scenarios.json",
+  "scenarios": [
+    {
+      "id": "T001",
+      "tier": "P0_required",
+      "title": "可信作者从入口解析",
+      "original_work_package": "WP01",
+      "requirements": [
+        "R-001"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T002",
+      "tier": "P0_required",
+      "title": "伪造作者字段",
+      "original_work_package": "WP01",
+      "requirements": [
+        "R-001"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T003",
+      "tier": "P0_required",
+      "title": "可信 Client 无 Slot",
+      "original_work_package": "WP01",
+      "requirements": [
+        "R-002"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T004",
+      "tier": "P0_required",
+      "title": "未绑定不提权",
+      "original_work_package": "WP01",
+      "requirements": [
+        "R-002"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T005",
+      "tier": "P0_required",
+      "title": "稳定地址跨 Session",
+      "original_work_package": "WP01",
+      "requirements": [
+        "R-003"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T006",
+      "tier": "P0_required",
+      "title": "多接收端歧义",
+      "original_work_package": "WP01",
+      "requirements": [
+        "R-003"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T007",
+      "tier": "P0_required",
+      "title": "提交原子性",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-004"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T008",
+      "tier": "P0_required",
+      "title": "提交窗口崩溃",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-004"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T009",
+      "tier": "P0_required",
+      "title": "同键恢复",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-005"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T010",
+      "tier": "P0_required",
+      "title": "同键异文冲突",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-005"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T011",
+      "tier": "P0_required",
+      "title": "合法多引用回复",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-006"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T012",
+      "tier": "P0_required",
+      "title": "第三方不能代答",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-006"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T013",
+      "tier": "P0_required",
+      "title": "Native 成功不冒充回复",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-007"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T014",
+      "tier": "P0_required",
+      "title": "未知 ACK 仍有回复",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-007"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T015",
+      "tier": "P0_required",
+      "title": "message_only + sync",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-008"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T016",
+      "tier": "P0_required",
+      "title": "超时不撤销",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-008"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T017",
+      "tier": "P0_required",
+      "title": "UTF-8 长正文",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-009"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T018",
+      "tier": "P0_required",
+      "title": "read 不消费",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-009"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T019",
+      "tier": "P0_required",
+      "title": "提交序号分页",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-010"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T020",
+      "tier": "P0_required",
+      "title": "游标过滤改变",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-010"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T021",
+      "tier": "P0_required",
+      "title": "handoff 前落盘",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-011"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T022",
+      "tier": "P0_required",
+      "title": "intent 后崩溃",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-011"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T023",
+      "tier": "P0_required",
+      "title": "原操作重放",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-012"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T024",
+      "tier": "P0_required",
+      "title": "去重域变化",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-012"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T025",
+      "tier": "P0_required",
+      "title": "核验未知结果",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-013"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T026",
+      "tier": "P0_required",
+      "title": "无查询能力",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-013"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T027",
+      "tier": "P0_required",
+      "title": "旧 worker fence",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-014"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T028",
+      "tier": "P0_required",
+      "title": "无原生 fence",
+      "original_work_package": "WP02",
+      "requirements": [
+        "R-014"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T029",
+      "tier": "P0_required",
+      "title": "绑定前后重验",
+      "original_work_package": "WP03",
+      "requirements": [
+        "R-015"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T030",
+      "tier": "P0_required",
+      "title": "撤销撞上外部输入",
+      "original_work_package": "WP03",
+      "requirements": [
+        "R-015"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T031",
+      "tier": "P0_required",
+      "title": "忙时安全排队",
+      "original_work_package": "WP03",
+      "requirements": [
+        "R-016"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T032",
+      "tier": "P0_required",
+      "title": "审批/草稿保护",
+      "original_work_package": "WP03",
+      "requirements": [
+        "R-016"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T033",
+      "tier": "P0_required",
+      "title": "状态过期",
+      "original_work_package": "WP01",
+      "requirements": [
+        "R-017"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T034",
+      "tier": "P0_required",
+      "title": "终端静默",
+      "original_work_package": "WP01",
+      "requirements": [
+        "R-017"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T035",
+      "tier": "P0_required",
+      "title": "重绑保留历史",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-018"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T036",
+      "tier": "P0_required",
+      "title": "旧回执晚到",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-018"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T037",
+      "tier": "P0_required",
+      "title": "受权 Session 恢复",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-019"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T038",
+      "tier": "P0_required",
+      "title": "无恢复权限",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-019"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T039",
+      "tier": "P0_required",
+      "title": "wait 与 wake 去重",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-020"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T040",
+      "tier": "P0_required",
+      "title": "唤醒合并不丢正文",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-020"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T041",
+      "tier": "P1_required",
+      "title": "无会话前置",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-021"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T042",
+      "tier": "P1_required",
+      "title": "并发创建投影",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-021"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T043",
+      "tier": "P2_optional",
+      "title": "跨设备已读",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-022"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "if_feature_implemented_or_separately_authorized",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T044",
+      "tier": "P2_optional",
+      "title": "个人未读不代表消费",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-022"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "if_feature_implemented_or_separately_authorized",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T045",
+      "tier": "P1_required",
+      "title": "snapshot race",
+      "original_work_package": "WP06",
+      "requirements": [
+        "R-023"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T046",
+      "tier": "P1_required",
+      "title": "replay 重复",
+      "original_work_package": "WP06",
+      "requirements": [
+        "R-023"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T047",
+      "tier": "P1_required",
+      "title": "订阅撤销",
+      "original_work_package": "WP06",
+      "requirements": [
+        "R-024"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T048",
+      "tier": "P1_required",
+      "title": "计数/错误泄漏",
+      "original_work_package": "WP06",
+      "requirements": [
+        "R-024"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T049",
+      "tier": "P1_required",
+      "title": "固定 snapshot 分页",
+      "original_work_package": "WP06",
+      "requirements": [
+        "R-025"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T050",
+      "tier": "P1_required",
+      "title": "游标过期",
+      "original_work_package": "WP06",
+      "requirements": [
+        "R-025"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T051",
+      "tier": "P2_optional",
+      "title": "附件受权读取",
+      "original_work_package": "WP07",
+      "requirements": [
+        "R-026"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "if_feature_implemented_or_separately_authorized",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T052",
+      "tier": "P2_optional",
+      "title": "附件越权/SSRF",
+      "original_work_package": "WP07",
+      "requirements": [
+        "R-026"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "if_feature_implemented_or_separately_authorized",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T053",
+      "tier": "P1_required",
+      "title": "双源 exact linkage",
+      "original_work_package": "WP07",
+      "requirements": [
+        "R-027"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T054",
+      "tier": "P1_required",
+      "title": "相同文本无 linkage",
+      "original_work_package": "WP07",
+      "requirements": [
+        "R-027"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T055",
+      "tier": "P1_required",
+      "title": "新旧入口一致",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-028"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T056",
+      "tier": "P1_required",
+      "title": "HTTP 绕权",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-028"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T057",
+      "tier": "P0_required",
+      "title": "有界背压",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-029"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T058",
+      "tier": "P0_required",
+      "title": "已接受不可丢",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-029"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T059",
+      "tier": "P1_required",
+      "title": "未知准确呈现",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-030"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T060",
+      "tier": "P1_required",
+      "title": "缺字段事件",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-030"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T061",
+      "tier": "P0_required",
+      "title": "已有 Native 回归",
+      "original_work_package": "WP03",
+      "requirements": [
+        "R-031"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T062",
+      "tier": "P0_required",
+      "title": "未验证平台",
+      "original_work_package": "WP03",
+      "requirements": [
+        "R-031"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T063",
+      "tier": "P1_required",
+      "title": "Orca 单输入 owner",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-032"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T064",
+      "tier": "P1_required",
+      "title": "双 adapter 竞争",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-032"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T065",
+      "tier": "P1_required",
+      "title": "UI 功能闭环",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-033"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T066",
+      "tier": "P1_required",
+      "title": "Native 完成渲染",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-033"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T067",
+      "tier": "P1_required",
+      "title": "插件能力缺口",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-034"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T068",
+      "tier": "P1_required",
+      "title": "私改 DB 取巧",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-034"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T069",
+      "tier": "P0_required",
+      "title": "additive 升级",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-035"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T070",
+      "tier": "P0_required",
+      "title": "迁移中断回滚",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-035"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T071",
+      "tier": "P0_required",
+      "title": "恢复动作幂等",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-036"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T072",
+      "tier": "P0_required",
+      "title": "过期配置恢复",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-036"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T073",
+      "tier": "P0_required",
+      "title": "诊断脱敏",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-037"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T074",
+      "tier": "P0_required",
+      "title": "系统通知不能代答",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-037"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T075",
+      "tier": "P0_required",
+      "title": "证据层次",
+      "original_work_package": "WP10",
+      "requirements": [
+        "R-038"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T076",
+      "tier": "P0_required",
+      "title": "缺真实环境",
+      "original_work_package": "WP10",
+      "requirements": [
+        "R-038"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T077",
+      "tier": "P0_required",
+      "title": "能力失效",
+      "original_work_package": "WP01",
+      "requirements": [
+        "R-039"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T078",
+      "tier": "P0_required",
+      "title": "缓存穿透",
+      "original_work_package": "WP01",
+      "requirements": [
+        "R-039"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T079",
+      "tier": "P0_required",
+      "title": "独立 Core 可用",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-040"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T080",
+      "tier": "P0_required",
+      "title": "UI 关闭",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-040"
+      ],
+      "required_evidence": "controlled_integration; claimed native capability additionally native_protocol or independent_model_e2e",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T081",
+      "tier": "P1_required",
+      "title": "真实 HTTP 客户端全链",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-033"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T082",
+      "tier": "P1_required",
+      "title": "Orca 原生 transcript delegate",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-027"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T083",
+      "tier": "P1_required",
+      "title": "原生审批 stale nonce",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-033"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T084",
+      "tier": "P2_optional",
+      "title": "draft CAS 冲突",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-022"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "if_feature_implemented_or_separately_authorized",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T085",
+      "tier": "P2_optional",
+      "title": "附件上传断线",
+      "original_work_package": "WP07",
+      "requirements": [
+        "R-026"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "if_feature_implemented_or_separately_authorized",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T086",
+      "tier": "P1_required",
+      "title": "Native clear/compact",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-033"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T087",
+      "tier": "P1_required",
+      "title": "模型选择不改通信身份",
+      "original_work_package": "WP08",
+      "requirements": [
+        "R-033"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T088",
+      "tier": "P2_optional",
+      "title": "通知重复与 seen",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-037"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "if_feature_implemented_or_separately_authorized",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T089",
+      "tier": "P0_required",
+      "title": "多项目隔离",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-024"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T090",
+      "tier": "P0_required",
+      "title": "安装后的服务回归",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-040"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T091",
+      "tier": "P0_required",
+      "title": "历史 backfill 可恢复",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-035"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T092",
+      "tier": "P0_required",
+      "title": "只有接收资格未知",
+      "original_work_package": "WP03",
+      "requirements": [
+        "R-031"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T093",
+      "tier": "P0_required",
+      "title": "无意外写入启动",
+      "original_work_package": "WP09",
+      "requirements": [
+        "R-035"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T094",
+      "tier": "P0_required",
+      "title": "大消息 ACK 独立续读",
+      "original_work_package": "WP05",
+      "requirements": [
+        "R-009"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T095",
+      "tier": "P1_required",
+      "title": "SSE 心跳不是消息",
+      "original_work_package": "WP06",
+      "requirements": [
+        "R-023"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    },
+    {
+      "id": "T096",
+      "tier": "P0_required",
+      "title": "关闭 adapter 中未决输入",
+      "original_work_package": "WP04",
+      "requirements": [
+        "R-013"
+      ],
+      "required_evidence": "controlled_integration + native/host qualification where claimed",
+      "condition": "required_when_applicable_to_claimed_supported_configuration",
+      "baseline_status_not_presumed": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "acs-source-impact-review/1",
+  "file": "runtime/communication_http.py",
+  "before_sha256": "bc2d47ad84bae02ca0f2ed590b7218c0a105fa72b62c755b9ffafc823a6ceb46",
+  "after_sha256": "023de773d23da0022f90292d8be22540a162b40a48346e3cf9465c5f8ff635f8",
+  "reverse_patch_matches_captured_before": true,
+  "behavior_delta": "Only explicit include_native_source=true forwards the extension keyword. Default/false retain legacy read_message(offset,max_inline_bytes) call shape.",
+  "affected_verification": [
+    "read-compatibility-final",
+    "p0-p1-final"
+  ],
+  "Native_E4_retention_reason": "The actual E4 path uses Project/MCP calls and the signed receiver API, not this communication HTTP read facade. All other captured Runtime/deployment bytes in e match; this change neither admits Native input nor creates an explicit reply.",
+  "migration": null,
+  "new_dependency": null
+}

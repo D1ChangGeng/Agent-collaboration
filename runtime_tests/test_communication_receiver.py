@@ -138,7 +138,7 @@ def test_native_receiver_settings_do_not_require_execution_collector_storage(tmp
     assert not hasattr(CodexReceiverCapacity, "_projection_snapshot")
 
 
-def enrolled_native_factory(f, tmp_path, monkeypatch, home):
+def enrolled_native_factory(f, tmp_path, monkeypatch, home, *, schema_path=None):
     """Provision actual Node/Runtime records and enter the production factory."""
     binary = shutil.which("codex.exe") if os.name == "nt" else shutil.which("codex")
     if binary is None:
@@ -171,6 +171,12 @@ def enrolled_native_factory(f, tmp_path, monkeypatch, home):
         "capacity_attempt_id": "factory-capacity", "executable": binary, "cwd": str(tmp_path), "codex_home": str(home),
         "driver_journal": str(tmp_path/"factory-driver.sqlite"), "node_journal": str(tmp_path/"factory-node.sqlite"),
         "runtime_id": "factory-runtime"}
+    if os.getenv("ACS_NATIVE_TEST_HISTORY_MODE"):
+        settings["history_mode"] = os.environ["ACS_NATIVE_TEST_HISTORY_MODE"]
+    if schema_path is not None:
+        settings["protocol_schema"] = str(schema_path)
+    if os.getenv("ACS_NATIVE_TEST_RECORD_HANDOFF") == "1":
+        settings["record_handoff"] = True
     monkeypatch.setenv("ACS_RECEIVER_DSN", f.dsn)
     return CodexReceiverCapacity(config, policy, settings)
 

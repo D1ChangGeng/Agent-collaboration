@@ -1,0 +1,13 @@
+{
+  "repository": "D:\\Chatgpt\\Agent-collaboration",
+  "branch": "codex/core-cleanup",
+  "head": "19d7881d49ee887315c54c5bc02e0cc424061376",
+  "tree": "8856b23e59d50eccb1198475e84937c48a71b0bb",
+  "tracked_binary_diff_sha256": "40e8ba83b1f2acec71da678380529b4ed99696b4ebf57d43192d88524b9c3851",
+  "working_tree": "dirty_uncommitted",
+  "committed": false,
+  "pushed": false,
+  "upstream": "origin/codex/core-cleanup",
+  "receiver_sync_action": "none",
+  "observed_at": "2026-11-07T10:24:41.372110+00:00"
+}

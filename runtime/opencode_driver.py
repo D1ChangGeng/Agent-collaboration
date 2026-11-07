@@ -28,6 +28,12 @@ from runtime.codex_driver import (
     digest,
     file_digest,
 )
+from runtime.receiver_lifecycle import (
+    AuthorizedLifecycleObservation,
+    AuthorizedLifecycleOperation,
+    check_lifecycle_driver,
+    lifecycle_source_fields,
+)
 from runtime.receiver_paths import PathSecurityRejected, private_parent
 
 if __package__:
@@ -308,10 +314,12 @@ class OpenCodeNativeDriver:
 
     def _auth(self, operation: AuthorizedOperation):
         operation.validate(self.clock)
+        check_lifecycle_driver(operation, self)
         if asdict(self.identity) != self._identity or self._claim_fd is None:
             raise DriverRejected("Driver binding is retired or detached")
         self.check_current(operation, self.identity)
         operation.validate(self.clock)
+        check_lifecycle_driver(operation, self)
         if asdict(self.identity) != self._identity:
             raise DriverRejected("binding changed during authorization")
 
@@ -322,7 +330,14 @@ class OpenCodeNativeDriver:
 
     def _run(self, operation, action, payload, function):
         with self._lock:
+            check_lifecycle_driver(operation, self, action=action)
             self._auth(operation)
+            if operation.read_only:
+                raise DriverRejected("read-only Native observation cannot authorize a Driver action")
+            if action == "invoke" and payload.get("handoff_context") is not None:
+                from runtime.native_handoff import handoff_payload
+
+                payload = handoff_payload(self, operation, payload, payload["handoff_context"])
             record = self.journal.begin(operation, self.binding_id, action,
                                         {**payload, "binding": self._identity}, clock=self.clock)
             self._auth(operation)
@@ -334,9 +349,10 @@ class OpenCodeNativeDriver:
                 raise OutcomeUncertain("deferred invocation has mutating I/O evidence")
             previous_active = self._active_message, self._active_operation_id
             try:
+                check_lifecycle_driver(operation, self, action=action, fresh_effect=True)
                 result = function()
                 result.update(operation_id=operation.operation_id, command_id=operation.command_id,
-                              message_id=operation.message_id)
+                              **lifecycle_source_fields(operation))
                 state = "uncertain" if result["receipt_layer"] == "runtime_dispatched" else "acknowledged"
                 self.journal.finish(operation.operation_id, state, result)
                 return result
@@ -357,7 +373,13 @@ class OpenCodeNativeDriver:
                 raise
 
     def _http(self, operation, method, path, payload=None, *, max_bytes=4 * 1024 * 1024, on_dispatch=None):
+        if type(operation) is AuthorizedLifecycleOperation:
+            operation.check_http(method, path)
+        if type(operation) is AuthorizedLifecycleObservation:
+            operation.check_http(method, path)
         self._auth(operation)
+        if operation.read_only and method != "GET":
+            raise DriverRejected("read-only Native observation cannot authorize a Native HTTP mutation")
         if self.client is None:
             raise OutcomeUncertain("native endpoint is not bound")
         self.journal.event(operation.operation_id, "http_intent",
@@ -389,8 +411,16 @@ class OpenCodeNativeDriver:
             )
         except HttpPreCallTimeout as error:
             raise DriverRejected("native HTTP duration elapsed before dispatch") from error
-        self.journal.event(operation.operation_id, "http_response",
-                           {"method": method, "path": path, "status": status, "body_digest": digest(value)})
+        response_evidence = {"method": method, "path": path, "status": status, "body_digest": digest(value)}
+        if method == "POST" and path == "/session" and type(status) is int and 200 <= status < 300 and type(value) is dict:
+            try:
+                response_evidence["native_session_id"] = native_id(value.get("id"), "ses")
+            except DriverRejected:
+                # A malformed response may follow an actual create effect.
+                # The caller retains its normal validation/unknown handling;
+                # only an actual bounded provider ID is positive evidence.
+                pass
+        self.journal.event(operation.operation_id, "http_response", response_evidence)
         return status, value
 
     def _observe_native_profile(self, operation):
@@ -638,61 +668,86 @@ class OpenCodeNativeDriver:
                 raise DriverRejected("native event observation thread did not stop")
         self._event_thread = None
 
+    def _launch_owned_transport(self, operation, *, lifecycle_action):
+        if lifecycle_action not in {"spawn", "resume"}:
+            raise DriverRejected("unsupported owned transport lifecycle action")
+        if lifecycle_action == "resume":
+            from runtime.native_restore import restoration_history
+
+            previous = restoration_history(self, exclude_operation_id=operation.operation_id)
+            if getattr(operation, "restore_process_ref", None) != previous["evidence_ref"]:
+                raise DriverRejected("restoration requires its exact original stopped process")
+            self._stop_events()
+            for thread in self._diag_threads:
+                thread.join(timeout=2)
+                if thread.is_alive():
+                    raise DriverRejected("original native diagnostic reader has not stopped")
+            self._diag_threads = []
+        if lifecycle_action == "spawn" and (self.client is not None or self.owned is not None):
+            raise DriverRejected("Driver already owns or attaches to an endpoint")
+        self.profile.validate(fresh=lifecycle_action == "spawn")
+        if self.supervisor is None:
+            raise DriverRejected("native spawn requires an actual Node containment supervisor")
+        if self.auth_stager is not None:
+            try:
+                stage = self.auth_stager.stage(self.profile)
+            except ValueError as error:
+                raise DriverRejected("private OpenCode auth staging rejected") from error
+            self.journal.event(operation.operation_id, "private_auth_staged", stage)
+        password = secrets.token_urlsafe(36)
+        with socket.socket() as reservation:
+            reservation.bind(("127.0.0.1", 0))
+            port = reservation.getsockname()[1]
+        argv = [self.profile.executable]
+        if self.profile.execution_mode == "restricted":
+            argv.append("--pure")
+        argv.extend(["serve", "--hostname", "127.0.0.1", "--port", str(port)])
+        self.journal.event(operation.operation_id, "process_intent",
+                           {"argv": argv, "profile": self.profile.binding(), "binding": self._identity})
+        self._auth(operation)
+        check_lifecycle_driver(operation, self, action=lifecycle_action, fresh_effect=True)
+        self.journal.event(
+            operation.operation_id,
+            "process_dispatch",
+            {"argv": argv, "profile": self.profile.binding(), "binding": self._identity},
+        )
+        process_label = "opencode-" + hashlib.sha256(operation.operation_id.encode()).hexdigest()[:32]
+
+        def authorize_launch():
+            self._auth(operation)
+            check_lifecycle_driver(operation, self, action=lifecycle_action, fresh_effect=True)
+
+        launch_options = {"before_start": authorize_launch} if type(operation) is AuthorizedLifecycleOperation else {}
+        self.owned = self.supervisor.launch(argv, cwd=self.profile.cwd,
+            env=self.profile.process_environment(password), label=process_label, **launch_options)
+        self.ownership = "exclusive_owned"
+        self.journal.event(operation.operation_id, "process_started",
+                           {"pid": self.owned.process.pid, "birth_ref": self.owned.birth_ref,
+                            "containment_id": self.owned.containment_id})
+        for stream in (self.owned.process.stdout, self.owned.process.stderr):
+            thread = threading.Thread(target=self._drain_output, args=(stream,), daemon=True)
+            thread.start()
+            self._diag_threads.append(thread)
+        def owner():
+            proof = self.supervisor.inspect(self.owned)
+            owners = listener_owner_pids(port)
+            return (proof.get("verified") is True and proof.get("birth_ref") == self.owned.birth_ref
+                    and proof.get("containment_id") == self.owned.containment_id
+                    and not proof.get("root_exited") and bool(owners)
+                    and owners <= set(proof.get("remaining_pids", [])))
+        self.client = LoopbackHttp(port, password, self.profile.cwd, owner, timeout=self.http_timeout)
+        self._owned_transport_identity = (id(self.owned), id(self.client))
+        until = time.monotonic() + min(15, operation.remaining(self.clock))
+        while not owner():
+            self._auth(operation)
+            if self.owned.process.poll() is not None or time.monotonic() >= until:
+                raise OutcomeUncertain("owned server did not expose a verified loopback listener")
+            time.sleep(0.05)
+        self._observe_native_profile(operation)
+
     def spawn(self, operation):
         def perform():
-            if self.client is not None or self.owned is not None:
-                raise DriverRejected("Driver already owns or attaches to an endpoint")
-            self.profile.validate(fresh=True)
-            if self.supervisor is None:
-                raise DriverRejected("native spawn requires an actual Node containment supervisor")
-            if self.auth_stager is not None:
-                try:
-                    stage = self.auth_stager.stage(self.profile)
-                except ValueError as error:
-                    raise DriverRejected("private OpenCode auth staging rejected") from error
-                self.journal.event(operation.operation_id, "private_auth_staged", stage)
-            password = secrets.token_urlsafe(36)
-            with socket.socket() as reservation:
-                reservation.bind(("127.0.0.1", 0))
-                port = reservation.getsockname()[1]
-            argv = [self.profile.executable]
-            if self.profile.execution_mode == "restricted":
-                argv.append("--pure")
-            argv.extend(["serve", "--hostname", "127.0.0.1", "--port", str(port)])
-            self.journal.event(operation.operation_id, "process_intent",
-                               {"argv": argv, "profile": self.profile.binding(), "binding": self._identity})
-            self._auth(operation)
-            self.journal.event(
-                operation.operation_id,
-                "process_dispatch",
-                {"argv": argv, "profile": self.profile.binding(), "binding": self._identity},
-            )
-            process_label = "opencode-" + hashlib.sha256(operation.operation_id.encode()).hexdigest()[:32]
-            self.owned = self.supervisor.launch(argv, cwd=self.profile.cwd,
-                                                env=self.profile.process_environment(password), label=process_label)
-            self.ownership = "exclusive_owned"
-            self.journal.event(operation.operation_id, "process_started",
-                               {"pid": self.owned.process.pid, "birth_ref": self.owned.birth_ref,
-                                "containment_id": self.owned.containment_id})
-            for stream in (self.owned.process.stdout, self.owned.process.stderr):
-                thread = threading.Thread(target=self._drain_output, args=(stream,), daemon=True)
-                thread.start()
-                self._diag_threads.append(thread)
-            def owner():
-                proof = self.supervisor.inspect(self.owned)
-                owners = listener_owner_pids(port)
-                return (proof.get("verified") is True and proof.get("birth_ref") == self.owned.birth_ref
-                        and proof.get("containment_id") == self.owned.containment_id
-                        and not proof.get("root_exited") and bool(owners)
-                        and owners <= set(proof.get("remaining_pids", [])))
-            self.client = LoopbackHttp(port, password, self.profile.cwd, owner, timeout=self.http_timeout)
-            until = time.monotonic() + min(15, operation.remaining(self.clock))
-            while not owner():
-                self._auth(operation)
-                if self.owned.process.poll() is not None or time.monotonic() >= until:
-                    raise OutcomeUncertain("owned server did not expose a verified loopback listener")
-                time.sleep(0.05)
-            self._observe_native_profile(operation)
+            self._launch_owned_transport(operation, lifecycle_action="spawn")
             _, session = self._http(
                 operation, "POST", "/session", self._session_payload(operation.operation_id)
             )
@@ -700,7 +755,10 @@ class OpenCodeNativeDriver:
             self.session_id = session["id"]
             self._start_events(operation)
             return self._receipt("runtime_acknowledged", native_ack_type="session_create_response")
-        return self._run(operation, "spawn", {"profile": self.profile.binding()}, perform)
+        payload = {"profile": self.profile.binding()}
+        if getattr(self, "_lifecycle_profile_seal", None) is not None:
+            payload["capacity_profile"] = dict(self._lifecycle_profile_seal)
+        return self._run(operation, "spawn", payload, perform)
 
     def replace_session(self, operation):
         """Replace one owned idle Session without starting a second native process."""
@@ -850,12 +908,20 @@ class OpenCodeNativeDriver:
                                  event_stream=self._event_state)
 
     def resume(self, operation):
+        from runtime.native_restore import restoration_payload
+
+        payload = restoration_payload(self, operation, "native_session_id")
+
         def perform():
+            if payload["native_session_id"] != self.session_id:
+                raise DriverRejected("Native resume target changed before transport admission")
+            if payload.get("restore_process") is True:
+                self._launch_owned_transport(operation, lifecycle_action="resume")
             self._owned_mutation()
             view = self._inspect(operation)
             self._start_events(operation)
             return self._receipt("context_resumed", status=view["status"])
-        return self._run(operation, "resume", {"native_session_id": self.session_id}, perform)
+        return self._run(operation, "resume", payload, perform)
 
     def _new_message_id(self):
         now = int((self.clock.observation_time().timestamp() if self.clock is not None else time.time()) * 1000)
@@ -909,7 +975,7 @@ class OpenCodeNativeDriver:
             raise DriverRejected("native message readback differs from the exact authorized input")
         return value
 
-    def invoke(self, operation, text, *, on_dispatch=None):
+    def invoke(self, operation, text, *, on_dispatch=None, handoff_context=None):
         if not isinstance(text, str) or not text or len(text.encode()) > 1024 * 1024:
             raise DriverRejected("only bounded plain text is admitted")
         with self._lock:
@@ -918,6 +984,9 @@ class OpenCodeNativeDriver:
             message_id = (prior["input"]["payload"].get("native_message_id") if prior and prior["action"] == "invoke"
                           else self._new_message_id())
             payload = {"native_session_id": self.session_id, "native_message_id": message_id, "text": text}
+            from runtime.native_handoff import handoff_payload
+
+            payload = handoff_payload(self, operation, payload, handoff_context)
             def perform():
                 self._owned_mutation()
                 view = self._inspect(operation)

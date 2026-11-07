@@ -24,6 +24,7 @@ from mcp.server.auth.settings import AuthSettings
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import Field, field_validator, model_validator
 from starlette.middleware.cors import CORSMiddleware
+from starlette.routing import Mount
 
 from runtime.mcp_runtime import McpRuntime
 from runtime.project_mcp_server import create_project_server
@@ -61,6 +62,10 @@ class ProjectHttpSettings(ConfigModel):
     bindings: tuple[OAuthBinding, ...] = Field(min_length=1, max_length=256)
     allowed_origins: tuple[str, ...] = Field(default=(), max_length=16)
     authorization_refresh_seconds: int = Field(default=5, ge=1, le=5)
+    communication_client_api: bool = False
+    communication_event_stream: bool = False
+    communication_attachments: bool = False
+    communication_native_links: bool = False
     presentation_timezone: str = "UTC"
 
     @field_validator("presentation_timezone")
@@ -90,6 +95,12 @@ class ProjectHttpSettings(ConfigModel):
 
     @model_validator(mode="after")
     def validate_bindings(self):
+        if self.communication_event_stream and not self.communication_client_api:
+            raise ValueError("event HTTP requires the communication client facade")
+        if self.communication_attachments and not self.communication_client_api:
+            raise ValueError("attachment HTTP requires the communication client facade")
+        if self.communication_native_links and not self.communication_client_api:
+            raise ValueError("Native link HTTP requires the communication client facade")
         if urlsplit(self.resource_url).path != "/mcp":
             raise ValueError("this ingress profile serves the /mcp resource")
         identities = [(b.subject, b.client_id) for b in self.bindings]
@@ -153,6 +164,10 @@ class IntrospectionVerifier:
             return None
 
 
+class OAuthScopeDenied(PermissionError):
+    """A current authenticated token lacks an explicitly required scope."""
+
+
 class TokenAuthorization:
     """A bounded introspection observation, rechecked by every protected action."""
 
@@ -185,7 +200,13 @@ class TokenAuthorization:
         self.credential()
         required = catalog["tools"][name]["security_scopes"]
         if not set(required) <= set(self.access.scopes):
-            raise PermissionError("OAuth tool scope is unavailable")
+            raise OAuthScopeDenied("OAuth tool scope is unavailable")
+
+    def authorize_permissions(self, required):
+        """Narrow explicit REST permissions in addition to live Domain Grants."""
+        self.credential()
+        if not set(required) <= set(self.access.scopes):
+            raise OAuthScopeDenied("OAuth operation scope is unavailable")
 
 
 class OAuthProjectService(ProjectService):
@@ -212,9 +233,9 @@ class OAuthProjectService(ProjectService):
             if set(self.catalog["tools"][action["tool"]]["security_scopes"]) <= allowed]
         return actor
 
-    def execute(self, name, args, credential):
+    def _check_tool_policy(self, name):
         self.token_authorization.authorize_tool(self.catalog, name)
-        return super().execute(name, args, credential)
+        return super()._check_tool_policy(name)
 
     def _profile_snapshot(self):
         state, data, followups = super()._profile_snapshot()
@@ -226,11 +247,20 @@ class OAuthProjectService(ProjectService):
         }), followups
 
 
-def create_http_app(service, catalog, settings, *, sources=None, host="127.0.0.1", port=8765, client=None):
+def create_http_app(service, catalog, settings, *, sources=None, host="127.0.0.1", port=8765, client=None, native_provider_registry=None):
     """Construct a multi-principal endpoint; no provisioning or listener side effects."""
+    # Only the operator-installed catalog may drive deterministic continuation;
+    # an HTTP request's selected profile/catalog cannot replace it.
+    service.authority._receiver_lifecycle_catalog = catalog
     if any(b.profile not in catalog["profiles"] for b in settings.bindings):
         raise ValueError("OAuth binding refers to an unknown Profile")
     owns_client = client is None
+    if native_provider_registry is not None:
+        from runtime.native_provider_registry import NativeProviderRegistry
+
+        if not isinstance(native_provider_registry, NativeProviderRegistry):
+            raise TypeError("an admitted server NativeProviderRegistry is required")
+        service.authority._native_provider_registry = native_provider_registry
     client = client or httpx.AsyncClient(trust_env=False)
     verifier = IntrospectionVerifier(settings, client)
 
@@ -263,6 +293,24 @@ def create_http_app(service, catalog, settings, *, sources=None, host="127.0.0.1
             allowed_origins=list(settings.allowed_origins)),
         max_request_body_size=131072, max_sessions=64, session_idle_timeout=300)
     original_lifespan = app.router.lifespan_context
+    if settings.communication_client_api:
+        from runtime.communication_client_oauth import create_oauth_communication_app
+
+        service.authority._communication_client_api_enabled = True
+        if settings.communication_attachments and getattr(service.authority, "_communication_attachment_settings", None) is None:
+            raise ValueError("attachment HTTP requires explicit Runtime attachment and Scope CAS configuration")
+        service.authority._communication_attachments_enabled = settings.communication_attachments
+        if settings.communication_native_links and (
+                getattr(service.authority, "_communication_native_link_settings", None) is None
+                or getattr(service.authority, "_native_provider_registry", None) is None):
+            raise ValueError("Native link HTTP requires explicit Runtime limits and an admitted provider registry")
+        service.authority._communication_native_links_enabled = settings.communication_native_links
+        if settings.communication_event_stream:
+            service.authority._communication_events_enabled = True
+        client_app = create_oauth_communication_app(service, catalog, settings, sources=sources, client=client)
+        # Preserve the existing /mcp OAuth routes; REST has its own authenticated
+        # resolver and reuses the same explicitly provisioned subject bindings.
+        app.router.routes.append(Mount("/", app=client_app))
 
     @asynccontextmanager
     async def lifespan(application):
@@ -284,7 +332,7 @@ def create_http_app(service, catalog, settings, *, sources=None, host="127.0.0.1
     app.router.lifespan_context = lifespan
     if settings.allowed_origins:
         app.add_middleware(CORSMiddleware, allow_origins=list(settings.allowed_origins),
-            allow_methods=["GET", "POST", "DELETE"],
-            allow_headers=["Authorization", "Content-Type", "Mcp-Session-Id", "MCP-Protocol-Version", "Last-Event-ID"],
-            expose_headers=["Mcp-Session-Id", "WWW-Authenticate"], max_age=300)
+            allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
+            allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "If-Match", "Mcp-Session-Id", "MCP-Protocol-Version", "Last-Event-ID"],
+            expose_headers=["Mcp-Session-Id", "WWW-Authenticate", "Content-Disposition", "ETag"], max_age=300)
     return app

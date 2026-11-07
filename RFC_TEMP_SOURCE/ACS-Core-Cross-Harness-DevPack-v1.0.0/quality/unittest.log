@@ -1,0 +1,24 @@
+test_adapter_protocol_imports (test_contract_pack.PackageTests.test_adapter_protocol_imports) ... ok
+test_all_scenarios_are_unexecuted_specs (test_contract_pack.PackageTests.test_all_scenarios_are_unexecuted_specs) ... ok
+test_forty_requirements (test_contract_pack.PackageTests.test_forty_requirements) ... ok
+test_mcp_defaults (test_contract_pack.PackageTests.test_mcp_defaults) ... ok
+test_no_false_implementation_claim (test_contract_pack.PackageTests.test_no_false_implementation_claim) ... ok
+test_package_consistency (test_contract_pack.PackageTests.test_package_consistency) ... ok
+test_source_snapshots_are_not_deployment_attestations (test_contract_pack.PackageTests.test_source_snapshots_are_not_deployment_attestations) ... ok
+test_ui_features_have_owners (test_contract_pack.PackageTests.test_ui_features_have_owners) ... ok
+test_unknown_is_not_directly_retryable (test_contract_pack.PackageTests.test_unknown_is_not_directly_retryable) ... ok
+test_binding_never_regresses (test_contract_pack.TraceTests.test_binding_never_regresses) ... ok
+test_evidence_required_for_claimed_admission (test_contract_pack.TraceTests.test_evidence_required_for_claimed_admission) ... ok
+test_immutable_message_identity (test_contract_pack.TraceTests.test_immutable_message_identity) ... ok
+test_invalid_traces_are_rejected (test_contract_pack.TraceTests.test_invalid_traces_are_rejected) ... ok
+test_native_replay_wrong_scope_rejected (test_contract_pack.TraceTests.test_native_replay_wrong_scope_rejected) ... ok
+test_no_handoff_without_intent (test_contract_pack.TraceTests.test_no_handoff_without_intent) ... ok
+test_proved_native_replay_same_scope (test_contract_pack.TraceTests.test_proved_native_replay_same_scope) ... ok
+test_reply_is_independent_of_native_unknown (test_contract_pack.TraceTests.test_reply_is_independent_of_native_unknown) ... ok
+test_wait_timeout_cannot_cancel (test_contract_pack.TraceTests.test_wait_timeout_cannot_cancel) ... ok
+test_wait_timeout_no_side_effect (test_contract_pack.TraceTests.test_wait_timeout_no_side_effect) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 1.355s
+
+OK

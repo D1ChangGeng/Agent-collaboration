@@ -14,18 +14,21 @@ from typing import Any, ClassVar
 from nacl.signing import SigningKey
 
 from runtime.connection_clock import ClockUnavailable, ConnectionClock
+from runtime.delivery_models import InvocationRequest
+from runtime.delivery_node import NATIVE_ATTACHMENT_UNSUPPORTED, has_native_attachments
 from runtime.lifetimes import earliest
 from runtime.receiver_config import ReceiverRuntimeConfig, resolve_connection_clock
 from runtime.receiver_crypto import canonical, sha256, sign, verify
 from runtime.receiver_models import (
     DeliveryAdmission,
     DispatchBody,
+    NativeSourceReadbackBody,
     PrepareBody,
     ReadbackBody,
-    ResponseReadbackBody,
     ReadinessBody,
     ReceiverReceipt,
     RecoveryBody,
+    ResponseReadbackBody,
     SignedReceipt,
     SignedRequest,
 )
@@ -40,6 +43,34 @@ from runtime.receiver_paths import (
 
 class ReceiverRejected(RuntimeError):
     pass
+
+
+def verified_prepare_body(prepared):
+    """Read the original admitted body, checking every durable body copy/hash.
+
+    Preparation was authenticated on admission. This integrity check does not
+    reinterpret that historical request using a replacement boot/configuration.
+    The newly signed dispatch/recovery separately pins its original digests.
+    """
+    try:
+        original = SignedRequest.model_validate_json(prepared["signed_request_json"], strict=True)
+        body = PrepareBody.model_validate(original.body, strict=True)
+        admission = original.admission
+        if (admission.purpose != "delivery.prepare" or admission.request_id != prepared["request_id"]
+                or canonical(body).decode() != prepared["body_json"]
+                or admission.body_sha256 != sha256(original.body) or prepared["body_sha256"] != admission.body_sha256
+                or canonical(admission).decode() != prepared["admission_json"]
+                or sha256(admission) != prepared["admission_sha256"]
+                or original.signature != prepared["authority_signature"]
+                or sha256(original) != prepared["signed_request_sha256"]
+                or sha256({"admission": admission.model_dump(mode="json"), "body": body.model_dump(mode="json")}) != prepared["canonical_hash"]
+                or sha256(body.envelope) != admission.envelope_digest
+                or sha256(body.invocation) != admission.invocation_digest
+                or sha256(body.selection) != admission.selection_digest):
+            raise ValueError("prepared original integrity differs")
+        return body
+    except (ValueError, TypeError, KeyError) as error:
+        raise ReceiverRejected("prepared signed request integrity rejected") from error
 
 
 _ACTIVE_EXECUTION_LEASES: dict[str, tuple[float, Callable[[], float], str, int]] = {}
@@ -249,7 +280,7 @@ class ReceiverService:
 
     def __init__(self, config: ReceiverRuntimeConfig, node_signing_key: SigningKey,
                  *, authorize_current: Callable[[DeliveryAdmission], bool],
-                 clock: ConnectionClock | None = None):
+                 clock: ConnectionClock | None = None, authorize_source_read=None):
         config.validate()
         from runtime.receiver_crypto import public_key
         if public_key(node_signing_key) != config.binding.node_public_key:
@@ -261,6 +292,9 @@ class ReceiverService:
         self.binding = config.binding
         self.node_signing_key = node_signing_key
         self.authorize_current = authorize_current
+        if authorize_source_read is not None and not callable(authorize_source_read):
+            raise ReceiverRejected("current Native source read authority must be callable")
+        self.authorize_source_read = authorize_source_read or authorize_current
         self.ledger = ReceiverLedger(config.ledger_path)
 
     def claim_boot(self, boot: str, generation: int, *, old_boot_isolation_ref: str | None = None):
@@ -278,11 +312,13 @@ class ReceiverService:
             "delivery.readiness": ReadinessBody,
             "delivery.recover": RecoveryBody,
         }
-        model = (ResponseReadbackBody if request.admission.purpose == "delivery.readback"
+        model = (NativeSourceReadbackBody if request.admission.purpose == "delivery.readback" and "native_source" in request.body
+                 else ResponseReadbackBody if request.admission.purpose == "delivery.readback"
                  and "response_digest" in request.body else models[request.admission.purpose])
         return model.model_validate(request.body, strict=True)
 
-    def _verify(self, request: SignedRequest):
+    def _verify_identity(self, request: SignedRequest):
+        """Verify sealed historical bytes, not permission to admit new input."""
         admission = request.admission
         body = self._typed_body(request)
         registration = self.binding.registration
@@ -305,8 +341,6 @@ class ReceiverService:
                 or admission.body_sha256 != sha256(body)):
             raise ReceiverRejected("delivery admission context rejected")
         verify(self.config.authority_public_key, request.signature, admission)
-        if not self._time_valid(admission):
-            raise ReceiverRejected("delivery admission deadline or Authority clock rejected")
         if isinstance(body, PrepareBody) and (
             admission.envelope_digest != sha256(body.envelope)
             or admission.invocation_digest != sha256(body.invocation)
@@ -314,6 +348,12 @@ class ReceiverService:
         ):
             raise ReceiverRejected("prepare canonical envelope/invocation/selection digest rejected")
         return body, sha256({"admission": admission.model_dump(mode="json"), "body": body.model_dump(mode="json")})
+
+    def _verify(self, request: SignedRequest):
+        body, request_hash = self._verify_identity(request)
+        if not self._time_valid(request.admission):
+            raise ReceiverRejected("delivery admission deadline or Authority clock rejected")
+        return body, request_hash
 
     def _deadline(self, admission: DeliveryAdmission):
         return earliest(admission.deadline,
@@ -494,7 +534,7 @@ class ReceiverService:
             raise ReceiverRejected("receiver boot or journal generation changed")
         return meta
 
-    def prepare(self, request: SignedRequest) -> SignedReceipt:
+    def prepare(self, request: SignedRequest, *, adapter_receiver=None) -> SignedReceipt:
         _, request_hash = self._verify(request)
         with self.ledger.transaction() as connection:
             self._check_current_boot(connection, request.admission)
@@ -511,6 +551,7 @@ class ReceiverService:
                 raise ReceiverRejected("dispatch is already marked")
             return self._insert(
                 connection, request, request_hash, "prepared", False,
+                {"adapter_receiver": adapter_receiver} if adapter_receiver is not None else None,
                 prepare_identity=self._identity(request.admission),
             )
 
@@ -523,9 +564,33 @@ class ReceiverService:
             raise ReceiverRejected("matching unmarked prepared request is unavailable")
         return row
 
+    @staticmethod
+    def _prepared_native_attachments(prepared):
+        """Inspect the authenticated original preparation, never caller prose."""
+        body = verified_prepare_body(prepared)
+        candidates = (body.envelope, body.invocation.get("envelope", {}))
+        if not any(isinstance(value, dict) and isinstance(value.get("packet"), dict)
+                   and value["packet"].get("schema_version") == "acs-message/1"
+                   and value["packet"].get("attachment_refs") for value in candidates):
+            return False
+        try:
+            invocation = InvocationRequest.model_validate_json(json.dumps(body.invocation), strict=True)
+        except ValueError as error:
+            raise ReceiverRejected("prepared attachment invocation is invalid") from error
+        if invocation.envelope.model_dump(mode="json") != body.envelope:
+            raise ReceiverRejected("prepared envelope and invocation differ")
+        return has_native_attachments(invocation.envelope.packet)
+
     def _update(self, connection, request: SignedRequest, request_hash: str,
                 state: str, evidence=None, *, identity_admission=None,
                 target_request_id=None) -> SignedReceipt:
+        previous = self._existing(connection, request, request_hash)
+        retained = self._stored(previous).receipt.evidence.get("core_verified_input") if previous is not None else None
+        if retained is not None:
+            evidence = dict(evidence or {})
+            if evidence.get("core_verified_input", retained) != retained:
+                raise ReceiverRejected("original verified Core input cannot be replaced")
+            evidence["core_verified_input"] = retained
         receipt = self._receipt(
             request, request_hash, state, evidence, identity_admission=identity_admission,
             target_request_id=target_request_id,
@@ -543,6 +608,34 @@ class ReceiverService:
         if cursor.rowcount != 1:
             raise ReceiverRejected("dispatch marker disappeared")
         return receipt
+
+    def record_verified_input(self, request, value):
+        """Attach immutable original input bytes to the existing dispatch row.
+
+        This technical fact does not admit Native input or create another
+        operation. Its receipt update deliberately preserves the active native
+        execution lease, unlike a terminal dispatch-state transition.
+        """
+        _body, request_hash = self._verify(request)
+        if self.authorize_current(request.admission) is not True:
+            raise ReceiverRejected("verified input authority is no longer current")
+        if len(json.dumps(value).encode()) > self.config.maximum_body_bytes:
+            raise ReceiverRejected("verified input evidence exceeds its bound")
+        with self.ledger.transaction() as connection:
+            self._check_current_boot(connection, request.admission)
+            row = self._existing(connection, request, request_hash)
+            if row is None or row["state"] != "runtime_dispatched" or not self._execution_lease_active(row):
+                raise ReceiverRejected("verified input requires the original active dispatch lease")
+            old = self._stored(row)
+            evidence = dict(old.receipt.evidence)
+            if evidence.get("core_verified_input", value) != value:
+                raise ReceiverRejected("original verified Core input differs")
+            evidence["core_verified_input"] = value
+            receipt = self._receipt(request, request_hash, "runtime_dispatched", evidence)
+            connection.execute("UPDATE receiver_requests SET receipt_json=?,receipt_signature=?,receipt_sha256=?,signed_receipt_sha256=? "
+                "WHERE request_id=? AND state='runtime_dispatched' AND local_dispatch_marker=1",
+                (receipt.model_dump_json(), receipt.signature, sha256(receipt.receipt), sha256(receipt), request.admission.request_id))
+            return receipt
 
     @staticmethod
     def _execution_lease_active(row: sqlite3.Row) -> bool:
@@ -601,6 +694,12 @@ class ReceiverService:
                 if current is not True or not self._time_valid(request.admission):
                     return self._update(connection, request, request_hash, "blocked",
                                         {"reason": "current_authority_or_time_rejected"})
+                prepared = self._prepared(connection, request.admission, request.body["prepare_request_id"])
+                if self._prepared_native_attachments(prepared):
+                    # A historical marker cannot be recast as known no-effect.
+                    # It also cannot authorize a partial text-only invocation.
+                    return self._update(connection, request, request_hash, "uncertain",
+                                        {"reason": NATIVE_ATTACHMENT_UNSUPPORTED})
 
             try:
                 evidence = invoke(request.admission)
@@ -657,6 +756,15 @@ class ReceiverService:
                     return self._stored(existing)
                 prepared = self._prepared(connection, request.admission, body.prepare_request_id)
                 self._match_prepare(prepared, request.admission)
+                if self._prepared_native_attachments(prepared):
+                    marked = connection.execute("SELECT 1 FROM receiver_requests WHERE operation_id=? AND dispatch_id=? AND local_dispatch_marker=1",
+                                                (request.admission.operation_id, request.admission.dispatch_id)).fetchone()
+                    if marked:
+                        raise ReceiverRejected("marked dispatch cannot be reclassified as no effect")
+                    if self.authorize_current(request.admission) is not True:
+                        raise ReceiverRejected("current authority rejected attachment dispatch")
+                    return self._insert(connection, request, request_hash, "blocked", False, {"reason": NATIVE_ATTACHMENT_UNSUPPORTED},
+                                        prepare_identity=json.loads(prepared["prepare_identity_json"]))
                 self._insert(
                     connection, request, request_hash, "runtime_dispatched", True,
                     prepare_identity=json.loads(prepared["prepare_identity_json"]),
@@ -710,6 +818,11 @@ class ReceiverService:
                 ).fetchone()
                 if marked:
                     raise ReceiverRejected("marked dispatch cannot be recovered by reinvocation")
+                if self._prepared_native_attachments(prepared):
+                    if self.authorize_current(request.admission) is not True:
+                        raise ReceiverRejected("current authority rejected attachment recovery")
+                    return self._insert(connection, request, request_hash, "blocked", False, {"reason": NATIVE_ATTACHMENT_UNSUPPORTED},
+                                        prepare_identity=json.loads(prepared["prepare_identity_json"]))
                 self._insert(
                     connection, request, request_hash, "runtime_dispatched", True,
                     {"old_boot": body.old_boot_incarnation, "new_boot": body.new_boot_incarnation},
@@ -728,7 +841,69 @@ class ReceiverService:
                 self._abandon_execution(request, request_hash, execution_lease_id, error)
                 raise
 
-    def readback(self, request: SignedRequest, response_reader=None) -> SignedReceipt:
+    def _source_readback(self, request, body, request_hash, reader):
+        from runtime.client_contracts import ClientContracts
+
+        if not callable(reader):
+            raise ReceiverRejected("native source reader is unavailable")
+        if self.authorize_source_read(request.admission) is not True:
+            raise ReceiverRejected("native source read authority is no longer current")
+
+        def target(connection):
+            self._check_current_boot(connection, request.admission)
+            row = connection.execute("SELECT * FROM receiver_requests WHERE operation_id=? AND dispatch_id=? "
+                "AND purpose IN ('delivery.dispatch','delivery.recover') ORDER BY updated_at DESC LIMIT 1",
+                (body.operation_id, body.dispatch_id)).fetchone()
+            if row is None:
+                raise ReceiverRejected("original native source dispatch is unavailable")
+            original = DeliveryAdmission.model_validate_json(row["admission_json"], strict=True)
+            expected, actual = self._identity(original), self._identity(request.admission)
+            # This fresh technical read never renews the original input's
+            # business deadline. Current authorization is checked separately.
+            expected.pop("deadline")
+            actual.pop("deadline")
+            if expected != actual:
+                raise ReceiverRejected("native source read differs from original dispatch")
+            return row
+
+        with self.ledger.transaction() as connection:
+            target(connection)
+            previous = self._existing(connection, request, request_hash)
+            cached = self._stored(previous) if previous is not None else None
+        if cached is not None:
+            self._verify(request)
+            if self.authorize_source_read(request.admission) is not True:
+                raise ReceiverRejected("native source cached read authority changed")
+            return cached
+        # DriverJournal/authorization I/O takes place outside the Receiver SQL
+        # transaction. The result contains only exact provenance references.
+        value = ClientContracts().validate("NativeSourceLookup", reader(request.admission, body.provider_admission))
+        if len(json.dumps(value).encode()) > 16384:
+            raise ReceiverRejected("native source result exceeds its bounded budget")
+        self._verify(request)
+        if self.authorize_source_read(request.admission) is not True:
+            raise ReceiverRejected("native source read authority changed during lookup")
+        with self.ledger.transaction() as connection:
+            row = target(connection)
+            previous = self._existing(connection, request, request_hash)
+            if previous is not None:
+                return self._stored(previous)
+            evidence = {"stored_state": row["state"], "stored_receipt_sha256": sha256(row["receipt_json"].encode()),
+                        "target_request_id": row["request_id"], "native_source": value}
+            return self._insert(connection, request, request_hash, "readback", False, evidence,
+                prepare_identity=json.loads(row["prepare_identity_json"]), identity_admission=request.admission,
+                target_request_id=row["request_id"])
+
+    def require_original_source_read(self, admission):
+        # Historical identity/signature is verified by the caller first. This
+        # derived object selects current technical-read policy only; it is not
+        # a new signed admission and is never used for Native execution.
+        selected = admission.model_copy(update={"purpose": "delivery.readback", "path": self.PATHS["delivery.readback"],
+                                                "deadline": None})
+        if self.authorize_source_read(selected) is not True:
+            raise ReceiverRejected("current original source read authority is unavailable")
+
+    def readback(self, request: SignedRequest, response_reader=None, native_source_reader=None) -> SignedReceipt:
         body, request_hash = self._verify(request)
         if not isinstance(body, ReadbackBody):
             raise ReceiverRejected("readback body rejected")
@@ -736,6 +911,8 @@ class ReceiverService:
             request.admission.operation_id, request.admission.dispatch_id,
         ):
             raise ReceiverRejected("readback body and admission identity differ")
+        if isinstance(body, NativeSourceReadbackBody):
+            return self._source_readback(request, body, request_hash, native_source_reader)
         with self.ledger.transaction() as connection:
             self._check_current_boot(connection, request.admission)
             existing = self._existing(connection, request, request_hash)
@@ -787,6 +964,12 @@ class ReceiverService:
             existing = self._existing(connection, request, request_hash)
             if existing:
                 return self._stored(existing)
+            if self._prepared_native_attachments(prepared):
+                observed = self.clock.observation_time()
+                return self._insert(connection, request, request_hash, "readiness", False,
+                    {"activity": "unknown", "reason_code": NATIVE_ATTACHMENT_UNSUPPORTED, "source": "receiver_attachment_policy",
+                     "observed_at": observed.isoformat(), "expires_at": (observed + timedelta(seconds=2)).isoformat()},
+                    prepare_identity=self._identity(request.admission))
         observed_at = self.clock.observation_time()
         reading = self.clock.reading()
         observed = (probe(request.admission) if callable(probe) else {
@@ -807,11 +990,12 @@ class ReceiverService:
                                 prepare_identity=self._identity(request.admission))
 
     def handle(self, request: SignedRequest, invoke: Callable[[DeliveryAdmission], dict[str, Any]],
-               *, after_marker=None, native_readiness=None, response_reader=None) -> SignedReceipt:
+               *, after_marker=None, native_readiness=None, response_reader=None, native_source_reader=None) -> SignedReceipt:
         actions = {
             "delivery.prepare": lambda: self.prepare(request),
             "delivery.dispatch": lambda: self.dispatch(request, invoke, after_marker=after_marker),
-            "delivery.readback": lambda: self.readback(request, response_reader),
+            "delivery.readback": lambda: self.readback(request, response_reader,
+                **({"native_source_reader": native_source_reader} if native_source_reader is not None else {})),
             "delivery.readiness": lambda: self.readiness(request, native_readiness or getattr(invoke, "readiness", None)),
             "delivery.recover": lambda: self.recover(request, invoke, after_marker=after_marker),
         }

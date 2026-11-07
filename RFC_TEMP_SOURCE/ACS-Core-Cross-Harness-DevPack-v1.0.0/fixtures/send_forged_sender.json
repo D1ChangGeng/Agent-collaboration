@@ -1,0 +1,5 @@
+{
+  "to": "slot:B",
+  "content": "请核对接口。",
+  "sender": "client:admin"
+}

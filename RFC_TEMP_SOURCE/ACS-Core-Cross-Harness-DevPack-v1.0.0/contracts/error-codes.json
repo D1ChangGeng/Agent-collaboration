@@ -1,0 +1,141 @@
+{
+  "schema_version": "acs-errors/1",
+  "note": "retryable permits another observation/definitely effect-free action; never authorizes blind native retry",
+  "codes": [
+    {
+      "code": "invalid_argument",
+      "http_status": 400,
+      "retryable_default": false
+    },
+    {
+      "code": "unauthenticated",
+      "http_status": 401,
+      "retryable_default": false
+    },
+    {
+      "code": "authorization_denied",
+      "http_status": 403,
+      "retryable_default": false
+    },
+    {
+      "code": "not_found",
+      "http_status": 404,
+      "retryable_default": false
+    },
+    {
+      "code": "idempotency_conflict",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "revision_conflict",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "binding_changed",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "receiver_selection_required",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "capability_unsupported",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "receiver_unavailable",
+      "http_status": 503,
+      "retryable_default": true
+    },
+    {
+      "code": "receiver_busy",
+      "http_status": 409,
+      "retryable_default": true
+    },
+    {
+      "code": "approval_required",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "observation_unknown",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "observation_stale",
+      "http_status": 409,
+      "retryable_default": true
+    },
+    {
+      "code": "native_outcome_unknown",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "native_not_admitted",
+      "http_status": 409,
+      "retryable_default": true
+    },
+    {
+      "code": "cursor_expired",
+      "http_status": 410,
+      "retryable_default": false
+    },
+    {
+      "code": "cursor_scope_mismatch",
+      "http_status": 400,
+      "retryable_default": false
+    },
+    {
+      "code": "snapshot_expired",
+      "http_status": 410,
+      "retryable_default": false
+    },
+    {
+      "code": "quota_exceeded",
+      "http_status": 429,
+      "retryable_default": true
+    },
+    {
+      "code": "content_too_large",
+      "http_status": 413,
+      "retryable_default": false
+    },
+    {
+      "code": "attachment_not_ready",
+      "http_status": 409,
+      "retryable_default": true
+    },
+    {
+      "code": "attachment_digest_mismatch",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "host_extension_required",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "schema_adoption_required",
+      "http_status": 503,
+      "retryable_default": false
+    },
+    {
+      "code": "provider_generation_changed",
+      "http_status": 409,
+      "retryable_default": false
+    },
+    {
+      "code": "stream_backpressure",
+      "http_status": 429,
+      "retryable_default": true
+    }
+  ]
+}

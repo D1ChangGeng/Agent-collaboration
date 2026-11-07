@@ -1,0 +1,134 @@
+FFFFFFFFFF.............................................................. [ 58%]
+.................................................F..                     [100%]
+================================== FAILURES ===================================
+_ test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[codex] _
+runtime_tests\test_native_restore_origin.py:57: in test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact
+    old, driver, created, original_permit = stopped_journal(node)
+                                            ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert old.terminate(close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_receiver_lifecycle_capacity.py:145: in <lambda>
+    setattr(driver, method, lambda *_args, **_kwargs: pytest.fail("capacity getter attempted a Driver mutation"))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: capacity getter attempted a Driver mutation
+_ test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[opencode] _
+runtime_tests\test_native_restore_origin.py:57: in test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact
+    old, driver, created, original_permit = stopped_journal(node)
+                                            ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert old.terminate(close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_receiver_lifecycle_capacity.py:145: in <lambda>
+    setattr(driver, method, lambda *_args, **_kwargs: pytest.fail("capacity getter attempted a Driver mutation"))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: capacity getter attempted a Driver mutation
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-missing_stop] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert old.terminate(close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_receiver_lifecycle_capacity.py:145: in <lambda>
+    setattr(driver, method, lambda *_args, **_kwargs: pytest.fail("capacity getter attempted a Driver mutation"))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: capacity getter attempted a Driver mutation
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-stop_survivors] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert old.terminate(close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_receiver_lifecycle_capacity.py:145: in <lambda>
+    setattr(driver, method, lambda *_args, **_kwargs: pytest.fail("capacity getter attempted a Driver mutation"))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: capacity getter attempted a Driver mutation
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-creation_unknown] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert old.terminate(close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_receiver_lifecycle_capacity.py:145: in <lambda>
+    setattr(driver, method, lambda *_args, **_kwargs: pytest.fail("capacity getter attempted a Driver mutation"))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: capacity getter attempted a Driver mutation
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-profile_attestation] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert old.terminate(close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_receiver_lifecycle_capacity.py:145: in <lambda>
+    setattr(driver, method, lambda *_args, **_kwargs: pytest.fail("capacity getter attempted a Driver mutation"))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: capacity getter attempted a Driver mutation
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[opencode-missing_stop] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert old.terminate(close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_receiver_lifecycle_capacity.py:145: in <lambda>
+    setattr(driver, method, lambda *_args, **_kwargs: pytest.fail("capacity getter attempted a Driver mutation"))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: capacity getter attempted a Driver mutation
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[opencode-stop_survivors] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert old.terminate(close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_receiver_lifecycle_capacity.py:145: in <lambda>
+    setattr(driver, method, lambda *_args, **_kwargs: pytest.fail("capacity getter attempted a Driver mutation"))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: capacity getter attempted a Driver mutation
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[opencode-creation_unknown] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert old.terminate(close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_receiver_lifecycle_capacity.py:145: in <lambda>
+    setattr(driver, method, lambda *_args, **_kwargs: pytest.fail("capacity getter attempted a Driver mutation"))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: capacity getter attempted a Driver mutation
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[opencode-profile_attestation] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert old.terminate(close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_receiver_lifecycle_capacity.py:145: in <lambda>
+    setattr(driver, method, lambda *_args, **_kwargs: pytest.fail("capacity getter attempted a Driver mutation"))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: capacity getter attempted a Driver mutation
+_ test_explicit_new_namespace_initializes_and_adopts_before_any_driver_claim __
+runtime_tests\test_receiver_lifecycle_factory.py:86: in test_explicit_new_namespace_initializes_and_adopts_before_any_driver_claim
+    lifecycle.lifecycle_journal(capacity)
+runtime_deployment\receiver_lifecycle.py:124: in lifecycle_journal
+    with sqlite3.connect(path.as_uri() + "?mode=ro", uri=True) as connection:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   sqlite3.OperationalError: unable to open database file
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-development-capabilities-20261107\durable-restore-a.xml -
+=========================== short test summary info ===========================
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[codex]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[opencode]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-missing_stop]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-stop_survivors]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-creation_unknown]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-profile_attestation]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[opencode-missing_stop]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[opencode-stop_survivors]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[opencode-creation_unknown]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[opencode-profile_attestation]
+FAILED runtime_tests/test_receiver_lifecycle_factory.py::test_explicit_new_namespace_initializes_and_adopts_before_any_driver_claim
+11 failed, 113 passed in 13.74s

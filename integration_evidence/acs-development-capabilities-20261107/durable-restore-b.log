@@ -1,0 +1,104 @@
+FFFFFF.................................................................. [ 58%]
+....................................................                     [100%]
+================================== FAILURES ===================================
+_ test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[codex] _
+runtime_tests\test_native_restore_origin.py:57: in test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact
+    old, driver, created, original_permit = stopped_journal(node)
+                                            ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert type(old).terminate(old, close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:1396: in terminate
+    return self._run(operation, "terminate", {"thread_id": self.thread_id}, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:796: in _run
+    result = function()
+             ^^^^^^^^^^
+runtime\codex_driver.py:1393: in perform
+    self.client.close()
+    ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Client' object has no attribute 'close'
+_ test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[opencode] _
+runtime_tests\test_native_restore_origin.py:92: in test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact
+    assert receipt.outcome == "acknowledged" and receipt.native_session_ref == created.native_session_ref
+E   AssertionError: assert ('unknown' == 'acknowledged'
+E     
+E     - acknowledged
+E     + unknown)
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-missing_stop] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert type(old).terminate(old, close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:1396: in terminate
+    return self._run(operation, "terminate", {"thread_id": self.thread_id}, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:796: in _run
+    result = function()
+             ^^^^^^^^^^
+runtime\codex_driver.py:1393: in perform
+    self.client.close()
+    ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Client' object has no attribute 'close'
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-stop_survivors] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert type(old).terminate(old, close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:1396: in terminate
+    return self._run(operation, "terminate", {"thread_id": self.thread_id}, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:796: in _run
+    result = function()
+             ^^^^^^^^^^
+runtime\codex_driver.py:1393: in perform
+    self.client.close()
+    ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Client' object has no attribute 'close'
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-creation_unknown] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert type(old).terminate(old, close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:1396: in terminate
+    return self._run(operation, "terminate", {"thread_id": self.thread_id}, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:796: in _run
+    result = function()
+             ^^^^^^^^^^
+runtime\codex_driver.py:1393: in perform
+    self.client.close()
+    ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Client' object has no attribute 'close'
+_ test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-profile_attestation] _
+runtime_tests\test_native_restore_origin.py:102: in test_reconstruction_cannot_infer_missing_process_or_core_trust
+    old, driver, _created, permit = stopped_journal(node)
+                                    ^^^^^^^^^^^^^^^^^^^^^
+runtime_tests\test_native_restore_origin.py:47: in stopped_journal
+    assert type(old).terminate(old, close)["receipt_layer"] == "process_tree_terminated"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:1396: in terminate
+    return self._run(operation, "terminate", {"thread_id": self.thread_id}, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:796: in _run
+    result = function()
+             ^^^^^^^^^^
+runtime\codex_driver.py:1393: in perform
+    self.client.close()
+    ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Client' object has no attribute 'close'
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-development-capabilities-20261107\durable-restore-b.xml -
+=========================== short test summary info ===========================
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[codex]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstructed_node_uses_core_attested_profile_and_original_stop_without_native_contact[opencode]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-missing_stop]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-stop_survivors]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-creation_unknown]
+FAILED runtime_tests/test_native_restore_origin.py::test_reconstruction_cannot_infer_missing_process_or_core_trust[codex-profile_attestation]
+6 failed, 118 passed in 17.69s

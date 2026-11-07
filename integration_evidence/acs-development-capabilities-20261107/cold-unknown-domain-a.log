@@ -1,0 +1,56 @@
+......FF................................................................ [ 72%]
+...........................                                              [100%]
+================================== FAILURES ===================================
+_ test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay[codex] _
+runtime\codex_jsonrpc.py:187: in request
+    result = future.result(self._remaining(deadline, dispatched=True))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py:462: in result
+    raise TimeoutError()
+E   TimeoutError
+
+The above exception was the direct cause of the following exception:
+runtime_tests\test_native_cold_restore_transport.py:139: in test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay
+    driver.invoke(incoming, "Original authorized input; do not resend")
+runtime\codex_driver.py:1249: in invoke
+    return self._run(operation, "invoke", payload, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\codex_driver.py:796: in _run
+    result = function()
+             ^^^^^^^^^^
+runtime\codex_driver.py:1229: in perform
+    response = self._rpc(
+runtime\codex_driver.py:749: in _rpc
+    result = self.client.request(
+runtime\codex_jsonrpc.py:191: in request
+    raise RpcTimeout(f"RPC acknowledgement deadline elapsed: {method}") from exc
+E   runtime.codex_jsonrpc.RpcTimeout: RPC acknowledgement deadline elapsed: turn/start
+_ test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay[opencode] _
+runtime_tests\test_native_cold_restore_transport.py:139: in test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay
+    driver.invoke(incoming, "Original authorized input; do not resend")
+runtime\opencode_driver.py:1019: in invoke
+    return self._run(operation, "invoke", payload, perform)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+runtime\opencode_driver.py:353: in _run
+    result = function()
+             ^^^^^^^^^^
+runtime\opencode_driver.py:1003: in perform
+    code, _ = self._http(operation, "POST", "/session/" + self.session_id + "/prompt_async", {
+runtime\opencode_driver.py:403: in _http
+    status, value = self.client.request(
+runtime\opencode_http.py:212: in request
+    response = connection.getresponse()
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\http\client.py:1478: in getresponse
+    response.begin()
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\http\client.py:343: in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\http\client.py:312: in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+E   http.client.RemoteDisconnected: Remote end closed connection without response
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-development-capabilities-20261107\cold-unknown-domain-a.xml -
+=========================== short test summary info ===========================
+FAILED runtime_tests/test_native_cold_restore_transport.py::test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay[codex]
+FAILED runtime_tests/test_native_cold_restore_transport.py::test_unknown_input_can_reconnect_only_its_original_domain_for_query_without_replay[opencode]
+2 failed, 97 passed in 10.15s

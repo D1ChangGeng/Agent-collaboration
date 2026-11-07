@@ -32,6 +32,13 @@ from typing import Protocol
 
 from runtime.communication_tools import NATIVE_COLLABORATION_TOOLS
 from runtime.driver_claim import ClaimRejected, KernelClaim
+from runtime.receiver_lifecycle import (
+    AuthorizedLifecycleObservation,
+    AuthorizedLifecycleOperation,
+    check_lifecycle_driver,
+    lifecycle_operation_id,
+    lifecycle_source_fields,
+)
 
 if __package__:
     from .codex_jsonrpc import JsonRpcClient, RpcError, RpcPreCallTimeout
@@ -81,7 +88,13 @@ class AuthorizedOperation:
     grant_ref: str
     deadline: datetime | None
 
+    @property
+    def read_only(self):
+        return False
+
     def validate(self, clock=None):
+        if type(self.read_only) is not bool:
+            raise DriverRejected("operation read capability must be a trusted boolean")
         if any(
             not isinstance(value, str) or not 1 <= len(value) <= 256
             for value in (self.operation_id, self.command_id, self.message_id, self.grant_ref)
@@ -116,6 +129,15 @@ class AuthorizedOperation:
         if remaining <= 0:
             raise DriverRejected("operation authorization deadline expired")
         return remaining
+
+
+@dataclass(frozen=True)
+class AuthorizedObservation(AuthorizedOperation):
+    """Current read capability; no Driver lifecycle/input action is admitted."""
+
+    @property
+    def read_only(self):
+        return True
 
 
 @dataclass(frozen=True)
@@ -154,8 +176,13 @@ class LaunchProfile:
     execution_mode: str = "restricted"
     startup_overrides: tuple[str, ...] = ()
     collaboration_server: str | None = None
+    history_mode: str | None = None
 
     def validate(self):
+        if self.history_mode is not None and (
+            self.history_mode != "paginated" or self.version != "0.166.0" or self.execution_mode != "native"
+        ):
+            raise DriverRejected("explicit paginated history requires the reviewed Codex 0.166.0 Native contract")
         if len(self.startup_overrides) > 32:
             raise DriverRejected("too many trusted Native configuration overrides")
         for value in self.startup_overrides:
@@ -226,7 +253,8 @@ class LaunchProfile:
 
     def binding(self):
         # Do not serialize environment values or configuration contents.
-        value = {k: v for k, v in asdict(self).items() if k not in {"environment", "startup_overrides"}}
+        value = {k: v for k, v in asdict(self).items() if k not in {"environment", "startup_overrides"}
+                 and not (k == "history_mode" and v is None)}
         if self.startup_overrides:
             value["startup_overrides_sha256"] = hashlib.sha256(json.dumps(self.startup_overrides).encode()).hexdigest()
         return value
@@ -252,6 +280,14 @@ class DriverJournal:
     two local Driver instances from mutating one binding. No lock stealing or
     timeout-based takeover is performed. Node still owns cross-host fencing.
     """
+
+    _LIFECYCLE_DDL = ("CREATE TABLE driver_operations("
+        "operation_id TEXT PRIMARY KEY,binding_id TEXT NOT NULL,command_id TEXT NOT NULL UNIQUE,"
+        "message_id TEXT UNIQUE,action TEXT NOT NULL,input_hash TEXT NOT NULL,input_json TEXT NOT NULL,"
+        "state TEXT NOT NULL,result_json TEXT,source_kind TEXT NOT NULL,source_ref TEXT NOT NULL,"
+        "CHECK((source_kind='legacy' AND message_id IS NOT NULL AND source_ref=operation_id) OR "
+        "(source_kind='receiver_lifecycle' AND message_id IS NULL AND action IN ('spawn','resume'))),"
+        "UNIQUE(source_kind,source_ref,action))")
 
     def __init__(self, path, *, clock=None):
         self.clock = clock
@@ -279,6 +315,142 @@ class DriverJournal:
                 yield conn
         finally:
             conn.close()
+
+    @staticmethod
+    def _source_schema(connection):
+        columns = connection.execute("PRAGMA table_info(driver_operations)").fetchall()
+        names = [row[1] for row in columns]
+        legacy = ["operation_id", "binding_id", "command_id", "message_id", "action", "input_hash", "input_json", "state", "result_json"]
+        metadata = connection.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='driver_journal_metadata'").fetchone()
+        if names == legacy and metadata is None:
+            if any(row[2].upper() != "TEXT" or row[3] != (0 if row[1] in {"operation_id", "result_json"} else 1)
+                   or row[5] != (1 if row[1] == "operation_id" else 0) for row in columns):
+                raise DriverRejected("legacy Driver journal shape requires operator review")
+            return 1
+        if names != [*legacy, "source_kind", "source_ref"] or metadata is None:
+            raise DriverRejected("Driver journal source schema requires explicit operator adoption")
+        rows = connection.execute("SELECT name,value FROM driver_journal_metadata").fetchall()
+        if (rows != [("source_identity_schema", "2")]
+                or any(row[2].upper() != "TEXT" or row[3] != (0 if row[1] in {"operation_id", "message_id", "result_json"} else 1)
+                       or row[5] != (1 if row[1] == "operation_id" else 0) for row in columns)):
+            raise DriverRejected("Driver journal lifecycle schema identity is unavailable")
+        return 2
+
+    @staticmethod
+    def _adoption_snapshot(connection):
+        operations = connection.execute("SELECT operation_id,binding_id,command_id,message_id,action,input_hash,input_json,state,result_json "
+                                        "FROM driver_operations ORDER BY operation_id").fetchall()
+        events = connection.execute("SELECT sequence,operation_id,kind,body,observed_at FROM driver_events ORDER BY sequence").fetchall()
+        sequence = connection.execute("SELECT seq FROM sqlite_sequence WHERE name='driver_events'").fetchone()
+        return operations, events, sequence
+
+    def preview_lifecycle_adoption(self):
+        """Read-only preview; no schema or evidence is rewritten."""
+        with self._connect() as connection:
+            connection.execute("BEGIN")
+            version = self._source_schema(connection)
+            snapshot = self._adoption_snapshot(connection)
+        return {"schema_version": version, "legacy_digest": digest(snapshot),
+                "operation_count": len(snapshot[0]), "event_count": len(snapshot[1])}
+
+    def adopt_lifecycle_schema(self, *, expected_legacy_digest=None):
+        """Explicit same-journal adoption; run only with capacity quiesced.
+
+        This instance's claims and any journaled binding's live kernel claim
+        reject adoption. SQLite EXCLUSIVE serializes the copy/verify/rename.
+        Operator quiescence also covers an unjournaled capacity in another
+        process; no production bootstrap calls this method automatically.
+        """
+        reservations = []
+        with self._claim_mutex:
+            if self._claims:
+                raise DriverRejected("quiesce Driver claims before lifecycle journal adoption")
+            try:
+                with self._connect() as connection:
+                    connection.execute("BEGIN EXCLUSIVE")
+                    version = self._source_schema(connection)
+                    before = self._adoption_snapshot(connection)
+                    if expected_legacy_digest is not None and expected_legacy_digest != digest(before):
+                        raise DriverRejected("Driver journal changed since lifecycle adoption preview")
+                    if version == 2:
+                        self._verify_lifecycle_schema(connection)
+                        return {"schema_version": 2, "legacy_digest": digest(before), "migrated": False,
+                                "operation_count": len(before[0]), "event_count": len(before[1])}
+                    extra = connection.execute("SELECT name FROM sqlite_master WHERE tbl_name='driver_operations' "
+                        "AND (type='trigger' OR type='index' AND sql IS NOT NULL)").fetchall()
+                    if extra or connection.execute("SELECT 1 FROM sqlite_master WHERE name='driver_operations_before_lifecycle_adoption'").fetchone():
+                        raise DriverRejected("unrecognized Driver journal objects require operator review")
+                    if not {("operation_id",), ("command_id",), ("message_id",)} <= self._operation_keys(connection):
+                        raise DriverRejected("legacy Driver journal identity fence requires operator review")
+                    for row in before[0]:
+                        self._verify_operation_row(row, 1)
+                    for binding in sorted({row[1] for row in before[0]}):
+                        try:
+                            reservations.append(KernelClaim(self.path + "." + digest(binding) + ".lock", binding))
+                        except (OSError, ClaimRejected) as error:
+                            raise DriverRejected("quiesce journaled Driver bindings before lifecycle adoption") from error
+                    connection.execute("ALTER TABLE driver_operations RENAME TO driver_operations_before_lifecycle_adoption")
+                    connection.execute(self._LIFECYCLE_DDL)
+                    connection.execute("INSERT INTO driver_operations SELECT *, 'legacy',operation_id "
+                                       "FROM driver_operations_before_lifecycle_adoption")
+                    connection.execute("CREATE TABLE driver_journal_metadata(name TEXT PRIMARY KEY,value TEXT NOT NULL)")
+                    connection.execute("INSERT INTO driver_journal_metadata VALUES('source_identity_schema','2')")
+                    self._verify_lifecycle_schema(connection)
+                    if self._adoption_snapshot(connection) != before:
+                        raise DriverRejected("lifecycle adoption changed legacy Driver evidence")
+                    connection.execute("DROP TABLE driver_operations_before_lifecycle_adoption")
+                return {"schema_version": 2, "legacy_digest": digest(before), "migrated": True,
+                        "operation_count": len(before[0]), "event_count": len(before[1])}
+            finally:
+                for claim in reversed(reservations):
+                    claim.close()
+
+    @staticmethod
+    def _operation_keys(connection):
+        return {tuple(row[0] for row in connection.execute("SELECT name FROM pragma_index_info(?) ORDER BY seqno", (index[1],)).fetchall())
+                for index in connection.execute("PRAGMA index_list(driver_operations)").fetchall() if index[2]}
+
+    @staticmethod
+    def _operation_columns(schema):
+        return ("operation_id,binding_id,command_id,message_id,action,input_hash,input_json,state,result_json"
+                + (",source_kind,source_ref" if schema == 2 else ""))
+
+    @staticmethod
+    def _verify_operation_row(row, schema):
+        """SQL lookup/fence labels must agree with the unchanged hashed input."""
+        try:
+            operation_id, binding, command, message, action, hashed, encoded = row[:7]
+            if any(type(value) is not str or not value for value in (operation_id, binding, command, action, hashed, encoded, row[7])):
+                raise ValueError("stored identity is incomplete")
+            body = json.loads(encoded)
+            if (type(body) is not dict or digest(body) != hashed
+                    or (body.get("binding_id"), body.get("command_id"), body.get("action")) != (binding, command, action)):
+                raise ValueError("physical identity differs from hashed input")
+            kind, source_ref = row[9:] if schema == 2 else ("legacy", operation_id)
+            if kind == "legacy":
+                if (type(message) is not str or not message or body.get("message_id") != message
+                        or source_ref != operation_id):
+                    raise ValueError("legacy message/source identity differs")
+            elif (kind != "receiver_lifecycle" or action not in {"spawn", "resume"}
+                    or message is not None or "message_id" in body or body.get("source_ref") != source_ref
+                    or body.get("source_kind") != kind
+                    or operation_id != lifecycle_operation_id(source_ref, action,
+                        restore_process_ref=body.get("restore_process_ref"))):
+                raise ValueError("lifecycle source/action identity differs")
+        except (TypeError, ValueError, KeyError) as error:
+            raise DriverRejected("Driver journal stored identity is unavailable") from error
+
+    def _verify_lifecycle_schema(self, connection):
+        if self._source_schema(connection) != 2:
+            raise DriverRejected("explicit lifecycle Driver schema adoption required")
+        definition = connection.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='driver_operations'").fetchone()[0]
+        if "".join(definition.split()) != "".join(self._LIFECYCLE_DDL.split()):
+            raise DriverRejected("Driver lifecycle journal shape/checks are unavailable")
+        keys = self._operation_keys(connection)
+        if not {("operation_id",), ("command_id",), ("message_id",), ("source_kind", "source_ref", "action")} <= keys:
+            raise DriverRejected("Driver lifecycle journal identity fence is unavailable")
+        for row in connection.execute("SELECT " + self._operation_columns(2) + " FROM driver_operations"):
+            self._verify_operation_row(row, 2)
 
     def claim(self, binding_id):
         path = self.path + "." + digest(binding_id) + ".lock"
@@ -346,9 +518,15 @@ class DriverJournal:
     def begin(self, operation, binding, action, payload, *, clock=None):
         clock = self.clock if clock is None else clock
         operation.validate(clock)
+        if operation.read_only:
+            raise DriverRejected("read-only capability cannot create a Driver operation")
+        lifecycle = type(operation) is AuthorizedLifecycleOperation
+        if lifecycle and (operation.action != action or operation.binding_id != binding
+                          or payload.get("binding") != asdict(operation.binding)):
+            raise DriverRejected("lifecycle journal action/binding differs from authorization")
         body = {
             "command_id": operation.command_id,
-            "message_id": operation.message_id,
+            **lifecycle_source_fields(operation),
             "grant_ref": operation.grant_ref,
             "deadline": operation.deadline.isoformat() if operation.deadline else None,
             "binding_id": binding,
@@ -357,34 +535,58 @@ class DriverJournal:
         }
         with self._connect() as conn:
             conn.execute("BEGIN IMMEDIATE")
+            schema = self._source_schema(conn)
+            if lifecycle and schema != 2:
+                raise DriverRejected("explicit lifecycle Driver journal adoption required")
             operation.validate(clock)
             row = conn.execute(
-                "SELECT input_hash FROM driver_operations WHERE operation_id=?",
+                "SELECT " + self._operation_columns(schema) + " FROM driver_operations WHERE operation_id=?",
                 (operation.operation_id,),
             ).fetchone()
             if row is not None:
-                if row[0] != digest(body):
+                self._verify_operation_row(row, schema)
+                if (row[5] != digest(body) or (row[1], row[4]) != (binding, action)
+                        or schema == 2 and (*row[9:], row[3]) != (
+                        "receiver_lifecycle" if lifecycle else "legacy", operation.source_ref if lifecycle else operation.operation_id,
+                        None if lifecycle else operation.message_id)):
                     raise DriverRejected("operation identity reused with different input")
             else:
-                pending = conn.execute(
-                    "SELECT operation_id FROM driver_operations WHERE binding_id=? "
-                    "AND state IN ('intent','uncertain') LIMIT 1",
-                    (binding,),
-                ).fetchone()
-                if pending and action not in {"terminate", "cancel"}:
-                    raise OutcomeUncertain("binding has unresolved operation: " + pending[0])
-                conn.execute(
-                    "INSERT INTO driver_operations VALUES(?,?,?,?,?,?,?,'intent',NULL)",
-                    (
+                pending_id = None
+                # Validate unresolved fence labels before filtering by binding:
+                # corrupt SQL binding B must not hide uncertain input for A.
+                for pending in conn.execute("SELECT " + self._operation_columns(schema) +
+                        " FROM driver_operations WHERE state IN ('intent','uncertain')"):
+                    self._verify_operation_row(pending, schema)
+                    if pending[1] == binding:
+                        pending_body = json.loads(pending[6])
+                        if (lifecycle and action == "resume" and operation.restore_process_ref is not None
+                                and payload.get("restore_process") is True and pending[4] == "invoke"
+                                and pending_body["payload"].get("binding") == asdict(operation.binding)
+                                and (pending_body["payload"].get("thread_id") or pending_body["payload"].get("native_session_id")) == operation.native_session_ref):
+                            # Reconnect only the original dedup domain so it can
+                            # be queried. Its uncertain input remains fenced;
+                            # neither a new prompt nor another Session is allowed.
+                            continue
+                        pending_id = pending[0]
+                        break
+                if pending_id is not None and action not in {"terminate", "cancel"}:
+                    raise OutcomeUncertain("binding has unresolved operation: " + pending_id)
+                values = (
                         operation.operation_id,
                         binding,
                         operation.command_id,
-                        operation.message_id,
+                        None if lifecycle else operation.message_id,
                         action,
                         digest(body),
                         canonical(body),
-                    ),
-                )
+                    )
+                if schema == 1:
+                    conn.execute("INSERT INTO driver_operations(operation_id,binding_id,command_id,message_id,action,input_hash,input_json,state,result_json) "
+                                 "VALUES(?,?,?,?,?,?,?,'intent',NULL)", values)
+                else:
+                    conn.execute("INSERT INTO driver_operations(operation_id,binding_id,command_id,message_id,action,input_hash,input_json,state,result_json,source_kind,source_ref) "
+                        "VALUES(?,?,?,?,?,?,?,'intent',NULL,?,?)", (*values, "receiver_lifecycle" if lifecycle else "legacy",
+                        operation.source_ref if lifecycle else operation.operation_id))
         return {**self.read(operation.operation_id), "created": row is None}
 
     def event(self, operation_id, kind, body, *, observed_at=None):
@@ -474,6 +676,11 @@ class CodexAppServerDriver:
 
     def _rpc(self, operation, method, params, *, on_dispatch=None):
         operation.validate(self.clock)
+        check_lifecycle_driver(operation, self)
+        if type(operation) is AuthorizedLifecycleOperation:
+            operation.check_rpc(method)
+        if type(operation) is AuthorizedLifecycleObservation:
+            operation.check_rpc(method, params)
         self.check_current(operation, self.identity)
         request_id = uuid.uuid4().hex
         self.journal.event(
@@ -485,7 +692,7 @@ class CodexAppServerDriver:
                 "params": params,
                 "binding": asdict(self.identity),
                 "command_id": operation.command_id,
-                "message_id": operation.message_id,
+                **lifecycle_source_fields(operation),
                 "grant_ref": operation.grant_ref,
             },
         )
@@ -494,8 +701,17 @@ class CodexAppServerDriver:
         remaining = operation.remaining(self.clock)
         def before_send():
             operation.validate(self.clock)
+            check_lifecycle_driver(operation, self)
+            if type(operation) is AuthorizedLifecycleObservation:
+                operation.check_rpc(method, params)
             self.check_current(operation, self.identity)
             operation.validate(self.clock)
+            check_lifecycle_driver(operation, self)
+            if operation.read_only and method not in {
+                "initialize", "thread/read", "thread/turns/list", "config/read",
+                "experimentalFeature/list", "permissionProfile/list", "mcpServerStatus/list",
+            }:
+                raise DriverRejected("read-only Native observation cannot authorize a Native RPC mutation")
 
         def dispatch():
             previous_attempted = self._turn_start_attempted
@@ -549,8 +765,15 @@ class CodexAppServerDriver:
     def _run(self, operation, action, payload, function):
         with self._lock:
             operation.validate(self.clock)
+            check_lifecycle_driver(operation, self, action=action)
             self.check_current(operation, self.identity)
             operation.validate(self.clock)
+            if operation.read_only:
+                raise DriverRejected("read-only Native observation cannot authorize a Driver action")
+            if action == "invoke" and payload.get("handoff_context") is not None:
+                from runtime.native_handoff import handoff_payload
+
+                payload = handoff_payload(self, operation, payload, payload["handoff_context"])
             record = self.journal.begin(
                 operation, self.binding_id, action, {**payload, "binding": asdict(self.identity)},
                 clock=self.clock,
@@ -569,11 +792,12 @@ class CodexAppServerDriver:
                     "durable intent already has execution evidence; no blind retry"
                 )
             try:
+                check_lifecycle_driver(operation, self, action=action, fresh_effect=True)
                 result = function()
                 result.update(
                     operation_id=operation.operation_id,
                     command_id=operation.command_id,
-                    message_id=operation.message_id,
+                    **lifecycle_source_fields(operation),
                 )
                 self.journal.finish(operation.operation_id, "acknowledged", result)
                 return result
@@ -637,6 +861,8 @@ class CodexAppServerDriver:
         return thread
 
     def _settings(self, operation, response):
+        if self.profile.history_mode is not None and response.get("thread", {}).get("historyMode") != self.profile.history_mode:
+            raise DriverRejected("native persisted history mode differs from the selected profile")
         if self.profile.execution_mode == "native":
             if Path(response.get("cwd", "")) != Path(self.profile.cwd):
                 raise DriverRejected("native session cwd differs from the selected project")
@@ -686,67 +912,91 @@ class CodexAppServerDriver:
                         or set(matches[0].get("tools", {})) - set(NATIVE_COLLABORATION_TOOLS)):
                     raise DriverRejected("native communication MCP tools were not positively observed")
 
+    def _launch_owned_transport(self, operation, *, lifecycle_action):
+        if lifecycle_action not in {"spawn", "resume"}:
+            raise DriverRejected("unsupported owned transport lifecycle action")
+        if lifecycle_action == "resume":
+            from runtime.native_restore import restoration_history
+
+            previous = restoration_history(self, exclude_operation_id=operation.operation_id)
+            if getattr(operation, "restore_process_ref", None) != previous["evidence_ref"]:
+                raise DriverRejected("restoration requires its exact original stopped process")
+            if self.client is not None:
+                self.client.close()
+            self._initialized = False
+        if lifecycle_action == "spawn" and self.client is not None:
+            raise DriverRejected("Driver already has an endpoint")
+        self.profile.validate()
+        self.check_current(operation, self.identity)
+        argv = [self.profile.executable]
+        for override in self.profile.startup_overrides:
+            argv.extend(["-c", override])
+        if self.profile.execution_mode == "restricted":
+            argv.extend(["--disable", "multi_agent", "--disable", "multi_agent_v2"])
+        argv.append("app-server")
+        journal_argv = ([self.profile.executable, "<trusted startup overrides sha256:" +
+                        hashlib.sha256(json.dumps(self.profile.startup_overrides).encode()).hexdigest() + ">", "app-server"]
+                        if self.profile.startup_overrides else argv)
+        env = dict(self.profile.environment, CODEX_HOME=self.profile.codex_home)
+        process_label = "acs-codex-" + hashlib.sha256(
+            (self.binding_id + "\0" + operation.operation_id).encode()).hexdigest()
+        self.journal.event(
+            operation.operation_id,
+            "process_intent",
+            {"argv": journal_argv, "profile": self.profile.binding(), "process_label": process_label},
+        )
+        self.check_current(operation, self.identity)
+        operation.validate(self.clock)
+        check_lifecycle_driver(operation, self, action=lifecycle_action, fresh_effect=True)
+        self.journal.event(operation.operation_id, "process_dispatch",
+                           {"argv": journal_argv, "profile": self.profile.binding(), "binding": asdict(self.identity),
+                            "process_label": process_label})
+        if self.supervisor is not None:
+            def authorize_launch():
+                self.check_current(operation, self.identity)
+                operation.validate(self.clock)
+                check_lifecycle_driver(operation, self, action=lifecycle_action, fresh_effect=True)
+
+            launch_options = {"before_start": authorize_launch} if type(operation) is AuthorizedLifecycleOperation else {}
+            self.owned = self.supervisor.launch(
+                argv, cwd=self.profile.cwd, env=env, label=process_label, **launch_options
+            )
+        else:
+            process = subprocess.Popen(
+                argv,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=self.profile.cwd,
+                env=env,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            )
+            self.owned = OwnedProcess(process, "local-handle:" + uuid.uuid4().hex)
+        self.ownership = "exclusive_owned"
+        self.journal.event(
+            operation.operation_id,
+            "process_started",
+            {
+                "pid": self.owned.process.pid,
+                "birth_ref": self.owned.birth_ref,
+                "containment_id": self.owned.containment_id,
+            },
+        )
+        self.client = JsonRpcClient(
+            self.owned.process.stdout,
+            self.owned.process.stdin,
+            stderr=self.owned.process.stderr,
+            server_request_handler=self.server_request_handler,
+        )
+        self._owned_transport_identity = (id(self.owned), id(self.client))
+
     def spawn(self, operation):
         def perform():
-            if self.client is not None:
-                raise DriverRejected("Driver already has an endpoint")
-            self.profile.validate()
-            self.check_current(operation, self.identity)
-            argv = [self.profile.executable]
-            for override in self.profile.startup_overrides:
-                argv.extend(["-c", override])
-            if self.profile.execution_mode == "restricted":
-                argv.extend(["--disable", "multi_agent", "--disable", "multi_agent_v2"])
-            argv.append("app-server")
-            journal_argv = ([self.profile.executable, "<trusted startup overrides sha256:" +
-                            hashlib.sha256(json.dumps(self.profile.startup_overrides).encode()).hexdigest() + ">", "app-server"]
-                            if self.profile.startup_overrides else argv)
-            env = dict(self.profile.environment, CODEX_HOME=self.profile.codex_home)
-            process_label = "acs-codex-" + hashlib.sha256(
-                (self.binding_id + "\0" + operation.operation_id).encode()).hexdigest()
-            self.journal.event(
-                operation.operation_id,
-                "process_intent",
-                {"argv": journal_argv, "profile": self.profile.binding(), "process_label": process_label},
-            )
-            self.check_current(operation, self.identity)
-            operation.validate(self.clock)
-            self.journal.event(operation.operation_id, "process_dispatch",
-                               {"argv": journal_argv, "profile": self.profile.binding(), "binding": asdict(self.identity),
-                                "process_label": process_label})
-            if self.supervisor is not None:
-                self.owned = self.supervisor.launch(
-                    argv, cwd=self.profile.cwd, env=env, label=process_label
-                )
-            else:
-                process = subprocess.Popen(
-                    argv,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    cwd=self.profile.cwd,
-                    env=env,
-                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-                )
-                self.owned = OwnedProcess(process, "local-handle:" + uuid.uuid4().hex)
-            self.ownership = "exclusive_owned"
-            self.journal.event(
-                operation.operation_id,
-                "process_started",
-                {
-                    "pid": self.owned.process.pid,
-                    "birth_ref": self.owned.birth_ref,
-                    "containment_id": self.owned.containment_id,
-                },
-            )
-            self.client = JsonRpcClient(
-                self.owned.process.stdout,
-                self.owned.process.stdin,
-                stderr=self.owned.process.stderr,
-                server_request_handler=self.server_request_handler,
-            )
+            self._launch_owned_transport(operation, lifecycle_action="spawn")
             self._initialize(operation)
             params = {"cwd": self.profile.cwd, "ephemeral": False}
+            if self.profile.history_mode is not None:
+                params["historyMode"] = self.profile.history_mode
             if self.profile.execution_mode == "restricted":
                 params["approvalPolicy"] = "never"
                 if self.profile.version == "0.163.0":
@@ -766,7 +1016,10 @@ class CodexAppServerDriver:
             self._initial_context_response = json.loads(json.dumps(response))
             return self._binding_receipt("runtime_acknowledged")
 
-        return self._run(operation, "spawn", {"profile": self.profile.binding()}, perform)
+        payload = {"profile": self.profile.binding()}
+        if getattr(self, "_lifecycle_profile_seal", None) is not None:
+            payload["capacity_profile"] = dict(self._lifecycle_profile_seal)
+        return self._run(operation, "spawn", payload, perform)
 
     def attach(self, operation, client, thread_id):
         def perform():
@@ -965,7 +1218,7 @@ class CodexAppServerDriver:
                     matched.append(turn)
         return matched
 
-    def invoke(self, operation, text, *, on_dispatch=None):
+    def invoke(self, operation, text, *, on_dispatch=None, handoff_context=None):
         if not isinstance(text, str) or not text or len(text.encode()) > 1024 * 1024:
             raise DriverRejected("only bounded authorized text input is supported")
 
@@ -993,10 +1246,23 @@ class CodexAppServerDriver:
                 "runtime_acknowledged", turn_id=turn["id"], native_status=turn.get("status")
             )
 
-        return self._run(operation, "invoke", {"thread_id": self.thread_id, "text": text}, perform)
+        from runtime.native_handoff import handoff_payload
+
+        payload = handoff_payload(self, operation, {"thread_id": self.thread_id, "text": text}, handoff_context)
+        return self._run(operation, "invoke", payload, perform)
 
     def resume(self, operation):
+        from runtime.native_restore import restoration_payload
+
+        payload = restoration_payload(self, operation, "thread_id")
+
         def perform():
+            if payload["thread_id"] != self.thread_id:
+                raise DriverRejected("Native resume target changed before transport admission")
+            if payload.get("restore_process") is True:
+                self._launch_owned_transport(operation, lifecycle_action="resume")
+                self._initialize(operation)
+                self._initial_thread_snapshot = self._initial_context_response = None
             self._owned_mutation()
             if (not self._history_observed and not self._turn_start_attempted and not self._turn_start_dispatched
                     and self._initial_thread_snapshot is not None and self._initial_context_response is not None):
@@ -1008,16 +1274,17 @@ class CodexAppServerDriver:
                     self._settings(operation, self._initial_context_response)
                     return self._binding_receipt("context_resumed", native_context="unmaterialized_initial",
                                                  native_mutation=False)
-            response = self._rpc(
-                operation, "thread/resume", {"threadId": self.thread_id, "excludeTurns": True}
-            )
+            params = {"threadId": self.thread_id, "excludeTurns": True}
+            if payload.get("restore_process") is True and self.profile.history_mode is not None:
+                params["historyMode"] = self.profile.history_mode
+            response = self._rpc(operation, "thread/resume", params)
             self._native_thread(response)
             self._settings(operation, response)
             self._initial_thread_snapshot = json.loads(json.dumps(response["thread"]))
             self._initial_context_response = json.loads(json.dumps(response))
             return self._binding_receipt("context_resumed")
 
-        return self._run(operation, "resume", {"thread_id": self.thread_id}, perform)
+        return self._run(operation, "resume", payload, perform)
 
     def cancel(self, operation, turn_id):
         if not isinstance(turn_id, str) or not turn_id:

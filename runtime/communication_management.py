@@ -9,6 +9,92 @@ from runtime.project_common import IDENTIFIER, canonical, digest, handle, parse_
 
 
 class CommunicationManagement:
+    def _observe_legacy_session(self, committed, result, args, credential):
+        """Retain read-only legacy visibility; creation needs a fenced executor."""
+        project = args["project_id"]
+        slot = committed["collaborator_handle"].rsplit(":", 1)[1]
+        scope = parse_handle(result[1]["scope_handle"], "scope", project)
+        expected = {name: committed.get(name) for name in ("endpoint_id", "binding_revision")}
+        item = {**committed, "session_ref": None, "state": "provider_unavailable",
+                "preparation": "unsupported", "reason_code": "lifecycle_transport_unavailable"}
+        with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
+            bound, _root, command = self._authorize(authority, cursor, project, "configure_team", args)
+            self.service.authenticate(credential)
+            if self._receiving_binding(bound, cursor, project, scope, slot) != expected:
+                return item | {"state": "configuration_changed", "receiver_state": "unknown"}
+            bound._authorize(command, cursor, "runtime.read", scope)
+            provider = bound._delivery_endpoints.get(expected["endpoint_id"])
+            inspect = getattr(provider, "inspect_runtime", None)
+        # Observation may contact an existing Host; no SQL locks survive it.
+        # In particular, never call legacy prepare_runtime: it has no original
+        # lifecycle operation or final Node admission for a possible spawn.
+        if not callable(inspect):
+            return item
+        observed = inspect()
+        if not isinstance(observed, dict):
+            raise TypeError("receiver observation must be a mapping")
+        evidence = {"session_ref": observed.get("session_ref")
+                    if observed.get("observation") == "native_driver_readback" else None,
+                    "receiver_state": observed.get("state", "unknown"),
+                    "observation": observed.get("observation", "unknown")}
+        with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
+            bound, _root, command = self._authorize(authority, cursor, project, "configure_team", args)
+            self.service.authenticate(credential)
+            bound._authorize(command, cursor, "runtime.read", scope)
+            if (self._receiving_binding(bound, cursor, project, scope, slot) != expected
+                    or bound._delivery_endpoints.get(expected["endpoint_id"]) is not provider):
+                return item | {"state": "configuration_changed", "receiver_state": "unknown",
+                               "preparation_observation": evidence}
+            return item | evidence | {"state": "native_observed" if evidence["session_ref"] else "receiver_unconfirmed"}
+
+    def _prepare_fenced_session(self, committed, result, args, credential):
+        from runtime.receiver_recovery_operations import ReceiverRecoveryOperations
+
+        project = args["project_id"]
+        slot = committed["collaborator_handle"].rsplit(":", 1)[1]
+        scope = parse_handle(result[1]["scope_handle"], "scope", project)
+        expected = {name: committed.get(name) for name in ("endpoint_id", "binding_revision")}
+        item = {**committed, "session_ref": None, "state": "receiver_unconfirmed"}
+        with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
+            bound, _root, command = self._authorize(authority, cursor, project, "configure_team", args)
+            self.service.authenticate(credential)
+            if self._receiving_binding(bound, cursor, project, scope, slot) != expected:
+                return item | {"state": "configuration_changed", "receiver_state": "unknown"}
+            bound._authorize(command, cursor, "runtime.invoke", scope)
+        # No caller transaction survives submission or Node observation/effect.
+        # Team revision and the exact committed target make retries reuse their
+        # original recovery operation instead of allocating another Native run.
+        key = "configuration-preparation:" + digest([project, scope, slot, result[1]["team_revision"], expected])
+        recovery = ReceiverRecoveryOperations(self)
+        operation = recovery.submit(project, expected["endpoint_id"], {"action": "prepare_receiver",
+            "expected_revision": expected["binding_revision"],
+            "reason": "Prepare committed team revision " + str(result[1]["team_revision"])}, key, credential)
+        operation = recovery.advance(project, operation["operation_id"], credential)
+        item.update(preparation_operation_ref=operation["operation_id"], preparation="fenced_lifecycle",
+                    receiver_state="unknown", reason_code=operation["reason_code"])
+        with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
+            bound, _root, _command = self._authorize(authority, cursor, project, "configure_team", args)
+            self.service.authenticate(credential)
+            if self._receiving_binding(bound, cursor, project, scope, slot) != expected:
+                return item | {"state": "configuration_changed"}
+            current = recovery._row(cursor, project, operation["operation_id"])
+            data = current.get("lifecycle", {})
+            if current["operation"]["state"] != "completed":
+                return item | {"state": "preparation_" + current["operation"]["state"]}
+            receipt = data.get("receipt", {}).get("receipt", {})
+            capacity = data.get("observation", {}).get("observation", {}).get("capacity", {})
+            if receipt.get("outcome") == "acknowledged":
+                session = receipt.get("native_session_ref")
+                source = "signed_lifecycle_receipt"
+            elif data.get("phase") == "settled" and capacity.get("state") == "existing":
+                session = capacity.get("native_session_ref")
+                source = "signed_lifecycle_observation"
+            else:
+                session, source = None, "unknown"
+            if session:
+                item.update(session_ref=session, state="native_observed", observation=source)
+            return item
+
     def _receiving_binding(self, authority, cursor, project_id, scope, slot):
         cursor.execute("SELECT definition FROM collaboration_teams WHERE tenant_id=%s AND project_id=%s AND scope_id=%s",
                        (self.context.tenant_id, project_id, scope))
@@ -31,34 +117,14 @@ class CommunicationManagement:
         """
         sessions = []
         for committed in result[1]["native_sessions"]:
-            reference = committed["collaborator_handle"]
-            slot = reference.rsplit(":", 1)[1]
             item = {**committed, "session_ref": None, "state": "provider_unavailable"}
             expected = {name: committed.get(name) for name in ("endpoint_id", "binding_revision")}
             try:
-                with self.service.authority.transaction() as (authority, connection), connection.cursor() as cursor:
-                    bound, _project, command = self._authorize(authority, cursor, args["project_id"], "configure_team", args)
-                    self.service.authenticate(credential)
-                    scope = parse_handle(result[1]["scope_handle"], "scope", args["project_id"])
-                    current = self._receiving_binding(bound, cursor, args["project_id"], scope, slot)
-                    if current != expected:
-                        item.update(state="configuration_changed", receiver_state="unknown")
-                        sessions.append(item)
-                        continue
-                    provider = bound._delivery_endpoints.get(expected["endpoint_id"]) if expected["endpoint_id"] else None
-                    if provider is not None and callable(getattr(provider, "prepare_runtime", None)):
-                        bound._authorize(command, cursor, "runtime.invoke")
-                        observed = provider.prepare_runtime()
-                        if self._receiving_binding(bound, cursor, args["project_id"], scope, slot) != expected:
-                            item.update(state="configuration_changed", receiver_state="unknown",
-                                preparation_observation={"session_ref":observed.get("session_ref") if observed.get("observation")=="native_driver_readback" else None,
-                                    "receiver_state":observed.get("state","unknown"),"observation":observed.get("observation","unknown")})
-                            sessions.append(item)
-                            continue
-                        confirmed = observed.get("observation") == "native_driver_readback" and observed.get("session_ref")
-                        item.update(session_ref=observed.get("session_ref"), state="native_observed" if confirmed else "receiver_unconfirmed",
-                                    receiver_state=observed.get("state", "unknown"), observation=observed.get("observation", "unknown"),
-                                    preparation=observed.get("preparation", "unknown"))
+                transports = getattr(self.service.authority, "_receiver_lifecycle_transports", {})
+                if expected["endpoint_id"] in transports:
+                    sessions.append(self._prepare_fenced_session(committed, result, args, credential))
+                    continue
+                item = self._observe_legacy_session(committed, result, args, credential)
             except Exception as error:  # noqa: BLE001 - committed configuration remains reviewable.
                 item.update(state="preparation_unavailable", error_type=type(error).__name__)
             sessions.append(item)
@@ -125,6 +191,13 @@ class CommunicationManagement:
                 raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
             if old and old["principal_ref"] != member["principal_ref"]:
                 raise ValueError("a stable Slot cannot change author identity")
+            cursor.execute("SELECT tenant_id,scope_id FROM agent_slots WHERE agent_slot_id=%s FOR UPDATE", (slot,))
+            existing = cursor.fetchone()
+            if existing and existing != (self.context.tenant_id, scope):
+                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
+            # Rebind may retire a receiver while this command waits for the
+            # stable Slot. Validate the preference after that wait, under the
+            # same Slot fence used by endpoint publication.
             if member.get("endpoint_id") is not None:
                 if not isinstance(member["endpoint_id"], str):
                     raise ValueError("endpoint_id must be an admitted reference or null")
@@ -132,10 +205,6 @@ class CommunicationManagement:
                                (self.context.tenant_id, member["endpoint_id"]))
                 if cursor.fetchone() != (scope, slot, "active"):
                     raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
-            cursor.execute("SELECT tenant_id,scope_id FROM agent_slots WHERE agent_slot_id=%s FOR UPDATE", (slot,))
-            existing = cursor.fetchone()
-            if existing and existing != (self.context.tenant_id, scope):
-                raise AuthorizationDenied(self.context.principal_ref, self.context.grant_ref)
             cursor.execute("SELECT principal_ref,profile FROM collaboration_memberships WHERE tenant_id=%s "
                            "AND project_id=%s AND agent_slot_id=%s", (self.context.tenant_id, project_id, slot))
             owners = cursor.fetchall()

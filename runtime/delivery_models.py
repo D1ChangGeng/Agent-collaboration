@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator, model_serializer
 
 # Signed cross-host observation includes authorization and receipt persistence.
 # The receiver independently refreshes its shorter local lease before invoking.
@@ -58,6 +58,14 @@ class DeliveryPacket(DeliveryModel):
         return values
 
 
+class MessageAttachmentRef(DeliveryModel):
+    attachment_id: str = Field(pattern=r"^attachment-[a-f0-9]{32}$")
+    name: str = Field(min_length=1, max_length=255)
+    media_type: str = Field(min_length=1, max_length=256)
+    bytes: int = Field(ge=1, strict=True)
+    sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
 class MessagePacket(DeliveryModel):
     """An authenticated natural message, independent of the retired work domain."""
 
@@ -65,7 +73,7 @@ class MessagePacket(DeliveryModel):
     project_id: str = Field(min_length=1, max_length=128)
     sender: str = Field(min_length=1, max_length=512)
     recipient: str = Field(min_length=1, max_length=512)
-    content: str = Field(min_length=1, max_length=32768)
+    content: str = Field(min_length=1, max_length=1048576)
     reply_to: tuple[str, ...] = Field(default=(), max_length=32)
     response_mode: Literal["async", "sync"] = "async"
     target_scope_id: str = Field(min_length=1, max_length=256)
@@ -75,6 +83,21 @@ class MessagePacket(DeliveryModel):
     deadline: datetime | None = None
     maximum_attempts: int = Field(default=3, ge=1, le=8, strict=True)
     retry_delay_seconds: int = Field(default=1, ge=1, le=30, strict=True)
+    attachment_refs: tuple[MessageAttachmentRef, ...] = Field(default=(), max_length=8)
+
+    @model_serializer(mode="wrap")
+    def legacy_empty_attachments(self, handler):
+        value = handler(self)
+        if not self.attachment_refs:
+            value.pop("attachment_refs", None)
+        return value
+
+    @field_validator("attachment_refs")
+    @classmethod
+    def distinct_attachments(cls, values):
+        if len({value.attachment_id for value in values}) != len(values):
+            raise ValueError("message attachment identities must be unique")
+        return values
 
     @field_validator("content")
     @classmethod

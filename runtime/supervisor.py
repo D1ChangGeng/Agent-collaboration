@@ -218,7 +218,9 @@ class WindowsJobSupervisor(_Ownership):
             self.api.dll.CloseHandle(process_handle)
         record.details["member_handles"].clear()
 
-    def launch(self, argv: Sequence[str], *, cwd: str, env: Mapping[str, str], label: str) -> OwnedProcess:
+    def launch(self, argv: Sequence[str], *, cwd: str, env: Mapping[str, str], label: str, before_start=None) -> OwnedProcess:
+        if before_start is not None and not callable(before_start):
+            raise TypeError("launch authorization must be a trusted callback")
         args = _validate_launch(argv, env, label)
         if not Path(cwd).is_dir():
             raise ValueError("cwd must be an existing authorized directory")
@@ -236,6 +238,8 @@ class WindowsJobSupervisor(_Ownership):
                 limits.basic.active_limit = self.max_processes
             self.api.check(self.api.dll.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits)),
                            "SetInformationJobObject")
+            if before_start is not None:
+                before_start()
             process = subprocess.Popen(args, cwd=cwd, env=dict(env), stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                        creationflags=0x4 | 0x08000000, close_fds=True)  # SUSPENDED | NO_WINDOW
@@ -254,6 +258,8 @@ class WindowsJobSupervisor(_Ownership):
             with self._lock:
                 self._records[owned.containment_id] = record
                 self._track_members(record)
+                if before_start is not None:
+                    before_start()
                 self.api.resume_root(process.pid)
             return owned
         except BaseException:

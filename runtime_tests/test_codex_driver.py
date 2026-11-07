@@ -1250,3 +1250,42 @@ def test_native_environment_preserves_selected_settings_and_multiagent(native):
     assert "--disable" not in f.launches[0][0]
     f.driver.invoke(replace(operation("native-invoke"), deadline=None), "fixture request")
     assert f.state["turn_calls"] == 1
+
+
+@pytest.mark.parametrize("returned", ["paginated", "legacy", None])
+def test_native_0166_paginated_history_is_explicit_and_positively_observed(native, monkeypatch, returned):
+    from dataclasses import replace
+
+    driver = native.driver
+    assert "history_mode" not in driver.profile.binding()  # Keep prior profile fingerprints byte-compatible.
+    driver.profile = replace(driver.profile, version="0.166.0", execution_mode="native", history_mode="paginated")
+    assert driver.profile.binding()["history_mode"] == "paginated"
+    original = driver._rpc
+
+    def readback(operation, method, params, **kwargs):
+        response = original(operation, method, params, **kwargs)
+        if method == "thread/start":
+            assert params["historyMode"] == "paginated"
+            if returned is not None:
+                response["thread"]["historyMode"] = returned
+        return response
+
+    monkeypatch.setattr(driver, "_rpc", readback)
+    if returned != "paginated":
+        with pytest.raises(DriverRejected, match="persisted history mode"):
+            driver.spawn(operation("new-history-contract"))
+        assert native.state["turn_calls"] == 0
+    else:
+        driver.spawn(operation("new-history-contract"))
+        assert driver.thread_id == "thread-1"
+
+
+@pytest.mark.parametrize("version,mode,history", [("0.153.2", "native", "paginated"),
+    ("0.166.0", "restricted", "paginated"), ("0.166.0", "native", "legacy"), ("0.166.0", "native", "arbitrary")])
+def test_history_contract_rejects_unreviewed_selections_before_launch(native, version, mode, history):
+    from dataclasses import replace
+
+    native.driver.profile = replace(native.driver.profile, version=version, execution_mode=mode, history_mode=history)
+    with pytest.raises(DriverRejected, match="reviewed Codex 0.166.0 Native"):
+        native.driver.spawn(operation("bad-history-contract"))
+    assert native.launches == [] and native.state["turn_calls"] == 0

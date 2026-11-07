@@ -1,0 +1,616 @@
+{
+  "schema_version": "acs-change-items/1",
+  "note": "Items are independently reconcilable. Their list order is not a mandatory replay order. P0/P1 are required after evidence-based gap assessment; P2 remains optional.",
+  "items": [
+    {
+      "id": "C01",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "通信核心/身份和回复不回归",
+      "present_baseline": "已有稳定 Slot/Client/Root/Route，send/reply/wait/Inbox/Outbox",
+      "required_delta": "对所有新路径核验信任边界、默认语义、回复严格关系",
+      "reuse_first": "runtime/communication.py; runtime/communication_management.py; current MCP domain",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-001",
+        "R-002",
+        "R-003",
+        "R-006",
+        "R-007",
+        "R-008",
+        "R-009",
+        "R-010"
+      ],
+      "test_ids": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T011",
+        "T012",
+        "T013",
+        "T015",
+        "T016",
+        "T017",
+        "T018",
+        "T019",
+        "T020",
+        "T094"
+      ],
+      "depends_on": [],
+      "assessment_required": true
+    },
+    {
+      "id": "C02",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "Adapter 能力/证据声明",
+      "present_baseline": "已有 Codex/OpenCode Driver 和 list_harnesses",
+      "required_delta": "描述真实 Native 能力、观察来源/新鲜度/连接代次、unsupported",
+      "reuse_first": "existing receiver factory/Driver/Node callbacks; avoid duplicate adapter layer",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-017",
+        "R-039"
+      ],
+      "test_ids": [
+        "T033",
+        "T034",
+        "T077",
+        "T078"
+      ],
+      "depends_on": [
+        "C01"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C03",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "最后输入准入",
+      "present_baseline": "已有 Native 接收/idle/受限 busy",
+      "required_delta": "在同 binding/operation/权限/Provider readiness 下安全提交，保护审批/用户草稿",
+      "reuse_first": "native_delivery.py; receiver_codex/opencode",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-015",
+        "R-016"
+      ],
+      "test_ids": [
+        "T029",
+        "T030",
+        "T031",
+        "T032"
+      ],
+      "depends_on": [
+        "C02"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C04",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "Native 操作证据和未知调和",
+      "present_baseline": "已有 Outbox/operation/Node Journal/ACK 与防重",
+      "required_delta": "关联原操作和最后交接证据，未知时不重复原生副作用",
+      "reuse_first": "existing operations/Outbox/Node Journal; no second ledger",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-004",
+        "R-005",
+        "R-011",
+        "R-012",
+        "R-013"
+      ],
+      "test_ids": [
+        "T007",
+        "T008",
+        "T009",
+        "T010",
+        "T014",
+        "T021",
+        "T022",
+        "T023",
+        "T024",
+        "T025",
+        "T026",
+        "T096"
+      ],
+      "depends_on": [
+        "C01",
+        "C02"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C05",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "绑定代次与接收端 fencing",
+      "present_baseline": "已有 Slot、Endpoint、binding revision、per-Slot dispatch fence",
+      "required_delta": "旧 Native 实例不能收到新绑定消息、迟到 ACK 只证明旧操作",
+      "reuse_first": "current receiver config and Node/Runtime admission",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-003",
+        "R-014",
+        "R-018"
+      ],
+      "test_ids": [
+        "T005",
+        "T006",
+        "T027",
+        "T028",
+        "T035",
+        "T036"
+      ],
+      "depends_on": [
+        "C04"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C06",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "支持条件下的安全唤醒/延期",
+      "present_baseline": "已有 busy 退避、maintenance、通知",
+      "required_delta": "运行时在合法就绪边缘推进，避免模型回合重入或重复唤醒",
+      "reuse_first": "default MCP maintenance, existing inbox and waits",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-020",
+        "R-029"
+      ],
+      "test_ids": [
+        "T039",
+        "T040",
+        "T057",
+        "T058"
+      ],
+      "depends_on": [
+        "C03",
+        "C04"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C07",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "受权 Session 续接与重新绑定",
+      "present_baseline": "稳定 Slot/Client 身份与基本 Session 准备",
+      "required_delta": "可证明恢复原会话；明确许可的新会话重绑；不伪造工作记忆",
+      "reuse_first": "current endpoint configuration/receiver lifecycle",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-019",
+        "R-036"
+      ],
+      "test_ids": [
+        "T037",
+        "T038",
+        "T071",
+        "T072"
+      ],
+      "depends_on": [
+        "C04",
+        "C05"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C08",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "跨主机/混合版本/限额",
+      "present_baseline": "已有 TLS/签名 Node/Receiver/Tunnel 与跨主机记录",
+      "required_delta": "核对对端能力代次、断线重试/ACK、受限公平调度",
+      "reuse_first": "existing remote receiver transport and system notice",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-031",
+        "R-037",
+        "R-040"
+      ],
+      "test_ids": [
+        "T061",
+        "T062",
+        "T073",
+        "T074",
+        "T079",
+        "T080",
+        "T089",
+        "T090",
+        "T092"
+      ],
+      "depends_on": [
+        "C04",
+        "C05"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C09",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "安全迁移与历史保留",
+      "present_baseline": "现有 schema/version/adoption/历史消息",
+      "required_delta": "增量兼容迁移与回滚、不可丢 lost operation",
+      "reuse_first": "communication_core_schema.sql, existing upgrade tooling",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-035"
+      ],
+      "test_ids": [
+        "T069",
+        "T070",
+        "T091",
+        "T093"
+      ],
+      "depends_on": [
+        "C04"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C10",
+      "tier": "P0_required",
+      "kind": "correctness_guard",
+      "title": "真实资格与原始证据",
+      "present_baseline": "已有 v2.3.1 受支持主链和历史证据",
+      "required_delta": "受影响版本正反/故障回归；明确 E0-E5 不互换",
+      "reuse_first": "runtime_tests and integration_evidence",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-038"
+      ],
+      "test_ids": [
+        "T075",
+        "T076"
+      ],
+      "depends_on": [
+        "C01"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C11",
+      "tier": "P0_required",
+      "kind": "capability_extension",
+      "title": "最小只读诊断/受控恢复",
+      "present_baseline": "已有 delivery/list_harnesses/notice",
+      "required_delta": "补足 unknown 原因/证据来源/受权 recovery，引入最少新 surface",
+      "reuse_first": "existing notice and result metadata",
+      "acceptance": "只读诊断/受权恢复/通知故障路径维持正确，个人 seen 的 T088 仍属 P2 可选；受控失败按原记录保存。",
+      "old_requirements": [
+        "R-037"
+      ],
+      "test_ids": [
+        "T073",
+        "T074"
+      ],
+      "depends_on": [
+        "C04",
+        "C07"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C12",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "可信 HTTP facade",
+      "present_baseline": "MCP 已有领域服务和授权",
+      "required_delta": "P1 必需 endpoint 共享 Domain/Auth，不复写消息权威",
+      "reuse_first": "existing Project Service and auth",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-028"
+      ],
+      "test_ids": [
+        "T055",
+        "T056"
+      ],
+      "depends_on": [
+        "C01"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C13",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "可重建 Conversation 查询",
+      "present_baseline": "已有通信消息、contacts、project",
+      "required_delta": "双人会话/最近消息/空会话定位/历史分页与关系",
+      "reuse_first": "existing ordered message index and reader",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-021"
+      ],
+      "test_ids": [
+        "T041",
+        "T042"
+      ],
+      "depends_on": [
+        "C12"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C14",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "客户端权限状态与技术状态",
+      "present_baseline": "MCP 已有 list/messages/delivery/notice",
+      "required_delta": "列出 profile/receivers/delivery/operation/notice 且可授权查询",
+      "reuse_first": "existing read_profile/list_harnesses/communication notices",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-030"
+      ],
+      "test_ids": [
+        "T059",
+        "T060"
+      ],
+      "depends_on": [
+        "C12",
+        "C02"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C15",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "一致快照与事件重放",
+      "present_baseline": "Authority commit sequence / Outbox 已存在",
+      "required_delta": "snapshot high-water + replay + auth revoke + cursor expired",
+      "reuse_first": "existing commit order and outbox; avoid second authority",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-023",
+        "R-024",
+        "R-025"
+      ],
+      "test_ids": [
+        "T045",
+        "T046",
+        "T047",
+        "T048",
+        "T049",
+        "T050",
+        "T095"
+      ],
+      "depends_on": [
+        "C12",
+        "C13"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C16",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "NativeLink 和两源 provenance",
+      "present_baseline": "已区分 ACS Message 和 Native Session",
+      "required_delta": "受权 link ACS 消息到真正 host operation；原生 transcript 不复制",
+      "reuse_first": "host native ref, existing message_handle",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-027"
+      ],
+      "test_ids": [
+        "T053",
+        "T054",
+        "T082"
+      ],
+      "depends_on": [
+        "C12"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C17",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "Orca-owned Receiver 最小端口",
+      "present_baseline": "ACS Receiver、Orca Native Host 两种单独 owner",
+      "required_delta": "声明受信 admit/observe/reconcile，维持同 Native Session 单一写入者",
+      "reuse_first": "existing ACS Receiver + proposed host port",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-032",
+        "R-034"
+      ],
+      "test_ids": [
+        "T063",
+        "T064",
+        "T067",
+        "T068"
+      ],
+      "depends_on": [
+        "C03",
+        "C04"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C18",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "Orca Native delegate 合同",
+      "present_baseline": "Orca 自己显示 Tool/Diff/Approval/Session",
+      "required_delta": "界面仅连接 NativeViewProvider, ACS 不克隆原生数据",
+      "reuse_first": "Orca public plugin API / explicitly recorded host gap",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-033"
+      ],
+      "test_ids": [
+        "T066",
+        "T083",
+        "T086",
+        "T087"
+      ],
+      "depends_on": [
+        "C16",
+        "C17"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C19",
+      "tier": "P1_required",
+      "kind": "client_service",
+      "title": "Headless 实际 ACS Client",
+      "present_baseline": "已有 HTTP/事件目标原型",
+      "required_delta": "验证从身份到收信、历史、事件和权限撤销的无 UI 端到端",
+      "reuse_first": "actual ACS HTTP/Authority + simulated native view clearly labeled",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-033"
+      ],
+      "test_ids": [
+        "T065",
+        "T081"
+      ],
+      "depends_on": [
+        "C12",
+        "C13",
+        "C14",
+        "C15",
+        "C16"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C20",
+      "tier": "P1_required",
+      "kind": "integration_contract",
+      "title": "完整 ACS 通信 UI 合同地图",
+      "present_baseline": "原包 30 项 UI 功能列表",
+      "required_delta": "逐项标 ACS/P2/Host delegate，验证功能降级和缺口",
+      "reuse_first": "current contracts/ui-feature-matrix.json",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-033"
+      ],
+      "test_ids": [
+        "T065",
+        "T081"
+      ],
+      "depends_on": [
+        "C12",
+        "C16",
+        "C18"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C21",
+      "tier": "P1_required",
+      "kind": "correctness_guard",
+      "title": "客户端与宿主授权/来源隔离",
+      "present_baseline": "ACS/Host 属不同权限/生命周期",
+      "required_delta": "会话绑定权限、跨源不可推断、SSE 撤销与 metadata 不能提权",
+      "reuse_first": "existing ACS auth, host-claimed identity must revalidate",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-024",
+        "R-027",
+        "R-032"
+      ],
+      "test_ids": [
+        "T047",
+        "T048",
+        "T053",
+        "T054",
+        "T063",
+        "T064"
+      ],
+      "depends_on": [
+        "C15",
+        "C16"
+      ],
+      "assessment_required": true
+    },
+    {
+      "id": "C22",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "个人已读与通知 seen",
+      "present_baseline": "旧包目标设计，未断言实际完成",
+      "required_delta": "个人 read frontier/seen 与 Inbox 消费分离",
+      "reuse_first": "existing permission and message index",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-022"
+      ],
+      "test_ids": [
+        "T043",
+        "T044",
+        "T088"
+      ],
+      "depends_on": [],
+      "assessment_required": true
+    },
+    {
+      "id": "C23",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "个人草稿/偏好与静音归档",
+      "present_baseline": "旧包目标设计，未断言实际完成",
+      "required_delta": "个人可控 CAS/同步/无权限泄漏",
+      "reuse_first": "viewer-scoped state",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-022"
+      ],
+      "test_ids": [
+        "T084"
+      ],
+      "depends_on": [],
+      "assessment_required": true
+    },
+    {
+      "id": "C24",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "附件二进制服务",
+      "present_baseline": "已有 Source/Artifact 引用，不等于附件传输",
+      "required_delta": "安全上传/finalize/ACL/digest/SSRF/生命周期",
+      "reuse_first": "SourceBinding and existing artifact ACL",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-026"
+      ],
+      "test_ids": [
+        "T051",
+        "T052",
+        "T085"
+      ],
+      "depends_on": [],
+      "assessment_required": true
+    },
+    {
+      "id": "C25",
+      "tier": "P2_optional",
+      "kind": "optional_product",
+      "title": "全文消息搜索",
+      "present_baseline": "旧包目标设计，未断言实际完成",
+      "required_delta": "ACL-aware text index/cursor/search",
+      "reuse_first": "message index and viewer auth",
+      "acceptance": "真实源码/必要回归/风险负例同时核验；无改造缺口可 retained_verified",
+      "old_requirements": [
+        "R-026"
+      ],
+      "test_ids": [],
+      "depends_on": [],
+      "assessment_required": true
+    }
+  ]
+}

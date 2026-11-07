@@ -1,0 +1,82 @@
+{
+  "schema_version": "acs-event/1",
+  "ordering": "per_authority_projection; not native stream order",
+  "delivery": "at_least_once",
+  "kinds": [
+    {
+      "name": "message.committed",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "reply.linked",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "delivery.changed",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "receiver.observed",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "capability.changed",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "notice.created",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "conversation.updated",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "read_state.changed",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "draft.changed",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "attachment.ready",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "native_link.changed",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "permission.changed",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "resync.required",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "stream.end",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    },
+    {
+      "name": "notice.updated",
+      "payload_mode": "minimal_metadata",
+      "permission_rechecked": true
+    }
+  ]
+}

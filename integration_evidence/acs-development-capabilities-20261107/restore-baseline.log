@@ -1,0 +1,14 @@
+........................................................................ [ 13%]
+...................................................................ss... [ 27%]
+........................................................................ [ 41%]
+........................................................................ [ 55%]
+........................................................................ [ 69%]
+........................................................................ [ 83%]
+........................................................................ [ 96%]
+..............s.                                                         [100%]
+- generated xml file: D:\Chatgpt\Agent-collaboration\integration_evidence\acs-development-capabilities-20261107\restore-baseline.xml -
+=========================== short test summary info ===========================
+SKIPPED [1] runtime_tests\test_opencode_driver.py:737: owner-private path admission requires POSIX
+SKIPPED [1] runtime_tests\test_opencode_driver.py:770: owner-private path admission requires POSIX
+SKIPPED [1] runtime_tests\test_receiver_lifecycle_node.py:616: OpenCode http_response-specific journal history
+517 passed, 3 skipped in 71.61s (0:01:11)

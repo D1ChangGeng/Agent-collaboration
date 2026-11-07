@@ -43,3 +43,10 @@ integration_evidence/acs-installed-native-20261101/**/*.txt -whitespace
 integration_evidence/acs-release-20261101/** -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
 integration_evidence/acs-release-20261101/**/*.xml -whitespace
 integration_evidence/acs-release-20261101/**/*.txt -whitespace
+
+# Preserve immutable development-package checksums and captured run evidence.
+RFC_TEMP_SOURCE/ACS-Core-Cross-Harness-DevPack-v1.0.0/** -text -whitespace
+RFC_TEMP_SOURCE/ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0/** -text -whitespace
+integration_evidence/acs-development-capabilities-20261107/** -text -whitespace
+integration_evidence/acs-stage-agnostic-20261107-completion/** -text -whitespace
+integration_evidence/acs-stage-agnostic-20261106/** -text -whitespace

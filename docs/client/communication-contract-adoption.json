@@ -1,0 +1,44 @@
+{
+  "schema_version": "acs-client-contract-adoption/1",
+  "upstream_package": "ACS-Core-Cross-Harness-DevPack-v1.0.0",
+  "upstream_schema_sha256": "ec5432feba0d47d207ad59261c36324f92a95e478f4c858d2fc9264bdeb6f3a8",
+  "adopted_schema_sha256": "0cf28ed7d1c8ae837cf2e6d819d373023babec237a142c7d03af82f3f82159fa",
+  "changes": [
+    {
+      "model": "Draft",
+      "decision": "updated_at is null exactly for revision 0; persisted revisions require an aware timestamp",
+      "reason": "docs/08_CLIENT_API.md explicitly requires a missing pre-message draft to return revision 0; no persisted timestamp exists. This resolves a static schema inconsistency rather than inventing a date."
+    },
+    {
+      "model": "Notice",
+      "decision": "created_at is nullable only where the historical source has no recorded timestamp; new notice source inserts persist actual creation time",
+      "reason": "The existing communication_notices row has no timestamp. Preserving old data cannot recover a historical instant, and adoption time is not notice creation time. API returns honest null for those legacy rows."
+    },
+    {
+      "model": "Meta.limits",
+      "decision": "Require attachment_total_bytes, attachment_staging_bytes, attachment_project_staging_bytes and attachment_staging_seconds; zero means disabled capacity.",
+      "reason": "The package requires the aggregate per-message attachment budget to be advertised before enforcement, but upstream Meta lacks it. Bounded staging also needs explicit viewer/project quotas and TTL. Original devpack contracts remain unchanged."
+    },
+    {
+      "model": "NativeLink/NativeLinkWrite",
+      "decision": "Project the verified host_ref/provider_generation and require expected_host_ref/expected_provider_generation on writes.",
+      "reason": "The integration NativeSessionRef requires exact Host and generation; optimistic body strings are never proof. Current Core/Host authorization and registry evidence remain independent."
+    },
+    {
+      "model": "Meta.limits",
+      "decision": "Require native_link_count, native_link_history_revisions, native_link_write_receipts and native_link_metadata_bytes; zero means feature disabled.",
+      "reason": "Expose bounded link/history/receipt/metadata admission capacity before enforcing the optional service, without revealing private usage."
+    },
+    {
+      "model": "ReadMessageResponse.native_source",
+      "decision": "Add optional NativeSourceLookup/SourceLink/NativeSourceSession for explicit include_native_source reads; the existing22 P1 operations remain unchanged.",
+      "reason": "Exact original Core dispatch and Node journal evidence are distinct from mutable Slot/Session association. Current participant ACL and registration fences bracket the private read; an unavailable source is typed, never guessed from text or current sessions. No Native transcript/action permission is granted."
+    }
+  ],
+  "openapi": "docs/client/communication-openapi.yaml",
+  "sdk": "sdk/client-contracts.ts",
+  "scope": "v1.1.0 P0/P1/P2 delivery tiers supersede the old full-WP completion gate. The full contract and implemented optional features are retained. Runtime /meta and source-bound acceptance evidence determine availability; P1 contract readiness does not qualify an Orca Host.",
+  "scope_revision_package": "ACS-Core-Stage-Agnostic-Revision-Pack-v1.1.0",
+  "api_scope": "docs/client/communication-api-scope.json",
+  "p1_openapi": "docs/client/communication-p1-openapi.yaml"
+}

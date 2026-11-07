@@ -4,6 +4,7 @@ import hashlib
 import json
 import secrets
 import uuid
+from copy import copy
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -41,6 +42,22 @@ class EnrollmentAuthority:
 
     def __init__(self, authority: Any) -> None:
         self.authority = authority
+
+    def _read_lock(self, aliases="", *, default="UPDATE"):
+        snapshot = getattr(self, "_snapshot_read", False) is True
+        mode = "SHARE" if snapshot else default
+        return " FOR " + mode + (" OF " + aliases if aliases else "") + (" NOWAIT" if snapshot else "")
+
+    def current_runtime_snapshot(self, cursor, runtime_id):
+        """Reuse enrollment policy with read locks and no lock-upgrade waits.
+
+        The caller owns the transaction and handles LockNotAvailable by rolling
+        it back before any effect. Existing mutation helpers keep their original
+        UPDATE locking. A private copy isolates this mode from concurrent users.
+        """
+        reader = copy(self)
+        reader._snapshot_read = True
+        return reader._active_runtime(cursor, runtime_id)
 
     @staticmethod
     def _typed(model, value):
@@ -92,6 +109,17 @@ class EnrollmentAuthority:
     def _grant(self, cursor, grant_ref, scope_id, permissions):
         if self.authority.access_mode == "owner":
             ctx = self.authority.context
+            if getattr(self, "_snapshot_read", False) is True:
+                cursor.execute("SELECT g.principal_ref FROM grants g JOIN scopes s ON s.scope_id=%s "
+                    "AND s.tenant_id=g.tenant_id JOIN authority_instances a ON a.authority_id=g.authority_id "
+                    "AND a.authority_incarnation=g.authority_incarnation WHERE g.tenant_id=%s AND g.grant_ref=%s "
+                    "AND g.authority_id=%s AND g.authority_incarnation=%s AND g.revoked_at IS NULL "
+                    "AND s.status='active' AND a.status='active'" + self._read_lock("g,a,s", default="SHARE"),
+                    (scope_id, ctx.tenant_id, grant_ref, ctx.authority_id, ctx.authority_incarnation))
+                row = cursor.fetchone()
+                if row is None:
+                    raise AuthorizationDenied(ctx.principal_ref, grant_ref)
+                return row[0], None
             cursor.execute("SELECT g.principal_ref FROM grants g JOIN scopes s ON s.scope_id=%s "
                 "AND s.tenant_id=g.tenant_id WHERE g.tenant_id=%s AND g.grant_ref=%s "
                 "AND g.authority_id=%s AND g.authority_incarnation=%s "
@@ -110,7 +138,7 @@ class EnrollmentAuthority:
             "AND g.authority_incarnation=%s AND a.status='active' AND s.status='active' "
             # Enrollment observation must coexist with the caller's authorization
             # read locks while a remote receiver checks its own current binding.
-            "AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp() FOR SHARE OF g,a,s",
+            "AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp()" + self._read_lock("g,a,s", default="SHARE"),
             (ctx.tenant_id, grant_ref, scope_id, ctx.authority_id, ctx.authority_incarnation),
         )
         row = cursor.fetchone()
@@ -119,13 +147,13 @@ class EnrollmentAuthority:
         return row[0], row[1]
 
     def _slot(self, cursor, scope_id, slot_id):
-        cursor.execute("SELECT 1 FROM agent_slots WHERE tenant_id=%s AND scope_id=%s AND agent_slot_id=%s AND status='active' FOR UPDATE",
+        cursor.execute("SELECT 1 FROM agent_slots WHERE tenant_id=%s AND scope_id=%s AND agent_slot_id=%s AND status='active'" + self._read_lock(),
                        (self.authority.tenant_id, scope_id, slot_id))
         if cursor.fetchone() is None:
             raise AcceptanceGuardFailed("enrollment Scope/AgentSlot binding is unavailable")
 
     def _node(self, cursor, node_id, *, active=True):
-        cursor.execute("SELECT to_jsonb(n) FROM enrolled_nodes n WHERE tenant_id=%s AND node_id=%s FOR UPDATE",
+        cursor.execute("SELECT to_jsonb(n) FROM enrolled_nodes n WHERE tenant_id=%s AND node_id=%s" + self._read_lock(),
                        (self.authority.tenant_id, node_id))
         row = cursor.fetchone()
         if row is None:
@@ -145,7 +173,7 @@ class EnrollmentAuthority:
         cursor.execute(
             "SELECT to_jsonb(b),to_jsonb(k) FROM enrolled_node_bindings b JOIN enrolled_node_keys k ON k.key_id=b.key_id "
             "WHERE b.tenant_id=%s AND b.node_id=%s AND b.binding_revision=%s "
-            "AND b.status='active' AND k.status='active' AND (%s OR b.expires_at>clock_timestamp()) FOR UPDATE OF b,k",
+            "AND b.status='active' AND k.status='active' AND (%s OR b.expires_at>clock_timestamp())" + self._read_lock("b,k"),
             (node["tenant_id"], node_id, node["current_binding_revision"], self.authority.access_mode == "owner"),
         )
         row = cursor.fetchone()
@@ -163,7 +191,7 @@ class EnrollmentAuthority:
 
     def _active_runtime(self, cursor, runtime_id):
         cursor.execute("SELECT to_jsonb(r) FROM enrolled_runtimes r WHERE tenant_id=%s AND runtime_id=%s AND status='active' "
-                       "AND (%s OR expires_at>clock_timestamp()) FOR UPDATE",
+                       "AND (%s OR expires_at>clock_timestamp())" + self._read_lock(),
                        (self.authority.tenant_id, runtime_id, self.authority.access_mode == "owner"))
         row = cursor.fetchone()
         if row is None:

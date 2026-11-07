@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acs.invalid/contracts/adapter-wire.schema.json",
+  "oneOf": [
+    {
+      "$ref": "https://acs.invalid/contracts/models.schema.json#/$defs/NativeAdmissionCommand"
+    },
+    {
+      "$ref": "https://acs.invalid/contracts/models.schema.json#/$defs/NativeAdmissionResult"
+    }
+  ]
+}

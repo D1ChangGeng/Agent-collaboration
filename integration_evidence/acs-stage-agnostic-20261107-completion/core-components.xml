@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="8.816" timestamp="2026-11-07T14:01:11.756854+09:00" hostname="LAPTOP-FYGE2ZMR"><testcase classname="" name="tools.runtime.tests.test_communication_scope_contract" time="0.000"><error message="collection failure">ImportError while importing test module 'D:\Chatgpt\Agent-collaboration\tools\runtime\tests\test_communication_scope_contract.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\D26FO\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools\runtime\tests\test_communication_scope_contract.py:10: in &lt;module&gt;
+    import yaml
+E   ModuleNotFoundError: No module named 'yaml'</error></testcase></testsuite></testsuites>
