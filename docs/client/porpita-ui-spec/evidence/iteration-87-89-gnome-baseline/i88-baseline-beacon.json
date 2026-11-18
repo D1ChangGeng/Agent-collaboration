@@ -1,0 +1,60 @@
+{
+  "id": "i88-baseline-beacon",
+  "imageFile": "i88-baseline-beacon.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "viewport": [
+    720,
+    868
+  ],
+  "focused": "Connect",
+  "rows": {
+    "atlas": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 0
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "beacon": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 0
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "cedar": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 0
+      },
+      "selected": false,
+      "rowWidth": 364
+    }
+  },
+  "target": "porpita-config-validation-workspace-beacon",
+  "endpoint": "changgeng@::1:51007",
+  "aria": "- button \"Connect porpita-config-validation-workspace-beacon ::1:51007\": Connect",
+  "utterances": [
+    "More actions for porpita-config-validation-workspace-atlas",
+    "collapsed button",
+    "opens menu",
+    "Select porpita-config-validation-workspace-beacon::1:51007",
+    "check box not checked",
+    "Connect porpita-config-validation-workspace-beacon::1:51007",
+    "button"
+  ]
+}

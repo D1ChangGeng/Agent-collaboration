@@ -1,0 +1,205 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "setting-01",
+      "trigger": "Settings navigation: 智能体",
+      "elapsedMs": 1673,
+      "result": "captured"
+    },
+    {
+      "id": "setting-02",
+      "trigger": "Settings navigation: AI 提供商账户可选",
+      "elapsedMs": 1468,
+      "result": "captured"
+    },
+    {
+      "id": "setting-03",
+      "trigger": "Settings navigation: 编排",
+      "elapsedMs": 1113,
+      "result": "captured"
+    },
+    {
+      "id": "setting-04",
+      "trigger": "Settings navigation: 计算机控制",
+      "elapsedMs": 1080,
+      "result": "captured"
+    },
+    {
+      "id": "setting-05",
+      "trigger": "Settings navigation: 语音",
+      "elapsedMs": 865,
+      "result": "captured"
+    },
+    {
+      "id": "setting-06",
+      "trigger": "Settings navigation: Porpita 账户",
+      "elapsedMs": 860,
+      "result": "captured"
+    },
+    {
+      "id": "setting-07",
+      "trigger": "Settings navigation: 通用",
+      "elapsedMs": 1112,
+      "result": "captured"
+    },
+    {
+      "id": "setting-08",
+      "trigger": "Settings navigation: 集成",
+      "elapsedMs": 1040,
+      "result": "captured"
+    },
+    {
+      "id": "setting-09",
+      "trigger": "Settings navigation: 移动端",
+      "elapsedMs": 1073,
+      "result": "captured"
+    },
+    {
+      "id": "setting-10",
+      "trigger": "Settings navigation: 自动化",
+      "elapsedMs": 1632,
+      "result": "captured"
+    },
+    {
+      "id": "setting-11",
+      "trigger": "Settings navigation: 工件测试版",
+      "elapsedMs": 703,
+      "result": "captured"
+    },
+    {
+      "id": "setting-12",
+      "trigger": "Settings navigation: 分享技能测试版",
+      "elapsedMs": 837,
+      "result": "captured"
+    },
+    {
+      "id": "setting-13",
+      "trigger": "Settings navigation: 智能体会话搜索",
+      "elapsedMs": 666,
+      "result": "captured"
+    },
+    {
+      "id": "setting-14",
+      "trigger": "Settings navigation: Git 和源代码控制",
+      "elapsedMs": 1110,
+      "result": "captured"
+    },
+    {
+      "id": "setting-15",
+      "trigger": "Settings navigation: 任务来源",
+      "elapsedMs": 835,
+      "result": "captured"
+    },
+    {
+      "id": "setting-16",
+      "trigger": "Settings navigation: 终端",
+      "elapsedMs": 1157,
+      "result": "captured"
+    },
+    {
+      "id": "setting-17",
+      "trigger": "Settings navigation: 快捷命令",
+      "elapsedMs": 654,
+      "result": "captured"
+    },
+    {
+      "id": "setting-18",
+      "trigger": "Settings navigation: 浏览器",
+      "elapsedMs": 928,
+      "result": "captured"
+    },
+    {
+      "id": "setting-19",
+      "trigger": "Settings navigation: 手机模拟器",
+      "elapsedMs": 957,
+      "result": "captured"
+    },
+    {
+      "id": "setting-20",
+      "trigger": "Settings navigation: 浮动工作区",
+      "elapsedMs": 637,
+      "result": "captured"
+    },
+    {
+      "id": "setting-21",
+      "trigger": "Settings navigation: 外观",
+      "elapsedMs": 1066,
+      "result": "captured"
+    },
+    {
+      "id": "setting-22",
+      "trigger": "Settings navigation: 聊天界面",
+      "elapsedMs": 804,
+      "result": "captured"
+    },
+    {
+      "id": "setting-23",
+      "trigger": "Settings navigation: 输入与编辑",
+      "elapsedMs": 737,
+      "result": "captured"
+    },
+    {
+      "id": "setting-24",
+      "trigger": "Settings navigation: 通知",
+      "elapsedMs": 793,
+      "result": "captured"
+    },
+    {
+      "id": "setting-25",
+      "trigger": "Settings navigation: 快捷键",
+      "elapsedMs": 1240,
+      "result": "captured"
+    },
+    {
+      "id": "setting-26",
+      "trigger": "Settings navigation: 统计和使用情况",
+      "elapsedMs": 846,
+      "result": "captured"
+    },
+    {
+      "id": "setting-27",
+      "trigger": "Settings navigation: SSH 主机",
+      "elapsedMs": 666,
+      "result": "captured"
+    },
+    {
+      "id": "setting-28",
+      "trigger": "Settings navigation: 远程 Porpita 服务器",
+      "elapsedMs": 737,
+      "result": "captured"
+    },
+    {
+      "id": "setting-29",
+      "trigger": "Settings navigation: 隐私与遥测",
+      "elapsedMs": 720,
+      "result": "captured"
+    },
+    {
+      "id": "setting-30",
+      "trigger": "Settings navigation: 高级",
+      "elapsedMs": 698,
+      "result": "captured"
+    },
+    {
+      "id": "setting-31",
+      "trigger": "Settings navigation: 实验性",
+      "elapsedMs": 666,
+      "result": "captured"
+    },
+    {
+      "id": "setting-32",
+      "trigger": "Settings navigation: 插件Alpha 版",
+      "elapsedMs": 680,
+      "result": "captured"
+    }
+  ]
+}

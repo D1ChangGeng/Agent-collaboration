@@ -1,0 +1,65 @@
+{
+  "locale": "zh",
+  "documentLanguage": "zh",
+  "hiddenWindow": true,
+  "refusal": {
+    "width": 760,
+    "reasonVisible": true,
+    "registrationRetained": true,
+    "sourceErrorAvailable": true,
+    "republished": true
+  },
+  "kept": {
+    "workspacePathsRemoved": 2,
+    "originalRefsKept": 2,
+    "filterIndependent": true,
+    "noToastNeeded": true
+  },
+  "checkout": {
+    "location": {
+      "bothPathsFromGit": true,
+      "spacedUnicodePathRetained": true,
+      "manuallyManagedPathVisible": true,
+      "externalPathScrolledIntoView": true
+    },
+    "opened": {
+      "exactRegisteredWorktree": true,
+      "acknowledgedByMain": true,
+      "otherInstanceRefused": true,
+      "sameDialogAndSelection": true,
+      "checkoutWasNotSwitched": true
+    },
+    "drift": {
+      "fallback": {
+        "checkoutMovedInGit": true,
+        "oldButtonRemoved": true,
+        "sameSpaceWindow": true,
+        "cancelReceivedFocus": true,
+        "selectionPreserved": true,
+        "mainSelectionStableDuringReturn": true,
+        "previousSuccessStillVisible": false
+      },
+      "inspection": {
+        "location": {
+          "sameReviewAndSelection": true,
+          "checkButtonFocused": true,
+          "movedPathFoundBeforeSubmit": true,
+          "bothBranchRefsPreserved": true
+        },
+        "state": {
+          "releasedStatusShown": true,
+          "currentReviewSelectionPreserved": true,
+          "lastPathStillVisible": true,
+          "missingRefRetainsLastPathAndSelection": true,
+          "restoredRefCanBeCheckedAgain": true
+        },
+        "race": {
+          "laterCheckoutBlockedDeletion": true,
+          "freshReviewStartsUnselected": true,
+          "explicitRetryAfterReleaseSucceeded": true,
+          "otherBranchPreserved": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "working": {
+    "originalRow": true,
+    "providerTurnStarted": true
+  },
+  "attention": {
+    "approvalShownInNativeChat": true,
+    "noWorkingIndicator": true,
+    "reducedMotion": true
+  },
+  "collaboration": {
+    "existingDialog": true,
+    "connectionNotConfigured": true
+  },
+  "return": {
+    "sidebarFocus": true,
+    "pendingApprovalPreserved": true
+  }
+}

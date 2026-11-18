@@ -1,0 +1,158 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Release-review",
+  "section": [],
+  "text": "General\nShared release review\nRelease-review\nRelease-review\nhandoff\nLocal Windows\nhandoff-note.md\nOff\n—\n·\n0\nRemoved Studio.",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "General",
+      "label": "Choose group: General",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Shared release review",
+      "label": null,
+      "title": "Shared release review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Shared release review",
+      "title": "Close Shared release review",
+      "test": null
+    },
+    {
+      "text": "Release-review",
+      "label": null,
+      "title": "Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Release-review",
+      "title": "Close Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New work object",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open work",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Return to worktree",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Parent folder",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Explorer",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer placement",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Clear file filter",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "handoff-note.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i26-remove-explorer.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 99947
+}

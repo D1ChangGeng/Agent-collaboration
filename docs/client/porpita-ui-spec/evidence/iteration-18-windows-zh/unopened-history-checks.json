@@ -1,0 +1,19 @@
+{
+  "scan": {
+    "actualHistory": true,
+    "openedRowExcluded": true,
+    "noImplicitOpen": true,
+    "actionFits": true,
+    "noticesExercised": false
+  },
+  "resume": {
+    "transcriptDisplayed": true,
+    "oneNewTab": true,
+    "originalTabsRetained": true,
+    "removedFromUnopened": true
+  },
+  "openView": {
+    "queryPreserved": true,
+    "locationPreserved": true
+  }
+}

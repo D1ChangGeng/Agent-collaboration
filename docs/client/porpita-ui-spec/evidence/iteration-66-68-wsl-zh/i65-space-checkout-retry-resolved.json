@@ -1,0 +1,13 @@
+{
+  "size": [
+    760,
+    700
+  ],
+  "dpr": 1,
+  "lang": "zh",
+  "theme": "dark",
+  "reducedMotion": false,
+  "focus": "搜索工作区",
+  "imageFile": "i65-space-checkout-retry-resolved.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

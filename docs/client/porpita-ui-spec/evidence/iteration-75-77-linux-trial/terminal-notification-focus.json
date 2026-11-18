@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "cffbba55a876a9f5ead48070e730fb8df65c1ce3",
+  "linux": {
+    "product": "0.1.0",
+    "electron": "43.8.6",
+    "platform": "linux",
+    "architecture": "x64",
+    "packaged": true,
+    "profile": "isolated"
+  },
+  "display": "isolated X11 with Openbox and GNOME Orca",
+  "pairingCancelFocus": true,
+  "pairedWithWindows": true,
+  "legacyWorktreeRemovalWithKeyboard": true,
+  "projectAdoptedWithOriginalIdentity": true,
+  "sshActionKeepsFocus": true,
+  "adoptedWorktreeRemovalWithKeyboard": true,
+  "latestNotificationFocus": {
+    "before": "<textarea class=\"xterm-helper-textarea\" aria-label=\"Terminal input\" aria-multiline=\"false\" autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"off\" spellcheck=\"false\" tabindex=\"0\"",
+    "after": "<textarea class=\"xterm-helper-textarea\" aria-label=\"Terminal input\" aria-multiline=\"false\" autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"off\" spellcheck=\"false\" tabindex=\"0\""
+  },
+  "captured": [
+    "i75-pair-dialog",
+    "i75-pair-cancel",
+    "i75-windows-paired",
+    "i76-original-ssh-workspace",
+    "i76-adopted-ssh-host"
+  ],
+  "failure": "Tab traversal did not reach Review 1 Branch. Current focus: Terminal input"
+}

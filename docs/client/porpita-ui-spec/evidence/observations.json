@@ -1,0 +1,3248 @@
+[
+  {
+    "id": "EV01",
+    "kind": "observed",
+    "path": "02-onboarding.json",
+    "claim": "首用第一步，简中外壳中出现英文标题和选择说明；Chat/Terminal 是产品内演示。",
+    "rows": [
+      "B",
+      "B.01",
+      "P.13",
+      "Q.07",
+      "O.modal.onboarding",
+      "R.01"
+    ]
+  },
+  {
+    "id": "EV02",
+    "kind": "observed",
+    "path": "episode/03-onboarding-skip.json",
+    "claim": "本次首用选择稍后设置后出现工作区信任决策，进入原生安全面；窄窗口遮挡另见 EV27。",
+    "rows": [
+      "B.04",
+      "E.09",
+      "O.local.trust"
+    ]
+  },
+  {
+    "id": "EV03",
+    "kind": "observed",
+    "path": "04-shell.json",
+    "claim": "应用三分区与右 Dock、当前内容 Tab、Projects 和通知；只覆盖该窗口状态。",
+    "rows": [
+      "A",
+      "A.01",
+      "A.02",
+      "A.03",
+      "C",
+      "C.01",
+      "D",
+      "D.01",
+      "F",
+      "G",
+      "G.01",
+      "O.01"
+    ]
+  },
+  {
+    "id": "EV04",
+    "kind": "observed",
+    "path": "05-collaboration-unconfigured.json",
+    "claim": "标题栏协作弹窗；尚未配置，显示启动本地服务的入口，未触发连接。",
+    "rows": [
+      "K",
+      "K.01",
+      "O",
+      "P.06"
+    ]
+  },
+  {
+    "id": "EV05",
+    "kind": "observed",
+    "path": "06-settings.json",
+    "claim": "设置框架、通用与协作配置；未启动 Core。",
+    "rows": [
+      "N",
+      "N.general",
+      "N.general.01",
+      "N.general.02",
+      "P.02"
+    ]
+  },
+  {
+    "id": "EV06",
+    "kind": "observed",
+    "path": "08-appearance.json",
+    "claim": "外观设置的界面组；截图含中英混排与通知叠加。",
+    "rows": [
+      "N.appearance",
+      "P.12"
+    ]
+  },
+  {
+    "id": "EV07",
+    "kind": "observed",
+    "path": "09-settings-shortcuts.json",
+    "claim": "快捷键筛选和终端按键优先级入口；未改绑定。",
+    "rows": [
+      "N.shortcuts"
+    ]
+  },
+  {
+    "id": "EV08",
+    "kind": "observed",
+    "path": "10-plugin-manager.json",
+    "claim": "已进入插件管理并看到目录加载占位；未验安装、插件内容或最终目录。",
+    "rows": [
+      "L.05",
+      "N.plugins",
+      "P.08"
+    ]
+  },
+  {
+    "id": "EV09",
+    "kind": "observed",
+    "path": "11-settings-browser.json",
+    "claim": "浏览器设置入口与未配置权限项；未改变权限。",
+    "rows": [
+      "N.browser"
+    ]
+  },
+  {
+    "id": "EV10",
+    "kind": "observed",
+    "path": "12-settings-chat.json",
+    "claim": "Chat UI 关闭及 Agent 启动方式；只是设置，不代表 Native Chat 执行。",
+    "rows": [
+      "N.chat"
+    ]
+  },
+  {
+    "id": "EV11",
+    "kind": "observed",
+    "path": "13-settings-hosts.json",
+    "claim": "SSH 为空及添加入口，未建立 SSH。",
+    "rows": [
+      "N.ssh"
+    ]
+  },
+  {
+    "id": "EV12",
+    "kind": "observed",
+    "path": "15-search.json",
+    "claim": "打开跳转面板，看见最近 Terminal 与键盘提示。",
+    "rows": [
+      "C.09",
+      "O.modal.worktree-palette",
+      "P.03",
+      "R.02",
+      "T.04"
+    ]
+  },
+  {
+    "id": "EV13",
+    "kind": "observed",
+    "path": "16-tasks.json",
+    "claim": "任务路由切换中；主区未就绪的采样，后续 EV28 观察到无来源态。",
+    "rows": [
+      "J"
+    ]
+  },
+  {
+    "id": "EV14",
+    "kind": "observed",
+    "path": "17-automations.json",
+    "claim": "自动化空态、搜索/筛选/运行和模板入口；未创建调度。",
+    "rows": [
+      "L",
+      "L.01",
+      "S.02"
+    ]
+  },
+  {
+    "id": "EV15",
+    "kind": "observed",
+    "path": "18-mobile.json",
+    "claim": "配对入口与模拟手机内容，仅桌面呈现；未申请配对码。",
+    "rows": [
+      "M",
+      "M.01"
+    ]
+  },
+  {
+    "id": "EV16",
+    "kind": "observed",
+    "path": "workbench/19d-artifacts.json",
+    "claim": "夹具启用后进入工件，产品账号未配置的状态。",
+    "rows": [
+      "L.04",
+      "O.overlay.chat-ui-here-corner-card"
+    ]
+  },
+  {
+    "id": "EV17",
+    "kind": "observed",
+    "path": "workbench/19e-skills.json",
+    "claim": "夹具启用后进入 Skills，空目录及刷新/筛选/安装入口。",
+    "rows": [
+      "L.03"
+    ]
+  },
+  {
+    "id": "EV18",
+    "kind": "observed",
+    "path": "local-tools/19b-editor.json",
+    "claim": "从 Explorer 双击打开隔离 Markdown，工具栏、标题/正文和原 Explorer 同时可见。",
+    "rows": [
+      "H",
+      "H.02",
+      "G.02",
+      "P.12"
+    ]
+  },
+  {
+    "id": "EV19",
+    "kind": "observed",
+    "path": "local-tools/23-terminal-split.json",
+    "claim": "在 Terminal UI 触发右分割，DOM 断言至少两个 xterm；不是跨 Worktree Workspace split。",
+    "rows": [
+      "F",
+      "F.01",
+      "D.04"
+    ]
+  },
+  {
+    "id": "EV20",
+    "kind": "observed",
+    "path": "local-tools/24-right-dock-closed.json",
+    "claim": "工作台点击右栏开关后 Dock 隐藏，原分屏仍在；与前后帧配对。",
+    "rows": [
+      "G",
+      "G.01",
+      "Q.02",
+      "R.13",
+      "T.05"
+    ]
+  },
+  {
+    "id": "EV21",
+    "kind": "observed",
+    "path": "local-tools/24b-right-dock-reopened.json",
+    "claim": "再次打开回到 Explorer，文件仍选中；不是通用 Panel 移动。",
+    "rows": [
+      "G.01",
+      "G.02",
+      "Q.02"
+    ]
+  },
+  {
+    "id": "EV22",
+    "kind": "observed",
+    "path": "local-tools/25-narrow.json",
+    "claim": "820×580，两侧栏加分屏导致中心狭窄；通知遮挡部分工具。",
+    "rows": [
+      "A.02",
+      "D.03",
+      "G.01",
+      "O.01",
+      "P.10",
+      "Q.02",
+      "T.05"
+    ]
+  },
+  {
+    "id": "EV23",
+    "kind": "observed",
+    "path": "local-tools/26-reduced-dock.json",
+    "claim": "820×580，CDP prefers-reduced-motion=reduce，右 Dock 关，分屏仍可见。静态终点。",
+    "rows": [
+      "F.01",
+      "G.01",
+      "Q.02"
+    ]
+  },
+  {
+    "id": "EV24",
+    "kind": "observed",
+    "path": "14-settings-automations.json",
+    "claim": "自动化设置子页捕获。",
+    "rows": [
+      "N.automations"
+    ]
+  },
+  {
+    "id": "EV25",
+    "kind": "observed",
+    "path": "local-tools/22-new-tab.json",
+    "claim": "打开 New Tab 菜单，已看到 Shell、Browser、Markdown、模拟器、Agent 和设置选项。",
+    "rows": [
+      "D.01",
+      "F.03"
+    ]
+  },
+  {
+    "id": "EV26",
+    "kind": "observed",
+    "path": "local-tools/19c-html.json",
+    "claim": "Explorer 打开 HTML 文件的源码 Tab，截图有已渲染的源码；该记录不能证明 HTML 预览页面。",
+    "rows": [
+      "H.03",
+      "S.03"
+    ]
+  },
+  {
+    "id": "EV27",
+    "kind": "observed",
+    "path": "replay-b/25-narrow.json",
+    "claim": "不同新档案走到 820×580 的信任确认；不能从该回放认定其它目标入口通过。",
+    "rows": [
+      "O.local.trust",
+      "B.02",
+      "P.06",
+      "O.01",
+      "R.01",
+      "S.05"
+    ]
+  },
+  {
+    "id": "H01",
+    "kind": "historical",
+    "path": "docs/porpita/evidence/20261109/installed11-native-workbench.json",
+    "claim": "候选 11 历史实测：保存、Git Diff/commit、终端两 Pane、Browser 本地预览。",
+    "rows": [
+      "D.03",
+      "F.02",
+      "G.03",
+      "G.03.01",
+      "H.01",
+      "H.04",
+      "I",
+      "I.01",
+      "R.08",
+      "R.11"
+    ]
+  },
+  {
+    "id": "H02",
+    "kind": "historical",
+    "path": "docs/porpita/evidence/20261109/installed11-agent-question-approval.json",
+    "claim": "候选 11 真实原生 Agent 问答/审批，适用范围由原交付记录限定。",
+    "rows": [
+      "E",
+      "E.08",
+      "E.09",
+      "R.05"
+    ]
+  },
+  {
+    "id": "H03",
+    "kind": "historical",
+    "path": "docs/porpita/evidence/20261109/installed11-native-target-source.json",
+    "claim": "候选 11 Native 来源跳转/恢复记录。",
+    "rows": [
+      "E.01",
+      "E.06",
+      "E.07",
+      "K.04"
+    ]
+  },
+  {
+    "id": "H04",
+    "kind": "historical",
+    "path": "docs/porpita/evidence/20261109/installed11-local-collaboration-proof.json",
+    "claim": "候选 11 历史 Core 通信结果；不同于本轮未配置界面。",
+    "rows": [
+      "K.02",
+      "K.04"
+    ]
+  },
+  {
+    "id": "H05",
+    "kind": "historical",
+    "path": "docs/porpita/evidence/20261109/installed11-attachments.json",
+    "claim": "候选 11 历史附件边界。",
+    "rows": [
+      "E.05",
+      "K.03"
+    ]
+  },
+  {
+    "id": "H06",
+    "kind": "historical",
+    "path": "docs/porpita/evidence/20261109/installed11-service-reconnect.json",
+    "claim": "候选 11 连接断开/恢复交付记录。",
+    "rows": [
+      "A.05",
+      "N.general.01",
+      "M.05",
+      "R.12",
+      "S.08"
+    ]
+  },
+  {
+    "id": "H07",
+    "kind": "historical",
+    "path": "docs/porpita/evidence/20261109/installed11-stock-ui-comparison.json",
+    "claim": "Windows Orca/Porpita 同条件对照，含宽窄及 IME 子集。",
+    "rows": [
+      "A.01",
+      "D.01",
+      "E.03",
+      "P.13"
+    ]
+  },
+  {
+    "id": "EV28",
+    "kind": "observed",
+    "path": "tools-extra/32-tasks-settled.json",
+    "claim": "任务主区加载到 GitHub 无项目来源，显示来源栏、空表和引导。未连接或读取真实任务。",
+    "rows": [
+      "J",
+      "J.01",
+      "R.09",
+      "S.02",
+      "S.03"
+    ]
+  },
+  {
+    "id": "EV29",
+    "kind": "observed",
+    "path": "tools-extra/33-browser-blank.json",
+    "claim": "新标签菜单打开真实 Browser 空白态，地址栏与工具栏可见；未访问外部站点。",
+    "rows": [
+      "I",
+      "I.01",
+      "R.11"
+    ]
+  },
+  {
+    "id": "EV30",
+    "kind": "observed",
+    "path": "tools-extra/27-add-project.json",
+    "claim": "真实添加项目 Dialog，显示 Local Windows、浏览、克隆与创建入口；此记录未提交。",
+    "rows": [
+      "C.02",
+      "C.03",
+      "O.modal.add-repo",
+      "R.02"
+    ]
+  },
+  {
+    "id": "EV31",
+    "kind": "observed",
+    "path": "tools-extra/28-new-worktree.json",
+    "claim": "真实新建执行工作区 Dialog，显示项目、Host、Agent、名字和高级；未提交。",
+    "rows": [
+      "C.05",
+      "O.modal.new-workspace-composer"
+    ]
+  },
+  {
+    "id": "EV32",
+    "kind": "observed",
+    "path": "episode/30-theme.json",
+    "claim": "通过外观设置真实切深色，设置导航与当前区保持。",
+    "rows": [
+      "N.appearance",
+      "N.appearance.01",
+      "P.12",
+      "P.13",
+      "R.13"
+    ]
+  },
+  {
+    "id": "EV33",
+    "kind": "observed",
+    "path": "episode/34-dock-episode.json",
+    "claim": "Dock 显隐、重开后短暂加载和再次关闭；看过连续采样的关键帧，不量化帧率。",
+    "rows": [
+      "G.01",
+      "Q.02",
+      "R.13",
+      "T.05"
+    ]
+  },
+  {
+    "id": "EV34",
+    "kind": "observed",
+    "path": "episode/35-activity.json",
+    "claim": "左栏切到 Activity 投影，看到过滤与空结果；并非全屏 Activity 路由或 Session Index。",
+    "rows": [
+      "C.07"
+    ]
+  },
+  {
+    "id": "EV35",
+    "kind": "observed",
+    "path": "episode/36-board.json",
+    "claim": "打开工作区看板，看到状态列、固定区、搜索及局部导览；未提交拖放。",
+    "rows": [
+      "C.08",
+      "B.05",
+      "O.local.contextual-tour"
+    ]
+  },
+  {
+    "id": "S01",
+    "kind": "observed",
+    "path": "settings-census/setting-01.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.agents"
+    ]
+  },
+  {
+    "id": "S02",
+    "kind": "observed",
+    "path": "settings-census/setting-02.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.accounts"
+    ]
+  },
+  {
+    "id": "S03",
+    "kind": "observed",
+    "path": "settings-census/setting-03.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.orchestration"
+    ]
+  },
+  {
+    "id": "S04",
+    "kind": "observed",
+    "path": "settings-census/setting-04.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.computer-use"
+    ]
+  },
+  {
+    "id": "S05",
+    "kind": "observed",
+    "path": "settings-census/setting-05.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.voice"
+    ]
+  },
+  {
+    "id": "S06",
+    "kind": "observed",
+    "path": "settings-census/setting-06.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.orca-account"
+    ]
+  },
+  {
+    "id": "S07",
+    "kind": "observed",
+    "path": "settings-census/setting-07.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.general"
+    ]
+  },
+  {
+    "id": "S08",
+    "kind": "observed",
+    "path": "settings-census/setting-08.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.integrations"
+    ]
+  },
+  {
+    "id": "S09",
+    "kind": "observed",
+    "path": "settings-census/setting-09.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.mobile"
+    ]
+  },
+  {
+    "id": "S10",
+    "kind": "observed",
+    "path": "settings-census/setting-10.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.automations"
+    ]
+  },
+  {
+    "id": "S11",
+    "kind": "observed",
+    "path": "settings-census/setting-11.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.artifacts"
+    ]
+  },
+  {
+    "id": "S12",
+    "kind": "observed",
+    "path": "settings-census/setting-12.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.share-skills"
+    ]
+  },
+  {
+    "id": "S13",
+    "kind": "observed",
+    "path": "settings-census/setting-13.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.session-history"
+    ]
+  },
+  {
+    "id": "S14",
+    "kind": "observed",
+    "path": "settings-census/setting-14.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.git"
+    ]
+  },
+  {
+    "id": "S15",
+    "kind": "observed",
+    "path": "settings-census/setting-15.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.tasks"
+    ]
+  },
+  {
+    "id": "S16",
+    "kind": "observed",
+    "path": "settings-census/setting-16.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.terminal"
+    ]
+  },
+  {
+    "id": "S17",
+    "kind": "observed",
+    "path": "settings-census/setting-17.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.quick-commands"
+    ]
+  },
+  {
+    "id": "S18",
+    "kind": "observed",
+    "path": "settings-census/setting-18.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.browser"
+    ]
+  },
+  {
+    "id": "S19",
+    "kind": "observed",
+    "path": "settings-census/setting-19.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.mobile-emulator"
+    ]
+  },
+  {
+    "id": "S20",
+    "kind": "observed",
+    "path": "settings-census/setting-20.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.floating-workspace"
+    ]
+  },
+  {
+    "id": "S21",
+    "kind": "observed",
+    "path": "settings-census/setting-21.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.appearance"
+    ]
+  },
+  {
+    "id": "S22",
+    "kind": "observed",
+    "path": "settings-census/setting-22.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.chat"
+    ]
+  },
+  {
+    "id": "S23",
+    "kind": "observed",
+    "path": "settings-census/setting-23.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.input"
+    ]
+  },
+  {
+    "id": "S24",
+    "kind": "observed",
+    "path": "settings-census/setting-24.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.notifications"
+    ]
+  },
+  {
+    "id": "S25",
+    "kind": "observed",
+    "path": "settings-census/setting-25.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.shortcuts"
+    ]
+  },
+  {
+    "id": "S26",
+    "kind": "observed",
+    "path": "settings-census/setting-26.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.stats"
+    ]
+  },
+  {
+    "id": "S27",
+    "kind": "observed",
+    "path": "settings-census/setting-27.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.ssh"
+    ]
+  },
+  {
+    "id": "S28",
+    "kind": "observed",
+    "path": "settings-census/setting-28.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.servers"
+    ]
+  },
+  {
+    "id": "S29",
+    "kind": "observed",
+    "path": "settings-census/setting-29.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.privacy"
+    ]
+  },
+  {
+    "id": "S30",
+    "kind": "observed",
+    "path": "settings-census/setting-30.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.advanced"
+    ]
+  },
+  {
+    "id": "S31",
+    "kind": "observed",
+    "path": "settings-census/setting-31.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.experimental"
+    ]
+  },
+  {
+    "id": "S32",
+    "kind": "observed",
+    "path": "settings-census/setting-32.json",
+    "claim": "通过可见导航进入设置分区，已查看缩略总览；仅首屏与当时状态。内部弹层、字段编辑和提交需逐项补验。",
+    "rows": [
+      "N.plugins"
+    ]
+  },
+  {
+    "id": "EV36",
+    "kind": "observed",
+    "path": "git-intake/37-git-worktree.json",
+    "claim": "添加项目经真实入口接收临时仓库路径，main worktree 激活并显示 Git 工具。系统目录选择返回值来自夹具。",
+    "rows": [
+      "C.02",
+      "C.04",
+      "O.modal.add-repo",
+      "R.02",
+      "O.modal.project-added",
+      "T.01"
+    ]
+  },
+  {
+    "id": "EV37",
+    "kind": "observed",
+    "path": "git-intake/38-git-changes.json",
+    "claim": "打开右侧 Source Control，主分支、提交输入、未暂存文件和 Diff 入口均可见；未提交或修改 Git 状态。",
+    "rows": [
+      "G.03",
+      "G.03.01"
+    ]
+  },
+  {
+    "id": "EV38",
+    "kind": "observed",
+    "path": "git-intake/39-git-diff.json",
+    "claim": "点击改动文件，Monaco Diff 与原 Git scope 同时可见；看到预先添加的修改行。",
+    "rows": [
+      "H.04",
+      "R.08"
+    ]
+  },
+  {
+    "id": "EV39",
+    "kind": "observed",
+    "path": "chat-start/41-chat-agent-menu.json",
+    "claim": "开启 Chat 后真实新 Tab 菜单区分可用和无法检查聊天可用性的 Agent。",
+    "rows": [
+      "F.03",
+      "S.06"
+    ]
+  },
+  {
+    "id": "EV40",
+    "kind": "observed",
+    "path": "chat-start/42-chat-empty.json",
+    "claim": "已点击 Codex 打开原生 Chat；未登录状态、Composer 与 Host 可见；未登录或发送请求。",
+    "rows": [
+      "E",
+      "E.01",
+      "E.02",
+      "E.03",
+      "E.04",
+      "R.05",
+      "S.02",
+      "S.06",
+      "S.07"
+    ]
+  },
+  {
+    "id": "FX01",
+    "kind": "fixture",
+    "path": "source-fixtures/tab-bar__TabBar--overflowing.light.png",
+    "claim": "当前 HEAD 已有 TabBar 宽/窄、浅深 fixture；观察到窄容器标题截断与 overflow。",
+    "rows": [
+      "D.01",
+      "D.02",
+      "Q.03",
+      "T.01"
+    ]
+  },
+  {
+    "id": "FX02",
+    "kind": "fixture",
+    "path": "source-fixtures/native-chat__prompts__NativeChatApprovalCard--fileChangesExpanded.dark.png",
+    "claim": "当前 HEAD 自带文件审批夹具；观察展开内容和允许/拒绝。不能证明真实审批执行。",
+    "rows": [
+      "E.08",
+      "E.09",
+      "S.05"
+    ]
+  },
+  {
+    "id": "FX03",
+    "kind": "fixture",
+    "path": "source-fixtures/native-chat__prompts__NativeChatQuestionCard--pendingAnswer.light.png",
+    "claim": "当前 HEAD 问题等待夹具，观察选择与提交呈现。",
+    "rows": [
+      "E.09",
+      "E.10",
+      "S.04",
+      "S.05"
+    ]
+  },
+  {
+    "id": "FX04",
+    "kind": "fixture",
+    "path": "source-fixtures/native-chat__messages__rows__NativeChatAgentMessageCard--wide.dark.png",
+    "claim": "当前 HEAD 聊天消息行夹具：子 Agent 来源、折叠摘要、发言人和时间可见。",
+    "rows": [
+      "E.06",
+      "E.07",
+      "E.08"
+    ]
+  },
+  {
+    "id": "FX05",
+    "kind": "fixture",
+    "path": "source-fixtures/native-chat__composer__controls__NativeChatComposerNotices--openingRetry.light.png",
+    "claim": "当前 HEAD Composer 连接未知和重试夹具。",
+    "rows": [
+      "E.04",
+      "S.07"
+    ]
+  },
+  {
+    "id": "TR01",
+    "kind": "trial",
+    "path": "group-trial/tab-bar__PorpitaTopLevelGroupResearch--selectorNarrow.light.png",
+    "claim": "420px 当前原生 TabBar 对照，组选择器为活跃标题保留更多字。试验的工作对象和组均为夹具。",
+    "rows": [
+      "D.08",
+      "R.03"
+    ]
+  },
+  {
+    "id": "TR02",
+    "kind": "trial",
+    "path": "group-trial/tab-bar__PorpitaTopLevelGroupResearch--stripWide.dark.png",
+    "claim": "920px 内联组名可同时辨认其它组，但压缩标签；与选择器同样数据。",
+    "rows": [
+      "D.08"
+    ]
+  },
+  {
+    "id": "TR03",
+    "kind": "trial",
+    "path": "group-trial/tab-bar__PorpitaTopLevelGroupResearch--selectorKeyboard.light.png",
+    "claim": "实际 DropdownMenu 接收程序触发打开/选择事件；当前组与标签更新。不代表实际键盘/屏幕阅读器通过。",
+    "rows": [
+      "D.08",
+      "R.03",
+      "T.04"
+    ]
+  },
+  {
+    "id": "EV41",
+    "kind": "observed",
+    "path": "dock-panels/37a-content-search.json",
+    "claim": "真实 Git fixture 的 Explorer 内容查询显示文件、匹配行、高亮和计数。",
+    "rows": [
+      "G.02.01",
+      "H.06",
+      "S.03",
+      "T.04",
+      "R.08"
+    ]
+  },
+  {
+    "id": "EV42",
+    "kind": "observed",
+    "path": "dock-panels/37b-vault.json",
+    "claim": "真实 Vault 扫描首屏，显示工作区/项目/全部与搜索；未读实际账户历史。",
+    "rows": [
+      "G.06",
+      "S.03",
+      "C.10"
+    ]
+  },
+  {
+    "id": "SRC01",
+    "kind": "current-build",
+    "path": "current-source/02-onboarding.json",
+    "claim": "HEAD 隔离 Electron，浅色简中首用步骤；英文字段混排仍可见。",
+    "rows": [
+      "B",
+      "B.01",
+      "O.modal.onboarding",
+      "P.13",
+      "R.01"
+    ]
+  },
+  {
+    "id": "SRC02",
+    "kind": "current-build",
+    "path": "current-source/30-theme.json",
+    "claim": "HEAD 设置实际切深色，首屏及焦点边界。",
+    "rows": [
+      "N.appearance",
+      "N.appearance.01",
+      "P.12",
+      "P.13",
+      "R.13"
+    ]
+  },
+  {
+    "id": "SRC03",
+    "kind": "current-build",
+    "path": "current-source/36-board.json",
+    "claim": "HEAD 工作树看板与局部教学，未提交拖动。",
+    "rows": [
+      "C.08",
+      "B.05",
+      "O.local.contextual-tour"
+    ]
+  },
+  {
+    "id": "SRC04",
+    "kind": "current-build",
+    "path": "current-connections/44-source-collaboration.json",
+    "claim": "HEAD 协作 Dialog 未配置；未启动 Core。",
+    "rows": [
+      "K",
+      "K.01",
+      "P.06",
+      "S.02"
+    ]
+  },
+  {
+    "id": "SRC05",
+    "kind": "current-build",
+    "path": "current-connections/45-source-general.json",
+    "claim": "HEAD 通用设置及未配置、导入入口；未进行导入。",
+    "rows": [
+      "N",
+      "N.general",
+      "N.general.01",
+      "N.general.02"
+    ]
+  },
+  {
+    "id": "SRC06",
+    "kind": "current-build",
+    "path": "current-connections/46-source-mobile.json",
+    "claim": "HEAD 手机配对入口、混排和设备内演示；未生成配对码。",
+    "rows": [
+      "M.01",
+      "P.13"
+    ]
+  },
+  {
+    "id": "EV43",
+    "kind": "observed",
+    "path": "restart/51-after-restart.json",
+    "claim": "同一隔离档案重开后已见原 Markdown，但出现会话搜索教育弹窗；弹窗内容是示例。",
+    "rows": [
+      "B.05",
+      "O.modal.feature-tips",
+      "R.06"
+    ]
+  },
+  {
+    "id": "EV44",
+    "kind": "observed",
+    "path": "restart-recheck/52-resume-editor.json",
+    "claim": "正常退出码 0 后重新启动，关闭可选提示，原 Markdown 内容、活动标签和文件树选择恢复。未检查后台 PTY 保活。",
+    "rows": [
+      "A.05",
+      "H.02",
+      "R.06",
+      "T.06",
+      "S.09"
+    ]
+  },
+  {
+    "id": "EV45",
+    "kind": "observed",
+    "path": "checks-project-settings/37c-checks.json",
+    "claim": "真实 Git scope 中打开检查项，无凭据的环境出现 GitHub 身份验证失败和重试。未登录或验证实际检查运行。",
+    "rows": [
+      "G.04",
+      "S.07"
+    ]
+  },
+  {
+    "id": "EV46",
+    "kind": "observed",
+    "path": "checks-project-settings/39a-project-settings.json",
+    "claim": "打开临时 Git 项目的动态 Settings 区，身份/图标/颜色及项目归属可见。未保存变更。",
+    "rows": [
+      "N.repo",
+      "N.repo.01",
+      "P.07"
+    ]
+  },
+  {
+    "id": "EV47",
+    "kind": "observed",
+    "path": "auxiliary-en/53-space-window.json",
+    "claim": "在英文隔离档案经状态栏 Resource Manager→Space→Review 打开独立 space.html，1100×700 未扫描态；窗口在后台隐藏，未运行清理。",
+    "rows": [
+      "A.06",
+      "A.03.01",
+      "M.02",
+      "R.11",
+      "S.02"
+    ]
+  },
+  {
+    "id": "EV48",
+    "kind": "observed",
+    "path": "auxiliary/54-dashboard-window.json",
+    "claim": "启用实验设置后从侧栏打开独立 popout.html，简中 1100×700、三个空状态列与过滤；英文复见，不验证 OS 焦点。",
+    "rows": [
+      "A.06",
+      "M.03",
+      "N.experimental",
+      "S.02"
+    ]
+  },
+  {
+    "id": "I201",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-split-820.json",
+    "claim": "Windows 双终端，820 CSS px，左右栏同时显示且中心 320px。",
+    "rows": [
+      "A.02",
+      "D.03",
+      "G.01",
+      "Q.02",
+      "T.05",
+      "F.01"
+    ]
+  },
+  {
+    "id": "I202",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-split-600-right.json",
+    "claim": "600 CSS px 和模拟减少动态时键盘切换两栏，焦点回右侧开关；Explorer 查询复见。",
+    "rows": [
+      "A.02",
+      "D.03",
+      "G.01",
+      "G.02",
+      "Q.02",
+      "T.04",
+      "T.05"
+    ]
+  },
+  {
+    "id": "I203",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-split-restored.json",
+    "claim": "恢复 1280px 后原有两栏宽度及双 PTY 视图恢复。",
+    "rows": [
+      "A.02",
+      "D.03",
+      "G.01",
+      "Q.02",
+      "T.04",
+      "T.05"
+    ]
+  },
+  {
+    "id": "I204",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-trust-narrow.json",
+    "claim": "600×400 的实际信任 Dialog，两个按钮可命中，Sonner 与通知卡片栈均隐藏。",
+    "rows": [
+      "O.01",
+      "O.local.trust",
+      "P.06",
+      "P.11",
+      "S.05",
+      "B.04"
+    ]
+  },
+  {
+    "id": "I205",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-trust-answer.json",
+    "claim": "隔离档案选择让智能体询问后关闭阻塞面；保留原信任决策逻辑。",
+    "rows": [
+      "O.01",
+      "O.local.trust",
+      "P.06",
+      "S.05"
+    ]
+  },
+  {
+    "id": "I206",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-project-scope.json",
+    "claim": "通过 Add Project 接入临时 Git 仓库，查看实际 Source Control 改动。",
+    "rows": [
+      "C.02",
+      "G.02",
+      "G.03",
+      "R.02"
+    ]
+  },
+  {
+    "id": "I207",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-help.json",
+    "claim": "真实 Windows Help 显示交付记录和问题入口，更新源为空时菜单无检查更新项。",
+    "rows": [
+      "B.05",
+      "N.general.03",
+      "O.07"
+    ]
+  },
+  {
+    "id": "I208",
+    "kind": "observed",
+    "path": "iteration-02-core/i2-core-start.json",
+    "claim": "候选 11 隔离档案使用 bundled Core 在同一台 Windows 机器启动。",
+    "rows": [
+      "K.01",
+      "N.general.01",
+      "S.08"
+    ]
+  },
+  {
+    "id": "I209",
+    "kind": "observed",
+    "path": "iteration-02-core/i2-core-disconnect.json",
+    "claim": "在 Settings 手动断开同一本机服务，界面显示未连接。",
+    "rows": [
+      "K.01",
+      "N.general.01",
+      "S.08"
+    ]
+  },
+  {
+    "id": "I210",
+    "kind": "observed",
+    "path": "iteration-02-core/i2-core-reconnect.json",
+    "claim": "本轮两次同机重连恢复已连接。一次在原页恢复，另一次超过原页 10 秒观测窗口，退出再打开设置后显示已连接。",
+    "rows": [
+      "K.01",
+      "N.general.01",
+      "S.08"
+    ]
+  },
+  {
+    "id": "I211",
+    "kind": "trial",
+    "path": "group-shape/keyboard-overflow.png",
+    "claim": "240 CSS px 的组件夹具，键盘定位活跃组第 30 个 Tab。",
+    "rows": [
+      "D.08",
+      "P.03",
+      "P.10",
+      "T.04"
+    ]
+  },
+  {
+    "id": "I212",
+    "kind": "trial",
+    "path": "group-shape/drop-destination.png",
+    "claim": "真实指针拖放和键盘取消/迁移，Orca TabBar、原组件与合成数据。",
+    "rows": [
+      "D.08",
+      "P.04",
+      "T.03",
+      "T.04"
+    ]
+  },
+  {
+    "id": "I213",
+    "kind": "fixture",
+    "path": "group-shape/ui__sonner--olderToastBehindModalSheet.light.png",
+    "claim": "现有普通 Sheet 夹具中旧 toast 可提升与单独关闭，保留草稿及焦点。",
+    "rows": [
+      "O.01",
+      "P.06",
+      "P.11"
+    ]
+  },
+  {
+    "id": "I214",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-split-820-side.json",
+    "claim": "活动栏实际侧置后，820px 窗口左右栏宽 240/260px，主区仍为 320px。",
+    "rows": [
+      "A.02",
+      "G.01",
+      "Q.02",
+      "T.05"
+    ]
+  },
+  {
+    "id": "I215",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-chat-open.json",
+    "claim": "从真实工作台进入 Codex Native Chat 的未登录空态。",
+    "rows": [
+      "E.01",
+      "E",
+      "D.01",
+      "S.02"
+    ]
+  },
+  {
+    "id": "I216",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-chat-narrow.json",
+    "claim": "600×400 的现有 Native Chat，Chat 宽 319px、Composer 输入宽 281px；未请求模型。",
+    "rows": [
+      "E.01",
+      "E",
+      "D.03",
+      "A.02",
+      "Q.02",
+      "T.05"
+    ]
+  },
+  {
+    "id": "I217",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-project-return.json",
+    "claim": "由两个实际工作树行切换本机 folder 与 Git，返回后可读取同一项目的 changes。",
+    "rows": [
+      "C.02",
+      "C.04",
+      "G.03",
+      "R.02"
+    ]
+  },
+  {
+    "id": "I218",
+    "kind": "iteration-build",
+    "path": "iteration-02-windows/i2-chat-terminal-split.json",
+    "claim": "Native Chat 的 Split Terminal Right 在当前 worktree 打开同级终端，确认两者同屏。",
+    "rows": [
+      "D.03",
+      "E.01",
+      "F.01",
+      "R.04"
+    ]
+  },
+  {
+    "id": "I301",
+    "kind": "current-build",
+    "path": "iteration-03-baseline/i3-same-name.json",
+    "claim": "在第二轮相同工作台和两个本地同名聊天条件下，通用查询同时显示会话、设置与创建动作。",
+    "rows": [
+      "C.09",
+      "O.modal.worktree-palette"
+    ]
+  },
+  {
+    "id": "I302",
+    "kind": "iteration-build",
+    "path": "iteration-03-windows/i3-empty.json",
+    "claim": "通过 Sidebar 打开实际跳转面板，Space 启用聊天筛选，返回输入框并显示无已开聊天。",
+    "rows": [
+      "C.09",
+      "C.10",
+      "O.modal.worktree-palette",
+      "T.04"
+    ]
+  },
+  {
+    "id": "I303",
+    "kind": "iteration-build",
+    "path": "iteration-03-windows/i3-same-name.json",
+    "claim": "现有 Orca 结果行显示两个相同标题的 Native Chat 及不同的项目来源。",
+    "rows": [
+      "C.09",
+      "C.10",
+      "O.modal.worktree-palette",
+      "R.03"
+    ]
+  },
+  {
+    "id": "I304",
+    "kind": "iteration-build",
+    "path": "iteration-03-windows/i3-continue-episode.json",
+    "claim": "两个真实本地 Git 项目的原 Native Chat 经鼠标和 Enter 往返，保留两份草稿，重复选择保留原 Tab、原 Pane 及两个 Tab 数。",
+    "rows": [
+      "C.10",
+      "E.01",
+      "R.03",
+      "T.04"
+    ]
+  },
+  {
+    "id": "I305",
+    "kind": "iteration-build",
+    "path": "iteration-03-windows/i3-no-match.json",
+    "claim": "任务 URL 在聊天筛选中无结果，Enter 保留面板及原聊天。",
+    "rows": [
+      "C.09",
+      "O.modal.worktree-palette",
+      "T.04"
+    ]
+  },
+  {
+    "id": "I306",
+    "kind": "iteration-build",
+    "path": "iteration-03-windows/i3-exact-title.json",
+    "claim": "粘贴含分隔符的完整同名标题，精确找到原来的两条 Native Chat 结果。",
+    "rows": [
+      "C.09",
+      "C.10",
+      "R.03"
+    ]
+  },
+  {
+    "id": "I307",
+    "kind": "iteration-build",
+    "path": "iteration-03-windows-zh-final/i3-compact.json",
+    "claim": "简中深色、600×400 CSS px、减少动态时，两个同名聊天与项目来源可读。",
+    "rows": [
+      "C.09",
+      "C.10",
+      "O.modal.worktree-palette",
+      "R.03",
+      "T.04",
+      "T.05"
+    ]
+  },
+  {
+    "id": "I308",
+    "kind": "iteration-build",
+    "path": "iteration-03-windows/i3-general.json",
+    "claim": "关闭聊天筛选保留查询。恢复通用终端结果后，Escape 回到 Sidebar 搜索控件，原聊天草稿仍在。",
+    "rows": [
+      "C.09",
+      "O.modal.worktree-palette",
+      "T.04"
+    ]
+  },
+  {
+    "id": "I401",
+    "kind": "iteration-build",
+    "path": "iteration-04-baseline/i4-history.json",
+    "claim": "第三轮基线用同名 Codex 记录复现已开终端的定位和恢复并列，在静止行内不可见。",
+    "rows": ["G.06"]
+  },
+  {
+    "id": "I402",
+    "kind": "iteration-build",
+    "path": "iteration-04-windows/i4-actions.json",
+    "claim": "同名历史行用常驻 LocateFixed 与 Play 分别呈现定位和恢复。仅提示词相同的记录不会变为定位。",
+    "rows": ["G.06"]
+  },
+  {
+    "id": "I403",
+    "kind": "iteration-build",
+    "path": "iteration-04-windows/i4-read-history.json",
+    "claim": "展开行读取真实扫描所得记录，终端标签数量保持。",
+    "rows": ["C.10", "G.06"]
+  },
+  {
+    "id": "I404",
+    "kind": "iteration-build",
+    "path": "iteration-04-windows/i4-original.json",
+    "claim": "Enter 将焦点放回现有终端 Tab 的同一 leaf，未增加终端标签；状态由受控夹具提供。",
+    "rows": ["F.01", "G.06", "R.03", "T.04"]
+  },
+  {
+    "id": "I405",
+    "kind": "iteration-build",
+    "path": "iteration-04-windows-zh/i4-search.json",
+    "claim": "Vault 查询显示两条同名记录，未启用全文索引。可用动作按记录区分，Escape 清空查询。",
+    "rows": ["C.10", "G.06", "T.04"]
+  },
+  {
+    "id": "I406",
+    "kind": "iteration-build",
+    "path": "iteration-04-windows/i4-resume-chat.json",
+    "claim": "从原有菜单恢复未打开的 Codex 记录，Native Chat 显示隔离档案原对话与未登录提示。",
+    "rows": ["E.01", "G.06", "R.03"]
+  },
+  {
+    "id": "I407",
+    "kind": "iteration-build",
+    "path": "iteration-04-windows-zh/i4-chat-original.json",
+    "claim": "从历史点击原位动作回到已恢复 Chat 的同一 Tab 和会话，Composer 取得焦点并保留未发送草稿。",
+    "rows": ["C.10", "E.01", "G.06", "R.03", "T.04"]
+  },
+  {
+    "id": "I408",
+    "kind": "iteration-build",
+    "path": "iteration-04-windows/i4-resume-terminal.json",
+    "claim": "双击另一条适用记录的终端恢复动作，仅打开一个新终端并显示已排队反馈。CLI 内会话载入未确证。",
+    "rows": ["F.01", "G.06"]
+  },
+  {
+    "id": "I409",
+    "kind": "iteration-build",
+    "path": "iteration-04-windows-zh/i4-compact.json",
+    "claim": "简中深色、860×520 CSS px、减少动态条件下，两个首要按钮仍在窗口内；长标题按原行截断规则折略。",
+    "rows": ["G.06", "T.05"]
+  },
+  {
+    "id": "I410",
+    "kind": "iteration-build",
+    "path": "iteration-04-windows-zh/i4-resume-picker.json",
+    "claim": "Native Chat 的 /resume 弹窗打开同一已有查询，搜索框焦点可见，同名结果保持各自内容。",
+    "rows": ["O.modal.agent-session-history", "T.04"]
+  },
+  {
+    "id": "I411",
+    "kind": "iteration-build",
+    "path": "iteration-04-windows/i4-resume-picker-return.json",
+    "claim": "方向键与 Enter 选择当前 Codex 历史对象，弹窗关闭且焦点回到原 Composer，未增加聊天标签。",
+    "rows": ["E.01", "O.modal.agent-session-history", "T.04"]
+  },
+  {
+    "id": "I501",
+    "kind": "iteration-build",
+    "path": "iteration-05-baseline/i5-unreachable.json",
+    "claim": "第四轮基线在配对端断开后保留本机结果，状态使用配置 ID，结果缺来源徽章且显示加载更多。",
+    "rows": ["G.06.01"]
+  },
+  {
+    "id": "I502",
+    "kind": "iteration-build",
+    "path": "iteration-05-windows/i5-two-sources.json",
+    "claim": "真实桌面和配对 Runtime 通过各自索引返回同标题同原生 ID 的两个 Codex 记录，Host 标签区分来源。",
+    "rows": ["C.10", "G.06", "G.06.01"]
+  },
+  {
+    "id": "I503",
+    "kind": "iteration-build",
+    "path": "iteration-05-windows/i5-source-disappears.json",
+    "claim": "撤回 Studio 夹具文件并刷新，远端索引移除其命中，本机同 ID 命中仍在。",
+    "rows": ["C.10", "G.06.01"]
+  },
+  {
+    "id": "I504",
+    "kind": "iteration-build",
+    "path": "iteration-05-windows-zh/i5-unreachable.json",
+    "claim": "Studio 不可达，提示使用配置名，并保留一条带明确本机来源的匹配与重试。",
+    "rows": ["G.06", "G.06.01", "S.08"]
+  },
+  {
+    "id": "I505",
+    "kind": "iteration-build",
+    "path": "iteration-05-windows/i5-partial-empty.json",
+    "claim": "只在离线 Studio 可命中的查询保留明确的漏搜状态与重试。",
+    "rows": ["G.06.01", "S.08"]
+  },
+  {
+    "id": "I506",
+    "kind": "iteration-build",
+    "path": "iteration-05-windows-zh/i5-retry-offline.json",
+    "claim": "配对端离线时用 Enter 重试，查询与范围持续，焦点回搜索框。",
+    "rows": ["G.06.01", "S.08", "T.04"]
+  },
+  {
+    "id": "I507",
+    "kind": "iteration-build",
+    "path": "iteration-05-windows/i5-retry.json",
+    "claim": "重启同一真实 Runtime 后，原查询恢复仅 Studio 拥有的结果，配对身份保持。",
+    "rows": ["G.06.01", "S.08"]
+  },
+  {
+    "id": "I508",
+    "kind": "iteration-build",
+    "path": "iteration-05-windows/i5-owning-chat.json",
+    "claim": "展开 Studio 可读其原对话，从 Vault 恢复后选中 Studio 所属 Native Chat。",
+    "rows": ["C.10", "E.01", "G.06.01", "R.03"]
+  },
+  {
+    "id": "I509",
+    "kind": "iteration-build",
+    "path": "iteration-05-windows-zh/i5-return-chat.json",
+    "claim": "从本机工作区点击 Studio 历史的定位动作，回到配对端的同一会话和输入区，草稿保留。",
+    "rows": ["E.01", "G.06", "G.06.01", "R.03", "T.04"]
+  },
+  {
+    "id": "I510",
+    "kind": "iteration-build",
+    "path": "iteration-05-windows-zh/i5-compact.json",
+    "claim": "860×520 CSS px 与减少动态下，本机和 Studio 短名称可读，行尾动作仍在原位置。",
+    "rows": ["G.06.01", "T.05"]
+  },
+  {
+    "id": "I601",
+    "kind": "iteration-build",
+    "path": "iteration-06-baseline/i6-palette.json",
+    "claim": "第五轮开发构建中，已打开聊天搜索为空时跳转面板尚无历史交接入口。",
+    "rows": ["C.10.01", "O.modal.worktree-palette"]
+  },
+  {
+    "id": "I602",
+    "kind": "iteration-build",
+    "path": "iteration-06-windows/i6-hand-off.json",
+    "claim": "在跳转面板聚焦历史动作并按 Enter，Vault 搜索框取得焦点并找到合成历史，原工作树及标签保持。",
+    "rows": ["C.09", "C.10", "C.10.01", "O.modal.worktree-palette", "T.04"]
+  },
+  {
+    "id": "I603",
+    "kind": "iteration-build",
+    "path": "iteration-06-windows-zh/i6-narrow.json",
+    "claim": "600×420 CSS px 简中深色与减少动态下，从 Sidebar 交接另一个查询给 Vault，未匹配状态可见。",
+    "rows": ["C.09", "C.10.01", "O.modal.worktree-palette", "T.05"]
+  },
+  {
+    "id": "I604",
+    "kind": "iteration-build",
+    "path": "iteration-06-windows/i6-empty-query.json",
+    "claim": "空跳转查询可打开 Vault 浏览历史，搜索框不再包含上一次转交的查询。",
+    "rows": ["C.10", "C.10.01"]
+  },
+  {
+    "id": "I605",
+    "kind": "iteration-build",
+    "path": "iteration-06-windows-zh/i6-dock-unavailable.json",
+    "claim": "在隐藏右 Dock 的 Skills 页，跳转面板保留导航和关闭，历史交接入口按当前宿主能力隐藏。",
+    "rows": ["C.10.01", "O.modal.worktree-palette"]
+  },
+  {
+    "id": "I701",
+    "kind": "iteration-build",
+    "path": "iteration-07-windows/i7-split.json",
+    "claim": "从真实内容标签菜单将两个终端分为左右 Pane，分隔线以有名称的 separator 暴露。",
+    "rows": ["D.03", "D.03.01"]
+  },
+  {
+    "id": "I702",
+    "kind": "iteration-build",
+    "path": "iteration-07-windows/i7-keyboard.json",
+    "claim": "分隔线承接键盘焦点，两次右键把比例从 50% 调到 60%，原内容标签与活跃组保持。",
+    "rows": ["D.03", "D.03.01", "Q.03", "T.04"]
+  },
+  {
+    "id": "I703",
+    "kind": "iteration-build",
+    "path": "iteration-07-windows-zh/i7-cancel.json",
+    "claim": "拖动直接预览边界，按住时触发 Escape 并释放后回到提交的 60%，另有连续帧。",
+    "rows": ["D.03", "D.03.01", "Q.03"]
+  },
+  {
+    "id": "I704",
+    "kind": "iteration-build",
+    "path": "iteration-07-windows-zh/i7-narrow.json",
+    "claim": "820×520 CSS px、减少动态，Home 和 End 的语义比例为 15% 与 85%，左键随后回到 80%。",
+    "rows": ["D.03.01", "Q.03", "T.05"]
+  },
+  {
+    "id": "I801",
+    "kind": "iteration-build",
+    "path": "iteration-08-baseline/i8-dock-return.json",
+    "claim": "第八轮变更前，从 Vault 返回当前工作树 Explorer，原文件名筛选被清空。",
+    "rows": ["G.02.02"]
+  },
+  {
+    "id": "I802",
+    "kind": "iteration-build",
+    "path": "iteration-08-windows/i8-dock-return.json",
+    "claim": "从 Vault 返回同工作树的 Explorer，原输入和文件名匹配重新呈现。",
+    "rows": ["G.02", "G.02.01", "G.02.02"]
+  },
+  {
+    "id": "I803",
+    "kind": "iteration-build",
+    "path": "iteration-08-windows/i8-other-worktree.json",
+    "claim": "第二个项目带来新的工作树及空查询，输入后找到自己的文件。",
+    "rows": ["G.02", "G.02.02"]
+  },
+  {
+    "id": "I804",
+    "kind": "iteration-build",
+    "path": "iteration-08-windows-zh/i8-worktree-return.json",
+    "claim": "Git 与目录项目往返时分别恢复 release-checklist 与 notes.md 查询。",
+    "rows": ["G.02", "G.02.01", "G.02.02"]
+  },
+  {
+    "id": "I805",
+    "kind": "iteration-build",
+    "path": "iteration-08-windows-zh/i8-open-original.json",
+    "claim": "820×540 CSS px、减少动态下打开恢复后的文件名结果，实际编辑对象绑定原工作树。",
+    "rows": ["G.02", "G.02.01", "G.02.02", "T.05"]
+  },
+  {
+    "id": "I901",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i9-two-worktrees.json",
+    "claim": "Windows 开发预览并排显示不同本地 Worktree 的两个真实 Native Chat，保留各自会话和草稿。",
+    "rows": ["D.07", "D.07.01", "R.04"]
+  },
+  {
+    "id": "I902",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i9-return-to-pane.json",
+    "claim": "键盘从 50% 调至 55%，600px 切换到另一个 Pane 后放宽恢复原比例，保留草稿。",
+    "rows": ["D.07.01", "R.04", "T.05"]
+  },
+  {
+    "id": "I903",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i9-reopen.json",
+    "claim": "关闭 Workspace 标签后通过打开列表恢复同一对象、两个草稿与 55% 分隔比例。",
+    "rows": ["D.07", "D.07.01"]
+  },
+  {
+    "id": "I904",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i9-pane-budget.json",
+    "claim": "692px 条件下两 Pane 各至少 320px，临时比例限制保留已存 55% 原比例。",
+    "rows": ["D.07.01", "T.05"]
+  },
+  {
+    "id": "I1001",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i10-groups.json",
+    "claim": "创建长名称分组，从菜单把 Workspace 移入新组，源组回退到最近对象；键盘切组时恢复该 Workspace。",
+    "rows": ["D.08", "D.08.01"]
+  },
+  {
+    "id": "I1002",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i10-narrow-search.json",
+    "claim": "600px 预览可通过打开列表在不同组间找回目标，菜单入口与自绘窗口按钮保持独立的命中区域。",
+    "rows": ["D.08", "D.08.01", "T.05"]
+  },
+  {
+    "id": "I1003",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i10-layout-restore.json",
+    "claim": "重载 Electron renderer 后重新进入预览，恢复原选中组、Workspace、两个会话与分隔比例。",
+    "rows": ["D.08", "D.08.01"]
+  },
+  {
+    "id": "I1101",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i11-fixed-scope.json",
+    "claim": "独立 Explorer 浏览绑定的实际本地子目录，名称筛选明确选中原 Markdown 文件。",
+    "rows": ["G.09", "G.09.01"]
+  },
+  {
+    "id": "I1102",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i11-move-panel.json",
+    "claim": "从独立 Tab 移入 Workspace 后实例 ID 保持，焦点先交给筛选。聚焦另一工作树的 Chat 时文件范围、筛选及选择不变。",
+    "rows": ["G.09", "G.09.01", "R.04", "R.07"]
+  },
+  {
+    "id": "I1103",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i11-detach.json",
+    "claim": "从 Workspace 移回顶层 Tab 恢复同一 Explorer 实例和原筛选。",
+    "rows": ["G.09", "G.09.01", "R.07"]
+  },
+  {
+    "id": "I1104",
+    "kind": "iteration-build",
+    "path": "iteration-09-11-windows/i11-original-file.json",
+    "claim": "820×540 CSS px 从恢复的 Explorer 结果打开文件，渲染出真实内容，编辑器归属原 Worktree。",
+    "rows": ["G.09", "G.09.01", "R.07"]
+  },
+  {
+    "id": "I1201",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i12-profile-save.json",
+    "claim": "含固定目录 Explorer 的本地 Workspace 写入隔离桌面档案，磁盘与主进程读回一致。",
+    "rows": ["D.07.02"]
+  },
+  {
+    "id": "I1202",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i12-legacy-migration.json",
+    "claim": "档案文件缺失时导入旧 renderer 模型，保留已有布局与工具状态。",
+    "rows": ["D.07.02"]
+  },
+  {
+    "id": "I1203",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i12-cold-restore.json",
+    "claim": "干净退出 Electron 后以新进程恢复同一 Workspace、草稿、55% 比例和嵌入 Explorer 筛选。",
+    "rows": ["A.05", "D.07", "D.07.02", "R.06", "G.09.01"]
+  },
+  {
+    "id": "I1204",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i12-read-failure.json",
+    "claim": "一次性档案中不受支持的布局版本保留原字节，预览提供重试和返回入口。",
+    "rows": ["D.07.02"]
+  },
+  {
+    "id": "I1205",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i12-retry-layout.json",
+    "claim": "测试恢复有效档案文件后，用户重试回到同一布局和文件筛选。",
+    "rows": ["D.07.02", "R.06"]
+  },
+  {
+    "id": "I1301",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i13-location.json",
+    "claim": "已打开 Chat 的真实搜索结果同时显示目的 Workspace 和原项目。",
+    "rows": ["C.10.02", "R.03"]
+  },
+  {
+    "id": "I1302",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i13-focus-chat.json",
+    "claim": "Enter 返回现有布局的原会话输入，工作树原选中对象与对应草稿保持。",
+    "rows": ["C.10", "C.10.02", "R.03", "T.04"]
+  },
+  {
+    "id": "I1303",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i13-single-view.json",
+    "claim": "预览使用会话时原 Worktree 的同一 Chat 视图卸载，离开预览后从原工作树重新呈现。",
+    "rows": ["C.10.02"]
+  },
+  {
+    "id": "I1304",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i13-normal-fallback.json",
+    "claim": "仅在已关闭布局中记录的 Chat 使用原 Worktree 打开流程。",
+    "rows": ["C.10.02", "R.03"]
+  },
+  {
+    "id": "I1401",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i14-cancel-move.json",
+    "claim": "600px 拖到组选择器进入目的组选择，Escape 不写组变更并回到来源 Tab 焦点。",
+    "rows": ["D.08", "D.08.02", "Q.03", "T.04"]
+  },
+  {
+    "id": "I1402",
+    "kind": "iteration-build",
+    "path": "iteration-12-14-windows/i14-move-to-group.json",
+    "claim": "投放后选通用组，原 Workspace ID 和会话引用保持，可经跨组找回草稿和嵌入工具。",
+    "rows": ["D.08", "D.08.02", "Q.03"]
+  },
+  {
+    "id": "I1501",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows/i15-empty.json",
+    "claim": "工作台未打开 Native Chat 时，侧栏显示本机目录空态，历史入口仍可用。",
+    "rows": ["C.10.03", "S.02"]
+  },
+  {
+    "id": "I1502",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows/i15-directory.json",
+    "claim": "常驻目录列出两实际项目的三条 Native Chat，显示 Harness 和已开 Workspace 去向。",
+    "rows": ["C.10", "C.10.03", "P.03"]
+  },
+  {
+    "id": "I1503",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows/i15-native-target.json",
+    "claim": "鼠标选择未加入布局的已开 Chat，打开原工作树的原 Composer，无新增 Tab。",
+    "rows": ["C.10.03", "R.03", "T.04"]
+  },
+  {
+    "id": "I1504",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows/i15-keyboard-route.json",
+    "claim": "输入框 Enter 进入匹配的现有 Workspace Pane，原 Chat 和两个未发送草稿保持。",
+    "rows": ["C.10", "C.10.03", "R.03", "T.04"]
+  },
+  {
+    "id": "I1601",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows/i16-current-worktree.json",
+    "claim": "从 Workspace 返回时查询保持，当前工作树范围只保留该工作树两条 Chat。",
+    "rows": ["C.10.04"]
+  },
+  {
+    "id": "I1602",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows-zh/i16-project-menu.json",
+    "claim": "640×520 缩窄且减少动态时，通过 Enter 打开菜单，检查当前值、选项和浮层边界。",
+    "rows": ["C.10.04", "P.04", "Q.04", "T.04"]
+  },
+  {
+    "id": "I1603",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows-zh/i16-scoped-projects.json",
+    "claim": "Escape 回焦后切换范围，再用键盘按项目分组。短窗显示两个项目的完整结果。",
+    "rows": ["C.10", "C.10.04", "P.10", "T.04"]
+  },
+  {
+    "id": "I1604",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows-zh/i16-short-navigation.json",
+    "claim": "600×400 的目录保留筛选和搜索输入，侧栏全局导航可独立滚动。",
+    "rows": ["C.10.04", "P.10", "T.05"]
+  },
+  {
+    "id": "I1605",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows-zh/i16-no-results.json",
+    "claim": "已存在本机 Chat 时无匹配给出独立空态，历史入口保持可用。",
+    "rows": ["C.10.04", "S.02"]
+  },
+  {
+    "id": "I1701",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows/i17-history-search.json",
+    "claim": "真实 Vault 接收查询和键盘焦点，扫描的合成历史可定位原会话。",
+    "rows": ["C.10", "C.10.05", "G.06", "T.04"]
+  },
+  {
+    "id": "I1702",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows/i17-original-workspace.json",
+    "claim": "用真实 Vault 的原位按钮进入同一双 Pane Workspace，保留草稿并聚焦原 Composer。",
+    "rows": ["C.10", "C.10.05", "D.07.01", "E.04", "G.06", "R.03", "T.04"]
+  },
+  {
+    "id": "I1703",
+    "kind": "iteration-build",
+    "path": "iteration-15-17-windows-zh/i17-return-directory.json",
+    "claim": "从原 Workspace 返回工作树后，目录保留已选范围、筛选词和项目分组。",
+    "rows": ["C.10.05", "R.03"]
+  },
+  {
+    "id": "I1801",
+    "kind": "iteration-build",
+    "path": "iteration-18-windows-zh/i18-history-mode.json",
+    "claim": "在 860×580 左栏使用真实 Vault 扫描历史。已绑定原位的会话从此视图排除，恢复菜单保持可点击。",
+    "rows": ["C.10", "C.10.06", "G.06", "P.10"]
+  },
+  {
+    "id": "I1802",
+    "kind": "iteration-build",
+    "path": "iteration-18-windows-zh/i18-native-resume.json",
+    "claim": "从左栏实际续接 Codex 历史，Native Chat 读到原记录，已有 Tab 保持，该行退出未打开视图。",
+    "rows": ["C.10.06", "E.01", "G.06", "R.03"]
+  },
+  {
+    "id": "I1803",
+    "kind": "iteration-build",
+    "path": "iteration-18-windows-zh/i18-directory-return.json",
+    "claim": "返回已开目录后保留既有查询和位置筛选。",
+    "rows": ["C.10.06", "R.03"]
+  },
+  {
+    "id": "I1901",
+    "kind": "iteration-build",
+    "path": "iteration-19-windows/i19-running.json",
+    "claim": "真实桌面以隔离的协议夹具启动一轮 Native Chat，同一目录行随原生状态显示工作中。",
+    "rows": ["C.10.07", "S.04"]
+  },
+  {
+    "id": "I1902",
+    "kind": "iteration-build",
+    "path": "iteration-19-windows/i19-needs-attention.json",
+    "claim": "原生审批卡在 820×540 减少动态条件下可见，状态标记从工作中变为需要关注。",
+    "rows": ["C.10.07", "E.09", "S.05"]
+  },
+  {
+    "id": "I1903",
+    "kind": "iteration-build",
+    "path": "iteration-19-windows/i19-collaboration.json",
+    "claim": "从目录键盘打开原协作 Dialog，显示隔离档案的实际未连接状态。",
+    "rows": ["C.10.08", "K.01", "T.04"]
+  },
+  {
+    "id": "I1904",
+    "kind": "iteration-build",
+    "path": "iteration-19-windows/i19-collaboration-return.json",
+    "claim": "Escape 回目录按钮，前景 Chat 的待处理状态保持。",
+    "rows": ["C.10.08", "T.04"]
+  },
+  {
+    "id": "I2001",
+    "kind": "iteration-build",
+    "path": "iteration-20-loopback/i20-directory-hosts.json",
+    "claim": "同机两个隔离 Runtime 的同名历史已在各自 Worktree 打开，860×520 目录明确区分两条来源。",
+    "rows": ["C.10", "C.10.09", "M.05.01"]
+  },
+  {
+    "id": "I2002",
+    "kind": "iteration-build",
+    "path": "iteration-20-loopback/i20-owner-routing.json",
+    "claim": "独立 Host 筛选后选择原 Chat，核对本机和 Studio 各自的 Tab、原输入焦点与两份草稿。",
+    "rows": ["C.10", "C.10.09", "R.03", "T.04"]
+  },
+  {
+    "id": "I2003",
+    "kind": "iteration-build",
+    "path": "iteration-20-loopback/i20-directory-offline.json",
+    "claim": "真实 Studio 进程离线后已知条目显示连接未确认并禁用，本机会话继续可选。",
+    "rows": ["C.10.09", "S.06"]
+  },
+  {
+    "id": "I2004",
+    "kind": "iteration-build",
+    "path": "iteration-20-loopback/i20-directory-reconnect.json",
+    "claim": "连接重新可验证后沿用原查询与范围，键盘选择返回 Studio 原会话与草稿。",
+    "rows": ["C.10", "C.10.09", "R.03", "T.04"]
+  },
+  {
+    "id": "I2101",
+    "kind": "iteration-build",
+    "path": "iteration-21-23-loopback/i21-mixed-workspace.json",
+    "claim": "同样标题的本机与 Studio Native Chat 在同一 Workspace 呈现其原记录，输入各自的草稿。",
+    "rows": ["D.07", "D.07.03"]
+  },
+  {
+    "id": "I2102",
+    "kind": "iteration-build",
+    "path": "iteration-21-23-loopback/i21-short-pane.json",
+    "claim": "600×460 与减少动态条件下按 Host 切换同名 Pane，只显示选中窗格并聚焦其 Composer。",
+    "rows": ["D.07.03", "T.04"]
+  },
+  {
+    "id": "I2103",
+    "kind": "iteration-build",
+    "path": "iteration-21-23-loopback/i21-reopen-from-directory.json",
+    "claim": "从已开目录选择 Studio，进入同一工作空间及同一输入框。",
+    "rows": ["C.10.09", "D.07.03", "R.03"]
+  },
+  {
+    "id": "I2201",
+    "kind": "iteration-build",
+    "path": "iteration-21-23-loopback/i22-save-qualified-layout.json",
+    "claim": "桌面档案写入 v2，保留明确的 Host、配对版本、会话、调节后的比例和所选 Pane。",
+    "rows": ["D.07.02", "D.07.04"]
+  },
+  {
+    "id": "I2202",
+    "kind": "iteration-build",
+    "path": "iteration-21-23-loopback/i22-cold-mixed-restore.json",
+    "claim": "客户端实际新进程进入同一 Workspace。Studio 保持运行，两条记录及草稿、比例、所选 Pane 恢复。",
+    "rows": ["D.07", "D.07.04"]
+  },
+  {
+    "id": "I2203",
+    "kind": "iteration-build",
+    "path": "iteration-22-local-profile/i22-v1-profile.json",
+    "claim": "读取真实 v1 的隔离档案并恢复布局，分屏键盘编辑后在同一路径写入带本机来源的 v2。",
+    "rows": ["D.07.02", "D.07.04"]
+  },
+  {
+    "id": "I2301",
+    "kind": "iteration-build",
+    "path": "iteration-21-23-loopback/i23-studio-outage.json",
+    "claim": "停止隔离 Studio 后仅其 Pane 显示重连，同一 Workspace 内的本机草稿仍能编辑。",
+    "rows": ["D.07.05", "S.06"]
+  },
+  {
+    "id": "I2302",
+    "kind": "iteration-build",
+    "path": "iteration-21-23-loopback/i23-studio-reconnect.json",
+    "claim": "从原 Pane 重新连接同一 Studio。原草稿、本机离线期间的编辑及 Workspace 比例仍在。",
+    "rows": ["D.07", "D.07.05", "R.03"]
+  },
+  {
+    "id": "I2303",
+    "kind": "iteration-build",
+    "path": "iteration-21-23-loopback/i23-pairing-removed.json",
+    "claim": "通过设置实际撤回隔离配对，原 Pane 落为不可用，远端记录与输入不再显示。",
+    "rows": ["D.07.05", "S.06"]
+  },
+  {
+    "id": "I2304",
+    "kind": "iteration-build",
+    "path": "iteration-21-23-loopback/i23-remove-stale-reference.json",
+    "claim": "明确移除失效 Pane 后，同一 Workspace 保留本机引用、草稿和输入焦点。",
+    "rows": ["D.07.05", "T.04"]
+  },
+  {
+    "id": "I2401",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i24-source-picker.json",
+    "claim": "从同一 Workspace 打开 Explorer 时，两个同名项目以可见的 Local Windows 和 Studio 区分。",
+    "rows": ["G.09.02"]
+  },
+  {
+    "id": "I2402",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i24-two-explorers.json",
+    "claim": "键盘可按 Host 选择。两个实例分别列出各自目录的来源文件，同名文件各自可选。",
+    "rows": ["G.09", "G.09.02"]
+  },
+  {
+    "id": "I2403",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i24-open-original-local.json",
+    "claim": "从名称筛选按 Enter 将同名文件打开在 Local 的原 Worktree，显示该文件的本机内容。",
+    "rows": ["G.09.02", "H.01"]
+  },
+  {
+    "id": "I2404",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i24-open-original-studio.json",
+    "claim": "从 Studio Explorer 打开同一相对路径，实际编辑器的 Runtime 和文件内容属于 Studio。",
+    "rows": ["G.09.02", "H.01", "R.07"]
+  },
+  {
+    "id": "I2501",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i25-move-same-explorer.json",
+    "claim": "同一实例移入、移出后保留目录、筛选、选择、列表滚动和筛选框的焦点。",
+    "rows": ["G.09", "G.09.01", "R.07"]
+  },
+  {
+    "id": "I2502",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i25-narrow-workspace.json",
+    "claim": "600×460、减少动态条件下切换到 Local Chat，主区仍有 360 CSS px，嵌入标题继续显示 handoff 和 Studio。",
+    "rows": ["G.09.03", "R.07"]
+  },
+  {
+    "id": "I2503",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i25-two-instance-return.json",
+    "claim": "在本机独立标签与混合 Workspace 之间切换，各 Explorer 按自身来源还原筛选、位置与选择。",
+    "rows": ["G.09", "G.09.01", "R.07"]
+  },
+  {
+    "id": "I2601",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i26-cold-explorer.json",
+    "claim": "重启桌面进程且保留同一 Studio Runtime，重开恢复原 Explorer 实例、位置、目录、筛选和选择，再选同范围仍复用同实例。",
+    "rows": ["G.09.01", "G.09.04"]
+  },
+  {
+    "id": "I2602",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i26-explorer-outage.json",
+    "claim": "停止 Studio 后其 Explorer 切换到重连，本机 Chat 仍可编辑且本机 Explorer 可独立打开。",
+    "rows": ["G.09.04", "S.06"]
+  },
+  {
+    "id": "I2603",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i26-explorer-reconnect.json",
+    "claim": "连接同一 Studio 档案后，从原目录读到停机时新增的文件并保留旧选择和本机草稿。",
+    "rows": ["G.09.04", "S.06"]
+  },
+  {
+    "id": "I2604",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i26-explorer-revoked.json",
+    "claim": "用设置真实撤回隔离配对，原实例显示可移除占位，旧路径、查询和文件行均不再显示。",
+    "rows": ["G.09.04", "S.06"]
+  },
+  {
+    "id": "I2605",
+    "kind": "iteration-build",
+    "path": "iteration-24-26-loopback-zh/i26-remove-explorer.json",
+    "claim": "在占位中移除失效实例后回到本机 Chat 的输入，原工作空间、本机 Explorer 与测试文件仍在。",
+    "rows": ["G.09.04", "T.04"]
+  },
+  {
+    "id": "I2606",
+    "kind": "iteration-build",
+    "path": "iteration-26-local-profile/i22-v1-profile.json",
+    "claim": "读取真实 v1 档案恢复本机 Workspace 和 Explorer 信息，使用一次实际分屏编辑保存 v3。",
+    "rows": ["G.09.04", "D.07.04"]
+  },
+  {
+    "id": "I2701",
+    "kind": "iteration-build",
+    "path": "iteration-27-29-usage/i27-usage-follows-chat.json",
+    "claim": "同名 Chat 切换时状态栏分别显示 Studio 与本机用量范围。独立 Explorer 的会话用量区为空。",
+    "rows": ["A.03.03", "D.07.03"]
+  },
+  {
+    "id": "I2702",
+    "kind": "iteration-build",
+    "path": "iteration-27-29-usage/i25-narrow-workspace.json",
+    "claim": "600×460 且减少动态时，焦点移到 Studio Explorer 的筛选框，状态栏继续显示所选本机 Chat 的用量来源。",
+    "rows": ["A.03.03", "G.09.03"]
+  },
+  {
+    "id": "I2801",
+    "kind": "iteration-build",
+    "path": "iteration-27-29-usage/i28-accounts-handoff.json",
+    "claim": "从用量按钮按 Enter 打开各自的 Settings Host。返回仍是同一个 Workspace 与所选 Chat。",
+    "rows": ["A.03.04", "N.accounts"]
+  },
+  {
+    "id": "I2802",
+    "kind": "iteration-build",
+    "path": "iteration-27-29-usage/i28-populated-usage.json",
+    "claim": "37% 是给本机用量的合成夹具。600×460 实际呈现来源、提供方读数及账户入口。",
+    "rows": ["A.03.04"]
+  },
+  {
+    "id": "I2803",
+    "kind": "iteration-build",
+    "path": "iteration-27-29-usage/i24-open-original-studio.json",
+    "claim": "从固定 Explorer 打开 Studio 的测试文件时，编辑器读到 Studio 文档并恢复原工作树状态栏。",
+    "rows": ["A.03.04", "H.01"]
+  },
+  {
+    "id": "I2901",
+    "kind": "iteration-build",
+    "path": "iteration-27-29-usage/i26-explorer-outage.json",
+    "claim": "停掉 Studio 后，Studio Chat 的状态栏显示离线且没有账户动作。切到本机输入时，本机用量入口与编辑可继续。",
+    "rows": ["A.03.05", "S.06"]
+  },
+  {
+    "id": "I2902",
+    "kind": "iteration-build",
+    "path": "iteration-27-29-usage/i29-usage-recovers.json",
+    "claim": "重连原 Studio 后恢复该 Host 的用量入口。再次切换到本机时，两边的用量和草稿继续独立。",
+    "rows": ["A.03.05", "S.06"]
+  },
+  {
+    "id": "I2903",
+    "kind": "iteration-build",
+    "path": "iteration-27-29-usage/i26-explorer-revoked.json",
+    "claim": "实际撤回配对。原 Chat 不可用时状态栏旧 Host 名、用量和账户入口均退出。",
+    "rows": ["A.03.05", "S.06"]
+  },
+  {
+    "id": "I3001",
+    "kind": "iteration-build",
+    "path": "iteration-30-32-ports/i30-ports-scope.json",
+    "claim": "同一 Windows 的两个配对工作树各运行真实环回服务。对应的独立 Explorer 列出所属项目与分支的端口。",
+    "rows": ["A.03.06", "G.05"]
+  },
+  {
+    "id": "I3002",
+    "kind": "iteration-build",
+    "path": "iteration-30-32-ports/i30-ports-worktree.json",
+    "claim": "在 Studio 端口弹层按 Enter 转到实际 Studio 工作树，再返回同一固定 Explorer。",
+    "rows": ["A.03.06", "G.05"]
+  },
+  {
+    "id": "I3003",
+    "kind": "iteration-build",
+    "path": "iteration-30-32-mixed-trial/i30-ports-scope.json",
+    "claim": "首轮开发预览以已打开的 Local 与 Studio Chat 验证端口随所选会话工作树变化。此画面早于项目名细化。",
+    "rows": ["A.03.06", "D.07.03"]
+  },
+  {
+    "id": "I3101",
+    "kind": "iteration-build",
+    "path": "iteration-30-32-ports/i31-ports-outage.json",
+    "claim": "停掉 Studio 后看到离线且原监听项退出。切到本机时仍读到本机真实监听。",
+    "rows": ["A.03.07", "S.06"]
+  },
+  {
+    "id": "I3102",
+    "kind": "iteration-build",
+    "path": "iteration-30-32-ports/i31-ports-recovery.json",
+    "claim": "重连原 Studio 并等文件范围就绪后，端口弹层读到新监听。旧端口已经退出。",
+    "rows": ["A.03.07", "G.05"]
+  },
+  {
+    "id": "I3103",
+    "kind": "iteration-build",
+    "path": "iteration-30-32-ports/i31-ports-revoked.json",
+    "claim": "通过 Settings 撤回配对后端口显示工作树不可用，原 Host 和跳转动作退出。",
+    "rows": ["A.03.07", "S.06"]
+  },
+  {
+    "id": "I3201",
+    "kind": "iteration-build",
+    "path": "iteration-30-32-ports/i32-resource-scope.json",
+    "claim": "600×460 的隐藏窗口中切换两个 Explorer Host，均可识别本机汇总和本机 PTY。有数字帧使用资源样本。",
+    "rows": ["A.03.08", "A.03.01"]
+  },
+  {
+    "id": "I3301",
+    "kind": "iteration-build",
+    "path": "iteration-33-35-port-resources-zh/i33-port-details.json",
+    "claim": "用键盘打开实际本机和 Studio 的端口详情，确认 Host 徽章、原工作树及监听地址。关闭后焦点返回原端口入口。简中为 600×460。",
+    "rows": ["A.03.09", "G.05"]
+  },
+  {
+    "id": "I3401",
+    "kind": "iteration-build",
+    "path": "iteration-33-35-port-resources/i34-port-browser.json",
+    "claim": "替换本机测试监听，旧详情提示刷新。读到新监听后在原本机工作树的嵌入 Browser 加载实际环回 HTML。",
+    "rows": ["A.03.10", "G.05"]
+  },
+  {
+    "id": "I3501",
+    "kind": "iteration-build",
+    "path": "iteration-33-35-port-resources-zh/i35-resource-worktree.json",
+    "claim": "隐藏窗口中用资源样本与渲染器可见性夹具呈现本机行。真实定位显示原本机工作树，返回仍是同一个 Studio Explorer。",
+    "rows": ["A.03.11", "D.07.04"]
+  },
+  {
+    "id": "I3601",
+    "kind": "iteration-build",
+    "path": "iteration-36-38-port-targets/i36-port-address.json",
+    "claim": "英语回放核对实际监听、浏览器地址及原端口按钮回焦，Studio 详情展示配对端监听。",
+    "rows": ["A.03.12", "G.05"]
+  },
+  {
+    "id": "I3602",
+    "kind": "iteration-build",
+    "path": "iteration-36-38-port-targets-zh/i36-port-address.json",
+    "claim": "简中 600×460 回放核对监听、浏览器地址和诊断文字，检查对话框宽度及原入口回焦。",
+    "rows": ["A.03.12", "G.05"]
+  },
+  {
+    "id": "I3701",
+    "kind": "iteration-build",
+    "path": "iteration-36-38-port-targets/i37-port-refresh.json",
+    "claim": "替换实际本机监听，用 Enter 刷新后焦点进入原端口列表，选择替换项才加载实际环回 HTML。",
+    "rows": ["A.03.13", "A.03.10", "G.05"]
+  },
+  {
+    "id": "I3702",
+    "kind": "iteration-build",
+    "path": "iteration-36-38-port-targets-zh/i37-port-refresh.json",
+    "claim": "简中回放确认监听变化提示、刷新后的键盘焦点和实际打开的本机环回页面。",
+    "rows": ["A.03.13", "G.05"]
+  },
+  {
+    "id": "I3801",
+    "kind": "iteration-build",
+    "path": "iteration-36-38-port-targets/i38-resource-browser.json",
+    "claim": "从 Studio 侧打开资源管理器并按 Space，检查本机 Browser 原标签和活动页面身份、标签数量、Studio Explorer 返回。",
+    "rows": ["A.03.14", "I.01", "D.07.04"]
+  },
+  {
+    "id": "I3802",
+    "kind": "iteration-build",
+    "path": "iteration-36-38-port-targets-zh/i38-resource-browser.json",
+    "claim": "简中资源树显示归属明确的样本并定位实际已打开的本机 Browser。切换后继续原页面，回到同一 Studio Explorer。",
+    "rows": ["A.03.14", "I.01"]
+  },
+  {
+    "id": "I3901",
+    "kind": "iteration-build",
+    "path": "iteration-39-41-resource-continuity/i39-resource-terminal.json",
+    "claim": "使用 Resources 和本机 PTY 选择两个实际分屏，核对两个原 PTY、分屏编号、终端焦点和原 Explorer。",
+    "rows": ["A.03.15"]
+  },
+  {
+    "id": "I3902",
+    "kind": "iteration-build",
+    "path": "iteration-39-41-resource-continuity-zh/i39-resource-terminal.json",
+    "claim": "简中深色回放使用两张资源列表分别定位实际分屏，记录窗格编号、键盘焦点和 Explorer 返回。",
+    "rows": ["A.03.15"]
+  },
+  {
+    "id": "I4001",
+    "kind": "iteration-build",
+    "path": "iteration-39-41-resource-continuity/i40-pty-availability.json",
+    "claim": "实际 daemon 显示原绑定与无标签进程。注入诊断失败后可读旧记录并重试，恢复后当前绑定可定位。",
+    "rows": ["A.03.16"]
+  },
+  {
+    "id": "I4002",
+    "kind": "iteration-build",
+    "path": "iteration-39-41-resource-continuity-zh/i40-pty-availability.json",
+    "claim": "简中 600×460 减少动态条件检查本机 PTY 列表和旧记录，注入读取失败后从重试恢复。",
+    "rows": ["A.03.16"]
+  },
+  {
+    "id": "I4101",
+    "kind": "iteration-build",
+    "path": "iteration-39-41-resource-continuity/i41-space-review.json",
+    "claim": "实际扫描后从摘要发出 Space 请求。注入一次打开失败，随后复用正常开窗并读实际结果，关闭后回原 Explorer。",
+    "rows": ["M.02.01", "M.02"]
+  },
+  {
+    "id": "I4102",
+    "kind": "iteration-build",
+    "path": "iteration-39-41-resource-continuity-zh/i41-space-review.json",
+    "claim": "核对简中 Space 入口、失败重试、实际磁盘结果和原 Explorer，记录独立窗口画面。",
+    "rows": ["M.02.01", "M.02"]
+  },
+  {
+    "id": "I4201",
+    "kind": "iteration-build",
+    "path": "iteration-42-44-resource-selection/i42-pty-eligible-selection.json",
+    "claim": "两个真实 PTY 的键盘选择经过未勾选、混合态、全选与清空，结束计数随选择改变。",
+    "rows": ["A.03.17"]
+  },
+  {
+    "id": "I4202",
+    "kind": "iteration-build",
+    "path": "iteration-42-44-resource-selection-zh/i42-pty-eligible-selection.json",
+    "claim": "简中 600×460 且启用减少动态，核对全选范围、结束按钮计数和清空。",
+    "rows": ["A.03.17"]
+  },
+  {
+    "id": "I4301",
+    "kind": "iteration-build",
+    "path": "iteration-42-44-resource-selection/i43-space-folders.json",
+    "claim": "从真实目录树图的工作区图块进入目录，返回后焦点留在可再次进入的入口。",
+    "rows": ["M.02.02"]
+  },
+  {
+    "id": "I4302",
+    "kind": "iteration-build",
+    "path": "iteration-42-44-resource-selection-zh/i43-space-folders.json",
+    "claim": "简中独立 Space 区分概览和目录，使用 Enter 与 Space 验证进出焦点。",
+    "rows": ["M.02.02"]
+  },
+  {
+    "id": "I4401",
+    "kind": "iteration-build",
+    "path": "iteration-42-44-resource-selection/i44-space-filtered.json",
+    "claim": "两个实际托管工作树均已选。筛选隐藏一项后只审阅可见项并取消，清除筛选后两项仍选中。",
+    "rows": ["M.02.03"]
+  },
+  {
+    "id": "I4402",
+    "kind": "iteration-build",
+    "path": "iteration-42-44-resource-selection-zh/i44-space-filtered.json",
+    "claim": "简中回放核对可见与隐藏计数、零项禁用、保护主工作树及清除全部选择。",
+    "rows": ["M.02.03"]
+  },
+  {
+    "id": "I4501",
+    "kind": "iteration-build",
+    "path": "iteration-45-47-space-cleanup/i45-space-review-cancel-focus.json",
+    "claim": "Space 审阅初始焦点落到取消。Enter 和 Esc 取消后回到审阅按钮，并保留选择和搜索词。",
+    "rows": ["M.02.04"]
+  },
+  {
+    "id": "I4502",
+    "kind": "iteration-build",
+    "path": "iteration-45-47-space-cleanup-zh/i45-space-review-cancel-focus.json",
+    "claim": "简中 Space 的取消按钮获得初始焦点，确认范围和返回焦点由真实回放验证。",
+    "rows": ["M.02.04"]
+  },
+  {
+    "id": "I4601",
+    "kind": "iteration-build",
+    "path": "iteration-45-47-space-cleanup/i46-space-cleaned.json",
+    "claim": "确认单项后实际移除隔离工作树，Space 显示一项成功并将焦点交给仍保留原搜索词的搜索框。",
+    "rows": ["M.02.05"]
+  },
+  {
+    "id": "I4602",
+    "kind": "iteration-build",
+    "path": "iteration-45-47-space-cleanup-zh/i46-space-cleaned.json",
+    "claim": "简中回放核对真实单项删除回执、继续筛选和筛选隐藏的另一项选择。",
+    "rows": ["M.02.05"]
+  },
+  {
+    "id": "I4701",
+    "kind": "iteration-build",
+    "path": "iteration-45-47-space-cleanup/i47-space-partial.json",
+    "claim": "两个临时工作树确认后真实完成一项，保留有临时修改的一项。主窗口重新发布状态后行内原因仍在，重新审阅后重试完成。",
+    "rows": ["M.02.06"]
+  },
+  {
+    "id": "I4702",
+    "kind": "iteration-build",
+    "path": "iteration-45-47-space-cleanup-zh/i47-space-partial.json",
+    "claim": "简中独立 Space 显示实际部分完成，接收主窗口刷新后仍显示删除失败。解除测试原因后从同一列表审阅并完成。",
+    "rows": ["M.02.06"]
+  },
+  {
+    "id": "I4801",
+    "kind": "iteration-build",
+    "path": "iteration-48-50-space-en/i48-space-refusal-reason.json",
+    "claim": "真实 Git 拒绝含临时未跟踪文件的工作树。760px 视口在主窗口重发后仍显示完整短原因。",
+    "rows": ["M.02.07"]
+  },
+  {
+    "id": "I4802",
+    "kind": "iteration-build",
+    "path": "iteration-48-50-space-zh/i48-space-refusal-reason.json",
+    "claim": "简中 Space 的失败原因在退出瞬时通知后可读。测试文件和工作树继续存在。",
+    "rows": ["M.02.07"]
+  },
+  {
+    "id": "I4901",
+    "kind": "iteration-build",
+    "path": "iteration-48-50-space-en/i49-space-kept-branches.json",
+    "claim": "Space 移除了两个测试工作树，两个真实分支 HEAD 均保留。切回主工作树后仍显示复核入口。",
+    "rows": ["M.02.08"]
+  },
+  {
+    "id": "I4902",
+    "kind": "iteration-build",
+    "path": "iteration-48-50-space-zh/i49-space-kept-branches.json",
+    "claim": "简中回放在清理结果栏单列由 Git 保留的分支，并核对结果与筛选独立。",
+    "rows": ["M.02.08"]
+  },
+  {
+    "id": "I5001",
+    "kind": "iteration-build",
+    "path": "iteration-48-50-space-en/i50-space-branch-review-empty.json",
+    "claim": "真实分支复核打开后初始焦点在取消，默认零选。全选、清空与 Esc 可用，取消保留两份实际 refs。",
+    "rows": ["M.02.09"]
+  },
+  {
+    "id": "I5002",
+    "kind": "iteration-build",
+    "path": "iteration-48-50-space-zh/i50-space-branch-review-result.json",
+    "claim": "简中以键盘重开复核并确认单项，只有所选分支的 Git ref 被删除。剩余项继续可查。",
+    "rows": ["M.02.09"]
+  },
+  {
+    "id": "I5101",
+    "kind": "iteration-build",
+    "path": "iteration-51-53-space-en/i51-space-branch-batch-result.json",
+    "claim": "三个真实分支提交后确认删除一条，另两条退回复核。筛选变化后仍显示同一批次结果。",
+    "rows": ["M.02.10"]
+  },
+  {
+    "id": "I5102",
+    "kind": "iteration-build",
+    "path": "iteration-51-53-space-zh/i51-space-branch-batch-result.json",
+    "claim": "简中 760px 的 Space 显示独立的工作树和分支删除结果，复核入口保持可达。",
+    "rows": ["M.02.10"]
+  },
+  {
+    "id": "I5201",
+    "kind": "iteration-build",
+    "path": "iteration-51-53-space-en/i52-space-branch-refusals.json",
+    "claim": "重开复核可对照已变化分支的原提交和 Git 实读提交。键盘全选只选择另一个可复核分支。",
+    "rows": ["M.02.11"]
+  },
+  {
+    "id": "I5202",
+    "kind": "iteration-build",
+    "path": "iteration-51-53-space-zh/i52-space-branch-refusals.json",
+    "claim": "简中可辨认「分支已变化」与检出占用，取消后真实 Git 引用保持原位。",
+    "rows": ["M.02.11"]
+  },
+  {
+    "id": "I5301",
+    "kind": "iteration-build",
+    "path": "iteration-51-53-space-en/i53-space-branch-keep.json",
+    "claim": "保留变化分支后，剩余条目仍在同一复核且焦点回到取消。释放另一工作树后单项重试成功。",
+    "rows": ["M.02.12"]
+  },
+  {
+    "id": "I5302",
+    "kind": "iteration-build",
+    "path": "iteration-51-53-space-zh/i53-space-branch-recovered.json",
+    "claim": "简中先重试释放的分支，再保留最后一个已变化分支。窗口回到筛选并确认该分支复核结束，Git 中仍指向实读提交。",
+    "rows": ["M.02.12"]
+  },
+  {
+    "id": "I5401",
+    "kind": "iteration-build",
+    "path": "iteration-54-56-space-en/i54-space-checkout-paths.json",
+    "claim": "两条保留分支真正被不同 checkout 占用，显示准确路径。应用登记项有对应打开工作树入口。",
+    "rows": ["M.02.13"]
+  },
+  {
+    "id": "I5402",
+    "kind": "iteration-build",
+    "path": "iteration-54-56-space-zh/i54-space-checkout-external.json",
+    "claim": "简中窄窗滚动至外部 checkout，可读到带空格和中文目录名的 Git 路径。",
+    "rows": ["M.02.13"]
+  },
+  {
+    "id": "I5501",
+    "kind": "iteration-build",
+    "path": "iteration-54-56-space-en/i55-branch-open-checkout.json",
+    "claim": "使用复核中的按钮激活真实本机主窗口里对应的登记工作树，检查活跃工作树及 Host。",
+    "rows": ["M.02.14"]
+  },
+  {
+    "id": "I5502",
+    "kind": "iteration-build",
+    "path": "iteration-54-56-space-zh/i55-space-checkout-opened.json",
+    "claim": "简中 Space 保留对话框与选择，收到主窗口打开回执。协议检查拒绝同 ID 的过期实例。",
+    "rows": ["M.02.14"]
+  },
+  {
+    "id": "I5601",
+    "kind": "iteration-build",
+    "path": "iteration-54-56-space-en/i56-space-checkout-resumed.json",
+    "claim": "释放登记 checkout 后确认删除一项。另一条真实 Git 分支仍在，原入口与筛选焦点仍可继续。",
+    "rows": ["M.02.15"]
+  },
+  {
+    "id": "I5602",
+    "kind": "iteration-build",
+    "path": "iteration-54-56-space-zh/i56-space-checkout-completed.json",
+    "claim": "按外部路径释放检出并显式重试，Git 确认最后一项并退出复核，焦点回筛选。",
+    "rows": ["M.02.15"]
+  },
+  {
+    "id": "I5701",
+    "kind": "iteration-build",
+    "path": "iteration-57-59-space-en/i57-workbench-return-entry.json",
+    "claim": "1100px 英语工作台在确认打开已登记工作树后提供状态栏返回入口，并保留当前工作树。",
+    "rows": ["M.02.16"]
+  },
+  {
+    "id": "I5702",
+    "kind": "iteration-build",
+    "path": "iteration-57-59-space-zh/i57-workbench-return-entry.json",
+    "claim": "820px 简中主窗口仍显示完整返回文案，同一登记工作树处于活跃状态。",
+    "rows": ["M.02.16"]
+  },
+  {
+    "id": "I5801",
+    "kind": "iteration-build",
+    "path": "iteration-57-59-space-en/i58-space-review-returned.json",
+    "claim": "按 Enter 从主窗口返回同一 Space，验证原打开工作树按钮获得键盘焦点。",
+    "rows": ["M.02.17"]
+  },
+  {
+    "id": "I5802",
+    "kind": "iteration-build",
+    "path": "iteration-57-59-space-zh/i58-space-review-returned.json",
+    "claim": "简中返回时恢复该工作树按钮，保留一条勾选和一条未选，主工作台没有切换工作树。",
+    "rows": ["M.02.17"]
+  },
+  {
+    "id": "I5901",
+    "kind": "iteration-build",
+    "path": "iteration-57-59-space-en/i59-space-return-lifetime.json",
+    "claim": "取消及关闭后状态栏入口撤下。重新复核初始零选，旧请求失效后窗口数量与 Git 引用保持。",
+    "rows": ["M.02.18"]
+  },
+  {
+    "id": "I5902",
+    "kind": "iteration-build",
+    "path": "iteration-57-59-space-zh/i59-space-return-lifetime.json",
+    "claim": "简中实测重载 Space 后返回入口回收，随后关窗时旧请求保持失效。",
+    "rows": ["M.02.18"]
+  },
+  {
+    "id": "I6001",
+    "kind": "iteration-build",
+    "path": "iteration-60-62-space-en/i60-space-fallback-focus.json",
+    "claim": "移动 Git 工作树使原打开按钮消失。按 Enter 返回同一 Space 后，取消获焦，原勾选和主工作台选择保留。",
+    "rows": ["M.02.19"]
+  },
+  {
+    "id": "I6002",
+    "kind": "iteration-build",
+    "path": "iteration-60-62-space-zh/i60-space-fallback-focus.json",
+    "claim": "760px 简中复核在原按钮消失后回到取消，已勾选分支和其他候选仍可辨认。",
+    "rows": ["M.02.19"]
+  },
+  {
+    "id": "I6101",
+    "kind": "iteration-build",
+    "path": "iteration-60-62-space-en/i61-space-last-checkout-path.json",
+    "claim": "英语回放在原路径登记 ID 相同但实例不同的真实工作树。上次路径仍可查看，旧打开动作保持撤下。",
+    "rows": ["M.02.20"]
+  },
+  {
+    "id": "I6102",
+    "kind": "iteration-build",
+    "path": "iteration-60-62-space-zh/i61-space-last-checkout-path.json",
+    "claim": "简中显示上次检出路径与核对提示，原行的打开成功提示已撤下。",
+    "rows": ["M.02.20"]
+  },
+  {
+    "id": "I6201",
+    "kind": "iteration-build",
+    "path": "iteration-60-62-space-en/i62-space-checkout-refreshed.json",
+    "claim": "显式提交时 Git 仍拒绝删除在其他路径检出的分支并更新复核中的路径，新的复核从零选开始。",
+    "rows": ["M.02.21"]
+  },
+  {
+    "id": "I6202",
+    "kind": "iteration-build",
+    "path": "iteration-60-62-space-zh/i62-space-checkout-resolved.json",
+    "claim": "实际释放移动后的检出并重新勾选提交，删除目标分支，其余分支仍在待复核清单。",
+    "rows": ["M.02.21"]
+  },
+  {
+    "id": "I6301",
+    "kind": "iteration-build",
+    "path": "iteration-63-65-space-en/i63-space-checkout-current.json",
+    "claim": "按 Enter 核对后，同一个分支行在提交删除前显示移动后的真实 Git 路径。当前勾选、焦点和两条 Git 引用保留。",
+    "rows": ["M.02.22"]
+  },
+  {
+    "id": "I6302",
+    "kind": "iteration-build",
+    "path": "iteration-63-65-space-zh/i63-space-checkout-current.json",
+    "claim": "760px 简中复核在原分支行显示包含空格和中文的当前检出路径。",
+    "rows": ["M.02.22"]
+  },
+  {
+    "id": "I6401",
+    "kind": "iteration-build",
+    "path": "iteration-63-65-space-en/i64-space-checkout-head-changed.json",
+    "claim": "另一条分支实际推进 HEAD 后，核对只撤下该项勾选，受影响的核对按钮保持焦点并完整显示。",
+    "rows": ["M.02.23"]
+  },
+  {
+    "id": "I6402",
+    "kind": "iteration-build",
+    "path": "iteration-63-65-space-zh/i64-space-checkout-available.json",
+    "claim": "切换工作树分支后核对为未检出，原行保留上次路径、勾选和键盘焦点。",
+    "rows": ["M.02.23"]
+  },
+  {
+    "id": "I6403",
+    "kind": "iteration-build",
+    "path": "iteration-63-65-space-zh/i64-space-checkout-unconfirmed.json",
+    "claim": "临时重命名 Git 分支后显示结果未确认，保留上次路径、勾选与核对按钮焦点。恢复原引用后可在原行再次核对。",
+    "rows": ["M.02.23"]
+  },
+  {
+    "id": "I6501",
+    "kind": "iteration-build",
+    "path": "iteration-63-65-space-en/i65-space-checkout-occupied-again.json",
+    "claim": "核对为未检出后实际再次检出，显式提交被 Git 拒绝，两条分支引用保留，新复核零选且显示当次检出路径。",
+    "rows": ["M.02.24"]
+  },
+  {
+    "id": "I6502",
+    "kind": "iteration-build",
+    "path": "iteration-63-65-space-zh/i65-space-checkout-retry-resolved.json",
+    "claim": "实际释放再次占用后重新勾选并提交，回执确认删除目标分支，另一条分支仍保留。",
+    "rows": ["M.02.24"]
+  },
+  {
+    "id": "I6601",
+    "kind": "iteration-build",
+    "path": "iteration-66-68-paired-en/i66-paired-host-checkout.json",
+    "claim": "配对主机的 Git 回到原分支行并显示移动后的路径。本机有同名同 HEAD 引用，核对后两条引用都保留。",
+    "rows": ["M.02.25"]
+  },
+  {
+    "id": "I6602",
+    "kind": "iteration-build",
+    "path": "iteration-66-68-paired-zh/i66-paired-host-checkout.json",
+    "claim": "760px 简中工作台复核显示仓库、Studio 和包含空格与中文的当前检出路径，初始零选。",
+    "rows": ["M.02.25"]
+  },
+  {
+    "id": "I6701",
+    "kind": "iteration-build",
+    "path": "iteration-66-68-paired-en/i67-paired-host-offline.json",
+    "claim": "实际断开配对连接后在原行保留上次路径、勾选与键盘焦点，当前提交禁用。",
+    "rows": ["M.02.26"]
+  },
+  {
+    "id": "I6702",
+    "kind": "iteration-build",
+    "path": "iteration-66-68-paired-zh/i67-paired-host-recovered.json",
+    "claim": "恢复同一配对后在原行再次核对，显示未检出并恢复当前选择的提交。",
+    "rows": ["M.02.26"]
+  },
+  {
+    "id": "I6703",
+    "kind": "iteration-build",
+    "path": "iteration-66-68-paired-zh/i67-paired-host-retry.json",
+    "claim": "核对后再次检出，Git 拒绝本次提交，重新打开的复核从零选开始并显示实际路径。",
+    "rows": ["M.02.26"]
+  },
+  {
+    "id": "I6704",
+    "kind": "iteration-build",
+    "path": "iteration-66-68-paired-en/i67-paired-host-result.json",
+    "claim": "释放占用并重新勾选提交后，只删除 Studio 的分支，本机同名同 HEAD 引用保留。",
+    "rows": ["M.02.26"]
+  },
+  {
+    "id": "I6801",
+    "kind": "iteration-build",
+    "path": "iteration-66-68-wsl-zh/i63-space-checkout-current.json",
+    "claim": "在实际 Ubuntu WSL 2 工作树移动后，Space 列明发行版，路径保留 Linux 目录大小写、空格和中文。",
+    "rows": ["M.02.27"]
+  },
+  {
+    "id": "I6802",
+    "kind": "iteration-build",
+    "path": "iteration-66-68-wsl-zh/i65-space-checkout-retry-resolved.json",
+    "claim": "WSL Git 实际释放再次占用后，Space 的显式提交删除目标引用并保留另一条分支。",
+    "rows": ["M.02.27"]
+  },
+  {
+    "id": "I6901",
+    "kind": "iteration-build",
+    "path": "iteration-69-71-paired-en/i67-paired-host-offline.json",
+    "claim": "原配对行在实际断开时保留勾选、上次检出路径与焦点，提供重连并核对，暂停提交。",
+    "rows": ["M.02.28"]
+  },
+  {
+    "id": "I6902",
+    "kind": "iteration-build",
+    "path": "iteration-69-71-paired-en/i67-paired-host-recovered.json",
+    "claim": "从同一行重连后，Git 未确认期间保持提交暂停，恢复原引用并再次核对后才可显式提交。",
+    "rows": ["M.02.28"]
+  },
+  {
+    "id": "I7001",
+    "kind": "iteration-build",
+    "path": "iteration-69-71-ssh-zh/i70-ssh-project-needs-host-service.json",
+    "claim": "真实 Porpita 在历史 SSH 登记夹具上显示原主机名称和项目接入说明，保留原本地登记移除动作并提供 SSH 设置入口。",
+    "rows": ["M.02.29"]
+  },
+  {
+    "id": "I7002",
+    "kind": "iteration-build",
+    "path": "iteration-69-71-ssh-zh/i70-ssh-settings-with-workspace-preserved.json",
+    "claim": "由原对话框进入现成的 SSH 设置，保存的主机可见，原工作区登记保留。",
+    "rows": ["M.02.29"]
+  },
+  {
+    "id": "I7003",
+    "kind": "iteration-build",
+    "path": "iteration-69-71-ssh-layout-zh/i70-ssh-settings-with-workspace-preserved.json",
+    "claim": "当前 Renderer 以 760px 简中回放同一入口，标题和说明使用整行，现有工具栏移到下一行，原工作区登记保留。",
+    "rows": ["M.02.29"]
+  },
+  {
+    "id": "I7004",
+    "kind": "iteration-build",
+    "path": "iteration-69-71-ssh-layout-zh/i70-ssh-settings-wide.json",
+    "claim": "1160px 下同一 SSH 设置保留标题和工具栏并排，主机卡片仍可见。",
+    "rows": ["M.02.29"]
+  },
+  {
+    "id": "I7101",
+    "kind": "iteration-build",
+    "path": "iteration-69-71-wsl-zh/i71-space-wsl-stopped.json",
+    "claim": "临时发行版真正停止后，被动核对仍保持停止并保留路径、勾选与焦点，提交暂停。",
+    "rows": ["M.02.30"]
+  },
+  {
+    "id": "I7102",
+    "kind": "iteration-build",
+    "path": "iteration-69-71-wsl-zh/i71-space-wsl-started.json",
+    "claim": "键盘触发目标发行版启动后取得新的未检出结果，勾选与两条真实 Git 引用保留。",
+    "rows": ["M.02.30"]
+  },
+  {
+    "id": "I7103",
+    "kind": "iteration-build",
+    "path": "iteration-69-71-wsl-zh/i65-space-checkout-retry-resolved.json",
+    "claim": "启动并核对之后，Git 仍拒绝再次占用。释放并从零选复核显式提交后只删除目标分支。",
+    "rows": ["M.02.30"]
+  },
+  {
+    "id": "I7201",
+    "kind": "iteration-build",
+    "path": "iteration-72-74-physical-en/i72-physical-pairing.json",
+    "claim": "Windows 0.1.0 从服务器设置输入 Linux 实机的访问链接，确认 SSH 隧道并连接。客户端读到的 Runtime ID 与 Linux 启动回执一致。",
+    "rows": ["M.02.31"]
+  },
+  {
+    "id": "I7301",
+    "kind": "iteration-build",
+    "path": "iteration-72-74-physical-en/i73-standalone-project-before-adoption.json",
+    "claim": "接管前的独立 SSH 项目保留原工作树，工作区确认显示原主机并提供 SSH 设置入口。",
+    "rows": ["M.02.32"]
+  },
+  {
+    "id": "I7302",
+    "kind": "iteration-build",
+    "path": "iteration-72-74-physical-en/i73-adopted-server.json",
+    "claim": "原 SSH 卡片显示已连接和服务器标记。实际托管服务保留原项目 ID 和路径，拥有独立于直接配对的 Runtime ID。",
+    "rows": ["M.02.32"]
+  },
+  {
+    "id": "I7401",
+    "kind": "iteration-build",
+    "path": "iteration-72-74-physical-en/i74-adopted-branch-checkout.json",
+    "claim": "接管后的原工作区被移除，复核按零选打开。原行从 Linux Git 读到移动后的工作树路径，两机同名同 HEAD 引用仍保留。",
+    "rows": ["M.02.33"]
+  },
+  {
+    "id": "I7402",
+    "kind": "iteration-build",
+    "path": "iteration-72-74-physical-en/i74-disconnected-branch-review.json",
+    "claim": "切断实际接管通道时，原行保留上次检出路径、勾选和焦点，暂停提交。独立的直接配对服务仍可查询。",
+    "rows": ["M.02.33"]
+  },
+  {
+    "id": "I7403",
+    "kind": "iteration-build",
+    "path": "iteration-72-74-physical-en/i74-reconnected-original-row.json",
+    "claim": "从原分支行恢复同一 SSH 托管服务，取得 Git 的未检出读数，勾选保留并恢复提交。",
+    "rows": ["M.02.33"]
+  },
+  {
+    "id": "I7404",
+    "kind": "iteration-build",
+    "path": "iteration-72-74-physical-en/i74-refusal-and-retry.json",
+    "claim": "核对后再次占用触发 Git 拒绝。原路径留在新复核，选择恢复为零，Linux 引用仍在。",
+    "rows": ["M.02.33"]
+  },
+  {
+    "id": "I7405",
+    "kind": "iteration-build",
+    "path": "iteration-72-74-physical-en/i74-explicit-retry-on-linux.json",
+    "claim": "解除占用并显式提交后，Linux 目标引用被删除，Windows 同名引用保留。成功通知显示当次结果，旧失败说明与重试动作退出。",
+    "rows": ["M.02.33"]
+  },
+  {
+    "id": "I7501",
+    "kind": "iteration-build",
+    "path": "iteration-75-77-linux-en/i75-pair-dialog.json",
+    "claim": "原生 X11 窗口通过 Tab 和 Shift+Tab 定位空的访问链接字段，保存系统 Orca 播报的对话框与字段说明。",
+    "rows": ["M.02.34"]
+  },
+  {
+    "id": "I7502",
+    "kind": "iteration-build",
+    "path": "iteration-75-77-linux-en/i75-pair-cancel.json",
+    "claim": "Escape 关闭添加服务器对话框，X11 回放确认键盘焦点回到设置页的原添加入口。",
+    "rows": ["M.02.34"]
+  },
+  {
+    "id": "I7503",
+    "kind": "iteration-build",
+    "path": "iteration-75-77-linux-en/i75-windows-paired.json",
+    "claim": "Linux 图形客户端以键盘提交隧道确认，连接同版本 Windows Runtime。真实系统 Orca 播报连接成功。",
+    "rows": ["M.02.34"]
+  },
+  {
+    "id": "I7601",
+    "kind": "iteration-build",
+    "path": "iteration-75-77-linux-en/i76-original-ssh-workspace.json",
+    "claim": "从 Worktrees 列表使用原生键盘定位，原删除快捷键打开独立 SSH 工作区确认，系统读屏报出项目接入位置。",
+    "rows": ["M.02.35"]
+  },
+  {
+    "id": "I7602",
+    "kind": "iteration-build",
+    "path": "iteration-75-77-linux-en/i76-adopted-ssh-host.json",
+    "claim": "SSH 主按钮焦点保持，系统 Orca 读出连接变化。实际托管 Runtime 接管原项目 ID 和路径。",
+    "rows": ["M.02.35"]
+  },
+  {
+    "id": "I7701",
+    "kind": "iteration-build",
+    "path": "iteration-75-77-linux-en/i77-moved-checkout.json",
+    "claim": "终端返回工作台后，Alt+T 聚焦通知。用键盘进入零选的分支复核，从实际 Git 取得移动后的检出路径。",
+    "rows": ["M.02.36"]
+  },
+  {
+    "id": "I7702",
+    "kind": "iteration-build",
+    "path": "iteration-75-77-linux-en/i77-original-row-outage.json",
+    "claim": "切断 SSH 时原分支保留路径、选择和焦点，暂停提交，独立 Windows 配对仍可查询。保存系统读屏播报和语音片段。",
+    "rows": ["M.02.36"]
+  },
+  {
+    "id": "I7703",
+    "kind": "iteration-build",
+    "path": "iteration-75-77-linux-en/i77-original-row-recovered.json",
+    "claim": "从原行重连同一托管 Runtime，实际 Git 返回未检出。保留当前选择并恢复提交。",
+    "rows": ["M.02.36"]
+  },
+  {
+    "id": "I7704",
+    "kind": "iteration-build",
+    "path": "iteration-75-77-linux-en/i77-git-refusal.json",
+    "claim": "再次占用触发 Git 拒绝。用原生键盘从通知重开复核，原路径可定位且选择恢复为零。",
+    "rows": ["M.02.36"]
+  },
+  {
+    "id": "I7705",
+    "kind": "iteration-build",
+    "path": "iteration-75-77-linux-en/i77-explicit-retry-result.json",
+    "claim": "释放占用后重新勾选并提交。实际 Linux Git 目标引用删除，Windows 对照引用保留。Alt+T 进入通知列表后实际读出本次回执。",
+    "rows": ["M.02.36"]
+  },
+  {
+    "id": "I7801",
+    "kind": "iteration-build",
+    "path": "iteration-78-80-wayland-en/i78-pair-cancel.json",
+    "claim": "原生 Wayland 键盘打开添加服务器对话框，Escape 回到添加按钮，保留实际焦点与系统读屏事件。",
+    "rows": ["M.02.37"]
+  },
+  {
+    "id": "I7802",
+    "kind": "iteration-build",
+    "path": "iteration-78-80-wayland-en/i78-adopted-ssh-host.json",
+    "claim": "原生 Wayland 键盘触发同一独立 SSH 试件接管，原项目 ID 与路径保留，动作焦点留在主机按钮。",
+    "rows": ["M.02.37"]
+  },
+  {
+    "id": "I7803",
+    "kind": "iteration-build",
+    "path": "iteration-78-80-wayland-en/i78-original-row-outage.json",
+    "claim": "Alt+T 进入通知并开启复核。SSH 中断时原行保留焦点、选择和上次路径，直接 Windows Runtime 保持可查询。",
+    "rows": ["M.02.37", "O.01.01"]
+  },
+  {
+    "id": "I7804",
+    "kind": "iteration-build",
+    "path": "iteration-78-80-wayland-en/i78-git-refusal.json",
+    "claim": "真实 Git 在再次占用时拒绝，键盘从通知重新打开零选的分支复核，原路径可复核。",
+    "rows": ["M.02.37"]
+  },
+  {
+    "id": "I7901",
+    "kind": "iteration-build",
+    "path": "iteration-78-80-wayland-en/i79-automatic-receipt.json",
+    "claim": "显式提交只按一次 Return。Orca 自动读出一次与画面一致的 Git 成功回执。Linux 删除目标引用，Windows 同名引用保留。",
+    "rows": ["M.02.38"]
+  },
+  {
+    "id": "I8001",
+    "kind": "iteration-build",
+    "path": "iteration-78-80-wayland-trial/i80-ssh-settings.json",
+    "claim": "同一 Wayland 环境的基线中，首次使用卡片可见并遮到已经聚焦的 SSH 连接按钮。",
+    "rows": ["O.01.01"]
+  },
+  {
+    "id": "I8002",
+    "kind": "iteration-build",
+    "path": "iteration-78-80-wayland-en/i80-ssh-settings.json",
+    "claim": "修订版在 SSH 设置暂停首次使用卡片。合成器画面显示连接按钮，按钮中心命中检查通过。",
+    "rows": ["O.01.01"]
+  },
+  {
+    "id": "I8003",
+    "kind": "iteration-build",
+    "path": "iteration-78-80-wayland-en/i80-card-returned.json",
+    "claim": "退出设置后尚未处理的卡片重新显示，当前会话中的提示没有被避让动作消耗。",
+    "rows": ["O.01.01"]
+  },
+  {
+    "id": "I8101",
+    "kind": "iteration-build",
+    "path": "iteration-81-83-gnome-en/i81-activities.json",
+    "claim": "原生 Super 打开 GNOME 活动概览，配对表单仍在窗口预览中。",
+    "rows": ["M.02.39"]
+  },
+  {
+    "id": "I8102",
+    "kind": "iteration-build",
+    "path": "iteration-81-83-gnome-en/i81-system-notifications.json",
+    "claim": "Super+V 在 Porpita 上方打开 GNOME 系统通知。",
+    "rows": ["M.02.39"]
+  },
+  {
+    "id": "I8103",
+    "kind": "iteration-build",
+    "path": "iteration-81-83-gnome-en/i81-switch-return.json",
+    "claim": "用 Super+Tab 从另一个应用切回 Porpita，原访问链接输入恢复焦点。",
+    "rows": ["M.02.39"]
+  },
+  {
+    "id": "I8104",
+    "kind": "iteration-build",
+    "path": "iteration-81-83-gnome-en/i81-adopted-ssh-host.json",
+    "claim": "在完成系统快捷键回焦及双机配对后，原独立 SSH 项目由其自身托管 Runtime 接管。",
+    "rows": ["M.02.39"]
+  },
+  {
+    "id": "I8201",
+    "kind": "iteration-build",
+    "path": "iteration-81-83-gnome-en/i82-review-resumed.json",
+    "claim": "退出 GNOME 系统通知后，分支选中及确认按钮焦点保留。",
+    "rows": ["M.02.40"]
+  },
+  {
+    "id": "I8202",
+    "kind": "iteration-build",
+    "path": "iteration-81-83-gnome-en/i82-automatic-receipt.json",
+    "claim": "只按一次 Return 后，GNOME Orca 自动播报一次完整 Git 成功回执，与画面一致。",
+    "rows": ["M.02.40"]
+  },
+  {
+    "id": "I8301",
+    "kind": "iteration-build",
+    "path": "iteration-81-83-gnome-en/i83-ssh-settings.json",
+    "claim": "720px GNOME 平铺窗口中，卡片暂隐，SSH 连接按钮聚焦且中心命中。",
+    "rows": ["O.01.02"]
+  },
+  {
+    "id": "I8302",
+    "kind": "iteration-build",
+    "path": "iteration-81-83-gnome-en/i83-card-returned.json",
+    "claim": "从服务器设置回工作台后，同一次首次使用提示重新显示。",
+    "rows": ["O.01.02"]
+  },
+  {
+    "id": "I8401",
+    "kind": "iteration-build",
+    "path": "iteration-84-86-gnome-baseline/i84-baseline-beacon.json",
+    "claim": "720px 原生基线的三条别名及地址均出现截短。",
+    "rows": ["M.04.02"]
+  },
+  {
+    "id": "I8402",
+    "kind": "iteration-build",
+    "path": "iteration-84-86-gnome-en/i84-tiled.json",
+    "claim": "相同的 GNOME 平铺宽度内，三个完整别名及地址都可见。",
+    "rows": ["M.04.02"]
+  },
+  {
+    "id": "I8501",
+    "kind": "iteration-build",
+    "path": "iteration-84-86-gnome-en/i85-focus-beacon.json",
+    "claim": "Tab 到连接按钮时，Orca 读出动作、当前主机完整别名和地址。",
+    "rows": ["M.04.03"]
+  },
+  {
+    "id": "I8502",
+    "kind": "iteration-build",
+    "path": "iteration-84-86-gnome-en/i85-bulk-selection.json",
+    "claim": "复选框播报完整身份，Space 勾选 atlas 并保持其余目标未选。",
+    "rows": ["M.04.03"]
+  },
+  {
+    "id": "I8601",
+    "kind": "iteration-build",
+    "path": "iteration-84-86-gnome-en/i86-connected.json",
+    "claim": "一次 Enter 后仅 beacon 新增 TCP 连接与公钥认证，Orca 读出带完整身份的成功状态。",
+    "rows": ["M.04.04"]
+  },
+  {
+    "id": "I8602",
+    "kind": "iteration-build",
+    "path": "iteration-84-86-gnome-trial/i86-connected.json",
+    "claim": "首次修订可连接正确目标，Orca 把状态词和别名连读。用于核对语音修订。",
+    "rows": ["M.04.04"]
+  },
+  {
+    "id": "I8603",
+    "kind": "iteration-build",
+    "path": "iteration-84-86-gnome-en/i86-disconnected.json",
+    "claim": "从 beacon 的原按钮断开后，焦点仍在同一条目的连接动作。",
+    "rows": ["M.04.04"]
+  },
+  {
+    "id": "I8701",
+    "kind": "iteration-build",
+    "path": "iteration-87-89-gnome-baseline/i87-baseline-import.json",
+    "claim": "基线导入未带入 ssh -G 解析出的继承用户名。",
+    "rows": ["M.04.05"]
+  },
+  {
+    "id": "I8702",
+    "kind": "iteration-build",
+    "path": "iteration-87-89-gnome-en/i87-import.json",
+    "claim": "通过原生键盘导入三条配置，实际端点与 ssh -G 一致。",
+    "rows": ["M.04.05"]
+  },
+  {
+    "id": "I8801",
+    "kind": "iteration-build",
+    "path": "iteration-87-89-gnome-baseline/i88-baseline-beacon.json",
+    "claim": "基线的 IPv6 字面量和实际端口直接相接。",
+    "rows": ["M.04.06"]
+  },
+  {
+    "id": "I8802",
+    "kind": "iteration-build",
+    "path": "iteration-87-89-gnome-en/i88-focus-beacon.json",
+    "claim": "720px 的 Tab 焦点播报包含完整别名、用户名、IPv6 和端口。",
+    "rows": ["M.04.06"]
+  },
+  {
+    "id": "I8901",
+    "kind": "iteration-build",
+    "path": "iteration-87-89-gnome-en/i89-first-prompt.json",
+    "claim": "首次接触显示实机握手指纹，默认聚焦 Cancel，认证尚未发生。",
+    "rows": ["M.04.07"]
+  },
+  {
+    "id": "I8902",
+    "kind": "iteration-build",
+    "path": "iteration-87-89-gnome-en/i89-cancel.json",
+    "claim": "Escape 归还原按钮焦点，认证与信任表保持原值。",
+    "rows": ["M.04.07"]
+  },
+  {
+    "id": "I8903",
+    "kind": "iteration-build",
+    "path": "iteration-87-89-gnome-en/i89-connected.json",
+    "claim": "Orca 读出完整身份与指纹，明确确认后仅 Beacon 完成认证并保存信任。",
+    "rows": ["M.04.07"]
+  },
+  {
+    "id": "I8904",
+    "kind": "iteration-build",
+    "path": "iteration-87-89-gnome-en/i89-reconnected.json",
+    "claim": "重连时核对同一密钥成功，直接认证且保留同一信任记录。",
+    "rows": ["M.04.07"]
+  },
+  {
+    "id": "I9001",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-en-onboarding-agent-surface-1280.json",
+    "claim": "英语浅色 1280×800 首次设置向导第 1 步将 Tab 焦点限制在弹层内，取消 Skip 确认对话框后焦点恢复至原弹层控件且不回落至 body；主进程英文 Help 菜单显示 Explore Porpita / Getting Started with Porpita。",
+    "rows": ["B", "B.01", "O.modal.onboarding"]
+  },
+  {
+    "id": "I9002",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-onboarding-agent-surface-1280.json",
+    "claim": "简中浅色 1280×800 首次设置向导第 1 步统一使用 Porpita 标识及完整中文步骤文案。",
+    "rows": ["B", "B.01", "O.modal.onboarding"]
+  },
+  {
+    "id": "I9003",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-onboarding-agent-1280.json",
+    "claim": "简中首次设置向导 Agent 步骤统一使用 Porpita 术语与完整中文说明，无残留 Orca 回退。",
+    "rows": ["B", "O.modal.onboarding"]
+  },
+  {
+    "id": "I9004",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-onboarding-theme-1280.json",
+    "claim": "简中首次设置向导主题步骤完整展示主题选项与对应中文描述。",
+    "rows": ["B", "O.modal.onboarding"]
+  },
+  {
+    "id": "I9005",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-onboarding-narrow-600.json",
+    "claim": "600×400 窄窗下的简中首次设置向导无水平溢出（scrollWidth 566 === clientWidth 566），底部继续控件可点击。",
+    "rows": ["B", "B.01", "O.modal.onboarding"]
+  },
+  {
+    "id": "I9006",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-en-landing-1280.json",
+    "claim": "英语无工作区 Landing 页面在 1280×800 下使用 Porpita 标识与共享 Button 控件完整呈现。",
+    "rows": ["A.04"]
+  },
+  {
+    "id": "I9007",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-landing-narrow-600.json",
+    "claim": "简中 600×400 窄窗 Landing 支持纵向滚动（scrollHeight 410 > clientHeight 340），隐藏首次使用卡片避免遮挡主动作。",
+    "rows": ["A.04"]
+  },
+  {
+    "id": "I9008",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-en-tour-narrow-600.json",
+    "claim": "英语 600×400 窄窗下 Automations 引导浮层完整落在视口内，退出后焦点归还原 Search automations 输入框。",
+    "rows": ["B.05", "O.local.contextual-tour"]
+  },
+  {
+    "id": "I9009",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-tour-narrow-600.json",
+    "claim": "简中 600×400 窄窗下 Automations 引导浮层使用中文提示且无溢出，关闭后焦点回到「搜索自动化」输入框。",
+    "rows": ["B.05", "O.local.contextual-tour"]
+  },
+  {
+    "id": "I9010",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-en-mobile-pairing-1280.json",
+    "claim": "英语移动端入口显示 Porpita Mobile 与局域网配对、保留上游 Orca Mobile 下载提示，并诚实标明未配置 Relay 不可用。",
+    "rows": ["M.01"]
+  },
+  {
+    "id": "I9011",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-mobile-pairing-1280.json",
+    "claim": "简中移动端配对页与 PhoneCarousel 样例预览全量中文化完成，显式区分局域网配对与不可用的 Porpita Relay。",
+    "rows": ["M.01"]
+  },
+  {
+    "id": "I9012",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-artifacts-unavailable-1280.json",
+    "claim": "简中侧栏与页面统一使用「工件」，未配置账户服务时展示不可用说明及「返回工作区」入口而不跳转失效账户页。",
+    "rows": ["L.04"]
+  },
+  {
+    "id": "I9013",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-en-artifacts-unavailable-1280.json",
+    "claim": "英语 Artifact 页在未配置账户服务时展示诚实 Unavailable 状态，「Back to workspace」可直接回到工作区。",
+    "rows": ["L.04"]
+  },
+  {
+    "id": "I9014",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-settings-account-1280.json",
+    "claim": "简中设置统一显示「Porpita 账户」，未配置登录服务时如实说明「Porpita 登录在此版本中不可用」。",
+    "rows": ["N.orca-account"]
+  },
+  {
+    "id": "I9015",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-settings-artifacts-1280.json",
+    "claim": "简中工件设置页使用「工件」与「打开账户设置」译文，并诚实标明当前版本不支持在线共享、本地预览仍可用。",
+    "rows": ["L.04"]
+  },
+  {
+    "id": "I9016",
+    "kind": "iteration-build",
+    "path": "iteration-90-windows/i90-zh-mobile-terminal-slide-1280.json",
+    "claim": "简中移动端 PhoneCarousel TerminalSlide 示例保留真实分支与命令标识（feat/mobile-page、orca/feat-mobile-page、mobile/orca-mobile-sidebar-mock-v3.html、PASS、PLAN.md、Tab、Esc），清除机器直译痕迹。",
+    "rows": ["M.01"]
+  }
+]

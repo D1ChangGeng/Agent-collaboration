@@ -1,0 +1,15 @@
+{
+  "searchViaPairedRuntime": true,
+  "sameTitleAndProviderId": 2,
+  "studioPreview": true,
+  "owningChat": {
+    "studioOwner": true,
+    "originalTranscript": true,
+    "initialSelection": true
+  },
+  "returnToStudio": {
+    "sameSession": true,
+    "inputFocused": true,
+    "draftPreserved": true
+  }
+}

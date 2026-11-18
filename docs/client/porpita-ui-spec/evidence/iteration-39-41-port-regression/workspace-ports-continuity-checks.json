@@ -1,0 +1,28 @@
+{
+  "boundary": "Two paired Runtime profiles sharing one Windows port table, distinct worktree roots",
+  "scope": {
+    "bothHostsScanned": true,
+    "actualListeners": true,
+    "unrelatedListenerExcluded": true
+  },
+  "handoff": {
+    "originalWorktree": true,
+    "originalHost": true,
+    "restoredExplorer": true
+  },
+  "resource": {
+    "localAcrossHosts": true,
+    "localPtys": true,
+    "populatedNumbersAreFixture": true
+  },
+  "browser": {
+    "staleListenerRefused": true,
+    "originalWorktree": true,
+    "realGuestDocument": true
+  },
+  "refresh": {
+    "sameScopedList": true,
+    "listFocus": true,
+    "explicitReplacementSelection": true
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i72-physical-pairing",
+      "trigger": "Pair Windows with the deployed Linux runtime",
+      "elapsedMs": 5261,
+      "result": "captured"
+    },
+    {
+      "id": "i73-standalone-project-before-adoption",
+      "trigger": "Open the preexisting independent SSH workspace and its recovery dialog",
+      "elapsedMs": 1290,
+      "result": "captured"
+    },
+    {
+      "id": "i73-adopted-server",
+      "trigger": "Connect the same SSH target and adopt the existing project",
+      "elapsedMs": 68182,
+      "result": "captured"
+    },
+    {
+      "id": "i74-adopted-branch-checkout",
+      "trigger": "Remove the adopted workspace and check the retained ref on its new owner",
+      "elapsedMs": 3363,
+      "result": "captured"
+    },
+    {
+      "id": "i74-disconnected-branch-review",
+      "trigger": "Drop the SSH transport while the adopted branch is selected",
+      "result": "not reached",
+      "reason": "locator.waitFor: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog', { name: 'Review kept branches', exact: true }).locator('li').filter({ hasText: 'review-topic' }).getByText('Host unavailable', { exact: true }) to be visible\u001b[22m\n"
+    },
+    {
+      "id": "i74-reconnected-original-row",
+      "trigger": "Release the checkout and reconnect from the original review row",
+      "result": "not reached",
+      "reason": "The expression evaluated to a falsy value:\n\n  assert.ok(proof.outage)\n"
+    },
+    {
+      "id": "i74-refusal-and-retry",
+      "trigger": "Review the real refusal after the branch is checked out again",
+      "result": "not reached",
+      "reason": "The expression evaluated to a falsy value:\n\n  assert.ok(proof.recovery)\n"
+    },
+    {
+      "id": "i74-explicit-retry-on-linux",
+      "trigger": "Submit a fresh selection on Linux after releasing the branch again",
+      "result": "not reached",
+      "reason": "The expression evaluated to a falsy value:\n\n  assert.ok(proof.refusal)\n"
+    }
+  ]
+}

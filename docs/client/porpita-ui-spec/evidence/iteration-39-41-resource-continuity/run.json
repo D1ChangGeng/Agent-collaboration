@@ -1,0 +1,43 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i30-add-worktrees",
+      "trigger": "Pair Studio and add the two real worktrees",
+      "elapsedMs": 8756,
+      "result": "captured"
+    },
+    {
+      "id": "i39-resource-worktree-setup",
+      "trigger": "Open the original Local and Studio worktrees and their Explorers",
+      "elapsedMs": 5973,
+      "result": "captured"
+    },
+    {
+      "id": "i39-resource-terminal",
+      "trigger": "Resume the exact terminal panes via Resources and Local PTYs",
+      "elapsedMs": 9527,
+      "result": "captured"
+    },
+    {
+      "id": "i40-pty-availability",
+      "trigger": "Review local binding and recover the real PTY inventory after a failed read",
+      "elapsedMs": 3332,
+      "result": "captured"
+    },
+    {
+      "id": "i41-space-review",
+      "trigger": "Review a completed disk scan in the Space window and retain Studio Explorer",
+      "elapsedMs": 6526,
+      "result": "captured"
+    }
+  ]
+}

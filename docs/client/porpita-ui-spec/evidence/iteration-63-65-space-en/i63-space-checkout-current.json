@@ -1,0 +1,13 @@
+{
+  "size": [
+    850,
+    700
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "light",
+  "reducedMotion": false,
+  "focus": "Check checkout for cleanup-kept-one",
+  "imageFile": "i63-space-checkout-current.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

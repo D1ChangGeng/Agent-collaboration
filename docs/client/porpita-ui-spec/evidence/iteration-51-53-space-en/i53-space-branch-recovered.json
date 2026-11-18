@@ -1,0 +1,13 @@
+{
+  "size": [
+    850,
+    700
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "light",
+  "reducedMotion": false,
+  "focus": "Filter workspaces",
+  "imageFile": "i53-space-branch-recovered.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

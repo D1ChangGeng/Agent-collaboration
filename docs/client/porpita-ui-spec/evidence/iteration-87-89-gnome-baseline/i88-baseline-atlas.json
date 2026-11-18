@@ -1,0 +1,64 @@
+{
+  "id": "i88-baseline-atlas",
+  "imageFile": "i88-baseline-atlas.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "viewport": [
+    720,
+    868
+  ],
+  "focused": "Connect",
+  "rows": {
+    "atlas": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 0
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "beacon": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 0
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "cedar": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 0
+      },
+      "selected": false,
+      "rowWidth": 364
+    }
+  },
+  "target": "porpita-config-validation-workspace-atlas",
+  "endpoint": "changgeng@::1:54869",
+  "aria": "- button \"Connect porpita-config-validation-workspace-atlas ::1:54869\": Connect",
+  "utterances": [
+    "Add host",
+    "button",
+    "More SSH host actions",
+    "collapsed button",
+    "opens menu",
+    "Select all hosts from ~/.ssh/config",
+    "check box not checked",
+    "Select porpita-config-validation-workspace-atlas::1:54869",
+    "check box not checked",
+    "Connect porpita-config-validation-workspace-atlas::1:54869",
+    "button"
+  ]
+}

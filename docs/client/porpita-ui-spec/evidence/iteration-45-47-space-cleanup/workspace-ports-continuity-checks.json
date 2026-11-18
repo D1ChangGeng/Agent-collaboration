@@ -1,0 +1,73 @@
+{
+  "boundary": "Two paired Runtime profiles sharing one Windows port table, distinct worktree roots",
+  "resourceSetup": {
+    "localExplorer": true,
+    "studioExplorer": true
+  },
+  "terminalNavigation": {
+    "sameTab": true,
+    "bothOriginalPanes": true,
+    "distinctLabels": true,
+    "keyboardFocus": true,
+    "originalExplorer": true
+  },
+  "ptyAvailability": {
+    "tablessProcess": true,
+    "retainedFailureSample": true,
+    "navigationRestoredOnRetry": true
+  },
+  "ptySelection": {
+    "originalPanes": 2,
+    "keyboard": true,
+    "states": [
+      "false",
+      "mixed",
+      "true",
+      "false"
+    ]
+  },
+  "spaceReview": {
+    "actualScan": true,
+    "pendingAndRetry": true,
+    "realHiddenWindow": true,
+    "originalExplorer": true
+  },
+  "spaceNavigation": {
+    "realFolderSizes": true,
+    "tileEntry": true,
+    "toolbarEntry": true,
+    "keyboardFocus": true
+  },
+  "spaceSelection": {
+    "linkedWorktrees": 2,
+    "protectedMain": true,
+    "reviewedVisibleOnly": true,
+    "hiddenOnlyUnavailable": true,
+    "restoredByRemovingFilter": true,
+    "cleared": true,
+    "cancelled": true
+  },
+  "spaceReviewFocus": {
+    "cancelInitial": true,
+    "keyboardCancel": true,
+    "escapeCancel": true,
+    "focusReturned": true,
+    "selectionPreserved": true
+  },
+  "spaceCleanupResult": {
+    "realRemoval": true,
+    "resultVisible": true,
+    "filterRetained": true,
+    "focusInFilter": true,
+    "otherSelectionRetained": true
+  },
+  "spacePartialCleanup": {
+    "ordinaryDeletePreservedLateChange": true,
+    "realPartialResult": true,
+    "reasonInRow": true,
+    "reasonSurvivedPublication": true,
+    "reviewedRetry": true,
+    "retryRemovedRemaining": true,
+    "protectedMain": true
+  }
+}

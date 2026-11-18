@@ -1,0 +1,79 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i30-add-worktrees",
+      "trigger": "Pair Studio and add the two real worktrees",
+      "elapsedMs": 6929,
+      "result": "captured"
+    },
+    {
+      "id": "i39-resource-worktree-setup",
+      "trigger": "Open the original Local and Studio worktrees and their Explorers",
+      "elapsedMs": 5243,
+      "result": "captured"
+    },
+    {
+      "id": "i39-resource-terminal",
+      "trigger": "Resume the exact terminal panes via Resources and Local PTYs",
+      "elapsedMs": 7997,
+      "result": "captured"
+    },
+    {
+      "id": "i40-pty-availability",
+      "trigger": "Review local binding and recover the real PTY inventory after a failed read",
+      "elapsedMs": 2117,
+      "result": "captured"
+    },
+    {
+      "id": "i42-pty-eligible-selection",
+      "trigger": "Use the PTY bulk controls in three selection states",
+      "elapsedMs": 1505,
+      "result": "captured"
+    },
+    {
+      "id": "i41-space-review",
+      "trigger": "Review a completed disk scan in the Space window and retain Studio Explorer",
+      "elapsedMs": 13129,
+      "result": "captured"
+    },
+    {
+      "id": "i43-space-folder-navigation",
+      "trigger": "Inspect a folder chart and return using the keyboard",
+      "elapsedMs": 3657,
+      "result": "captured"
+    },
+    {
+      "id": "i44-space-filtered-selection",
+      "trigger": "Check visible review scope with two real linked worktrees",
+      "elapsedMs": 4357,
+      "result": "captured"
+    },
+    {
+      "id": "i45-space-review-focus",
+      "trigger": "Cancel a deletion review from the keyboard and return to its trigger",
+      "elapsedMs": 2123,
+      "result": "captured"
+    },
+    {
+      "id": "i46-space-cleanup-result",
+      "trigger": "Complete one real cleanup and retain the current Space filter",
+      "elapsedMs": 4326,
+      "result": "captured"
+    },
+    {
+      "id": "i47-space-partial-cleanup",
+      "trigger": "Report a real partial cleanup, then review and retry the remaining worktree",
+      "elapsedMs": 11772,
+      "result": "captured"
+    }
+  ]
+}

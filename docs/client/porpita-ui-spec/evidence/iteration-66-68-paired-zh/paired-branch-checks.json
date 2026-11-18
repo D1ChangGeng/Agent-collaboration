@@ -1,0 +1,29 @@
+{
+  "locale": "zh",
+  "transport": "paired Runtime over loopback",
+  "hiddenWindow": true,
+  "owner": {
+    "originalHostPath": true,
+    "sameNameAndHeadOnLocal": true,
+    "neitherRefModified": true,
+    "checkFocused": true
+  },
+  "offline": {
+    "lastPathRetained": true,
+    "selectedBranchRetained": true,
+    "explicitSubmitPaused": true
+  },
+  "recovered": {
+    "sameRowAndFocus": true,
+    "sameSelection": true,
+    "newGitResult": true
+  },
+  "race": {
+    "checkedOutAfterReadBlocksSubmit": true,
+    "freshReviewStartsUnselected": true
+  },
+  "result": {
+    "onlyOriginalHostBranchDeleted": true,
+    "sameNameLocalRefPreserved": true
+  }
+}

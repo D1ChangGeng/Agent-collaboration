@@ -1,0 +1,295 @@
+{
+  "size": [
+    600,
+    400
+  ],
+  "dpr": 1,
+  "lang": "",
+  "theme": "light",
+  "focusTag": "INPUT",
+  "focusLabel": "Search automations",
+  "focusInsideModal": null,
+  "modalOverflow": null,
+  "tourPanelRect": {
+    "rect": {
+      "x": 268,
+      "y": 108,
+      "width": 320,
+      "height": 138,
+      "top": 108,
+      "right": 588,
+      "bottom": 246,
+      "left": 268
+    },
+    "scrollWidth": 318,
+    "clientWidth": 318,
+    "scrollHeight": 136,
+    "clientHeight": 136
+  },
+  "landingScroll": {
+    "scrollHeight": 86,
+    "clientHeight": 86,
+    "scrollTop": 0
+  },
+  "text": "Search\nTasks\nArtifacts\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nNo workspaces found\nAutomations\nFilters\nRuns\nNew Automation\n\nNo automations across loaded hosts\n\nStart from a template\nREPO HEALTH\nWeekday repo audit\nCheck dependencies, failing tests, and risky open changes each weekday.\nRELEASE PREP\nRelease readiness\nPrepare a weekly release risk summary from the current project state.\nRECURRING REVIEW\nDaily change review\nScan recent work and call out correctness, UX, and test coverage risks.\nMAINTENANCE\nHourly queue check\nLook for stuck work, stale generated files, and failed local validation.\nAdd new\nOff\n—\n·\n0\nWhat is an automation?\n\nAutomations run agent work on a schedule. Add an automation by clicking this button.\n\n1 of 2\nNext",
+  "dialogs": [
+    "What is an automation?\n\nAutomations run agent work on a schedule. Add an automation by clicking this button.\n\n1 of 2\nNext"
+  ],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Artifacts",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Porpita Mobile\nNew",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Workspace options",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Add project",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "New workspace",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Filters",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Refresh automations",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Runs",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "New Automation",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "REPO HEALTH\nWeekday repo audit\nCheck dependencies, failing tests, and risky open changes each weekday.",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "RELEASE PREP\nRelease readiness\nPrepare a weekly release risk summary from the current project state.",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "RECURRING REVIEW\nDaily change review\nScan recent work and call out correctness, UX, and test coverage risks.",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "MAINTENANCE\nHourly queue check\nLook for stuck work, stale generated files, and failed local validation.",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Add new",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Skip tour",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Next",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "ariaPressed": null,
+      "disabled": false
+    }
+  ],
+  "extra": {},
+  "imageFile": "i90-en-tour-narrow-600.png",
+  "imageMethod": "CDP screenshot"
+}

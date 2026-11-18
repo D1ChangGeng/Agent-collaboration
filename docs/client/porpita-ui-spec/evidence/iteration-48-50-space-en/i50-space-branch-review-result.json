@@ -1,0 +1,13 @@
+{
+  "size": [
+    1100,
+    700
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "light",
+  "reducedMotion": false,
+  "focus": "Filter workspaces",
+  "imageFile": "i50-space-branch-review-result.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

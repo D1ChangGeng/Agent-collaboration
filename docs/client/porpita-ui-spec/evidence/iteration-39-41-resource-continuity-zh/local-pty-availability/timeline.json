@@ -1,0 +1,112 @@
+{
+  "actions": [
+    {
+      "name": "Compare a real tab-less PTY and a bound pane",
+      "startMs": 49251.49900000001,
+      "endMs": 49433.1174
+    },
+    {
+      "name": "Fail a diagnostic read and inspect the retained list without navigation actions",
+      "startMs": 49433.1271,
+      "endMs": 49531.05440000001
+    },
+    {
+      "name": "Retry through the original control and recover the actual bound PTY",
+      "startMs": 49531.061100000006,
+      "endMs": 49611.19690000001
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794743974.412941,
+      "receivedAtMs": 49251.4918,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.4952,
+      "receivedAtMs": 49286.95730000001,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.561564,
+      "receivedAtMs": 49353.5365,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.593034,
+      "receivedAtMs": 49386.4672,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.628475,
+      "receivedAtMs": 49422.02650000001,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.690018,
+      "receivedAtMs": 49482.13010000001,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.711767,
+      "receivedAtMs": 49505.05870000001,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.713313,
+      "receivedAtMs": 49506.86320000001,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.725977,
+      "receivedAtMs": 49518.681800000006,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.736736,
+      "receivedAtMs": 49529.32310000001,
+      "file": "009.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.742729,
+      "receivedAtMs": 49534.7136,
+      "file": "010.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.759038,
+      "receivedAtMs": 49552.02690000001,
+      "file": "011.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.769829,
+      "receivedAtMs": 49562.8695,
+      "file": "012.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.774103,
+      "receivedAtMs": 49568.56240000001,
+      "file": "013.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.788715,
+      "receivedAtMs": 49580.31300000001,
+      "file": "014.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.799214,
+      "receivedAtMs": 49591.44110000001,
+      "file": "015.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.80602,
+      "receivedAtMs": 49597.2905,
+      "file": "016.jpg"
+    },
+    {
+      "rendererTimestamp": 1794743974.817779,
+      "receivedAtMs": 49609.77870000001,
+      "file": "017.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

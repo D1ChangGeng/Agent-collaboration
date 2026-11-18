@@ -1,0 +1,356 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "default",
+  "focus": "随心输入，@ 引用文件，/ 使用命令",
+  "section": [],
+  "text": "搜索\n工作空间（预览）\n任务\n工件\n技能\n自动化\nPorpita 手机端\n新功能\n会话\n0\n所有工作树\n搜索历史会话\nIncident response · 运行排查与复盘记录\nUI-spec-folder · main · Codex\nTerminal 1\nBuild triage · 构建排查\nIncident response · 运行排查与复盘记录\n命令\n\n开始与 Codex 聊天\n\n让 Codex 检查代码、解释输出或进行修改。\n\nCodex 尚未登录。请运行 `codex login`。\n\n\n\n\n完全访问\n模型\nLAPTOP-FYGE2ZMR\nmain\n· 主工作副本\nmain\n关闭\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "前进",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "搜索",
+      "label": "搜索工作树和浏览器选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工作空间（预览）",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 GitHub 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 Jira 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "技能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 手机端\n新功能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "查看活动",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "会话",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "所有工作树",
+      "label": "会话筛选",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "搜索历史会话",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "帮助",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示活动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区看板",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换右侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Terminal 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Build triage · 构建排查",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Incident response · 运行排查与复盘记录",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新标签页",
+      "title": "新标签页",
+      "test": null
+    },
+    {
+      "text": "命令",
+      "label": "添加快捷命令",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移交给另一个智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用终端智能体继续",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "向右拆分终端",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "聊天设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "关闭",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "附加文件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "完全访问",
+      "label": "权限 完全访问",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更多聊天控件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "模型",
+      "label": "模型",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "开始听写",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "发送",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· 主工作副本",
+      "label": "复制 main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "复制 main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更多侧边栏选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i15-native-target.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 30188
+}

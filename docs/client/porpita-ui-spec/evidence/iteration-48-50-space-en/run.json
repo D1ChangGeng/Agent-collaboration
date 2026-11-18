@@ -1,0 +1,31 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i48-space-refusal",
+      "trigger": "Read the actual failed worktree reason at 760 content pixels",
+      "elapsedMs": 2384,
+      "result": "captured"
+    },
+    {
+      "id": "i49-space-branch-outcome",
+      "trigger": "Remove two worktrees and retain their actual unmerged Git branches",
+      "elapsedMs": 5347,
+      "result": "captured"
+    },
+    {
+      "id": "i50-space-review-kept-branches",
+      "trigger": "Cancel a branch review, reopen and force delete only the selected branch",
+      "elapsedMs": 1857,
+      "result": "captured"
+    }
+  ]
+}

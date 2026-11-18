@@ -1,0 +1,51 @@
+{
+  "id": "i81-activities",
+  "description": "GNOME Activities takes the keyboard from the pairing form",
+  "imageFile": "i81-activities.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "nativeWindow": "Porpita",
+  "keys": [
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Return",
+    "super"
+  ],
+  "viewport": [
+    1440,
+    868
+  ],
+  "documentFocused": true,
+  "dialog": [
+    "Add server\n\nPaste the access link from Share this computer on the other machine.\n\nAccess link\n\nOrca shows the destination before connecting. Credentials stay hidden.\n\nName\n(optional)\n\nRunning Orca without a window? On that computer, run orca serve --pairing-address <address>\n\nCancel\nAdd server\nClose"
+  ],
+  "focus": {
+    "role": "input",
+    "name": ""
+  },
+  "text": "Back to app\nCtrl\n+\nF\n\nAI CAPABILITIES\n\nAgents\nAI Provider Accounts\nOPTIONAL\nOrchestration\nComputer Use\nVoice\n\nSET UP\n\nOrca Account\nGeneral\nIntegrations\nMobile\n\nWORKFLOWS\n\nAutomations\nArtifacts\nBETA\nShare Skills\nBETA\nAgent Session Search\nGit & Source Control\nTask Sources\nTerminal\nQuick Commands\nBrowser\nMobile Emulator\nFloating Workspace\n\nINTERFACE\n\nAppearance\nChat UI\nInput & Editing\nNotifications\nShortcuts\nStats & Usage\n\nREMOTE HOSTS\n\nSSH Hosts\nRemote Orca Servers\n\nPRIVACY & SECURITY\n\nPrivacy & Telemetry\n\nADVANCED\n\nAdvanced\n\nEXPERIMENTAL\n\nExperimental\nPlugins\nALPHA\n\nPROJECTS\n\nIndependent project\nSSH\nRemote Orca Servers\n\nRun Orca on another machine and work on it from here.\n\nAdd server\nShare this computer\n\nNew projects open on this computer until you add a server.\n\nNo saved servers\n\nPair a dev box, a cloud machine, or a desktop at home. Its sessions keep running there when this computer sleeps.\n\nConfigure usage tracking\nOff\n—\n·\n0\n0 hosts\nAdd server\n\nPaste the access link from Share this computer on the other machine.\n\nAccess link\n\nOrca shows the destination before connecting. Credentials stay hidden.\n\nName\n(optional)\n\nRunning Orca without a window? On that computer, run orca serve --pairing-address <address>\n\nCancel\nAdd server\nClose",
+  "utterances": [
+    "Privacy & Telemetry",
+    "button",
+    "Advanced",
+    "button",
+    "Experimental",
+    "button",
+    "Plugins ALPHA",
+    "button",
+    "Independent project SSH",
+    "button",
+    "leaving complementary content.",
+    "Add server",
+    "button",
+    "Add server Paste the access link from Share this computer on the other machine. Access link Orca shows the destination before connecting. Credentials stay hidden. Name(optional) Running Orca without a window? On that computer, run orca serve --pairing-address <address>",
+    "form",
+    "Access link",
+    "entry",
+    "Orca shows the destination before connecting. Credentials stay hidden."
+  ],
+  "windowFocused": false
+}

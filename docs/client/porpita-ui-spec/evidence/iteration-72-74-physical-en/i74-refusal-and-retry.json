@@ -1,0 +1,328 @@
+{
+  "size": [
+    1000,
+    720
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Cancel",
+  "section": [],
+  "text": "Search\nTasks\nArtifacts\nSkills\nAutomations\nOrca Mobile\nNew\nProjects\n0\nIndependent project\nInactive\nmain\nprimary\nmain\nPorpita\n\nSelect a workspace from the sidebar to begin.\n\nAdd project\nCreate worktree\nCreate worktree\nCtrl\n+\nN\nMove up workspace\nCtrl\n+\n⇧\n+\n↑\nMove down workspace\nCtrl\n+\n⇧\n+\n↓\nSelect a workspace to browse files\nOff\n—\n·\n0\n2 hosts\nReview kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n0 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nChecked out\n\nSwitch the other worktree to a different branch before trying again.\n\nCheckout path\nCheck checkout\n/tmp/porpita-ui72-build.AamHBGq6/ssh-cell-r8/home/Checkout Moved\n\nCancel\nForce Delete\nClose",
+  "dialogs": [
+    "Review kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n0 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nChecked out\n\nSwitch the other worktree to a different branch before trying again.\n\nCheckout path\nCheck checkout\n/tmp/porpita-ui72-build.AamHBGq6/ssh-cell-r8/home/Checkout Moved\n\nCancel\nForce Delete\nClose"
+  ],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Artifacts",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Skills",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Orca Mobile\nNew",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse all projects",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace options",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Add project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Project actions for Independent project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Create new worktree for Independent project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Mark as unread",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Add project",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Create worktree",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle right sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Agents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Source Control (Ctrl+⇧+G)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Checks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "2 hosts",
+      "label": "Remote host connection status",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Check checkout",
+      "label": "Check checkout for review-topic",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Cancel",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Force Delete",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Close",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i74-refusal-and-retry.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 133269
+}

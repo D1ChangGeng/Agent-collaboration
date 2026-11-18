@@ -1,0 +1,13 @@
+{
+  "size": [
+    760,
+    700
+  ],
+  "dpr": 1,
+  "lang": "zh",
+  "theme": "dark",
+  "reducedMotion": false,
+  "focus": "核对 D1/cleanup-kept-one 的检出",
+  "imageFile": "i64-space-checkout-available.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

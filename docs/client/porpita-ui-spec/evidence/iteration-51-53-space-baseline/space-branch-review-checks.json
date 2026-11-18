@@ -1,0 +1,27 @@
+{
+  "locale": "en",
+  "documentLanguage": "en",
+  "hiddenWindow": true,
+  "refusal": {
+    "width": 760,
+    "reasonVisible": true,
+    "registrationRetained": true,
+    "sourceErrorAvailable": true,
+    "republished": true
+  },
+  "kept": {
+    "workspacePathsRemoved": 3,
+    "originalRefsKept": 3,
+    "filterIndependent": true,
+    "noToastNeeded": true
+  },
+  "recovery": {
+    "baseline": {
+      "oneBranchDeleted": true,
+      "changedTipRetained": true,
+      "checkedOutTipRetained": true,
+      "reasonOnlyInNotification": true,
+      "oldCommitStillSelectable": true
+    }
+  }
+}

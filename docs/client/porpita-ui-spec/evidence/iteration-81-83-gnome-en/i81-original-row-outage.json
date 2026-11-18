@@ -1,0 +1,48 @@
+{
+  "id": "i81-original-row-outage",
+  "description": "The SSH outage retains previous checkout, selected branch, and original keyboard focus",
+  "imageFile": "i81-original-row-outage.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "nativeWindow": "Porpita",
+  "keys": [
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "space",
+    "Tab",
+    "Return"
+  ],
+  "viewport": [
+    720,
+    868
+  ],
+  "documentFocused": true,
+  "dialog": [
+    "Review kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n1 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nHost unavailable\n\nReconnect to the original host and check again. Clear this selection to continue with other branches.\n\nLast reported checkout path\nReconnect and check\n/tmp/porpita-ui81.mus1Uzwe/ssh-cell/home/Checkout Moved\n\nCancel\nForce Delete 1 Branch\nClose"
+  ],
+  "focus": {
+    "role": "button",
+    "name": "Reconnect and check checkout for review-topic"
+  },
+  "text": "Search\nTasks\nAutomations\nOrca Mobile\nNew\nProjects\n0\nWindows validation project\nInactive\nmain\nprimary\nWindows acceptance service\nmain\nssh-cell-rerun/home/Independent project\nActive\nmain\nprimary\nLinux SSH project\nmain\nInactive\nIndependent project\nLinux SSH project\nDetached HEAD @ 8b8115d\nssh-cell/home/Independent project\nActive\nmain\nprimary\nLinux SSH project\nmain\n\nAdd a setup script\n\nIndependent project\n\nAdd a setup command to run when Orca creates new worktrees.\n\nConfigure\nchanggeng@yue-Precision-3680: /tmp/porpita-ui81.mus1Uzwe/ssh-cell/home/project\nchanggeng@yue-Precision-3680:/tmp/porpita-ui81.mus\n1Uzwe/ssh-cell/home/project$  \nReconnecting to Linux SSH project\nDown for 14 sec\nThe connection to the server dropped. Orca is retrying automatically, and terminals resume when it returns.\nUsage unavailable\nUsage unavailable\nOff\n—\n·\n0\n1 host\nReview kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n1 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nHost unavailable\n\nReconnect to the original host and check again. Clear this selection to continue with other branches.\n\nLast reported checkout path\nReconnect and check\n/tmp/porpita-ui81.mus1Uzwe/ssh-cell/home/Checkout Moved\n\nCancel\nForce Delete 1 Branch\nClose",
+  "utterances": [
+    "Cancel",
+    "button",
+    "Close",
+    "button",
+    "Select all",
+    "check box not checked",
+    "List with 1 item",
+    "review-topic Independent project · Linux SSH project · 8b8115d",
+    "check box not checked",
+    "Switch the other worktree to a different branch before trying again.",
+    "checked",
+    "Check checkout for review-topic",
+    "button",
+    "Checking checkout…",
+    "Reconnect and check checkout for review-topic",
+    "Reconnect to the original host and check again. Clear this selection to continue with other branches."
+  ],
+  "windowFocused": true
+}

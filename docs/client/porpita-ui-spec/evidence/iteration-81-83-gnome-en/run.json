@@ -1,0 +1,87 @@
+{
+  "sourceCommit": "1c7c37ecc49d07f64bb7d8fa70a9da387653c480",
+  "gnomeStartup": {
+    "nativeWindowWaitMs": 9668,
+    "initiallyFocused": false,
+    "focusedBeforeReplay": true
+  },
+  "wayland": {
+    "compositor": "GNOME Shell / Mutter 46.2",
+    "socket": "wayland-0",
+    "monitor": [
+      1440,
+      900
+    ],
+    "input": "Mutter keyboard keycodes (US evdev)",
+    "x11DisplaySet": false,
+    "xwayland": false
+  },
+  "linux": {
+    "product": "0.1.0",
+    "electron": "43.8.6",
+    "platform": "linux",
+    "architecture": "x64",
+    "packaged": true,
+    "profile": "isolated"
+  },
+  "display": "isolated GNOME Shell Wayland and GNOME Orca",
+  "tipHiddenInServerSettings": true,
+  "gnomeFocus": {
+    "retainedAfterOverview": true,
+    "retainedAfterNotifications": true,
+    "retainedAfterSwitch": true
+  },
+  "pairingCancelFocus": true,
+  "pairedWithWindows": true,
+  "tipResumedInWorkbench": true,
+  "legacyWorktreeRemovalWithKeyboard": true,
+  "gnomeWindowWidths": {
+    "wide": 1440,
+    "narrow": 720
+  },
+  "sshActionClear": true,
+  "tipHiddenInSshSettings": true,
+  "projectAdoptedWithOriginalIdentity": true,
+  "sshActionKeepsFocus": true,
+  "adoptedWorktreeRemovalWithKeyboard": true,
+  "latestNotificationFocus": {
+    "before": "<body style=\"\">\n    <div id=\"root\"><div class=\"app-layout\" style=\"--collapsed-sidebar-header-width: 280px; --window-controls-width: 138px; --window-controls-height: 36px; --mac-tra",
+    "after": "<ol dir=\"ltr\" tabindex=\"-1\" class=\"toaster group\" data-sonner-toaster=\"true\" data-sonner-theme=\"light\" data-y-position=\"bottom\" data-x-position=\"right\" style=\"--front-toast-height:"
+  },
+  "tipHiddenDuringReview": true,
+  "outageVoiceRecorded": true,
+  "outagePreservedFocusAndSelection": true,
+  "gnomeReviewRestored": true,
+  "deletedOnlyFromSshProject": true,
+  "receiptVoiceRecorded": true,
+  "automaticReceiptSpoken": true,
+  "receiptAnnouncements": 1,
+  "receiptKeys": [
+    "Return"
+  ],
+  "tipResumedAfterReview": true,
+  "completed": true,
+  "captured": [
+    "i83-card-workbench",
+    "i83-server-settings",
+    "i81-activities",
+    "i81-system-notifications",
+    "i81-switch-away",
+    "i81-switch-return",
+    "i81-pair-dialog",
+    "i81-pair-cancel",
+    "i81-windows-paired",
+    "i83-card-returned",
+    "i81-original-ssh-workspace",
+    "i83-ssh-before-tile",
+    "i83-ssh-settings",
+    "i81-adopted-ssh-host",
+    "i81-moved-checkout",
+    "i81-original-row-outage",
+    "i81-original-row-recovered",
+    "i81-git-refusal",
+    "i82-review-interrupted",
+    "i82-review-resumed",
+    "i82-automatic-receipt"
+  ]
+}

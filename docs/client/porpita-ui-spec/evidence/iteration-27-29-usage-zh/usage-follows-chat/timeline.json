@@ -1,0 +1,52 @@
+{
+  "actions": [
+    {
+      "name": "Focus the Studio chat",
+      "startMs": 115882.98819999999,
+      "endMs": 116243.6005
+    },
+    {
+      "name": "Focus the Local chat",
+      "startMs": 116243.6224,
+      "endMs": 116444.9662
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794730534.401491,
+      "receivedAtMs": 115882.67199999999,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730534.471543,
+      "receivedAtMs": 116005.4383,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730534.525354,
+      "receivedAtMs": 116015.144,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730534.333049,
+      "receivedAtMs": 116022.4647,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730534.730067,
+      "receivedAtMs": 116138.5622,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730534.760392,
+      "receivedAtMs": 116152.56839999999,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730534.817298,
+      "receivedAtMs": 116206.98109999999,
+      "file": "006.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

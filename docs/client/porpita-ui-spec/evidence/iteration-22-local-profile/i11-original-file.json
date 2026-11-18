@@ -1,0 +1,548 @@
+{
+  "size": [
+    820,
+    540
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "reduce",
+  "focus": "The original scope contains the release checklist.",
+  "section": [],
+  "text": "Search\nWorkspaces (preview)\nTasks\nArtifacts\nSkills\nAutomations\nOrca Mobile\nNew\nProjects\n0\nUI-spec-sample\nActive\nmain\nprimary\nmain\nUI-spec-folder\nActive\nmain\nprimary\nmain\nTerminal 1\nRelease review · 发版核对\nrelease-checklist.md\nU\n<isolated>/UI-spec-sample/docs/\nrelease-checklist.md\nFile path copied\nB\nI\nS\n\nThe original scope contains the release checklist.\n\nUI-spec-sample\nNames\nContents\ndocs\nU\nbuild-notes.md\nU\nrelease-checklist.md\nU\nnotes.md\nM\npreview.html\nOff\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Workspaces (preview)",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Artifacts",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Skills",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Orca Mobile\nNew",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse all projects",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Sessions",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace options",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Add project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Project actions for UI-spec-sample",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Create new worktree for UI-spec-sample",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Mark as unread",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Project actions for UI-spec-folder",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Create new worktree for UI-spec-folder",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Mark as unread",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Scroll tabs left",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab Terminal 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab Release review · 发版核对",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Scroll tabs right",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New tab",
+      "title": "New tab",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Add quick command",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "<isolated>/UI-spec-sample/docs/\nrelease-checklist.md",
+      "label": null,
+      "title": "<isolated>/UI-spec-sample/docs/release-checklist.md",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Source",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Rich Editor",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Changes",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Table of Contents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Share as artifact",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "File actions",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Body text",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Heading 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Heading 2",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Heading 3",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "B",
+      "label": "Bold",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "I",
+      "label": "Italic",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "S",
+      "label": "Strike",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Bullet list",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Numbered list",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Checklist",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Quote",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Link",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Image",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More blocks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle right sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Agents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Source Control (Ctrl+⇧+G)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Checks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse All",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Explorer",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More Explorer Actions",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Names",
+      "label": "Filter files by name",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Contents",
+      "label": "Search file contents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "docs\nU",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "build-notes.md\nU",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "release-checklist.md\nU",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "notes.md\nM",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "preview.html",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i11-original-file.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 106189
+}

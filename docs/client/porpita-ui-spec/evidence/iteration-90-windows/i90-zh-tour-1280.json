@@ -1,0 +1,295 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "theme": "dark",
+  "focusTag": "INPUT",
+  "focusLabel": "搜索自动化",
+  "focusInsideModal": null,
+  "modalOverflow": null,
+  "tourPanelRect": {
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 148,
+      "top": 0,
+      "right": 320,
+      "bottom": 148,
+      "left": 0
+    },
+    "scrollWidth": 326,
+    "clientWidth": 318,
+    "scrollHeight": 136,
+    "clientHeight": 136
+  },
+  "landingScroll": {
+    "scrollHeight": 486,
+    "clientHeight": 486,
+    "scrollTop": 0
+  },
+  "text": "搜索\n任务\n工件\n自动化\nPorpita 手机端\n新功能\n项目\n0\n未找到工作区\n自动化\n筛选器\n运行\n新建自动化\n\n加载主机之间没有自动化\n\n从模板开始\nREPO 健康\n工作日仓库审计\n每个工作日检查依赖关系、失败的测试和有风险的开放变更。\n发布准备\n发布准备情况\n根据当前项目状态准备每周发布风险摘要。\n定期评审\n每日变更回顾\n扫描最近的工作并指出正确性、用户体验和测试覆盖率风险。\n维护\n每小时排队检查\n查找卡住的工作、陈旧的生成文件以及失败的本地验证。\n添加新的\n关闭\n—\n·\n0\n什么是自动化？\n\n自动化按计划运行智能体工作。单击此按钮添加自动化。\n\n1 / 2\n下一步",
+  "dialogs": [
+    "什么是自动化？\n\n自动化按计划运行智能体工作。单击此按钮添加自动化。\n\n1 / 2\n下一步"
+  ],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "切换侧边栏",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前进",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "搜索",
+      "label": "搜索工作树和浏览器选项卡",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "任务",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "打开 GitHub 任务",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "打开 Jira 任务",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "工件",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Porpita 手机端\n新功能",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "查看活动",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "工作区选项",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "添加项目",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "新工作区",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "帮助",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "显示活动工作区",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "工作区看板",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "筛选器",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "刷新自动化",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "运行",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "新建自动化",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "REPO 健康\n工作日仓库审计\n每个工作日检查依赖关系、失败的测试和有风险的开放变更。",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "发布准备\n发布准备情况\n根据当前项目状态准备每周发布风险摘要。",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "定期评审\n每日变更回顾\n扫描最近的工作并指出正确性、用户体验和测试覆盖率风险。",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "维护\n每小时排队检查\n查找卡住的工作、陈旧的生成文件以及失败的本地验证。",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "添加新的",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "跳过导览",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "下一步",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "ariaPressed": null,
+      "disabled": false
+    }
+  ],
+  "extra": {},
+  "imageFile": "i90-zh-tour-1280.png",
+  "imageMethod": "CDP screenshot"
+}

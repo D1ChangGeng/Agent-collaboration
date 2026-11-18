@@ -1,0 +1,13 @@
+{
+  "size": [
+    760,
+    700
+  ],
+  "dpr": 1,
+  "lang": "zh",
+  "theme": "dark",
+  "reducedMotion": false,
+  "focus": "取消",
+  "imageFile": "i62-space-checkout-refreshed.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

@@ -1,0 +1,181 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable and verified",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 1518,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 3585,
+      "result": "captured"
+    },
+    {
+      "id": "04-shell",
+      "trigger": "Dismiss contextual tour; leave trust to the agent",
+      "elapsedMs": 606,
+      "result": "captured"
+    },
+    {
+      "id": "05-collaboration-unconfigured",
+      "trigger": "Collaboration titlebar button",
+      "elapsedMs": 994,
+      "result": "captured"
+    },
+    {
+      "id": "06-settings",
+      "trigger": "Settings button",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "07-general",
+      "trigger": "Settings navigation: general",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "08-appearance",
+      "trigger": "Settings navigation: appearance",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "09-settings-shortcuts",
+      "trigger": "Settings navigation: shortcuts",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "10-plugin-manager",
+      "trigger": "Settings navigation: plugins",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "11-settings-browser",
+      "trigger": "Settings navigation: browser",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "12-settings-chat",
+      "trigger": "Settings navigation: chat",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "13-settings-hosts",
+      "trigger": "Settings navigation: ssh",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "14-settings-automations",
+      "trigger": "Settings navigation: automations",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "15-search",
+      "trigger": "Sidebar search",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "16-tasks",
+      "trigger": "Sidebar Tasks",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "17-automations",
+      "trigger": "Sidebar Automations",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "18-mobile",
+      "trigger": "Sidebar Mobile",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "19-fixture-project",
+      "trigger": "Register a disposable Git repo through app IPC; open it in Sidebar",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 8000ms exceeded."
+    },
+    {
+      "id": "20-explorer-search",
+      "trigger": "Explorer content mode",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "21-source-control",
+      "trigger": "Source Control activity button",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "21b-diff",
+      "trigger": "Open changed file from Source Control",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "22-new-tab",
+      "trigger": "New Tab menu",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "23-terminal-split",
+      "trigger": "Split Terminal Right button",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "24a-right-dock-before",
+      "trigger": "Right dock before toggle",
+      "result": "not reached",
+      "reason": "locator.waitFor: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "24-right-dock-closed",
+      "trigger": "Toggle Right Sidebar",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "24b-right-dock-reopened",
+      "trigger": "Reverse the right dock toggle",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "25-narrow",
+      "trigger": "Resize hidden desktop viewport",
+      "elapsedMs": 583,
+      "result": "captured"
+    },
+    {
+      "id": "26-reduced-dock",
+      "trigger": "Toggle Right Sidebar with reduced motion",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    }
+  ]
+}

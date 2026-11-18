@@ -1,0 +1,57 @@
+{
+  "actions": [
+    {
+      "name": "click the actual Vault original pane action",
+      "startMs": 37676.1366,
+      "endMs": 37806.4744
+    },
+    {
+      "name": "check the same Workspace, panes and drafts",
+      "startMs": 37806.4805,
+      "endMs": 37833.776399999995
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794714866.555317,
+      "receivedAtMs": 37676.1293,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794714866.604325,
+      "receivedAtMs": 37693.6555,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794714866.692933,
+      "receivedAtMs": 37781.060999999994,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794714866.709819,
+      "receivedAtMs": 37799.0491,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794714866.711145,
+      "receivedAtMs": 37799.8843,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794714866.71763,
+      "receivedAtMs": 37805.659199999995,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794714866.733896,
+      "receivedAtMs": 37822.1689,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794714866.739338,
+      "receivedAtMs": 37827.438799999996,
+      "file": "007.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

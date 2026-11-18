@@ -1,0 +1,55 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i48-space-refusal",
+      "trigger": "Read the actual failed worktree reason at 760 content pixels",
+      "elapsedMs": 5243,
+      "result": "captured"
+    },
+    {
+      "id": "i49-space-branch-outcome",
+      "trigger": "Remove worktrees and retain their actual unmerged Git branches",
+      "elapsedMs": 19576,
+      "result": "captured"
+    },
+    {
+      "id": "i54-branch-checkout-location",
+      "trigger": "Read the Git checkout paths of both recorded refusals",
+      "elapsedMs": 4721,
+      "result": "captured"
+    },
+    {
+      "id": "i55-branch-open-checkout",
+      "trigger": "Open the exact registered worktree from its retained branch",
+      "elapsedMs": 4351,
+      "result": "captured"
+    },
+    {
+      "id": "i57-workbench-return-entry",
+      "trigger": "Find the Space return action in the active workbench",
+      "elapsedMs": 1159,
+      "result": "captured"
+    },
+    {
+      "id": "i58-space-return-focus",
+      "trigger": "Use the workbench action and restore the original Space control",
+      "elapsedMs": 1837,
+      "result": "captured"
+    },
+    {
+      "id": "i59-space-return-lifetime",
+      "trigger": "End the review and verify that the old return cannot reopen it",
+      "elapsedMs": 2960,
+      "result": "captured"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "version": "43.8.6",
+  "electronVersion": "43.8.6",
+  "windowIsolation": {
+    "enOnboarding": [
+      {
+        "visible": false,
+        "focused": false
+      }
+    ],
+    "zhOnboarding": [
+      {
+        "visible": false,
+        "focused": false
+      }
+    ],
+    "en": [
+      {
+        "visible": false,
+        "focused": false
+      }
+    ],
+    "zh": [
+      {
+        "visible": false,
+        "focused": false
+      }
+    ]
+  },
+  "checks": {
+    "enOnboardingTabChecksAllInsideModal": true,
+    "enOnboardingSkipCancelFocus": {
+      "insideModal": true,
+      "isBody": false,
+      "focusTag": "BUTTON",
+      "focusLabel": "ContinueCtrl+"
+    },
+    "enHelpMenuLabels": [
+      "Report Crash...",
+      "Explore Porpita",
+      "Getting Started with Porpita",
+      "About Porpita Dev"
+    ],
+    "zhLandingScroll": {
+      "scrollHeight": 410,
+      "clientHeight": 340,
+      "initialTop": 0,
+      "maxTop": 70,
+      "canScroll": true
+    },
+    "enLandingScroll": {
+      "scrollHeight": 492,
+      "clientHeight": 340,
+      "initialTop": 0,
+      "maxTop": 152,
+      "canScroll": true
+    },
+    "enAfterTourFocus": {
+      "tag": "INPUT",
+      "text": null,
+      "label": "Search automations",
+      "isBody": false
+    },
+    "zhAfterTourFocus": {
+      "tag": "INPUT",
+      "text": null,
+      "label": "搜索自动化",
+      "isBody": false
+    },
+    "enArtifactsBackToWorkspace": true,
+    "zhArtifactsBackToWorkspace": true
+  }
+}

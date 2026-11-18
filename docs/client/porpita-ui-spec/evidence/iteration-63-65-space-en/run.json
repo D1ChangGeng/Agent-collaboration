@@ -1,0 +1,61 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i48-space-refusal",
+      "trigger": "Read the actual failed worktree reason at 760 content pixels",
+      "elapsedMs": 5387,
+      "result": "captured"
+    },
+    {
+      "id": "i49-space-branch-outcome",
+      "trigger": "Remove worktrees and retain their actual unmerged Git branches",
+      "elapsedMs": 14299,
+      "result": "captured"
+    },
+    {
+      "id": "i54-branch-checkout-location",
+      "trigger": "Read the Git checkout paths of both recorded refusals",
+      "elapsedMs": 3446,
+      "result": "captured"
+    },
+    {
+      "id": "i55-branch-open-checkout",
+      "trigger": "Open the exact registered worktree from its retained branch",
+      "elapsedMs": 2570,
+      "result": "captured"
+    },
+    {
+      "id": "i60-return-after-checkout-move",
+      "trigger": "Move a linked checkout and return to the original review by keyboard",
+      "elapsedMs": 6888,
+      "result": "captured"
+    },
+    {
+      "id": "i63-checkout-read-only-location",
+      "trigger": "Check Git checkout after the linked worktree was moved",
+      "elapsedMs": 2373,
+      "result": "captured"
+    },
+    {
+      "id": "i64-checkout-release-and-branch-head",
+      "trigger": "Check the released checkout in the existing review",
+      "elapsedMs": 4723,
+      "result": "captured"
+    },
+    {
+      "id": "i65-checkout-changed-after-check",
+      "trigger": "Recheck on submit when a checked branch becomes occupied again",
+      "elapsedMs": 5635,
+      "result": "captured"
+    }
+  ]
+}

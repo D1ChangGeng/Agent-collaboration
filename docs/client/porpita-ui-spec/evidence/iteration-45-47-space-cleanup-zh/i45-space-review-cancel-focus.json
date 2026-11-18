@@ -1,0 +1,24 @@
+{
+  "imageFile": "i45-space-review-cancel-focus.jpg",
+  "size": [
+    1100,
+    700
+  ],
+  "locale": "zh",
+  "theme": "dark",
+  "windowIsolation": {
+    "visible": false,
+    "focused": false
+  },
+  "capture": "CDP viewport screenshot after painting",
+  "source": "550921aee05331a9921e615d5958a171b62cbd02",
+  "step": "i45-space-review-focus",
+  "run": "run.json",
+  "verifiedJourney": {
+    "cancelInitial": true,
+    "keyboardCancel": true,
+    "escapeCancel": true,
+    "focusReturned": true,
+    "selectionPreserved": true
+  }
+}

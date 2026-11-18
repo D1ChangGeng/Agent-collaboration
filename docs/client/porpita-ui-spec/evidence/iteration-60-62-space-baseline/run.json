@@ -1,0 +1,43 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i48-space-refusal",
+      "trigger": "Read the actual failed worktree reason at 760 content pixels",
+      "elapsedMs": 3845,
+      "result": "captured"
+    },
+    {
+      "id": "i49-space-branch-outcome",
+      "trigger": "Remove worktrees and retain their actual unmerged Git branches",
+      "elapsedMs": 12473,
+      "result": "captured"
+    },
+    {
+      "id": "i54-branch-checkout-location",
+      "trigger": "Read the Git checkout paths of both recorded refusals",
+      "elapsedMs": 2867,
+      "result": "captured"
+    },
+    {
+      "id": "i55-branch-open-checkout",
+      "trigger": "Open the exact registered worktree from its retained branch",
+      "elapsedMs": 2095,
+      "result": "captured"
+    },
+    {
+      "id": "i60-return-after-checkout-move",
+      "trigger": "Move a linked checkout and return to the original review by keyboard",
+      "elapsedMs": 4600,
+      "result": "captured"
+    }
+  ]
+}

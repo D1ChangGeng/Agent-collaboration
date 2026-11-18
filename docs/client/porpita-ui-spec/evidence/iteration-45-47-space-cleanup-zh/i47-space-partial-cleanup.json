@@ -1,0 +1,146 @@
+{
+  "size": [
+    600,
+    460
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "reduce",
+  "focus": "资源管理器，2 个终端会话 · 本机内存",
+  "section": [],
+  "text": "通用\nRelease-review\nStudio · Release-review\nRelease-review\nStudio\nhandoff\nrelease.md\n关闭\n—\n·\n2\n1 个主机",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "通用",
+      "label": "选择分组：通用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Release-review",
+      "label": null,
+      "title": "Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭 Release-review",
+      "title": "关闭 Release-review",
+      "test": null
+    },
+    {
+      "text": "Studio · Release-review",
+      "label": null,
+      "title": "Studio · Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭 Studio · Release-review",
+      "title": "关闭 Studio · Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新建工作对象",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "查找工作对象",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新文件管理器",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "资源管理器位置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "handoff",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "release.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·\n2",
+      "label": "资源管理器，2 个终端会话 · 本机内存",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Studio 的端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "1 个主机",
+      "label": "远程主机连接状态",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i47-space-partial-cleanup.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 376522
+}

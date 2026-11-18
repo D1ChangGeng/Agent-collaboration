@@ -1,0 +1,61 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i48-space-refusal",
+      "trigger": "Read the actual failed worktree reason at 760 content pixels",
+      "elapsedMs": 10503,
+      "result": "captured"
+    },
+    {
+      "id": "i49-space-branch-outcome",
+      "trigger": "Remove worktrees and retain their actual unmerged Git branches",
+      "elapsedMs": 22456,
+      "result": "captured"
+    },
+    {
+      "id": "i54-branch-checkout-location",
+      "trigger": "Read the Git checkout paths of both recorded refusals",
+      "elapsedMs": 5033,
+      "result": "captured"
+    },
+    {
+      "id": "i55-branch-open-checkout",
+      "trigger": "Open the exact registered worktree from its retained branch",
+      "elapsedMs": 6181,
+      "result": "captured"
+    },
+    {
+      "id": "i60-return-after-checkout-move",
+      "trigger": "Move a linked checkout and return to the original review by keyboard",
+      "elapsedMs": 8287,
+      "result": "captured"
+    },
+    {
+      "id": "i63-checkout-read-only-location",
+      "trigger": "Check Git checkout after the linked worktree was moved",
+      "elapsedMs": 3653,
+      "result": "captured"
+    },
+    {
+      "id": "i64-checkout-release-and-branch-head",
+      "trigger": "Check the released checkout in the existing review",
+      "result": "not reached",
+      "reason": "locator.waitFor: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog', { name: '复核保留的分支', exact: true }).locator('li').filter({ hasText: 'D1/cleanup-kept-one' }).getByText('未检出', { exact: true }) to be visible\u001b[22m\n"
+    },
+    {
+      "id": "i65-checkout-changed-after-check",
+      "trigger": "Recheck on submit when a checked branch becomes occupied again",
+      "result": "not reached",
+      "reason": "The expression evaluated to a falsy value:\n\n  assert.ok(proof.state)\n"
+    }
+  ]
+}

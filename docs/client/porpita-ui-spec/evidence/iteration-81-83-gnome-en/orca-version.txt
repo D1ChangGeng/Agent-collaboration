@@ -1,0 +1,1 @@
+Orca version 51.1, AT-SPI2 version: 2.62.1, Session: wayland

@@ -1,0 +1,310 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": null,
+  "section": [],
+  "text": "General\nShared release review\nShared release review\nRelease-review\nLocal Windows\n\nReview the release checklist\n\n9:00 PM\n\nThe Local queue contains the release checklist.\n\n9:00 PM\nJump to latest\n\nCodex isn't signed in. Run `codex login`.\n\nWorkspace Local · 本机草稿\n\nFull access\nModel\nLAPTOP-FYGE2ZMR\nmain\n· Main checkout\nmain\nShared release review\nRelease-review\nStudio\n\nReview the release checklist\n\n9:00 PM\n\nThe Studio queue contains the release checklist.\n\n9:00 PM\nJump to latest\n\nCodex isn't signed in. Run `codex login`.\n\nWorkspace Studio · 配对草稿\n\nFull access\nModel\nStudio\nmain\n· Main checkout\nmain\nSet up usage on Studio\nOff\n—\n·\n0\n1 host\nChoose a folder for Explorer\n\nAvailable worktree folders\n\nRelease-review\nLocal Windows\nRelease-review\nStudio",
+  "dialogs": [
+    "Choose a folder for Explorer\n\nAvailable worktree folders\n\nRelease-review\nLocal Windows\nRelease-review\nStudio"
+  ],
+  "buttons": [
+    {
+      "text": "General",
+      "label": "Choose group: General",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Shared release review",
+      "label": null,
+      "title": "Shared release review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Shared release review",
+      "title": "Close Shared release review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New work object",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open work",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Return to worktree",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Copy message",
+      "title": "Copy message",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Copy message",
+      "title": "Copy message",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Fork from this response",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Scroll this message to top",
+      "title": "Scroll this message to top",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Review the release checklist",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Jump to latest",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Dismiss",
+      "title": "Dismiss",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Attach file",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Full access",
+      "label": "Permissions Full access",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More chat controls",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Model",
+      "label": "Model",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Start dictation",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Send",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· Main checkout",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Copy message",
+      "title": "Copy message",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Copy message",
+      "title": "Copy message",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Fork from this response",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Scroll this message to top",
+      "title": "Scroll this message to top",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Review the release checklist",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Jump to latest",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Dismiss",
+      "title": "Dismiss",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Attach file",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Full access",
+      "label": "Permissions Full access",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More chat controls",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Model",
+      "label": "Model",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Start dictation",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Send",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· Main checkout",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Set up usage on Studio",
+      "label": "Set up usage on Studio",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "1 host",
+      "label": "Remote host connection status",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i24-source-picker.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 55086
+}

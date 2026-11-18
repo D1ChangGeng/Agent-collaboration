@@ -1,0 +1,13 @@
+{
+  "size": [
+    850,
+    700
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "light",
+  "reducedMotion": false,
+  "focus": "Cancel",
+  "imageFile": "i53-space-branch-keep.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

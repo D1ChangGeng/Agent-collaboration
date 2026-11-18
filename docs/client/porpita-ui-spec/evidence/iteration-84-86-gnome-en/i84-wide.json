@@ -1,0 +1,48 @@
+{
+  "id": "i84-wide",
+  "imageFile": "i84-wide.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "viewport": [
+    1440,
+    868
+  ],
+  "focused": "SSH Hosts",
+  "rows": {
+    "atlas": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 830
+    },
+    "beacon": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 830
+    },
+    "cedar": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 830
+    }
+  }
+}

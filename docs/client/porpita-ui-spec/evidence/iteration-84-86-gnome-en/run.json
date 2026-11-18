@@ -1,0 +1,69 @@
+{
+  "mode": "verify",
+  "steps": [
+    "i84-wide",
+    "i85-focus-atlas",
+    "i85-focus-beacon",
+    "i85-focus-cedar",
+    "i84-tiled",
+    "i85-bulk-selection",
+    "i86-connected",
+    "i86-disconnected"
+  ],
+  "sourceCommit": "97a402fc775e8ccdee864555d0d92c4cf6271ba3",
+  "compositor": {
+    "human_readable": "GNOME Shell / Mutter 46.2",
+    "monitor": [
+      1440,
+      900
+    ],
+    "xwayland": false
+  },
+  "reader": "Orca version 51.1, AT-SPI2 version: 2.62.1, Session: wayland",
+  "product": {
+    "version": "0.1.0",
+    "electron": "43.8.6"
+  },
+  "primarySpeech": {
+    "atlas": true,
+    "beacon": true,
+    "cedar": true
+  },
+  "checkboxIdentity": true,
+  "connection": {
+    "target": "porpita-integration-validation-workspace-beacon",
+    "endpoint": "changgeng@127.0.0.2:45165",
+    "before": {
+      "atlas": 0,
+      "beacon": 1,
+      "cedar": 0
+    },
+    "after": {
+      "atlas": 0,
+      "beacon": 2,
+      "cedar": 0
+    },
+    "tcpBefore": {
+      "atlas": 0,
+      "beacon": 1,
+      "cedar": 0
+    },
+    "tcpAfter": {
+      "atlas": 0,
+      "beacon": 2,
+      "cedar": 0
+    },
+    "focusRetained": true,
+    "keys": [
+      "Return"
+    ],
+    "utterances": [
+      "Connecting…",
+      "Disconnect porpita-integration-validation-workspace-beacon changgeng@127.0.0.2:45165",
+      "grayed",
+      "Connected, porpita-integration-validation-workspace-beacon, changgeng@127.0.0.2:45165"
+    ],
+    "connectedStatus": "Connected, porpita-integration-validation-workspace-beacon, changgeng@127.0.0.2:45165"
+  },
+  "completed": true
+}

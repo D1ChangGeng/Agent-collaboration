@@ -1,0 +1,39 @@
+{
+  "sourceCommit": "619c37d7487b31aeca8ad5c7bf643cafba746a2a",
+  "linux": {
+    "product": "0.1.0",
+    "electron": "43.8.6",
+    "platform": "linux",
+    "architecture": "x64",
+    "packaged": true,
+    "profile": "isolated"
+  },
+  "display": "isolated X11 with Openbox and GNOME Orca",
+  "pairingCancelFocus": true,
+  "pairedWithWindows": true,
+  "legacyWorktreeRemovalWithKeyboard": true,
+  "projectAdoptedWithOriginalIdentity": true,
+  "sshActionKeepsFocus": true,
+  "adoptedWorktreeRemovalWithKeyboard": true,
+  "latestNotificationFocus": {
+    "before": "<body style=\"\">\n    <div id=\"root\"><div class=\"app-layout\" style=\"--collapsed-sidebar-header-width: 280px; --window-controls-width: 138px; --window-controls-height: 36px; --mac-tra",
+    "after": "<ol dir=\"ltr\" tabindex=\"-1\" class=\"toaster group\" data-sonner-toaster=\"true\" data-sonner-theme=\"light\" data-y-position=\"bottom\" data-x-position=\"right\" style=\"--front-toast-height:"
+  },
+  "outageVoiceRecorded": true,
+  "outagePreservedFocusAndSelection": true,
+  "deletedOnlyFromSshProject": true,
+  "successReceiptSpoken": true,
+  "completed": true,
+  "captured": [
+    "i75-pair-dialog",
+    "i75-pair-cancel",
+    "i75-windows-paired",
+    "i76-original-ssh-workspace",
+    "i76-adopted-ssh-host",
+    "i77-moved-checkout",
+    "i77-original-row-outage",
+    "i77-original-row-recovered",
+    "i77-git-refusal",
+    "i77-explicit-retry-result"
+  ]
+}

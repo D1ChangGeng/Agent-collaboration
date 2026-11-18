@@ -1,0 +1,387 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "theme": "light",
+  "focusTag": "BUTTON",
+  "focusLabel": "ContinueCtrl+",
+  "focusInsideModal": true,
+  "modalOverflow": {
+    "scrollWidth": 1098,
+    "clientWidth": 1098,
+    "rect": {
+      "x": 90,
+      "y": 16,
+      "width": 1100,
+      "height": 768,
+      "top": 16,
+      "right": 1190,
+      "bottom": 784,
+      "left": 90
+    },
+    "footerRect": {
+      "x": 123,
+      "y": 694,
+      "width": 1034,
+      "height": 57,
+      "top": 694,
+      "right": 1157,
+      "bottom": 751,
+      "left": 123
+    }
+  },
+  "tourPanelRect": null,
+  "landingScroll": {
+    "scrollHeight": 486,
+    "clientHeight": 486,
+    "scrollTop": 0
+  },
+  "text": "Search\nOnboarding checklist\nHide\nTasks\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nNo workspaces found\nPorpita\n\nAdd a project to get started.\n\nAdd project\nCreate workspace\nCreate workspace\nCtrl\n+\nN\nMove up workspace\nCtrl\n+\n⇧\n+\n↑\nMove down workspace\nCtrl\n+\n⇧\n+\n↓\nSelect a workspace to browse files\nOff\n—\n·\n0\nPorpita\nSwitch language\n2 of 6\nPick your default agent\n\nPorpita works with every CLI agent. Choose the one you'll reach for most.\n\nAgents open in\nTerminal UI\nDetected on your system\n4\nCodex\nChat available\nGitHub Copilot\nQoder CLI\nKimi\nShow 41 more agents →\nWant chat too? Turn it on any time in Settings → Chat UI.\nTurn on now\nYolo mode\nAgents run commands and edit files without asking, and some also bypass their sandbox. Use only in projects you trust.\n\nOff uses each agent’s own settings. Individual agent permissions can override this switch.\n\nSet up later\nBack\nContinue\nCtrl\n+",
+  "dialogs": [
+    "Porpita\nSwitch language\n2 of 6\nPick your default agent\n\nPorpita works with every CLI agent. Choose the one you'll reach for most.\n\nAgents open in\nTerminal UI\nDetected on your system\n4\nCodex\nChat available\nGitHub Copilot\nQoder CLI\nKimi\nShow 41 more agents →\nWant chat too? Turn it on any time in Settings → Chat UI.\nTurn on now\nYolo mode\nAgents run commands and edit files without asking, and some also bypass their sandbox. Use only in projects you trust.\n\nOff uses each agent’s own settings. Individual agent permissions can override this switch.\n\nSet up later\nBack\nContinue\nCtrl\n+"
+  ],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Onboarding checklist",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Hide",
+      "label": "Hide from sidebar",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Porpita Mobile\nNew",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Workspace options",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Add project",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "New workspace",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Add project",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Create workspace",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Toggle right sidebar",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Explorer (Ctrl+⇧+E)",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Agents",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Source Control (Ctrl+⇧+G)",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Checks",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Switch language",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 1: Chat or Terminal",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 2: Default Agent",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 3: Appearance",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 4: Integrations",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 5: Windows Terminal",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 6: Notifications",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Codex\nChat available",
+      "label": null,
+      "ariaPressed": "true",
+      "disabled": false
+    },
+    {
+      "text": "GitHub Copilot",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Qoder CLI",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Kimi",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Show 41 more agents →",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Turn on now",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Set up later",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Back",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Continue\nCtrl\n+",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    }
+  ],
+  "extra": {},
+  "imageFile": "i90-en-onboarding-agent-1280.png",
+  "imageMethod": "CDP screenshot"
+}

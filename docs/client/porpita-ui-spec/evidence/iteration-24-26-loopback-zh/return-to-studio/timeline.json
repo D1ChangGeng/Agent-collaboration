@@ -1,0 +1,72 @@
+{
+  "actions": [
+    {
+      "name": "choose the Studio history row",
+      "startMs": 96466.0618,
+      "endMs": 96936.0319
+    },
+    {
+      "name": "wait for the original chat input",
+      "startMs": 96936.05410000001,
+      "endMs": 96983.71969999999
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794727508.181177,
+      "receivedAtMs": 96466.05129999999,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794727508.626634,
+      "receivedAtMs": 96901.49369999999,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794727508.635286,
+      "receivedAtMs": 96904.66709999999,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794727508.63783,
+      "receivedAtMs": 96908.26430000001,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794727508.668819,
+      "receivedAtMs": 96934.07199999999,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794727508.676912,
+      "receivedAtMs": 96940.8387,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794727508.685017,
+      "receivedAtMs": 96948.6716,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794727508.694491,
+      "receivedAtMs": 96953.18340000001,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794727508.709241,
+      "receivedAtMs": 96973.8909,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794727508.712864,
+      "receivedAtMs": 96978.17379999999,
+      "file": "009.jpg"
+    },
+    {
+      "rendererTimestamp": 1794727508.719682,
+      "receivedAtMs": 96982.23180000001,
+      "file": "010.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

@@ -1,0 +1,67 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i5-two-sources",
+      "trigger": "Search for the same Codex session ID on Local and Studio",
+      "elapsedMs": 7982,
+      "result": "captured"
+    },
+    {
+      "id": "i5-owning-chat",
+      "trigger": "Read the Studio transcript and open it on its owning runtime",
+      "elapsedMs": 6423,
+      "result": "captured"
+    },
+    {
+      "id": "i5-return-chat",
+      "trigger": "Return from the local worktree to the same Studio chat",
+      "elapsedMs": 2520,
+      "result": "captured"
+    },
+    {
+      "id": "i20-local-resume",
+      "trigger": "Resume the Local history row before comparing the two open sessions",
+      "elapsedMs": 5557,
+      "result": "captured"
+    },
+    {
+      "id": "i20-directory-hosts",
+      "trigger": "Inspect the Local and Studio host chips for identical titles in a compact window",
+      "elapsedMs": 1459,
+      "result": "captured"
+    },
+    {
+      "id": "i20-owner-routing",
+      "trigger": "Filter the same query by each Host and open the original focused chat",
+      "elapsedMs": 2026,
+      "result": "captured"
+    },
+    {
+      "id": "i20-directory-offline",
+      "trigger": "Keep the Local match available while Studio is offline",
+      "elapsedMs": 10782,
+      "result": "captured"
+    },
+    {
+      "id": "i20-reconnect-offer",
+      "trigger": "Select Studio and inspect the scoped reconnect action",
+      "elapsedMs": 720,
+      "result": "captured"
+    },
+    {
+      "id": "i20-directory-reconnect",
+      "trigger": "Recover Studio and reopen the same paired chat",
+      "elapsedMs": 3991,
+      "result": "captured"
+    }
+  ]
+}

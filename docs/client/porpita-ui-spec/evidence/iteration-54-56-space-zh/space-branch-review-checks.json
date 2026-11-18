@@ -1,0 +1,41 @@
+{
+  "locale": "zh",
+  "documentLanguage": "zh",
+  "hiddenWindow": true,
+  "refusal": {
+    "width": 760,
+    "reasonVisible": true,
+    "registrationRetained": true,
+    "sourceErrorAvailable": true,
+    "republished": true
+  },
+  "kept": {
+    "workspacePathsRemoved": 2,
+    "originalRefsKept": 2,
+    "filterIndependent": true,
+    "noToastNeeded": true
+  },
+  "checkout": {
+    "location": {
+      "bothPathsFromGit": true,
+      "spacedUnicodePathRetained": true,
+      "manuallyManagedPathVisible": true,
+      "externalPathScrolledIntoView": true
+    },
+    "opened": {
+      "exactRegisteredWorktree": true,
+      "acknowledgedByMain": true,
+      "otherInstanceRefused": true,
+      "sameDialogAndSelection": true,
+      "checkoutWasNotSwitched": true
+    },
+    "resumed": {
+      "approvedCheckoutReleased": true,
+      "submittedAgainThroughSpace": true,
+      "externalFallbackResolved": true,
+      "retainedOtherBranchUntilSelected": true,
+      "filterFocusRestored": true,
+      "reviewCleared": true
+    }
+  }
+}

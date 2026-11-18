@@ -1,0 +1,54 @@
+{
+  "id": "i89-cancel",
+  "imageFile": "i89-cancel.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "viewport": [
+    720,
+    868
+  ],
+  "focused": "Connect",
+  "rows": {
+    "atlas": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "beacon": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "cedar": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    }
+  },
+  "stored": [],
+  "authentication": {
+    "atlas": 0,
+    "beacon": 1,
+    "cedar": 0
+  }
+}

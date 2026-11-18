@@ -1,0 +1,115 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 1354,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 1096,
+      "result": "captured"
+    },
+    {
+      "id": "04-shell",
+      "trigger": "Dismiss contextual tour; leave trust to the agent",
+      "elapsedMs": 575,
+      "result": "captured"
+    },
+    {
+      "id": "19a-explorer",
+      "trigger": "Inspect a seeded local folder",
+      "elapsedMs": 691,
+      "result": "captured"
+    },
+    {
+      "id": "19b-editor",
+      "trigger": "Double click the local file",
+      "elapsedMs": 2445,
+      "result": "captured"
+    },
+    {
+      "id": "19c-html",
+      "trigger": "Double click the local HTML file",
+      "elapsedMs": 2836,
+      "result": "captured"
+    },
+    {
+      "id": "19-fixture-project",
+      "trigger": "Open disposable Git repository in Sidebar (seeded via app IPC)",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 8000ms exceeded."
+    },
+    {
+      "id": "20-explorer-search",
+      "trigger": "Explorer content mode",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "21-source-control",
+      "trigger": "Source Control activity button",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "21b-diff",
+      "trigger": "Open changed file from Source Control",
+      "result": "not reached",
+      "reason": "locator.waitFor: Timeout 8000ms exceeded."
+    },
+    {
+      "id": "22-new-tab",
+      "trigger": "New Tab menu",
+      "elapsedMs": 1762,
+      "result": "captured"
+    },
+    {
+      "id": "23-terminal-split",
+      "trigger": "Split Terminal Right button",
+      "elapsedMs": 1788,
+      "result": "captured"
+    },
+    {
+      "id": "24a-right-dock-before",
+      "trigger": "Right dock before toggle",
+      "elapsedMs": 766,
+      "result": "captured"
+    },
+    {
+      "id": "24-right-dock-closed",
+      "trigger": "Toggle Right Sidebar",
+      "elapsedMs": 896,
+      "result": "captured"
+    },
+    {
+      "id": "24b-right-dock-reopened",
+      "trigger": "Reverse the right dock toggle",
+      "elapsedMs": 1049,
+      "result": "captured"
+    },
+    {
+      "id": "25-narrow",
+      "trigger": "Resize hidden desktop viewport",
+      "elapsedMs": 660,
+      "result": "captured"
+    },
+    {
+      "id": "26-reduced-dock",
+      "trigger": "Toggle Right Sidebar with reduced motion",
+      "elapsedMs": 1192,
+      "result": "captured"
+    }
+  ]
+}

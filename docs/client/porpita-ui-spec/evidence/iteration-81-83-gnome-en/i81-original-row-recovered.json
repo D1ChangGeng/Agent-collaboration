@@ -1,0 +1,29 @@
+{
+  "id": "i81-original-row-recovered",
+  "description": "Reconnect and read fresh Git state from the same runtime",
+  "imageFile": "i81-original-row-recovered.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "nativeWindow": "Porpita",
+  "keys": [
+    "Return"
+  ],
+  "viewport": [
+    720,
+    868
+  ],
+  "documentFocused": true,
+  "dialog": [
+    "Review kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n1 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nNo checkout\n\nGit reported no checkout for this branch at the time of the check.\n\nLast reported checkout path\nCheck checkout\n/tmp/porpita-ui81.mus1Uzwe/ssh-cell/home/Checkout Moved\n\nCancel\nForce Delete 1 Branch\nClose"
+  ],
+  "focus": {
+    "role": "button",
+    "name": "Check checkout for review-topic"
+  },
+  "text": "Search\nTasks\nAutomations\nOrca Mobile\nNew\nProjects\n0\nWindows validation project\nInactive\nmain\nprimary\nWindows acceptance service\nmain\nssh-cell-rerun/home/Independent project\nActive\nmain\nprimary\nLinux SSH project\nmain\nInactive\nIndependent project\nLinux SSH project\nDetached HEAD @ 8b8115d\nssh-cell/home/Independent project\nActive\nmain\nprimary\nLinux SSH project\nmain\n\nAdd a setup script\n\nIndependent project\n\nAdd a setup command to run when Orca creates new worktrees.\n\nConfigure\nchanggeng@yue-Precision-3680: /tmp/porpita-ui81.mus1Uzwe/ssh-cell/home/project\nchanggeng@yue-Precision-3680:/tmp/porpita-ui81.mus\n1Uzwe/ssh-cell/home/project$  \nRefresh failed\nRun Kimi to refresh\nOff\n—\n·\n0\n2 hosts\nReview kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n1 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nNo checkout\n\nGit reported no checkout for this branch at the time of the check.\n\nLast reported checkout path\nCheck checkout\n/tmp/porpita-ui81.mus1Uzwe/ssh-cell/home/Checkout Moved\n\nCancel\nForce Delete 1 Branch\nClose",
+  "utterances": [
+    "Reconnecting and checking…",
+    "Check checkout for review-topic",
+    "Git reported no checkout for this branch at the time of the check."
+  ],
+  "windowFocused": true
+}

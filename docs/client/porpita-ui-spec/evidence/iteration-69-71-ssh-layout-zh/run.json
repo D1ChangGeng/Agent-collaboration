@@ -1,0 +1,31 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i70-ssh-project-needs-host-service",
+      "trigger": "Open the existing saved SSH workspace confirmation",
+      "elapsedMs": 950,
+      "result": "captured"
+    },
+    {
+      "id": "i70-ssh-settings-with-workspace-preserved",
+      "trigger": "Open the existing SSH settings without removing the workspace",
+      "elapsedMs": 1500,
+      "result": "captured"
+    },
+    {
+      "id": "i70-ssh-settings-wide",
+      "trigger": "Check the same SSH header and actions at desktop width",
+      "elapsedMs": 450,
+      "result": "captured"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "locale": "zh",
+  "documentLanguage": "zh",
+  "hiddenWindow": true,
+  "refusal": {
+    "width": 760,
+    "reasonVisible": true,
+    "registrationRetained": true,
+    "sourceErrorAvailable": true,
+    "republished": true
+  },
+  "kept": {
+    "workspacePathsRemoved": 2,
+    "originalRefsKept": 2,
+    "filterIndependent": true,
+    "noToastNeeded": true
+  },
+  "checkout": {
+    "location": {
+      "bothPathsFromGit": true,
+      "spacedUnicodePathRetained": true,
+      "manuallyManagedPathVisible": true,
+      "externalPathScrolledIntoView": true
+    },
+    "opened": {
+      "exactRegisteredWorktree": true,
+      "acknowledgedByMain": true,
+      "otherInstanceRefused": true,
+      "sameDialogAndSelection": true,
+      "checkoutWasNotSwitched": true
+    },
+    "drift": {
+      "fallback": {
+        "checkoutMovedInGit": true,
+        "oldButtonRemoved": true,
+        "sameSpaceWindow": true,
+        "cancelReceivedFocus": true,
+        "selectionPreserved": true,
+        "mainSelectionStableDuringReturn": true,
+        "previousSuccessStillVisible": false
+      },
+      "record": {
+        "lastPathLabeled": true,
+        "staleSuccessCleared": true
+      },
+      "retry": {
+        "movedCheckoutBlockedDeletion": true,
+        "newGitPathShown": true,
+        "freshReviewStartsUnselected": true,
+        "explicitRetryAfterReleaseSucceeded": true,
+        "otherBranchPreserved": true
+      }
+    }
+  }
+}

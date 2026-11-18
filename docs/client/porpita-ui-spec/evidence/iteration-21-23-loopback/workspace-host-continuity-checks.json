@@ -1,0 +1,62 @@
+{
+  "boundary": {
+    "topology": "Two isolated Runtime profiles on one Windows machine",
+    "fixture": "Same Provider history ID and title; distinct Native Chat sessions",
+    "network": "Loopback paired transport",
+    "input": "Unsent drafts only"
+  },
+  "originals": {
+    "distinctNativeSessionIds": true,
+    "distinctNativeTabIds": true
+  },
+  "mixed": {
+    "sameTitleHostsDistinguished": true,
+    "originalTranscripts": true,
+    "separateDrafts": true
+  },
+  "directory": {
+    "sameWorkspace": true,
+    "studioComposerFocused": true
+  },
+  "short": {
+    "hostChangedWithSameWorkspace": true,
+    "onlySelectedPaneVisible": true,
+    "localComposerFocused": true
+  },
+  "saved": {
+    "version": 2,
+    "sourceQualifiedRefs": true,
+    "hostQualifiedFocus": true,
+    "ratio": 0.55,
+    "diskMatches": true
+  },
+  "cold": {
+    "desktopProcessChanged": true,
+    "studioProcessKept": true,
+    "workspaceKept": true,
+    "qualifiedFocusKept": true,
+    "originalDraftsKept": true
+  },
+  "offline": {
+    "onlyStudioOfferedReconnect": true,
+    "localComposerEditable": true,
+    "layoutSlotsKept": true
+  },
+  "recovered": {
+    "trigger": "pane reconnect",
+    "studioDraftKept": true,
+    "localEditKept": true,
+    "originalWorkspaceKept": true
+  },
+  "retired": {
+    "catalogEntryRemoved": true,
+    "savedUnavailableSlotKept": true,
+    "remoteTranscriptHidden": true,
+    "localDraftKept": true
+  },
+  "removed": {
+    "onlyLocalReferenceRemains": true,
+    "sameWorkspace": true,
+    "localInputFocus": true
+  }
+}

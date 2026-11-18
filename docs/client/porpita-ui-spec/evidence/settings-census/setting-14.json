@@ -1,0 +1,628 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Git 和源代码控制",
+  "section": [
+    "git"
+  ],
+  "text": "返回应用\nCtrl\n+\nF\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n尚未添加项目。\n\nGit 和源代码控制\n\n分支命名、基础引用和 Git AI Author。\n\n分支前缀\n\n选择分支名称是使用您的 Git 用户名、自定义前缀还是不使用前缀。\n\ngit用户名\n自定义\n没有任何\n\nJira 键大小写\n\nPorpita 为新的 Jira 关联工作区建议的工作区和分支名称中 Jira 议题键的大小写，例如使用 PROJ-123-fix-login 而非 proj-123-fix-login。现有工作区和你输入的名称绝不会更改。\n\n小写\n大写键\n保持本地 main 最新\n\n创建工作区时，Porpita 会刷新远程基准分支，并安全地快进对应的本地分支，例如 main 或 master。这样可以避免 git diff main...HEAD 等命令与过时的历史记录进行比较。如果该分支有未提交的更改或仅在本地的提交，Porpita 会跳过更新。\n\n源代码管理分组顺序\n\n选择在源代码管理中优先显示“已暂存更改”还是“更改”。\n\n更改优先\n已暂存优先\n默认对比基准\n\n选择源代码管理在比较已提交变更时默认使用的基准。分支上游会自动跟随当前分支；如果没有上游，则回退到仓库默认分支。你仍然可以在对应 worktree 的 Git 面板中按 worktree 更改对比基准。Pull Request 和变基目标不会改变。\n\n仓库默认\n分支上游\n自动重命名分支和工作树\n\n当智能体开始在新工作区中工作时，Porpita 会重命名其自动生成的分支（例如 Nautilus）到总结任务的简短名称。只有 Porpita 命名的分支才会被重命名，并且在推送后不会被重命名。\n\n高级\n源代码控制 AI 默认值\n\n方案、提示和托管评审默认值由此客户端共享；模型选择和发现则限定在智能体运行的主机内。\n\n显示源代码控制 AI 操作\n\n添加 AI 按钮，用于使用该操作的提示词模板运行选定的智能体。\n\n操作方案\n\n仅当您希望 Porpita 注入上下文时才使用变量。将智能体保留为默认值以遵循您的正常智能体偏好。\n\nCommit message\n\n根据已暂存的更改生成提交信息。\n\n拉取请求详情、分支名称和聊天名称未选择自己的模型时也可以使用此模型；其“与默认值相同”选项会显示所用模型。\n\nSonnet · Claude · Low\n\n此预设支持的智能体：OMP, Claude, Codex, OpenCode, OpenCode 2, Pi, Amp, Cursor, Kimi, Muse, DeepSeek Harness, GitHub Copilot, Antigravity, Jcode, 自定义命令。\n\n参数\n提示词模板\n变量\n{basePrompt}\n{branch}\n{stagedFiles}\n{stagedPatch}\n{linkedIssue}\n\n已保存\n\n保存\n\nPull request details\n\n生成托管评论标题和描述。\n\nSonnet · Claude · Low\n\n此预设支持的智能体：OMP, Claude, Codex, OpenCode, OpenCode 2, Pi, Amp, Cursor, Kimi, Muse, DeepSeek Harness, GitHub Copilot, Antigravity, Jcode, 自定义命令。\n\n参数\n提示词模板\n变量\n{basePrompt}\n{branch}\n{baseBranch}\n{currentTitle}\n{currentBody}\n{commitSummary}\n{changedFiles}\n{patch}\n{linkedIssue}\n\n已保存\n\n保存\n\nBranch name\n\n重命名 Porpita 从初始智能体任务创建的分支。\n\nSonnet · Claude · Low\n\n此预设支持的智能体：OMP, Claude, Codex, OpenCode, OpenCode 2, Pi, Amp, Cursor, Kimi, Muse, DeepSeek Harness, GitHub Copilot, Antigravity, Jcode, 自定义命令。\n\n参数\n提示词模板\n变量\n{basePrompt}\n{firstPrompt}\n{assistantMessage}\n\n已保存\n\n保存\n\nCommit failure fixes\n\n当 commit 挂钩或 git commit 失败时启动智能体。\n\n使用默认智能体\n提示词模板\n变量\n{basePrompt}\n\n已保存\n\n保存\n\nPush failure fixes\n\n当 pre-push 钩子或 git push 失败时启动智能体。\n\n使用默认智能体\n提示词模板\n变量\n{basePrompt}\n\n已保存\n\n保存\n\nBroken checks fixes\n\n从失败的托管评审检查中启动智能体。\n\n使用默认智能体\n提示词模板\n变量\n{basePrompt}\n\n已保存\n\n保存\n\nConflict resolution\n\n启动用于解决本地或托管评审合并冲突的智能体。\n\n使用默认智能体\n提示词模板\n变量\n{basePrompt}\n\n已保存\n\n保存\n\nReview comment resolution\n\n从选中的未解决 PR 或 MR 评论启动智能体。\n\n使用默认智能体\n提示词模板\n变量\n{basePrompt}\n\n已保存\n\n保存\n自定义命令\n\n由选择自定义命令的 commit 消息、PR 和分支名称预设使用。使用 {prompt} 将提示词输入作为参数传递；否则 Porpita 会通过标准输入传递。\n\n托管评审创建默认值\n\n由继承全局托管评审默认值的仓库使用。\n\n默认草稿\n除非在编辑器中更改，否则将托管评审创建为草稿。\n可用时使用评审模板\n当未设置描述时，首选仓库PR模板。\n打开 Create PR 时生成详细信息\n编辑器打开时运行一次托管评审详情生成。\n创建后打开托管评审\n提交后在浏览器中打开创建的托管评论。\nGitHub API 预算\n\nPorpita 通过 GitHub CLI 使用 REST、搜索和 GraphQL。\n\n预算范围：Local Windows\nGitHub API 额度从这台桌面客户端上的 CLI 获取。要查看服务器的额度，请在“设置”顶部的主机菜单中选择。\n打开远程服务器\n正在加载 GitHub API 预算...\nGitLab API预算\n\nPorpita 通过 GitLab CLI 使用 REST。\n\n预算范围：Local Windows\nGitLab API 额度从这台桌面客户端上的 CLI 获取。要查看服务器的额度，请在“设置”顶部的主机菜单中选择。\n打开远程服务器\n正在加载 GitLab API 预算...\n关闭\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "git用户名",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自定义",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "没有任何",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "小写",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "大写键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "保持本地 main 最新",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "更改优先",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已暂存优先",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "仓库默认",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分支上游",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "自动重命名分支和工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示源代码控制 AI 操作",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Sonnet · Claude · Low",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{branch}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{stagedFiles}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{stagedPatch}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{linkedIssue}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Sonnet · Claude · Low",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{branch}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{baseBranch}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{currentTitle}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{currentBody}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{commitSummary}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{changedFiles}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{patch}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{linkedIssue}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Sonnet · Claude · Low",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{firstPrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{assistantMessage}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用默认智能体",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用默认智能体",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用默认智能体",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用默认智能体",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用默认智能体",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开远程服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新 GitHub API 预算",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开远程服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新 GitLab API 预算",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "setting-14.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 35108
+}

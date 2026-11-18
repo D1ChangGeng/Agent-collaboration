@@ -1,0 +1,142 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Ports",
+  "section": [],
+  "text": "General\nRelease-review\nExplorer\nExplorer\n\nThe original host for this Explorer is unavailable.\n\nRemove Explorer\nOff\n—\n·\nRemoved Studio.\nPorts\n\nWorktree ports unavailable",
+  "dialogs": [
+    "Ports\n\nWorktree ports unavailable"
+  ],
+  "buttons": [
+    {
+      "text": "General",
+      "label": "Choose group: General",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Release-review",
+      "label": null,
+      "title": "Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Release-review",
+      "title": "Close Release-review",
+      "test": null
+    },
+    {
+      "text": "Explorer",
+      "label": null,
+      "title": "Explorer",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Explorer",
+      "title": "Close Explorer",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New work object",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open work",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Return to worktree",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Explorer",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer placement",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Remove Explorer",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable · local memory",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i31-ports-revoked.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 29729
+}

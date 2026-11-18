@@ -1,0 +1,13 @@
+{
+  "size": [
+    760,
+    700
+  ],
+  "dpr": 1,
+  "lang": "zh",
+  "theme": "dark",
+  "reducedMotion": false,
+  "focus": "启动 PorpitaSpec-eee31ea9 并核对 cleanup-kept-one 的检出",
+  "imageFile": "i71-space-wsl-stopped.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

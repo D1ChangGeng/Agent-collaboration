@@ -1,0 +1,320 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "theme": "dark",
+  "focusTag": "BUTTON",
+  "focusLabel": "工件测试版",
+  "focusInsideModal": null,
+  "modalOverflow": null,
+  "tourPanelRect": null,
+  "landingScroll": {
+    "scrollHeight": 1533,
+    "clientHeight": 622,
+    "scrollTop": 0
+  },
+  "text": "返回应用\nCtrl\n+\nF\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n尚未添加项目。\n\n工件\nBETA\n\n与您的团队共享 HTML 和 Markdown 文件并管理他们的公共链接。\n\n允许发布公共工件链接\n\n将 HTML 和 Markdown 文件发布为任何知道 URL 的人都可以打开的链接。现有链接将保留，直到您从工件中将其删除。\n\n显示工件按钮\n\n在侧边栏中显示工件快捷方式。\n\n此版本不支持工件在线共享\n\n在线工件发布需要配置 Porpita 账户服务。本地 HTML 与 Markdown 预览仍可在工作区中正常使用。\n\n不可用\n如何使用工件\n\n启用上面的工件共享以将 HTML 或 Markdown 文件发布为公共链接。\n\n1\n\n启用工件共享\n\n打开上面的“允许发布公共工件链接”。\n\n2\n\n选择要共享的文件\n\n打开 HTML 或 Markdown 文件并选择共享为工件，或要求智能体共享它。\n\n3\n\n复制公共链接\n\n发布后，复制链接并将其发送给您的团队。\n\n4\n\n在 Porpita 中管理它\n\n从侧边栏打开工件以预览或删除链接。\n\n打开工件\n预览、复制和管理通过您的帐户共享的链接。\n关闭\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "允许发布公共工件链接",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "显示工件按钮",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "打开工件\n预览、复制和管理通过您的帐户共享的链接。",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "ariaPressed": null,
+      "disabled": false
+    }
+  ],
+  "extra": {},
+  "imageFile": "i90-zh-settings-artifacts-1280.png",
+  "imageMethod": "CDP screenshot"
+}

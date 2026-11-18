@@ -1,0 +1,357 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "theme": "light",
+  "focusTag": "BUTTON",
+  "focusLabel": "Switch language",
+  "focusInsideModal": true,
+  "modalOverflow": {
+    "scrollWidth": 1098,
+    "clientWidth": 1098,
+    "rect": {
+      "x": 90,
+      "y": 16,
+      "width": 1100,
+      "height": 768,
+      "top": 16,
+      "right": 1190,
+      "bottom": 784,
+      "left": 90
+    },
+    "footerRect": {
+      "x": 123,
+      "y": 694,
+      "width": 1034,
+      "height": 57,
+      "top": 694,
+      "right": 1157,
+      "bottom": 751,
+      "left": 123
+    }
+  },
+  "tourPanelRect": null,
+  "landingScroll": {
+    "scrollHeight": 519,
+    "clientHeight": 519,
+    "scrollTop": 0
+  },
+  "text": "搜索\n任务\n自动化\nPorpita 手机端\n新功能\n项目\n0\n未找到工作区\nPorpita\n\n添加一个项目即可开始。\n\n添加项目\n创建工作区\n创建工作区\nCtrl\n+\nN\n选择上一个工作区\nCtrl\n+\n⇧\n+\n↑\n选择下一个工作区\nCtrl\n+\n⇧\n+\n↓\n选择一个工作区来浏览文件\n···\n关闭\n—\n·\n0\nPorpita\nSwitch language\n1 / 6\n欢迎使用 PORPITA\n你希望如何使用智能体？\n\n选择新智能体的默认打开方式。\n\n为 fetchUser 添加重试逻辑\n编辑了\napi.ts\n+1 -1\n12\n-\nreturn fetch(url)\n12\n+\nreturn withRetry(fetch, url)\n\n失败的请求现在最多会重试 3 次。\n\n继续提问…\n聊天界面\n\n智能体在聊天中回复，并带渲染后的消息和差异对比。\n\n不支持聊天界面的智能体以及 SSH 或 WSL 项目仍会在终端中打开。\n\nzsh — claude\n❯ claude\n> add retry to fetchUser\n● Update(src/api.ts)\n⎿ 1 addition, 1 removal\n12 - return fetch(url)\n12 + return withRetry(fetch, url)\n● Done. Retries capped at 3.\n终端\n\n保留每个智能体原生的 CLI 体验，支持所有 CLI 智能体。\n\n这并非永久选择，随时可在设置 → 聊天界面中切换。\n\n稍后设置\n继续\nCtrl\n+\n用量显示现已精简\n\n每个服务提供商显示一个主要指标。在用量菜单中选择“详细”即可查看更多限额。\n\nGot it",
+  "dialogs": [
+    "Porpita\nSwitch language\n1 / 6\n欢迎使用 PORPITA\n你希望如何使用智能体？\n\n选择新智能体的默认打开方式。\n\n为 fetchUser 添加重试逻辑\n编辑了\napi.ts\n+1 -1\n12\n-\nreturn fetch(url)\n12\n+\nreturn withRetry(fetch, url)\n\n失败的请求现在最多会重试 3 次。\n\n继续提问…\n聊天界面\n\n智能体在聊天中回复，并带渲染后的消息和差异对比。\n\n不支持聊天界面的智能体以及 SSH 或 WSL 项目仍会在终端中打开。\n\nzsh — claude\n❯ claude\n> add retry to fetchUser\n● Update(src/api.ts)\n⎿ 1 addition, 1 removal\n12 - return fetch(url)\n12 + return withRetry(fetch, url)\n● Done. Retries capped at 3.\n终端\n\n保留每个智能体原生的 CLI 体验，支持所有 CLI 智能体。\n\n这并非永久选择，随时可在设置 → 聊天界面中切换。\n\n稍后设置\n继续\nCtrl\n+"
+  ],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "切换侧边栏",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "",
+      "label": "前进",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "搜索",
+      "label": "搜索工作树和浏览器选项卡",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "任务",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "打开 GitHub 任务",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "打开 Jira 任务",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Porpita 手机端\n新功能",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "查看活动",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "工作区选项",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "添加项目",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "新工作区",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "帮助",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "显示活动工作区",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "工作区看板",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "添加项目",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "创建工作区",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "切换右侧边栏",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "资源管理器 (Ctrl+⇧+E)",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "智能体",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "源代码控制 (Ctrl+⇧+G)",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "检查项",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "···",
+      "label": "使用量",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Switch language",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 1：聊天界面或终端",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 2：默认智能体",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 3：外观",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 4：集成",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 5：Windows 终端",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 6：通知",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "为 fetchUser 添加重试逻辑\n编辑了\napi.ts\n+1 -1\n12\n-\nreturn fetch(url)\n12\n+\nreturn withRetry(fetch, url)\n\n失败的请求现在最多会重试 3 次。\n\n继续提问…\n聊天界面\n\n智能体在聊天中回复，并带渲染后的消息和差异对比。\n\n不支持聊天界面的智能体以及 SSH 或 WSL 项目仍会在终端中打开。",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "zsh — claude\n❯ claude\n> add retry to fetchUser\n● Update(src/api.ts)\n⎿ 1 addition, 1 removal\n12 - return fetch(url)\n12 + return withRetry(fetch, url)\n● Done. Retries capped at 3.\n终端\n\n保留每个智能体原生的 CLI 体验，支持所有 CLI 智能体。",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "稍后设置",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "继续\nCtrl\n+",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Dismiss",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Got it",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    }
+  ],
+  "extra": {},
+  "imageFile": "i90-zh-onboarding-agent-surface-1280.png",
+  "imageMethod": "CDP screenshot"
+}

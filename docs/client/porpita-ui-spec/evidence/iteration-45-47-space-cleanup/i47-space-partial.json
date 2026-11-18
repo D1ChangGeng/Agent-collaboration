@@ -1,0 +1,26 @@
+{
+  "imageFile": "i47-space-partial.jpg",
+  "size": [
+    1100,
+    700
+  ],
+  "locale": "en",
+  "theme": "light",
+  "windowIsolation": {
+    "visible": false,
+    "focused": false
+  },
+  "capture": "CDP screencast from the real Space renderer",
+  "source": "550921aee05331a9921e615d5958a171b62cbd02",
+  "step": "i47-space-partial-cleanup",
+  "run": "run.json",
+  "verifiedJourney": {
+    "ordinaryDeletePreservedLateChange": true,
+    "realPartialResult": true,
+    "reasonInRow": true,
+    "reasonSurvivedPublication": true,
+    "reviewedRetry": true,
+    "retryRemovedRemaining": true,
+    "protectedMain": true
+  }
+}

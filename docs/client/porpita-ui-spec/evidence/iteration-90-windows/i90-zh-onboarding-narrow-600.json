@@ -1,0 +1,423 @@
+{
+  "size": [
+    600,
+    400
+  ],
+  "dpr": 1,
+  "lang": "",
+  "theme": "light",
+  "focusTag": "BUTTON",
+  "focusLabel": "继续Ctrl+",
+  "focusInsideModal": true,
+  "modalOverflow": {
+    "scrollWidth": 566,
+    "clientWidth": 566,
+    "rect": {
+      "x": 16,
+      "y": 16,
+      "width": 568,
+      "height": 368,
+      "top": 16,
+      "right": 584,
+      "bottom": 384,
+      "left": 16
+    },
+    "footerRect": {
+      "x": 33,
+      "y": 322,
+      "width": 534,
+      "height": 49,
+      "top": 322,
+      "right": 567,
+      "bottom": 371,
+      "left": 33
+    }
+  },
+  "tourPanelRect": null,
+  "landingScroll": {
+    "scrollHeight": 86,
+    "clientHeight": 86,
+    "scrollTop": 0
+  },
+  "text": "搜索\n入门清单\n隐藏\n任务\n自动化\nPorpita 手机端\n新功能\n项目\n0\n未找到工作区\nPorpita\n\n添加一个项目即可开始。\n\n添加项目\n创建工作区\n创建工作区\nCtrl\n+\nN\n选择上一个工作区\nCtrl\n+\n⇧\n+\n↑\n选择下一个工作区\nCtrl\n+\n⇧\n+\n↓\n关闭\n—\n·\n0\nPorpita\nSwitch language\n3 / 6\n让这里有家的感觉\n\n选择浅色或深色，也可以再选一个主题。两者都可以随时在设置中更改。\n\n颜色模式浅色、深色或跟随系统。\n系统\n匹配操作系统\n深色\n轻松护眼\n浅色\n明亮、清脆\n主题可选。使用应用主题和终端调色板进一步自定义。\nPorpita 浅色\n内置\nCatppuccin Latte\n终端调色板\nRose Pine Dawn\n终端调色板\nTokyo Night Light\n终端调色板\nGruvbox Light\n终端调色板\nOne Light\n终端调色板\nEverforest Light\n终端调色板\nSolarized Light\n终端调色板\nOrca 主题目录\n浏览插件\n更多主题以插件形式提供。\n浏览主题插件\n更多终端选项（包括字体、光标和配色）位于 设置 → 终端\n稍后设置\n返回\n继续\nCtrl\n+",
+  "dialogs": [
+    "Porpita\nSwitch language\n3 / 6\n让这里有家的感觉\n\n选择浅色或深色，也可以再选一个主题。两者都可以随时在设置中更改。\n\n颜色模式浅色、深色或跟随系统。\n系统\n匹配操作系统\n深色\n轻松护眼\n浅色\n明亮、清脆\n主题可选。使用应用主题和终端调色板进一步自定义。\nPorpita 浅色\n内置\nCatppuccin Latte\n终端调色板\nRose Pine Dawn\n终端调色板\nTokyo Night Light\n终端调色板\nGruvbox Light\n终端调色板\nOne Light\n终端调色板\nEverforest Light\n终端调色板\nSolarized Light\n终端调色板\nOrca 主题目录\n浏览插件\n更多主题以插件形式提供。\n浏览主题插件\n更多终端选项（包括字体、光标和配色）位于 设置 → 终端\n稍后设置\n返回\n继续\nCtrl\n+"
+  ],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "切换侧边栏",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "",
+      "label": "前进",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "搜索",
+      "label": "搜索工作树和浏览器选项卡",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "入门清单",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "隐藏",
+      "label": "从侧边栏隐藏",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "任务",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "打开 GitHub 任务",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "打开 Jira 任务",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Porpita 手机端\n新功能",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "查看活动",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "工作区选项",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "添加项目",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "新工作区",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "帮助",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "显示活动工作区",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "工作区看板",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "切换右侧边栏",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "添加项目",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "创建工作区",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "资源管理器 (Ctrl+⇧+E)",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "更多侧边栏选项卡",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Switch language",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 1：聊天界面或终端",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 2：默认智能体",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 3：外观",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 4：集成",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 5：Windows 终端",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "前往入门步骤 6：通知",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "系统\n匹配操作系统",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "深色\n轻松护眼",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "浅色\n明亮、清脆",
+      "label": null,
+      "ariaPressed": "true",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "上一组外观",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "",
+      "label": "更多外观",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Porpita 浅色\n内置",
+      "label": null,
+      "ariaPressed": "true",
+      "disabled": false
+    },
+    {
+      "text": "Catppuccin Latte\n终端调色板",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Rose Pine Dawn\n终端调色板",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Tokyo Night Light\n终端调色板",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Gruvbox Light\n终端调色板",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "One Light\n终端调色板",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Everforest Light\n终端调色板",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Solarized Light\n终端调色板",
+      "label": null,
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Orca 主题目录\n浏览插件",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "浏览主题插件",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "稍后设置",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "返回",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "继续\nCtrl\n+",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    }
+  ],
+  "extra": {},
+  "imageFile": "i90-zh-onboarding-narrow-600.png",
+  "imageMethod": "CDP screenshot"
+}

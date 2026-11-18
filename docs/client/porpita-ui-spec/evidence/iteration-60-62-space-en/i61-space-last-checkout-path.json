@@ -1,0 +1,13 @@
+{
+  "size": [
+    850,
+    700
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "light",
+  "reducedMotion": false,
+  "focus": "Cancel",
+  "imageFile": "i61-space-last-checkout-path.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

@@ -1,0 +1,44 @@
+{
+  "sourceCommit": "619c37d7487b31aeca8ad5c7bf643cafba746a2a",
+  "wayland": {
+    "compositor": "1.9",
+    "socket": "wayland-1",
+    "appId": "porpita",
+    "shell": "xdg_shell",
+    "x11DisplaySet": false
+  },
+  "linux": {
+    "product": "0.1.0",
+    "electron": "43.8.6",
+    "platform": "linux",
+    "architecture": "x64",
+    "packaged": true,
+    "profile": "isolated"
+  },
+  "display": "isolated Wayland with Sway and GNOME Orca",
+  "tipHiddenInServerSettings": false,
+  "pairingCancelFocus": true,
+  "pairedWithWindows": true,
+  "tipResumedInWorkbench": true,
+  "legacyWorktreeRemovalWithKeyboard": true,
+  "sshActionClear": false,
+  "tipHiddenInSshSettings": false,
+  "projectAdoptedWithOriginalIdentity": true,
+  "sshActionKeepsFocus": true,
+  "adoptedWorktreeRemovalWithKeyboard": true,
+  "latestNotificationFocus": {
+    "before": "<textarea class=\"xterm-helper-textarea\" aria-label=\"Terminal input\" aria-multiline=\"false\" autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"off\" spellcheck=\"false\" tabindex=\"0\"",
+    "after": "<textarea class=\"xterm-helper-textarea\" aria-label=\"Terminal input\" aria-multiline=\"false\" autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"off\" spellcheck=\"false\" tabindex=\"0\""
+  },
+  "captured": [
+    "i80-card-workbench",
+    "i80-server-settings",
+    "i78-pair-dialog",
+    "i78-pair-cancel",
+    "i78-windows-paired",
+    "i80-card-returned",
+    "i78-original-ssh-workspace",
+    "i80-ssh-settings",
+    "i78-adopted-ssh-host"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i19-running",
+      "trigger": "Observe the original Native Chat publish a working state while its scripted provider waits",
+      "elapsedMs": 1533,
+      "result": "captured"
+    },
+    {
+      "id": "i19-needs-attention",
+      "trigger": "Keep the same row and switch its live state to Needs attention for a pending approval",
+      "elapsedMs": 718,
+      "result": "captured"
+    },
+    {
+      "id": "i19-collaboration",
+      "trigger": "Inspect the original collaboration panel’s actual connection label from the session directory",
+      "elapsedMs": 499,
+      "result": "captured"
+    },
+    {
+      "id": "i19-collaboration-return",
+      "trigger": "Escape restores the sidebar trigger and preserves the original agent state",
+      "elapsedMs": 739,
+      "result": "captured"
+    }
+  ]
+}

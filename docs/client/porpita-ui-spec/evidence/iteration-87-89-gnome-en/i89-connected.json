@@ -1,0 +1,80 @@
+{
+  "id": "i89-connected",
+  "imageFile": "i89-connected.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "viewport": [
+    720,
+    868
+  ],
+  "focused": "Disconnect",
+  "rows": {
+    "atlas": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "beacon": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "cedar": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    }
+  },
+  "connection": {
+    "before": {
+      "atlas": 0,
+      "beacon": 1,
+      "cedar": 0
+    },
+    "after": {
+      "atlas": 0,
+      "beacon": 2,
+      "cedar": 0
+    },
+    "trusted": [
+      {
+        "host": "::1",
+        "port": 51007,
+        "fingerprint": "SHA256:q4G99Ou/+sgwNS25zM+5uJYwADt5/kBjI/L2P2nrnzw"
+      }
+    ],
+    "utterances": [
+      "Trust SSH host key dialog porpita-config-validation-workspace-beacon changgeng@[::1]:51007 Compare this fingerprint with one from your administrator before trusting this host. ssh-ed25519 fingerprint SHA256:q4G99Ou/+sgwNS25zM+5uJYwADt5/kBjI/L2P2nrnzw",
+      "Cancel",
+      "button",
+      "Trust and connect porpita-config-validation-workspace-beacon changgeng@[::1]:51007",
+      "button",
+      "Connecting porpita-config-validation-workspace-beacon changgeng@[::1]:51007",
+      "button grayed",
+      "Connecting…",
+      "Disconnect porpita-config-validation-workspace-beacon changgeng@[::1]:51007",
+      "grayed",
+      "Connected, porpita-config-validation-workspace-beacon, changgeng@[::1]:51007"
+    ]
+  }
+}

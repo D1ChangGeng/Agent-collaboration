@@ -1,0 +1,24 @@
+{
+  "imageFile": "i46-space-cleaned.jpg",
+  "size": [
+    1100,
+    700
+  ],
+  "locale": "en",
+  "theme": "light",
+  "windowIsolation": {
+    "visible": false,
+    "focused": false
+  },
+  "capture": "CDP screencast from the real Space renderer",
+  "source": "550921aee05331a9921e615d5958a171b62cbd02",
+  "step": "i46-space-cleanup-result",
+  "run": "run.json",
+  "verifiedJourney": {
+    "realRemoval": true,
+    "resultVisible": true,
+    "filterRetained": true,
+    "focusInFilter": true,
+    "otherSelectionRetained": true
+  }
+}

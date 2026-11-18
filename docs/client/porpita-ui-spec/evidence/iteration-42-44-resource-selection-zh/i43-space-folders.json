@@ -1,0 +1,23 @@
+{
+  "imageFile": "i43-space-folders.jpg",
+  "size": [
+    1100,
+    700
+  ],
+  "locale": "zh",
+  "theme": "dark",
+  "windowIsolation": {
+    "visible": false,
+    "focused": false
+  },
+  "capture": "CDP screencast from the real Space renderer",
+  "source": "85a2e8ad908b65dfa23bc870472dc4d9e3781f1a",
+  "step": "i43-space-folder-navigation",
+  "run": "run.json",
+  "verifiedJourney": {
+    "realFolderSizes": true,
+    "tileEntry": true,
+    "toolbarEntry": true,
+    "keyboardFocus": true
+  }
+}

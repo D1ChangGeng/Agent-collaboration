@@ -1,0 +1,28 @@
+{
+  "id": "i78-adopted-ssh-host",
+  "description": "Original SSH project is owned by its independent managed runtime",
+  "imageFile": "i78-adopted-ssh-host.png",
+  "imageMethod": "Wayland compositor screencopy",
+  "nativeWindow": "Porpita",
+  "appId": "porpita",
+  "keys": [
+    "Return"
+  ],
+  "viewport": [
+    1060,
+    790
+  ],
+  "dialog": [],
+  "focus": {
+    "role": "button",
+    "name": "Disconnect"
+  },
+  "text": "Back to app\nCtrl\n+\nF\n\nAI CAPABILITIES\n\nAgents\nAI Provider Accounts\nOPTIONAL\nOrchestration\nComputer Use\nVoice\n\nSET UP\n\nOrca Account\nGeneral\nIntegrations\nMobile\n\nWORKFLOWS\n\nAutomations\nArtifacts\nBETA\nShare Skills\nBETA\nAgent Session Search\nGit & Source Control\nTask Sources\nTerminal\nQuick Commands\nBrowser\nMobile Emulator\nFloating Workspace\n\nINTERFACE\n\nAppearance\nChat UI\nInput & Editing\nNotifications\nShortcuts\nStats & Usage\n\nREMOTE HOSTS\n\nSSH Hosts\nRemote Orca Servers\n\nPRIVACY & SECURITY\n\nPrivacy & Telemetry\n\nADVANCED\n\nAdvanced\n\nEXPERIMENTAL\n\nExperimental\nPlugins\nALPHA\n\nPROJECTS\n\nWindows validation project\nIndependent project\nHost\nLocal Linux\nAccounts, detected agents and terminal options below are for this host.\nSSH Hosts\n\nUse existing machines over SSH for files, terminals, Git, and workspaces.\n\nSync ~/.ssh/config\nAdd host\n1 hosts\nAdded in Orca· 1\nLinux SSH project\nOrca server\nchanggeng@127.0.0.1:32937 · client_key\nConnected\nDisconnect\nRefresh failed\nRun Kimi to refresh\nOff\n—\n·\n0\n2 hosts",
+  "utterances": [
+    "Connecting",
+    "grayed",
+    "Connecting…",
+    "Disconnect",
+    "Connected"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "id": "i78-git-refusal",
+  "description": "Git refuses a newly occupied branch and review opens with no selection",
+  "imageFile": "i78-git-refusal.png",
+  "imageMethod": "Wayland compositor screencopy",
+  "nativeWindow": "Porpita",
+  "appId": "porpita",
+  "keys": [
+    "Tab",
+    "Tab",
+    "Return",
+    "alt+t",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Return"
+  ],
+  "viewport": [
+    1060,
+    790
+  ],
+  "dialog": [
+    "Review kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n0 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nChecked out\n\nSwitch the other worktree to a different branch before trying again.\n\nCheckout path\nCheck checkout\n/tmp/porpita-ui78.1aHEhABb/ssh-cell-rerun/home/Checkout Moved\n\nCancel\nForce Delete\nClose"
+  ],
+  "focus": {
+    "role": "button",
+    "name": "Cancel"
+  },
+  "text": "Search\nTasks\nAutomations\nOrca Mobile\nNew\nProjects\n0\nWindows validation project\nInactive\nmain\nprimary\nWindows acceptance service\nmain\nIndependent project\nActive\nmain\nprimary\nLinux SSH project\nmain\n\nAdd a setup script\n\nIndependent project\n\nAdd a setup command to run when Orca creates new worktrees.\n\nConfigure\nchanggeng@yue-Precision-3680: /tmp/porpita-ui78.1aHEhABb/ssh-cell-rerun/home/project\nchanggeng@yue-Precision-3680:/tmp/porpita-ui78.1a\nHEhABb/ssh-cell-rerun/home/project$  \nIndependent project\nNames\nContents\nREADME.md\nRefresh failed\nRun Kimi to refresh\nOff\n—\n·\n0\n2 hosts\nReview kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n0 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nChecked out\n\nSwitch the other worktree to a different branch before trying again.\n\nCheckout path\nCheck checkout\n/tmp/porpita-ui78.1aHEhABb/ssh-cell-rerun/home/Checkout Moved\n\nCancel\nForce Delete\nClose",
+  "utterances": [
+    "Cancel",
+    "button",
+    "Force Delete 1 Branch",
+    "button",
+    "Porpita",
+    "document web",
+    "Focus mode is sticky.",
+    "0 deleted, 1 not deleted review-topic: Local branch \"review-topic\" is checked out in another worktree. Git reported worktree \"/tmp/porpita-ui78.1aHEhABb/ssh-cell-rerun/home/Checkout Moved\".",
+    "One headline metric per provider. Choose Detailed in the Usage menu to show more limits.",
+    "Usage display is now compact. Usage display is now compact One headline metric per provider. Choose Detailed in the Usage menu to show more limits.",
+    "Notifications alt+T region",
+    "Close toast 0 deleted, 1 not deleted review-topic: Local branch \"review-topic\" is checked out in another worktree. Git reported worktree \"/tmp/porpita-ui78.1aHEhABb/ssh-cell-rerun/home/Checkout Moved\". Review failed branches",
+    "List with 1 item clickable",
+    "Close toast 0 deleted, 1 not deleted review-topic: Local branch \"review-topic\" is checked out in another worktree. Git reported worktree \"/tmp/porpita-ui78.1aHEhABb/ssh-cell-rerun/home/Checkout Moved\". Review failed branches",
+    "Close toast",
+    "button",
+    "Review failed branches",
+    "button",
+    "clickable",
+    "Close toast",
+    "button",
+    "Review failed branches",
+    "button",
+    "Review kept branches Select the Git branches you want to force delete. Unselected branches stay in their repositories. Select all0 of 1 selected review-topicIndependent project · Linux SSH project · 8b8115dChecked outSwitch the other worktree to a different branch befor",
+    "Cancel",
+    "button",
+    "/tmp/porpita-ui78.1aHEhABb/ssh-cell-rerun/home/Checkout Moved"
+  ]
+}

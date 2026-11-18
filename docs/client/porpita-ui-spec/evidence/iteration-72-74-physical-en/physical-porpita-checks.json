@@ -1,0 +1,45 @@
+{
+  "client": "Windows x64",
+  "clientVersion": "0.1.0",
+  "electronVersion": "43.8.6",
+  "server": "physical Linux x86_64",
+  "transport": "OpenSSH forwarding",
+  "pairing": {
+    "matchedLinuxRuntimeId": true,
+    "createdThroughVisibleSettings": true,
+    "serverVersion": "0.1.0+41c16b177c48"
+  },
+  "before": {
+    "sourceWasStandaloneSsh": true,
+    "offeredSettingsOnSameProject": true
+  },
+  "adoption": {
+    "originalProjectIdAndPath": true,
+    "separateManagedRuntime": true
+  },
+  "checkout": {
+    "actualMovedLinuxPath": true,
+    "retainedBothRefs": true,
+    "initialZeroSelection": true
+  },
+  "outage": {
+    "cutRealSshForward": true,
+    "retainedPathAndSelection": true,
+    "blockedSubmit": true,
+    "originalRowFocus": true,
+    "directPairingStillReachable": true
+  },
+  "recovery": {
+    "readFreshGitAfterReconnect": true,
+    "preservedSelectionAndRef": true
+  },
+  "refusal": {
+    "gitRecheckedBeforeDelete": true,
+    "startedRetryAtZeroSelection": true
+  },
+  "result": {
+    "confirmedDeleteOnLinux": true,
+    "pairedWindowsRefKept": true,
+    "clearedPreviousRefusalAndRetry": true
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "i80-card-workbench",
+  "description": "The pending feature card appears in the workbench",
+  "imageFile": "i80-card-workbench.png",
+  "imageMethod": "Wayland compositor screencopy",
+  "nativeWindow": "Porpita",
+  "appId": "porpita",
+  "keys": [],
+  "viewport": [
+    1060,
+    790
+  ],
+  "dialog": [],
+  "focus": {
+    "role": "button",
+    "name": "Application menu"
+  },
+  "text": "Search\nTasks\nAutomations\nOrca Mobile\nNew\nProjects\n0\nIndependent project\nInactive\nConnect\nLegacy checkout\nPorpita\n\nSelect a workspace from the sidebar to begin.\n\nAdd project\nCreate worktree\nCreate worktree\nCtrl\n+\nN\nMove up workspace\nCtrl\n+\n⇧\n+\n↑\nMove down workspace\nCtrl\n+\n⇧\n+\n↓\nSelect a workspace to browse files\nConfigure usage tracking\nOff\n—\n·\n0\n0 hosts\nChat UI is here\nExplain login\nMap out how login works\nRead\nauth.ts\n\nLogin starts in auth.ts: the browser posts to /login, the server checks the password and creates a session, then redirects you to the app. Here’s the flow:\n\nBrowser\npassword\n/login\nSession\ncookie\nApp\nAsk anything, @ to mention files, / for commands\nAsk for approval\nOpus\nAgents can now open as a chat, with rich messages, visuals and images.\nChange anytime in Settings → Chat UI.\nStay in terminal\nUse Chat UI\nApplication menu",
+  "utterances": [
+    "Porpita",
+    "Porpita",
+    "document web",
+    "Focus mode is sticky.",
+    "Application menu"
+  ]
+}

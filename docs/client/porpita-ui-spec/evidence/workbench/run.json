@@ -1,0 +1,115 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable and verified",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "04-shell",
+      "trigger": "Dismiss contextual tour; leave trust to the agent",
+      "result": "not reached",
+      "reason": "locator.waitFor: Timeout 10000ms exceeded."
+    },
+    {
+      "id": "19a-explorer",
+      "trigger": "Inspect a seeded local folder",
+      "result": "not reached",
+      "reason": "locator.waitFor: Timeout 7500ms exceeded."
+    },
+    {
+      "id": "19b-editor",
+      "trigger": "Double click the local file",
+      "result": "not reached",
+      "reason": "locator.dblclick: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "19c-html",
+      "trigger": "Double click the local HTML file",
+      "result": "not reached",
+      "reason": "locator.dblclick: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "19d-artifacts",
+      "trigger": "Open enabled Artifacts sidebar entry",
+      "elapsedMs": 708,
+      "result": "captured"
+    },
+    {
+      "id": "19e-skills",
+      "trigger": "Open enabled Skills sidebar entry",
+      "elapsedMs": 875,
+      "result": "captured"
+    },
+    {
+      "id": "19-fixture-project",
+      "trigger": "Register disposable Git repository by IPC; activate its worktree using Sidebar",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 8000ms exceeded."
+    },
+    {
+      "id": "20-explorer-search",
+      "trigger": "Explorer content mode",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "21-source-control",
+      "trigger": "Source Control activity button",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "21b-diff",
+      "trigger": "Open changed file from Source Control",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "22-new-tab",
+      "trigger": "New Tab menu",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "23-terminal-split",
+      "trigger": "Split Terminal Right button",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "24a-right-dock-before",
+      "trigger": "Right dock before toggle",
+      "result": "not reached",
+      "reason": "locator.waitFor: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "24-right-dock-closed",
+      "trigger": "Toggle Right Sidebar",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "24b-right-dock-reopened",
+      "trigger": "Reverse the right dock toggle",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "25-narrow",
+      "trigger": "Resize hidden desktop viewport",
+      "elapsedMs": 453,
+      "result": "captured"
+    },
+    {
+      "id": "26-reduced-dock",
+      "trigger": "Toggle Right Sidebar with reduced motion",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    }
+  ]
+}

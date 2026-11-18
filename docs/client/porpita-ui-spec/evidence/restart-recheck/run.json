@@ -1,0 +1,43 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 620,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 1876,
+      "result": "captured"
+    },
+    {
+      "id": "50-before-restart",
+      "trigger": "Open a Markdown file from Explorer before ordinary Quit",
+      "elapsedMs": 1795,
+      "result": "captured"
+    },
+    {
+      "id": "51-after-restart",
+      "trigger": "Reopen the same isolated profile and verify active editor",
+      "elapsedMs": 12801,
+      "result": "captured"
+    },
+    {
+      "id": "52-resume-editor",
+      "trigger": "Dismiss optional feature tip and return to restored document",
+      "elapsedMs": 734,
+      "result": "captured"
+    }
+  ]
+}

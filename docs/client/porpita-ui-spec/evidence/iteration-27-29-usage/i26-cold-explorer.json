@@ -1,0 +1,794 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Find files",
+  "section": [],
+  "text": "General\nShared release review\nRelease-review\nShared release review\nRelease-review\nLocal Windows\n\nReview the release checklist\n\n9:00 PM\n\nThe Local queue contains the release checklist.\n\n9:00 PM\nJump to latest\n\nCodex isn't signed in. Run `codex login`.\n\nWorkspace Local · 本机草稿\n\nFull access\nModel\nmain\n· Main checkout\nmain\nShared release review\nRelease-review\nStudio\n\nReview the release checklist\n\n9:00 PM\n\nThe Studio queue contains the release checklist.\n\n9:00 PM\nJump to latest\n\nCodex isn't signed in. Run `codex login`.\n\nWorkspace Studio · 配对草稿\n\nFull access\nModel\nmain\n· Main checkout\nmain\nhandoff\nStudio\nreview-001.md\nreview-002.md\nreview-003.md\nreview-004.md\nreview-005.md\nreview-006.md\nreview-007.md\nreview-008.md\nreview-009.md\nreview-010.md\nreview-011.md\nreview-012.md\nreview-013.md\nreview-014.md\nreview-015.md\nreview-016.md\nreview-017.md\nreview-018.md\nreview-019.md\nreview-020.md\nreview-021.md\nreview-022.md\nreview-023.md\nreview-024.md\nreview-025.md\nreview-026.md\nreview-027.md\nreview-028.md\nreview-029.md\nreview-030.md\nreview-031.md\nreview-032.md\nreview-033.md\nreview-034.md\nreview-035.md\nreview-036.md\nreview-037.md\nreview-038.md\nreview-039.md\nreview-040.md\nreview-041.md\nreview-042.md\nreview-043.md\nreview-044.md\nreview-045.md\nreview-046.md\nreview-047.md\nreview-048.md\nreview-049.md\nreview-050.md\nreview-051.md\nreview-052.md\nreview-053.md\nreview-054.md\nreview-055.md\nreview-056.md\nreview-057.md\nreview-058.md\nreview-059.md\nreview-060.md\nreview-061.md\nreview-062.md\nreview-063.md\nreview-064.md\nreview-065.md\nreview-066.md\nreview-067.md\nreview-068.md\nreview-069.md\nreview-070.md\nreview-071.md\nreview-072.md\nreview-073.md\nreview-074.md\nreview-075.md\nreview-076.md\nUsage on Local Windows\nOff\n—\n·\n0\n1 host",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "General",
+      "label": "Choose group: General",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Shared release review",
+      "label": null,
+      "title": "Shared release review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Shared release review",
+      "title": "Close Shared release review",
+      "test": null
+    },
+    {
+      "text": "Release-review",
+      "label": null,
+      "title": "Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Release-review",
+      "title": "Close Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New work object",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open work",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Return to worktree",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Copy message",
+      "title": "Copy message",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Copy message",
+      "title": "Copy message",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Fork from this response",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Scroll this message to top",
+      "title": "Scroll this message to top",
+      "test": null
+    },
+    {
+      "text": "Jump to latest",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Dismiss",
+      "title": "Dismiss",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Attach file",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Full access",
+      "label": "Permissions Full access",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More chat controls",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Model",
+      "label": "Model",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Start dictation",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Send",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· Main checkout",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Copy message",
+      "title": "Copy message",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Copy message",
+      "title": "Copy message",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Fork from this response",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Scroll this message to top",
+      "title": "Scroll this message to top",
+      "test": null
+    },
+    {
+      "text": "Jump to latest",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Dismiss",
+      "title": "Dismiss",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Attach file",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Full access",
+      "label": "Permissions Full access",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More chat controls",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Model",
+      "label": "Model",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Start dictation",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Send",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· Main checkout",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Parent folder",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Explorer",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer placement",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Clear file filter",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-001.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-002.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-003.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-004.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-005.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-006.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-007.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-008.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-009.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-010.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-011.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-012.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-013.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-014.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-015.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-016.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-017.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-018.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-019.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-020.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-021.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-022.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-023.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-024.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-025.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-026.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-027.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-028.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-029.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-030.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-031.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-032.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-033.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-034.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-035.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-036.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-037.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-038.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-039.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-040.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-041.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-042.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-043.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-044.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-045.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-046.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-047.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-048.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-049.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-050.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-051.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-052.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-053.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-054.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-055.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-056.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-057.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-058.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-059.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-060.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-061.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-062.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-063.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-064.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-065.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-066.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-067.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-068.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-069.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-070.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-071.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-072.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-073.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-074.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-075.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "review-076.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Usage on Local Windows",
+      "label": "Usage on Local Windows",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "1 host",
+      "label": "Remote host connection status",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i26-cold-explorer.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 118642
+}

@@ -1,0 +1,139 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i5-two-sources",
+      "trigger": "Search for the same Codex session ID on Local and Studio",
+      "elapsedMs": 8880,
+      "result": "captured"
+    },
+    {
+      "id": "i5-owning-chat",
+      "trigger": "Read the Studio transcript and open it on its owning runtime",
+      "elapsedMs": 13418,
+      "result": "captured"
+    },
+    {
+      "id": "i5-return-chat",
+      "trigger": "Return from the local worktree to the same Studio chat",
+      "elapsedMs": 3882,
+      "result": "captured"
+    },
+    {
+      "id": "i21-resume-local-chat",
+      "trigger": "Resume the Local Vault result and verify the two original Native Chat identities",
+      "elapsedMs": 10378,
+      "result": "captured"
+    },
+    {
+      "id": "i21-mixed-workspace",
+      "trigger": "Pick the same chat title twice using the distinct Host badges and keep both drafts independent",
+      "elapsedMs": 3749,
+      "result": "captured"
+    },
+    {
+      "id": "i24-source-picker",
+      "trigger": "Show identical project titles with explicit Local and Studio source labels",
+      "elapsedMs": 2000,
+      "result": "captured"
+    },
+    {
+      "id": "i24-two-explorers",
+      "trigger": "Create two scoped instances, each listing only its own actual folder",
+      "elapsedMs": 4813,
+      "result": "captured"
+    },
+    {
+      "id": "i24-open-original-local",
+      "trigger": "Open the shared filename in its Local editor and read the Local document",
+      "elapsedMs": 2265,
+      "result": "captured"
+    },
+    {
+      "id": "i27-usage-follows-chat",
+      "trigger": "Switch between same-title chats and show their different usage owners",
+      "elapsedMs": 2913,
+      "result": "captured"
+    },
+    {
+      "id": "i28-accounts-handoff",
+      "trigger": "Open the owning host’s Accounts page and return to the same Workspace",
+      "elapsedMs": 7945,
+      "result": "captured"
+    },
+    {
+      "id": "i28-populated-usage",
+      "trigger": "Inspect a 37% local quota fixture and its account action at narrow width",
+      "elapsedMs": 2889,
+      "result": "captured"
+    },
+    {
+      "id": "i24-open-original-studio",
+      "trigger": "Open the same filename in the Studio editor and read the Studio document",
+      "elapsedMs": 3160,
+      "result": "captured"
+    },
+    {
+      "id": "i25-move-same-explorer",
+      "trigger": "Move Studio into Workspace and back with its selection, scroll, and input focus",
+      "elapsedMs": 6449,
+      "result": "captured"
+    },
+    {
+      "id": "i25-narrow-workspace",
+      "trigger": "Keep Explorer bound to Studio while switching to a usable Local Chat at 600 × 460",
+      "elapsedMs": 2699,
+      "result": "captured"
+    },
+    {
+      "id": "i25-two-instance-return",
+      "trigger": "Switch to the Local tab and resume its independent filter and selected file",
+      "elapsedMs": 2444,
+      "result": "captured"
+    },
+    {
+      "id": "i26-cold-explorer",
+      "trigger": "Restart the desktop only and restore the embedded Studio Explorer and selected file",
+      "elapsedMs": 27062,
+      "result": "captured"
+    },
+    {
+      "id": "i26-explorer-outage",
+      "trigger": "Stop Studio and verify only its file listing waits while Local remains editable",
+      "elapsedMs": 18336,
+      "result": "captured"
+    },
+    {
+      "id": "i26-explorer-reconnect",
+      "trigger": "Reconnect the original Studio Host and read a file added while it was stopped",
+      "elapsedMs": 23794,
+      "result": "captured"
+    },
+    {
+      "id": "i29-usage-recovers",
+      "trigger": "Read the original Studio usage after recovery and switch back to the Local usage",
+      "elapsedMs": 14875,
+      "result": "captured"
+    },
+    {
+      "id": "i26-explorer-revoked",
+      "trigger": "Withdraw the Studio pairing and reopen the original Workspace with the retired listing redacted",
+      "elapsedMs": 14084,
+      "result": "captured"
+    },
+    {
+      "id": "i26-remove-explorer",
+      "trigger": "Remove the obsolete Explorer and check that the Workspace and Local Explorer remain intact",
+      "elapsedMs": 1756,
+      "result": "captured"
+    }
+  ]
+}

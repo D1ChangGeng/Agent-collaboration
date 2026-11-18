@@ -1,0 +1,478 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "AI 提供商账户可选",
+  "section": [
+    "accounts"
+  ],
+  "text": "返回应用\nCtrl\n+\nF\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n尚未添加项目。\n\nAI 提供商账户\n可选\n\n可选。 Porpita 可与您现有的提供商登录配合使用；仅当您希望 Porpita 帮助在账户之间切换时才添加账户。\n\nOpenCode\n\n在 Porpita 主机的终端中运行此命令以添加账户。选择适用于该主机上新启动的智能体；直接 SSH 连接和 Windows 托管的 WSL 使用各自的凭据。\n\norca account add --agent opencode\n复制添加账户命令\n刷新账户\n系统默认\n当前使用\nDevin\n\n在 Porpita 主机的终端中运行此命令以添加账户。选择适用于该主机上新启动的智能体；直接 SSH 连接和 Windows 托管的 WSL 使用各自的凭据。\n\norca account add --agent devin\n复制添加账户命令\n刷新账户\n系统默认\n当前使用\n账户位置\n\n选择要检查的本地环境以及添加新的托管 Claude 和 Codex 账户的位置。\n\nWindows\nWSL\nClaude\n\n可选。Porpita 可使用系统默认 Claude 登录；仅当你需要快速切换且不想迁移聊天会话时才添加账户。\n\n账户\n\n正在显示 Windows 的账户。新账户会添加到此处。\n\n添加账户\n系统默认\n当前\n使用您当前 Windows Claude 登录名。\nWindows 没有受管理的 Claude 账户。Porpita 将使用该环境的系统默认 Claude 登录，直到您在此处添加一个。\nClaude 在终端中运行期间切换账户时\n\n重启后，每个终端对话都会在新账户上继续。\n\n询问\nCodex\n\n可选。Porpita 可使用系统默认 Codex 登录；仅当你需要在 Porpita 中快速切换账户时才添加账户。\n每个账户在 Porpita 中都保留自己的本地登录上下文。账户身份验证保留在此设备上。\n\n未找到 Windows 的 Codex 登录信息。\n账户\n\n正在显示 Windows 的账户。新账户会添加到此处。\n\n添加账户\n系统默认\n当前\n需要登录\n未找到 Windows 的 Codex 登录信息。\nWindows 没有受管理的 Codex 账户。Porpita 将使用该环境的系统默认 Codex 登录，直到您在此处添加一个。\nGemini CLI（旧版）\n\n保留现有的 Gemini CLI 会话可用。Gemini 凭据不会让您登录 Antigravity。\n\n使用 Gemini CLI 凭据（实验）\n\n从本地 Gemini CLI 安装中提取 OAuth 凭据，用于在 Windows 通过 Google 进行身份验证。这将使用颁发给 Gemini CLI 应用的凭据，而非 Porpita。若 Google 更新 CLI，可能会失效。请自行承担风险。\n\nAntigravity\n\n在此主机上启动 agy 并完成其浏览器登录，然后保存当前帐户。要添加其他帐户，请在 agy 中使用 /logout 并再次登录。 登录说明\n\n没有登录本机 agy 帐户。\n\n保存当前帐户\n刷新帐户\n刷新使用情况\n\nSelect applies and verifies the host default agy credential. Command choices and later account changes are handled by agy. Existing sessions may keep their previous account.\n\nAntigravity Chat 暂不支持 Windows，因此 Antigravity 会在此主机的终端中打开。macOS 或 Linux 主机上的聊天仍可正常使用。\n\nOpenCode Go\n\n配置 OpenCode Go 提供商设置。\n\nOpenCode Go API 密钥\n未保存\n保存\n\n用于在状态栏中显示 OpenCode Go 使用情况。下面的会话 Cookie 仅旧版控制台 (OpenCode Black) 账号需要。\n\nOpenCode Go 会话 cookie\n\n从浏览器的 DevTools → Network → 任何 opencode.ai 请求粘贴完整的 Cookie 标头，包括 __Host-console_session（例如 auth=…; __Host-console_session=…）。认证 cookie 仍然涵盖工作区发现；仅凭认证不足以获取使用情况。OpenCode Go 认证基于 Web，可在 Windows 与 WSL 终端间共享。\n\n工作区 ID 覆盖\n\n登录 opencode.ai 后在 URL 中找到此内容（例如 opencode.ai/workspace/wrk_…/go).\n\nMiniMax\n\n为你的账户配置 MiniMax 用量跟踪。\n\n打开控制台\n\n尚未设置凭据\n\n保存在本地，并发送到所选的 MiniMax 端点以刷新用量。\n\nMiniMax 端点\n海外 (platform.minimax.io)\nMiniMax 会话 Cookie\n未保存\n如何复制\n保存\n\n打开所选控制台并登录，然后从开发者工具复制 Cookie 请求标头（Network → 任意包含 remains 的请求 → Cookie）。\n\n在浏览器中退出登录后，Cookie 将过期。\n\nMiniMax API 密钥\n未保存\n保存\n\n从 MiniMax 控制台 → API 密钥中复制密钥。已保存的 API 密钥优先于 Cookie；使用“忘记密钥”切换回 Cookie。\n\n高级\n\n除非 MiniMax 使用量刷新指向了错误的工作区或模型，否则请保持这些默认值。\n\nGroup ID 覆盖\n使用模型名称\nGrok (xAI)\n\n显示来自 Grok CLI 登录的每周额度使用量（会话文件 ~/.grok/auth.json）。\n\nGrok CLI 文档\n\n未登录 Grok CLI\n\n在终端运行 grok login，然后点击此处的刷新使用量。\n\n刷新使用量\nCursor\n\n显示来自此电脑上已有登录的 Cursor 套餐用量。Porpita 仅读取，不会更改您的 Cursor 登录。\n\nCursor 仪表盘\n\n在此电脑上未找到 Cursor 登录\n\n请使用 Cursor IDE 登录，或在终端中运行 cursor-agent login，然后在此点击“刷新用量”。\n\n刷新用量\nGLM Coding Plan\n\n在状态栏追踪 Z.AI 或智谱（BigModel）GLM Coding Plan 用量。在此保存套餐 API key，无需安装 ZCode CLI。\n\n获取 API key\n\n尚未关联 GLM Coding Plan\n\n在下方保存套餐 API key，或在这台电脑上通过 ZCode CLI 登录。\n\n刷新用量\n套餐站点\nZ.AI（z.ai）\nAPI key\n未保存\n保存\n\n与编码工具使用同一把套餐 key（例如 Claude Code 将 ANTHROPIC_BASE_URL 指向对应站点）。切换上方站点会变更接收该 key 的主机。\n\n通过 ZCode 使用 GLM\n\n登录后即可将 GLM 用作编程智能体。上方的配额 API 密钥仅用于监控用量；ZCode 自行管理登录和模型选择。\n\n选择对应套餐站点的浏览器登录，或使用 ZCode 的隐藏输入 API 密钥设置。登录后，启动 ZCode 并使用 /model 选择 GLM 模型。\n\nZ.AI 浏览器登录\nBigModel 浏览器登录\nZCode API 密钥设置\n关闭\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "复制添加账户命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "刷新账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "当前使用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "复制添加账户命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "刷新账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "当前使用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Windows",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "WSL",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "添加账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "系统默认\n当前\n使用您当前 Windows Claude 登录名。",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "询问",
+      "label": "Claude 在终端中运行期间切换账户时",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "添加账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "系统默认\n当前\n需要登录\n未找到 Windows 的 Codex 登录信息。",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用 Gemini CLI 凭据（实验）",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存当前帐户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "刷新帐户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "刷新使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "海外 (platform.minimax.io)",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "如何复制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "刷新使用量",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "刷新用量",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "刷新用量",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Z.AI（z.ai）",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Z.AI 浏览器登录",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "BigModel 浏览器登录",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "ZCode API 密钥设置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "setting-02.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 22996
+}

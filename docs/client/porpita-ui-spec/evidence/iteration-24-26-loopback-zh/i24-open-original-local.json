@@ -1,0 +1,410 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "default",
+  "focus": "The Local handoff uses the blue release checklist.",
+  "section": [],
+  "text": "搜索\n工作空间（预览）\n任务\n工件\n技能\n自动化\nPorpita 手机端\n新功能\n会话\n0\n所有工作树\n搜索历史会话\nShared release review\nLocal Windows\nRelease-review · main · Codex\n在 Shared release review 中打开\nShared release review\nStudio\nRelease-review · main · Codex\n在 Shared release review 中打开\nTerminal 1\nShared release review\nhandoff-note.md\nU\n命令\n<isolated>/Release-review/handoff/\nhandoff-note.md\n已复制文件路径\nB\nI\nS\nThe Local handoff uses the blue release checklist.\n\n\n\n\n关闭\n—\n·\n0\n1 个主机",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "前进",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "搜索",
+      "label": "搜索工作树和浏览器选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工作空间（预览）",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 GitHub 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 Jira 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "技能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 手机端\n新功能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "查看活动",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "会话",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "所有工作树",
+      "label": "会话筛选",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "搜索历史会话",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "帮助",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示活动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区看板",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换右侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Terminal 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Shared release review",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新标签页",
+      "title": "新标签页",
+      "test": null
+    },
+    {
+      "text": "命令",
+      "label": "添加快捷命令",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "<isolated>/Release-review/handoff/\nhandoff-note.md",
+      "label": null,
+      "title": "<isolated>/Release-review/handoff/handoff-note.md",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "源码",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "富文本编辑器",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更改",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "目录",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "分享为工件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "文件操作",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "正文",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标题 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标题 2",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标题 3",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "B",
+      "label": "粗体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "I",
+      "label": "斜体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "S",
+      "label": "删除线",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "项目符号列表",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "编号列表",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "清单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "引用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关联",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "图像",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更多块",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更多侧边栏选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "1 个主机",
+      "label": "远程主机连接状态",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i24-open-original-local.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 111601
+}

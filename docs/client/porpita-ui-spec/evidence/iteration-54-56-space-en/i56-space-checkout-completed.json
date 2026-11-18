@@ -1,0 +1,13 @@
+{
+  "size": [
+    850,
+    700
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "light",
+  "reducedMotion": false,
+  "focus": "Filter workspaces",
+  "imageFile": "i56-space-checkout-completed.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

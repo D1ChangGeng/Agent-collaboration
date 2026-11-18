@@ -1,0 +1,28 @@
+{
+  "id": "i77-original-row-recovered",
+  "description": "Reconnect and read fresh Git state from the same runtime",
+  "imageFile": "i77-original-row-recovered.png",
+  "imageMethod": "X11 root pixels",
+  "nativeWindow": "Porpita",
+  "keys": [
+    "Return"
+  ],
+  "viewport": [
+    1060,
+    790
+  ],
+  "dialog": [
+    "Review kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n1 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nNo checkout\n\nGit reported no checkout for this branch at the time of the check.\n\nLast reported checkout path\nCheck checkout\n/tmp/porpita-ui75.DoYiWrK3/ssh-cell-r13/home/Checkout Moved\n\nCancel\nForce Delete 1 Branch\nClose"
+  ],
+  "focus": {
+    "role": "button",
+    "name": "Check checkout for review-topic"
+  },
+  "text": "Search\nTasks\nAutomations\nOrca Mobile\nNew\nProjects\n0\nWindows validation project\nInactive\nmain\nprimary\nWindows acceptance service\nmain\nIndependent project\nActive\nmain\nprimary\nLinux SSH project\nmain\n\nAdd a setup script\n\nIndependent project\n\nAdd a setup command to run when Orca creates new worktrees.\n\nConfigure\nTerminal\nTo run a command as administrator (user \"root\"), \nuse \"sudo <command>\".\nSee \"man sudo_root\" for details.\nTo run a command as administrator (user \"root\"), \nuse \"sudo <command>\".\nSee \"man sudo_root\" for details.\nchanggeng@yue-Precision-3680:~/project$  \nIndependent project\nNames\nContents\nREADME.md\nNo usage on Linux SSH project\nOff\n—\n·\n0\n2 hosts\nReview kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n1 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nNo checkout\n\nGit reported no checkout for this branch at the time of the check.\n\nLast reported checkout path\nCheck checkout\n/tmp/porpita-ui75.DoYiWrK3/ssh-cell-r13/home/Checkout Moved\n\nCancel\nForce Delete 1 Branch\nClose",
+  "utterances": [
+    "Reconnect to the original host and check again. Clear this selection to continue with other branches.",
+    "return",
+    "Reconnecting and checking…",
+    "Check checkout for review-topic"
+  ]
+}

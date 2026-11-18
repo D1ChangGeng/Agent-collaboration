@@ -1,0 +1,70 @@
+{
+  "id": "i85-focus-beacon",
+  "imageFile": "i85-focus-beacon.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "viewport": [
+    720,
+    868
+  ],
+  "focused": "Connect",
+  "rows": {
+    "atlas": {
+      "label": {
+        "full": true,
+        "lines": 2
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "beacon": {
+      "label": {
+        "full": true,
+        "lines": 2
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "cedar": {
+      "label": {
+        "full": true,
+        "lines": 2
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    }
+  },
+  "target": "porpita-integration-validation-workspace-beacon",
+  "endpoint": "changgeng@127.0.0.2:45165",
+  "keys": [
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab"
+  ],
+  "aria": "- button \"Connect porpita-integration-validation-workspace-beacon changgeng@127.0.0.2:45165\": Connect",
+  "utterances": [
+    "More actions for porpita-integration-validation-workspace-atlas",
+    "collapsed button",
+    "opens menu",
+    "Select porpita-integration-validation-workspace-beacon changgeng@127.0.0.2:45165",
+    "check box not checked",
+    "Connect porpita-integration-validation-workspace-beacon changgeng@127.0.0.2:45165",
+    "button"
+  ]
+}

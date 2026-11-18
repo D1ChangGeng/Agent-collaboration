@@ -1,0 +1,54 @@
+{
+  "locale": "en",
+  "documentLanguage": "en",
+  "hiddenWindow": true,
+  "refusal": {
+    "width": 760,
+    "reasonVisible": true,
+    "registrationRetained": true,
+    "sourceErrorAvailable": true,
+    "republished": true
+  },
+  "kept": {
+    "workspacePathsRemoved": 2,
+    "originalRefsKept": 2,
+    "filterIndependent": true,
+    "noToastNeeded": true
+  },
+  "checkout": {
+    "location": {
+      "bothPathsFromGit": true,
+      "spacedUnicodePathRetained": true,
+      "manuallyManagedPathVisible": true,
+      "externalPathScrolledIntoView": true
+    },
+    "opened": {
+      "exactRegisteredWorktree": true,
+      "acknowledgedByMain": true,
+      "otherInstanceRefused": true,
+      "sameDialogAndSelection": true,
+      "checkoutWasNotSwitched": true
+    },
+    "returnReview": {
+      "entry": {
+        "workbenchWidth": 1100,
+        "remainedAfterResize": true,
+        "activeCheckoutUnchanged": true
+      },
+      "returned": {
+        "sameSpaceWindow": true,
+        "originatingControlFocused": true,
+        "selectionPreserved": true,
+        "mainWorktreeUnchanged": true
+      },
+      "lifetime": {
+        "cancelledReviewClearedEntry": true,
+        "newReviewStartsWithoutEntry": true,
+        "reloadClearedEntry": false,
+        "closedWindowClearedEntry": true,
+        "staleReturnDidNotOpenWindow": true,
+        "branchesPreserved": true
+      }
+    }
+  }
+}

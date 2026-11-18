@@ -1,0 +1,91 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i5-two-sources",
+      "trigger": "Search for the same Codex session ID on Local and Studio",
+      "elapsedMs": 36772,
+      "result": "captured"
+    },
+    {
+      "id": "i5-owning-chat",
+      "trigger": "Read the Studio transcript and open it on its owning runtime",
+      "elapsedMs": 8178,
+      "result": "captured"
+    },
+    {
+      "id": "i5-return-chat",
+      "trigger": "Return from the local worktree to the same Studio chat",
+      "elapsedMs": 3859,
+      "result": "captured"
+    },
+    {
+      "id": "i21-resume-local-chat",
+      "trigger": "Resume the Local Vault result and verify the two original Native Chat identities",
+      "elapsedMs": 9252,
+      "result": "captured"
+    },
+    {
+      "id": "i21-mixed-workspace",
+      "trigger": "Pick the same chat title twice using the distinct Host badges and keep both drafts independent",
+      "elapsedMs": 3697,
+      "result": "captured"
+    },
+    {
+      "id": "i21-reopen-from-directory",
+      "trigger": "Find the composed Studio Chat in the directory and return to its original Workspace Pane",
+      "elapsedMs": 3285,
+      "result": "captured"
+    },
+    {
+      "id": "i21-short-pane",
+      "trigger": "Switch between the original Hosts at 600 × 460 with reduced motion",
+      "elapsedMs": 2722,
+      "result": "captured"
+    },
+    {
+      "id": "i22-save-qualified-layout",
+      "trigger": "Persist v2 Host, pairing, focus, and splitter ratio through the real preview",
+      "elapsedMs": 2086,
+      "result": "captured"
+    },
+    {
+      "id": "i22-cold-mixed-restore",
+      "trigger": "Close and relaunch only desktop, then reopen the same Host-qualified Workspace",
+      "elapsedMs": 33120,
+      "result": "captured"
+    },
+    {
+      "id": "i23-studio-outage",
+      "trigger": "Stop Studio while the composed Workspace is open and keep working in Local",
+      "elapsedMs": 11057,
+      "result": "captured"
+    },
+    {
+      "id": "i23-studio-reconnect",
+      "trigger": "Recover Studio in place and verify both drafts and the saved split",
+      "elapsedMs": 15067,
+      "result": "captured"
+    },
+    {
+      "id": "i23-pairing-removed",
+      "trigger": "Remove the isolated Studio pairing in Settings and reopen the saved Workspace",
+      "elapsedMs": 10186,
+      "result": "captured"
+    },
+    {
+      "id": "i23-remove-stale-reference",
+      "trigger": "Remove the unavailable reference from the same Workspace and leave Local in focus",
+      "elapsedMs": 1138,
+      "result": "captured"
+    }
+  ]
+}

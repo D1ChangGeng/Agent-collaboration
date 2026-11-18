@@ -1,0 +1,952 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "智能体",
+  "section": [
+    "agents"
+  ],
+  "text": "返回应用\nCtrl\n+\nF\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n尚未添加项目。\n\n智能体\n\n管理 AI 智能体、设置默认值并自定义命令。\n\n智能体打开方式\n\n这台电脑上智能体的默认打开方式。\n\n解释登录流程\n梳理一下登录是怎么工作的\n读取了\nauth.ts\n\n登录从 auth.ts 开始：浏览器提交到 /login，服务器检查密码并创建会话，然后将你重定向到应用。流程如下：\n\n浏览器\n密码\n/login\n会话\nCookie\n应用\n随心输入，@ 引用文件，/ 使用命令\n请求批准\nOpus\n聊天\n\n富文本消息、可视化内容和图片。\n\nClaude\nClaude Code\nOpus · ~/projects/acme-web\n> 梳理一下登录是怎么工作的\nRead\n(src/auth.ts)\n⎿ Read 84 lines\n登录从 auth.ts 开始：浏览器提交到 /login，服务器检查密码并创建会话，然后将你重定向到应用。流程如下：\n❯\n终端\n\n每个智能体自己的 CLI。\n\n按智能体选择\n默认智能体\n\n所选主机上新智能体的默认设置。\n\n自动\nCodex\nGitHub Copilot\nQoder CLI\nKimi\n权限\n完全访问\n\n每个智能体无需询问即可执行的操作。你可以在下方为单个智能体单独设置。\n\n已安装\n4 已检测\n刷新\nCodex\ncodex--dangerously-bypass-approvals-and-sandbox\n聊天\nCLI\n启用\n已禁用\n默认\nGitHub Copilot\ncopilot--yolo\n启用\n已禁用\n默认\nQoder CLI\nqodercli--dangerously-skip-permissions\n启用\n已禁用\n默认\nKimi\nkimi--yolo\n启用\n已禁用\n默认\n可安装\n41 智能体\nClaude\nclaude--dangerously-skip-permissions\n聊天\nCLI\n启用\n已禁用\nClaude Agent Teams\n已禁用\nporpita.cmd claude-teams--dangerously-skip-permissions\n启用\n已禁用\nOpenClaude\nopenclaude--dangerously-skip-permissions\n启用\n已禁用\nGrok\ngrok--permission-mode bypassPermissions\n聊天\nCLI\n启用\n已禁用\nOpenCode 2\nopencode2\n使用 OpenCode 2 自己的设置\n聊天\nCLI\n启用\n已禁用\nOpenCode\nopencode\n使用 OpenCode 自己的设置\n聊天\nCLI\n启用\n已禁用\nMiMo Code\nmimo\n启用\n已禁用\nAnte\nante--yolo\n启用\n已禁用\nTrae\ntraecli--yolo\n启用\n已禁用\nMuse\nmuse--yolo\n启用\n已禁用\nDeepSeek Harness\ndsh-tui\n启用\n已禁用\nQoder CLI China\nqoderclicn--dangerously-skip-permissions\n启用\n已禁用\nZCode\nzcode--mode yolo\n启用\n已禁用\nPi\npi\n聊天\nCLI\n启用\n已禁用\nOMP\nomp\n使用 OMP 自己的设置\n聊天\nCLI\n启用\n已禁用\nPrime Agent\nprime-agent\n启用\n已禁用\nGemini\ngemini--yolo\n启用\n已禁用\nAntigravity\nagy--dangerously-skip-permissions\n聊天\nCLI\n启用\n已禁用\nAider\naider--yes-always\n启用\n已禁用\nGoose\ngooseGOOSE_MODE=auto\n启用\n已禁用\n权限\n与所有智能体相同 ·\n完全访问\n命令\n\n如果 Goose CLI 安装在 PATH 之外，请输入其在此主机上的可执行文件完整路径。\n\nAmp\namp--dangerously-allow-all\n启用\n已禁用\nKilocode\nkilo\n启用\n已禁用\nKiro\nkiro-cli--trust-all-tools\n启用\n已禁用\nCharm\ncrush--yolo\n启用\n已禁用\nAuggie\nauggie\n启用\n已禁用\nAutohand Code\nautohand--unrestricted\n启用\n已禁用\nCline\ncline--auto-approve true\n启用\n已禁用\nCodebuff\ncodebuff\n启用\n已禁用\nFreebuff\nfreebuff\n启用\n已禁用\nCommand Code\ncommand-code--yolo\n启用\n已禁用\nContinue\ncn--allow \"*\"\n启用\n已禁用\nCursor\ncursor-agent--yolo\n启用\n已禁用\nDroid\ndroid--auto high\n启用\n已禁用\nMistral Vibe\nvibe--agent auto-approve\n启用\n已禁用\nQwen Code\nqwen--approval-mode yolo\n启用\n已禁用\nRovo Dev\nacli rovodev run--yolo\n启用\n已禁用\nHermes\nhermes--yolo\n启用\n已禁用\nDevin\ndevin--permission-mode bypass --respect-workspace-trust false\n启用\n已禁用\nOpenClaw\nopenclaw\n启用\n已禁用\nCodeBuddy\ncodebuddy--dangerously-skip-permissions\n启用\n已禁用\nJcode\njcode\n启用\n已禁用\n在账户之间共享 Codex 历史记录\n\n让每个 Codex 账户以及你自己的 ~/.codex 都能继续在其他账户中开始的对话。关闭后，每个账户的历史记录将保持独立。关闭不会移除任何已共享的内容。\n\nLocal Windows\n智能体运行时\n\n对于未覆盖运行时的项目，在 Windows 上检测并启动智能体。\n\nWindows\nWSL\n智能体状态钩子\n\n在 Porpita 中显示工作中、等待中和完成状态。关闭后将移除 Porpita 管理的钩子并停止重新安装。\n\nClaude 子智能体导航\n\n从侧边栏打开 Claude 子智能体。会在 Claude 的 keybindings.json 中添加快捷键，并在新的 Porpita 窗格中加载 Porpita mod。需要 Claude 2.1.300+ 和状态钩子。关闭时会移除 Porpita 添加的快捷键；你删除过的快捷键保持删除状态。\n\nPorpita 启动智能体时信任该文件夹\n\nPorpita 启动的智能体可以跳过“Do you trust this folder?”提示，因此项目的智能体钩子和设置会立即运行。Porpita 会在每个仓库中首次启动智能体时询问一次，你可以在该仓库的设置中更改回答。关闭此项可让智能体始终自行询问。在你没有看着时运行的智能体（例如编排工作进程、自动化以及从手机启动的智能体）如果发出询问，会一直等待，直到你在它的终端中作答。已信任的文件夹仍保持信任。\n\n在自己的服务器上运行每个 Codex 终端\n\n保持 Porpita 的状态和关闭选项卡正常工作。关闭以使用 Codex 的共享服务器及其智能体概述。适用于新终端。\n\n当 Codex 选项卡共享服务器时发出警告\n\n当您自己启动的 Codex 与其他选项卡共享服务器时，在您自己启动的 Codex 上显示一条通知，因为它的智能体状态可能是错误的。\n\n自动生成标签页标题\n\n根据第一个已知智能体提示词生成简短稳定的标签页名称。手动重命名始终优先。\n\n防止电脑休眠\n\n选择“打开”、“智能体”或“关闭”。智能体工作时智能体模式保持唤醒状态；盖子关闭行为遵循该设备的电源设置。\n\n开启\n智能体\n关闭\n提示缓存定时器\n\nClaude 会缓存对话以降低成本。空闲过久后缓存会过期，下一条消息将以更高成本重新发送完整上下文。此倒计时可帮助您了解何时继续。\n\n缓存定时器\n\nClaude 智能体空闲后，在侧边栏中显示倒计时。\n\n关闭\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "按智能体选择",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Codex",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "GitHub Copilot",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Qoder CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Kimi",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "完全访问",
+      "label": "权限",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "刷新",
+      "label": null,
+      "title": "重新读取 shell PATH 并重新检测已安装的智能体",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "默认",
+      "label": null,
+      "title": "设置为默认值",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "默认",
+      "label": null,
+      "title": "设置为默认值",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "默认",
+      "label": null,
+      "title": "设置为默认值",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "默认",
+      "label": null,
+      "title": "设置为默认值",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用 OpenCode 2 自己的设置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用 OpenCode 自己的设置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用 OMP 自己的设置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "折叠智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "与所有智能体相同 ·\n完全访问",
+      "label": "Goose 权限",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已禁用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开智能体设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启用",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "setting-01.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 21526
+}

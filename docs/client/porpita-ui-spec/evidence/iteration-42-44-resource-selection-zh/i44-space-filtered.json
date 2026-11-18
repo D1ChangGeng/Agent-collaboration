@@ -1,0 +1,26 @@
+{
+  "imageFile": "i44-space-filtered.jpg",
+  "size": [
+    1100,
+    700
+  ],
+  "locale": "zh",
+  "theme": "dark",
+  "windowIsolation": {
+    "visible": false,
+    "focused": false
+  },
+  "capture": "CDP screencast from the real Space renderer",
+  "source": "85a2e8ad908b65dfa23bc870472dc4d9e3781f1a",
+  "step": "i44-space-filtered-selection",
+  "run": "run.json",
+  "verifiedJourney": {
+    "linkedWorktrees": 2,
+    "protectedMain": true,
+    "reviewedVisibleOnly": true,
+    "hiddenOnlyUnavailable": true,
+    "restoredByRemovingFilter": true,
+    "cleared": true,
+    "cancelled": true
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Ports on Local Windows",
+  "section": [],
+  "text": "General\nRelease-review\nStudio · Release-review\nRelease-review\nLocal Windows\nhandoff\nnotes.md\nporpita-ports-fixture.cjs\npreview.html\nOff\n—\n·\n1\n0 hosts",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "General",
+      "label": "Choose group: General",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Release-review",
+      "label": null,
+      "title": "Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Release-review",
+      "title": "Close Release-review",
+      "test": null
+    },
+    {
+      "text": "Studio · Release-review",
+      "label": null,
+      "title": "Studio · Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Studio · Release-review",
+      "title": "Close Studio · Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New work object",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open work",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Return to worktree",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Explorer",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer placement",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "handoff",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "notes.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "porpita-ports-fixture.cjs",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "preview.html",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable · local memory",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "1",
+      "label": "Ports on Local Windows",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0 hosts",
+      "label": "Remote host connection status",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i31-ports-outage.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 90277
+}

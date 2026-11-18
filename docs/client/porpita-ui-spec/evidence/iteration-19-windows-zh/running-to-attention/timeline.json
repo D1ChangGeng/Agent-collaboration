@@ -1,0 +1,32 @@
+{
+  "actions": [
+    {
+      "name": "release the scripted provider at the actual tool prompt",
+      "startMs": 18677.811700000002,
+      "endMs": 18678.575200000003
+    },
+    {
+      "name": "wait for the native session status and original prompt",
+      "startMs": 18678.5857,
+      "endMs": 18816.052600000003
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794715211.609885,
+      "receivedAtMs": 18677.8028,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794715211.744971,
+      "receivedAtMs": 18744.594800000003,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794715211.766688,
+      "receivedAtMs": 18764.4761,
+      "file": "002.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

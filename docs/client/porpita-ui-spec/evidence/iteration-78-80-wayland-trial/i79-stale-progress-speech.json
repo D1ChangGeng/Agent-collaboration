@@ -1,0 +1,12 @@
+{
+  "sourceCommit": "f1282c1456b4a8d78605118855cdc76903fbed19",
+  "platform": "Wayland, Sway 1.9",
+  "orca": "51.1",
+  "keys": [
+    "Return"
+  ],
+  "announcementsAfterSubmit": [
+    "Git branches deleted: 1 Deleting Git branches: 1"
+  ],
+  "includedStaleProgress": true
+}

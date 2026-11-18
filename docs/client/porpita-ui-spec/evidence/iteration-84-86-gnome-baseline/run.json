@@ -1,0 +1,29 @@
+{
+  "mode": "baseline",
+  "steps": [
+    "i84-baseline-wide",
+    "i84-baseline-atlas",
+    "i84-baseline-beacon",
+    "i84-baseline-cedar"
+  ],
+  "sourceCommit": "1c7c37ecc49d07f64bb7d8fa70a9da387653c480",
+  "compositor": {
+    "human_readable": "GNOME Shell / Mutter 46.2",
+    "monitor": [
+      1440,
+      900
+    ],
+    "xwayland": false
+  },
+  "reader": "Orca version 51.1, AT-SPI2 version: 2.62.1, Session: wayland",
+  "product": {
+    "version": "0.1.0",
+    "electron": "43.8.6"
+  },
+  "primarySpeech": {
+    "atlas": false,
+    "beacon": false,
+    "cedar": false
+  },
+  "completed": true
+}

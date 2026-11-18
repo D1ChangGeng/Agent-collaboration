@@ -1,0 +1,8 @@
+{
+  "product": "0.1.0",
+  "architecture": "x64",
+  "platform": "win32",
+  "anyVisible": false,
+  "sourceCommit": "619c37d7487b31aeca8ad5c7bf643cafba746a2a",
+  "counterpartRefUnchanged": true
+}

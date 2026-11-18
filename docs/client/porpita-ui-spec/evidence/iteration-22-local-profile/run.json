@@ -1,0 +1,151 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i9-two-worktrees",
+      "trigger": "Open two real local Native Chats side by side from separate worktrees",
+      "elapsedMs": 2174,
+      "result": "captured"
+    },
+    {
+      "id": "i9-return-to-pane",
+      "trigger": "Switch at 600px without moving either session and restore the split",
+      "elapsedMs": 1903,
+      "result": "captured"
+    },
+    {
+      "id": "i9-pane-budget",
+      "trigger": "Keep two panes readable near the split threshold",
+      "elapsedMs": 1328,
+      "result": "captured"
+    },
+    {
+      "id": "i9-reopen",
+      "trigger": "Close only the Workspace tab and reopen the same layout and drafts",
+      "elapsedMs": 2372,
+      "result": "captured"
+    },
+    {
+      "id": "i10-groups",
+      "trigger": "Create a long-named group and move the active Workspace from the context menu",
+      "elapsedMs": 7729,
+      "result": "captured"
+    },
+    {
+      "id": "i10-narrow-search",
+      "trigger": "Find a hidden tab across all groups at 600px with window buttons clear",
+      "elapsedMs": 2463,
+      "result": "captured"
+    },
+    {
+      "id": "i10-layout-restore",
+      "trigger": "Reload the isolated desktop renderer and restore the selected group and Workspace",
+      "elapsedMs": 7714,
+      "result": "captured"
+    },
+    {
+      "id": "i11-fixed-scope",
+      "trigger": "Open a standalone Explorer for the original worktree and find a real file",
+      "elapsedMs": 4426,
+      "result": "captured"
+    },
+    {
+      "id": "i11-move-panel",
+      "trigger": "Move the same Explorer into a Workspace and back while selecting the other worktree chat",
+      "elapsedMs": 3245,
+      "result": "captured"
+    },
+    {
+      "id": "i11-detach",
+      "trigger": "Return the same Explorer instance to its top-level tab",
+      "elapsedMs": 2388,
+      "result": "captured"
+    },
+    {
+      "id": "i11-original-file",
+      "trigger": "Open the file through its original worktree editor",
+      "elapsedMs": 2747,
+      "result": "captured"
+    },
+    {
+      "id": "i12-profile-save",
+      "trigger": "Persist a Workspace with its two sessions and an embedded Explorer",
+      "elapsedMs": 2181,
+      "result": "captured"
+    },
+    {
+      "id": "i12-legacy-migration",
+      "trigger": "Adopt the previous preview record the first time a desktop profile opens",
+      "elapsedMs": 9622,
+      "result": "captured"
+    },
+    {
+      "id": "i22-v1-profile",
+      "trigger": "Read a v1 local layout from the profile and write qualified references on the next split edit",
+      "elapsedMs": 9484,
+      "result": "captured"
+    },
+    {
+      "id": "i12-cold-restore",
+      "trigger": "Relaunch Electron and return to the same Workspaces and embedded file query",
+      "elapsedMs": 32834,
+      "result": "captured"
+    },
+    {
+      "id": "i12-read-failure",
+      "trigger": "Keep the saved data intact when the layout cannot be decoded",
+      "elapsedMs": 10283,
+      "result": "captured"
+    },
+    {
+      "id": "i12-retry-layout",
+      "trigger": "Retry loading the saved layout from the same entry",
+      "elapsedMs": 1428,
+      "result": "captured"
+    },
+    {
+      "id": "i13-location",
+      "trigger": "Show the owning Workspace below a matching open Chat",
+      "elapsedMs": 3123,
+      "result": "captured"
+    },
+    {
+      "id": "i13-focus-chat",
+      "trigger": "Enter the result and focus the original Chat inside its Workspace",
+      "elapsedMs": 1656,
+      "result": "captured"
+    },
+    {
+      "id": "i13-single-view",
+      "trigger": "Return to the worktree surface and let the original view take over",
+      "elapsedMs": 4108,
+      "result": "captured"
+    },
+    {
+      "id": "i13-normal-fallback",
+      "trigger": "Open a Chat whose Workspace has been closed using the ordinary Worktree route",
+      "elapsedMs": 19437,
+      "result": "captured"
+    },
+    {
+      "id": "i14-cancel-move",
+      "trigger": "Cancel a drop after the destination menu opens and return focus to the source tab",
+      "elapsedMs": 4965,
+      "result": "captured"
+    },
+    {
+      "id": "i14-move-to-group",
+      "trigger": "Confirm another group and find the same workspace, drafts, and tool",
+      "elapsedMs": 7175,
+      "result": "captured"
+    }
+  ]
+}

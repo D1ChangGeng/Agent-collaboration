@@ -1,0 +1,43 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i66-paired-host-checkout",
+      "trigger": "Read the current checkout from the retained paired Host",
+      "elapsedMs": 10712,
+      "result": "captured"
+    },
+    {
+      "id": "i67-paired-host-offline",
+      "trigger": "Keep the selection and previous checkout while Studio is disconnected",
+      "result": "not reached",
+      "reason": "locator.waitFor: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog', { name: 'Review kept branches', exact: true }).locator('li').filter({ hasText: 'checkout-review' }).getByText('Host unavailable', { exact: true }) to be visible\u001b[22m\n"
+    },
+    {
+      "id": "i67-paired-host-recovered",
+      "trigger": "Reconnect the same pairing and check again in the same review",
+      "result": "not reached",
+      "reason": "undefined == true"
+    },
+    {
+      "id": "i67-paired-host-retry",
+      "trigger": "Reopen a fresh review when Git refuses a checkout that appeared after the check",
+      "result": "not reached",
+      "reason": "undefined == true"
+    },
+    {
+      "id": "i67-paired-host-result",
+      "trigger": "Release the checkout and submit again only on the original paired host",
+      "result": "not reached",
+      "reason": "undefined == true"
+    }
+  ]
+}

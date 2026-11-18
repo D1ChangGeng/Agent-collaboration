@@ -1,0 +1,490 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "浏览器",
+  "section": [
+    "browser"
+  ],
+  "text": "返回应用\nCtrl\n+\nF\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n尚未添加项目。\n\n浏览器\n\n主页、链接路由和会话 cookie。\n\n智能体浏览器使用\n\n让编码智能体通过您的登录来驱动此浏览器。\n\n默认主页\n\n创建新浏览器选项卡时打开的 URL。留空以打开空白选项卡。\n\n保存\n默认搜索引擎\n\n在地址栏中输入非 URL 文本时使用。\n\nGoogle\n默认缩放\n\n未单独设置缩放的网站使用的缩放级别。\n\n100%\n浏览器身份\n\n为每个浏览器配置文件和页面选择用户代理。更改在重新启动后生效。\n\n已清理\n原生\n站点权限\n\n网站在使用摄像头、麦克风、位置等资源前会请求您的许可。您可以更改对各个网站允许或阻止的权限。\n\n尚未允许或阻止任何网站。\n\n链路路由\n\n在 Porpita 内置浏览器中打开 Porpita 各处的 http(s) 链接。登录页面和 Shift+Ctrl+click 始终使用系统浏览器。\n\n按住 Shift 在 Porpita 中打开\n\n链接在系统浏览器中打开。启用后，Shift+Ctrl+点击会改在 Porpita 内置浏览器中打开。\n\n在后台打开链接\n\n终端、聊天和 Markdown 中的链接会在浏览器中打开，焦点仍停留在你点击的位置。\n\n终端 URL 点击次数\n\n控制点击终端窗格和聊天记录中打印的已检测的 URL。\n\n简单的点击\n\n选择左键单击是显示操作、打开 URL 还是将其留给终端。 Cmd/Ctrl-单击始终直接打开。\n\n操作\n打开网址\n交给终端\n中键单击\n\n选择鼠标滚轮单击对已检测的终端 URL 执行的操作。\n\n操作\n打开网址\n交给终端\nlocalhost 工作树标签\n\n将工作区端口作为工作树专属的 Porpita localhost URL 打开，便于区分浏览器标签页。\n\n新标签页使用的配置文件\n\n在所有位置共享默认配置文件，或为每个仓库或工作区分配独立的 Cookie 和存储空间，避免本地开发服务器共用登录状态。\n\n共享\n按仓库\n按工作区\n远程浏览\n\n远程工作区页面呈现的位置及其网络流量的离开位置。\n\n远程服务器工作区\n\n页面呈现的位置。流量始终通过远程服务器。仅适用于新页面。\n\n当前设备\n服务器（流式传输）\nSSH 工作区\n\n浏览器流量从哪里离开。页面始终在此设备上呈现。\n\nSSH 主机\n当前设备\n会话和 Cookie\n\n为新浏览器选项卡选择默认配置文件。通过以下方式导入 cookie 并切换每个选项卡的配置文件 ··· 工具栏菜单。\n\n添加配置文件\nDefault\n当前\n\n没有导入cookie\n\n导入 Cookie\nGoogle Cookies\n\nGoogle ties its sign-ins to the browser they were made in, so Orca doesn't import Google cookies from other browsers. If Google is stuck on the wrong account or keeps signing you out, clear Google cookies from the active profile, then sign in to Google again in Orca. Other sites stay signed in.\n\nClear Google cookies…\nPasswords\n\nSaved logins for the Default profile. Orca fills one only when you pick it under a sign-in field.\n\nImport\nAdd\nOffer to save passwords\n\nAfter you sign in to a site in Orca’s browser, offer to save the login.\n\nAsk for Touch ID before filling\n\nThis computer can’t confirm it’s you with Touch ID, so passwords show and fill without a check.\n\nNo saved passwords yet\n\nOrca offers to save a login after you sign in. You can also bring them from another browser or a CSV file.\n\nDelete all password data\n\nEvery saved password, note and never-save site in the Default profile.\n\nDelete…\n关闭\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "启用智能体浏览器使用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Google",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "100%",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已清理",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "原生",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "链路路由",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "按住 Shift 在 Porpita 中打开",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在后台打开链接",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "操作",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开网址",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "交给终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "操作",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开网址",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "交给终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "localhost 工作树标签",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "共享",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "按仓库",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "按工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "当前设备",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "服务器（流式传输）",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "当前设备",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "添加配置文件",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "导入 Cookie",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Clear Google cookies…",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Import",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Add",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Offer to save passwords",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Ask for Touch ID before filling",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Delete…",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "setting-18.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 38688
+}

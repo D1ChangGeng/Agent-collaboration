@@ -1,0 +1,61 @@
+{
+  "sourceCommit": "1c7c37ecc49d07f64bb7d8fa70a9da387653c480",
+  "wayland": {
+    "compositor": "1.9",
+    "socket": "wayland-1",
+    "appId": "porpita",
+    "shell": "xdg_shell",
+    "input": "virtual keyboard with a standard US evdev map",
+    "x11DisplaySet": false
+  },
+  "linux": {
+    "product": "0.1.0",
+    "electron": "43.8.6",
+    "platform": "linux",
+    "architecture": "x64",
+    "packaged": true,
+    "profile": "isolated"
+  },
+  "display": "isolated Wayland with Sway and GNOME Orca",
+  "tipHiddenInServerSettings": true,
+  "pairingCancelFocus": true,
+  "pairedWithWindows": true,
+  "tipResumedInWorkbench": true,
+  "legacyWorktreeRemovalWithKeyboard": true,
+  "sshActionClear": true,
+  "tipHiddenInSshSettings": true,
+  "projectAdoptedWithOriginalIdentity": true,
+  "sshActionKeepsFocus": true,
+  "adoptedWorktreeRemovalWithKeyboard": true,
+  "latestNotificationFocus": {
+    "before": "<body style=\"\">\n    <div id=\"root\"><div class=\"app-layout\" style=\"--collapsed-sidebar-header-width: 280px; --window-controls-width: 138px; --window-controls-height: 36px; --mac-tra",
+    "after": "<ol dir=\"ltr\" tabindex=\"-1\" class=\"toaster group\" data-sonner-toaster=\"true\" data-sonner-theme=\"light\" data-y-position=\"bottom\" data-x-position=\"right\" style=\"--front-toast-height:"
+  },
+  "tipHiddenDuringReview": true,
+  "outageVoiceRecorded": true,
+  "outagePreservedFocusAndSelection": true,
+  "deletedOnlyFromSshProject": true,
+  "receiptVoiceRecorded": true,
+  "automaticReceiptSpoken": true,
+  "receiptAnnouncements": 1,
+  "receiptKeys": [
+    "Return"
+  ],
+  "completed": true,
+  "captured": [
+    "i80-card-workbench",
+    "i80-server-settings",
+    "i78-pair-dialog",
+    "i78-pair-cancel",
+    "i78-windows-paired",
+    "i80-card-returned",
+    "i78-original-ssh-workspace",
+    "i80-ssh-settings",
+    "i78-adopted-ssh-host",
+    "i78-moved-checkout",
+    "i78-original-row-outage",
+    "i78-original-row-recovered",
+    "i78-git-refusal",
+    "i79-automatic-receipt"
+  ]
+}

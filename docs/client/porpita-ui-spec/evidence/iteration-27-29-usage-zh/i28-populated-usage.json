@@ -1,0 +1,284 @@
+{
+  "size": [
+    600,
+    460
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "default",
+  "focus": "Local Windows 的用量所有智能体详细精简Codex5h37%使用详情与历史管理账户…",
+  "section": [],
+  "text": "通用\nShared release review\nStudio · Release-review\nRelease-review\nShared release review\nShared release review\nRelease-review\nLocal Windows\n\nReview the release checklist\n\n21:00\n\nThe Local queue contains the release checklist.\n\n21:00\n跳到最新消息\n\nCodex 尚未登录。请运行 `codex login`。\n\nWorkspace Local · 本机草稿\n\n完全访问\n模型\nLAPTOP-FYGE2ZMR\nmain\n· 主工作副本\nmain\nLocal Windows\n已用\n37% 5h\n关闭\n—\n·\n0\n1 个主机\nLocal Windows 的用量\n所有智能体\n详细\n精简\nCodex\n5h\n37%\n使用详情与历史\n管理账户…",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "通用",
+      "label": "选择分组：通用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Shared release review",
+      "label": null,
+      "title": "Shared release review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭 Shared release review",
+      "title": "关闭 Shared release review",
+      "test": null
+    },
+    {
+      "text": "Studio · Release-review",
+      "label": null,
+      "title": "Studio · Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭 Studio · Release-review",
+      "title": "关闭 Studio · Release-review",
+      "test": null
+    },
+    {
+      "text": "Release-review",
+      "label": null,
+      "title": "Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭 Release-review",
+      "title": "关闭 Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新建工作对象",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "查找工作对象",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Shared release review",
+      "label": "切换窗格",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "复制消息",
+      "title": "复制消息",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "复制消息",
+      "title": "复制消息",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "从此回复创建分支",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "将此消息滚动到顶部",
+      "title": "将此消息滚动到顶部",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Review the release checklist",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "跳到最新消息",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "关闭",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "附加文件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "完全访问",
+      "label": "权限 完全访问",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更多聊天控件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "模型",
+      "label": "模型",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "开始听写",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "发送",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· 主工作副本",
+      "label": "复制 main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "复制 main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Local Windows\n已用\n37% 5h",
+      "label": "Local Windows 的用量",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "1 个主机",
+      "label": "远程主机连接状态",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "详细",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "精简",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Codex\n5h\n37%",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用详情与历史",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "管理账户…",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i28-populated-usage.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 127439
+}

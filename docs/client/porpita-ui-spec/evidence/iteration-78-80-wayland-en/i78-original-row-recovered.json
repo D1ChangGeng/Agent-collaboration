@@ -1,0 +1,28 @@
+{
+  "id": "i78-original-row-recovered",
+  "description": "Reconnect and read fresh Git state from the same runtime",
+  "imageFile": "i78-original-row-recovered.png",
+  "imageMethod": "Wayland compositor screencopy",
+  "nativeWindow": "Porpita",
+  "appId": "porpita",
+  "keys": [
+    "Return"
+  ],
+  "viewport": [
+    1060,
+    790
+  ],
+  "dialog": [
+    "Review kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n1 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nNo checkout\n\nGit reported no checkout for this branch at the time of the check.\n\nLast reported checkout path\nCheck checkout\n/tmp/porpita-ui78.1aHEhABb/ssh-cell-rerun/home/Checkout Moved\n\nCancel\nForce Delete 1 Branch\nClose"
+  ],
+  "focus": {
+    "role": "button",
+    "name": "Check checkout for review-topic"
+  },
+  "text": "Search\nTasks\nAutomations\nOrca Mobile\nNew\nProjects\n0\nWindows validation project\nInactive\nmain\nprimary\nWindows acceptance service\nmain\nIndependent project\nActive\nmain\nprimary\nLinux SSH project\nmain\n\nAdd a setup script\n\nIndependent project\n\nAdd a setup command to run when Orca creates new worktrees.\n\nConfigure\nchanggeng@yue-Precision-3680: /tmp/porpita-ui78.1aHEhABb/ssh-cell-rerun/home/project\nchanggeng@yue-Precision-3680:/tmp/porpita-ui78.1a\nHEhABb/ssh-cell-rerun/home/project$  \nIndependent project\nNames\nContents\nREADME.md\nRefresh failed\nRun Kimi to refresh\nOff\n—\n·\n0\n2 hosts\nReview kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n1 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nNo checkout\n\nGit reported no checkout for this branch at the time of the check.\n\nLast reported checkout path\nCheck checkout\n/tmp/porpita-ui78.1aHEhABb/ssh-cell-rerun/home/Checkout Moved\n\nCancel\nForce Delete 1 Branch\nClose",
+  "utterances": [
+    "Reconnecting and checking…",
+    "Check checkout for review-topic",
+    "Git reported no checkout for this branch at the time of the check."
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "size": [
+    1100,
+    700
+  ],
+  "dpr": 1,
+  "lang": "zh",
+  "theme": "dark",
+  "reducedMotion": false,
+  "focus": null,
+  "imageFile": "i50-space-branch-review-selected.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

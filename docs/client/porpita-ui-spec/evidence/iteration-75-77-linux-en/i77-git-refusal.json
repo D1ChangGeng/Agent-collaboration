@@ -1,0 +1,56 @@
+{
+  "id": "i77-git-refusal",
+  "description": "Git refuses a newly occupied branch and review opens with no selection",
+  "imageFile": "i77-git-refusal.png",
+  "imageMethod": "X11 root pixels",
+  "nativeWindow": "Porpita",
+  "keys": [
+    "Tab",
+    "Tab",
+    "Return",
+    "alt+t",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Return"
+  ],
+  "viewport": [
+    1060,
+    790
+  ],
+  "dialog": [
+    "Review kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n0 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nChecked out\n\nSwitch the other worktree to a different branch before trying again.\n\nCheckout path\nCheck checkout\n/tmp/porpita-ui75.DoYiWrK3/ssh-cell-r13/home/Checkout Moved\n\nCancel\nForce Delete\nClose"
+  ],
+  "focus": {
+    "role": "button",
+    "name": "Cancel"
+  },
+  "text": "Search\nTasks\nAutomations\nOrca Mobile\nNew\nProjects\n0\nWindows validation project\nInactive\nmain\nprimary\nWindows acceptance service\nmain\nIndependent project\nActive\nmain\nprimary\nLinux SSH project\nmain\n\nAdd a setup script\n\nIndependent project\n\nAdd a setup command to run when Orca creates new worktrees.\n\nConfigure\nTerminal\nTo run a command as administrator (user \"root\"), \nuse \"sudo <command>\".\nSee \"man sudo_root\" for details.\nTo run a command as administrator (user \"root\"), \nuse \"sudo <command>\".\nSee \"man sudo_root\" for details.\nchanggeng@yue-Precision-3680:~/project$  \nIndependent project\nNames\nContents\nREADME.md\nNo usage on Linux SSH project\nOff\n—\n·\n0\n2 hosts\nReview kept branches\n\nSelect the Git branches you want to force delete. Unselected branches stay in their repositories.\n\nSelect all\n0 of 1 selected\nreview-topic\nIndependent project · Linux SSH project · 8b8115d\nChecked out\n\nSwitch the other worktree to a different branch before trying again.\n\nCheckout path\nCheck checkout\n/tmp/porpita-ui75.DoYiWrK3/ssh-cell-r13/home/Checkout Moved\n\nCancel\nForce Delete\nClose",
+  "utterances": [
+    "Git reported no checkout for this branch at the time of the check.",
+    "tab",
+    "Cancel push button.",
+    "tab",
+    "Force Delete 1 Branch push button.",
+    "return",
+    "Porpita",
+    "Porpita document web.",
+    "0 deleted, 1 not deleted",
+    "review-topic: Local branch \"review-topic\" is checked out in another worktree. Git reported worktree \"/tmp/porpita-ui75.DoYiWrK3/ssh-cell-r13/home/Checkout Moved\".",
+    "Review failed branches",
+    "left alt",
+    "t",
+    "region Notifications alt+T",
+    "Close toast 0 deleted, 1 not deleted review-topic: Local branch \"review-topic\" is checked out in another worktree. Git reported worktree \"/tmp/porpita-ui75.DoYiWrK3/ssh-cell-r13/home/Checkout Moved\". Review failed branches.",
+    "List with 1 item.",
+    "clickable.",
+    "tab",
+    "Close toast 0 deleted, 1 not deleted review-topic: Local branch \"review-topic\" is checked out in another worktree. Git reported worktree \"/tmp/porpita-ui75.DoYiWrK3/ssh-cell-r13/home/Checkout Moved\". Review failed branches.",
+    "tree level 1 clickable.",
+    "tab",
+    "Close toast push button.",
+    "tab",
+    "Review failed branches push button.",
+    "return"
+  ]
+}

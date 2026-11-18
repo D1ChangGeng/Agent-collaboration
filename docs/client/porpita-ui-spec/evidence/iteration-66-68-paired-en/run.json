@@ -1,0 +1,43 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i66-paired-host-checkout",
+      "trigger": "Read the current checkout from the retained paired Host",
+      "elapsedMs": 17481,
+      "result": "captured"
+    },
+    {
+      "id": "i67-paired-host-offline",
+      "trigger": "Keep the selection and previous checkout while Studio is disconnected",
+      "elapsedMs": 1330,
+      "result": "captured"
+    },
+    {
+      "id": "i67-paired-host-recovered",
+      "trigger": "Reconnect the same pairing and check again in the same review",
+      "elapsedMs": 2677,
+      "result": "captured"
+    },
+    {
+      "id": "i67-paired-host-retry",
+      "trigger": "Reopen a fresh review when Git refuses a checkout that appeared after the check",
+      "elapsedMs": 2977,
+      "result": "captured"
+    },
+    {
+      "id": "i67-paired-host-result",
+      "trigger": "Release the checkout and submit again only on the original paired host",
+      "elapsedMs": 4706,
+      "result": "captured"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "kernel": "Linux 6.11.0-17-generic x86_64",
+  "virtualization": "none",
+  "transport": "OpenSSH over network to registered workstation",
+  "separateSshInvocations": true,
+  "actualWorktreeMoved": true,
+  "lastCheckout": "<fixture>/Checkout Moved",
+  "sameNamedLocalRefHadSameHead": true,
+  "bothRefsPreserved": true
+}

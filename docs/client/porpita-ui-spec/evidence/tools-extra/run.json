@@ -1,0 +1,133 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 676,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 2989,
+      "result": "captured"
+    },
+    {
+      "id": "04-shell",
+      "trigger": "Dismiss contextual tour; leave trust to the agent",
+      "elapsedMs": 553,
+      "result": "captured"
+    },
+    {
+      "id": "19a-explorer",
+      "trigger": "Inspect a seeded local folder",
+      "elapsedMs": 545,
+      "result": "captured"
+    },
+    {
+      "id": "19b-editor",
+      "trigger": "Double click the local file",
+      "elapsedMs": 2257,
+      "result": "captured"
+    },
+    {
+      "id": "19c-html",
+      "trigger": "Double click the local HTML file",
+      "result": "not reached",
+      "reason": "locator.dblclick: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "20-explorer-search",
+      "trigger": "Explorer content mode",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "30-appearance",
+      "trigger": "Go to Appearance; set dark theme in the test profile",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "31-dark-workbench",
+      "trigger": "Return to the same workbench in dark theme",
+      "elapsedMs": 569,
+      "result": "captured"
+    },
+    {
+      "id": "32-tasks-settled",
+      "trigger": "Open Tasks and wait for its Source Bar",
+      "elapsedMs": 2161,
+      "result": "captured"
+    },
+    {
+      "id": "22-new-tab",
+      "trigger": "New Tab menu",
+      "elapsedMs": 1098,
+      "result": "captured"
+    },
+    {
+      "id": "33-browser-blank",
+      "trigger": "Choose New Browser Tab from the menu",
+      "elapsedMs": 1751,
+      "result": "captured"
+    },
+    {
+      "id": "23-terminal-split",
+      "trigger": "Split Terminal Right button",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "24a-right-dock-before",
+      "trigger": "Right dock before toggle",
+      "elapsedMs": 535,
+      "result": "captured"
+    },
+    {
+      "id": "24-right-dock-closed",
+      "trigger": "Toggle Right Sidebar",
+      "elapsedMs": 860,
+      "result": "captured"
+    },
+    {
+      "id": "24b-right-dock-reopened",
+      "trigger": "Reverse the right dock toggle",
+      "elapsedMs": 767,
+      "result": "captured"
+    },
+    {
+      "id": "25-narrow",
+      "trigger": "Resize hidden desktop viewport",
+      "elapsedMs": 628,
+      "result": "captured"
+    },
+    {
+      "id": "26-reduced-dock",
+      "trigger": "Toggle Right Sidebar with reduced motion",
+      "elapsedMs": 887,
+      "result": "captured"
+    },
+    {
+      "id": "27-add-project",
+      "trigger": "Open Add Project without submitting",
+      "elapsedMs": 1554,
+      "result": "captured"
+    },
+    {
+      "id": "28-new-worktree",
+      "trigger": "Open New Workspace without submitting",
+      "elapsedMs": 1510,
+      "result": "captured"
+    }
+  ]
+}

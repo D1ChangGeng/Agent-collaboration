@@ -1,0 +1,40 @@
+{
+  "scope": {
+    "topology": "Two isolated runtime profiles on the same Windows machine",
+    "fixture": "Same provider session ID and title; different transcripts and worktrees",
+    "verification": "Actual adopted chat IDs, input focus and unsent drafts",
+    "limits": "No multi-machine latency, no shared raw worktree key, no account-backed model requests"
+  },
+  "adoptedBoth": {
+    "localTranscript": true,
+    "pairedTranscript": true,
+    "nativeTabsPerOwner": [
+      1,
+      1
+    ]
+  },
+  "ownerChips": {
+    "exactTitleMatches": 2,
+    "distinctReadableHostLabels": true,
+    "viewport": "860×520"
+  },
+  "routedBoth": {
+    "queryPreserved": true,
+    "nativeTabIdsPreserved": true,
+    "originalInputsFocused": true,
+    "draftsPreserved": true
+  },
+  "offline": {
+    "studioDisabled": true,
+    "localStillOperable": true,
+    "queryPreserved": true
+  },
+  "scopedReconnect": true,
+  "reconnected": {
+    "contact": "explicit reconnect",
+    "sameTab": true,
+    "sameDraft": true,
+    "scopePreserved": true,
+    "queryPreserved": true
+  }
+}

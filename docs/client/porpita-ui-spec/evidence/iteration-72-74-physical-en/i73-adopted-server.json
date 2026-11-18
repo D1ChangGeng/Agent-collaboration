@@ -1,0 +1,358 @@
+{
+  "size": [
+    1000,
+    720
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "\n    Back to appCtrl+FAI CapabilitiesAgentsAI Provider AccountsOptionalOrchestrationComputer UseVoiceSet UpOrca AccountG",
+  "section": [
+    "ssh"
+  ],
+  "text": "Back to app\nCtrl\n+\nF\n\nAI CAPABILITIES\n\nAgents\nAI Provider Accounts\nOPTIONAL\nOrchestration\nComputer Use\nVoice\n\nSET UP\n\nOrca Account\nGeneral\nIntegrations\nMobile\n\nWORKFLOWS\n\nAutomations\nArtifacts\nBETA\nShare Skills\nBETA\nAgent Session Search\nGit & Source Control\nTask Sources\nTerminal\nQuick Commands\nBrowser\nMobile Emulator\nFloating Workspace\n\nINTERFACE\n\nAppearance\nChat UI\nInput & Editing\nNotifications\nShortcuts\nStats & Usage\n\nREMOTE HOSTS\n\nSSH Hosts\nRemote Orca Servers\n\nPRIVACY & SECURITY\n\nPrivacy & Telemetry\n\nADVANCED\n\nAdvanced\n\nEXPERIMENTAL\n\nExperimental\nPlugins\nALPHA\n\nPROJECTS\n\nIndependent project\nSSH\nHost\nLocal Windows\nAccounts, detected agents and terminal options below are for this host.\nSSH Hosts\n\nUse existing machines over SSH for files, terminals, Git, and workspaces.\n\nSync ~/.ssh/config\nAdd host\n1 hosts\nAdded in Orca· 1\nLinux SSH project\nOrca server\nchanggeng@127.0.0.1:62586 · id_ed25519\nConnected\nDisconnect\nOff\n—\n·\n0\n2 hosts",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Back to app",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Agents",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI Provider Accounts\nOPTIONAL",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Orchestration",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Computer Use",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Voice",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Orca Account",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "General",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Integrations",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Mobile",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Artifacts\nBETA",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Share Skills\nBETA",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Agent Session Search",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git & Source Control",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Task Sources",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Terminal",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Quick Commands",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Browser",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Mobile Emulator",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Floating Workspace",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Appearance",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Chat UI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Input & Editing",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Notifications",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Shortcuts",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Stats & Usage",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH Hosts",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Remote Orca Servers",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Privacy & Telemetry",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Advanced",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Experimental",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Plugins\nALPHA",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Independent project\nSSH",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Local Windows",
+      "label": "Host",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Sync ~/.ssh/config",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Add host",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More SSH host actions",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Select all hosts added in Orca",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Select Linux SSH project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Disconnect",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More actions for Linux SSH project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "2 hosts",
+      "label": "Remote host connection status",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i73-adopted-server.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 114055
+}

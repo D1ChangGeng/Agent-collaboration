@@ -1,0 +1,43 @@
+{
+  "locale": "zh",
+  "documentLanguage": "zh",
+  "hiddenWindow": true,
+  "refusal": {
+    "width": 760,
+    "reasonVisible": true,
+    "registrationRetained": true,
+    "sourceErrorAvailable": true,
+    "republished": true
+  },
+  "kept": {
+    "workspacePathsRemoved": 3,
+    "originalRefsKept": 3,
+    "filterIndependent": true,
+    "noToastNeeded": true
+  },
+  "recovery": {
+    "batch": {
+      "confirmedDeleted": 1,
+      "returnedForReview": 2,
+      "bothRefsPreserved": true,
+      "filterIndependent": true,
+      "focusInFilter": true,
+      "noNotificationNeeded": true
+    },
+    "refusals": {
+      "recordedAndObservedHeadVisible": true,
+      "staleExcludedFromSelectAll": true,
+      "checkedOutStillReviewable": true,
+      "cancelPreservedBoth": true
+    },
+    "recovery": {
+      "checkedOutReleased": true,
+      "retryDeletedOnlyReleasedBranch": true,
+      "changedBranchKeptInGit": true,
+      "reviewCleared": true,
+      "protectedMain": true,
+      "acknowledgementVisible": true,
+      "keepFocus": "filter"
+    }
+  }
+}

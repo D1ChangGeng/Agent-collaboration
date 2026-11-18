@@ -1,0 +1,13 @@
+{
+  "size": [
+    760,
+    700
+  ],
+  "dpr": 1,
+  "lang": "zh",
+  "theme": "dark",
+  "reducedMotion": false,
+  "focus": "打开 D1/cleanup-kept-one 的工作树",
+  "imageFile": "i55-space-checkout-opened.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

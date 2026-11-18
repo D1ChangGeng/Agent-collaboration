@@ -1,0 +1,157 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable and verified",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 2380,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 2752,
+      "result": "captured"
+    },
+    {
+      "id": "04-shell",
+      "trigger": "Dismiss contextual tour; leave trust to the agent",
+      "elapsedMs": 529,
+      "result": "captured"
+    },
+    {
+      "id": "05-collaboration-unconfigured",
+      "trigger": "Collaboration titlebar button",
+      "elapsedMs": 1043,
+      "result": "captured"
+    },
+    {
+      "id": "06-settings",
+      "trigger": "Settings button",
+      "elapsedMs": 3092,
+      "result": "captured"
+    },
+    {
+      "id": "07-general",
+      "trigger": "Settings navigation: general",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "08-appearance",
+      "trigger": "Settings navigation: appearance",
+      "elapsedMs": 1505,
+      "result": "captured"
+    },
+    {
+      "id": "09-settings-shortcuts",
+      "trigger": "Settings navigation: shortcuts",
+      "elapsedMs": 1707,
+      "result": "captured"
+    },
+    {
+      "id": "10-plugin-manager",
+      "trigger": "Settings navigation: plugins",
+      "elapsedMs": 1103,
+      "result": "captured"
+    },
+    {
+      "id": "11-settings-browser",
+      "trigger": "Settings navigation: browser",
+      "elapsedMs": 997,
+      "result": "captured"
+    },
+    {
+      "id": "12-settings-chat",
+      "trigger": "Settings navigation: chat",
+      "elapsedMs": 896,
+      "result": "captured"
+    },
+    {
+      "id": "13-settings-hosts",
+      "trigger": "Settings navigation: ssh",
+      "elapsedMs": 820,
+      "result": "captured"
+    },
+    {
+      "id": "14-settings-automations",
+      "trigger": "Settings navigation: automations",
+      "elapsedMs": 819,
+      "result": "captured"
+    },
+    {
+      "id": "15-search",
+      "trigger": "Sidebar search",
+      "elapsedMs": 1130,
+      "result": "captured"
+    },
+    {
+      "id": "16-tasks",
+      "trigger": "Sidebar Tasks",
+      "elapsedMs": 1958,
+      "result": "captured"
+    },
+    {
+      "id": "17-automations",
+      "trigger": "Sidebar Automations",
+      "elapsedMs": 1239,
+      "result": "captured"
+    },
+    {
+      "id": "18-mobile",
+      "trigger": "Sidebar Mobile",
+      "elapsedMs": 1114,
+      "result": "captured"
+    },
+    {
+      "id": "19-fixture-project",
+      "trigger": "Register a disposable Git repo through app IPC; open it in Sidebar",
+      "result": "not reached",
+      "reason": "locator.waitFor: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "20-explorer-search",
+      "trigger": "Explorer content mode",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "21-source-control",
+      "trigger": "Source Control activity button",
+      "elapsedMs": 1084,
+      "result": "captured"
+    },
+    {
+      "id": "22-new-tab",
+      "trigger": "New Tab menu",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "23-terminal-split",
+      "trigger": "Split Terminal Right button",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "24-right-dock-closed",
+      "trigger": "Toggle Right Sidebar",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "25-narrow",
+      "trigger": "Resize hidden desktop viewport",
+      "elapsedMs": 530,
+      "result": "captured"
+    }
+  ]
+}

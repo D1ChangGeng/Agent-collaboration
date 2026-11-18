@@ -1,0 +1,67 @@
+{
+  "actions": [
+    {
+      "name": "Narrow the preview while Studio is focused",
+      "startMs": 107936.0274,
+      "endMs": 108371.8041
+    },
+    {
+      "name": "Choose Local from the same-title pane menu",
+      "startMs": 108371.8484,
+      "endMs": 109083.2855
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794722249.842602,
+      "receivedAtMs": 107936.0065,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794722249.998961,
+      "receivedAtMs": 108006.0914,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794722250.134835,
+      "receivedAtMs": 108147.6447,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794722250.18996,
+      "receivedAtMs": 108202.3187,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794722250.194482,
+      "receivedAtMs": 108206.7668,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794722250.318574,
+      "receivedAtMs": 108334.2656,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794722250.615967,
+      "receivedAtMs": 108629.7046,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794722250.908049,
+      "receivedAtMs": 108926.7939,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794722250.954385,
+      "receivedAtMs": 108975.0482,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794722250.96386,
+      "receivedAtMs": 109006.4944,
+      "file": "009.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

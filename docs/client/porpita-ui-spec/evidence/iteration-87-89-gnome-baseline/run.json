@@ -1,0 +1,85 @@
+{
+  "mode": "config-baseline",
+  "steps": [
+    "i87-baseline-import",
+    "i88-baseline-atlas",
+    "i88-baseline-beacon",
+    "i88-baseline-cedar",
+    "i89-baseline-first-connect"
+  ],
+  "sourceCommit": "97a402fc775e8ccdee864555d0d92c4cf6271ba3",
+  "compositor": {
+    "human_readable": "GNOME Shell / Mutter 46.2",
+    "monitor": [
+      1440,
+      900
+    ],
+    "xwayland": false
+  },
+  "reader": "Orca version 51.1, AT-SPI2 version: 2.62.1, Session: wayland",
+  "product": {
+    "version": "0.1.0",
+    "electron": "43.8.6"
+  },
+  "resolvedConfig": [
+    {
+      "alias": "porpita-config-validation-workspace-atlas",
+      "user": "changgeng",
+      "hostname": "::1",
+      "port": "54869",
+      "stricthostkeychecking": "ask"
+    },
+    {
+      "alias": "porpita-config-validation-workspace-beacon",
+      "user": "changgeng",
+      "hostname": "::1",
+      "port": "51007",
+      "stricthostkeychecking": "ask"
+    },
+    {
+      "alias": "porpita-config-validation-workspace-cedar",
+      "user": "changgeng",
+      "hostname": "::1",
+      "port": "60989",
+      "stricthostkeychecking": "ask"
+    }
+  ],
+  "imported": [
+    {
+      "label": "porpita-config-validation-workspace-atlas",
+      "host": "::1",
+      "port": 54869,
+      "username": "",
+      "source": "ssh-config"
+    },
+    {
+      "label": "porpita-config-validation-workspace-beacon",
+      "host": "::1",
+      "port": 51007,
+      "username": "",
+      "source": "ssh-config"
+    },
+    {
+      "label": "porpita-config-validation-workspace-cedar",
+      "host": "::1",
+      "port": 60989,
+      "username": "",
+      "source": "ssh-config"
+    }
+  ],
+  "configSpeech": {
+    "atlas": null,
+    "beacon": null,
+    "cedar": null
+  },
+  "firstConnect": {
+    "prompt": false,
+    "authentication": {
+      "atlas": 0,
+      "beacon": 1,
+      "cedar": 0
+    },
+    "trusted": []
+  },
+  "completed": true
+}

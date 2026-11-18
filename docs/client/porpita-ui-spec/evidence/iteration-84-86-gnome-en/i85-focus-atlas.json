@@ -1,0 +1,87 @@
+{
+  "id": "i85-focus-atlas",
+  "imageFile": "i85-focus-atlas.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "viewport": [
+    720,
+    868
+  ],
+  "focused": "Connect",
+  "rows": {
+    "atlas": {
+      "label": {
+        "full": true,
+        "lines": 2
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "beacon": {
+      "label": {
+        "full": true,
+        "lines": 2
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "cedar": {
+      "label": {
+        "full": true,
+        "lines": 2
+      },
+      "endpoint": {
+        "full": true,
+        "lines": 1
+      },
+      "selected": false,
+      "rowWidth": 364
+    }
+  },
+  "target": "porpita-integration-validation-workspace-atlas",
+  "endpoint": "changgeng@127.0.0.1:33239",
+  "keys": [
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab"
+  ],
+  "aria": "- button \"Connect porpita-integration-validation-workspace-atlas changgeng@127.0.0.1:33239\": Connect",
+  "utterances": [
+    "Remote Orca Servers",
+    "button",
+    "Privacy & Telemetry",
+    "button",
+    "Advanced",
+    "button",
+    "Experimental",
+    "button",
+    "Plugins ALPHA",
+    "button",
+    "leaving complementary content.",
+    "Sync ~/.ssh/config",
+    "button",
+    "Add host",
+    "button",
+    "More SSH host actions",
+    "collapsed button",
+    "opens menu",
+    "Select all hosts added in Orca",
+    "check box not checked",
+    "Select porpita-integration-validation-workspace-atlas changgeng@127.0.0.1:33239",
+    "check box not checked",
+    "Connect porpita-integration-validation-workspace-atlas changgeng@127.0.0.1:33239",
+    "button"
+  ]
+}

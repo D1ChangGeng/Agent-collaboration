@@ -1,0 +1,353 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "theme": "light",
+  "focusTag": "BUTTON",
+  "focusLabel": "Switch language",
+  "focusInsideModal": true,
+  "modalOverflow": {
+    "scrollWidth": 1098,
+    "clientWidth": 1098,
+    "rect": {
+      "x": 90,
+      "y": 16,
+      "width": 1100,
+      "height": 768,
+      "top": 16,
+      "right": 1190,
+      "bottom": 784,
+      "left": 90
+    },
+    "footerRect": {
+      "x": 123,
+      "y": 694,
+      "width": 1034,
+      "height": 57,
+      "top": 694,
+      "right": 1157,
+      "bottom": 751,
+      "left": 123
+    }
+  },
+  "tourPanelRect": null,
+  "landingScroll": {
+    "scrollHeight": 486,
+    "clientHeight": 486,
+    "scrollTop": 0
+  },
+  "text": "Search\nOnboarding checklist\nHide\nTasks\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nNo workspaces found\nPorpita\n\nAdd a project to get started.\n\nAdd project\nCreate workspace\nCreate workspace\nCtrl\n+\nN\nMove up workspace\nCtrl\n+\n⇧\n+\n↑\nMove down workspace\nCtrl\n+\n⇧\n+\n↓\nSelect a workspace to browse files\nOff\n—\n·\n0\nPorpita\nSwitch language\n1 of 6\nWELCOME TO PORPITA\nHow do you want to work with agents?\n\nPick where new agents open.\n\nAdd retry to fetchUser\nEdited\napi.ts\n+1 -1\n12\n-\nreturn fetch(url)\n12\n+\nreturn withRetry(fetch, url)\n\nFailed requests now retry up to 3 times.\n\nAsk a follow-up…\nChat UI\n\nAgents reply in a chat, with rendered messages and diffs.\n\nAgents without chat support, and SSH or WSL projects, still open in a terminal.\n\nzsh — claude\n❯ claude\n> add retry to fetchUser\n● Update(src/api.ts)\n⎿ 1 addition, 1 removal\n12 - return fetch(url)\n12 + return withRetry(fetch, url)\n● Done. Retries capped at 3.\nTerminal\n\nEach agent's own CLI, exactly as it ships. Works with every CLI agent.\n\nNot a permanent choice. Switch any time in Settings → Chat UI.\n\nSet up later\nContinue\nCtrl\n+\nChat or Terminal\nDefault Agent\nAppearance\nIntegrations\nWindows Terminal\nNotifications",
+  "dialogs": [
+    "Porpita\nSwitch language\n1 of 6\nWELCOME TO PORPITA\nHow do you want to work with agents?\n\nPick where new agents open.\n\nAdd retry to fetchUser\nEdited\napi.ts\n+1 -1\n12\n-\nreturn fetch(url)\n12\n+\nreturn withRetry(fetch, url)\n\nFailed requests now retry up to 3 times.\n\nAsk a follow-up…\nChat UI\n\nAgents reply in a chat, with rendered messages and diffs.\n\nAgents without chat support, and SSH or WSL projects, still open in a terminal.\n\nzsh — claude\n❯ claude\n> add retry to fetchUser\n● Update(src/api.ts)\n⎿ 1 addition, 1 removal\n12 - return fetch(url)\n12 + return withRetry(fetch, url)\n● Done. Retries capped at 3.\nTerminal\n\nEach agent's own CLI, exactly as it ships. Works with every CLI agent.\n\nNot a permanent choice. Switch any time in Settings → Chat UI.\n\nSet up later\nContinue\nCtrl\n+"
+  ],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "ariaPressed": null,
+      "disabled": true
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Onboarding checklist",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Hide",
+      "label": "Hide from sidebar",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Porpita Mobile\nNew",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Workspace options",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Add project",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "New workspace",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Add project",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Create workspace",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Toggle right sidebar",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Explorer (Ctrl+⇧+E)",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Agents",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Source Control (Ctrl+⇧+G)",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Checks",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Switch language",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 1: Chat or Terminal",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 2: Default Agent",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 3: Appearance",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 4: Integrations",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 5: Windows Terminal",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Go to onboarding step 6: Notifications",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Add retry to fetchUser\nEdited\napi.ts\n+1 -1\n12\n-\nreturn fetch(url)\n12\n+\nreturn withRetry(fetch, url)\n\nFailed requests now retry up to 3 times.\n\nAsk a follow-up…\nChat UI\n\nAgents reply in a chat, with rendered messages and diffs.\n\nAgents without chat support, and SSH or WSL projects, still open in a terminal.",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "zsh — claude\n❯ claude\n> add retry to fetchUser\n● Update(src/api.ts)\n⎿ 1 addition, 1 removal\n12 - return fetch(url)\n12 + return withRetry(fetch, url)\n● Done. Retries capped at 3.\nTerminal\n\nEach agent's own CLI, exactly as it ships. Works with every CLI agent.",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Set up later",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Continue\nCtrl\n+",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    }
+  ],
+  "extra": {
+    "tabChecksAllInsideModal": true
+  },
+  "imageFile": "i90-en-onboarding-agent-surface-1280.png",
+  "imageMethod": "CDP screenshot"
+}

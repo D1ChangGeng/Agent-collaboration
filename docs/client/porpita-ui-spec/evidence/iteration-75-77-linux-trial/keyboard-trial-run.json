@@ -1,0 +1,24 @@
+{
+  "linux": {
+    "product": "0.1.0",
+    "electron": "43.8.6",
+    "platform": "linux",
+    "architecture": "x64",
+    "packaged": true,
+    "profile": "isolated"
+  },
+  "display": "isolated X11 with Openbox and GNOME Orca",
+  "pairingCancelFocus": false,
+  "pairedWithWindows": true,
+  "legacyWorktreeRemovalWithKeyboard": false,
+  "projectAdoptedWithOriginalIdentity": true,
+  "adoptedWorktreeRemovalWithKeyboard": false,
+  "captured": [
+    "i75-pair-dialog",
+    "i75-pair-cancel",
+    "i75-windows-paired",
+    "i76-original-ssh-workspace",
+    "i76-adopted-ssh-host"
+  ],
+  "failure": "Tab traversal did not reach Review 1 Branch. Current focus: Terminal input"
+}

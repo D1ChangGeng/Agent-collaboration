@@ -1,0 +1,42 @@
+{
+  "id": "i78-original-ssh-workspace",
+  "description": "Open SSH recovery from the keyboard-selected legacy worktree",
+  "imageFile": "i78-original-ssh-workspace.png",
+  "imageMethod": "Wayland compositor screencopy",
+  "nativeWindow": "Porpita",
+  "appId": "porpita",
+  "keys": [
+    "ctrl+shift+0",
+    "Down",
+    "ctrl+shift+BackSpace"
+  ],
+  "viewport": [
+    1060,
+    790
+  ],
+  "dialog": [
+    "Remove “Legacy checkout” from Orca?\n\nConnect this project to its Porpita server on Linux SSH project to review Git branches. Removing the workspace from Porpita keeps its files, worktree, and branches on Linux SSH project.\n\nLinux SSH project\nCancel\nOpen SSH settings\nRemove from Orca"
+  ],
+  "focus": {
+    "role": "button",
+    "name": "Cancel"
+  },
+  "text": "Search\nTasks\nAutomations\nOrca Mobile\nNew\nProjects\n0\nIndependent project\nInactive\nConnect\nLegacy checkout\nLinux SSH project\nWindows validation project\nInactive\nmain\nprimary\nWindows acceptance service\nmain\n\nAdd a setup script\n\nIndependent project\n\nCouldn't verify this repo's setup script right now.\n\nRetry\nSettings\nIndependent project\nNames\nContents\nRetry\nCould not load files for this workspace: Remote connection dropped. Click Reconnect on the SSH target before retrying.\nConfigure usage tracking\nOff\n—\n·\n0\n1 host\nRemove “Legacy checkout” from Orca?\n\nConnect this project to its Porpita server on Linux SSH project to review Git branches. Removing the workspace from Porpita keeps its files, worktree, and branches on Linux SSH project.\n\nLinux SSH project\nCancel\nOpen SSH settings\nRemove from Orca",
+  "utterances": [
+    "Worktrees",
+    "multi-select List with 2 items",
+    "Porpita",
+    "Worktrees multi-select List with 2 items",
+    "not selected",
+    "Inactive Legacy checkout Linux SSH project.",
+    "Mark as unread",
+    "button",
+    "Connect to SSH host Linux SSH project",
+    "button",
+    "(Current page)",
+    "Focus mode is sticky.",
+    "Remove “Legacy checkout” from Orca? dialog Connect this project to its Porpita server on Linux SSH project to review Git branches. Removing the workspace from Porpita keeps its files, worktree, and branches on Linux SSH project.",
+    "Cancel",
+    "button"
+  ]
+}

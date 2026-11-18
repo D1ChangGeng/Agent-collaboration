@@ -1,0 +1,142 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "default",
+  "focus": "端口",
+  "section": [],
+  "text": "通用\nRelease-review\n资源管理器\n资源管理器\n\n此资源管理器的原主机已不可用。\n\n移除资源管理器\n关闭\n—\n·\n删除了 Studio。\n端口\n\n工作树端口不可用",
+  "dialogs": [
+    "端口\n\n工作树端口不可用"
+  ],
+  "buttons": [
+    {
+      "text": "通用",
+      "label": "选择分组：通用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Release-review",
+      "label": null,
+      "title": "Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭 Release-review",
+      "title": "关闭 Release-review",
+      "test": null
+    },
+    {
+      "text": "资源管理器",
+      "label": null,
+      "title": "资源管理器",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭 资源管理器",
+      "title": "关闭 资源管理器",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新建工作对象",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "查找工作对象",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新文件管理器",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "资源管理器位置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移除资源管理器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用 · 本机内存",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i31-ports-revoked.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 67498
+}

@@ -1,0 +1,117 @@
+{
+  "actions": [
+    {
+      "name": "Focus the recovered Studio chat",
+      "startMs": 168591.763,
+      "endMs": 168714.5193
+    },
+    {
+      "name": "Check that the local usage owner is still independent",
+      "startMs": 168714.52240000002,
+      "endMs": 168832.8666
+    },
+    {
+      "name": "Leave Studio selected for pairing withdrawal",
+      "startMs": 168832.8676,
+      "endMs": 168890.86490000002
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794730587.20068,
+      "receivedAtMs": 168591.758,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.269316,
+      "receivedAtMs": 168621.0357,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.330633,
+      "receivedAtMs": 168687.77060000002,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.346164,
+      "receivedAtMs": 168701.44220000002,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.354884,
+      "receivedAtMs": 168713.03840000002,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.363594,
+      "receivedAtMs": 168721.5541,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.369932,
+      "receivedAtMs": 168728.34910000002,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.382287,
+      "receivedAtMs": 168738.60090000002,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.394772,
+      "receivedAtMs": 168753.2429,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.401951,
+      "receivedAtMs": 168759.1023,
+      "file": "009.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.413664,
+      "receivedAtMs": 168767.8855,
+      "file": "010.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.419834,
+      "receivedAtMs": 168774.10460000002,
+      "file": "011.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.431667,
+      "receivedAtMs": 168785.93980000002,
+      "file": "012.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.444276,
+      "receivedAtMs": 168797.0559,
+      "file": "013.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.456894,
+      "receivedAtMs": 168811.7745,
+      "file": "014.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.462947,
+      "receivedAtMs": 168817.625,
+      "file": "015.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.47537,
+      "receivedAtMs": 168826.55130000002,
+      "file": "016.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.482182,
+      "receivedAtMs": 168832.1418,
+      "file": "017.jpg"
+    },
+    {
+      "rendererTimestamp": 1794730587.539151,
+      "receivedAtMs": 168890.1662,
+      "file": "018.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

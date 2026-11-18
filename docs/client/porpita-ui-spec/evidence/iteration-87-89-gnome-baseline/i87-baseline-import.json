@@ -1,0 +1,94 @@
+{
+  "id": "i87-baseline-import",
+  "imageFile": "i87-baseline-import.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "viewport": [
+    720,
+    868
+  ],
+  "focused": "Back to appCtrl+FAI CapabilitiesAgentsAI Provider AccountsOptionalOrchestrationComputer UseVoiceSet UpOrca AccountGeneralIntegrationsMobileWorkflowsAutomationsArtifactsBetaShare SkillsBetaAgent Session SearchGit & Source ControlTask SourcesTerminalQuick CommandsBrowserMobile EmulatorFloating WorkspaceInterfaceAppearanceChat UIInput & EditingNotificationsShortcutsStats & UsageRemote HostsSSH HostsRemote Orca ServersPrivacy & SecurityPrivacy & TelemetryAdvancedAdvancedExperimentalExperimentalPluginsAlphaProjectsNo projects added yet.SSH HostsUse existing machines over SSH for files, terminals, Git, and workspaces.Sync ~/.ssh/configAdd host3 hostsFrom ~/.ssh/config· 3porpita-config-validation-workspace-atlas::1:54869Connectporpita-config-validation-workspace-beacon::1:51007Connectporpita-config-validation-workspace-cedar::1:60989ConnectConfigure usage trackingOff—·01 host99 hosts0 hostsChat UI is hereExplain loginMap out how login worksReadauth.tsLogin starts in auth.ts: the browser posts to /login, the server checks the password and creates a session, then redirects you to the app. Here’s the flow:Browserpassword/loginSessioncookieAppAsk anything, @ to mention files, / for commandsAsk for approvalOpusAgents can now open as a chat, with rich messages, visuals and images.Change anytime in Settings → Chat UI.Stay in terminalUse Chat UI\n  \n\nSynced 3 servers",
+  "rows": {
+    "atlas": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 0
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "beacon": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 0
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "cedar": {
+      "label": {
+        "full": true,
+        "lines": 1
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 0
+      },
+      "selected": false,
+      "rowWidth": 364
+    }
+  },
+  "imported": [
+    {
+      "label": "porpita-config-validation-workspace-atlas",
+      "host": "::1",
+      "port": 54869,
+      "username": "",
+      "source": "ssh-config"
+    },
+    {
+      "label": "porpita-config-validation-workspace-beacon",
+      "host": "::1",
+      "port": 51007,
+      "username": "",
+      "source": "ssh-config"
+    },
+    {
+      "label": "porpita-config-validation-workspace-cedar",
+      "host": "::1",
+      "port": 60989,
+      "username": "",
+      "source": "ssh-config"
+    }
+  ],
+  "resolvedConfig": [
+    {
+      "alias": "porpita-config-validation-workspace-atlas",
+      "user": "changgeng",
+      "hostname": "::1",
+      "port": "54869",
+      "stricthostkeychecking": "ask"
+    },
+    {
+      "alias": "porpita-config-validation-workspace-beacon",
+      "user": "changgeng",
+      "hostname": "::1",
+      "port": "51007",
+      "stricthostkeychecking": "ask"
+    },
+    {
+      "alias": "porpita-config-validation-workspace-cedar",
+      "user": "changgeng",
+      "hostname": "::1",
+      "port": "60989",
+      "stricthostkeychecking": "ask"
+    }
+  ]
+}

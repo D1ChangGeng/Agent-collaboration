@@ -1,0 +1,266 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "theme": "light",
+  "focusTag": "BUTTON",
+  "focusLabel": "Porpita Mobile",
+  "focusInsideModal": null,
+  "modalOverflow": null,
+  "tourPanelRect": null,
+  "landingScroll": {
+    "scrollHeight": 486,
+    "clientHeight": 486,
+    "scrollTop": 0
+  },
+  "text": "Search\nTasks\nArtifacts\nAutomations\nPorpita Mobile\nProjects\n0\nNo workspaces found\nHide from sidebar\nPORPITA\nPair a device\n\nGenerate a pairing code for a compatible client on your network.\n\nGet a pairing code\nPorpita\nJump back in\nfix-auth-redirect\nWaiting for input · MacBook Pro\n2m\nDesktops\nMacBook Pro\n40 worktrees · 5 active\nTasks\nTasks\nBrowse your issues and reviews\nAutomations\nAutomations\nSchedule agent work and view runs\nNew workspace\nMacBook Pro\nFilter\nRecent\nRepo\nPINNED\n3\nfeat/mobile-page\n#2491\norca\nfeat/mobile-page\nclaude · refactoring v3 mock to use real screens…\n2\nruntime/web-pairing\n#2487\norca\nfeat/web-pairing\n$ pnpm test --filter web-runtime\n1\ninfra/notifier\norca\nmain\nawaiting permission · sudo apt install\n1\nACTIVE\n37\ndocs/styleguide-update\norca\nfeat/styleguide\n$ pnpm lint\n1\nfeat/runtime-perf\norca\nfeat/runtime-perf\nfix/notifier-cooldown\n#2483\norca\nfeat/notifier-cooldown\nclaude · investigating macOS notification queue…\n1\nchore/deps-bump\norca\nfeat/deps-bump\nexperiment/ssh-multiplex\norca\nfeat/ssh-mux\n$ ssh -O check orca-relay\n2\nrefactor/host-store\norca\nfeat/host-store\nfeat/mobile-page\n2 terminals · claude active\nclaude\nshell\nPLAN.md\ndev@mac orca/feat-mobile-page $ claude\n● Read mobile/orca-mobile-sidebar-mock-v3.html\n  ⎿ Read 2103 lines\n● Edit mobile/orca-mobile-sidebar-mock-v3.html\n  ⎿ Replaced pair-scan slide with terminal session\n● Bash pnpm test --filter mobile\n  ⎿ PASS src/transport/host-store.test.ts\n     PASS src/cache/worktree-cache.test.ts\n     ● 14 passed, 1 skipped (1.8s)\nI've replaced the pair-scan slide with a high-fidelity\nterminal screen. Tokyonight palette, Menlo, real claude\ntool-call formatting. Want me to add the diff next?\n› \nPaste\nEsc\nTab\n⌫\n↑\n↓\n←\n→\nCtrl+C\nType a command…\nOff\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Artifacts",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Porpita Mobile",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Workspace options",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Add project",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "New workspace",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "Hide from sidebar",
+      "label": "Hide from sidebar",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Close Porpita Mobile",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Get a pairing code",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Back",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Filter",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Recent",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Repo",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Back",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Source control",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Files",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "ariaPressed": "false",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": null,
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "ariaPressed": null,
+      "disabled": false
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "ariaPressed": null,
+      "disabled": false
+    }
+  ],
+  "extra": {},
+  "imageFile": "i90-en-mobile-intro-1280.png",
+  "imageMethod": "CDP screenshot"
+}

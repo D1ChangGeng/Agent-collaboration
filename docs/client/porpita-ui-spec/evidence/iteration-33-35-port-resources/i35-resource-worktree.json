@@ -1,0 +1,152 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "\n    GeneralRelease-reviewStudio · Release-review\n    To pick up a draggable item, press the space bar.\n    While draggi",
+  "section": [],
+  "text": "General\nRelease-review\nStudio · Release-review\nRelease-review\nStudio\nhandoff\nporpita-ports-fixture.cjs\nrelease.md\nOff\n—\n·\n1 host",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "General",
+      "label": "Choose group: General",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Release-review",
+      "label": null,
+      "title": "Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Release-review",
+      "title": "Close Release-review",
+      "test": null
+    },
+    {
+      "text": "Studio · Release-review",
+      "label": null,
+      "title": "Studio · Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Studio · Release-review",
+      "title": "Close Studio · Release-review",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New work object",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open work",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Return to worktree",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Explorer",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer placement",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "handoff",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "porpita-ports-fixture.cjs",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "release.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable · local memory",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Ports on Studio",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "1 host",
+      "label": "Remote host connection status",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i35-resource-worktree.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 23108
+}

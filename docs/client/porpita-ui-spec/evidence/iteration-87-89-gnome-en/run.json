@@ -1,0 +1,113 @@
+{
+  "mode": "config-verify",
+  "steps": [
+    "i87-import",
+    "i88-focus-atlas",
+    "i88-focus-beacon",
+    "i88-focus-cedar",
+    "i89-first-prompt",
+    "i89-cancel",
+    "i89-trust-action",
+    "i89-connected",
+    "i89-reconnected"
+  ],
+  "sourceCommit": "df72b79763023cbb84724c37c5ba4fcb435303fd",
+  "compositor": {
+    "human_readable": "GNOME Shell / Mutter 46.2",
+    "monitor": [
+      1440,
+      900
+    ],
+    "xwayland": false
+  },
+  "reader": "Orca version 51.1, AT-SPI2 version: 2.62.1, Session: wayland",
+  "product": {
+    "version": "0.1.0",
+    "electron": "43.8.6"
+  },
+  "resolvedConfig": [
+    {
+      "alias": "porpita-config-validation-workspace-atlas",
+      "user": "changgeng",
+      "hostname": "::1",
+      "port": "54869",
+      "stricthostkeychecking": "ask"
+    },
+    {
+      "alias": "porpita-config-validation-workspace-beacon",
+      "user": "changgeng",
+      "hostname": "::1",
+      "port": "51007",
+      "stricthostkeychecking": "ask"
+    },
+    {
+      "alias": "porpita-config-validation-workspace-cedar",
+      "user": "changgeng",
+      "hostname": "::1",
+      "port": "60989",
+      "stricthostkeychecking": "ask"
+    }
+  ],
+  "imported": [
+    {
+      "label": "porpita-config-validation-workspace-atlas",
+      "host": "::1",
+      "port": 54869,
+      "username": "changgeng",
+      "source": "ssh-config"
+    },
+    {
+      "label": "porpita-config-validation-workspace-beacon",
+      "host": "::1",
+      "port": 51007,
+      "username": "changgeng",
+      "source": "ssh-config"
+    },
+    {
+      "label": "porpita-config-validation-workspace-cedar",
+      "host": "::1",
+      "port": 60989,
+      "username": "changgeng",
+      "source": "ssh-config"
+    }
+  ],
+  "configSpeech": {
+    "atlas": "Connect porpita-config-validation-workspace-atlas changgeng@[::1]:54869",
+    "beacon": "Connect porpita-config-validation-workspace-beacon changgeng@[::1]:51007",
+    "cedar": "Connect porpita-config-validation-workspace-cedar changgeng@[::1]:60989"
+  },
+  "promptSpeech": "Trust and connect porpita-config-validation-workspace-beacon changgeng@[::1]:51007",
+  "connection": {
+    "before": {
+      "atlas": 0,
+      "beacon": 1,
+      "cedar": 0
+    },
+    "after": {
+      "atlas": 0,
+      "beacon": 2,
+      "cedar": 0
+    },
+    "trusted": [
+      {
+        "host": "::1",
+        "port": 51007,
+        "fingerprint": "SHA256:q4G99Ou/+sgwNS25zM+5uJYwADt5/kBjI/L2P2nrnzw"
+      }
+    ],
+    "utterances": [
+      "Trust SSH host key dialog porpita-config-validation-workspace-beacon changgeng@[::1]:51007 Compare this fingerprint with one from your administrator before trusting this host. ssh-ed25519 fingerprint SHA256:q4G99Ou/+sgwNS25zM+5uJYwADt5/kBjI/L2P2nrnzw",
+      "Cancel",
+      "button",
+      "Trust and connect porpita-config-validation-workspace-beacon changgeng@[::1]:51007",
+      "button",
+      "Connecting porpita-config-validation-workspace-beacon changgeng@[::1]:51007",
+      "button grayed",
+      "Connecting…",
+      "Disconnect porpita-config-validation-workspace-beacon changgeng@[::1]:51007",
+      "grayed",
+      "Connected, porpita-config-validation-workspace-beacon, changgeng@[::1]:51007"
+    ]
+  },
+  "completed": true
+}

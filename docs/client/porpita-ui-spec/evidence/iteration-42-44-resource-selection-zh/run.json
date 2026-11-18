@@ -1,0 +1,61 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i30-add-worktrees",
+      "trigger": "Pair Studio and add the two real worktrees",
+      "elapsedMs": 3457,
+      "result": "captured"
+    },
+    {
+      "id": "i39-resource-worktree-setup",
+      "trigger": "Open the original Local and Studio worktrees and their Explorers",
+      "elapsedMs": 3479,
+      "result": "captured"
+    },
+    {
+      "id": "i39-resource-terminal",
+      "trigger": "Resume the exact terminal panes via Resources and Local PTYs",
+      "elapsedMs": 6177,
+      "result": "captured"
+    },
+    {
+      "id": "i40-pty-availability",
+      "trigger": "Review local binding and recover the real PTY inventory after a failed read",
+      "elapsedMs": 1829,
+      "result": "captured"
+    },
+    {
+      "id": "i42-pty-eligible-selection",
+      "trigger": "Use the PTY bulk controls in three selection states",
+      "elapsedMs": 1058,
+      "result": "captured"
+    },
+    {
+      "id": "i41-space-review",
+      "trigger": "Review a completed disk scan in the Space window and retain Studio Explorer",
+      "elapsedMs": 11604,
+      "result": "captured"
+    },
+    {
+      "id": "i43-space-folder-navigation",
+      "trigger": "Inspect a folder chart and return using the keyboard",
+      "elapsedMs": 4061,
+      "result": "captured"
+    },
+    {
+      "id": "i44-space-filtered-selection",
+      "trigger": "Check visible review scope with two real linked worktrees",
+      "elapsedMs": 4809,
+      "result": "captured"
+    }
+  ]
+}

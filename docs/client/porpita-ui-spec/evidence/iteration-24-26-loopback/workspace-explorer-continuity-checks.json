@@ -1,0 +1,68 @@
+{
+  "boundary": "Windows development preview, two authenticated loopback Runtime profiles, disposable Git roots",
+  "picker": {
+    "sameProjectName": true,
+    "explicitHostChoices": 2
+  },
+  "instances": {
+    "localOnlyEntries": true,
+    "studioOnlyEntries": true,
+    "independentInstances": true
+  },
+  "localEditor": {
+    "originalWorktree": true,
+    "localBytesVisible": true
+  },
+  "studioEditor": {
+    "originalWorktree": true,
+    "pairedOwner": true,
+    "studioBytesVisible": true
+  },
+  "move": {
+    "samePanel": true,
+    "sameSelection": true,
+    "filterFocusRestored": true,
+    "scrollRetained": true,
+    "standalonePositionRetained": true
+  },
+  "narrow": {
+    "viewport": 600,
+    "workspace": 360,
+    "explorer": 239,
+    "focusChangedWithoutRebinding": true,
+    "reducedMotion": true
+  },
+  "persisted": {
+    "version": 3,
+    "originalRootsKept": true,
+    "worktreesAndPairingKept": true
+  },
+  "cold": {
+    "newClient": true,
+    "sameRuntime": true,
+    "sameLayoutAndSelection": true,
+    "sameScopeReused": true
+  },
+  "outage": {
+    "studioFilesHidden": true,
+    "localDraftEditable": true,
+    "localExplorerUsable": true
+  },
+  "recovered": {
+    "trigger": "Explorer reconnect",
+    "newDirectoryRead": true,
+    "selectionKept": true,
+    "localDraftKept": true
+  },
+  "revoked": {
+    "cachedRowsAndPathHidden": true,
+    "reconnectAbsent": true,
+    "localDraftKept": true
+  },
+  "removed": {
+    "onlyRetiredPanelRemoved": true,
+    "diskFileKept": true,
+    "otherExplorerKept": true,
+    "localComposerFocused": true
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "size": [
+    850,
+    700
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "light",
+  "reducedMotion": false,
+  "focus": "Open worktree for cleanup-kept-one",
+  "imageFile": "i58-space-review-returned.jpg",
+  "imageMethod": "CDP screenshot of hidden Space renderer"
+}

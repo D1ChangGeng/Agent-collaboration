@@ -1,0 +1,55 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i30-add-worktrees",
+      "trigger": "Pair Studio and add the two real worktrees",
+      "elapsedMs": 3158,
+      "result": "captured"
+    },
+    {
+      "id": "i30-ports-scope",
+      "trigger": "Read the actual listeners for two fixed Explorers with the same project name",
+      "elapsedMs": 4333,
+      "result": "captured"
+    },
+    {
+      "id": "i30-ports-worktree",
+      "trigger": "Follow the Studio port panel to its original worktree and return to the same Explorer",
+      "elapsedMs": 876,
+      "result": "captured"
+    },
+    {
+      "id": "i32-resource-scope",
+      "trigger": "Check the local summary and PTYs across the two fixed Explorer hosts",
+      "elapsedMs": 1725,
+      "result": "captured"
+    },
+    {
+      "id": "i31-ports-outage",
+      "trigger": "Stop Studio while Local still has a functioning listener",
+      "elapsedMs": 2468,
+      "result": "captured"
+    },
+    {
+      "id": "i31-ports-recovery",
+      "trigger": "Reconnect the Studio Explorer and read its replacement listener",
+      "elapsedMs": 8854,
+      "result": "captured"
+    },
+    {
+      "id": "i31-ports-revoked",
+      "trigger": "Withdraw Studio pairing and check the retired port panel",
+      "elapsedMs": 5297,
+      "result": "captured"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "linux": {
+    "product": "0.1.0",
+    "electron": "43.8.6",
+    "platform": "linux",
+    "architecture": "x64",
+    "packaged": true,
+    "profile": "isolated"
+  },
+  "display": "isolated X11 with Openbox and GNOME Orca",
+  "pairingCancelFocus": false,
+  "captured": [
+    "i75-pair-dialog"
+  ],
+  "failure": "Cannot read properties of null (reading 'trim')"
+}

@@ -1,0 +1,87 @@
+{
+  "id": "i84-baseline-atlas",
+  "imageFile": "i84-baseline-atlas.png",
+  "imageMethod": "Mutter RecordMonitor / PipeWire",
+  "viewport": [
+    720,
+    868
+  ],
+  "focused": "Connect",
+  "rows": {
+    "atlas": {
+      "label": {
+        "full": false,
+        "lines": 2
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 2
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "beacon": {
+      "label": {
+        "full": false,
+        "lines": 2
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 2
+      },
+      "selected": false,
+      "rowWidth": 364
+    },
+    "cedar": {
+      "label": {
+        "full": false,
+        "lines": 2
+      },
+      "endpoint": {
+        "full": false,
+        "lines": 2
+      },
+      "selected": false,
+      "rowWidth": 364
+    }
+  },
+  "target": "porpita-integration-validation-workspace-atlas",
+  "endpoint": "changgeng@127.0.0.1:33239",
+  "keys": [
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab",
+    "Tab"
+  ],
+  "aria": "- button \"Connect\"",
+  "utterances": [
+    "Remote Orca Servers",
+    "button",
+    "Privacy & Telemetry",
+    "button",
+    "Advanced",
+    "button",
+    "Experimental",
+    "button",
+    "Plugins ALPHA",
+    "button",
+    "leaving complementary content.",
+    "Sync ~/.ssh/config",
+    "button",
+    "Add host",
+    "button",
+    "More SSH host actions",
+    "collapsed button",
+    "opens menu",
+    "Select all hosts added in Orca",
+    "check box not checked",
+    "Select porpita-integration-validation-workspace-atlas",
+    "check box not checked",
+    "Connect",
+    "button"
+  ]
+}

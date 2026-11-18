@@ -1,0 +1,79 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i30-add-worktrees",
+      "trigger": "Pair Studio and add the two real worktrees",
+      "elapsedMs": 7263,
+      "result": "captured"
+    },
+    {
+      "id": "i30-ports-scope",
+      "trigger": "Read the actual listeners for two fixed Explorers with the same project name",
+      "elapsedMs": 11151,
+      "result": "captured"
+    },
+    {
+      "id": "i30-ports-worktree",
+      "trigger": "Follow the Studio port panel to its original worktree and return to the same Explorer",
+      "elapsedMs": 1391,
+      "result": "captured"
+    },
+    {
+      "id": "i32-resource-scope",
+      "trigger": "Check the local summary and PTYs across the two fixed Explorer hosts",
+      "elapsedMs": 3527,
+      "result": "captured"
+    },
+    {
+      "id": "i36-port-address",
+      "trigger": "Inspect both listeners with host, worktree and address provenance",
+      "elapsedMs": 4917,
+      "result": "captured"
+    },
+    {
+      "id": "i37-port-refresh",
+      "trigger": "Recover a stale listener and open the selected replacement",
+      "elapsedMs": 7625,
+      "result": "captured"
+    },
+    {
+      "id": "i35-resource-worktree",
+      "trigger": "Follow the sampled local worktree row from the Studio preview and restore the original Explorer",
+      "elapsedMs": 2741,
+      "result": "captured"
+    },
+    {
+      "id": "i38-resource-browser",
+      "trigger": "Switch from Studio Explorer to the original Local Browser tab from Resources",
+      "elapsedMs": 2755,
+      "result": "captured"
+    },
+    {
+      "id": "i31-ports-outage",
+      "trigger": "Stop Studio while Local still has a functioning listener",
+      "elapsedMs": 11025,
+      "result": "captured"
+    },
+    {
+      "id": "i31-ports-recovery",
+      "trigger": "Reconnect the Studio Explorer and read its replacement listener",
+      "elapsedMs": 5573,
+      "result": "captured"
+    },
+    {
+      "id": "i31-ports-revoked",
+      "trigger": "Withdraw Studio pairing and check the retired port panel",
+      "elapsedMs": 3666,
+      "result": "captured"
+    }
+  ]
+}

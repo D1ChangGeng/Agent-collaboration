@@ -1,0 +1,73 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i48-space-refusal",
+      "trigger": "Read the actual failed worktree reason at 760 content pixels",
+      "elapsedMs": 5375,
+      "result": "captured"
+    },
+    {
+      "id": "i49-space-branch-outcome",
+      "trigger": "Remove worktrees and retain their actual unmerged Git branches",
+      "elapsedMs": 10467,
+      "result": "captured"
+    },
+    {
+      "id": "i54-branch-checkout-location",
+      "trigger": "Read the Git checkout paths of both recorded refusals",
+      "elapsedMs": 44433,
+      "result": "captured"
+    },
+    {
+      "id": "i55-branch-open-checkout",
+      "trigger": "Open the exact registered worktree from its retained branch",
+      "elapsedMs": 3645,
+      "result": "captured"
+    },
+    {
+      "id": "i60-return-after-checkout-move",
+      "trigger": "Move a linked checkout and return to the original review by keyboard",
+      "elapsedMs": 5088,
+      "result": "captured"
+    },
+    {
+      "id": "i63-checkout-read-only-location",
+      "trigger": "Check Git checkout after the linked worktree was moved",
+      "elapsedMs": 2938,
+      "result": "captured"
+    },
+    {
+      "id": "i71-wsl-stopped",
+      "trigger": "Stop only the disposable distro and check without waking it",
+      "elapsedMs": 2902,
+      "result": "captured"
+    },
+    {
+      "id": "i71-wsl-start-and-check",
+      "trigger": "Start the named distro from the row and obtain a fresh Git result",
+      "elapsedMs": 3568,
+      "result": "captured"
+    },
+    {
+      "id": "i64-checkout-release-and-branch-head",
+      "trigger": "Check the released checkout in the existing review",
+      "elapsedMs": 3486,
+      "result": "captured"
+    },
+    {
+      "id": "i65-checkout-changed-after-check",
+      "trigger": "Recheck on submit when a checked branch becomes occupied again",
+      "elapsedMs": 3887,
+      "result": "captured"
+    }
+  ]
+}
