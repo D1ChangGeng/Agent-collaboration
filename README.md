@@ -241,6 +241,8 @@ and validation operations for the project files.
 
 ## Development and support
 
+The [ORCA-first capability assessment and route decision](docs/client/ORCA-FIRST.zh-CN.md) is the current product direction: evaluate native ORCA with Skills/configuration, validate plugin extensions for demonstrated gaps, and consider a fork or retained ACS Core only when the evidence requires it. [Earlier Client design and research](docs/client/ORCA-FIRST.zh-CN.md#archive) is archived in place as historical material.
+
 The repository includes [contribution guidance](CONTRIBUTING.md),
 [security reporting](SECURITY.md), [change history](CHANGELOG.md) and a
 [Sustainable Use License 1.0](LICENSE). The license permits free public

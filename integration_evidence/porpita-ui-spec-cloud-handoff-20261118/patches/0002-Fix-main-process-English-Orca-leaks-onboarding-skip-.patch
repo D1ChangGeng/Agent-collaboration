@@ -1,0 +1,2249 @@
+From 28c8847a988e65d8dcac30a3fff5c4301f08844d Mon Sep 17 00:00:00 2001
+From: D1 <278324052+D1ChangGeng@users.noreply.github.com>
+Date: Wed, 18 Nov 2026 14:43:34 +0900
+Subject: [PATCH 2/4] Fix main-process English Orca leaks, onboarding skip
+ focus, collapsed tour gating, and TerminalSlide copy
+
+---
+ .../gpu-fallback-recovered-launch.ts          |   2 +-
+ .../gpu-fallback-restart-prompt.ts            |   9 +-
+ src/main/i18n/main-i18n-lazy-locale.test.ts   |  29 +++
+ src/main/i18n/main-i18n.ts                    |   6 +-
+ src/main/index.ts                             |   2 +-
+ src/main/ipc/notification-options.ts          |   4 +-
+ src/main/ipc/notification-permission-probe.ts |   4 +-
+ .../ipc/startup-notification-registration.ts  |   7 +-
+ .../local-builds/local-build-switch.test.ts   |   2 +-
+ src/main/local-builds/local-build-switch.ts   |   8 +-
+ src/main/menu/app-menu-quit-item.ts           |   2 +-
+ src/main/menu/register-app-menu.test.ts       |  91 ++++++++
+ src/main/menu/register-app-menu.ts            |   4 +-
+ .../runtime-rpc-startup-failure.test.ts       |  14 +-
+ .../rpc/server/runtime-rpc-startup-failure.ts |  16 +-
+ ...rowser-process-user-agent-ordering.test.ts |   8 +-
+ .../startup/main-process-preflight-failure.ts |   2 +-
+ .../profile-state-recovery-preflight.ts       |   6 +-
+ .../profile-state-write-failure.test.ts       |   4 +-
+ .../startup/profile-state-write-failure.ts    |   6 +-
+ .../quit-and-stop-all-sessions-prompt.ts      |   8 +-
+ .../windows-install-dir-acl-recovery.test.ts  |   2 +-
+ .../windows-install-dir-acl-recovery.ts       |  10 +-
+ src/main/tray/system-tray.test.ts             |  18 +-
+ src/main/tray/system-tray.ts                  |   4 +-
+ .../window/dashboard-popout-window.test.ts    |   2 +-
+ src/main/window/dashboard-popout-window.ts    |   4 +-
+ .../window/main-window-close-lifecycle.ts     |   4 +-
+ .../window/renderer-recovery-prompt.test.ts   |   2 +-
+ src/main/window/renderer-recovery-prompt.ts   |  16 +-
+ src/main/window/workspace-space-window.ts     |   4 +-
+ .../BrowserCookieImportDisclosure.tsx         |   2 +-
+ .../CodexSharedSettingsNoticeCard.tsx         |   4 +-
+ .../contextual-tours/contextual-tour-gate.ts  |  15 +-
+ .../use-contextual-tour-focus.test.tsx        |  54 ++++-
+ .../feature-tips/CliSkillSetupPanel.tsx       |   2 +-
+ .../feature-tips/CliSkillSetupTerminal.tsx    |   4 +-
+ .../feature-tips/FeatureTipsModal.tsx         |   4 +-
+ .../feature-tips/SessionSearchTipDialog.tsx   |   2 +-
+ .../AgentCapabilitiesSetupAction.tsx          |   6 +-
+ .../feature-wall/BrowserUseSkillSetupCard.tsx |   2 +-
+ .../feature-wall/ConnectIntegrationsList.tsx  |   6 +-
+ .../feature-wall/FeatureWallBrowserAction.tsx |   2 +-
+ .../feature-wall/FeatureWallTourSurface.tsx   |   2 +-
+ .../feature-wall/OrchestrationSetupCard.tsx   |   2 +-
+ .../agent-capability-setup-status.ts          |   2 +-
+ .../components/landing-preflight-issues.ts    |   2 +-
+ .../mac-notification-permission-card.tsx      |   6 +-
+ .../OnboardingFlow.focus-and-l10n.test.tsx    |  53 ++++-
+ .../components/onboarding/OnboardingFlow.tsx  |  35 ++-
+ .../OnboardingSkipConfirmationDialog.tsx      |   2 +
+ .../OrcaProfileSignOutConfirmDialog.tsx       |   7 +-
+ .../artifacts/artifacts-settings-search.ts    |   2 +-
+ .../MobileEmulatorAgentControlRow.tsx         |   6 +-
+ .../emulator/MobileEmulatorExamples.tsx       |   2 +-
+ .../emulator/MobileEmulatorSettingsPane.tsx   |   4 +-
+ .../mobile/emulator/mobile-emulator-search.ts |   6 +-
+ ...tings-setup-workflow-section-renderers.tsx |   4 +-
+ .../sidebar/SidebarSettingsHelpMenu.tsx       |   6 +-
+ .../skills/setup/AgentSkillSetupPanel.tsx     |   2 +-
+ .../setup/linear-agent-skill-install-cta.tsx  |   2 +-
+ ...settings-navigation-capability-sections.ts |   8 +-
+ .../settings-navigation-workflow-sections.ts  |   2 +-
+ .../src/i18n/en-runtime-required.json         | 212 +-----------------
+ src/renderer/src/i18n/locales/zh.json         |  34 +--
+ .../src/lib/blocked-notification-fallback.ts  |   4 +-
+ 66 files changed, 438 insertions(+), 370 deletions(-)
+ create mode 100644 src/main/menu/register-app-menu.test.ts
+
+diff --git a/src/main/crash-reporting/gpu-fallback-recovered-launch.ts b/src/main/crash-reporting/gpu-fallback-recovered-launch.ts
+index e8c7463333..6103fef989 100644
+--- a/src/main/crash-reporting/gpu-fallback-recovered-launch.ts
++++ b/src/main/crash-reporting/gpu-fallback-recovered-launch.ts
+@@ -15,7 +15,7 @@ export function gpuFallbackRecoveredLaunchOptions(): MessageBoxOptions {
+     title: translateMain('gpuFallback.recoveredLaunch.title', 'Safe Graphics Mode is Active'),
+     message: translateMain(
+       'gpuFallback.recoveredLaunch.message',
+-      'Orca recovered in Safe Graphics Mode.'
++      'Porpita recovered in Safe Graphics Mode.'
+     ),
+     detail: translateMain(
+       'gpuFallback.recoveredLaunch.detail',
+diff --git a/src/main/crash-reporting/gpu-fallback-restart-prompt.ts b/src/main/crash-reporting/gpu-fallback-restart-prompt.ts
+index 662b33aac5..37dae9caf3 100644
+--- a/src/main/crash-reporting/gpu-fallback-restart-prompt.ts
++++ b/src/main/crash-reporting/gpu-fallback-restart-prompt.ts
+@@ -12,14 +12,17 @@ export function gpuFallbackRestartOptions(): MessageBoxOptions {
+     ],
+     defaultId: 0,
+     cancelId: 1,
+-    title: translateMain('gpuFallback.restartPrompt.title', 'Restart Orca in Safe Graphics Mode?'),
++    title: translateMain(
++      'gpuFallback.restartPrompt.title',
++      'Restart Porpita in Safe Graphics Mode?'
++    ),
+     message: translateMain(
+       'gpuFallback.restartPrompt.message',
+-      "Orca's graphics process has crashed repeatedly."
++      "Porpita's graphics process has crashed repeatedly."
+     ),
+     detail: translateMain(
+       'gpuFallback.restartPrompt.detail',
+-      'Safe graphics mode disables hardware acceleration and WebGL for this Orca version. Terminals and 3D content may render more slowly. Keep Running leaves graphics settings unchanged.'
++      'Safe graphics mode disables hardware acceleration and WebGL for this Porpita version. Terminals and 3D content may render more slowly. Keep Running leaves graphics settings unchanged.'
+     )
+   }
+ }
+diff --git a/src/main/i18n/main-i18n-lazy-locale.test.ts b/src/main/i18n/main-i18n-lazy-locale.test.ts
+index d81f2eeab2..a687fd919f 100644
+--- a/src/main/i18n/main-i18n-lazy-locale.test.ts
++++ b/src/main/i18n/main-i18n-lazy-locale.test.ts
+@@ -68,4 +68,33 @@ describe('main-i18n lazy locale loading', () => {
+     ).toBe('21 files')
+     expect(translateMain('empty', '{{count}} terminals', { count: 2 })).toBe('2 terminals')
+   })
++
++  it('resolves English Porpita branding and plural entries without leaking Orca fallbacks', async () => {
++    await setMainUiLanguage(UI_LANGUAGE_ENGLISH)
++    expect(translateMain('menu.exploreOrca', 'Explore Orca')).toBe('Explore Porpita')
++    expect(translateMain('menu.gettingStarted', 'Getting Started with Orca')).toBe(
++      'Getting Started with Porpita'
++    )
++    expect(translateMain('tray.openOrca', 'Open Orca')).toBe('Open Porpita')
++    expect(
++      translateMain(
++        'localBuild.liveTerminals',
++        '{{count}} live terminals will reconnect after restart.',
++        {
++          count: 1,
++          defaultValue_one: '{{count}} live terminal will reconnect after restart.'
++        }
++      )
++    ).toBe('1 live terminal will reconnect after restart.')
++    expect(
++      translateMain(
++        'localBuild.liveTerminals',
++        '{{count}} live terminals will reconnect after restart.',
++        {
++          count: 3,
++          defaultValue_one: '{{count}} live terminal will reconnect after restart.'
++        }
++      )
++    ).toBe('3 live terminals will reconnect after restart.')
++  })
+ })
+diff --git a/src/main/i18n/main-i18n.ts b/src/main/i18n/main-i18n.ts
+index 2b5d7811a4..2ce747ffa7 100644
+--- a/src/main/i18n/main-i18n.ts
++++ b/src/main/i18n/main-i18n.ts
+@@ -1,3 +1,4 @@
++import enCatalog from '../../renderer/src/i18n/locales/en.json'
+ import { getSystemLanguageDetection } from './system-language'
+ import type { i18n as I18nInstance } from 'i18next'
+ 
+@@ -7,7 +8,8 @@ import { UI_LANGUAGE_SYSTEM, type UiLanguage } from '../../shared/ui-language'
+ 
+ let languageGeneration = 0
+ 
+-// English uses caller fallbacks; load only the selected non-English catalog after startup.
++// Main bundles only the subset of en.json referenced by src/main and src/shared via main-locale-subset;
++// non-English catalogs load lazily after startup.
+ const LAZY_LOCALE_LOADERS: Record<
+   Exclude<SupportedUiLocale, 'en'>,
+   () => Promise<{ default: Record<string, unknown> }>
+@@ -30,7 +32,7 @@ const LAZY_LOCALE_LOADER_MAP = new Map<string, () => Promise<{ default: Record<s
+ // Initializes synchronously, so startup dialogs can translate before settings load.
+ const orcaI18n = createOrcaI18n({
+   loadCatalog: (language) => LAZY_LOCALE_LOADER_MAP.get(language)?.().then((mod) => mod.default),
+-  englishResources: {}
++  englishResources: enCatalog
+ })
+ 
+ export const mainI18n: I18nInstance = orcaI18n.i18n
+diff --git a/src/main/index.ts b/src/main/index.ts
+index 0e53bfcc02..43ec304ad8 100644
+--- a/src/main/index.ts
++++ b/src/main/index.ts
+@@ -239,7 +239,7 @@ if (preflightReady) {
+               formatProfileStateStartupFailure(error, translateMain) ??
+               translateMain(
+                 'startupFailure.finishFailed',
+-                'Orca could not finish starting: {{detail}}',
++                'Porpita could not finish starting: {{detail}}',
+                 { detail }
+               ),
+             ...(failureClass === 'recovery-required' || failureClass === 'ambiguous-authority'
+diff --git a/src/main/ipc/notification-options.ts b/src/main/ipc/notification-options.ts
+index dccd0b8759..aaf911c201 100644
+--- a/src/main/ipc/notification-options.ts
++++ b/src/main/ipc/notification-options.ts
+@@ -30,8 +30,8 @@ export function buildNotificationOptions(
+ 
+   if (args.source === 'test') {
+     return {
+-      title: translate('notifications.test.title', 'Orca notifications are on'),
+-      body: translate('notifications.test.body', 'This is a test notification from Orca.')
++      title: translate('notifications.test.title', 'Porpita notifications are on'),
++      body: translate('notifications.test.body', 'This is a test notification from Porpita.')
+     }
+   }
+ 
+diff --git a/src/main/ipc/notification-permission-probe.ts b/src/main/ipc/notification-permission-probe.ts
+index 92f5728a39..f75a0dca11 100644
+--- a/src/main/ipc/notification-permission-probe.ts
++++ b/src/main/ipc/notification-permission-probe.ts
+@@ -38,10 +38,10 @@ export function probeNotificationDelivery(): Promise<NotificationDeliveryProbeRe
+   permissionDialogTriggeredThisSession = true
+ 
+   const probe = new Notification({
+-    title: translateMain('notifications.test.title', 'Orca notifications are on'),
++    title: translateMain('notifications.test.title', 'Porpita notifications are on'),
+     body: translateMain(
+       'notifications.permissionProbe.body',
+-      'Orca will alert you when agents finish or terminals need attention.'
++      'Porpita will alert you when agents finish or terminals need attention.'
+     ),
+     silent: true
+   })
+diff --git a/src/main/ipc/startup-notification-registration.ts b/src/main/ipc/startup-notification-registration.ts
+index 14fead68ac..a4ce140d65 100644
+--- a/src/main/ipc/startup-notification-registration.ts
++++ b/src/main/ipc/startup-notification-registration.ts
+@@ -18,10 +18,13 @@ export function triggerStartupNotificationRegistration(store: Store): void {
+   store.updateUI({ notificationPermissionRequested: true })
+ 
+   const notification = new Notification({
+-    title: translateMain('notifications.startupRegistration.title', 'Orca is ready to notify you'),
++    title: translateMain(
++      'notifications.startupRegistration.title',
++      'Porpita is ready to notify you'
++    ),
+     body: translateMain(
+       'notifications.startupRegistration.body',
+-      'Allow notifications so Orca can alert you when agents finish or terminals need attention.'
++      'Allow notifications so Porpita can alert you when agents finish or terminals need attention.'
+     )
+   })
+ 
+diff --git a/src/main/local-builds/local-build-switch.test.ts b/src/main/local-builds/local-build-switch.test.ts
+index f032f82a38..49186a4aa0 100644
+--- a/src/main/local-builds/local-build-switch.test.ts
++++ b/src/main/local-builds/local-build-switch.test.ts
+@@ -85,7 +85,7 @@ it('re-resolves dialog parents and preserves failure, cancellation and candidate
+     if (mode === 'live') {
+       openOptions = showOpenDialog.mock.calls[0]?.at(-1)
+       confirmationOptions = showMessageBox.mock.calls[0]?.at(-1)
+-      expect(openOptions).toMatchObject({ title: 'Choose a Local Orca Build' })
++      expect(openOptions).toMatchObject({ title: 'Choose a Local Porpita Build' })
+       expect(confirmationOptions).toMatchObject({ buttons: ['Use Local Build', 'Cancel'] })
+     }
+     expect(showOpenDialog).toHaveBeenCalledExactlyOnceWith(
+diff --git a/src/main/local-builds/local-build-switch.ts b/src/main/local-builds/local-build-switch.ts
+index 3cfc2ffcda..30b7b96def 100644
+--- a/src/main/local-builds/local-build-switch.ts
++++ b/src/main/local-builds/local-build-switch.ts
+@@ -9,12 +9,12 @@ export async function chooseLocalBuild(
+   getMainWindow: () => BrowserWindow | null
+ ): Promise<LocalBuildCandidate | null> {
+   const openDialogOptions: Electron.OpenDialogOptions = {
+-    title: translateMain('localBuild.chooseTitle', 'Choose a Local Orca Build'),
++    title: translateMain('localBuild.chooseTitle', 'Choose a Local Porpita Build'),
+     buttonLabel: translateMain('localBuild.chooseButton', 'Choose Build'),
+     properties: ['openFile'],
+     filters: [
+       {
+-        name: translateMain('localBuild.manifestFilter', 'Orca update manifest'),
++        name: translateMain('localBuild.manifestFilter', 'Porpita update manifest'),
+         extensions: ['yml']
+       }
+     ]
+@@ -51,7 +51,7 @@ export async function chooseLocalBuild(
+           )
+     const messageBoxOptions: Electron.MessageBoxOptions = {
+       type: 'question',
+-      title: translateMain('localBuild.confirmTitle', 'Use Local Orca Build?'),
++      title: translateMain('localBuild.confirmTitle', 'Use Local Porpita Build?'),
+       message: `${app.getVersion()} → ${candidate.version}`,
+       detail: [
+         terminalSummary,
+@@ -63,7 +63,7 @@ export async function chooseLocalBuild(
+         '',
+         translateMain(
+           'localBuild.signatureRequirement',
+-          'The build must have the same valid code signature as Orca or installation will stop.'
++          'The build must have the same valid code signature as Porpita or installation will stop.'
+         )
+       ].join('\n'),
+       buttons: [
+diff --git a/src/main/menu/app-menu-quit-item.ts b/src/main/menu/app-menu-quit-item.ts
+index ec8b584c71..48381d76d4 100644
+--- a/src/main/menu/app-menu-quit-item.ts
++++ b/src/main/menu/app-menu-quit-item.ts
+@@ -36,7 +36,7 @@ export function quitAndStopAllSessionsMenuText(): Pick<
+     label: translateMain('menu.quitAndStopAllSessions', 'Quit Completely...'),
+     toolTip: translateMain(
+       'menu.quitAndStopAllSessionsTooltip',
+-      'Also stops every terminal session, including running agents. Plain Quit keeps them running so Orca reattaches on next launch.'
++      'Also stops every terminal session, including running agents. Plain Quit keeps them running so Porpita reattaches on next launch.'
+     )
+   }
+ }
+diff --git a/src/main/menu/register-app-menu.test.ts b/src/main/menu/register-app-menu.test.ts
+new file mode 100644
+index 0000000000..2a0cf38ee7
+--- /dev/null
++++ b/src/main/menu/register-app-menu.test.ts
+@@ -0,0 +1,91 @@
++import { beforeEach, describe, expect, it, vi } from 'vitest'
++
++const { buildFromTemplateMock, setApplicationMenuMock } = vi.hoisted(() => ({
++  buildFromTemplateMock: vi.fn((template: Electron.MenuItemConstructorOptions[]) => ({ template })),
++  setApplicationMenuMock: vi.fn()
++}))
++
++vi.mock('electron', () => ({
++  BrowserWindow: {
++    getFocusedWindow: vi.fn(() => null)
++  },
++  Menu: {
++    buildFromTemplate: buildFromTemplateMock,
++    setApplicationMenu: setApplicationMenuMock,
++    sendActionToFirstResponder: vi.fn()
++  },
++  MenuItem: vi.fn(function (opts: Electron.MenuItemConstructorOptions) {
++    return opts
++  }),
++  app: {
++    name: 'Porpita',
++    getLocale: vi.fn(() => 'en-US')
++  },
++  webContents: {
++    getFocusedWebContents: vi.fn(() => null)
++  }
++}))
++
++import { setMainUiLanguage } from '../i18n/main-i18n'
++import { registerAppMenu } from './register-app-menu'
++
++function registerDefaultMenu(): Electron.MenuItemConstructorOptions[] {
++  registerAppMenu({
++    onOpenSettings: vi.fn(),
++    onOpenSetupGuide: vi.fn(),
++    onOpenFeatureTour: vi.fn(),
++    onOpenCrashReport: vi.fn(),
++    onCheckForUpdates: vi.fn(),
++    onZoomIn: vi.fn(),
++    onZoomOut: vi.fn(),
++    onZoomReset: vi.fn(),
++    onToggleLeftSidebar: vi.fn(),
++    onToggleRightSidebar: vi.fn(),
++    onToggleAppearance: vi.fn(),
++    getAppearanceState: () => ({
++      showTasksButton: true,
++      showAutomationsButton: true,
++      showMobileButton: true,
++      showTitlebarAppName: true,
++      statusBarVisible: true
++    })
++  })
++  return buildFromTemplateMock.mock.calls.at(-1)?.[0] ?? []
++}
++
++describe('registerAppMenu localization', () => {
++  beforeEach(async () => {
++    buildFromTemplateMock.mockClear()
++    setApplicationMenuMock.mockClear()
++    await setMainUiLanguage('en')
++  })
++
++  it('uses Porpita Help menu labels in English instead of Orca fallbacks', () => {
++    const template = registerDefaultMenu()
++    const helpMenu = template.find((item) => item.label === 'Help')
++    const helpSubmenu = Array.isArray(helpMenu?.submenu) ? helpMenu.submenu : []
++    const labels = helpSubmenu.map((item) => item.label).filter(Boolean)
++
++    expect(labels).toContain('Explore Porpita')
++    expect(labels).toContain('Getting Started with Porpita')
++    expect(labels).not.toContain('Explore Orca')
++    expect(labels).not.toContain('Getting Started with Orca')
++
++    const viewMenu = template.find((item) => item.label === 'View')
++    const viewSubmenu = Array.isArray(viewMenu?.submenu) ? viewMenu.submenu : []
++    const appearanceMenu = viewSubmenu.find((item) => item.label === 'Appearance')
++    const appearanceSubmenu = Array.isArray(appearanceMenu?.submenu) ? appearanceMenu.submenu : []
++    expect(appearanceSubmenu.map((item) => item.label)).toContain('Show Porpita Mobile Button')
++  })
++
++  it('localizes Help menu labels in Simplified Chinese', async () => {
++    await setMainUiLanguage('zh')
++    const template = registerDefaultMenu()
++    const helpMenu = template.find((item) => item.label === '帮助')
++    const helpSubmenu = Array.isArray(helpMenu?.submenu) ? helpMenu.submenu : []
++    const labels = helpSubmenu.map((item) => item.label).filter(Boolean)
++
++    expect(labels).toContain('探索 Porpita')
++    expect(labels).toContain('Porpita 入门')
++  })
++})
+diff --git a/src/main/menu/register-app-menu.ts b/src/main/menu/register-app-menu.ts
+index 34805d34b4..1f225aa57d 100644
+--- a/src/main/menu/register-app-menu.ts
++++ b/src/main/menu/register-app-menu.ts
+@@ -113,12 +113,12 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
+   }
+ 
+   const featureTourItem: Electron.MenuItemConstructorOptions = {
+-    label: translateMain('menu.exploreOrca', 'Explore Orca'),
++    label: translateMain('menu.exploreOrca', 'Explore Porpita'),
+     click: (_menuItem, window) => onOpenFeatureTour(window)
+   }
+ 
+   const setupGuideItem: Electron.MenuItemConstructorOptions = {
+-    label: translateMain('menu.gettingStarted', 'Getting Started with Orca'),
++    label: translateMain('menu.gettingStarted', 'Getting Started with Porpita'),
+     click: (_menuItem, window) => onOpenSetupGuide(window)
+   }
+ 
+diff --git a/src/main/runtime/rpc/server/runtime-rpc-startup-failure.test.ts b/src/main/runtime/rpc/server/runtime-rpc-startup-failure.test.ts
+index a92b49c385..7afc94abf4 100644
+--- a/src/main/runtime/rpc/server/runtime-rpc-startup-failure.test.ts
++++ b/src/main/runtime/rpc/server/runtime-rpc-startup-failure.test.ts
+@@ -151,8 +151,8 @@ describe('runtime RPC startup failure reporting', () => {
+       parentWindow,
+       expect.objectContaining({
+         type: 'error',
+-        title: 'Orca CLI unavailable',
+-        message: "Orca couldn't start its local command transport.",
++        title: 'Porpita CLI unavailable',
++        message: "Porpita couldn't start its local command transport.",
+         detail: expect.stringMatching(
+           /orca status.*orca terminal.*orchestration.*Cause: metadata write failed/s
+         )
+@@ -162,13 +162,13 @@ describe('runtime RPC startup failure reporting', () => {
+ 
+   // Only address_in_use can be fixed by restart; other failure classes must explain their required repair.
+   it.each([
+-    ['EACCES', "Check permissions on Orca's data folder"],
+-    ['EPERM', "Check permissions on Orca's data folder"],
++    ['EACCES', "Check permissions on Porpita's data folder"],
++    ['EPERM', "Check permissions on Porpita's data folder"],
+     ['ENOSPC', 'Your disk may be full or read-only'],
+     ['EROFS', 'Your disk may be full or read-only'],
+     ['EINVAL', 'at a path that is too long'],
+     ['ENAMETOOLONG', 'at a path that is too long'],
+-    ['ENOENT', "Orca's data folder may be missing"],
++    ['ENOENT', "Porpita's data folder may be missing"],
+     ['EADDRINUSE', 'Another process may be holding the port']
+   ] as const)('guides the user on how to fix %s', async (code, guidance) => {
+     const error = Object.assign(new Error('metadata write failed'), { code })
+@@ -184,8 +184,8 @@ describe('runtime RPC startup failure reporting', () => {
+     await showRuntimeRpcStartupFailureDialog(createParentWindow(), new Error('mystery'))
+ 
+     const detail = showMessageBoxMock.mock.calls[0]?.[1]?.detail as string
+-    expect(detail).toContain('Restart Orca to try again.')
+-    expect(detail).not.toContain("Check permissions on Orca's data folder")
++    expect(detail).toContain('Restart Porpita to try again.')
++    expect(detail).not.toContain("Check permissions on Porpita's data folder")
+   })
+ 
+   it('truncates a runaway cause instead of pasting it whole into the dialog', async () => {
+diff --git a/src/main/runtime/rpc/server/runtime-rpc-startup-failure.ts b/src/main/runtime/rpc/server/runtime-rpc-startup-failure.ts
+index e2a81fa115..7b1d03a0ec 100644
+--- a/src/main/runtime/rpc/server/runtime-rpc-startup-failure.ts
++++ b/src/main/runtime/rpc/server/runtime-rpc-startup-failure.ts
+@@ -70,24 +70,24 @@ const GUIDANCE_BY_ERROR_CLASS: Readonly<
+   permission_denied: {
+     key: 'runtimeRpc.startupFailure.guidance.permissionDenied',
+     fallback:
+-      "Orca couldn't write its runtime file. Check permissions on Orca's data folder, then restart."
++      "Porpita couldn't write its runtime file. Check permissions on Porpita's data folder, then restart."
+   },
+   storage_unavailable: {
+     key: 'runtimeRpc.startupFailure.guidance.storageUnavailable',
+-    fallback: 'Your disk may be full or read-only. Free up space, then restart Orca.'
++    fallback: 'Your disk may be full or read-only. Free up space, then restart Porpita.'
+   },
+   invalid_path: {
+     key: 'runtimeRpc.startupFailure.guidance.invalidPath',
+     fallback:
+-      "Orca's data folder may be missing, moved, or at a path that is too long. Restore it or use a shorter path, then restart Orca."
++      "Porpita's data folder may be missing, moved, or at a path that is too long. Restore it or use a shorter path, then restart Porpita."
+   },
+   address_in_use: {
+     key: 'runtimeRpc.startupFailure.guidance.addressInUse',
+-    fallback: 'Another process may be holding the port. Restart Orca to try again.'
++    fallback: 'Another process may be holding the port. Restart Porpita to try again.'
+   },
+   unknown: {
+     key: 'runtimeRpc.startupFailure.guidance.unknown',
+-    fallback: 'Restart Orca to try again.'
++    fallback: 'Restart Porpita to try again.'
+   }
+ }
+ 
+@@ -100,14 +100,14 @@ function createRuntimeRpcStartupFailureDialogOptions(error: unknown): MessageBox
+     defaultId: 0,
+     cancelId: 0,
+     noLink: true,
+-    title: translateMain('runtimeRpc.startupFailure.title', 'Orca CLI unavailable'),
++    title: translateMain('runtimeRpc.startupFailure.title', 'Porpita CLI unavailable'),
+     message: translateMain(
+       'runtimeRpc.startupFailure.message',
+-      "Orca couldn't start its local command transport."
++      "Porpita couldn't start its local command transport."
+     ),
+     detail: translateMain(
+       'runtimeRpc.startupFailure.detail',
+-      'Orca will continue to work, but commands such as orca status, orca terminal, and orchestration are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}',
++      'Porpita will continue to work, but commands such as orca status, orca terminal, and orchestration are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}',
+       { cause, guidance: translateMain(key, fallback) }
+     )
+   }
+diff --git a/src/main/startup/browser-process-user-agent-ordering.test.ts b/src/main/startup/browser-process-user-agent-ordering.test.ts
+index 07d2a72ded..287c59e86f 100644
+--- a/src/main/startup/browser-process-user-agent-ordering.test.ts
++++ b/src/main/startup/browser-process-user-agent-ordering.test.ts
+@@ -12,7 +12,9 @@ const mocks = vi.hoisted(() => {
+     // Preflight reads commandLine to select the Linux keyring backend.
+     commandLine: { hasSwitch: vi.fn(() => false), appendSwitch: vi.fn() },
+     getVersion: vi.fn(() => '1.0.0'),
++    getName: vi.fn(() => 'Orca Development'),
+     getPath: vi.fn(() => '/canonical-user-data'),
++    setPath: vi.fn(),
+     get userAgentFallback(): string {
+       events.push('read-user-agent')
+       return userAgent
+@@ -222,7 +224,7 @@ describe('browser process user-agent startup ordering', () => {
+         runMainProcessPreflight({ focusExistingWindow: vi.fn(), requestDesktopActivation: vi.fn() })
+       ).toBe(false)
+       expect(mocks.showErrorBox).toHaveBeenCalledWith(
+-        'Orca could not start',
++        'Porpita could not start',
+         expect.stringContaining('Stop Orca and orcad before retrying profile recovery')
+       )
+       expect(mocks.app.isReady).not.toHaveBeenCalled()
+@@ -246,7 +248,7 @@ describe('browser process user-agent startup ordering', () => {
+         runMainProcessPreflight({ focusExistingWindow: vi.fn(), requestDesktopActivation: vi.fn() })
+       ).toBe(false)
+       expect(mocks.showErrorBox).toHaveBeenCalledWith(
+-        'Orca could not start',
++        'Porpita could not start',
+         'Another orcad (pid 7)'
+       )
+       expect(mocks.app.exit.mock.calls).toEqual([[3]])
+@@ -382,7 +384,7 @@ it('defers a Linux desktop startup failure until Electron is ready', async () =>
+     // The dialog waits for the async system-language catalog after ready.
+     await vi.waitFor(() => expect(mocks.app.exit).toHaveBeenCalled())
+     expect(mocks.showErrorBox).toHaveBeenCalledWith(
+-      'Orca could not start',
++      'Porpita could not start',
+       expect.stringContaining('Linux pre-ready failure')
+     )
+     expect(mocks.app.exit).toHaveBeenCalledWith(1)
+diff --git a/src/main/startup/main-process-preflight-failure.ts b/src/main/startup/main-process-preflight-failure.ts
+index 78e6abbeba..2ed504fb3e 100644
+--- a/src/main/startup/main-process-preflight-failure.ts
++++ b/src/main/startup/main-process-preflight-failure.ts
+@@ -37,7 +37,7 @@ export function handleMainProcessPreflightFailure(error: unknown, exitCode = 1):
+       const message =
+         formatProfileStateStartupFailure(error, translateMain) ??
+         (error instanceof Error ? error.message : String(error))
+-      dialog.showErrorBox(translateMain('startupFailure.title', 'Orca could not start'), message)
++      dialog.showErrorBox(translateMain('startupFailure.title', 'Porpita could not start'), message)
+     } catch (dialogError) {
+       console.warn('[startup] Could not show startup failure:', dialogError)
+     } finally {
+diff --git a/src/main/startup/profile-state-recovery-preflight.ts b/src/main/startup/profile-state-recovery-preflight.ts
+index 08ea2f9eb2..2d8e8405fd 100644
+--- a/src/main/startup/profile-state-recovery-preflight.ts
++++ b/src/main/startup/profile-state-recovery-preflight.ts
+@@ -79,15 +79,15 @@ function runDesktopRecovery(argv: readonly string[]): void {
+         buttons: [translateMain('profileState.recoveryNotApplied.quitButton', 'Quit')],
+         title: translateMain(
+           'profileState.recoveryNotApplied.title',
+-          'Orca could not finish recovering this profile'
++          'Porpita could not finish recovering this profile'
+         ),
+         message: translateMain(
+           'profileState.recoveryNotApplied.message',
+-          'Orca could not apply the selected profile state.'
++          'Porpita could not apply the selected profile state.'
+         ),
+         detail: `${response.message}\n\n${translateMain(
+           'profileState.recoveryNotApplied.reopenDetail',
+-          'Reopen Orca to choose again.'
++          'Reopen Porpita to choose again.'
+         )}`
+       })
+     )
+diff --git a/src/main/startup/profile-state-write-failure.test.ts b/src/main/startup/profile-state-write-failure.test.ts
+index 19e950039a..da3ccb86ab 100644
+--- a/src/main/startup/profile-state-write-failure.test.ts
++++ b/src/main/startup/profile-state-write-failure.test.ts
+@@ -84,9 +84,9 @@ it('attaches the alert to the visible main window and explains an unconfirmed wr
+   expect(fixture.show).toHaveBeenCalledWith(window, {
+     type: 'error',
+     title: 'Saving stopped',
+-    message: 'Orca has stopped saving this profile.',
++    message: 'Porpita has stopped saving this profile.',
+     detail:
+-      'Orca could not confirm whether your most recent change was saved. New changes will not be saved until you restart Orca.',
++      'Porpita could not confirm whether your most recent change was saved. New changes will not be saved until you restart Porpita.',
+     buttons: ['OK']
+   })
+   expect(recordProfileStateWriteFailureReport).toHaveBeenCalledWith(workerExit, 'dialog')
+diff --git a/src/main/startup/profile-state-write-failure.ts b/src/main/startup/profile-state-write-failure.ts
+index 376fc0c021..8e826d0430 100644
+--- a/src/main/startup/profile-state-write-failure.ts
++++ b/src/main/startup/profile-state-write-failure.ts
+@@ -14,17 +14,17 @@ export function profileStateWriteFailureDialogOptions(error: Error): MessageBoxO
+     title: translateMain('profileState.writeFailure.title', 'Saving stopped'),
+     message: translateMain(
+       'profileState.writeFailure.message',
+-      'Orca has stopped saving this profile.'
++      'Porpita has stopped saving this profile.'
+     ),
+     detail:
+       profileStateWriterFailureOutcome(error) === 'indeterminate'
+         ? translateMain(
+             'profileState.writeFailure.indeterminateDetail',
+-            'Orca could not confirm whether your most recent change was saved. New changes will not be saved until you restart Orca.'
++            'Porpita could not confirm whether your most recent change was saved. New changes will not be saved until you restart Porpita.'
+           )
+         : translateMain(
+             'profileState.writeFailure.safeDetail',
+-            'Changes saved before this point are safe. New changes will not be saved until you restart Orca.'
++            'Changes saved before this point are safe. New changes will not be saved until you restart Porpita.'
+           ),
+     buttons: [translateMain('profileState.writeFailure.okButton', 'OK')]
+   }
+diff --git a/src/main/startup/quit-and-stop-all-sessions-prompt.ts b/src/main/startup/quit-and-stop-all-sessions-prompt.ts
+index 388be0b580..c6e2d78734 100644
+--- a/src/main/startup/quit-and-stop-all-sessions-prompt.ts
++++ b/src/main/startup/quit-and-stop-all-sessions-prompt.ts
+@@ -22,11 +22,11 @@ export async function confirmQuitAndStopAllSessions(
+     title: translateMain('quitAndStopAllSessions.title', 'Quit Completely'),
+     message: translateMain(
+       'quitAndStopAllSessions.message',
+-      'Stop all terminal sessions and quit Orca?'
++      'Stop all terminal sessions and quit Porpita?'
+     ),
+     detail: translateMain(
+       'quitAndStopAllSessions.detail',
+-      "Orca closes every terminal tab and stops its session, including agents running in terminals, then quits. Plain Quit keeps them running so Orca reattaches on next launch. Terminal sessions on remote hosts may keep running there. Unsaved terminal work is lost, and the closed tabs don't come back on next launch. This can't be undone."
++      "Porpita closes every terminal tab and stops its session, including agents running in terminals, then quits. Plain Quit keeps them running so Porpita reattaches on next launch. Terminal sessions on remote hosts may keep running there. Unsaved terminal work is lost, and the closed tabs don't come back on next launch. This can't be undone."
+     )
+   })
+   return response === CONFIRM_BUTTON_INDEX
+@@ -45,11 +45,11 @@ export async function explainStopAllSessionsUnavailable(
+     title: translateMain('quitAndStopAllSessions.title', 'Quit Completely'),
+     message: translateMain(
+       'quitAndStopAllSessions.unavailableMessage',
+-      "Orca can't stop every terminal session right now."
++      "Porpita can't stop every terminal session right now."
+     ),
+     detail: translateMain(
+       'quitAndStopAllSessions.unavailableDetail',
+-      'Nothing was stopped. Try again once your terminals have opened. If a terminal says it was opened in a newer version of Orca, reopen it first. If your terminals are already open, quit and reopen Orca, then try again.'
++      'Nothing was stopped. Try again once your terminals have opened. If a terminal says it was opened in a newer version of Porpita, reopen it first. If your terminals are already open, quit and reopen Porpita, then try again.'
+     )
+   })
+   return false
+diff --git a/src/main/startup/windows-install-dir-acl-recovery.test.ts b/src/main/startup/windows-install-dir-acl-recovery.test.ts
+index bd5d9311f7..e8a06ee8a1 100644
+--- a/src/main/startup/windows-install-dir-acl-recovery.test.ts
++++ b/src/main/startup/windows-install-dir-acl-recovery.test.ts
+@@ -151,7 +151,7 @@ describe('describeInstallDirAclPoison', () => {
+   it('offers the copyable commands, and drops them once the repair lands', async () => {
+     await probeThenRecover(() => [ORPHAN_PACKAGE_ACE])
+     const repaired = describeInstallDirAclPoison()
+-    expect(repaired?.detail).toContain('Orca repaired the permissions')
++    expect(repaired?.detail).toContain('Porpita repaired the permissions')
+     expect(repaired?.detail).not.toContain('Administrator Command Prompt')
+     expect(repaired?.commands).toEqual([
+       `icacls "${INSTALL_DIR}" /grant "*S-1-15-2-2:(OI)(CI)(RX)"`,
+diff --git a/src/main/startup/windows-install-dir-acl-recovery.ts b/src/main/startup/windows-install-dir-acl-recovery.ts
+index 5c25087ac7..04853d1ad9 100644
+--- a/src/main/startup/windows-install-dir-acl-recovery.ts
++++ b/src/main/startup/windows-install-dir-acl-recovery.ts
+@@ -264,24 +264,24 @@ export function describeInstallDirAclPoison(): InstallDirAclPoisonDiagnosis | nu
+   const commands = buildInstallDirAclRepairCommands(poison.installDir)
+   const cause = translateMain(
+     'installDirAcl.cause',
+-    "Windows permissions on Orca's install folder are blocking its own sandboxed processes from reading the files it shipped with."
++    "Windows permissions on Porpita's install folder are blocking its own sandboxed processes from reading the files it shipped with."
+   )
+   if (poison.stage === 'repaired') {
+     return {
+-      detail: `${cause}\n\n${translateMain('installDirAcl.repaired', 'Orca repaired the permissions. Reload to use them.')}`,
++      detail: `${cause}\n\n${translateMain('installDirAcl.repaired', 'Porpita repaired the permissions. Reload to use them.')}`,
+       commands
+     }
+   }
+   const status =
+     poison.stage === 'pending'
+-      ? translateMain('installDirAcl.repairing', 'Orca is repairing the permissions now.')
++      ? translateMain('installDirAcl.repairing', 'Porpita is repairing the permissions now.')
+       : translateMain(
+           'installDirAcl.repairFailed',
+-          'Orca could not repair them, which usually means the folder needs an administrator.'
++          'Porpita could not repair them, which usually means the folder needs an administrator.'
+         )
+   const runCommands = translateMain(
+     'installDirAcl.runCommands',
+-    'Run these in an Administrator Command Prompt, then relaunch Orca:'
++    'Run these in an Administrator Command Prompt, then relaunch Porpita:'
+   )
+   return {
+     detail: `${cause} ${status}\n\n${runCommands}\n\n${commands.join('\n')}`,
+diff --git a/src/main/tray/system-tray.test.ts b/src/main/tray/system-tray.test.ts
+index 1b5876ddd0..adcc5089e2 100644
+--- a/src/main/tray/system-tray.test.ts
++++ b/src/main/tray/system-tray.test.ts
+@@ -201,7 +201,7 @@ describe('createSystemTray', () => {
+     expect(trayInstances).toHaveLength(1)
+     expect(trayInstances[0].image).toBe(resizedImage)
+     expect(trayInstances[0].setToolTip).toHaveBeenCalledWith('Orca')
+-    expect(builtMenuItems().map((item) => item.label)).toEqual(['Open Orca', undefined, 'Quit'])
++    expect(builtMenuItems().map((item) => item.label)).toEqual(['Open Porpita', undefined, 'Quit'])
+     const clickHandler = trayInstances[0].on.mock.calls.find((call) => call[0] === 'click')?.[1]
+     expect(clickHandler).toBeTypeOf('function')
+ 
+@@ -227,7 +227,7 @@ describe('createSystemTray', () => {
+       dataURL: 'data:image/png;base64,mac-retina'
+     })
+     expect(builtMenuItems().map((item) => item.label)).toEqual([
+-      'Open Orca',
++      'Open Porpita',
+       undefined,
+       'Settings',
+       undefined,
+@@ -237,7 +237,7 @@ describe('createSystemTray', () => {
+     expect(nativeThemeMock.on).toHaveBeenCalledWith('updated', expect.any(Function))
+ 
+     for (const [label, callback] of [
+-      ['Open Orca', options.onOpen],
++      ['Open Porpita', options.onOpen],
+       ['Settings', options.onOpenSettings],
+       ['Quit', options.onQuit]
+     ] as const) {
+@@ -259,8 +259,8 @@ describe('createSystemTray', () => {
+ 
+       expect(builtMenuItems().map((item) => item.label)).toEqual(
+         platform === 'darwin'
+-          ? ['Open Orca', undefined, 'Settings', undefined, 'Quit Completely...', 'Quit']
+-          : ['Open Orca', undefined, 'Quit Completely...', 'Quit']
++          ? ['Open Porpita', undefined, 'Settings', undefined, 'Quit Completely...', 'Quit']
++          : ['Open Porpita', undefined, 'Quit Completely...', 'Quit']
+       )
+       builtMenuItems().at(-2)?.click?.()
+       expect(options.onQuitAndStopAllSessions).toHaveBeenCalledOnce()
+@@ -386,7 +386,7 @@ describe('dev instance indicator', () => {
+ 
+     expect(stampDevBadgeMock).not.toHaveBeenCalled()
+     expect(trayInstances[0].image).toBe(baseMacImage)
+-    expect(builtMenuItems()[0].label).toBe('Open Orca')
++    expect(builtMenuItems()[0].label).toBe('Open Porpita')
+   })
+ })
+ 
+@@ -444,7 +444,7 @@ describe('setTrayAttention', () => {
+     })
+     expect(attentionImage.setTemplateImage).toHaveBeenCalledWith(false)
+     expect(created.setImage).toHaveBeenCalledWith(attentionImage)
+-    expect(created.setToolTip).toHaveBeenCalledWith('Orca - activity waiting')
++    expect(created.setToolTip).toHaveBeenCalledWith('Porpita - activity waiting')
+ 
+     setTrayAttention(false)
+     flushTraySceneMutation()
+@@ -648,11 +648,11 @@ describe('language changes', () => {
+       await setMainUiLanguage('en')
+       const options = { ...createOptions(), onQuitAndStopAllSessions: vi.fn() }
+       createSystemTray(options)
+-      expect(builtMenuItems()[0].label).toBe('Open Orca')
++      expect(builtMenuItems()[0].label).toBe('Open Porpita')
+ 
+       await setMainUiLanguage('ja')
+       rebuildSystemTrayMenu()
+-      expect(builtMenuItems()[0].label).toBe('Open Orca')
++      expect(builtMenuItems()[0].label).toBe('Open Porpita')
+       flushTraySceneMutation()
+ 
+       expect(trayInstances).toHaveLength(1)
+diff --git a/src/main/tray/system-tray.ts b/src/main/tray/system-tray.ts
+index e0c91a7e9b..2f5f991de1 100644
+--- a/src/main/tray/system-tray.ts
++++ b/src/main/tray/system-tray.ts
+@@ -82,7 +82,7 @@ function applyTrayImage(): void {
+         tray.setToolTip(
+           devIndicator
+             ? `${baseTooltip()} - ${translateMain('tray.activityWaitingSuffix', 'activity waiting')}`
+-            : translateMain('tray.activityWaiting', 'Orca - activity waiting')
++            : translateMain('tray.activityWaiting', 'Porpita - activity waiting')
+         )
+         return
+       } catch (error) {
+@@ -251,7 +251,7 @@ function buildTrayMenu(opts: SystemTrayOptions): Menu {
+         ] satisfies Electron.MenuItemConstructorOptions[])
+       : []),
+     {
+-      label: translateMain('tray.openOrca', 'Open Orca'),
++      label: translateMain('tray.openOrca', 'Open Porpita'),
+       click: safeMenuAction(() => opts.onOpen())
+     },
+     { type: 'separator' },
+diff --git a/src/main/window/dashboard-popout-window.test.ts b/src/main/window/dashboard-popout-window.test.ts
+index ef4a8bd816..626992c9b9 100644
+--- a/src/main/window/dashboard-popout-window.test.ts
++++ b/src/main/window/dashboard-popout-window.test.ts
+@@ -247,7 +247,7 @@ describe('createOrFocusDashboardPopout', () => {
+ 
+     expect(instances).toHaveLength(1)
+     const opts = instances[0].options
+-    expect(opts.title).toBe('Orca Agent Dashboard')
++    expect(opts.title).toBe('Porpita Agent Dashboard')
+     expect(opts.minWidth).toBe(480)
+     expect(opts.minHeight).toBe(360)
+     // Native frame: neither a custom titleBarStyle nor frame:false is set.
+diff --git a/src/main/window/dashboard-popout-window.ts b/src/main/window/dashboard-popout-window.ts
+index bca82a47af..3fa01cf329 100644
+--- a/src/main/window/dashboard-popout-window.ts
++++ b/src/main/window/dashboard-popout-window.ts
+@@ -149,7 +149,7 @@ export function createOrFocusDashboardPopout(
+     ...(savedBounds ? { x: savedBounds.x, y: savedBounds.y } : {}),
+     minWidth: MIN_WIDTH,
+     minHeight: MIN_HEIGHT,
+-    title: translateMain('native.dialog.dashboardTitle', 'Orca Agent Dashboard'),
++    title: translateMain('native.dialog.dashboardTitle', 'Porpita Agent Dashboard'),
+     show: false,
+     autoHideMenuBar: true,
+     backgroundColor: nativeTheme.shouldUseDarkColors ? '#0a0a0a' : '#ffffff',
+@@ -261,7 +261,7 @@ export function createOrFocusDashboardPopout(
+   })
+   const updateTitle = (): void => {
+     if (!window.isDestroyed()) {
+-      window.setTitle(translateMain('native.dialog.dashboardTitle', 'Orca Agent Dashboard'))
++      window.setTitle(translateMain('native.dialog.dashboardTitle', 'Porpita Agent Dashboard'))
+     }
+   }
+   mainI18n.on('languageChanged', updateTitle)
+diff --git a/src/main/window/main-window-close-lifecycle.ts b/src/main/window/main-window-close-lifecycle.ts
+index ac93ab6085..7deb96cdbc 100644
+--- a/src/main/window/main-window-close-lifecycle.ts
++++ b/src/main/window/main-window-close-lifecycle.ts
+@@ -75,10 +75,10 @@ export function installMainWindowCloseLifecycle(args: {
+     if (store.getUI().trayMinimizeNoticeShown !== true) {
+       try {
+         new Notification({
+-          title: 'Orca',
++          title: 'Porpita',
+           body: translateMain(
+             'tray.minimizeNotice.body',
+-            'Orca is still running in the system tray'
++            'Porpita is still running in the system tray'
+           )
+         }).show()
+       } catch {
+diff --git a/src/main/window/renderer-recovery-prompt.test.ts b/src/main/window/renderer-recovery-prompt.test.ts
+index 995cd88f4d..07ae848485 100644
+--- a/src/main/window/renderer-recovery-prompt.test.ts
++++ b/src/main/window/renderer-recovery-prompt.test.ts
+@@ -57,7 +57,7 @@ describe('presentRendererRecoveryPrompt', () => {
+   it('interpolates the recovery count', async () => {
+     const { run, shown } = harness({ recentRecoveryCount: 7 })
+     await run()
+-    expect(shown[0].detail).toContain('Orca tried to recover 7 times in a row')
++    expect(shown[0].detail).toContain('Porpita tried to recover 7 times in a row')
+     expect(shown[0].detail).not.toContain('{{')
+   })
+ 
+diff --git a/src/main/window/renderer-recovery-prompt.ts b/src/main/window/renderer-recovery-prompt.ts
+index a55ad7789e..4ec0de5237 100644
+--- a/src/main/window/renderer-recovery-prompt.ts
++++ b/src/main/window/renderer-recovery-prompt.ts
+@@ -56,7 +56,7 @@ export async function presentRendererRecoveryPrompt(
+       defaultId: 0,
+       // Escape retries instead of destroying the session.
+       cancelId: 0,
+-      title: translateMain('rendererRecovery.title', 'Orca keeps failing to load'),
++      title: translateMain('rendererRecovery.title', 'Porpita keeps failing to load'),
+       ...content
+     })
+     if (response === 1 && diagnosis) {
+@@ -82,7 +82,7 @@ function describeLowCommit(availableMB: number): PromptContent {
+   )
+   const advice = translateMain(
+     'rendererRecovery.lowCommitAdvice',
+-    'Free memory by closing unused apps or Orca workspaces, or increase the Windows page file size, then click Reload.'
++    'Free memory by closing unused apps or Porpita workspaces, or increase the Windows page file size, then click Reload.'
+   )
+   return {
+     message: translateMain('rendererRecovery.lowCommitMessage', 'Windows is out of memory.'),
+@@ -97,11 +97,11 @@ function describeLaunchFailure(
+ ): PromptContent {
+   const message = translateMain(
+     'rendererRecovery.launchFailedMessage',
+-    "Orca couldn't start the process that draws its window."
++    "Porpita couldn't start the process that draws its window."
+   )
+   const retried = translateMain(
+     'rendererRecovery.launchFailedDetail',
+-    'Orca retried {{recoveryCount}} times without success.',
++    'Porpita retried {{recoveryCount}} times without success.',
+     { recoveryCount: attempts }
+   )
+   const cause =
+@@ -113,7 +113,7 @@ function describeLaunchFailure(
+       : (diagnosis?.detail ??
+         translateMain(
+           'rendererRecovery.launchFailedGenericDetail',
+-          'The system refused to start it. Free up memory or close other apps, then click Try Again. If this keeps happening, reinstall Orca.'
++          'The system refused to start it. Free up memory or close other apps, then click Try Again. If this keeps happening, reinstall Porpita.'
+         ))
+   return { message, detail: `${retried}\n\n${cause}` }
+ }
+@@ -126,11 +126,11 @@ function describeRendererCrash(
+   const recoveryDetail = stalled
+     ? translateMain(
+         'rendererRecovery.stalledDetail',
+-        'Orca reloaded the window after a crash, but it never finished loading.'
++        'Porpita reloaded the window after a crash, but it never finished loading.'
+       )
+     : translateMain(
+         'rendererRecovery.crashLoopDetail',
+-        'Orca tried to recover {{recoveryCount}} times in a row without success.',
++        'Porpita tried to recover {{recoveryCount}} times in a row without success.',
+         { recoveryCount }
+       )
+   const causeDetail = diagnosis
+@@ -140,7 +140,7 @@ function describeRendererCrash(
+       )}`
+     : translateMain(
+         'rendererRecovery.genericDetail',
+-        'This is often a graphics-driver or installation problem. Reload to try again, or quit and relaunch Orca.'
++        'This is often a graphics-driver or installation problem. Reload to try again, or quit and relaunch Porpita.'
+       )
+   return {
+     message: stalled
+diff --git a/src/main/window/workspace-space-window.ts b/src/main/window/workspace-space-window.ts
+index 08bbfedc31..feb49547d7 100644
+--- a/src/main/window/workspace-space-window.ts
++++ b/src/main/window/workspace-space-window.ts
+@@ -52,7 +52,7 @@ export function createOrFocusWorkspaceSpaceWindow(store: Store): BrowserWindow {
+     height: 820,
+     minWidth: 700,
+     minHeight: 520,
+-    title: translateMain('native.dialog.spaceTitle', 'Orca Space Beta'),
++    title: translateMain('native.dialog.spaceTitle', 'Porpita Space Beta'),
+     show: false,
+     autoHideMenuBar: true,
+     backgroundColor: nativeTheme.shouldUseDarkColors ? '#0a0a0a' : '#ffffff',
+@@ -89,7 +89,7 @@ export function createOrFocusWorkspaceSpaceWindow(store: Store): BrowserWindow {
+   })
+   const updateTitle = (): void => {
+     if (!window.isDestroyed()) {
+-      window.setTitle(translateMain('native.dialog.spaceTitle', 'Orca Space Beta'))
++      window.setTitle(translateMain('native.dialog.spaceTitle', 'Porpita Space Beta'))
+     }
+   }
+   mainI18n.on('languageChanged', updateTitle)
+diff --git a/src/renderer/src/components/BrowserCookieImportDisclosure.tsx b/src/renderer/src/components/BrowserCookieImportDisclosure.tsx
+index 9e7c203675..6f158f6ade 100644
+--- a/src/renderer/src/components/BrowserCookieImportDisclosure.tsx
++++ b/src/renderer/src/components/BrowserCookieImportDisclosure.tsx
+@@ -18,7 +18,7 @@ export function BrowserCookieImportDisclosure(): React.JSX.Element {
+           <span className="block leading-4 text-muted-foreground">
+             {translate(
+               'auto.components.BrowserCookieImportDisclosure.description',
+-              'Sign in to Google directly in Orca.'
++              'Sign in to Google directly in Porpita.'
+             )}
+           </span>
+         </span>
+diff --git a/src/renderer/src/components/CodexSharedSettingsNoticeCard.tsx b/src/renderer/src/components/CodexSharedSettingsNoticeCard.tsx
+index ba4d6065a8..73af5ca391 100644
+--- a/src/renderer/src/components/CodexSharedSettingsNoticeCard.tsx
++++ b/src/renderer/src/components/CodexSharedSettingsNoticeCard.tsx
+@@ -19,7 +19,7 @@ export function CodexSharedSettingsNoticeCard(): React.JSX.Element | null {
+             <CardTitle id="codex-shared-settings-notice-heading">
+               {translate(
+                 'terminal.codexSharedSettingsNotice.title',
+-                'Codex in Orca now uses ~/.codex'
++                'Codex in Porpita now uses ~/.codex'
+               )}
+             </CardTitle>
+           </div>
+@@ -37,7 +37,7 @@ export function CodexSharedSettingsNoticeCard(): React.JSX.Element | null {
+         <CardDescription>
+           {translate(
+             'terminal.codexSharedSettingsNotice.description',
+-            'Codex may ask again to trust folders or approve commands. Re-add any MCP servers you added only in Orca.'
++            'Codex may ask again to trust folders or approve commands. Re-add any MCP servers you added only in Porpita.'
+           )}
+         </CardDescription>
+       </CardContent>
+diff --git a/src/renderer/src/components/contextual-tours/contextual-tour-gate.ts b/src/renderer/src/components/contextual-tours/contextual-tour-gate.ts
+index 4be5e28d52..73a097df10 100644
+--- a/src/renderer/src/components/contextual-tours/contextual-tour-gate.ts
++++ b/src/renderer/src/components/contextual-tours/contextual-tour-gate.ts
+@@ -221,10 +221,6 @@ function isMeasurableRect(rect: DOMRect): boolean {
+   )
+ }
+ 
+-function rectsIntersect(a: DOMRect, b: DOMRect): boolean {
+-  return a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom
+-}
+-
+ function isTargetRectWithinVisibleBounds(element: Element, rect: DOMRect): boolean {
+   if (typeof window === 'undefined') {
+     return true
+@@ -264,7 +260,16 @@ function isTargetRectWithinVisibleBounds(element: Element, rect: DOMRect): boole
+         return false
+       }
+       const ancestorRect = ancestor.getBoundingClientRect()
+-      if (isMeasurableRect(ancestorRect) && !rectsIntersect(rect, ancestorRect)) {
++      if (
++        (clipsX &&
++          (ancestorRect.width <= 0 ||
++            rect.right <= ancestorRect.left ||
++            rect.left >= ancestorRect.right)) ||
++        (clipsY &&
++          (ancestorRect.height <= 0 ||
++            rect.bottom <= ancestorRect.top ||
++            rect.top >= ancestorRect.bottom))
++      ) {
+         return false
+       }
+     }
+diff --git a/src/renderer/src/components/contextual-tours/use-contextual-tour-focus.test.tsx b/src/renderer/src/components/contextual-tours/use-contextual-tour-focus.test.tsx
+index 87daa03ec7..2a7b79d3de 100644
+--- a/src/renderer/src/components/contextual-tours/use-contextual-tour-focus.test.tsx
++++ b/src/renderer/src/components/contextual-tours/use-contextual-tour-focus.test.tsx
+@@ -14,7 +14,7 @@ vi.mock('@/lib/visible-overlay', () => ({
+   hasVisibleOverlay: mocks.hasVisibleOverlay
+ }))
+ 
+-import { hasContextualTourTarget } from './contextual-tour-gate'
++import { getMeasurableContextualTourTarget, hasContextualTourTarget } from './contextual-tour-gate'
+ import { useContextualTourFocus } from './use-contextual-tour-focus'
+ 
+ function TourHarness({
+@@ -155,4 +155,56 @@ describe('hasContextualTourTarget bounds visibility', () => {
+     offscreen.remove()
+     visible.remove()
+   })
++
++  it('rejects targets inside collapsed zero-height or zero-width overflow-clipping ancestors', () => {
++    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 800 })
++    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 })
++
++    const collapsedHeight = document.createElement('div')
++    collapsedHeight.style.overflow = 'hidden'
++    collapsedHeight.style.maxHeight = '0px'
++    Object.defineProperty(collapsedHeight, 'getBoundingClientRect', {
++      configurable: true,
++      value: () => ({ left: 0, top: 0, right: 200, bottom: 0, width: 200, height: 0 })
++    })
++    const heightTarget = document.createElement('div')
++    heightTarget.setAttribute('data-contextual-tour-target', 'collapsed-height-target')
++    Object.defineProperty(heightTarget, 'getBoundingClientRect', {
++      configurable: true,
++      value: () => ({ left: 10, top: 10, right: 80, bottom: 40, width: 70, height: 30 })
++    })
++    collapsedHeight.appendChild(heightTarget)
++
++    const collapsedWidth = document.createElement('div')
++    collapsedWidth.style.overflowX = 'clip'
++    Object.defineProperty(collapsedWidth, 'getBoundingClientRect', {
++      configurable: true,
++      value: () => ({ left: 0, top: 0, right: 0, bottom: 120, width: 0, height: 120 })
++    })
++    const widthTarget = document.createElement('div')
++    widthTarget.setAttribute('data-contextual-tour-target', 'collapsed-width-target')
++    Object.defineProperty(widthTarget, 'getBoundingClientRect', {
++      configurable: true,
++      value: () => ({ left: 10, top: 10, right: 80, bottom: 40, width: 70, height: 30 })
++    })
++    collapsedWidth.appendChild(widthTarget)
++
++    document.body.append(collapsedHeight, collapsedWidth)
++
++    expect(hasContextualTourTarget('[data-contextual-tour-target="collapsed-height-target"]')).toBe(
++      false
++    )
++    expect(
++      getMeasurableContextualTourTarget('[data-contextual-tour-target="collapsed-height-target"]')
++    ).toBeNull()
++    expect(hasContextualTourTarget('[data-contextual-tour-target="collapsed-width-target"]')).toBe(
++      false
++    )
++    expect(
++      getMeasurableContextualTourTarget('[data-contextual-tour-target="collapsed-width-target"]')
++    ).toBeNull()
++
++    collapsedHeight.remove()
++    collapsedWidth.remove()
++  })
+ })
+diff --git a/src/renderer/src/components/feature-tips/CliSkillSetupPanel.tsx b/src/renderer/src/components/feature-tips/CliSkillSetupPanel.tsx
+index 29a6931197..ce962db3d7 100644
+--- a/src/renderer/src/components/feature-tips/CliSkillSetupPanel.tsx
++++ b/src/renderer/src/components/feature-tips/CliSkillSetupPanel.tsx
+@@ -33,7 +33,7 @@ function BundledCliSkillSetupPanel(): React.JSX.Element {
+       title={translate('auto.components.feature.tips.CliSkillSetupPanel.title', 'Skill setup')}
+       description={translate(
+         'auto.components.feature.tips.CliSkillSetupPanel.description',
+-        'Install the Orca CLI and orchestration skills for your agents.'
++        'Install the Porpita CLI and orchestration skills for your agents.'
+       )}
+       skillNames={CLI_TIP_SKILL_NAMES}
+       installed={installed}
+diff --git a/src/renderer/src/components/feature-tips/CliSkillSetupTerminal.tsx b/src/renderer/src/components/feature-tips/CliSkillSetupTerminal.tsx
+index 3c0084a70f..2d0c956d2b 100644
+--- a/src/renderer/src/components/feature-tips/CliSkillSetupTerminal.tsx
++++ b/src/renderer/src/components/feature-tips/CliSkillSetupTerminal.tsx
+@@ -83,11 +83,11 @@ export function CliSkillSetupTerminal(): React.JSX.Element {
+         )}
+         ariaLabel={translate(
+           'auto.components.feature.tips.CliSkillSetupTerminal.43b60ec5c3',
+-          'Orca CLI and orchestration skill install terminal'
++          'Porpita CLI and orchestration skill install terminal'
+         )}
+         description={translate(
+           'auto.components.feature.tips.CliSkillSetupTerminal.1953e90447',
+-          'Press Enter to install the Orca CLI orchestration skill for your agents.'
++          'Press Enter to install the Porpita CLI orchestration skill for your agents.'
+         )}
+         terminalHeightPx={280}
+         terminalTopMarginPx={8}
+diff --git a/src/renderer/src/components/feature-tips/FeatureTipsModal.tsx b/src/renderer/src/components/feature-tips/FeatureTipsModal.tsx
+index 4fd50fd06d..94f66bb0a5 100644
+--- a/src/renderer/src/components/feature-tips/FeatureTipsModal.tsx
++++ b/src/renderer/src/components/feature-tips/FeatureTipsModal.tsx
+@@ -229,7 +229,7 @@ export default function FeatureTipsModal(): JSX.Element | null {
+           toast.warning(
+             translate(
+               'auto.components.feature.tips.FeatureTipsModal.1da82af45b',
+-              'Orca CLI needs attention'
++              'Porpita CLI needs attention'
+             ),
+             {
+               description:
+@@ -248,7 +248,7 @@ export default function FeatureTipsModal(): JSX.Element | null {
+               ? error.message
+               : translate(
+                   'auto.components.feature.tips.FeatureTipsModal.cliInstallFailed',
+-                  'Failed to install Orca CLI.'
++                  'Failed to install Porpita CLI.'
+                 )
+           if (
+             import.meta.env.DEV &&
+diff --git a/src/renderer/src/components/feature-tips/SessionSearchTipDialog.tsx b/src/renderer/src/components/feature-tips/SessionSearchTipDialog.tsx
+index fc7aff4439..c179d413fb 100644
+--- a/src/renderer/src/components/feature-tips/SessionSearchTipDialog.tsx
++++ b/src/renderer/src/components/feature-tips/SessionSearchTipDialog.tsx
+@@ -31,7 +31,7 @@ function stageCopy(
+         title: translate('featureTips.sessionSearch.indexingTitle', 'Indexing your agent sessions'),
+         description: translate(
+           'featureTips.sessionSearch.indexingDescription',
+-          'Orca is reading your past agent transcripts so you can search them. This can take a few minutes.'
++          'Porpita is reading your past agent transcripts so you can search them. This can take a few minutes.'
+         ),
+         cta: translate('featureTips.sessionSearch.continueInBackground', 'Continue in background')
+       }
+diff --git a/src/renderer/src/components/feature-wall/AgentCapabilitiesSetupAction.tsx b/src/renderer/src/components/feature-wall/AgentCapabilitiesSetupAction.tsx
+index 3f4ddf2f8d..2a1650d6c3 100644
+--- a/src/renderer/src/components/feature-wall/AgentCapabilitiesSetupAction.tsx
++++ b/src/renderer/src/components/feature-wall/AgentCapabilitiesSetupAction.tsx
+@@ -227,7 +227,7 @@ const AGENT_CAPABILITY_SETUP_ROWS: readonly AgentCapabilitySetupRow[] = [
+     get description() {
+       return translate(
+         'auto.components.feature.wall.AgentCapabilitiesSetupAction.c61c91e642',
+-        'Let agents coordinate through Orca to keep large, multi-step tasks moving to completion.'
++        'Let agents coordinate through Porpita to keep large, multi-step tasks moving to completion.'
+       )
+     },
+     icon: <Workflow className="size-4" />
+@@ -243,7 +243,7 @@ const AGENT_CAPABILITY_SETUP_ROWS: readonly AgentCapabilitySetupRow[] = [
+     get description() {
+       return translate(
+         'auto.components.feature.wall.AgentCapabilitiesSetupAction.5e8fe5a72d',
+-        "Give agents direct access to Orca's browser so they can test pages, capture screenshots, and act on what they see."
++        "Give agents direct access to Porpita's browser so they can test pages, capture screenshots, and act on what they see."
+       )
+     },
+     icon: <Globe2 className="size-4" />
+@@ -323,7 +323,7 @@ function AgentCapabilitySetupControls(props: {
+               (props.installAction?.kind === 'replace'
+                 ? translate(
+                     'auto.components.settings.AgentSkillSetupPanel.replaceWithOrcaCopy',
+-                    "Replace with Orca's copy"
++                    "Replace with Porpita's copy"
+                   )
+                 : props.installAction?.kind === 'run' && props.installAction.changes
+                   ? bundledSkillSetupActionLabel(props.installAction.changes)
+diff --git a/src/renderer/src/components/feature-wall/BrowserUseSkillSetupCard.tsx b/src/renderer/src/components/feature-wall/BrowserUseSkillSetupCard.tsx
+index 47ea4998db..51df6c5c96 100644
+--- a/src/renderer/src/components/feature-wall/BrowserUseSkillSetupCard.tsx
++++ b/src/renderer/src/components/feature-wall/BrowserUseSkillSetupCard.tsx
+@@ -28,7 +28,7 @@ export function BrowserUseSkillSetupCard(props: {
+       )}
+       description={translate(
+         'auto.components.feature.wall.BrowserUseSkillSetupCard.cbc45022d4',
+-        "Enables agents to navigate and verify pages in Orca's browser."
++        "Enables agents to navigate and verify pages in Porpita's browser."
+       )}
+       skillNames={[PORPITA_CLI_SKILL_NAME]}
+       installed={skill.installed}
+diff --git a/src/renderer/src/components/feature-wall/ConnectIntegrationsList.tsx b/src/renderer/src/components/feature-wall/ConnectIntegrationsList.tsx
+index b095120393..881d332f52 100644
+--- a/src/renderer/src/components/feature-wall/ConnectIntegrationsList.tsx
++++ b/src/renderer/src/components/feature-wall/ConnectIntegrationsList.tsx
+@@ -90,7 +90,7 @@ export function ConnectIntegrationsList(): React.JSX.Element {
+           )}
+           description={translate(
+             'auto.components.feature.wall.ConnectIntegrationsList.review_step_description',
+-            'Connect a review provider so Orca can show PR or MR status, checks, and reviews.'
++            'Connect a review provider so Porpita can show PR or MR status, checks, and reviews.'
+           )}
+           summary={
+             <Trans
+@@ -121,11 +121,11 @@ export function ConnectIntegrationsList(): React.JSX.Element {
+           expanded={taskExpanded}
+           title={translate(
+             'auto.components.feature.wall.ConnectIntegrationsList.task_step_title',
+-            'Start agents on your tasks without leaving Orca'
++            'Start agents on your tasks without leaving Porpita'
+           )}
+           description={translate(
+             'auto.components.feature.wall.ConnectIntegrationsList.33b650af52',
+-            'Connect where your team tracks work. Orca starts workspaces with the issue title, link, and context already attached.'
++            'Connect where your team tracks work. Porpita starts workspaces with the issue title, link, and context already attached.'
+           )}
+           summary={
+             status.trackerProviderName ? (
+diff --git a/src/renderer/src/components/feature-wall/FeatureWallBrowserAction.tsx b/src/renderer/src/components/feature-wall/FeatureWallBrowserAction.tsx
+index f5a44e63d3..e05e2ede62 100644
+--- a/src/renderer/src/components/feature-wall/FeatureWallBrowserAction.tsx
++++ b/src/renderer/src/components/feature-wall/FeatureWallBrowserAction.tsx
+@@ -256,7 +256,7 @@ function BrowserSkillInstallForRuntime({
+           : installAction.kind === 'replace'
+             ? translate(
+                 'auto.components.settings.AgentSkillSetupPanel.replaceWithOrcaCopy',
+-                "Replace with Orca's copy"
++                "Replace with Porpita's copy"
+               )
+             : installAction.kind === 'run' && installAction.changes
+               ? bundledSkillSetupActionLabel(installAction.changes)
+diff --git a/src/renderer/src/components/feature-wall/FeatureWallTourSurface.tsx b/src/renderer/src/components/feature-wall/FeatureWallTourSurface.tsx
+index b1cdfc15b2..fd4b7c1465 100644
+--- a/src/renderer/src/components/feature-wall/FeatureWallTourSurface.tsx
++++ b/src/renderer/src/components/feature-wall/FeatureWallTourSurface.tsx
+@@ -57,7 +57,7 @@ export function FeatureWallTourSurface({
+   doneLabel = translate('auto.components.feature.wall.FeatureWallTourSurface.done', 'Done'),
+   footerText = translate(
+     'auto.components.feature.wall.FeatureWallTourSurface.reopenHint',
+-    'Reopen any time from Help > Explore Orca.'
++    'Reopen any time from Help > Explore Porpita.'
+   ),
+   enableKeyboardShortcut = true,
+   compactRail = false,
+diff --git a/src/renderer/src/components/feature-wall/OrchestrationSetupCard.tsx b/src/renderer/src/components/feature-wall/OrchestrationSetupCard.tsx
+index ef6a88ac58..77b6ab489f 100644
+--- a/src/renderer/src/components/feature-wall/OrchestrationSetupCard.tsx
++++ b/src/renderer/src/components/feature-wall/OrchestrationSetupCard.tsx
+@@ -22,7 +22,7 @@ export function OrchestrationSetupCard(props: {
+       )}
+       description={translate(
+         'auto.components.settings.OrchestrationSetupCard.e7d2a5146c',
+-        'Enables agents to hand off context and coordinate work through Orca.'
++        'Enables agents to hand off context and coordinate work through Porpita.'
+       )}
+       skillNames={[ORCHESTRATION_SKILL_NAME]}
+       installed={skill.installed}
+diff --git a/src/renderer/src/components/feature-wall/agent-capability-setup-status.ts b/src/renderer/src/components/feature-wall/agent-capability-setup-status.ts
+index 429d800d47..b0ff4c2efb 100644
+--- a/src/renderer/src/components/feature-wall/agent-capability-setup-status.ts
++++ b/src/renderer/src/components/feature-wall/agent-capability-setup-status.ts
+@@ -218,7 +218,7 @@ function getComputerUseInstallStatus(
+         permissions.unavailableReason === 'web_client'
+           ? translate(
+               'auto.components.feature.wall.agent.capability.setup.status.requiresOrcaDesktop',
+-              'Requires Orca Desktop'
++              'Requires Porpita Desktop'
+             )
+           : translate(
+               'auto.components.feature.wall.agent.capability.setup.status.6d2b0a84e1',
+diff --git a/src/renderer/src/components/landing-preflight-issues.ts b/src/renderer/src/components/landing-preflight-issues.ts
+index 9a7ba5fd7a..40491e237d 100644
+--- a/src/renderer/src/components/landing-preflight-issues.ts
++++ b/src/renderer/src/components/landing-preflight-issues.ts
+@@ -56,7 +56,7 @@ export function getLandingPreflightIssues(
+       title: translate('auto.components.Landing.5beaef5f9e', 'GitHub CLI is not installed'),
+       description: translate(
+         'auto.components.Landing.73e1ad4282',
+-        'Orca uses the GitHub CLI (gh) to show pull requests, issues, and checks.'
++        'Porpita uses the GitHub CLI (gh) to show pull requests, issues, and checks.'
+       ),
+       fixLabel: translate('auto.components.Landing.installGitHubCli', 'Install GitHub CLI'),
+       fixUrl: 'https://cli.github.com',
+diff --git a/src/renderer/src/components/notifications/mac-notification-permission-card.tsx b/src/renderer/src/components/notifications/mac-notification-permission-card.tsx
+index ca14727716..f784e756bf 100644
+--- a/src/renderer/src/components/notifications/mac-notification-permission-card.tsx
++++ b/src/renderer/src/components/notifications/mac-notification-permission-card.tsx
+@@ -146,7 +146,7 @@ export function MacNotificationPermissionCard({
+               <div className="text-sm font-medium text-foreground">
+                 {translate(
+                   'auto.components.onboarding.NotificationStep.95d99b52fa',
+-                  'Allow notifications for Orca'
++                  'Allow notifications for Porpita'
+                 )}
+               </div>
+               <p className="max-w-[58ch] text-[13px] leading-relaxed text-muted-foreground">
+@@ -185,13 +185,13 @@ export function MacNotificationPermissionCard({
+               <div className="text-sm font-medium text-foreground">
+                 {translate(
+                   'auto.components.onboarding.NotificationStep.90b5d2e363',
+-                  'macOS is not delivering Orca notifications'
++                  'macOS is not delivering Porpita notifications'
+                 )}
+               </div>
+               <p className="max-w-[58ch] text-[13px] leading-relaxed text-muted-foreground">
+                 {translate(
+                   'auto.components.onboarding.mac.notification.permission.card.721d2bedb6',
+-                  'Turn on Allow notifications for Orca in System Settings.'
++                  'Turn on Allow notifications for Porpita in System Settings.'
+                 )}
+               </p>
+             </div>
+diff --git a/src/renderer/src/components/onboarding/OnboardingFlow.focus-and-l10n.test.tsx b/src/renderer/src/components/onboarding/OnboardingFlow.focus-and-l10n.test.tsx
+index f953113df2..498dd233ef 100644
+--- a/src/renderer/src/components/onboarding/OnboardingFlow.focus-and-l10n.test.tsx
++++ b/src/renderer/src/components/onboarding/OnboardingFlow.focus-and-l10n.test.tsx
+@@ -2,7 +2,7 @@
+ 
+ import '@testing-library/jest-dom/vitest'
+ import type { ReactNode } from 'react'
+-import { cleanup, render, screen, waitFor } from '@testing-library/react'
++import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+ import userEvent from '@testing-library/user-event'
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+ 
+@@ -19,8 +19,10 @@ vi.mock('@/i18n/i18n', () => ({
+ }))
+ 
+ vi.mock('@/lib/app-keyboard-router', () => ({
+-  addAppKeyListener: vi.fn(),
+-  removeAppKeyListener: vi.fn()
++  addAppKeyListener: (type: 'keydown' | 'keyup', listener: (event: KeyboardEvent) => void) =>
++    window.addEventListener(type, listener),
++  removeAppKeyListener: (type: 'keydown' | 'keyup', listener: (event: KeyboardEvent) => void) =>
++    window.removeEventListener(type, listener)
+ }))
+ 
+ vi.mock('@/lib/use-scroll-edge-fades', () => ({
+@@ -195,4 +197,49 @@ describe('OnboardingFlow focus, localization fallbacks, and responsive layout',
+       expect(button).toHaveAttribute('type', 'button')
+     }
+   })
++
++  it('restores focus inside OnboardingFlow instead of document.body when canceling the real OnboardingSkipConfirmationDialog', async () => {
++    const view = render(
++      <OnboardingFlow onboarding={OPEN_ONBOARDING} onOnboardingChange={vi.fn()} />
++    )
++
++    const modal = screen.getByRole('dialog', { name: 'Porpita onboarding' })
++    const backdrop = view.container.querySelector('[data-onboarding-overlay]') as HTMLElement
++    const continueButton = screen.getByRole('button', { name: /Continue/i })
++
++    continueButton.focus()
++    expect(document.activeElement).toBe(continueButton)
++
++    // 1. Trigger via backdrop pointerDown and cancel via "No, keep going"
++    fireEvent.pointerDown(backdrop, { target: backdrop })
++    const keepGoingButton = await screen.findByRole('button', { name: 'No, keep going' })
++    const skipDialog = screen.getByRole('dialog', { name: 'Skip onboarding?' })
++    await waitFor(() => {
++      expect(skipDialog.contains(document.activeElement)).toBe(true)
++    })
++
++    const user = userEvent.setup()
++    await user.click(keepGoingButton)
++    await waitFor(() => {
++      expect(screen.queryByRole('dialog', { name: 'Skip onboarding?' })).not.toBeInTheDocument()
++      expect(document.activeElement).not.toBe(document.body)
++      expect(modal.contains(document.activeElement)).toBe(true)
++      expect(document.activeElement).toBe(continueButton)
++    })
++
++    // 2. Trigger via Escape key and cancel via Escape key
++    const setUpLaterButton = screen.getByRole('button', { name: 'Set up later' })
++    setUpLaterButton.focus()
++    expect(document.activeElement).toBe(setUpLaterButton)
++
++    await user.keyboard('{Escape}')
++    await screen.findByRole('dialog', { name: 'Skip onboarding?' })
++    await user.keyboard('{Escape}')
++    await waitFor(() => {
++      expect(screen.queryByRole('dialog', { name: 'Skip onboarding?' })).not.toBeInTheDocument()
++      expect(document.activeElement).not.toBe(document.body)
++      expect(modal.contains(document.activeElement)).toBe(true)
++      expect(document.activeElement).toBe(setUpLaterButton)
++    })
++  })
+ })
+diff --git a/src/renderer/src/components/onboarding/OnboardingFlow.tsx b/src/renderer/src/components/onboarding/OnboardingFlow.tsx
+index 6ebae6d0f8..8c20ffbfc8 100644
+--- a/src/renderer/src/components/onboarding/OnboardingFlow.tsx
++++ b/src/renderer/src/components/onboarding/OnboardingFlow.tsx
+@@ -50,22 +50,49 @@ export default function OnboardingFlow({
+       : translate('components.onboarding.flow.actions.continue', 'Continue'))
+   const [languagePickerOpen, setLanguagePickerOpen] = useState(false)
+   const [skipConfirmOpen, setSkipConfirmOpen] = useState(false)
++  const prevSkipConfirmOpenRef = useRef(false)
+   const skipConfirmAdvancedViaRef = useRef<'button' | 'keyboard'>('button')
++  const skipConfirmReturnFocusRef = useRef<HTMLElement | null>(null)
++  const modalElementRef = useRef<HTMLDivElement | null>(null)
+   const { next: flowNext, dismissOnboarding: flowDismissOnboarding } = flow
+   const { ref: overlayFocusScopeRef, scope: overlayFocusScope } = useOverlayFocusScope()
+-  const modalRef = useComposedRefs(flow.setLifecycleRootRef, overlayFocusScopeRef)
++  const modalRef = useComposedRefs(flow.setLifecycleRootRef, overlayFocusScopeRef, modalElementRef)
++
++  const restoreFocusAfterSkipConfirm = useCallback(() => {
++    const modal = modalElementRef.current
++    if (!modal || !modal.isConnected) {
++      return
++    }
++    const target = skipConfirmReturnFocusRef.current
++    const destination = target && target.isConnected && modal.contains(target) ? target : modal
++    destination.focus({ preventScroll: true })
++  }, [])
+ 
+   const requestSkipConfirmation = useCallback(
+     (advancedVia: 'button' | 'keyboard') => {
+       if (busyLabel || skipConfirmOpen || languagePickerOpen) {
+         return
+       }
++      const modal = modalElementRef.current
++      const active = document.activeElement instanceof HTMLElement ? document.activeElement : null
++      skipConfirmReturnFocusRef.current = modal && active && modal.contains(active) ? active : modal
+       skipConfirmAdvancedViaRef.current = advancedVia
+       setSkipConfirmOpen(true)
+     },
+     [busyLabel, skipConfirmOpen, languagePickerOpen]
+   )
+ 
++  useEffect(() => {
++    const wasOpen = prevSkipConfirmOpenRef.current
++    prevSkipConfirmOpenRef.current = skipConfirmOpen
++    if (wasOpen && !skipConfirmOpen && !languagePickerOpen) {
++      const modal = modalElementRef.current
++      if (modal && modal.isConnected && !modal.contains(document.activeElement)) {
++        restoreFocusAfterSkipConfirm()
++      }
++    }
++  }, [skipConfirmOpen, languagePickerOpen, restoreFocusAfterSkipConfirm])
++
+   const confirmSkipOnboarding = useCallback(() => {
+     const advancedVia = skipConfirmAdvancedViaRef.current
+     setSkipConfirmOpen(false)
+@@ -114,6 +141,7 @@ export default function OnboardingFlow({
+           if (!shouldRequestOnboardingSkipConfirmation(event)) {
+             return
+           }
++          event.preventDefault()
+           requestSkipConfirmation('button')
+         }}
+       >
+@@ -310,6 +338,11 @@ export default function OnboardingFlow({
+           open={skipConfirmOpen}
+           onOpenChange={setSkipConfirmOpen}
+           onSkip={confirmSkipOnboarding}
++          onCloseAutoFocus={(event) => {
++            event.preventDefault()
++            restoreFocusAfterSkipConfirm()
++            queueMicrotask(restoreFocusAfterSkipConfirm)
++          }}
+         />
+       </div>
+     </TooltipProvider>
+diff --git a/src/renderer/src/components/onboarding/OnboardingSkipConfirmationDialog.tsx b/src/renderer/src/components/onboarding/OnboardingSkipConfirmationDialog.tsx
+index 6851ea8339..7f6e7ac462 100644
+--- a/src/renderer/src/components/onboarding/OnboardingSkipConfirmationDialog.tsx
++++ b/src/renderer/src/components/onboarding/OnboardingSkipConfirmationDialog.tsx
+@@ -34,6 +34,7 @@ export function OnboardingSkipConfirmationDialog(props: {
+   open: boolean
+   onOpenChange: (open: boolean) => void
+   onSkip: () => void
++  onCloseAutoFocus?: (event: Event) => void
+ }): React.JSX.Element {
+   return (
+     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+@@ -41,6 +42,7 @@ export function OnboardingSkipConfirmationDialog(props: {
+         showCloseButton={false}
+         overlayClassName="z-[120] bg-black/35"
+         className="z-[130] sm:max-w-[360px]"
++        onCloseAutoFocus={props.onCloseAutoFocus}
+       >
+         <DialogHeader>
+           <DialogTitle>{ONBOARDING_SKIP_CONFIRMATION_COPY.title}</DialogTitle>
+diff --git a/src/renderer/src/components/orca-profiles/OrcaProfileSignOutConfirmDialog.tsx b/src/renderer/src/components/orca-profiles/OrcaProfileSignOutConfirmDialog.tsx
+index e5a4452566..d21fbb51d9 100644
+--- a/src/renderer/src/components/orca-profiles/OrcaProfileSignOutConfirmDialog.tsx
++++ b/src/renderer/src/components/orca-profiles/OrcaProfileSignOutConfirmDialog.tsx
+@@ -26,12 +26,15 @@ export function OrcaProfileSignOutConfirmDialog({
+       <DialogContent className="sm:max-w-[420px]">
+         <DialogHeader>
+           <DialogTitle>
+-            {translate('auto.components.orca.profiles.signout.confirm.title', 'Sign out of Orca?')}
++            {translate(
++              'auto.components.orca.profiles.signout.confirm.title',
++              'Sign out of Porpita?'
++            )}
+           </DialogTitle>
+           <DialogDescription>
+             {translate(
+               'auto.components.orca.profiles.signout.confirm.description',
+-              "Artifacts and Orca Relay will be unavailable until you sign in again. Your local projects and worktrees won't be affected."
++              "Artifacts and Porpita Relay will be unavailable until you sign in again. Your local projects and worktrees won't be affected."
+             )}
+           </DialogDescription>
+         </DialogHeader>
+diff --git a/src/renderer/src/components/settings/artifacts/artifacts-settings-search.ts b/src/renderer/src/components/settings/artifacts/artifacts-settings-search.ts
+index 4ebdb8cbcd..5c57b9a75e 100644
+--- a/src/renderer/src/components/settings/artifacts/artifacts-settings-search.ts
++++ b/src/renderer/src/components/settings/artifacts/artifacts-settings-search.ts
+@@ -10,7 +10,7 @@ export const getArtifactsSettingsSearchEntries = createLocalizedCatalog(() => [
+     ),
+     description: translate(
+       'auto.components.settings.artifacts.allowPublishingSearchDescription',
+-      'Allow Orca to publish HTML and Markdown files as public links.'
++      'Allow Porpita to publish HTML and Markdown files as public links.'
+     ),
+     keywords: [
+       ...translateSearchKeyword('auto.components.settings.artifacts.keywordArtifacts', 'artifacts'),
+diff --git a/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorAgentControlRow.tsx b/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorAgentControlRow.tsx
+index c2e1edf6ea..f64f94dfad 100644
+--- a/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorAgentControlRow.tsx
++++ b/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorAgentControlRow.tsx
+@@ -25,7 +25,7 @@ export function MobileEmulatorAgentControlRow(): React.JSX.Element {
+       )}
+       description={translate(
+         'auto.components.settings.MobileEmulatorAgentControlRow.ff4b7e65d6',
+-        'Let coding agents control the active mobile emulator with Orca CLI commands.'
++        'Let coding agents control the active mobile emulator with Porpita CLI commands.'
+       )}
+     >
+       <div className="divide-y divide-border">
+@@ -34,11 +34,11 @@ export function MobileEmulatorAgentControlRow(): React.JSX.Element {
+             variant="inline"
+             title={translate(
+               'auto.components.settings.MobileEmulatorAgentControlRow.67e19ee03c',
+-              'Orca CLI skill'
++              'Porpita CLI skill'
+             )}
+             description={translate(
+               'auto.components.settings.MobileEmulatorAgentControlRow.d94ca6a623',
+-              'Enables agents to use Orca CLI commands, including mobile emulator control.'
++              'Enables agents to use Porpita CLI commands, including mobile emulator control.'
+             )}
+             skillNames={[PORPITA_CLI_SKILL_NAME]}
+             target={activeSkillRuntime.bundledSkillTarget}
+diff --git a/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorExamples.tsx b/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorExamples.tsx
+index 1fba30c6d3..881c4a5809 100644
+--- a/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorExamples.tsx
++++ b/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorExamples.tsx
+@@ -54,7 +54,7 @@ export function MobileEmulatorExamples({
+       <p className="mt-1 text-xs text-muted-foreground">
+         {translate(
+           'auto.components.settings.MobileEmulatorExamples.4daa95f25a',
+-          'Paste any of these into Claude Code, Codex, or another agent in a project where the Orca CLI skill is installed.'
++          'Paste any of these into Claude Code, Codex, or another agent in a project where the Porpita CLI skill is installed.'
+         )}
+       </p>
+       <ul className="mt-3 space-y-2">
+diff --git a/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorSettingsPane.tsx b/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorSettingsPane.tsx
+index 45f292a2c3..00627152ab 100644
+--- a/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorSettingsPane.tsx
++++ b/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorSettingsPane.tsx
+@@ -145,7 +145,7 @@ export function MobileEmulatorSettingsPane({
+           )}
+           description={translate(
+             'auto.components.settings.MobileEmulatorSettingsPane.bc39d0f115',
+-            'Configure mobile emulator support for Orca and coding agents.'
++            'Configure mobile emulator support for Porpita and coding agents.'
+           )}
+           keywords={getMobileEmulatorSearchEntries().flatMap((entry) => entry.keywords ?? [])}
+           className="divide-y divide-border"
+@@ -231,7 +231,7 @@ export function MobileEmulatorSettingsPane({
+           )}
+           description={translate(
+             'auto.components.settings.MobileEmulatorSettingsPane.19d39113b6',
+-            'Let coding agents control the active mobile emulator with Orca CLI commands.'
++            'Let coding agents control the active mobile emulator with Porpita CLI commands.'
+           )}
+           keywords={getMobileEmulatorSearchEntries()[3]?.keywords}
+         >
+diff --git a/src/renderer/src/components/settings/mobile/emulator/mobile-emulator-search.ts b/src/renderer/src/components/settings/mobile/emulator/mobile-emulator-search.ts
+index e35af73894..cfa93a9a7f 100644
+--- a/src/renderer/src/components/settings/mobile/emulator/mobile-emulator-search.ts
++++ b/src/renderer/src/components/settings/mobile/emulator/mobile-emulator-search.ts
+@@ -10,7 +10,7 @@ export const getMobileEmulatorSearchEntries = createLocalizedCatalog(() => [
+     ),
+     description: translate(
+       'auto.components.settings.mobile.emulator.search.9595354cff',
+-      'Configure mobile emulator support for Orca and coding agents.'
++      'Configure mobile emulator support for Porpita and coding agents.'
+     ),
+     keywords: [
+       ...translateSearchKeyword(
+@@ -74,7 +74,7 @@ export const getMobileEmulatorSearchEntries = createLocalizedCatalog(() => [
+     ),
+     description: translate(
+       'auto.components.settings.mobile.emulator.search.2348045036',
+-      'Choose which emulator device Orca opens by default.'
++      'Choose which emulator device Porpita opens by default.'
+     ),
+     keywords: [
+       ...translateSearchKeyword(
+@@ -138,7 +138,7 @@ export const getMobileEmulatorSearchEntries = createLocalizedCatalog(() => [
+     ),
+     description: translate(
+       'auto.components.settings.mobile.emulator.search.2e0b45b2ba',
+-      'Use Orca CLI commands to list, attach, tap, and type into a mobile emulator.'
++      'Use Porpita CLI commands to list, attach, tap, and type into a mobile emulator.'
+     ),
+     keywords: [
+       ...translateSearchKeyword(
+diff --git a/src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx b/src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx
+index 15507ce472..9cb103e454 100644
+--- a/src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx
++++ b/src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx
+@@ -38,7 +38,7 @@ export function renderSetupGuideSettingsSection(context: SettingsRenderContext):
+       title={translate('auto.components.settings.Settings.6d119427ef', 'Onboarding checklist')}
+       description={translate(
+         'auto.components.settings.Settings.6855b0f77d',
+-        'Finish the core workflows that make Orca useful for parallel agent work.'
++        'Finish the core workflows that make Porpita useful for parallel agent work.'
+       )}
+       searchEntries={navigation.getSectionSearchEntries('setup-guide')}
+       bodyClassName="overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-none"
+@@ -195,7 +195,7 @@ export function renderSessionHistorySettingsSection(
+       title={translate('sessionHistory.settings.title', 'Agent Session Search')}
+       description={translate(
+         'sessionHistory.settings.description',
+-        'Search everything your agents have said and done, on this computer and on any paired Orca server.'
++        'Search everything your agents have said and done, on this computer and on any paired Porpita server.'
+       )}
+       searchEntries={navigation.getSectionSearchEntries('session-history')}
+     >
+diff --git a/src/renderer/src/components/sidebar/SidebarSettingsHelpMenu.tsx b/src/renderer/src/components/sidebar/SidebarSettingsHelpMenu.tsx
+index 7671f2a0eb..e34e10a08d 100644
+--- a/src/renderer/src/components/sidebar/SidebarSettingsHelpMenu.tsx
++++ b/src/renderer/src/components/sidebar/SidebarSettingsHelpMenu.tsx
+@@ -96,7 +96,7 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
+     }
+     setIsRestartingOrca(true)
+     toast.info(
+-      translate('auto.components.sidebar.SidebarSettingsHelpMenu.5161eef55d', 'Restarting Orca…')
++      translate('auto.components.sidebar.SidebarSettingsHelpMenu.5161eef55d', 'Restarting Porpita…')
+     )
+     void window.api.app.restart().catch((error) => {
+       if (mountedRef.current) {
+@@ -104,7 +104,7 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
+         toast.error(
+           translate(
+             'auto.components.sidebar.SidebarSettingsHelpMenu.4e8f5710d3',
+-            "Couldn't restart Orca."
++            "Couldn't restart Porpita."
+           ),
+           {
+             description: error instanceof Error ? error.message : undefined
+@@ -275,7 +275,7 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
+             <RotateCw className="size-3.5" />
+             {translate(
+               'auto.components.sidebar.SidebarSettingsHelpMenu.ad3d3ed7f1',
+-              'Restart Orca'
++              'Restart Porpita'
+             )}
+           </DropdownMenuItem>
+         </DropdownMenuContent>
+diff --git a/src/renderer/src/components/skills/setup/AgentSkillSetupPanel.tsx b/src/renderer/src/components/skills/setup/AgentSkillSetupPanel.tsx
+index 0c188501e6..d57c9e54f5 100644
+--- a/src/renderer/src/components/skills/setup/AgentSkillSetupPanel.tsx
++++ b/src/renderer/src/components/skills/setup/AgentSkillSetupPanel.tsx
+@@ -129,7 +129,7 @@ function BundledAgentSkillSetupPanel({
+             : installedButton === 'replace'
+               ? translate(
+                   'auto.components.settings.AgentSkillSetupPanel.replaceWithOrcaCopy',
+-                  "Replace with Orca's copy"
++                  "Replace with Porpita's copy"
+                 )
+               : action.kind === 'run' && action.changes
+                 ? bundledSkillSetupActionLabel(action.changes)
+diff --git a/src/renderer/src/components/skills/setup/linear-agent-skill-install-cta.tsx b/src/renderer/src/components/skills/setup/linear-agent-skill-install-cta.tsx
+index 623020699b..33b5055768 100644
+--- a/src/renderer/src/components/skills/setup/linear-agent-skill-install-cta.tsx
++++ b/src/renderer/src/components/skills/setup/linear-agent-skill-install-cta.tsx
+@@ -156,7 +156,7 @@ function BundledLinearAgentSkillInstallCta({
+                 : replacePaths
+                   ? translate(
+                       'auto.components.settings.AgentSkillSetupPanel.replaceWithOrcaCopy',
+-                      "Replace with Orca's copy"
++                      "Replace with Porpita's copy"
+                     )
+                   : action.kind === 'run' && action.changes
+                     ? bundledSkillSetupActionLabel(action.changes)
+diff --git a/src/renderer/src/hooks/settings-navigation-capability-sections.ts b/src/renderer/src/hooks/settings-navigation-capability-sections.ts
+index 88a4ec2749..2c57fb0b1a 100644
+--- a/src/renderer/src/hooks/settings-navigation-capability-sections.ts
++++ b/src/renderer/src/hooks/settings-navigation-capability-sections.ts
+@@ -69,7 +69,7 @@ export function buildCapabilitySettingsSections({
+       title: translate('auto.hooks.useSettingsNavigationMetadata.58a868e8e4', 'Orchestration'),
+       description: translate(
+         'auto.hooks.useSettingsNavigationMetadata.cd50cec5d7',
+-        'Coordinate multiple coding agents through Orca.'
++        'Coordinate multiple coding agents through Porpita.'
+       ),
+       icon: Network,
+       searchEntries: getOrchestrationPaneSearchEntries({
+@@ -85,7 +85,7 @@ export function buildCapabilitySettingsSections({
+             title: translate('auto.hooks.useSettingsNavigationMetadata.linearTitle', 'Linear'),
+             description: translate(
+               'auto.hooks.useSettingsNavigationMetadata.linearDescription',
+-              'How Linear works in Orca, setup checklist, agent skill, and example prompts.'
++              'How Linear works in Porpita, setup checklist, agent skill, and example prompts.'
+             ),
+             icon: LinearIcon,
+             searchEntries: getLinearAgentSkillPaneSearchEntries(),
+@@ -151,7 +151,7 @@ export function buildSetupSettingsSections({
+       ),
+       description: translate(
+         'auto.hooks.useSettingsNavigationMetadata.5f32ac08f3',
+-        'Finish the onboarding checklist for core Orca workflows.'
++        'Finish the onboarding checklist for core Porpita workflows.'
+       ),
+       icon: OrcaLogoSettingsIcon,
+       searchEntries: [
+@@ -168,7 +168,7 @@ export function buildSetupSettingsSections({
+             translate('auto.hooks.useSettingsNavigationMetadata.ea0b1bc7b8', 'setup guide'),
+             translate(
+               'auto.hooks.useSettingsNavigationMetadata.0505d0df29',
+-              'get started with Orca'
++              'get started with Porpita'
+             ),
+             translate('auto.hooks.useSettingsNavigationMetadata.724c440e72', 'getting started')
+           ]
+diff --git a/src/renderer/src/hooks/settings-navigation-workflow-sections.ts b/src/renderer/src/hooks/settings-navigation-workflow-sections.ts
+index 1eb055288b..2081ca759f 100644
+--- a/src/renderer/src/hooks/settings-navigation-workflow-sections.ts
++++ b/src/renderer/src/hooks/settings-navigation-workflow-sections.ts
+@@ -73,7 +73,7 @@ export function buildWorkflowSettingsSections(
+       title: translate('sessionHistory.settings.title', 'Agent Session Search'),
+       description: translate(
+         'sessionHistory.settings.description',
+-        'Search everything your agents have said and done, on this computer and on any paired Orca server.'
++        'Search everything your agents have said and done, on this computer and on any paired Porpita server.'
+       ),
+       icon: History,
+       searchEntries: [
+diff --git a/src/renderer/src/i18n/en-runtime-required.json b/src/renderer/src/i18n/en-runtime-required.json
+index f73577ab16..9d671d4540 100644
+--- a/src/renderer/src/i18n/en-runtime-required.json
++++ b/src/renderer/src/i18n/en-runtime-required.json
+@@ -79,9 +79,6 @@
+       "03a14f6b5b": "Retry the page or navigate to another Porpita surface."
+     },
+     "components": {
+-      "BrowserCookieImportDisclosure": {
+-        "description": "Sign in to Google directly in Porpita."
+-      },
+       "GitHubItemDialog": {
+         "filesViewed_one": "{{viewed}} / {{count}} file viewed",
+         "filesViewed_other": "{{viewed}} / {{count}} files viewed",
+@@ -102,7 +99,6 @@
+         "0d0ace8861": "Star on GitHub",
+         "157bb5ecbb": "Open GitHub",
+         "6ca6ff404e": "Porpita",
+-        "73e1ad4282": "Porpita uses the GitHub CLI (gh) to show pull requests, issues, and checks.",
+         "c1cf168479": "Hide",
+         "ec43b38ba7": "Starred on GitHub"
+       },
+@@ -506,47 +502,6 @@
+           }
+         }
+       },
+-      "feature": {
+-        "tips": {
+-          "CliSkillSetupPanel": {
+-            "description": "Install the Porpita CLI and orchestration skills for your agents."
+-          },
+-          "CliSkillSetupTerminal": {
+-            "1953e90447": "Press Enter to install the Porpita CLI orchestration skill for your agents.",
+-            "43b60ec5c3": "Porpita CLI and orchestration skill install terminal"
+-          },
+-          "FeatureTipsModal": {
+-            "1da82af45b": "Porpita CLI needs attention",
+-            "cliInstallFailed": "Failed to install Porpita CLI."
+-          }
+-        },
+-        "wall": {
+-          "AgentCapabilitiesSetupAction": {
+-            "5e8fe5a72d": "Give agents direct access to Porpita's browser so they can test pages, capture screenshots, and act on what they see.",
+-            "c61c91e642": "Let agents coordinate through Porpita to keep large, multi-step tasks moving to completion."
+-          },
+-          "BrowserUseSkillSetupCard": {
+-            "cbc45022d4": "Enables agents to navigate and verify pages in Porpita's browser."
+-          },
+-          "ConnectIntegrationsList": {
+-            "33b650af52": "Connect where your team tracks work. Porpita starts workspaces with the issue title, link, and context already attached.",
+-            "review_step_description": "Connect a review provider so Porpita can show PR or MR status, checks, and reviews.",
+-            "task_step_title": "Start agents on your tasks without leaving Porpita"
+-          },
+-          "FeatureWallTourSurface": {
+-            "reopenHint": "Reopen any time from Help > Explore Porpita."
+-          },
+-          "agent": {
+-            "capability": {
+-              "setup": {
+-                "status": {
+-                  "requiresOrcaDesktop": "Requires Porpita Desktop"
+-                }
+-              }
+-            }
+-          }
+-        }
+-      },
+       "floating": {
+         "terminal": {
+           "FloatingTerminalOrchestrationDialog": {
+@@ -664,32 +619,9 @@
+           "showMoreAgents_one": "Show {{count}} more agent →",
+           "showMoreAgents_other": "Show {{count}} more agents →"
+         },
+-        "NotificationStep": {
+-          "90b5d2e363": "macOS is not delivering Porpita notifications",
+-          "95d99b52fa": "Allow notifications for Porpita"
+-        },
+         "OnboardingFlow": {
+           "97c42cda00": "Install the GitHub CLI to:",
+           "ae3b00ca82": "Set up GitHub tasks"
+-        },
+-        "mac": {
+-          "notification": {
+-            "permission": {
+-              "card": {
+-                "721d2bedb6": "Turn on Allow notifications for Porpita in System Settings."
+-              }
+-            }
+-          }
+-        }
+-      },
+-      "orca": {
+-        "profiles": {
+-          "signout": {
+-            "confirm": {
+-              "description": "Artifacts and Porpita Relay will be unavailable until you sign in again. Your local projects and worktrees won't be affected.",
+-              "title": "Sign out of Porpita?"
+-            }
+-          }
+         }
+       },
+       "plainSshTerminal": {
+@@ -1073,8 +1005,7 @@
+           "87a2cb2ac8": "Porpita applies this networking mode at startup."
+         },
+         "AgentSkillSetupPanel": {
+-          "hostUnavailable": "Porpita can't install skills on this workspace's machine yet.",
+-          "replaceWithOrcaCopy": "Replace with Porpita's copy"
++          "hostUnavailable": "Porpita can't install skills on this workspace's machine yet."
+         },
+         "AgentsPane": {
+           "codexSessionSourceTooltip": "Porpita runs Codex in an isolated home. Point this at your existing Codex home to import that session history. Empty uses ~/.codex."
+@@ -1220,18 +1151,6 @@
+           "detectedServers_one": "{{detected}} detected · {{count}} server",
+           "detectedServers_other": "{{detected}} detected · {{count}} servers"
+         },
+-        "MobileEmulatorAgentControlRow": {
+-          "67e19ee03c": "Porpita CLI skill",
+-          "d94ca6a623": "Enables agents to use Porpita CLI commands, including mobile emulator control.",
+-          "ff4b7e65d6": "Let coding agents control the active mobile emulator with Porpita CLI commands."
+-        },
+-        "MobileEmulatorExamples": {
+-          "4daa95f25a": "Paste any of these into Claude Code, Codex, or another agent in a project where the Porpita CLI skill is installed."
+-        },
+-        "MobileEmulatorSettingsPane": {
+-          "19d39113b6": "Let coding agents control the active mobile emulator with Porpita CLI commands.",
+-          "bc39d0f115": "Configure mobile emulator support for Porpita and coding agents."
+-        },
+         "NotificationsPane": {
+           "115437bc35": "If no macOS banner appeared, enable Allow notifications for Porpita.",
+           "2a2033c388": "Choose the alert Porpita plays when a desktop notification is delivered.",
+@@ -1242,9 +1161,6 @@
+           "workerAutoReleaseKeywordClose": "close",
+           "workerAutoReleaseKeywordRelease": "release"
+         },
+-        "OrchestrationSetupCard": {
+-          "e7d2a5146c": "Enables agents to hand off context and coordinate work through Porpita."
+-        },
+         "OrchestrationSkillAgentCoverage": {
+           "fullCoverage_one": "All 1 detected agent has the skill.",
+           "fullCoverage_other": "All {{value0}} detected agents have the skill."
+@@ -1426,7 +1342,6 @@
+           "23931df7e8": "Remote Hosts",
+           "23c6874fdf": "AI Capabilities",
+           "475980f53d": "Coordinate multiple coding agents through Porpita.",
+-          "6855b0f77d": "Finish the core workflows that make Porpita useful for parallel agent work.",
+           "7686cb5c36": "Connect this browser to a saved Porpita server.",
+           "8acf3f22e0": "Porpita stats plus Claude, Codex, OpenCode, Muse token analytics and Grok subscription usage.",
+           "8bd117d669": "Interface",
+@@ -1581,9 +1496,6 @@
+             "4d5b9427b5": "When enabled, closing the window keeps Porpita running in the system tray instead of quitting."
+           }
+         },
+-        "artifacts": {
+-          "allowPublishingSearchDescription": "Allow Porpita to publish HTML and Markdown files as public links."
+-        },
+         "automations": {
+           "howItWorksDescription": "Schedule agent work once, then let Porpita create each run and keep its results together.",
+           "runStepTitle": "Porpita starts each run"
+@@ -1699,15 +1611,6 @@
+             "title": "Porpita on your SSH hosts"
+           }
+         },
+-        "mobile": {
+-          "emulator": {
+-            "search": {
+-              "2348045036": "Choose which emulator device Porpita opens by default.",
+-              "2e0b45b2ba": "Use Porpita CLI commands to list, attach, tap, and type into a mobile emulator.",
+-              "9595354cff": "Configure mobile emulator support for Porpita and coding agents."
+-            }
+-          }
+-        },
+         "moveAnyway": {
+           "description": "Porpita sets itself up on {{host}} without the saved items below. They stay on this computer and don’t appear on {{host}}. Unsaved edits are kept, never deleted."
+         },
+@@ -2113,11 +2016,6 @@
+           "selectedProjects_one": "{{count}} project",
+           "selectedProjects_other": "{{count}} projects"
+         },
+-        "SidebarSettingsHelpMenu": {
+-          "4e8f5710d3": "Couldn't restart Porpita.",
+-          "5161eef55d": "Restarting Porpita…",
+-          "ad3d3ed7f1": "Restart Porpita"
+-        },
+         "SidebarWorkspaceFilterSection": {
+           "otherClientsAria": "Hide workspaces created from other Porpita clients on shared remote servers"
+         },
+@@ -2715,13 +2613,9 @@
+         "title": "Seeing “Porpita would like to access…” prompts?"
+       },
+       "useSettingsNavigationMetadata": {
+-        "0505d0df29": "get started with Porpita",
+         "3d65d3f1b9": "Configure mobile emulator support for Porpita and coding agents.",
+-        "5f32ac08f3": "Finish the onboarding checklist for core Porpita workflows.",
+         "b351014180": "Porpita stats plus Claude, Codex, OpenCode, Muse token analytics and Grok subscription usage.",
+-        "cd50cec5d7": "Coordinate multiple coding agents through Porpita.",
+         "de0c2907a1": "Remote Porpita Servers",
+-        "linearDescription": "How Linear works in Porpita, setup checklist, agent skill, and example prompts.",
+         "pluginsDescription": "Install and manage Porpita plugins (Alpha)."
+       }
+     },
+@@ -2748,13 +2642,6 @@
+         "ownershipUnknown": "Porpita could not confirm who owns this {{value0}} conversation. Refresh Session History and try again.",
+         "preparationRefused": "Porpita could not prepare this {{value0}} conversation. Start a new chat to continue."
+       },
+-      "blocked": {
+-        "notification": {
+-          "fallback": {
+-            "de50bef680": "macOS is blocking Porpita notifications"
+-          }
+-        }
+-      },
+       "browser": {
+         "cookie": {
+           "import": {
+@@ -3802,32 +3689,10 @@
+       "startRefUnresolved": "Could not resolve provisioned-root start ref: {{ref}}"
+     }
+   },
+-  "featureTips": {
+-    "sessionSearch": {
+-      "indexingDescription": "Porpita is reading your past agent transcripts so you can search them. This can take a few minutes."
+-    }
+-  },
+   "gitGraph": {
+     "oldServer": "This server's Porpita version shows only the current branch",
+     "updateHost": "Update Porpita on {{host}} to open the Git Graph"
+   },
+-  "gpuFallback": {
+-    "recoveredLaunch": {
+-      "message": "Porpita recovered in Safe Graphics Mode."
+-    },
+-    "restartPrompt": {
+-      "detail": "Safe graphics mode disables hardware acceleration and WebGL for this Porpita version. Terminals and 3D content may render more slowly. Keep Running leaves graphics settings unchanged.",
+-      "message": "Porpita's graphics process has crashed repeatedly.",
+-      "title": "Restart Porpita in Safe Graphics Mode?"
+-    }
+-  },
+-  "installDirAcl": {
+-    "cause": "Windows permissions on Porpita's install folder are blocking its own sandboxed processes from reading the files it shipped with.",
+-    "repairFailed": "Porpita could not repair them, which usually means the folder needs an administrator.",
+-    "repaired": "Porpita repaired the permissions. Reload to use them.",
+-    "repairing": "Porpita is repairing the permissions now.",
+-    "runCommands": "Run these in an Administrator Command Prompt, then relaunch Porpita:"
+-  },
+   "jira": {
+     "transitions": {
+       "unsupported": "Jira requires fields Porpita cannot collect yet: {{fields}}."
+@@ -3838,12 +3703,8 @@
+     }
+   },
+   "localBuild": {
+-    "chooseTitle": "Choose a Local Porpita Build",
+-    "confirmTitle": "Use Local Porpita Build?",
+     "liveTerminals_one": "{{count}} live terminal will reconnect after restart.",
+-    "liveTerminals_other": "{{count}} live terminals will reconnect after restart.",
+-    "manifestFilter": "Porpita update manifest",
+-    "signatureRequirement": "The build must have the same valid code signature as Porpita or installation will stop."
++    "liveTerminals_other": "{{count}} live terminals will reconnect after restart."
+   },
+   "macosUpdateRequirement": {
+     "description": "Porpita {{version}} requires macOS {{macos}} or later. This version keeps working, but it won’t get new updates on this Mac.",
+@@ -3853,30 +3714,8 @@
+     "whyIntro": "We updated parts of Porpita’s foundation, like Electron and the on-device speech engine, to bring:"
+   },
+   "menu": {
+-    "exploreOrca": "Explore Porpita",
+-    "gettingStarted": "Getting Started with Porpita",
+-    "quitAndStopAllSessionsTooltip": "Also stops every terminal session, including running agents. Plain Quit keeps them running so Porpita reattaches on next launch.",
+     "quitApp": "Quit {{appName}}"
+   },
+-  "native": {
+-    "dialog": {
+-      "dashboardTitle": "Porpita Agent Dashboard",
+-      "spaceTitle": "Porpita Space Beta"
+-    }
+-  },
+-  "notifications": {
+-    "permissionProbe": {
+-      "body": "Porpita will alert you when agents finish or terminals need attention."
+-    },
+-    "startupRegistration": {
+-      "body": "Allow notifications so Porpita can alert you when agents finish or terminals need attention.",
+-      "title": "Porpita is ready to notify you"
+-    },
+-    "test": {
+-      "body": "This is a test notification from Porpita.",
+-      "title": "Porpita notifications are on"
+-    }
+-  },
+   "pet": {
+     "defaultLabels": {
+       "bundle": "Pet bundle",
+@@ -3917,11 +3756,6 @@
+       "cause": "This usually happens after opening the profile in an older version of Porpita.",
+       "sqliteOption": "SQLite: what this version of Porpita saved. Changes made in the older version are discarded."
+     },
+-    "recoveryNotApplied": {
+-      "message": "Porpita could not apply the selected profile state.",
+-      "reopenDetail": "Reopen Porpita to choose again.",
+-      "title": "Porpita could not finish recovering this profile"
+-    },
+     "repairChoice": {
+       "damagedCopyKept": "Porpita keeps a copy of the damaged file in its data folder, then restarts.",
+       "newerProjectsRemoved": "Projects added after that backup will be removed from Porpita, along with their workspace details. Files on disk are not touched.",
+@@ -3945,11 +3779,6 @@
+       "message": "Porpita cannot safely open this profile.",
+       "quitDetail": "Quit Porpita and resolve the profile-state authority before retrying.",
+       "title": "Porpita profile state cannot be opened"
+-    },
+-    "writeFailure": {
+-      "indeterminateDetail": "Porpita could not confirm whether your most recent change was saved. New changes will not be saved until you restart Porpita.",
+-      "message": "Porpita has stopped saving this profile.",
+-      "safeDetail": "Changes saved before this point are safe. New changes will not be saved until you restart Porpita."
+     }
+   },
+   "projectBoard": {
+@@ -3976,26 +3805,12 @@
+     }
+   },
+   "quitAndStopAllSessions": {
+-    "detail": "Porpita closes every terminal tab and stops its session, including agents running in terminals, then quits. Plain Quit keeps them running so Porpita reattaches on next launch. Terminal sessions on remote hosts may keep running there. Unsaved terminal work is lost, and the closed tabs don't come back on next launch. This can't be undone.",
+-    "failed": "Couldn't stop every terminal session, so Porpita stayed open.",
+-    "message": "Stop all terminal sessions and quit Porpita?",
+-    "unavailableDetail": "Nothing was stopped. Try again once your terminals have opened. If a terminal says it was opened in a newer version of Porpita, reopen it first. If your terminals are already open, quit and reopen Porpita, then try again.",
+-    "unavailableMessage": "Porpita can't stop every terminal session right now."
++    "failed": "Couldn't stop every terminal session, so Porpita stayed open."
+   },
+   "remoteHostBrowserControl": {
+     "description": "Agents on this SSH host can open and use Porpita browser tabs in its workspaces. Tabs it controls show its name. You can change this in Settings > SSH.",
+     "stopped": "{{host}} stopped controlling browser tabs until Porpita restarts."
+   },
+-  "rendererRecovery": {
+-    "crashLoopDetail": "Porpita tried to recover {{recoveryCount}} times in a row without success.",
+-    "genericDetail": "This is often a graphics-driver or installation problem. Reload to try again, or quit and relaunch Porpita.",
+-    "launchFailedDetail": "Porpita retried {{recoveryCount}} times without success.",
+-    "launchFailedGenericDetail": "The system refused to start it. Free up memory or close other apps, then click Try Again. If this keeps happening, reinstall Porpita.",
+-    "launchFailedMessage": "Porpita couldn't start the process that draws its window.",
+-    "lowCommitAdvice": "Free memory by closing unused apps or Porpita workspaces, or increase the Windows page file size, then click Reload.",
+-    "stalledDetail": "Porpita reloaded the window after a crash, but it never finished loading.",
+-    "title": "Porpita keeps failing to load"
+-  },
+   "resourceManager": {
+     "pty": {
+       "copyFailed": "Could not copy Porpita session ID",
+@@ -4036,21 +3851,17 @@
+   },
+   "runtimeRpc": {
+     "startupFailure": {
+-      "detail": "Porpita will continue to work, but commands such as orca status, orca terminal, and orchestration are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}",
+       "guidance": {
+         "addressInUse": "Another process may be holding the port. Restart Porpita to try again.",
+         "invalidPath": "Porpita's data folder may be missing, moved, or at a path that is too long. Restore it or use a shorter path, then restart Porpita.",
+         "permissionDenied": "Porpita couldn't write its runtime file. Check permissions on Porpita's data folder, then restart.",
+         "storageUnavailable": "Your disk may be full or read-only. Free up space, then restart Porpita.",
+         "unknown": "Restart Porpita to try again."
+-      },
+-      "message": "Porpita couldn't start its local command transport.",
+-      "title": "Porpita CLI unavailable"
++      }
+     }
+   },
+   "sessionHistory": {
+     "settings": {
+-      "description": "Search everything your agents have said and done, on this computer and on any paired Porpita server.",
+       "remoteServers": "Porpita remote servers",
+       "serverTooOld": "Needs a newer version of Porpita.",
+       "serverVersion": "Porpita v{{version}}",
+@@ -4419,10 +4230,6 @@
+       "basePrompt": "Porpita’s built-in prompt for this action, including the context Porpita knows how to gather safely."
+     }
+   },
+-  "startupFailure": {
+-    "finishFailed": "Porpita could not finish starting: {{detail}}",
+-    "title": "Porpita could not start"
+-  },
+   "stats": {
+     "usageBreakdown": {
+       "events_one": "{{count}} event",
+@@ -4479,10 +4286,6 @@
+       "stopFailed": "Porpita couldn't stop the server.",
+       "turnOffFailed": "Porpita couldn't turn this off."
+     },
+-    "codexSharedSettingsNotice": {
+-      "description": "Codex may ask again to trust folders or approve commands. Re-add any MCP servers you added only in Porpita.",
+-      "title": "Codex in Porpita now uses ~/.codex"
+-    },
+     "codexTerminalServerIsolationNotice": {
+       "title": "Porpita now runs Codex without its shared server"
+     },
+@@ -4505,13 +4308,6 @@
+       "unverifiable": "Porpita could not verify the terminal service process, so nothing was stopped."
+     }
+   },
+-  "tray": {
+-    "activityWaiting": "Porpita - activity waiting",
+-    "minimizeNotice": {
+-      "body": "Porpita is still running in the system tray"
+-    },
+-    "openOrca": "Open Porpita"
+-  },
+   "updates": {
+     "failure": {
+       "channelUnsupportedPlatform": "{{channel}} builds are produced only for macOS and Windows.",
+diff --git a/src/renderer/src/i18n/locales/zh.json b/src/renderer/src/i18n/locales/zh.json
+index 2b84665201..4726d81a65 100644
+--- a/src/renderer/src/i18n/locales/zh.json
++++ b/src/renderer/src/i18n/locales/zh.json
+@@ -14866,33 +14866,33 @@
+             "69334b4b10": "语音听写",
+             "29f2d13839": "输入命令...",
+             "817090af40": "Ctrl+C",
+-            "53ff909568": "选项卡",
+-            "4930eaaae7": "Esc键",
++            "53ff909568": "Tab",
++            "4930eaaae7": "Esc",
+             "fa22927f13": "粘贴",
+             "985373052e": "切换到手机模式",
+-            "58a9ee6003": "工具调用格式化。接下来要我添加差异吗？",
+-            "aa64b519c6": "终端屏幕。Tokyonight 配色，Menlo，真实 Claude",
+-            "e75112c834": "我已经用高保真幻灯片替换了配对扫描幻灯片",
++            "58a9ee6003": "工具调用格式。接下来要我添加 diff 吗？",
++            "aa64b519c6": "终端界面。Tokyonight 配色，Menlo，真实 claude",
++            "e75112c834": "我已经用高保真终端界面替换了扫码配对演示页",
+             "3ce3e8c892": "14 次通过，1 次跳过（1.8 秒）",
+             "4b3666f9a9": "src/cache/worktree-cache.test.ts",
+-            "1d448b69f7": "经过",
++            "1d448b69f7": "PASS",
+             "d39445686a": "src/transport/host-store.test.ts",
+-            "a6e7cdc688": "pnpm 测试 -- 搜索手机设备",
++            "a6e7cdc688": "pnpm test --filter mobile",
+             "21b67dfc92": "Bash",
+-            "d6d1041a1c": "⎿ 用终端会话替换配对扫描幻灯片",
+-            "336c0e070e": "手机/orca-mobile-sidebar-mock-v3.html",
++            "d6d1041a1c": "⎿ 已将扫码配对演示页替换为终端会话",
++            "336c0e070e": "mobile/orca-mobile-sidebar-mock-v3.html",
+             "6d4ebd5833": "编辑",
+-            "fc83e0d5ef": "⎿ 阅读2103行",
+-            "80cc356591": "读",
++            "fc83e0d5ef": "⎿ 读取 2103 行",
++            "80cc356591": "读取",
+             "2c10d43745": "claude",
+-            "e0f98be657": "Porpita/壮举-手机页面",
+-            "2defc05141": "开发@mac",
+-            "da121ba48d": "计划.md",
+-            "e4befee569": "Shell",
++            "e0f98be657": "orca/feat-mobile-page",
++            "2defc05141": "dev@mac",
++            "da121ba48d": "PLAN.md",
++            "e4befee569": "shell",
+             "606aa93192": "文件",
+             "94febb0976": "源代码管理",
+-            "8d6516312d": "2 个终端 · Claude 活跃",
+-            "8432787c4e": "壮举/手机页面",
++            "8d6516312d": "2 个终端 · claude 运行中",
++            "8432787c4e": "feat/mobile-page",
+             "8fd998acd3": "返回"
+           },
+           "WorktreeListSlide": {
+diff --git a/src/renderer/src/lib/blocked-notification-fallback.ts b/src/renderer/src/lib/blocked-notification-fallback.ts
+index 795418b80c..fe02e27883 100644
+--- a/src/renderer/src/lib/blocked-notification-fallback.ts
++++ b/src/renderer/src/lib/blocked-notification-fallback.ts
+@@ -12,12 +12,12 @@ export function showBlockedNotificationFallbackToast(): void {
+   toast.warning(
+     translate(
+       'auto.lib.blocked.notification.fallback.de50bef680',
+-      'macOS is blocking Orca notifications'
++      'macOS is blocking Porpita notifications'
+     ),
+     {
+       description: translate(
+         'auto.components.onboarding.mac.notification.permission.card.721d2bedb6',
+-        'Turn on Allow notifications for Orca in System Settings.'
++        'Turn on Allow notifications for Porpita in System Settings.'
+       ),
+       action: {
+         label: translate(
+-- 
+2.55.0.windows.5
+

@@ -1,0 +1,17 @@
+{
+  "schema_version": "porpita-complexity/1",
+  "default": "reuse-and-connect",
+  "rules": [
+    "No new generic ledger/queue/auth/signature system when current ACS or Host already owns the fact.",
+    "Defensive wrappers may be removed or merged when the same boundary is already enforced; record the short reason with the code change.",
+    "Only add a regression for a real affected function or direct correctness boundary; no new all-platform research matrix.",
+    "Do not remove actual identity, target or effect truth to obtain superficial success.",
+    "Prefer actual functional flow and minimal necessary integration tests over more schema/protocol layers."
+  ],
+  "not_product_progress": [
+    "number of validators",
+    "number of status fields",
+    "number of theoretical negative cases",
+    "number of mock passes"
+  ]
+}

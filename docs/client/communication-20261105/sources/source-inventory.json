@@ -1,0 +1,214 @@
+[
+  {
+    "path": "SOURCES.md",
+    "bytes": 9382
+  },
+  {
+    "path": "paseo/LICENSE",
+    "bytes": 11709
+  },
+  {
+    "path": "paseo/packages/app/package.json",
+    "bytes": 9069
+  },
+  {
+    "path": "paseo/packages/app/src/components/message.tsx",
+    "bytes": 73784
+  },
+  {
+    "path": "paseo/packages/app/src/styles/theme.ts",
+    "bytes": 24961
+  },
+  {
+    "path": "paseo/packages/website/public/hero-mockup.png",
+    "bytes": 883230
+  },
+  {
+    "path": "pigi/LICENSE",
+    "bytes": 11344
+  },
+  {
+    "path": "pigi/package.json",
+    "bytes": 4652
+  },
+  {
+    "path": "pigi/README.md",
+    "bytes": 2204
+  },
+  {
+    "path": "pigi/licenses/THIRD_PARTY_NOTICES.md",
+    "bytes": 4618
+  },
+  {
+    "path": "pigi/resources/hi-pigi.png",
+    "bytes": 864819
+  },
+  {
+    "path": "pigi/src/renderer/src/assets/semanticTokens.css",
+    "bytes": 1754
+  },
+  {
+    "path": "pigi/src/renderer/src/components/message/markdownMessage.tsx",
+    "bytes": 7941
+  },
+  {
+    "path": "pigi/src/renderer/src/components/terminal/terminalTheme.css",
+    "bytes": 2968
+  },
+  {
+    "path": "pigi/src/renderer/src/lib/layoutConstants.ts",
+    "bytes": 6281
+  },
+  {
+    "path": "pigi/src/shared/designTokens.css",
+    "bytes": 15142
+  },
+  {
+    "path": "pigi/src/shared/platform.ts",
+    "bytes": 65
+  },
+  {
+    "path": "pigi/website/package.json",
+    "bytes": 1032
+  },
+  {
+    "path": "pigi/website/src/components/Icon.astro",
+    "bytes": 326
+  },
+  {
+    "path": "pigi/website/src/components/app/AppWindow.astro",
+    "bytes": 6327
+  },
+  {
+    "path": "pigi/website/src/components/app/AssistantMessage.astro",
+    "bytes": 679
+  },
+  {
+    "path": "pigi/website/src/components/app/ChatInput.astro",
+    "bytes": 2723
+  },
+  {
+    "path": "pigi/website/src/components/app/MessageActions.astro",
+    "bytes": 2726
+  },
+  {
+    "path": "pigi/website/src/components/app/ReadGroup.astro",
+    "bytes": 1574
+  },
+  {
+    "path": "pigi/website/src/components/app/SessionToolbar.astro",
+    "bytes": 3622
+  },
+  {
+    "path": "pigi/website/src/components/app/SessionTreeHelpButton.astro",
+    "bytes": 1036
+  },
+  {
+    "path": "pigi/website/src/components/app/Sidebar.astro",
+    "bytes": 5175
+  },
+  {
+    "path": "pigi/website/src/components/app/ThinkingBlock.astro",
+    "bytes": 1698
+  },
+  {
+    "path": "pigi/website/src/components/app/ToolCard.astro",
+    "bytes": 3177
+  },
+  {
+    "path": "pigi/website/src/components/app/UserMessage.astro",
+    "bytes": 1337
+  },
+  {
+    "path": "pigi/website/src/components/demos/Minimap.astro",
+    "bytes": 2730
+  },
+  {
+    "path": "pigi/website/src/components/demos/SlashMenu.astro",
+    "bytes": 3327
+  },
+  {
+    "path": "pigi/website/src/components/demos/Transcript.astro",
+    "bytes": 5451
+  },
+  {
+    "path": "pigi/website/src/components/demos/ViewModeMenu.astro",
+    "bytes": 3446
+  },
+  {
+    "path": "pigi/website/src/components/demos/ViewModes.astro",
+    "bytes": 11456
+  },
+  {
+    "path": "pigi/website/src/lib/appCopy.ts",
+    "bytes": 1284
+  },
+  {
+    "path": "pigi/website/src/lib/appLayout.ts",
+    "bytes": 1930
+  },
+  {
+    "path": "pigi/website/src/lib/appUi.ts",
+    "bytes": 14689
+  },
+  {
+    "path": "pigi/website/src/lib/icons.ts",
+    "bytes": 5308
+  },
+  {
+    "path": "pigi/website/src/lib/sessions.ts",
+    "bytes": 15412
+  },
+  {
+    "path": "pigi/website/src/scripts/interactions.ts",
+    "bytes": 43056
+  },
+  {
+    "path": "pigi/website/src/styles/global.css",
+    "bytes": 14781
+  },
+  {
+    "path": "t3code/LICENSE",
+    "bytes": 1071
+  },
+  {
+    "path": "t3code/package.json",
+    "bytes": 6335
+  },
+  {
+    "path": "t3code/apps/web/package.json",
+    "bytes": 3979
+  },
+  {
+    "path": "t3code/apps/web/src/index.css",
+    "bytes": 88177
+  },
+  {
+    "path": "t3code/apps/web/src/components/AppSidebarLayout.tsx",
+    "bytes": 18026
+  },
+  {
+    "path": "t3code/apps/web/src/components/ChatMarkdown.tsx",
+    "bytes": 67479
+  },
+  {
+    "path": "t3code/apps/web/src/components/chat/ChatCanvas.tsx",
+    "bytes": 4881
+  },
+  {
+    "path": "t3code/apps/web/src/components/chat/ComposerSurface.tsx",
+    "bytes": 5232
+  },
+  {
+    "path": "t3code/apps/web/src/components/chat/MessagesTimeline.tsx",
+    "bytes": 65489
+  },
+  {
+    "path": "t3code/apps/web/src/components/chat/TimelineAssistantRows.tsx",
+    "bytes": 12443
+  },
+  {
+    "path": "t3code/apps/web/src/components/chat/TimelineUserMessageRow.tsx",
+    "bytes": 45764
+  }
+]

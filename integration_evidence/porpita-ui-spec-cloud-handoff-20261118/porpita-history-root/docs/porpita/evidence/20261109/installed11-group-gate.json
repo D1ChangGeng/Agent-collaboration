@@ -1,0 +1,45 @@
+{
+  "candidate": "prototype-11",
+  "task": {
+    "id": "task_dcf6e1870fe0",
+    "status": "ready",
+    "run_id": "run_051de675d0c3"
+  },
+  "gate": {
+    "id": "gate_517536afeb2e",
+    "status": "resolved",
+    "resolution": "approved for QA"
+  },
+  "archivedBodyRows": 0,
+  "observedReadyBlockedReady": true,
+  "originalRequestId": "108e4fd8-0fa6-4ff6-8cad-8289554dde32",
+  "partial": true,
+  "replayed": true,
+  "groupMessages": [
+    "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-1b477c6337614c46a958b23f6615c6ed",
+    "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-b7f9f0d034344b8fa9ea585d11a966a7",
+    "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-d44852bca1a04799813b47c2d4894ae4"
+  ],
+  "replayEvidence": "exact native CLI arguments, complete accepted replay-message prefix and Native readback",
+  "targets": [
+    {
+      "recipient": "term_58466c8b-5d2a-428d-84b5-422d5efe3262",
+      "state": "failed",
+      "code": "communication_receiver_unbound"
+    },
+    {
+      "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-b81ba3554e9bb35d6836910b6d955ad0",
+      "state": "accepted"
+    },
+    {
+      "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-c2a69c441ac91f477f7b2821b0da352b",
+      "state": "accepted"
+    },
+    {
+      "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-f1673ac84784e9040d66af4a85456109",
+      "state": "accepted"
+    }
+  ],
+  "legacyMessageRowsBefore": 0,
+  "legacyMessageRowsAfter": 0
+}

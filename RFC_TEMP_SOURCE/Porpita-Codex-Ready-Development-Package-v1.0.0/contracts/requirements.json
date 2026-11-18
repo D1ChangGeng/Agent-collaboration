@@ -1,0 +1,331 @@
+{
+  "schema_version": "porpita-requirements/1",
+  "items": [
+    {
+      "id": "PR01",
+      "title": "独立产品与实际安装",
+      "requirement": "交付 Porpita 完整安装应用而非 UI/插件演示。",
+      "owner": "WP08",
+      "acceptance": [
+        "UX01",
+        "UX20"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR02",
+      "title": "原生产品外形",
+      "requirement": "保留 Orca 布局、导航、组件和主要交互，不用内部组织树重构。",
+      "owner": "WP01",
+      "acceptance": [
+        "UX02",
+        "UX19"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR03",
+      "title": "阶段无关接续",
+      "requirement": "保留当前工作树并复用 ACS P0/P1/P2，参考提交不强制回退。",
+      "owner": "WP00",
+      "acceptance": [
+        "UX22"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR04",
+      "title": "品牌独立",
+      "requirement": "可见名称、图标、安装、协议、CLI、数据和服务归属为 Porpita。",
+      "owner": "WP02",
+      "acceptance": [
+        "UX01",
+        "UX18"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR05",
+      "title": "版权与兼容命名",
+      "requirement": "保留许可/来源/内部 wire 兼容标识，不盲目替换。",
+      "owner": "WP02",
+      "acceptance": [
+        "UX18"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR06",
+      "title": "全部正常A2A运输",
+      "requirement": "所有列明的 A2A 路径使用 ACS，无旧后端静默回退。",
+      "owner": "WP05",
+      "acceptance": [
+        "UX05",
+        "UX13",
+        "UX14",
+        "UX21"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR07",
+      "title": "原生执行保留",
+      "requirement": "原生用户输入、工具、Diff、审批、stop/queue/steer 由宿主。",
+      "owner": "WP04",
+      "acceptance": [
+        "UX03",
+        "UX07",
+        "UX08"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR08",
+      "title": "真实宿主接收",
+      "requirement": "接通现有 Receiver backend 与真实 Host handover，不以 stub 或 terminal.sendText 冒充。",
+      "owner": "WP04",
+      "acceptance": [
+        "UX05",
+        "UX07"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR09",
+      "title": "统一可信身份",
+      "requirement": "用户 Client 与每个 Agent 绑定来自真实配置；不以正文指定作者。",
+      "owner": "WP03",
+      "acceptance": [
+        "UX04",
+        "UX05",
+        "UX16"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR10",
+      "title": "组织模型内部化",
+      "requirement": "项目/成员自动关联；普通通信无 Run/Task 前置，Root/Route 不强制主导航。",
+      "owner": "WP03",
+      "acceptance": [
+        "UX04",
+        "UX06"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR11",
+      "title": "单一原生输入owner",
+      "requirement": "Porpita-owned Session 不被另一 ACS Native Driver 接管或重复输入。",
+      "owner": "WP04",
+      "acceptance": [
+        "UX05",
+        "UX16"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR12",
+      "title": "可选编排兼容",
+      "requirement": "保留 Run/Task/Dispatch/Gate 上层工作流及其操作；消息经 ACS，业务状态不迁 Core。",
+      "owner": "WP05",
+      "acceptance": [
+        "UX13",
+        "UX14"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR13",
+      "title": "托管本地首次启动",
+      "requirement": "UI 完成 ACS/Python/PG 依赖准备，用户不用开发工具。",
+      "owner": "WP03",
+      "acceptance": [
+        "UX01",
+        "UX04"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR14",
+      "title": "已有ACS服务接入",
+      "requirement": "真实登录、身份/meta、必要配置提示、注销重连；不修改原生产服务。",
+      "owner": "WP03",
+      "acceptance": [
+        "UX17"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR15",
+      "title": "客户端API复用",
+      "requirement": "采用现有 HTTP/SDK/schema；消息/联系人/会话历史真实可用。",
+      "owner": "WP06",
+      "acceptance": [
+        "UX06",
+        "UX09"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR16",
+      "title": "实时同步",
+      "requirement": "快照、SSE、分页、断线重开正常；不新增第二消息库。",
+      "owner": "WP06",
+      "acceptance": [
+        "UX09",
+        "UX15"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR17",
+      "title": "Native来源关联",
+      "requirement": "当前 NativeLink 与历史 SourceLink 正确，查看执行可直接跳转。",
+      "owner": "WP06",
+      "acceptance": [
+        "UX10"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR18",
+      "title": "P2用户功能",
+      "requirement": "已读/未读/草稿/静音/归档/字面搜索在真实界面使用。",
+      "owner": "WP06",
+      "acceptance": [
+        "UX09",
+        "UX11"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR19",
+      "title": "文件分享实际可用",
+      "requirement": "ACS 文件上传下载和目标Host材料化接通；不将上传成功当模型可读。",
+      "owner": "WP06",
+      "acceptance": [
+        "UX12"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR20",
+      "title": "日常连续性",
+      "requirement": "关闭窗口/退出重开/网络恢复继续原历史与会话，不重发未知输入。",
+      "owner": "WP07",
+      "acceptance": [
+        "UX15",
+        "UX16"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR21",
+      "title": "远端功能继承",
+      "requirement": "保留上游远端工作区与实际接收位置，ACS 到真实目标 Host。",
+      "owner": "WP07",
+      "acceptance": [
+        "UX21"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR22",
+      "title": "正常路径简化",
+      "requirement": "薄适配、复用上游队列，不新增泛化防御框架；直接问题才补测试。",
+      "owner": "WP04",
+      "acceptance": [
+        "UX19",
+        "UX22"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR23",
+      "title": "上游服务出口",
+      "requirement": "不使用 Orca 更新/遥测/云凭据冒充 Porpita，自有/用户服务才启用。",
+      "owner": "WP02",
+      "acceptance": [
+        "UX18"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR24",
+      "title": "当前产物一致",
+      "requirement": "最终 commit、ACS wheel/SDK、安装产物与实测证据对应。",
+      "owner": "WP08",
+      "acceptance": [
+        "UX20",
+        "UX22"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR25",
+      "title": "原生功能完整",
+      "requirement": "继承文件、编辑器、Git、Terminal、浏览器、设置和 Provider 可用性。",
+      "owner": "WP01",
+      "acceptance": [
+        "UX02",
+        "UX03"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR26",
+      "title": "真实双模型验收",
+      "requirement": "实际模型用自身 ACS 工具 A→B→A，工具执行和回复可观察。",
+      "owner": "WP09",
+      "acceptance": [
+        "UX05",
+        "UX08"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR27",
+      "title": "最小UI扩展",
+      "requirement": "连接/协作drawer/来源跳转等复用组件，不另做全屏通讯工作台。",
+      "owner": "WP06",
+      "acceptance": [
+        "UX06",
+        "UX19"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR28",
+      "title": "历史并存",
+      "requirement": "独立数据，显式导入；旧消息不重新投递，卸载不误删用户仓库。",
+      "owner": "WP07",
+      "acceptance": [
+        "UX15",
+        "UX20"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR29",
+      "title": "平台诚实交付",
+      "requirement": "Windows x64 默认首发必须安装验证；其他平台保留配置并准确记录。",
+      "owner": "WP08",
+      "acceptance": [
+        "UX01",
+        "UX20"
+      ],
+      "priority": "required"
+    },
+    {
+      "id": "PR30",
+      "title": "不以研究替代产品",
+      "requirement": "不要求新PoC/优劣研究；未打通必须功能不能靠 unsupported 签署完成。",
+      "owner": "WP09",
+      "acceptance": [
+        "UX22"
+      ],
+      "priority": "required"
+    }
+  ]
+}

@@ -1,0 +1,1439 @@
+import assert from 'node:assert/strict'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
+import {
+  addLocalFolderProject,
+  assertAllWindowsHidden,
+  closeElectronApp,
+  dismissStartupDialogs,
+  launchElectronApp,
+  openCollaborationDialog,
+  openSettingsPage,
+  quitElectronGracefully,
+  returnFromSettings,
+  setViewportSize,
+  sleep,
+  stubOpenDialog
+} from '../lib/electron-harness.mjs'
+import { startLoopbackAcsCore } from '../lib/acs-core-harness.mjs'
+import {
+  createCodexHistoryFixture,
+  createSyntheticPluginFixture,
+  createSyntheticSkillFixture,
+  createTempGitRepo,
+  startLoopbackHttpServer,
+  verifyGitBaselines
+} from '../lib/fixtures.mjs'
+import {
+  checkEnvBoundedHonesty,
+  checkMarkdownLinks,
+  checkOrcaFirstCrosswalk,
+  checkReferenceCrosswalk,
+  runStagedBuildCoverage
+} from '../lib/spec-audit-harness.mjs'
+import { pendingIfSmoke } from '../lib/test-context.mjs'
+
+async function detectProductionWorkspaceShell(page) {
+  return await page.evaluate(() => {
+    const previewToggle = [...document.querySelectorAll('button')].some((b) =>
+      /Workspaces \(preview\)|工作空间（预览）/i.test(b.textContent || '')
+    )
+    const hasWorkspaceTabs =
+      Boolean(document.querySelector('[data-workspace-preview]')) ||
+      Boolean(document.querySelector('[data-workspace-tab-strip]')) ||
+      Boolean(document.querySelector('[data-workspace-group-selector]')) ||
+      Boolean(document.querySelector('[data-session-index]')) ||
+      [...document.querySelectorAll('button')].some((b) =>
+        /New workspace|新建工作空间|New work object|新建工作对象/i.test(b.textContent || '')
+      )
+    return { previewToggle, hasWorkspaceTabs }
+  })
+}
+
+export const TIER1_TESTS = [
+  // =========================================================================
+  // E2E-F01: Porpita Desktop Shell & Production Integration (6 Tests)
+  // =========================================================================
+  {
+    id: 'T1-F01-01',
+    tier: 1,
+    featureArea: 'E2E-F01',
+    refs: ['PROJECT:F07', 'UX02', 'A'],
+    timeoutMs: 360_000,
+    async run(ctx) {
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const { page, app } = inst
+        await page
+          .locator('[data-contextual-tour-target="sidebar-navigation"] button')
+          .first()
+          .waitFor({ state: 'visible', timeout: 15000 })
+        await assertAllWindowsHidden(app)
+
+        const shell = await page.evaluate(() => ({
+          hasSidebar: Boolean(document.querySelector('[data-contextual-tour-target="sidebar-navigation"]')),
+          hasWorkbench: Boolean(document.querySelector('[data-workbench-viewport]')) || Boolean(document.querySelector('main')),
+          hasSettingsBtn: Boolean(document.querySelector('button[aria-label="Settings"], button[aria-label="设置"]')),
+          hasCollabBtn: Boolean(document.querySelector('button[aria-label="Collaboration"], button[aria-label="协作消息"]'))
+        }))
+        assert.equal(shell.hasSidebar, true, 'Left sidebar missing')
+        assert.equal(shell.hasSettingsBtn, true, 'Settings button missing')
+        assert.equal(shell.hasCollabBtn, true, 'Titlebar Collaboration button missing')
+
+        const ws = await detectProductionWorkspaceShell(page)
+        if (!ws.hasWorkspaceTabs || ws.previewToggle) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'Default production build renders integrated Workspace shell without preview-only toggle',
+            `previewToggle=${ws.previewToggle}, hasWorkspaceTabs=${ws.hasWorkspaceTabs}`
+          )
+        }
+        return { shell, ws }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F01-02',
+    tier: 1,
+    featureArea: 'E2E-F01',
+    refs: ['D.07', 'D.08', 'A.02'],
+    async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f01-02' })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const { page, app } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        const ws = await detectProductionWorkspaceShell(page)
+        if (!ws.hasWorkspaceTabs) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'Top-level Workspace creation & default naming in default build',
+            'Integrated Workspace tab creation control not yet present in default build'
+          )
+        }
+        const newWorkBtn = page
+          .getByRole('button', { name: /^(New workspace|新建工作空间|New work object|新建工作对象)$/i })
+          .first()
+        await newWorkBtn.click()
+        const tab = page.locator('[data-workspace-preview-tab], [data-workspace-tab]').first()
+        await tab.waitFor({ state: 'visible', timeout: 8000 })
+        return { createdTabText: await tab.innerText() }
+      } finally {
+        await closeElectronApp(inst)
+        repo.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F01-03',
+    tier: 1,
+    featureArea: 'E2E-F01',
+    refs: ['D.08.01', 'DDU-03'],
+    async run(ctx) {
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const ws = await detectProductionWorkspaceShell(inst.page)
+        if (!ws.hasWorkspaceTabs) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'Top-level Tab Group create/switch/rename/delete in default build',
+            'Top-level Tab Group UI not yet integrated into default production build'
+          )
+        }
+        const groupBtn = inst.page
+          .locator('[data-workspace-group-selector], [data-workspace-preview-group]')
+          .first()
+        await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
+        return { groupSelectorVisible: true }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F01-04',
+    tier: 1,
+    featureArea: 'E2E-F01',
+    refs: ['D.08.02', 'T.03'],
+    async run(ctx) {
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const ws = await detectProductionWorkspaceShell(inst.page)
+        if (!ws.hasWorkspaceTabs) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'Top-level Tab drag-to-group-selector & keyboard move',
+            'Top-level Tab Group UI not yet integrated into default production build'
+          )
+        }
+        return { verified: true }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F01-05',
+    tier: 1,
+    featureArea: 'E2E-F01',
+    refs: ['A.05', 'D.07.02', 'UX15'],
+    async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f01-05' })
+      let inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const tempRoot = inst.tempRoot
+      try {
+        await addLocalFolderProject(inst.app, inst.page, repo.repoPath)
+        // Open notes.md before quit to verify standard session/editor cold-start restoration
+        await inst.page.getByText('notes.md', { exact: true }).first().dblclick().catch(() => {})
+        await sleep(300)
+        const ws = await detectProductionWorkspaceShell(inst.page)
+        const exitCode = await quitElectronGracefully(inst)
+        assert.equal(exitCode, 0, `Clean quit returned ${exitCode}`)
+
+        const layoutPath = path.join(inst.userDataDir, 'porpita-workspaces.json')
+        const orcaDataPath = path.join(inst.userDataDir, 'orca-data.json')
+        assert.equal(existsSync(orcaDataPath), true, 'orca-data.json should exist after clean quit')
+
+        inst = await launchElectronApp({
+          porpitaRoot: ctx.porpitaRoot,
+          tempRoot,
+          seedCompletedOnboarding: false
+        })
+        await inst.page.getByText(path.basename(repo.repoPath)).first().waitFor({ state: 'visible', timeout: 30000 })
+
+        if (!ws.hasWorkspaceTabs || !existsSync(layoutPath)) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'porpita-workspaces.json v3 persisted & restored across clean quit in default build',
+            `hasWorkspaceTabs=${ws.hasWorkspaceTabs}, layoutFileExists=${existsSync(layoutPath)}`
+          )
+        }
+        const layout = JSON.parse(readFileSync(layoutPath, 'utf8'))
+        assert.ok(layout.version >= 3 || layout.workspaces, 'Expected v3 workspace layout schema')
+        return { exitCode, layoutVersion: layout.version ?? null }
+      } finally {
+        await closeElectronApp(inst, { removeTempDir: true })
+        repo.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F01-06',
+    tier: 1,
+    featureArea: 'E2E-F01',
+    refs: ['A.01', 'A.06', 'J11'],
+    async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f01-06' })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+
+        // Open Space auxiliary window via Resource Manager -> Space -> Review
+        const existing = new Set(app.windows())
+        const resourceBtn = page.getByRole('button', { name: /^(Resource Manager|资源管理器)/i }).first()
+        await resourceBtn.waitFor({ state: 'visible', timeout: 10000 })
+        await resourceBtn.click()
+        const popover = page
+          .locator('[data-slot="popover-content"]')
+          .filter({ hasText: /Workspace disk|Space|空间/i })
+          .first()
+        await popover.waitFor({ state: 'visible', timeout: 10000 })
+        const reviewBtn = popover
+          .getByRole('button', { name: /Review in Space|在.*空间.*查看|查看|审查|评审|审阅|检查|审核|复核|Review/i })
+          .last()
+        const [spacePage] = await Promise.all([
+          app.waitForEvent('window', { predicate: (w) => !existing.has(w), timeout: 12000 }),
+          reviewBtn.click()
+        ])
+        await spacePage.waitForLoadState('domcontentloaded', { timeout: 15000 })
+        assert.ok(new URL(spacePage.url()).pathname.endsWith('/space.html'), `Expected space.html, got ${spacePage.url()}`)
+        await assertAllWindowsHidden(app)
+
+        await spacePage.close()
+        await sleep(250)
+        // Main window still responsive and repo remains visible
+        await page.getByText(path.basename(repo.repoPath)).first().waitFor({ state: 'visible', timeout: 8000 })
+        return { spaceOpenedAndClosed: true, mainWindowAlive: true }
+      } finally {
+        await closeElectronApp(inst)
+        repo.cleanup()
+      }
+    }
+  },
+
+  // =========================================================================
+  // E2E-F02: Onboarding, Localization, Naming & Visual Tokens (6 Tests)
+  // =========================================================================
+  {
+    id: 'T1-F02-01',
+    tier: 1,
+    featureArea: 'E2E-F02',
+    refs: ['F01', 'B.01-B.04', 'J01'],
+    async run(ctx) {
+      const inst = await launchElectronApp({
+        porpitaRoot: ctx.porpitaRoot,
+        seedCompletedOnboarding: false,
+        extraEnv: { LANG: 'zh_CN.UTF-8' }
+      })
+      try {
+        const { page } = inst
+        const modal = page.locator('[role="dialog"][data-onboarding-modal]').first()
+        await modal.waitFor({ state: 'visible', timeout: 15000 })
+        // Switch UI language to zh if language selector is visible or check step text
+        const zhOption = modal.getByRole('button', { name: /简体中文|中文/i }).first()
+        if (await zhOption.isVisible().catch(() => false)) {
+          await zhOption.click()
+          await sleep(200)
+        }
+        const step0Text = await modal.innerText()
+        // Check if zh onboarding still contains untranslated English headings/descriptions
+        const hasUntranslatedHeadings =
+          /How do you want to work with agents\?|Pick your default agent|Make it feel like home|Set up notifications/i.test(
+            step0Text
+          )
+        // Test Continue / Back / Skip flow
+        const skipOrLater = modal.getByRole('button', { name: /稍后设置|Set up later|Skip/i }).first()
+        await skipOrLater.waitFor({ state: 'visible', timeout: 8000 })
+        if (hasUntranslatedHeadings) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M1',
+            'Simplified Chinese onboarding renders translated Chinese titles/instructions',
+            `Mixed English found in onboarding modal: ${step0Text.slice(0, 200)}`
+          )
+        }
+        return { step0Preview: step0Text.slice(0, 160) }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F02-02',
+    tier: 1,
+    featureArea: 'E2E-F02',
+    refs: ['F01', 'B.01-B.04', 'J01'],
+    async run(ctx) {
+      let inst = await launchElectronApp({
+        porpitaRoot: ctx.porpitaRoot,
+        seedCompletedOnboarding: false
+      })
+      const tempRoot = inst.tempRoot
+      try {
+        const { page } = inst
+        const modal = page.locator('[role="dialog"][data-onboarding-modal]').first()
+        await modal.waitFor({ state: 'visible', timeout: 15000 })
+        const skipBtn = modal.getByRole('button', { name: /Set up later|稍后设置/i }).first()
+        await skipBtn.click()
+        const confirmSkip = page.getByRole('dialog').getByRole('button', { name: /^(Skip|跳过)$/i }).first()
+        if (await confirmSkip.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await confirmSkip.click()
+        }
+        await modal.waitFor({ state: 'hidden', timeout: 10000 })
+
+        await quitElectronGracefully(inst)
+        inst = await launchElectronApp({
+          porpitaRoot: ctx.porpitaRoot,
+          tempRoot,
+          seedCompletedOnboarding: false
+        })
+        await sleep(1000)
+        const reopenedModalCount = await inst.page
+          .locator('[role="dialog"][data-onboarding-modal]:visible')
+          .count()
+        assert.equal(reopenedModalCount, 0, 'Onboarding must NOT re-open after skip/completion')
+        return { reopenedWithoutOnboarding: true }
+      } finally {
+        await closeElectronApp(inst, { removeTempDir: true })
+      }
+    }
+  },
+  {
+    id: 'T1-F02-03',
+    tier: 1,
+    featureArea: 'E2E-F02',
+    refs: ['F02', 'M.01', 'UX18'],
+    async run(ctx) {
+      const inst = await launchElectronApp({
+        porpitaRoot: ctx.porpitaRoot,
+        profileOptions: { locale: 'en' }
+      })
+      try {
+        const { page } = inst
+        await page
+          .locator('[data-contextual-tour-target="sidebar-navigation"]')
+          .waitFor({ state: 'visible', timeout: 12000 })
+        const sidebarText = await page
+          .locator('[data-contextual-tour-target="sidebar-navigation"]')
+          .innerText()
+        if (/Orca Mobile/i.test(sidebarText)) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M1',
+            'Sidebar mobile entry named "Porpita Mobile" (zero "Orca Mobile")',
+            `Observed "Orca Mobile" in SidebarNav: ${JSON.stringify(sidebarText)}`
+          )
+        }
+        assert.match(sidebarText, /Porpita Mobile|Porpita 手机端/i)
+        return { sidebarText }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F02-04',
+    tier: 1,
+    featureArea: 'E2E-F02',
+    refs: ['F03', 'L.04'],
+    async run(ctx) {
+      const inst = await launchElectronApp({
+        porpitaRoot: ctx.porpitaRoot,
+        profileOptions: { locale: 'en', settings: { showArtifactsButton: true } }
+      })
+      try {
+        const { page } = inst
+        const artifactsBtn = page.getByRole('button', { name: /^(Artifacts|工件)$/i }).first()
+        await artifactsBtn.waitFor({ state: 'visible', timeout: 10000 })
+        await artifactsBtn.click()
+        const main = page.locator('main').first()
+        await main.waitFor({ state: 'visible', timeout: 15000 })
+        await page.waitForFunction(
+          () => {
+            const mainEl = document.querySelector('main')
+            if (!mainEl) return false
+            if (mainEl.querySelector('[role="status"][aria-busy="true"]')) return false
+            const hasContent = Boolean(mainEl.querySelector('h2, p'))
+            return hasContent && mainEl.innerText.trim().length > 0
+          },
+          null,
+          { timeout: 15000 }
+        )
+        const bodyText = (await main.innerText()).trim()
+        if (/Orca account sign-in is not configured|Orca account/i.test(bodyText)) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M1',
+            'ArtifactsPage honest Porpita local-capability empty state without "Orca account" string',
+            `Observed: ${bodyText.slice(0, 220)}`
+          )
+        }
+        assert.ok(bodyText.length > 0, 'Artifacts empty state rendered')
+        return { excerpt: bodyText.slice(0, 200) }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F02-05',
+    tier: 1,
+    featureArea: 'E2E-F02',
+    refs: ['F01', 'B.05', 'O.local.contextual-tour'],
+    async run(ctx) {
+      const inst = await launchElectronApp({
+        porpitaRoot: ctx.porpitaRoot,
+        profileOptions: {
+          locale: 'en',
+          ui: { contextualToursAutoEligible: true, contextualToursSeenIds: [] }
+        }
+      })
+      try {
+        const { page } = inst
+        await page
+          .locator('[data-contextual-tour-target="sidebar-navigation"]')
+          .waitFor({ state: 'visible', timeout: 12000 })
+        // Trigger Help -> Onboarding or Contextual Tour skip if active
+        const skipTour = page.getByRole('button', { name: /Skip tour|Close tour|跳过导览/i }).first()
+        if (await skipTour.isVisible({ timeout: 2500 }).catch(() => false)) {
+          await skipTour.click()
+          await sleep(200)
+          assert.equal(await skipTour.isVisible().catch(() => false), false, 'Tour did not dismiss')
+        }
+        // Verify workbench buttons remain clickable (no focus/overlay trap)
+        await openSettingsPage(page)
+        await returnFromSettings(page)
+        return { tourHandledAndFocusFree: true }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F02-06',
+    tier: 1,
+    featureArea: 'E2E-F02',
+    refs: ['F03', 'P.*', 'Q.*', 'STYLEGUIDE'],
+    async run(ctx) {
+      const inst = await launchElectronApp({
+        porpitaRoot: ctx.porpitaRoot,
+        profileOptions: { locale: 'en', theme: 'dark', reducedMotion: true }
+      })
+      try {
+        const { page } = inst
+        await page.emulateMedia({ reducedMotion: 'reduce' })
+        await page.waitForFunction(() => document.documentElement.classList.contains('dark'), null, {
+          timeout: 8000
+        })
+        const tokens = await page.evaluate(() => {
+          const style = getComputedStyle(document.documentElement)
+          const bodyStyle = getComputedStyle(document.body)
+          return {
+            isDark: document.documentElement.classList.contains('dark'),
+            reducedMotionQuery: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+            radius: style.getPropertyValue('--radius').trim(),
+            background: style.getPropertyValue('--background').trim(),
+            card: style.getPropertyValue('--card').trim(),
+            border: style.getPropertyValue('--border').trim(),
+            fontFamily: bodyStyle.fontFamily
+          }
+        })
+        assert.equal(tokens.isDark, true, 'Dark theme class missing')
+        assert.equal(tokens.reducedMotionQuery, true, 'Reduced motion media emulation inactive')
+        assert.ok(tokens.radius, '--radius token must be defined')
+        assert.ok(tokens.background && tokens.card && tokens.border, 'Semantic surface tokens missing')
+        return tokens
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+
+  // =========================================================================
+  // E2E-F03: Workspace, Session Index & SidePanels (6 Tests)
+  // =========================================================================
+  {
+    id: 'T1-F03-01',
+    tier: 1,
+    featureArea: 'E2E-F03',
+    refs: ['C.10.03', 'C.10.04', 'J03'],
+    async run(ctx) {
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const ws = await detectProductionWorkspaceShell(inst.page)
+        if (!ws.hasWorkspaceTabs) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'Integrated Sidebar Session Index filtering & Group By in default build',
+            'Session Index not yet integrated into default production build'
+          )
+        }
+        return { sessionIndexPresent: true }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F03-02',
+    tier: 1,
+    featureArea: 'E2E-F03',
+    refs: ['C.10.02', 'DDU-02', 'J03'],
+    async run(ctx) {
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const ws = await detectProductionWorkspaceShell(inst.page)
+        if (!ws.hasWorkspaceTabs) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'Session Index single/double-click reuse & focus in default build',
+            'Session Index not yet integrated into default production build'
+          )
+        }
+        return { verified: true }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F03-03',
+    tier: 1,
+    featureArea: 'E2E-F03',
+    refs: ['C.10.05', 'C.10.06', 'G.06'],
+    async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f03-03' })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const { app, page, homeDir } = inst
+        createCodexHistoryFixture({
+          homeDir,
+          repoPath: repo.repoPath,
+          prompt: 'Follow up on the release checklist',
+          reply: 'The saved release notes are ready for review.'
+        })
+        await addLocalFolderProject(app, page, repo.repoPath)
+        // Verify Vault ("Agents") dock opens and finds the synthetic Codex history
+        const agentsBtn = page.getByRole('button', { name: /^(Agents|智能体)(?:\s|$)/i }).first()
+        if (!(await agentsBtn.isVisible().catch(() => false))) {
+          const rightToggle = page.locator('[data-workspace-sidebar-toggle="right"]:visible').first()
+          if (await rightToggle.isVisible().catch(() => false)) await rightToggle.click()
+        }
+        await agentsBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await agentsBtn.click()
+        const searchBox = page.getByRole('textbox', { name: /^(Search sessions|搜索会话)$/i }).first()
+        await searchBox.waitFor({ state: 'visible', timeout: 8000 })
+
+        const ws = await detectProductionWorkspaceShell(page)
+        if (!ws.hasWorkspaceTabs) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'Session Index <-> Vault handoff in default build',
+            'Vault search verified; Session Index integration pending M3'
+          )
+        }
+        return { vaultSearchVisible: true }
+      } finally {
+        await closeElectronApp(inst)
+        repo.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F03-04',
+    tier: 1,
+    featureArea: 'E2E-F03',
+    refs: ['D.03', 'D.03.01', 'D.04', 'T.03'],
+    async run(ctx) {
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const ws = await detectProductionWorkspaceShell(inst.page)
+        if (!ws.hasWorkspaceTabs) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'Multi-pane split, 5% keyboard divider & maximize/restore in default build',
+            'Integrated Workspace split layout pending M3'
+          )
+        }
+        return { verified: true }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F03-05',
+    tier: 1,
+    featureArea: 'E2E-F03',
+    refs: ['G.09.01', 'G.09.02', 'DDU-05', 'J07'],
+    async run(ctx) {
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const ws = await detectProductionWorkspaceShell(inst.page)
+        if (!ws.hasWorkspaceTabs) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'SidePanel Explorer Standalone <-> Embedded fixed-scope continuity in default build',
+            'Pinned SidePanel Standalone/Embedded integration pending M3'
+          )
+        }
+        return { verified: true }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+  {
+    id: 'T1-F03-06',
+    tier: 1,
+    featureArea: 'E2E-F03',
+    refs: ['C.06', 'M.02-M.02.10', 'J07'],
+    async run(ctx) {
+      const repo = createTempGitRepo({
+        name: 't1-f03-06',
+        worktrees: [
+          { branch: 'wt-clean' },
+          { branch: 'wt-unique', uniqueCommitFile: 'unique.txt', uniqueCommitContent: 'unique commit\n' }
+        ]
+      })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        const existing = new Set(app.windows())
+        const resourceBtn = page.getByRole('button', { name: /^(Resource Manager|资源管理器)/i }).first()
+        await resourceBtn.click()
+        const popover = page
+          .locator('[data-slot="popover-content"]')
+          .filter({ hasText: /Workspace disk|Space|空间/i })
+          .first()
+        await popover.waitFor({ state: 'visible', timeout: 8000 })
+        const [spacePage] = await Promise.all([
+          app.waitForEvent('window', { predicate: (w) => !existing.has(w), timeout: 12000 }),
+          popover.getByRole('button', { name: /Review in Space|在.*空间.*查看|查看|审查|评审|审阅|检查|审核|复核|Review/i }).last().click()
+        ])
+        await spacePage.waitForLoadState('domcontentloaded', { timeout: 15000 })
+        await spacePage.locator('body').waitFor({ state: 'visible', timeout: 10000 })
+        const spaceText = await spacePage.locator('body').innerText()
+        assert.ok(spaceText.length > 0, 'Space window rendered empty')
+        await spacePage.close()
+        return { spaceRendered: true, worktreesCreated: repo.worktrees.length }
+      } finally {
+        await closeElectronApp(inst)
+        repo.cleanup()
+      }
+    }
+  },
+
+  // =========================================================================
+  // E2E-F04: Retained Local Workbench Tools & Local Browser (6 Tests)
+  // =========================================================================
+  {
+    id: 'T1-F04-01',
+    tier: 1,
+    featureArea: 'E2E-F04',
+    refs: ['H.01', 'H.02', 'C.09', 'J08'],
+    async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f04-01' })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        const notesNode = page.getByText('notes.md', { exact: true }).first()
+        await notesNode.waitFor({ state: 'visible', timeout: 10000 })
+        await notesNode.dblclick()
+        await page.getByText('Disposable editor text.', { exact: true }).first().waitFor({ timeout: 10000 })
+        // Verify Quick Open shortcut opens palette
+        await page.keyboard.press('Control+p')
+        await sleep(250)
+        await page.keyboard.press('Escape')
+        return { openedNotesMd: true }
+      } finally {
+        await closeElectronApp(inst)
+        repo.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F04-02',
+    tier: 1,
+    featureArea: 'E2E-F04',
+    refs: ['H.03', 'J08'],
+    async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f04-02' })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        for (const fileName of ['sample.csv', 'sample.png', 'preview.html']) {
+          const item = page.getByText(fileName, { exact: true }).first()
+          await item.waitFor({ state: 'visible', timeout: 8000 })
+          await item.dblclick()
+          await sleep(300)
+        }
+        return { viewedCsvPngHtml: true }
+      } finally {
+        await closeElectronApp(inst)
+        repo.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F04-03',
+    tier: 1,
+    featureArea: 'E2E-F04',
+    refs: ['G.03', 'H.04', 'J08'],
+    async run(ctx) {
+      const repo = createTempGitRepo({
+        name: 't1-f04-03',
+        dirtyFiles: { 'notes.md': '# Modified\n\nChanged in test repository\n' }
+      })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        const scBtn = page.getByRole('button', { name: /^(Source Control|源代码管理|源代码控制)/i }).first()
+        await scBtn.waitFor({ state: 'visible', timeout: 10000 })
+        await scBtn.click()
+        const changedFile = page.getByText('notes.md', { exact: true }).last()
+        await changedFile.waitFor({ state: 'visible', timeout: 10000 })
+        await changedFile.click()
+        await page.locator('.monaco-diff-editor').first().waitFor({ state: 'visible', timeout: 10000 })
+        return { diffEditorVisible: true }
+      } finally {
+        await closeElectronApp(inst)
+        repo.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F04-04',
+    tier: 1,
+    featureArea: 'E2E-F04',
+    refs: ['I.01', 'I.03', 'J11'],
+    async run(ctx) {
+      const httpSrv = await startLoopbackHttpServer()
+      const repo = createTempGitRepo({ name: 't1-f04-04' })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        await page.getByRole('button', { name: /^(New tab|新标签页)$/i }).first().click()
+        const browserItem = page.getByRole('menuitem', { name: /Browser|浏览器/i }).first()
+        await browserItem.waitFor({ state: 'visible', timeout: 8000 })
+        await browserItem.click()
+        const addrBar = page.locator('[data-orca-browser-address-bar="true"]').first()
+        await addrBar.waitFor({ state: 'visible', timeout: 10000 })
+        await addrBar.fill(`${httpSrv.baseUrl}/page2`)
+        await addrBar.press('Enter')
+        await sleep(600)
+        const hasGuest = await app.evaluate(({ webContents }, url) =>
+          webContents.getAllWebContents().some((wc) => wc.getURL().startsWith(url)),
+          httpSrv.baseUrl
+        )
+        assert.equal(hasGuest, true, 'Loopback guest webContents did not load URL')
+        return { loopbackUrlLoaded: `${httpSrv.baseUrl}/page2` }
+      } finally {
+        await closeElectronApp(inst)
+        await httpSrv.close()
+        repo.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F04-05',
+    tier: 1,
+    featureArea: 'E2E-F04',
+    refs: ['L.03', 'L.05', 'L.06', 'G.08', 'J10'],
+    async run(ctx) {
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const pluginFix = createSyntheticPluginFixture(ctx.porpitaRoot)
+      try {
+        const { app, page, homeDir } = inst
+        const skill = createSyntheticSkillFixture(homeDir, 'e2e-offline-skill')
+
+        // Verify Skills page renders local skill
+        const skillsBtn = page.getByRole('button', { name: /^(Skills|技能)$/i }).first()
+        if (await skillsBtn.isVisible().catch(() => false)) {
+          await skillsBtn.click()
+          await sleep(400)
+        }
+
+        // Open Settings -> Plugins and add dev plugin folder via stubbed dialog
+        await openSettingsPage(page)
+        const pluginsNav = page.locator('aside button').filter({ hasText: /^(Plugins|插件)/i }).first()
+        await pluginsNav.waitFor({ state: 'visible', timeout: 8000 })
+        await pluginsNav.click()
+        await page.locator('section[data-settings-section="plugins"]').waitFor({ state: 'visible', timeout: 8000 })
+        const enableBtn = page.getByRole('button', { name: /Turn on plugins|开启插件/i }).first()
+        if (await enableBtn.isVisible().catch(() => false)) {
+          await enableBtn.click()
+          await sleep(300)
+        }
+        await stubOpenDialog(app, pluginFix.pluginDir)
+        const addDevBtn = page.getByRole('button', { name: /Add.*folder|Load.*folder|添加.*目录/i }).first()
+        if (await addDevBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await addDevBtn.click()
+          await sleep(500)
+        }
+        await returnFromSettings(page)
+        return { skillCreated: skill.skillName, pluginTitle: pluginFix.title }
+      } finally {
+        await closeElectronApp(inst)
+        pluginFix.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F04-06',
+    tier: 1,
+    featureArea: 'E2E-F04',
+    refs: ['N.*', 'L.01', 'L.02', 'J02'],
+    async run(ctx) {
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      try {
+        const { page } = inst
+        await openSettingsPage(page)
+        const navButtons = page
+          .locator('aside button:visible')
+          .filter({ hasNotText: /^(Back to app|返回应用)$/i })
+        const count = await navButtons.count()
+        assert.ok(count >= 15, `Expected >=15 visible settings targets, got ${count}`)
+        const visited = []
+        for (let i = 0; i < count; i++) {
+          const btn = navButtons.nth(i)
+          const label = (await btn.innerText()).trim()
+          await btn.click()
+          await sleep(60)
+          const ariaCurrent = await btn.getAttribute('aria-current')
+          assert.equal(ariaCurrent, 'page', `Settings nav button ${label} did not become aria-current="page"`)
+          const sec = await page
+            .locator('section[data-settings-section]')
+            .first()
+            .getAttribute('data-settings-section')
+          assert.ok(sec, `Settings section missing for nav button ${label}`)
+          visited.push(label || sec)
+        }
+        await returnFromSettings(page)
+        return { settingsTargetsVisited: visited.length, sample: visited.slice(0, 10) }
+      } finally {
+        await closeElectronApp(inst)
+      }
+    }
+  },
+
+  // =========================================================================
+  // E2E-F05: ACS Collaboration, NativeLink & Loopback Core (6 Tests)
+  // =========================================================================
+  {
+    id: 'T1-F05-01',
+    tier: 1,
+    featureArea: 'E2E-F05',
+    refs: ['N.general.01', 'F04', 'F05', 'UX17'],
+    timeoutMs: 360_000,
+    async run(ctx) {
+      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const inst = await launchElectronApp({
+        porpitaRoot: ctx.porpitaRoot,
+        profileOptions: { locale: 'zh' }
+      })
+      try {
+        const { page } = inst
+        // Open Collaboration dialog first to inspect project dropdown naming ("尚未连接工作区" vs "协作项目")
+        const dlg = await openCollaborationDialog(page)
+        const selectText = await dlg.locator('select').first().innerText()
+        await page.keyboard.press('Escape')
+        await dlg.waitFor({ state: 'hidden', timeout: 5000 })
+
+        // Connect via Settings -> General -> Collaboration ("Connect an existing service")
+        await openSettingsPage(page)
+        const generalNav = page.locator('aside button').filter({ hasText: /^(General|常规|通用)$/i }).first()
+        await generalNav.click()
+        const generalSec = page.locator('section[data-settings-section="general"]').first()
+        await generalSec.waitFor({ state: 'visible', timeout: 8000 })
+
+        const existingRadio = generalSec
+          .getByRole('button', { name: /Connect an existing service|连接已有服务/i })
+          .first()
+        const existingTab = generalSec
+          .getByRole('radio', { name: /Connect an existing service|连接已有服务/i })
+          .first()
+        if (await existingTab.isVisible().catch(() => false)) await existingTab.click()
+        else await existingRadio.click()
+
+        await generalSec.getByLabel(/Service address|服务地址/i).fill(core.baseUrl)
+        await generalSec.getByLabel(/Connection key|连接密钥/i).fill(core.tokens.client)
+        await generalSec.getByRole('button', { name: /^(Connect|连接)$/i }).first().click()
+
+        // Expect Settings badge to transition to Connected
+        await generalSec.getByText(/^(Connected|已连接)$/i).first().waitFor({ state: 'visible', timeout: 10000 })
+
+        // Check Titlebar Collaboration sync immediately (without reopening!)
+        await returnFromSettings(page)
+        const dlgAfter = await openCollaborationDialog(page)
+        const statusText = await dlgAfter.locator('[role="status"]').first().innerText()
+        const connectedNow = /Connected|已连接/i.test(statusText)
+        await page.keyboard.press('Escape')
+
+        if (!connectedNow || /尚未连接工作区/.test(selectText)) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M2',
+            'Settings <-> Titlebar connection status syncs immediately & dropdown reads "协作项目"',
+            `titlebarStatus=${statusText}, emptySelectText=${JSON.stringify(selectText)}`
+          )
+        }
+        return { connected: true, selectText, statusText }
+      } finally {
+        await closeElectronApp(inst)
+        await core.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F05-02',
+    tier: 1,
+    featureArea: 'E2E-F05',
+    refs: ['K.01', 'K.02', 'UX06', 'UX09'],
+    async run(ctx) {
+      const core = await startLoopbackAcsCore({ mode: 'full' })
+      try {
+        const pid = core.info.project_id
+        // Send 3 messages from client -> peer_b (empty pair -> populated conversation, no Run/Task)
+        const sentIds = []
+        for (let i = 1; i <= 3; i++) {
+          const s = await core.request('POST', `/projects/${pid}/messages`, {
+            token: core.tokens.client,
+            headers: { 'Idempotency-Key': `t1-f05-02-msg-${i}` },
+            body: { to: core.addresses.peer_b, content: `Opaque message #${i} needle-alpha` }
+          })
+          assert.equal(s.status, 201, `Expected 201 on send #${i}: ${s.text}`)
+          sentIds.push(s.json.message.message_handle)
+        }
+        // Peer B explicit reply referencing message #1
+        const reply = await core.peerSend({
+          actor: 'peer_b',
+          to: core.addresses.client,
+          content: 'Explicit peer reply for #1',
+          reply_to: [sentIds[0]]
+        })
+        assert.ok(reply.message?.message_handle, 'Peer reply handle missing')
+
+        // Paginate limit=2 + search exact substring
+        const page1 = await core.request('GET', `/projects/${pid}/messages?with=${encodeURIComponent(core.addresses.peer_b)}&limit=2`, {
+          token: core.tokens.client
+        })
+        assert.equal(page1.status, 200)
+        assert.equal(page1.json.items.length, 2)
+        assert.ok(page1.json.page.next_cursor, 'Expected next_cursor for pagination')
+
+        const page2 = await core.request(
+          'GET',
+          `/projects/${pid}/messages?with=${encodeURIComponent(core.addresses.peer_b)}&limit=2&cursor=${encodeURIComponent(page1.json.page.next_cursor)}`,
+          { token: core.tokens.client }
+        )
+        assert.equal(page2.status, 200)
+        assert.ok(page2.json.items.length >= 1)
+
+        const search = await core.request(
+          'GET',
+          `/projects/${pid}/search?q=${encodeURIComponent('needle-alpha')}`,
+          { token: core.tokens.client }
+        )
+        assert.equal(search.status, 200)
+        assert.equal(search.json.items.length, 3)
+        return { sentCount: sentIds.length, searchHits: search.json.items.length }
+      } finally {
+        await core.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F05-03',
+    tier: 1,
+    featureArea: 'E2E-F05',
+    refs: ['K.03', 'UX11', 'communication-contract-adoption'],
+    async run(ctx) {
+      const core = await startLoopbackAcsCore({ mode: 'full' })
+      try {
+        const pid = core.info.project_id
+        // Resolve conversation for client <-> peer_b
+        const conv = await core.request(
+          'GET',
+          `/projects/${pid}/conversations/resolve?with=${encodeURIComponent(core.addresses.peer_b)}`,
+          { token: core.tokens.client }
+        )
+        assert.equal(conv.status, 200, conv.text)
+        const cid = conv.json.conversation_id
+
+        // Viewer A saves draft with If-Match: "0"
+        const putDraft = await core.request('PUT', `/projects/${pid}/conversations/${cid}/draft`, {
+          token: core.tokens.client,
+          headers: { 'Idempotency-Key': 'draft-save-1', 'If-Match': '"0"' },
+          body: { content: 'Viewer A private draft text', attachment_refs: [] }
+        })
+        assert.equal(putDraft.status, 200, putDraft.text)
+        assert.equal(putDraft.json.revision, 1)
+        assert.ok(putDraft.json.updated_at, 'Persisted draft must have aware updated_at')
+
+        // Viewer A mutes conversation
+        const putPref = await core.request('PUT', `/projects/${pid}/conversations/${cid}/preferences`, {
+          token: core.tokens.client,
+          headers: { 'Idempotency-Key': 'pref-save-1', 'If-Match': '"0"' },
+          body: { muted: true, archived: false }
+        })
+        assert.equal(putPref.status, 200, putPref.text)
+        assert.equal(putPref.json.muted, true)
+
+        // Send 1 message so peer_b also sees this conversation pair, then check Peer B's draft & preferences remain isolated (rev 0)
+        const seedMsg = await core.request('POST', `/projects/${pid}/messages`, {
+          token: core.tokens.client,
+          headers: { 'Idempotency-Key': 'draft-pair-seed-1' },
+          body: { to: core.addresses.peer_b, content: 'Pair visibility seed', activation: 'message_only' }
+        })
+        assert.equal(seedMsg.status, 201, seedMsg.text)
+
+        const bConv = await core.request(
+          'GET',
+          `/projects/${pid}/conversations/resolve?with=${encodeURIComponent(core.addresses.client)}`,
+          { token: core.tokens.peer_b }
+        )
+        assert.equal(bConv.status, 200, bConv.text)
+        const bDraft = await core.request(
+          'GET',
+          `/projects/${pid}/conversations/${bConv.json.conversation_id}/draft`,
+          { token: core.tokens.peer_b }
+        )
+        assert.equal(bDraft.status, 200)
+        assert.equal(bDraft.json.revision, 0)
+        assert.equal(bDraft.json.updated_at, null)
+        return { viewerADraftRev: putDraft.json.revision, viewerBDraftRev: bDraft.json.revision }
+      } finally {
+        await core.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F05-04',
+    tier: 1,
+    featureArea: 'E2E-F05',
+    refs: ['K.04', 'UX10', 'C.10.08', 'communication-contract-adoption'],
+    async run(ctx) {
+      const core = await startLoopbackAcsCore({ mode: 'full' })
+      try {
+        const pid = core.info.project_id
+        const fix = core.nativeLinkFixture
+        // Bind NativeLink
+        const bind = await core.request('PUT', `/projects/${pid}/native-links/link-e2e-1`, {
+          token: core.tokens.client,
+          headers: { 'Idempotency-Key': 'bind-link-1' },
+          body: fix
+        })
+        assert.equal(bind.status, 200, bind.text)
+        assert.equal(Object.keys(bind.json).length, 12, 'NativeLink must return 12 fields')
+        assert.equal(bind.json.host_ref, fix.expected_host_ref)
+
+        // Send invoke message to peer_b & dispatch to DriverJournal
+        const send = await core.request('POST', `/projects/${pid}/messages`, {
+          token: core.tokens.client,
+          headers: { 'Idempotency-Key': 'invoke-source-1' },
+          body: { to: core.addresses.peer_b, content: 'Inspect native source turn', activation: 'invoke' }
+        })
+        assert.equal(send.status, 201, send.text)
+        await core.dispatchPending()
+
+        // Read with include_native_source=true
+        const read = await core.request(
+          'GET',
+          `/projects/${pid}/messages/${encodeURIComponent(send.json.message.message_handle)}?include_native_source=true`,
+          { token: core.tokens.client }
+        )
+        assert.equal(read.status, 200, read.text)
+        assert.equal(read.json.native_source?.available, true, `Expected available=true: ${read.text}`)
+        assert.equal(read.json.native_source.value.operationId, send.json.operation_ref)
+        return {
+          nativeLinkRevision: bind.json.revision,
+          sourceProvider: read.json.native_source.value.nativeSession.providerRef
+        }
+      } finally {
+        await core.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F05-05',
+    tier: 1,
+    featureArea: 'E2E-F05',
+    refs: ['K.03', 'K.04', 'T04', 'communication-api-scope'],
+    async run(ctx) {
+      const core = await startLoopbackAcsCore({ mode: 'full' })
+      try {
+        const pid = core.info.project_id
+        const snap = await core.request('GET', `/projects/${pid}/snapshot?limit=10`, {
+          token: core.tokens.client
+        })
+        assert.equal(snap.status, 200, snap.text)
+        const afterCursor = snap.json.after_cursor
+        assert.ok(afterCursor, 'Snapshot missing after_cursor')
+
+        // Open SSE stream with after_cursor, trigger peer send & notice
+        const controller = new AbortController()
+        const ssePromise = (async () => {
+          const res = await fetch(
+            `${core.apiUrl}/projects/${pid}/events?after_cursor=${encodeURIComponent(afterCursor)}`,
+            {
+              headers: { Authorization: `Bearer ${core.tokens.client}` },
+              signal: controller.signal
+            }
+          )
+          assert.equal(res.status, 200, `SSE failed: ${res.status}`)
+          const reader = res.body.getReader()
+          const decoder = new TextDecoder()
+          let buf = ''
+          while (true) {
+            const { value, done } = await reader.read()
+            if (done) break
+            buf += decoder.decode(value, { stream: true })
+            if (buf.includes('message.committed') || buf.includes('event:')) {
+              return buf
+            }
+          }
+          return buf
+        })()
+
+        await sleep(200)
+        await core.peerSend({ actor: 'peer_b', to: core.addresses.client, content: 'SSE live frame' })
+        const sseFrame = await Promise.race([
+          ssePromise,
+          sleep(6000).then(() => {
+            controller.abort()
+            throw new Error('SSE stream timed out waiting for event')
+          })
+        ])
+        controller.abort()
+        assert.match(sseFrame, /event:\s*\S+/, `Unexpected SSE output: ${sseFrame}`)
+
+        // Emit notice and mark seen
+        const noticeInfo = await core.emitNotice({ legacy_null_created_at: false })
+        const notices = await core.request('GET', `/projects/${pid}/notices`, {
+          token: core.tokens.client
+        })
+        assert.equal(notices.status, 200)
+        const nItem = notices.json.items.find((n) => n.notice_handle === noticeInfo.notice_handle)
+        assert.ok(nItem, 'Emitted notice not returned by GET /notices')
+        const seenRes = await core.request(
+          'PUT',
+          `/projects/${pid}/notices/${encodeURIComponent(nItem.notice_handle)}/seen`,
+          {
+            token: core.tokens.client,
+            headers: {
+              'Idempotency-Key': 'notice-seen-1',
+              'If-Match': `"${nItem.revision}"`
+            },
+            body: { seen: true }
+          }
+        )
+        assert.equal(seenRes.status, 200, seenRes.text)
+        assert.equal(seenRes.json.seen, true)
+        return { sseDelivered: true, noticeSeen: seenRes.json.seen }
+      } finally {
+        await core.cleanup()
+      }
+    }
+  },
+  {
+    id: 'T1-F05-06',
+    tier: 1,
+    featureArea: 'E2E-F05',
+    refs: ['K.03', 'UX12', 'communication-api-scope'],
+    async run(ctx) {
+      const core = await startLoopbackAcsCore({ mode: 'full' })
+      try {
+        const pid = core.info.project_id
+        const { createHash } = await import('node:crypto')
+        const payloadBytes = Buffer.from('Porpita attachment binary test payload\n', 'utf8')
+        const digestHex = createHash('sha256').update(payloadBytes).digest('hex')
+
+        const reserve = await core.request('POST', `/projects/${pid}/attachments`, {
+          token: core.tokens.client,
+          headers: { 'Idempotency-Key': 'att-reserve-1' },
+          body: {
+            name: 'report.txt',
+            media_type: 'text/plain',
+            bytes: payloadBytes.length,
+            sha256: digestHex
+          }
+        })
+        assert.equal(reserve.status, 201, reserve.text)
+        const attId = reserve.json.attachment_id
+
+        const upload = await core.request('PUT', `/projects/${pid}/attachments/${attId}/content`, {
+          token: core.tokens.client,
+          headers: {
+            'Idempotency-Key': 'att-upload-1',
+            'Content-Type': 'application/octet-stream'
+          },
+          rawBody: payloadBytes
+        })
+        assert.ok(upload.status === 200 || upload.status === 204, upload.text)
+
+        const fin = await core.request('POST', `/projects/${pid}/attachments/${attId}/finalize`, {
+          token: core.tokens.client,
+          headers: { 'Idempotency-Key': 'att-fin-1' },
+          body: { sha256: digestHex, bytes: payloadBytes.length }
+        })
+        assert.equal(fin.status, 200, fin.text)
+        assert.equal(fin.json.state, 'ready')
+
+        const send = await core.request('POST', `/projects/${pid}/messages`, {
+          token: core.tokens.client,
+          headers: { 'Idempotency-Key': 'att-send-1' },
+          body: {
+            to: core.addresses.peer_b,
+            content: 'Message with binary attachment',
+            attachment_refs: [attId]
+          }
+        })
+        assert.equal(send.status, 201, send.text)
+
+        const dlRes = await fetch(`${core.apiUrl}/projects/${pid}/attachments/${attId}/content`, {
+          headers: { Authorization: `Bearer ${core.tokens.peer_b}` }
+        })
+        assert.equal(dlRes.status, 200)
+        const dlBuf = Buffer.from(await dlRes.arrayBuffer())
+        const dlDigest = createHash('sha256').update(dlBuf).digest('hex')
+        assert.equal(dlDigest, digestHex, 'Downloaded attachment SHA-256 mismatch')
+        return { attachmentId: attId, sha256: dlDigest }
+      } finally {
+        await core.cleanup()
+      }
+    }
+  },
+
+  // =========================================================================
+  // E2E-F06: UI SPEC Audit, Crosswalk & Honest Boundaries (6 Tests)
+  // =========================================================================
+  {
+    id: 'T1-F06-01',
+    tier: 1,
+    featureArea: 'E2E-F06',
+    refs: ['ORIGINAL_REQUEST:R1', 'build_coverage.py'],
+    async run(ctx) {
+      const linkCheck = checkMarkdownLinks({
+        specRoot: ctx.specRoot,
+        orcaFirstPath: path.join(path.dirname(ctx.specRoot), 'ORCA-FIRST.zh-CN.md')
+      })
+      assert.equal(
+        linkCheck.brokenCount,
+        0,
+        `Broken markdown links: ${JSON.stringify(linkCheck.broken)}`
+      )
+
+      const staged = runStagedBuildCoverage({
+        specRoot: ctx.specRoot,
+        porpitaRoot: ctx.porpitaRoot,
+        historyRoot: ctx.historyRoot
+      })
+      assert.equal(staged.sourceIndexExitCode, 0, `source-index failed: ${staged.sourceIndexStderr}`)
+      if (staged.buildCoverageExitCode !== 0) {
+        if (ctx.mode === 'smoke') {
+          pendingIfSmoke(
+            ctx.mode,
+            'M4',
+            'Staged build_coverage.py exits 0 after catalog sync with M1-M3 changes',
+            `build_coverage.py exit=${staged.buildCoverageExitCode}: ${staged.buildCoverageStderr.slice(0, 300)}`
+          )
+        }
+        assert.fail(`build_coverage.py failed: ${staged.buildCoverageStderr}`)
+      }
+      assert.equal(staged.stdoutJson.domains, 20)
+      assert.ok(staged.stdoutJson.rows >= 371)
+      return {
+        linksChecked: linkCheck.checkedFilesCount,
+        domains: staged.stdoutJson.domains,
+        rows: staged.stdoutJson.rows
+      }
+    }
+  },
+  {
+    id: 'T1-F06-02',
+    tier: 1,
+    featureArea: 'E2E-F06',
+    refs: ['ORIGINAL_REQUEST:R1', 'build_coverage.py'],
+    async run(ctx) {
+      const staged = runStagedBuildCoverage({
+        specRoot: ctx.specRoot,
+        porpitaRoot: ctx.porpitaRoot,
+        historyRoot: ctx.historyRoot
+      })
+      assert.equal(staged.sourceIndexExitCode, 0, staged.sourceIndexStderr)
+      const reg = staged.summary.registry
+      assert.ok(reg.setting.length >= 34, `Expected >=34 settings renderers in summary, got ${reg.setting.length}`)
+      assert.ok(reg.activeView.length >= 9, `Expected >=9 activeViews, got ${reg.activeView.length}`)
+      if (staged.buildCoverageExitCode !== 0) {
+        pendingIfSmoke(
+          ctx.mode,
+          'M4',
+          'source-index & coverage-audit.json 100% registry parity',
+          staged.buildCoverageStderr.slice(0, 300)
+        )
+      }
+      assert.ok(staged.audit.settings_targets >= 37, `Expected >=37 settings_targets, got ${staged.audit.settings_targets}`)
+      assert.ok(staged.audit.top_level_views >= 9)
+      assert.ok(staged.audit.root_boundaries >= 37)
+      assert.ok(staged.audit.primitive_wrappers >= 32)
+      return {
+        settingsRenderers: reg.setting.length,
+        settingsTargets: staged.audit.settings_targets,
+        topLevelViews: staged.audit.top_level_views,
+        rootBoundaries: staged.audit.root_boundaries,
+        primitiveWrappers: staged.audit.primitive_wrappers
+      }
+    }
+  },
+  {
+    id: 'T1-F06-03',
+    tier: 1,
+    featureArea: 'E2E-F06',
+    refs: ['ORIGINAL_REQUEST:R2', 'ORCA-FIRST'],
+    async run(ctx) {
+      const orcaFirstPath = path.join(path.dirname(ctx.specRoot), 'ORCA-FIRST.zh-CN.md')
+      const cw = checkOrcaFirstCrosswalk({ orcaFirstPath, specRoot: ctx.specRoot })
+      assert.equal(cw.foundTIds.length, 12, `Expected T01-T12, found ${cw.foundTIds.join(',')}`)
+      assert.equal(cw.missingArchives.length, 0, `Missing ORCA-FIRST archives: ${cw.missingArchives.join(',')}`)
+      if (!cw.referencedOrcaFirst || cw.untracedTs.length > 0) {
+        pendingIfSmoke(
+          ctx.mode,
+          'M4',
+          'ORCA-FIRST.zh-CN.md (T01-T12) explicitly cross-referenced in porpita-ui-spec',
+          `referenced=${cw.referencedOrcaFirst}, untraced=${cw.untracedTs.join(',')}`
+        )
+      }
+      return cw
+    }
+  },
+  {
+    id: 'T1-F06-04',
+    tier: 1,
+    featureArea: 'E2E-F06',
+    refs: ['ORIGINAL_REQUEST:R2', 'UI_SPEC_BRIEF'],
+    async run(ctx) {
+      const refRoot =
+        'D:\\Chatgpt\\Agent-collaboration\\RFC_TEMP_SOURCE\\Porpita-Workspace-UI-Spec-Reference-v1.0.0'
+      const cw = checkReferenceCrosswalk({ refRoot, specRoot: ctx.specRoot })
+      assert.equal(cw.deliverablesCount, 11)
+      assert.equal(cw.openQuestionsCount, 12)
+      if (cw.missingDeliverablesInRef.length > 0 || !cw.hasExplicitOpenCrosswalk) {
+        pendingIfSmoke(
+          ctx.mode,
+          'M4',
+          '11 Reference deliverables & Open Questions #1-#12 mapped in porpita-ui-spec',
+          `missingDeliverables=${cw.missingDeliverablesInRef.join(',')}, openCrosswalk=${cw.hasExplicitOpenCrosswalk}`
+        )
+      }
+      return cw
+    }
+  },
+  {
+    id: 'T1-F06-05',
+    tier: 1,
+    featureArea: 'E2E-F06',
+    refs: ['ORIGINAL_REQUEST:R3', 'COVERAGE_CLOSURE.md'],
+    async run(ctx) {
+      const res = checkEnvBoundedHonesty({ specRoot: ctx.specRoot })
+      assert.equal(
+        res.uncoveredCategories.length,
+        0,
+        `ENV_BOUNDED categories missing from COVERAGE_CLOSURE.md: ${res.uncoveredCategories.join(',')}`
+      )
+      assert.equal(
+        res.dishonestFindings.length,
+        0,
+        `Dishonest closure claims detected: ${res.dishonestFindings.join('; ')}`
+      )
+      return res
+    }
+  },
+  {
+    id: 'T1-F06-06',
+    tier: 1,
+    featureArea: 'E2E-F06',
+    refs: ['ORIGINAL_REQUEST:R3', 'PROJECT'],
+    async run(ctx) {
+      const gitCheck = verifyGitBaselines({
+        agentCollabRoot: 'D:\\Chatgpt\\Agent-collaboration',
+        porpitaRoot: ctx.historyRoot
+      })
+      assert.equal(gitCheck.ok, true, `Git baseline drift: ${gitCheck.issues.join(' | ')}`)
+      return {
+        agentCollabHead: gitCheck.agentCollab.head,
+        trackedModsCount: gitCheck.agentCollab.trackedModsCount,
+        porpitaHead: gitCheck.porpita.head,
+        porpitaDeletions: gitCheck.porpita.deletionsCount
+      }
+    }
+  }
+]

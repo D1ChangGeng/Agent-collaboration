@@ -17,19 +17,22 @@ from runtime.native_view_models import ProviderAdmission
 from runtime.receiver import ReceiverRejected, ReceiverService, verified_prepare_body
 from runtime.receiver_contract import NativeAdmissionCommand, NativeAdmissionResult
 from runtime.receiver_crypto import sha256, verify
-from runtime.receiver_models import DispatchBody, PrepareBody, ReadbackBody, SignedRequest
+from runtime.receiver_models import DispatchBody, NativeSourceReadbackBody, PrepareBody, ReadbackBody, SignedRequest
 
 
 class ExistingOrcaReceiverBackend:
     format = "acs-delivery-admission/1"
 
-    def __init__(self, service, *, current_ownership, authorize_original_read=None):
+    def __init__(self, service, *, current_ownership, authorize_original_read=None, native_attachments=False):
         if (not isinstance(service, ReceiverService) or not callable(current_ownership)
                 or authorize_original_read is not None and not callable(authorize_original_read)):
             raise TypeError("the existing Receiver service, actual Host ownership and current Core read authority are required")
         self.service = service
         self._ownership = current_ownership
         self._read_authority = authorize_original_read or service.require_original_source_read
+        if type(native_attachments) is not bool:
+            raise TypeError("Native attachment capability requires an explicit installed Host port")
+        self.native_attachments = native_attachments
 
     def _owner(self):
         value = self._ownership()
@@ -78,12 +81,16 @@ class ExistingOrcaReceiverBackend:
         fact = {"provider_generation": owner["session"]["generation"], "native_session_ref": owner["session"]["sessionRef"],
                 "binding_epoch": owner["bindingEpoch"], "auth_revision": hashlib.sha256(json.dumps(auth, sort_keys=True).encode()).hexdigest(),
                 "orca_host_principal": owner["hostPrincipalRef"], "orca_provider_ref": owner["session"]["providerRef"]}
+        if self.native_attachments:
+            fact["orca_native_attachments"] = True
         self._same_owner(owner)
         with self.service.ledger.execution_fence():
             self._same_owner(owner)
             return self.service.prepare(request, adapter_receiver=fact)
 
-    def _verify(self, command, *, historical=False):
+    def _verify(self, command, *, historical=False, source_read=False):
+        if source_read and not historical:
+            raise ReceiverRejected("source verification cannot authorize Native execution")
         command = NativeAdmissionCommand.model_validate_json(command.model_dump_json(), strict=True)
         if command.sealed_envelope.format != self.format:
             raise ReceiverRejected("Orca Core verifier requires the negotiated sealed receiver format")
@@ -99,7 +106,7 @@ class ExistingOrcaReceiverBackend:
                 raise ReceiverRejected("current original-operation read authority is unavailable")
         elif self.service.authorize_current(request.admission) is not True:
             raise ReceiverRejected("current Core input authority is unavailable")
-        owner = self._owner()
+        owner = None if source_read else self._owner()
         with self.service.ledger.transaction() as connection:
             self.service._check_current_boot(connection, request.admission)
             prepared = self.service._prepared(connection, request.admission, body.prepare_request_id)
@@ -109,26 +116,34 @@ class ExistingOrcaReceiverBackend:
             receipt = self.service._stored(prepared)
             verify(self.service.binding.node_public_key, receipt.signature, receipt.receipt)
             fact = deepcopy(receipt.receipt.evidence.get("adapter_receiver"))
-        self._scope(owner, invocation)
-        if (not isinstance(fact, dict) or fact.get("orca_host_principal") != owner["hostPrincipalRef"]
-                or fact.get("orca_provider_ref") != owner["session"]["providerRef"]
+        if owner is not None:
+            self._scope(owner, invocation)
+        if (not isinstance(fact, dict)
+                or any(not isinstance(fact.get(name), str) or not 1 <= len(fact[name]) <= 512
+                       for name in ("orca_host_principal", "orca_provider_ref", "native_session_ref", "provider_generation"))
+                or (owner is not None and (fact["orca_host_principal"], fact["orca_provider_ref"]) !=
+                    (owner["hostPrincipalRef"], owner["session"]["providerRef"]))
                 or command.operation_id != invocation.invocation_id or command.receiver_id != invocation.envelope.endpoint_id
                 or command.message_handles != ("message:" + invocation.envelope.packet.project_id + ":" + invocation.message_id,)
                 or command.canonical_hash != invocation.envelope_digest or command.deadline != request.admission.deadline
                 or (command.binding_epoch, command.provider_generation, command.auth_revision) !=
                    (fact.get("binding_epoch"), fact.get("provider_generation"), fact.get("auth_revision"))):
             raise ReceiverRejected("Orca outer command differs from the signed prepared operation")
-        if not historical and (fact["native_session_ref"], fact["provider_generation"]) != (
+        if not historical and owner is not None and (fact["native_session_ref"], fact["provider_generation"]) != (
                 owner["session"]["sessionRef"], owner["session"]["generation"]):
             raise ReceiverRejected("Orca prepared Native session/generation is retired")
-        self._same_owner(owner)
+        if owner is not None:
+            self._same_owner(owner)
         if historical:
             if self._read_authority(request.admission) is not None:
                 raise ReceiverRejected("original-operation read authority changed")
         elif self.service.authorize_current(request.admission) is not True:
             raise ReceiverRejected("Core input authority changed during verification")
-        session = owner["session"] | {"sessionRef": fact["native_session_ref"], "generation": fact["provider_generation"]}
-        value = {"command": command.model_dump(mode="json"), "session": session, "hostPrincipalRef": owner["hostPrincipalRef"],
+        # The signed prepare contains the actual owner observed before the original
+        # input. It remains a historical reference after that owner has exited.
+        session = {"providerRef": fact["orca_provider_ref"], "sessionRef": fact["native_session_ref"],
+            "hostRef": invocation.envelope.machine_id, "generation": fact["provider_generation"], "authority": "orca"}
+        value = {"command": command.model_dump(mode="json"), "session": session, "hostPrincipalRef": fact["orca_host_principal"],
             "address": invocation.envelope.packet.recipient, "authorityId": invocation.envelope.authority_id,
             "authorityIncarnation": invocation.envelope.authority_incarnation, "scopeRef": invocation.envelope.packet.target_scope_id,
             "activation": invocation.envelope.packet.activation, "sealedBytesSha256": hashlib.sha256(raw).hexdigest(),
@@ -173,9 +188,12 @@ class ExistingOrcaReceiverBackend:
             self.service.require_original_source_read(admission)
             return {"available": False, "value": None, "reason_code": "native_source_ack_missing", "evidence_ref": None}
         result = NativeAdmissionResult.model_validate(raw_result, strict=True)
-        original = self.resolve_original(result.operation_id)
-        sealed = base64.b64decode(original["command"]["sealed_envelope"]["data"], validate=True)
-        original_request = SignedRequest.model_validate_json(sealed, strict=True)
+        if not isinstance(verified, dict) or not isinstance(verified.get("command"), dict):
+            raise ReceiverRejected("original verified Host command is unavailable")
+        command = NativeAdmissionCommand.model_validate_json(json.dumps(verified["command"]), strict=True)
+        if command.operation_id != result.operation_id:
+            raise ReceiverRejected("original Host acknowledgement names a different operation")
+        original, _command, original_request = self._verify(command, historical=True, source_read=True)
         with self.service.ledger.transaction() as connection:
             prepared = self.service._prepared(connection, original_request.admission, original_request.body["prepare_request_id"])
             invocation = InvocationRequest.model_validate_json(json.dumps(verified_prepare_body(prepared).invocation), strict=True)
@@ -297,7 +315,7 @@ class ExistingOrcaReceiverBackend:
                 raise ReceiverRejected("Orca Host has no positive Native admission evidence")
             return {"native_admission": result.model_dump(mode="json")}
 
-        receipt = self.service.dispatch(request, invoke)
+        receipt = self.service.dispatch(request, invoke, native_attachments=self.native_attachments)
         if admitted:
             return admitted[0]
         original = receipt.receipt.evidence.get("native_admission")
@@ -343,6 +361,16 @@ class OrcaReceiverRouter:
                         request.admission.operation_id, request.admission.dispatch_id):
                     raise ReceiverRejected("Host readback differs from its original operation")
                 service.require_original_source_read(request.admission)
+                if isinstance(body, NativeSourceReadbackBody):
+                    with service.ledger.transaction() as connection:
+                        acknowledged = connection.execute(
+                            "SELECT 1 FROM receiver_requests WHERE operation_id=? AND dispatch_id=? "
+                            "AND purpose='delivery.dispatch' AND state='runtime_acknowledged'",
+                            (body.operation_id, body.dispatch_id)).fetchone()
+                    if acknowledged is not None:
+                        # Reading a retained ACK needs its original signed facts,
+                        # never a fresh callback to the current execution owner.
+                        return service.readback(request, native_source_reader=self.backend.read_native_source)
                 original = self.backend.resolve_original("delivery-invocation:" + request.admission.attempt_id)
                 sealed = SignedRequest.model_validate_json(base64.b64decode(
                     original["command"]["sealed_envelope"]["data"], validate=True), strict=True)
@@ -354,5 +382,5 @@ class OrcaReceiverRouter:
                 self.backend.reconcile_original(original["command"]["operation_id"], self.reconcile_original)
             return service.readback(request, native_source_reader=self.backend.read_native_source)
         if request.admission.purpose == "delivery.readiness":
-            return service.readiness(request, self.observe_readiness)
+            return service.readiness(request, self.observe_readiness, native_attachments=self.backend.native_attachments)
         raise ReceiverRejected("Host recovery requires original-operation reconcile; no automatic replacement dispatch")

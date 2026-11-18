@@ -1,0 +1,29 @@
+{
+  "candidate": "prototype-11",
+  "separateInstalledProfile": true,
+  "connected": {
+    "mode": "existing-service",
+    "state": "connected",
+    "version": "2.3.1",
+    "authority": "porpita-f6df910bb487f4b723bffa02cc8beb4e",
+    "incarnation": "installation-1",
+    "level": "client",
+    "slotIsNull": true
+  },
+  "disconnected": {
+    "mode": "existing-service",
+    "state": "disconnected",
+    "slotIsNull": false
+  },
+  "connectedAgain": {
+    "mode": "existing-service",
+    "state": "connected",
+    "version": "2.3.1",
+    "authority": "porpita-f6df910bb487f4b723bffa02cc8beb4e",
+    "incarnation": "installation-1",
+    "level": "client",
+    "slotIsNull": true
+  },
+  "keyCleared": true,
+  "scope": "Private loopback QA Core; actual existing-service form with a trusted Human Client; key remained in process memory and system storage."
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S1",
+    "source": "C:\\Users\\D26FO\\AppData\\Local\\Temp\\codex-clipboard-ee005c37-6897-4ae5-b1c1-790d45b3fb61.png",
+    "file": "source-screenshot-1.png",
+    "bytes": 373802,
+    "width": 1771,
+    "height": 1222,
+    "sha256": "ab1a2a7ad98d47fb6f2346b6c765f1551d2ae3720509ddb3b7b74d0111e67c3c",
+    "role": "User supplied website feature inventory or feature detail still; no temporal claims"
+  },
+  {
+    "id": "S2",
+    "source": "C:\\Users\\D26FO\\AppData\\Local\\Temp\\codex-clipboard-d2480cc6-549b-4810-b04a-cb3f63a45cd2.png",
+    "file": "source-screenshot-2.png",
+    "bytes": 357988,
+    "width": 1771,
+    "height": 1218,
+    "sha256": "4c2b239dae65b531fc8c508989183d9e2f3c784665cf7f9aebca6e6ccdafed72",
+    "role": "User supplied website feature inventory or feature detail still; no temporal claims"
+  },
+  {
+    "id": "S3",
+    "source": "C:\\Users\\D26FO\\AppData\\Local\\Temp\\codex-clipboard-c94ebbb9-f491-498e-8876-d02b89a23ea3.png",
+    "file": "source-screenshot-3.png",
+    "bytes": 196383,
+    "width": 1830,
+    "height": 1075,
+    "sha256": "7dd9ccbf714fdbec98beb43497a6ad6132eaf4b6ccec0241d013cc38cb74a369",
+    "role": "User supplied website feature inventory or feature detail still; no temporal claims"
+  }
+]

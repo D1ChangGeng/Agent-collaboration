@@ -1,0 +1,17 @@
+{
+  "display_name": "Porpita",
+  "package_name_default": "porpita",
+  "cli_default": "porpita",
+  "daemon_default": "porpitad",
+  "application_id_default": "io.github.d1changgeng.porpita",
+  "uri_scheme_default": "porpita",
+  "initial_product_version_default": "0.1.0",
+  "product_tagline_zh": "让独立智能体协作成一个整体。",
+  "upstream_brand": "Orca",
+  "preserve_legal_attribution": true,
+  "preserve_internal_compatibility_names": true,
+  "update_endpoint": null,
+  "telemetry_endpoint": null,
+  "public_website": null,
+  "notes": "Null endpoints mean no real endpoint has been supplied; do not invent a domain or silently use upstream proprietary services."
+}

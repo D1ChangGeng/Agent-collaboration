@@ -1,0 +1,530 @@
+{
+  "schema_version": "porpita-delivery/1",
+  "product": "Porpita",
+  "product_version": "0.1.0",
+  "status": "NOT_RUN",
+  "primary_target": "windows-x64",
+  "sources": {
+    "porpita": {
+      "commit": "",
+      "dirty": false
+    },
+    "acs": {
+      "commit": "",
+      "dirty": false
+    },
+    "orca_upstream": {
+      "commit": "",
+      "dirty": false
+    }
+  },
+  "artifacts": [],
+  "scenarios": [
+    {
+      "id": "UX01",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX02",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX03",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX04",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX05",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX06",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX07",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX08",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX09",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX10",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX11",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX12",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX13",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX14",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX15",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX16",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX17",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX18",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX19",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX20",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX21",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    },
+    {
+      "id": "UX22",
+      "status": "not_run",
+      "environment": "",
+      "evidence": [],
+      "simulated": false
+    }
+  ],
+  "functional_coverage": [
+    {
+      "id": "F01",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F02",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F03",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F04",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F05",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F06",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F07",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F08",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F09",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F10",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F11",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F12",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F13",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F14",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F15",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F16",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F17",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F18",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F19",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F20",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F21",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F22",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F23",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F24",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F25",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F26",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F27",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "F28",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    }
+  ],
+  "message_paths": [
+    {
+      "id": "MP01",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP02",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP03",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP04",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP05",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP06",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP07",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP08",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP09",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP10",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP11",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP12",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP13",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "MP14",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    }
+  ],
+  "branding": [
+    {
+      "id": "B01",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B02",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B03",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B04",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B05",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B06",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B07",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B08",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B09",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B10",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B11",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B12",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B13",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B14",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    },
+    {
+      "id": "B15",
+      "status": "needs_inspection",
+      "implementation": "",
+      "evidence": []
+    }
+  ],
+  "limitations": [
+    "该文件是待填写模板，不是实际软件验收。"
+  ],
+  "blockers": []
+}

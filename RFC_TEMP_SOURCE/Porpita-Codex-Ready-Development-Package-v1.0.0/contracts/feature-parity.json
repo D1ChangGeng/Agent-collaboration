@@ -1,0 +1,342 @@
+{
+  "schema_version": "porpita-feature-parity/1",
+  "rule": "inherit means retain actual upstream-supported behavior, not reimplement or claim every Harness supports it",
+  "items": [
+    {
+      "id": "F01",
+      "feature": "窗口/侧栏/Tabs/Panes/分屏",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP01",
+      "acceptance": [
+        "UX02"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F02",
+      "feature": "主题/design tokens/快捷键/焦点",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP01",
+      "acceptance": [
+        "UX19"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F03",
+      "feature": "仓库/工作区/Worktree",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP01",
+      "acceptance": [
+        "UX02"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F04",
+      "feature": "Native Chat及流式历史",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP01",
+      "acceptance": [
+        "UX03"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F05",
+      "feature": "工具/思考折叠/后台任务",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP04",
+      "acceptance": [
+        "UX03"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F06",
+      "feature": "原生模型/参数/权限选择",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP04",
+      "acceptance": [
+        "UX08"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F07",
+      "feature": "原生审批和问题",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP04",
+      "acceptance": [
+        "UX08"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F08",
+      "feature": "stop/queue/steer/compact等原生操作",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP04",
+      "acceptance": [
+        "UX07"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F09",
+      "feature": "终端/TUI/会话切换",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP01",
+      "acceptance": [
+        "UX03"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F10",
+      "feature": "文件树/Monaco/预览",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP01",
+      "acceptance": [
+        "UX02"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F11",
+      "feature": "Git/Diff/stage/commit",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP01",
+      "acceptance": [
+        "UX03"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F12",
+      "feature": "内置浏览器/设计工具",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP01",
+      "acceptance": [
+        "UX02"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F13",
+      "feature": "Provider登录/已有插件/设置",
+      "change_kind": "inherit",
+      "authority": "host",
+      "owner": "WP01",
+      "acceptance": [
+        "UX03"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F14",
+      "feature": "ACS服务首次启动/连接",
+      "change_kind": "integrate",
+      "authority": "acs_and_host",
+      "owner": "WP03",
+      "acceptance": [
+        "UX04"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F15",
+      "feature": "Agent稳定身份/上下文",
+      "change_kind": "integrate",
+      "authority": "acs_and_host",
+      "owner": "WP03",
+      "acceptance": [
+        "UX04"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F16",
+      "feature": "真实宿主消息接收",
+      "change_kind": "implement_seam",
+      "authority": "acs_and_host",
+      "owner": "WP04",
+      "acceptance": [
+        "UX05"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F17",
+      "feature": "联系人/消息/关联回复",
+      "change_kind": "integrate",
+      "authority": "acs",
+      "owner": "WP06",
+      "acceptance": [
+        "UX06"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F18",
+      "feature": "实时消息和分页历史",
+      "change_kind": "integrate",
+      "authority": "acs",
+      "owner": "WP06",
+      "acceptance": [
+        "UX09"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F19",
+      "feature": "私人阅读/通知seen",
+      "change_kind": "integrate",
+      "authority": "acs",
+      "owner": "WP06",
+      "acceptance": [
+        "UX11"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F20",
+      "feature": "草稿/偏好/静音/归档",
+      "change_kind": "integrate",
+      "authority": "acs",
+      "owner": "WP06",
+      "acceptance": [
+        "UX11"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F21",
+      "feature": "正文搜索",
+      "change_kind": "integrate",
+      "authority": "acs",
+      "owner": "WP06",
+      "acceptance": [
+        "UX09"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F22",
+      "feature": "ACS附件及Host材料化",
+      "change_kind": "integrate",
+      "authority": "acs_and_host",
+      "owner": "WP06",
+      "acceptance": [
+        "UX12"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F23",
+      "feature": "查看消息对应执行",
+      "change_kind": "integrate",
+      "authority": "acs_and_host",
+      "owner": "WP06",
+      "acceptance": [
+        "UX10"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F24",
+      "feature": "Run/Task/Gate可选工作流",
+      "change_kind": "adapt_transport",
+      "authority": "host_workflow",
+      "owner": "WP05",
+      "acceptance": [
+        "UX13"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F25",
+      "feature": "群组/远端通信",
+      "change_kind": "adapt_transport",
+      "authority": "acs_and_host",
+      "owner": "WP07",
+      "acceptance": [
+        "UX21"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F26",
+      "feature": "重开/恢复/导入",
+      "change_kind": "integrate",
+      "authority": "acs_and_host",
+      "owner": "WP07",
+      "acceptance": [
+        "UX15"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F27",
+      "feature": "安装/升级/卸载/并存",
+      "change_kind": "rebrand_package",
+      "authority": "host",
+      "owner": "WP08",
+      "acceptance": [
+        "UX20"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    },
+    {
+      "id": "F28",
+      "feature": "品牌/外部出口/法律声明",
+      "change_kind": "rebrand_package",
+      "authority": "host",
+      "owner": "WP02",
+      "acceptance": [
+        "UX18"
+      ],
+      "required": true,
+      "upstream_support_boundary": "Use adopted upstream actual platform/provider support; required ACS normal paths cannot be replaced by a stub."
+    }
+  ]
+}

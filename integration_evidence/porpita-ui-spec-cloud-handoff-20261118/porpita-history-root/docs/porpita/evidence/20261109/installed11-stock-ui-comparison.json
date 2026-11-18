@@ -1,0 +1,60 @@
+{
+  "candidate": "prototype-11",
+  "stockOfficialVersion": "1.4.214",
+  "stockInstallerSha256": "cd0f0e856e75c1eddd314669af01a65f70ed3b233fd1831f3d50a191a27a0095",
+  "sameSyntheticRepo": true,
+  "sameWorkbenchCondition": true,
+  "orca": {
+    "title": "Orca",
+    "viewport": [
+      1400,
+      950
+    ],
+    "scrollWidth": 1400,
+    "theme": "dark",
+    "nativeWorkspace": true,
+    "tabAndSidebarCount": 1,
+    "dialogs": 0,
+    "navigation": [
+      "设置"
+    ],
+    "worktreeSwitcher": true,
+    "shortcutOpened": false,
+    "imeViaActualRendererComposition": true,
+    "escapedToWorkbench": true,
+    "narrow": {
+      "viewport": [
+        1080,
+        780
+      ],
+      "scrollWidth": 1080
+    }
+  },
+  "product": {
+    "title": "Porpita",
+    "viewport": [
+      1400,
+      950
+    ],
+    "scrollWidth": 1400,
+    "theme": "dark",
+    "nativeWorkspace": true,
+    "tabAndSidebarCount": 4,
+    "dialogs": 0,
+    "navigation": [
+      "协作消息",
+      "设置"
+    ],
+    "worktreeSwitcher": true,
+    "shortcutOpened": false,
+    "imeViaActualRendererComposition": true,
+    "escapedToWorkbench": true,
+    "narrow": {
+      "viewport": [
+        1080,
+        780
+      ],
+      "scrollWidth": 1080
+    }
+  }
+}

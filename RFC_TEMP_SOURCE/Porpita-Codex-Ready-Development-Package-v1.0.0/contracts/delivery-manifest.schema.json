@@ -1,0 +1,294 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:porpita:delivery-manifest:1",
+  "title": "Porpita first-generation product delivery record (not runtime protocol)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "product",
+    "product_version",
+    "status",
+    "primary_target",
+    "sources",
+    "artifacts",
+    "scenarios",
+    "functional_coverage",
+    "message_paths",
+    "branding",
+    "limitations",
+    "blockers"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "porpita-delivery/1"
+    },
+    "product": {
+      "const": "Porpita"
+    },
+    "product_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "NOT_RUN",
+        "CANDIDATE_WITH_BLOCKERS",
+        "PRODUCT_ACCEPTED"
+      ]
+    },
+    "primary_target": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "porpita",
+        "acs",
+        "orca_upstream"
+      ],
+      "properties": {
+        "porpita": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "commit",
+            "dirty"
+          ],
+          "properties": {
+            "commit": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "dirty": {
+              "type": "boolean"
+            },
+            "patch_evidence": {
+              "type": "string"
+            }
+          }
+        },
+        "acs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "commit",
+            "dirty"
+          ],
+          "properties": {
+            "commit": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "dirty": {
+              "type": "boolean"
+            },
+            "patch_evidence": {
+              "type": "string"
+            }
+          }
+        },
+        "orca_upstream": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "commit",
+            "dirty"
+          ],
+          "properties": {
+            "commit": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "dirty": {
+              "type": "boolean"
+            },
+            "patch_evidence": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "path",
+          "sha256",
+          "target",
+          "signing"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "installer",
+              "core_runtime",
+              "portable",
+              "source_patch",
+              "dependency_manifest"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "target": {
+            "type": "string"
+          },
+          "signing": {
+            "enum": [
+              "signed",
+              "unsigned_internal_candidate",
+              "not_applicable"
+            ]
+          }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "environment",
+          "evidence",
+          "simulated"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^UX[0-9]{2}$"
+          },
+          "status": {
+            "enum": [
+              "not_run",
+              "pass",
+              "fail",
+              "blocked"
+            ]
+          },
+          "environment": {
+            "type": "string"
+          },
+          "simulated": {
+            "type": "boolean"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "functional_coverage": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/coverage"
+      }
+    },
+    "message_paths": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/coverage"
+      }
+    },
+    "branding": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/coverage"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status",
+        "implementation",
+        "evidence"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "needs_inspection",
+            "complete",
+            "blocked"
+          ]
+        },
+        "implementation": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "PRODUCT_ACCEPTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "blockers": {
+            "maxItems": 0
+          },
+          "artifacts": {
+            "minItems": 1
+          },
+          "scenarios": {
+            "minItems": 22
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,335 @@
+{
+  "schema_version": "porpita-functional-acceptance/1",
+  "items": [
+    {
+      "id": "UX01",
+      "title": "安装并首次启动",
+      "owner": "WP08",
+      "required": true,
+      "evidence_kind": "real_installed_app",
+      "steps": "安装到非开发目录，从快捷方式启动，完成托管本地依赖准备。",
+      "pass_condition": "产品为 Porpita；不要求 Node/Python/PG 开发环境；可进入正常工作区。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX02",
+      "title": "原生工作台完整",
+      "owner": "WP01",
+      "required": true,
+      "evidence_kind": "real_app",
+      "steps": "打开仓库、创建worktree、切换标签/分屏，编辑保存文件并打开预览/浏览器。",
+      "pass_condition": "原有工作台与键盘/鼠标路径可用，无新的强制内部组织表单。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX03",
+      "title": "原生Agent执行体验",
+      "owner": "WP04",
+      "required": true,
+      "evidence_kind": "real_native",
+      "steps": "启动主测试Harness，执行文件修改/命令，观察stream/tools/Diff/terminal和Provider设置。",
+      "pass_condition": "实际工具与差异可用；不是被ACS文本转录替代；原生状态一致。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX04",
+      "title": "两个Agent自动接入",
+      "owner": "WP03",
+      "required": true,
+      "evidence_kind": "real_native",
+      "steps": "UI选择本地服务，打开项目并启动两个不同Harness；查看各自联系人/自身身份。",
+      "pass_condition": "可信MCP/Receiver配置自动完成，不手工填写slot/route或复制上下文。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX05",
+      "title": "真实跨Harness来回通信",
+      "owner": "WP09",
+      "required": true,
+      "evidence_kind": "real_models",
+      "steps": "在安装版中A获得实际开发需求；A用ACS联系B，B运行工具并用自身身份reply_to，A继续。",
+      "pass_condition": "两独立模型真实发信；原文/作者/回复可查；Native输入有实际引用；无人中转。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX06",
+      "title": "无任务通信与最小协作入口",
+      "owner": "WP06",
+      "required": true,
+      "evidence_kind": "real_app_service",
+      "steps": "不建Run/Task，打开空历史联系人发消息、回复，并从原生Chat进入协作视图。",
+      "pass_condition": "普通通信完整可用；不出现第二套主导航或通信控制台。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX07",
+      "title": "忙时消息和原生队列",
+      "owner": "WP04",
+      "required": true,
+      "evidence_kind": "real_native",
+      "steps": "B正工作时A补充消息，B当前草稿/队列/工具不被覆盖；完成后处理消息。",
+      "pass_condition": "利用原生queue或明确延期；正常工作与既有stop/steer行为保留。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX08",
+      "title": "提问与人类审批",
+      "owner": "WP09",
+      "required": true,
+      "evidence_kind": "real_models",
+      "steps": "B需管理者判断，A需人类决定时在原生问题/审批中处理，再回复B。",
+      "pass_condition": "答案到原问题；ACS不替人批准，也不要求新Gate才可交流。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX09",
+      "title": "消息历史/实时/搜索",
+      "owner": "WP06",
+      "required": true,
+      "evidence_kind": "real_app_service",
+      "steps": "产生多页历史，搜索正文，接收新消息，刷新/重连后继续查看。",
+      "pass_condition": "分页/搜索/实时均用真实Core；无漏掉正常新消息，搜索范围与字面语义明确。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX10",
+      "title": "消息跳到实际执行",
+      "owner": "WP06",
+      "required": true,
+      "evidence_kind": "real_native",
+      "steps": "从ACS消息选择查看执行；再变更当前Session后查看同一历史消息。",
+      "pass_condition": "定位原input/turn；不按文本猜测，不把历史链接改指向新的Session。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX11",
+      "title": "私人阅读与草稿",
+      "owner": "WP06",
+      "required": true,
+      "evidence_kind": "real_app_service",
+      "steps": "保存草稿、标记未读/已读、静音/归档，在另一窗口/重开后查看。",
+      "pass_condition": "个人状态保留；不消费Agent Inbox，不改变公共消息事实。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX12",
+      "title": "文件与图片分享",
+      "owner": "WP06",
+      "required": true,
+      "evidence_kind": "real_models",
+      "steps": "UI发送普通文件，由目标Host材料化给Agent实际读取；支持图片的主测试端再读一张图。",
+      "pass_condition": "ACS下载字节与原文一致，目标真实可读；不把本机路径传给不可达远端。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX13",
+      "title": "可选任务编排仍可用",
+      "owner": "WP05",
+      "required": true,
+      "evidence_kind": "real_native",
+      "steps": "通过现有入口创建Run/Task、启动Worker、提问/回复、提交完成报告。",
+      "pass_condition": "原任务界面仍工作；通信经ACS；普通消息不结算Task；旧通信写入未发生。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX14",
+      "title": "Gate与群组语义保留",
+      "owner": "WP05",
+      "required": true,
+      "evidence_kind": "real_app_service",
+      "steps": "显式gate等待再批准；向可见组发送并检查逐目标结果及部分失败提示。",
+      "pass_condition": "Gate由工作流控制；group不是ACS全局广播；不会重复投递已成功项。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX15",
+      "title": "退出重开与短暂断开",
+      "owner": "WP07",
+      "required": true,
+      "evidence_kind": "real_installed_app",
+      "steps": "保存工作与草稿，退出安装版再开；一次Core连接中断后重连。",
+      "pass_condition": "历史/成员/原生视图延续；不重新建身份或自动重发未知写。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX16",
+      "title": "目标更换与重复提交",
+      "owner": "WP04",
+      "required": true,
+      "evidence_kind": "real_native",
+      "steps": "一次重复点击/原key重复发送；另一次在目标Session切换时发消息。",
+      "pass_condition": "只有正确目标接收；不产生第二次意外Native输入；只核对直接影响的正常边界。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX17",
+      "title": "已有Core服务登录",
+      "owner": "WP03",
+      "required": true,
+      "evidence_kind": "real_app_service",
+      "steps": "通过UI连接隔离但真实已部署ACS、登录、读取meta/profile、注销重连。",
+      "pass_condition": "不要求内部ID或生产库更改；缺功能提示准确，凭据不暴露。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX18",
+      "title": "品牌和服务出口",
+      "owner": "WP02",
+      "required": true,
+      "evidence_kind": "installed_app_and_scan",
+      "steps": "检查安装器/窗口/托盘/菜单/CLI/deep link/关于/卸载及实际外部连接配置。",
+      "pass_condition": "独立Porpita品牌；无旧更新/遥测误连；许可及明确兼容标识保留。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX19",
+      "title": "原生UI与响应体验",
+      "owner": "WP06",
+      "required": true,
+      "evidence_kind": "real_app",
+      "steps": "同窗口主题对照上游；检查中文IME、快捷键、滚动、工具折叠、工作区切换与正常性能。",
+      "pass_condition": "没有明显改坏原生体验；新增内容使用原组件，不生成技术控制台。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX20",
+      "title": "同一候选升级/卸载交付",
+      "owner": "WP08",
+      "required": true,
+      "evidence_kind": "real_installed_app",
+      "steps": "记录安装器hash/源码，演练应用更新或覆盖安装，再卸载并确认用户数据策略。",
+      "pass_condition": "证据来自交付候选；与Orca并存；不误删仓库/原profile；签名状态真实。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX21",
+      "title": "实际远端Host链路",
+      "owner": "WP07",
+      "required": true,
+      "evidence_kind": "real_remote_host",
+      "steps": "至少两个真实Host进程/端点，使用继承的远端工作区能力并将A2A交给目标Receiver。",
+      "pass_condition": "目标实际执行；文件位置正确；标明是否同物理机，不假称物理双机资格。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    },
+    {
+      "id": "UX22",
+      "title": "最终功能与路径收口",
+      "owner": "WP09",
+      "required": true,
+      "evidence_kind": "source_and_evidence",
+      "steps": "按路径/功能清单逐项核对实际代码与前述证据，记录两个仓库提交及Core版本内容。",
+      "pass_condition": "required项完整，无stub/no-op和双消息权威；未实测平台不宣称通过。",
+      "evidence_minimum": [
+        "steps_and_observed_result",
+        "actual_environment",
+        "relevant_log_or_recording"
+      ],
+      "status": "not_run"
+    }
+  ]
+}

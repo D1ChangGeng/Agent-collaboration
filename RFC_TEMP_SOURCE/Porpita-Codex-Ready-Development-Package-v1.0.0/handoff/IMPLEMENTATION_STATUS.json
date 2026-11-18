@@ -1,0 +1,95 @@
+{
+  "schema_version": "porpita-work-status/1",
+  "items": [
+    {
+      "id": "WP00",
+      "status": "needs_inspection",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": []
+    },
+    {
+      "id": "WP01",
+      "status": "needs_inspection",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": []
+    },
+    {
+      "id": "WP02",
+      "status": "needs_inspection",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": []
+    },
+    {
+      "id": "WP03",
+      "status": "needs_inspection",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": []
+    },
+    {
+      "id": "WP04",
+      "status": "needs_inspection",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": []
+    },
+    {
+      "id": "WP05",
+      "status": "needs_inspection",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": []
+    },
+    {
+      "id": "WP06",
+      "status": "needs_inspection",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": []
+    },
+    {
+      "id": "WP07",
+      "status": "needs_inspection",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": []
+    },
+    {
+      "id": "WP08",
+      "status": "needs_inspection",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": []
+    },
+    {
+      "id": "WP09",
+      "status": "needs_inspection",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": []
+    }
+  ]
+}

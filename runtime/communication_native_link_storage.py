@@ -310,6 +310,18 @@ def _request_integrity(cursor, row):
 
 def _source_rows(cursor, identity, proof):
     selected, binding = proof.selection, proof.selection.binding
+    deadlines = []
+
+    def record_shared_deadline(row):
+        # Owned local bindings may have no lease expiry. The exact current
+        # bindings and the fresh Native proof are still checked for every write.
+        if identity.access_mode == "owner":
+            return
+        try:
+            deadlines.append(_date(row["expires_at"]))
+        except (TypeError, ValueError):
+            raise NativeLinkProofRejected("Native source shared lease has no aware deadline") from None
+
     cursor.execute("SELECT to_jsonb(e) FROM delivery_endpoints e WHERE tenant_id=%s AND endpoint_id=%s FOR SHARE",
                    (identity.tenant_id, binding.receiver_id))
     endpoint = cursor.fetchone()
@@ -325,7 +337,7 @@ def _source_rows(cursor, identity, proof):
                    (identity.tenant_id, selected.agent_slot_id, selected.scope_id))
     if cursor.fetchone() != ("active",):
         raise NativeLinkProofRejected("Native source Slot is no longer active")
-    deadlines = [_date(endpoint["expires_at"])]
+    record_shared_deadline(endpoint)
     cursor.execute("SELECT to_jsonb(n) FROM enrolled_nodes n WHERE tenant_id=%s AND node_id=%s FOR SHARE",
                    (identity.tenant_id, selected.node_id))
     node = cursor.fetchone()
@@ -347,7 +359,7 @@ def _source_rows(cursor, identity, proof):
     enrolled = binding_row[0]
     if (enrolled["status"], enrolled["machine_id"], enrolled["boot_incarnation"]) != ("active", proof.host_ref, selected.boot_incarnation):
         raise NativeLinkProofRejected("Native Node boot binding changed")
-    deadlines.append(_date(enrolled["expires_at"]))
+    record_shared_deadline(enrolled)
     if selected.runtime_id is not None:
         cursor.execute("SELECT to_jsonb(r) FROM enrolled_runtimes r WHERE tenant_id=%s AND runtime_id=%s FOR SHARE",
                        (identity.tenant_id, selected.runtime_id))
@@ -361,7 +373,7 @@ def _source_rows(cursor, identity, proof):
                  selected.scope_id, selected.agent_slot_id, identity.authority_id, identity.authority_incarnation)
                 or selected.runtime_binding_revision is not None and runtime["revision"] != selected.runtime_binding_revision):
             raise NativeLinkProofRejected("Native Runtime binding changed")
-        deadlines.append(_date(runtime["expires_at"]))
+        record_shared_deadline(runtime)
     return deadlines
 
 

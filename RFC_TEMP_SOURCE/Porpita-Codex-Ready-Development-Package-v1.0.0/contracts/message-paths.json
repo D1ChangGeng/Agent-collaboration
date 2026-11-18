@@ -1,0 +1,175 @@
+{
+  "schema_version": "porpita-message-cutover/1",
+  "default_backend": "acs",
+  "fallback_to_upstream_messaging": false,
+  "items": [
+    {
+      "id": "MP01",
+      "entry": "Agent ACS MCP send/reply/wait",
+      "source_hint": "ACS trusted MCP binding",
+      "target_behavior": "reuse Core; provision actual identity",
+      "owner": "WP04",
+      "acceptance": [
+        "UX05"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP02",
+      "entry": "orchestration.send ordinary",
+      "source_hint": "upstream send-methods.ts",
+      "target_behavior": "wrapper to ACS; preserve CLI shape and return actual receipt",
+      "owner": "WP05",
+      "acceptance": [
+        "UX13"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP03",
+      "entry": "ask/reply",
+      "source_hint": "upstream question handlers",
+      "target_behavior": "upper question record with ACS handles, no second inbox body",
+      "owner": "WP05",
+      "acceptance": [
+        "UX13"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP04",
+      "entry": "check/inbox/history",
+      "source_hint": "upstream check/read handlers",
+      "target_behavior": "read ACS; consumer-private handled frontier only",
+      "owner": "WP05",
+      "acceptance": [
+        "UX13"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP05",
+      "entry": "group addresses",
+      "source_hint": "upstream recipient/group routing",
+      "target_behavior": "resolve authorized members; per-target ACS receipts",
+      "owner": "WP05",
+      "acceptance": [
+        "UX14"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP06",
+      "entry": "worker_done/escalation/heartbeat",
+      "source_hint": "upstream task report handlers",
+      "target_behavior": "ACS notification plus original host workflow transition; no parsing arbitrary text",
+      "owner": "WP05",
+      "acceptance": [
+        "UX13"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP07",
+      "entry": "automatic wake",
+      "source_hint": "upstream mailbox notification/delivery",
+      "target_behavior": "ACS maintenance to single Host input lane; old loop inactive for same identity",
+      "owner": "WP04",
+      "acceptance": [
+        "UX07"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP08",
+      "entry": "remote/federation mail",
+      "source_hint": "upstream remote messaging",
+      "target_behavior": "ACS remote Receiver; retain workspace/control transport",
+      "owner": "WP07",
+      "acceptance": [
+        "UX21"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP09",
+      "entry": "automated terminal-to-Agent message",
+      "source_hint": "CLI terminal send / agent-targeted automation",
+      "target_behavior": "ACS when target is Agent; raw user shell I/O unchanged",
+      "owner": "WP05",
+      "acceptance": [
+        "UX22"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP10",
+      "entry": "human collaboration composer",
+      "source_hint": "new native-style collaboration surface",
+      "target_behavior": "current Client send; never impersonate selected Agent",
+      "owner": "WP06",
+      "acceptance": [
+        "UX06"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP11",
+      "entry": "native user composer/control",
+      "source_hint": "existing Host Chat/PTY",
+      "target_behavior": "KEEP native, not a communication replacement target",
+      "owner": "WP04",
+      "acceptance": [
+        "UX03"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP12",
+      "entry": "native output/tools/approvals",
+      "source_hint": "existing Native Chat data sources",
+      "target_behavior": "KEEP Host authority; no synthetic ACS reply",
+      "owner": "WP04",
+      "acceptance": [
+        "UX08"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP13",
+      "entry": "old message history",
+      "source_hint": "old orchestration messages",
+      "target_behavior": "read-only explicit provenance or deliberate import, never auto replay",
+      "owner": "WP07",
+      "acceptance": [
+        "UX15"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    },
+    {
+      "id": "MP14",
+      "entry": "public CLI/skills/automation invocations",
+      "source_hint": "bundled skill guides and CLI adapters",
+      "target_behavior": "Porpita public name and ACS routes; re-generate derived bundles",
+      "owner": "WP05",
+      "acceptance": [
+        "UX22"
+      ],
+      "implementation_path": null,
+      "status": "needs_inspection"
+    }
+  ]
+}

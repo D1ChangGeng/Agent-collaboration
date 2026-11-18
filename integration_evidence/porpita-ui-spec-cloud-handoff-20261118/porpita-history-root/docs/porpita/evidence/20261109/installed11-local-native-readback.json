@@ -1,0 +1,9 @@
+{
+  "candidate": "prototype-11",
+  "original": "message-a5538f57a31f4e509ed429b150769d72",
+  "explicitReply": "message-f5ca2c41df4e4de29ab2e0e4e9cb0ecf",
+  "exactReplyTo": [
+    "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-a5538f57a31f4e509ed429b150769d72"
+  ],
+  "seenByNativeCoordinator": true
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Porpita Codex Ready Development Package",
+  "package_version": "1.0.0",
+  "created_date": "2026-11-08",
+  "language": "zh-CN",
+  "application_name": "Porpita",
+  "suggested_initial_application_version": "0.1.0",
+  "application_version_is_not_package_version": true,
+  "scope": "complete-first-generation-desktop-implementation",
+  "execution_entry": "START_HERE_CODEX.md",
+  "state_agnostic": true,
+  "product_implemented_by_this_package": false,
+  "primary_target_default": "windows-x64",
+  "source_refs": {
+    "acs": "e5d71968a13e67e3dc51e318867d4ed9a1f946ac",
+    "orca": "26179069b664b2fc172963564ed419d97892b6c9"
+  },
+  "artifact_kind": "development-specification-not-application"
+}

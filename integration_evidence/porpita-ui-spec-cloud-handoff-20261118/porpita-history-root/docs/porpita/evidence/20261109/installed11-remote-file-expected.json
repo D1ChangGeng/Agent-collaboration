@@ -1,0 +1,12 @@
+{
+  "candidate": "prototype-11",
+  "marker": "PORPITA-REMOTE-FILE-11",
+  "project": "porpita-0d267b376a9bcee2fe74d0f82dea1508",
+  "remote": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-7234becd5c95cf296951865bdafad9de",
+  "local": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-f1673ac84784e9040d66af4a85456109",
+  "file": "D:\\Chatgpt\\Porpita\\.build-tools\\installed11-remote-file-JlLUhH\\porpita-remote-file-11.txt",
+  "bytes": 90,
+  "challenge": "28bc9a89a25e18fbf07dad2e",
+  "sha256": "63111456b9c8d200d953e3879f47d5d65f46d3e9b024e39df3a78ffb65b46dc3",
+  "prompt": "PORPITA-REMOTE-FILE-11：请在当前原生会话里做一次有限的双 Host 附件验收。\n 读取此输入随附的实际本机材料文件，独立取得 challenge 和完整 SHA-256。使用本会话 $env:PORPITA_CLI_COMMAND 指向的真实 Porpita 原生命令，查看 orchestration upload-file / send 的实际帮助，再 upload-file --file <刚收到的本机材料路径> --json，取得你自己的 attachment_id。\n 查当前项目 porpita_acs 联系人，目标为已在第二个真实 Porpita Host 注册的 OpenCode collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-7234becd5c95cf296951865bdafad9de。使用同一 CLI orchestration send --to <该确切地址> --subject PORPITA-REMOTE-FILE-11-RELAY --body <读取并显式回信的要求> --attachment-refs <你新上传的 ID> --json，向它投递一次。禁止把原发送机文件路径、文件正文或 challenge 写进消息正文。\n 给对方的要求：只从它实际收到的“Local file on this receiving host”材料路径，用自己的原生 shell 读取全部字节、独立提取 challenge、计算完整 SHA-256；报告材料的实际绝对路径与实际当前工作目录。然后在 porpita_acs 中查这条收到的确切消息，使用自身身份对原发送者显式 reply_to、activation=message_only 回复路径、challenge、哈希和字节数。不修改文件、全局设置，不读取凭据或其他项目。\n 用 porpita_acs wait_for_response 等待你发出的同一确切请求，最多三次各 120 秒；任何超时都继续检查原句柄，绝不重发。最终在原生 Chat 汇报两端读取的哈希、实际请求和回复引用、目标物化路径及 CLI 退出状态。若无正向证据请明确报告，不能把 Core 受理说成 Native ACK。不创建 Run/Task、不安装依赖、不提交。"
+}

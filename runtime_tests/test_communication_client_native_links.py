@@ -330,6 +330,20 @@ def test_owner_authority_keeps_its_existing_metadata_management_semantics(native
     assert len(native.reads) == 1
 
 
+def test_owned_local_endpoint_without_expiry_still_requires_fresh_native_proof(native, owner_client):
+    native.f.clients["trusted"] = owner_client
+    authority = owner_client.service.service.authority
+    authority._communication_native_links_enabled = True
+    authority._communication_native_link_settings = CommunicationNativeLinkSettings()
+    authority._native_provider_registry = native.registry
+    assert authority.access_mode == "owner"
+    with native.f.authority._connect() as connection:
+        connection.execute("UPDATE delivery_endpoints SET expires_at=NULL WHERE tenant_id=%s AND endpoint_id=%s",
+                           (native.f.authority.tenant_id, raw_body()["receiver_ref"]))
+    assert write(native, caller="trusted")["revision"] == 1
+    assert len(native.reads) == 1
+
+
 def test_same_principal_actual_slots_keep_separate_request_and_cursor_bindings(native):
     source = native.f.clients["b"]
     principal = native.f.clients["a"].service.context.principal_ref

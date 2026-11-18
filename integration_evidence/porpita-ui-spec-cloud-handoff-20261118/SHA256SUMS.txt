@@ -1,0 +1,5 @@
+8985224c7bb5e611ff26f4f48b6ba5b4b43542d81f7864f86491a78e09e9cada  porpita-ui-spec-from-origin-to-91wip.bundle
+f461585e7edbffc1dc03f6a14426fb0c21fececb20d9e756d600879baed1216f  patches/0001-Fix-F01-onboarding-landing-tour-l10n-and-focus-F02-P.patch
+c1939d2ffff5ff191447131636126f3620fb92889d45e0a7f9dde41fd0d33dd3  patches/0002-Fix-main-process-English-Orca-leaks-onboarding-skip-.patch
+428ff291481f4b75cb9e454239cc7432e71ee22e1f9173602ada5b535187b8c1  patches/0003-Fix-disabled-onboarding-skip-confirm-focus-fallback-.patch
+d0f7d24094079a009dd2346899a68196d0d49c626aaed419ac8aa5d62f9f2ba4  patches/0004-WIP-round-91-implement-F03-P.-P.13-Q.-high-contrast-.patch

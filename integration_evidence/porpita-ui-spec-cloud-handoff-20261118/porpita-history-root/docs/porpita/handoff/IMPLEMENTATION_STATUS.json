@@ -1,0 +1,199 @@
+{
+  "schema_version": "porpita-work-status/1",
+  "items": [
+    {
+      "id": "WP00",
+      "status": "complete",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": [
+        "../evidence/20261109/candidate11-source.json",
+        "../evidence/20261109/installer-prototype11.json",
+        "../evidence/20261109/installed11-final-source-audit.json"
+      ]
+    },
+    {
+      "id": "WP01",
+      "status": "complete",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": [
+        "../evidence/20261109/installed11-native-workbench.json",
+        "../evidence/20261109/installed11-local-collaboration-proof.json",
+        "../evidence/20261109/installed11-native-approval.png",
+        "../evidence/20261109/installed11-stock-ui-comparison.json"
+      ]
+    },
+    {
+      "id": "WP02",
+      "status": "complete",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": [
+        "../evidence/20261109/installer-prototype11.json",
+        "../evidence/20261109/installed11-brand-scan.json",
+        "../evidence/20261109/installed11-uninstall-reinstall.json"
+      ]
+    },
+    {
+      "id": "WP03",
+      "status": "complete",
+      "commit": null,
+      "implemented_paths": [
+        "src/main/porpita/managed-core.ts",
+        "resources/porpita-core/porpita_core.py",
+        "src/renderer/src/components/settings/collaboration/CollaborationSettingsSection.tsx",
+        "src/main/porpita/native-core-connection.ts",
+        "resources/porpita-core/porpita_receiver_enrollment.py",
+        "src/main/porpita/opencode-communication-config.ts"
+      ],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": [
+        "../evidence/20261109/installer-prototype11.json",
+        "../evidence/20261109/installed11-fresh-managed-setup.json",
+        "../evidence/20261109/installed11-shortcut-launch.json",
+        "../evidence/20261109/installed11-local-collaboration-proof.json",
+        "../evidence/20261109/installed11-native-identities.json",
+        "../evidence/20261109/installed11-existing-service.json"
+      ]
+    },
+    {
+      "id": "WP04",
+      "status": "complete",
+      "commit": null,
+      "implemented_paths": [
+        "src/main/porpita/native-host-bridge.ts",
+        "src/main/porpita/native-host-ownership.ts",
+        "src/main/porpita/native-receiver-input.ts",
+        "src/main/porpita/native-operation-id.ts",
+        "resources/porpita-core/porpita_receivers.py",
+        "resources/porpita-core/porpita_receiver_enrollment.py"
+      ],
+      "reused_paths": [
+        "ACS ExistingOrcaReceiverBackend / OrcaReceiverRouter / ReceiverHTTPServer",
+        "Host StructuredAgentSessionHost / original journal / original serialized input handover",
+        "Codex app-server owner and ACP new/resume MCP configuration"
+      ],
+      "remaining": [],
+      "evidence": [
+        "../evidence/20261109/installed11-local-collaboration-proof.json",
+        "../evidence/20261109/installed11-local-native-readback.json",
+        "../evidence/20261109/installed11-agent-question-approval.json",
+        "../evidence/20261109/installed11-agent-question-core.json",
+        "../evidence/20261109/installed11-native-approval.png",
+        "../evidence/20261109/installed11-native-target-source.json",
+        "../evidence/20261109/installed11-retained-core.json"
+      ]
+    },
+    {
+      "id": "WP05",
+      "status": "complete",
+      "commit": null,
+      "implemented_paths": [
+        "src/main/porpita/legacy-send.ts",
+        "src/main/porpita/legacy-read.ts",
+        "src/main/porpita/legacy-group.ts",
+        "src/main/porpita/legacy-question-reply.ts",
+        "src/main/porpita/legacy-lifecycle.ts",
+        "src/main/porpita/communication-mutation.ts",
+        "src/cli/handlers/orchestration/acs-send-receipt.ts",
+        "src/main/porpita/worker-instruction.ts",
+        "src/main/porpita/terminal-agent-message.ts",
+        "src/main/porpita/host-notifications.ts"
+      ],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": [
+        "../evidence/20261109/installed11-paired-worker-completion.json",
+        "../evidence/20261109/installed11-paired-worker-exchange.json",
+        "../evidence/20261109/installed11-group-gate.json"
+      ]
+    },
+    {
+      "id": "WP06",
+      "status": "complete",
+      "commit": null,
+      "implemented_paths": [
+        "src/renderer/src/components/collaboration",
+        "src/main/runtime/rpc/methods/collaboration",
+        "src/main/porpita/human-send.ts",
+        "src/main/porpita/native-shared-files.ts",
+        "src/main/porpita/native-source-location.ts",
+        "src/renderer/src/lib/porpita-source-navigation.ts"
+      ],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": [
+        "../evidence/20261109/installed11-no-task-conversation.json",
+        "../evidence/20261109/installed11-collaboration.png",
+        "../evidence/20261109/installed11-history-and-read-state.json",
+        "../evidence/20261109/installed11-service-reconnect.json",
+        "../evidence/20261109/installed11-reopen-after-reinstall.json",
+        "../evidence/20261109/installed11-attachments.json",
+        "../evidence/20261109/installed11-group-and-attachment-core.json",
+        "../evidence/20261109/installed11-remote-file-verification.json"
+      ]
+    },
+    {
+      "id": "WP07",
+      "status": "complete",
+      "commit": null,
+      "implemented_paths": [
+        "resources/porpita-core/porpita_receivers.py",
+        "resources/porpita-core/porpita_native_sources.py",
+        "src/main/porpita/native-core-connection.ts",
+        "src/main/porpita/native-provider-ref.ts"
+      ],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": [
+        "../evidence/20261109/installed11-service-reconnect.json",
+        "../evidence/20261109/installed11-reopen-after-reinstall.json",
+        "../evidence/20261109/installed11-second-host-ready.json",
+        "../evidence/20261109/installed11-remote-file-verification.json",
+        "../evidence/20261109/installed11-paired-worker-completion.json"
+      ]
+    },
+    {
+      "id": "WP08",
+      "status": "complete",
+      "commit": null,
+      "implemented_paths": [
+        "config/scripts/porpita/prepare-private-runtime.py",
+        "config/scripts/porpita/prepare-native-resources.mjs",
+        "config/scripts/porpita/verify-windows-runtime-closure.mjs",
+        "config/electron-builder.config.cjs",
+        "docs/porpita/BUILD.md"
+      ],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": [
+        "../evidence/20261109/installer-prototype11.json",
+        "../evidence/20261109/installed11-fresh-managed-setup.json",
+        "../evidence/20261109/installed11-shortcut-launch.json",
+        "../evidence/20261109/installed11-uninstall-reinstall.json",
+        "../evidence/20261109/installed11-reopen-after-reinstall.json"
+      ]
+    },
+    {
+      "id": "WP09",
+      "status": "complete",
+      "commit": null,
+      "implemented_paths": [],
+      "reused_paths": [],
+      "remaining": [],
+      "evidence": [
+        "../evidence/20261109/candidate11-source.json",
+        "../evidence/20261109/installer-prototype11.json",
+        "../evidence/20261109/installed11-final-source-audit.json"
+      ]
+    }
+  ]
+}

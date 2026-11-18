@@ -581,6 +581,13 @@ class ReceiverService:
             raise ReceiverRejected("prepared envelope and invocation differ")
         return has_native_attachments(invocation.envelope.packet)
 
+    def _prepared_attachment_port(self, prepared, installed):
+        """An actual Host port and its original signed preparation must both opt in."""
+        if installed is not True:
+            return False
+        fact = self._stored(prepared).receipt.evidence.get("adapter_receiver")
+        return isinstance(fact, dict) and fact.get("orca_native_attachments") is True
+
     def _update(self, connection, request: SignedRequest, request_hash: str,
                 state: str, evidence=None, *, identity_admission=None,
                 target_request_id=None) -> SignedReceipt:
@@ -666,7 +673,7 @@ class ReceiverService:
                 )
 
     def _invoke_with_fence(self, request: SignedRequest, request_hash: str, execution_lease_id: str,
-                           invoke: Callable[[DeliveryAdmission], dict[str, Any]]) -> SignedReceipt:
+                           invoke: Callable[[DeliveryAdmission], dict[str, Any]], *, native_attachments=False) -> SignedReceipt:
         # Keep the process-local boot fence while releasing SQLite before the
         # callback. The callback is allowed to read the same ledger; the final
         # transaction rechecks the marker and execution lease before commit.
@@ -695,7 +702,7 @@ class ReceiverService:
                     return self._update(connection, request, request_hash, "blocked",
                                         {"reason": "current_authority_or_time_rejected"})
                 prepared = self._prepared(connection, request.admission, request.body["prepare_request_id"])
-                if self._prepared_native_attachments(prepared):
+                if self._prepared_native_attachments(prepared) and not self._prepared_attachment_port(prepared, native_attachments):
                     # A historical marker cannot be recast as known no-effect.
                     # It also cannot authorize a partial text-only invocation.
                     return self._update(connection, request, request_hash, "uncertain",
@@ -735,7 +742,7 @@ class ReceiverService:
                 return self._update(connection, request, request_hash, "runtime_acknowledged", evidence)
 
     def dispatch(self, request: SignedRequest, invoke: Callable[[DeliveryAdmission], dict[str, Any]],
-                 *, after_marker: Callable[[], None] | None = None) -> SignedReceipt:
+                 *, after_marker: Callable[[], None] | None = None, native_attachments=False) -> SignedReceipt:
         body, request_hash = self._verify(request)
         if not isinstance(body, DispatchBody):
             raise ReceiverRejected("dispatch body rejected")
@@ -756,7 +763,7 @@ class ReceiverService:
                     return self._stored(existing)
                 prepared = self._prepared(connection, request.admission, body.prepare_request_id)
                 self._match_prepare(prepared, request.admission)
-                if self._prepared_native_attachments(prepared):
+                if self._prepared_native_attachments(prepared) and not self._prepared_attachment_port(prepared, native_attachments):
                     marked = connection.execute("SELECT 1 FROM receiver_requests WHERE operation_id=? AND dispatch_id=? AND local_dispatch_marker=1",
                                                 (request.admission.operation_id, request.admission.dispatch_id)).fetchone()
                     if marked:
@@ -777,7 +784,7 @@ class ReceiverService:
                     self._abandon_execution(request, request_hash, execution_lease_id, error)
                     raise
             try:
-                return self._invoke_with_fence(request, request_hash, execution_lease_id, invoke)
+                return self._invoke_with_fence(request, request_hash, execution_lease_id, invoke, native_attachments=native_attachments)
             except BaseException as error:
                 self._abandon_execution(request, request_hash, execution_lease_id, error)
                 raise
@@ -951,7 +958,7 @@ class ReceiverService:
                 identity_admission=request.admission if isinstance(body, ResponseReadbackBody) else target_admission, target_request_id=target["request_id"],
             )
 
-    def readiness(self, request: SignedRequest, probe) -> SignedReceipt:
+    def readiness(self, request: SignedRequest, probe, *, native_attachments=False) -> SignedReceipt:
         body, request_hash = self._verify(request)
         if not isinstance(body, ReadinessBody):
             raise ReceiverRejected("readiness body rejected")
@@ -964,7 +971,7 @@ class ReceiverService:
             existing = self._existing(connection, request, request_hash)
             if existing:
                 return self._stored(existing)
-            if self._prepared_native_attachments(prepared):
+            if self._prepared_native_attachments(prepared) and not self._prepared_attachment_port(prepared, native_attachments):
                 observed = self.clock.observation_time()
                 return self._insert(connection, request, request_hash, "readiness", False,
                     {"activity": "unknown", "reason_code": NATIVE_ATTACHMENT_UNSUPPORTED, "source": "receiver_attachment_policy",

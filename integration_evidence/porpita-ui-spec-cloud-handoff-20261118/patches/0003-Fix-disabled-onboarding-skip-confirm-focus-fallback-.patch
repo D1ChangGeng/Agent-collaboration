@@ -1,0 +1,127 @@
+From 492ba96e45b9f398bbbde0a2dd81b1f88a74d32c Mon Sep 17 00:00:00 2001
+From: D1 <278324052+D1ChangGeng@users.noreply.github.com>
+Date: Wed, 18 Nov 2026 15:36:12 +0900
+Subject: [PATCH 3/4] Fix disabled onboarding skip-confirm focus fallback and
+ remaining Orca copy
+
+---
+ .../review-notes-terminal-phase.ts            |  2 +-
+ .../OnboardingFlow.focus-and-l10n.test.tsx    | 31 +++++++++++++++++++
+ .../components/onboarding/OnboardingFlow.tsx  |  3 ++
+ .../emulator/MobileEmulatorExamples.tsx       |  6 ++--
+ .../settings-navigation-workflow-sections.ts  |  2 +-
+ .../src/i18n/en-runtime-required.json         |  1 -
+ 6 files changed, 39 insertions(+), 6 deletions(-)
+
+diff --git a/src/renderer/src/components/feature-wall/review-notes-terminal-phase.ts b/src/renderer/src/components/feature-wall/review-notes-terminal-phase.ts
+index f6a74daf96..947bf9e18d 100644
+--- a/src/renderer/src/components/feature-wall/review-notes-terminal-phase.ts
++++ b/src/renderer/src/components/feature-wall/review-notes-terminal-phase.ts
+@@ -60,7 +60,7 @@ export async function runTerminalPhase(ctx: TerminalPhaseContext): Promise<void>
+   }
+   const loadedEl = term.querySelector<HTMLDivElement>('[data-term-line-loaded]')
+   if (loadedEl) {
+-    loadedEl.innerHTML = `<span class="ravs-term-check">✓</span><span class="ravs-term-muted">Loaded ${NOTE_TARGETS.length} review notes from Orca</span>`
++    loadedEl.innerHTML = `<span class="ravs-term-check">✓</span><span class="ravs-term-muted">Loaded ${NOTE_TARGETS.length} review notes from Porpita</span>`
+   }
+   await wait(520)
+   if (isCancelled()) {
+diff --git a/src/renderer/src/components/onboarding/OnboardingFlow.focus-and-l10n.test.tsx b/src/renderer/src/components/onboarding/OnboardingFlow.focus-and-l10n.test.tsx
+index 498dd233ef..1986c0c8ae 100644
+--- a/src/renderer/src/components/onboarding/OnboardingFlow.focus-and-l10n.test.tsx
++++ b/src/renderer/src/components/onboarding/OnboardingFlow.focus-and-l10n.test.tsx
+@@ -242,4 +242,35 @@ describe('OnboardingFlow focus, localization fallbacks, and responsive layout',
+       expect(document.activeElement).toBe(setUpLaterButton)
+     })
+   })
++
++  it('falls back to the onboarding modal instead of document.body if the prior focused control becomes disabled while skip confirmation is open', async () => {
++    const view = render(
++      <OnboardingFlow onboarding={OPEN_ONBOARDING} onOnboardingChange={vi.fn()} />
++    )
++
++    const modal = screen.getByRole('dialog', { name: 'Porpita onboarding' })
++    const backdrop = view.container.querySelector('[data-onboarding-overlay]') as HTMLElement
++    const continueButton = screen.getByRole('button', { name: /Continue/i }) as HTMLButtonElement
++
++    continueButton.focus()
++    expect(document.activeElement).toBe(continueButton)
++
++    fireEvent.pointerDown(backdrop, { target: backdrop })
++    const keepGoingButton = await screen.findByRole('button', { name: 'No, keep going' })
++    const skipDialog = screen.getByRole('dialog', { name: 'Skip onboarding?' })
++    await waitFor(() => {
++      expect(skipDialog.contains(document.activeElement)).toBe(true)
++    })
++
++    continueButton.disabled = true
++
++    const user = userEvent.setup()
++    await user.click(keepGoingButton)
++    await waitFor(() => {
++      expect(screen.queryByRole('dialog', { name: 'Skip onboarding?' })).not.toBeInTheDocument()
++      expect(document.activeElement).not.toBe(document.body)
++      expect(modal.contains(document.activeElement)).toBe(true)
++      expect(document.activeElement).toBe(modal)
++    })
++  })
+ })
+diff --git a/src/renderer/src/components/onboarding/OnboardingFlow.tsx b/src/renderer/src/components/onboarding/OnboardingFlow.tsx
+index 8c20ffbfc8..b4151d0754 100644
+--- a/src/renderer/src/components/onboarding/OnboardingFlow.tsx
++++ b/src/renderer/src/components/onboarding/OnboardingFlow.tsx
+@@ -66,6 +66,9 @@ export default function OnboardingFlow({
+     const target = skipConfirmReturnFocusRef.current
+     const destination = target && target.isConnected && modal.contains(target) ? target : modal
+     destination.focus({ preventScroll: true })
++    if (destination !== modal && !modal.contains(document.activeElement)) {
++      modal.focus({ preventScroll: true })
++    }
+   }, [])
+ 
+   const requestSkipConfirmation = useCallback(
+diff --git a/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorExamples.tsx b/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorExamples.tsx
+index 881c4a5809..04713ea30d 100644
+--- a/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorExamples.tsx
++++ b/src/renderer/src/components/settings/mobile/emulator/MobileEmulatorExamples.tsx
+@@ -6,9 +6,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../
+ import { translate } from '@/i18n/i18n'
+ 
+ const EMULATOR_EXAMPLE_PROMPTS = [
+-  'Using Orca CLI, attach to the active iPhone simulator, sign in with the test account, complete onboarding, and tell me where the flow feels confusing.',
+-  'With Orca CLI, run through the mobile checkout flow from product search to confirmation, capture any broken screens, and summarize the exact step that fails.',
+-  'Using Orca CLI, grant camera permission, scan a test QR code or inject a camera fixture, finish the account-linking flow, and report whether the app reaches the success state.'
++  'Using Porpita CLI, attach to the active iPhone simulator, sign in with the test account, complete onboarding, and tell me where the flow feels confusing.',
++  'With Porpita CLI, run through the mobile checkout flow from product search to confirmation, capture any broken screens, and summarize the exact step that fails.',
++  'Using Porpita CLI, grant camera permission, scan a test QR code or inject a camera fixture, finish the account-linking flow, and report whether the app reaches the success state.'
+ ] as const
+ 
+ async function copyPrompt(prompt: string): Promise<void> {
+diff --git a/src/renderer/src/hooks/settings-navigation-workflow-sections.ts b/src/renderer/src/hooks/settings-navigation-workflow-sections.ts
+index 2081ca759f..5353a086e9 100644
+--- a/src/renderer/src/hooks/settings-navigation-workflow-sections.ts
++++ b/src/renderer/src/hooks/settings-navigation-workflow-sections.ts
+@@ -164,7 +164,7 @@ export function buildWorkflowSettingsSections(
+             ),
+             description: translate(
+               'auto.hooks.useSettingsNavigationMetadata.3d65d3f1b9',
+-              'Configure mobile emulator support for Orca and coding agents.'
++              'Configure mobile emulator support for Porpita and coding agents.'
+             ),
+             icon: TabletSmartphone,
+             searchEntries: getMobileEmulatorSearchEntries(),
+diff --git a/src/renderer/src/i18n/en-runtime-required.json b/src/renderer/src/i18n/en-runtime-required.json
+index 9d671d4540..60e8c4997f 100644
+--- a/src/renderer/src/i18n/en-runtime-required.json
++++ b/src/renderer/src/i18n/en-runtime-required.json
+@@ -2613,7 +2613,6 @@
+         "title": "Seeing “Porpita would like to access…” prompts?"
+       },
+       "useSettingsNavigationMetadata": {
+-        "3d65d3f1b9": "Configure mobile emulator support for Porpita and coding agents.",
+         "b351014180": "Porpita stats plus Claude, Codex, OpenCode, Muse token analytics and Grok subscription usage.",
+         "de0c2907a1": "Remote Porpita Servers",
+         "pluginsDescription": "Install and manage Porpita plugins (Alpha)."
+-- 
+2.55.0.windows.5
+

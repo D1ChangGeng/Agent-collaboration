@@ -1,0 +1,312 @@
+{
+  "observedDate": "2026-11-06",
+  "repository": "stablyai/orca",
+  "head": "52b8a24d275fe0cb598abb54119426712fae7a70",
+  "baseline": "9055eb9344dac1300311337cb1f0040d8094e3c2",
+  "verification": "Static source only; no Orca/model/ACS run; no upstream tests executed",
+  "files": [
+    {
+      "path": "src/main/plugins/workers/plugin-worker-spawn-spec.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "0892da10b1bd4dda27cc8913b53ac59ac45563d9",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-worker-spawn-spec.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "5b0ed7e55aac44ba09264a08444a66f97f4692b4987248055526803dbfc6fb9b",
+      "localLines": 47
+    },
+    {
+      "path": "src/main/plugins/workers/plugin-worker-env.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "699ea9cb05dd1e0385100ce1b6f6204dc5668a01",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-worker-env.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "accc3d2a9b0402d5c6d4ec5173f9ac54c2e2c2e43075376380a64ac4aac1163f",
+      "localLines": 47
+    },
+    {
+      "path": "src/main/plugins/plugin-service-host-call.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "285bb26620e6c5c0df72bc383f0fc651e19b69d6",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/plugin-service-host-call.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "c6352a1ef3e9f85350b5fd463a12d76f531ab5c9a3c7177cdde631cc90533559",
+      "localLines": 141
+    },
+    {
+      "path": "src/main/plugins/workers/plugin-host-methods.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "e9493d72cbd04160ef368c30de593702f50bf239",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-host-methods.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "b2dd063d6e97a612c71d8965d3651566149a369797668d6c6b22e21364bdd6ad",
+      "localLines": 152
+    },
+    {
+      "path": "src/shared/plugins/capabilities/plugin-capability-gate.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "40f9bc4a5a57005a3c1f73dcd39dd3144a337dc0",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/capabilities/plugin-capability-gate.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "1365a9fb312ed1b2d7c90993cb9937430949734918847875ba9627bae42fc42e",
+      "localLines": 62
+    },
+    {
+      "path": "src/shared/plugins/workers/plugin-worker-hooks.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "51bdc7291fdd3cf571a0d017cde22daa393495e3",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/workers/plugin-worker-hooks.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "c213b5a8d82cc64d78de84c4c758e1217288703f46eab5d885ef66b78cc24ccb",
+      "localLines": 42
+    },
+    {
+      "path": "src/main/plugins/workers/plugin-worker-startup.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "9f5aa939ed64de3e2b5dae4fd410262b440d92ce",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-worker-startup.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "c51e574730b9ba000f01a515b5ee3a3e0cb10af9b411d5a66df977b1366bd77c",
+      "localLines": 135
+    },
+    {
+      "path": "src/main/plugins/workers/plugin-worker-controller.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "5c4615261fe6e608fc66b9932d97883372bed697",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-worker-controller.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "d133233b30574bc0bab862d05c42bf4b50fb3042c7bcf5d9aa29896011596207",
+      "localLines": 179
+    },
+    {
+      "path": "src/main/plugins/plugin-storage-store.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "87cd72a413bb85fb8c5aa2eabff1d521959c37c3",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/plugin-storage-store.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "c8dadb922b5637153acc002b2a0ab95b547d58d0f088482563d66fda6770dd2a",
+      "localLines": 112
+    },
+    {
+      "path": "src/main/plugins/plugin-secrets-store.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "728ea27db711097319ec143b96d13e7b0adf5779",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/plugin-secrets-store.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "81bc281a8e4e0928130c760bec93c9996eb25ea710a05345c82b024eb39ddd8c",
+      "localLines": 136
+    },
+    {
+      "path": "src/shared/plugins/workers/plugin-host-api.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "a5f84a998faf6faf20e157a7bfc2a77e9996cace",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/workers/plugin-host-api.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "56d0ddc1bbada39fccdcb3212108c8cd72f201a50ee63526a8d817bd8223c60d",
+      "localLines": 353
+    },
+    {
+      "path": "docs/reference/plugin-declarative-ui.md",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": null,
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-declarative-ui.md",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "989975242bf46bcb4ddaf5d344d8874814056fb37d8e6a713724b1f7bef41b65",
+      "localLines": 573
+    },
+    {
+      "path": "docs/reference/plugin-manifest.md",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": null,
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-manifest.md",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "7e43e27e27da42fcadbd3a322e831bc06a20562f904ad9518d0da038138e0ddb",
+      "localLines": 261
+    },
+    {
+      "path": "src/main/plugins/workers/plugin-host-process.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "46d03466a86d54e9b8a3b392a18b17f77ff595a4",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-host-process.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "61d105a39cccf319d25490542d56a85a5fa34acece55343086c6688375afe50d",
+      "localLines": 316
+    },
+    {
+      "path": "src/main/plugins/workers/plugin-resident-worker.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "40ea0d013f06e301a7b22adc0fa3ab1238e08d5f",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-resident-worker.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "85aa61bf831a70701837bf9a00838ffc8f62ac6c9c8db60a0982837bfe91aa5d",
+      "localLines": 78
+    },
+    {
+      "path": "src/cli/handlers/orchestration/message-send-handler.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "9288dd50d87f5da82b94e002e8b3d569bd186c07",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/cli/handlers/orchestration/message-send-handler.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "c116e86282ae4ffae3809225519332af8ec62c6275c756154e7012ec20acc5fc",
+      "localLines": 224
+    },
+    {
+      "path": "src/cli/handlers/orchestration/message-check-handler.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "17a88a603f7cd03e1b5cec5ecf24a920cf645800",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/cli/handlers/orchestration/message-check-handler.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "abde2310458358e090d71d1512adc33b80b94f308c53a64eb9db17664314b694",
+      "localLines": 135
+    },
+    {
+      "path": "src/cli/handlers/orchestration/question-handler.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "c7cb01ccbea60571dcd80973b1e0d11739db46c2",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/cli/handlers/orchestration/question-handler.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "73295b7567d7b6bb3e076a5df41739e34c41a5b19c3bc1b9636e45c2df88319b",
+      "localLines": 193
+    },
+    {
+      "path": "src/cli/handlers/orchestration/terminal-identity.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "192223d2ca7bce35c2f4a4f364ac173e7fb9c0aa",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/cli/handlers/orchestration/terminal-identity.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "37478c94e2a9241453c2c9271e771dae891b06a652e965095127ece3cfbb14f7",
+      "localLines": 236
+    },
+    {
+      "path": "docs/reference/plugin-isolated-frames.md",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "30450b047a1773713878eea1f28e3a4f659b7f99",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-isolated-frames.md",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "91ec8ab36336cfacaa2b196c49e0d7257d059413fd6b813b4dc442e422032ff2",
+      "localLines": 138
+    },
+    {
+      "path": "src/main/plugins/workers/plugin-host-workspace-method-bindings.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "00cfa6c8312e7c9d92c65a234adf0565cbbca088",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-host-workspace-method-bindings.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "7ea4ed80b0549f3c2a3f09b564de67037695584aac4ecf30561d4f1012c06f95",
+      "localLines": 228
+    },
+    {
+      "path": "src/shared/plugins/workers/plugin-host-api-storage-schemas.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "3c75d34ee2c0efb5b3f1e4bb666d7be1491039ae",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/workers/plugin-host-api-storage-schemas.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "3e5e07fb7da34935ef4c30924b654ff1239bf43a4d7cdab300cc2cd8c2f35911",
+      "localLines": 52
+    },
+    {
+      "path": "src/shared/plugins/workers/plugin-host-api-worker-actions.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "18eda13a0b58cfc5aa02926b98942931b14d419f",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/workers/plugin-host-api-worker-actions.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "844f46409a01b93ec394a66a2202e7a36ac0dbdf8b0bf85a89bcc921b5046d11",
+      "localLines": 12
+    },
+    {
+      "path": "src/shared/plugins/contributions/plugin-hook-contribution.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "ddf71537b4b91bcfa951cfadca05c06e68c76c7c",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/contributions/plugin-hook-contribution.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "fdd21d3beaabd673e8bcea1de66125093f942c993b9b3beeaf757ed5c82c66a0",
+      "localLines": 64
+    },
+    {
+      "path": "src/shared/mcp-config.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "09fbc6d3865d7035a83f8156b34ee033f60581ca",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/mcp-config.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "fe79ec6c50f6108a688c1d447e4b1b03148239534a8bc96ab254709e9d62afe4",
+      "localLines": 209
+    },
+    {
+      "path": "src/cli/specs/skills.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "b9afef401f2bfb439a2cecf10bad371595cd4c6e",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/cli/specs/skills.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "c0ce51ab4b913e592f31abd6197e6f5605dc38ddc35c8cfc2bbc5e9dd51d4c44",
+      "localLines": 123
+    },
+    {
+      "path": "src/shared/skills.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "f6e89d65cfaed5cffc7c15b3eb210e7779a3ec69",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/skills.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "e30080081d0d459a0da03e5201a5b56534ea7b789bef1b3307968262b5999cde",
+      "localLines": 121
+    },
+    {
+      "path": "src/shared/plugins/workers/plugin-hook-chain.ts",
+      "sourceRef": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "gitBlobSha": "7e71f537f98f0c7e9bdbe3d33ecec70f64b1fff7",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/workers/plugin-hook-chain.ts",
+      "acquisition": "GitHub connector pinned fetch_file/fetch",
+      "localSha256": "2b86cdef89931c12a5b5215a2e805ceb81824605e5dd44ca5087ee8ea724a0c9",
+      "localLines": 137
+    },
+    {
+      "path": "docs/reference/plugin-host-api.md",
+      "sourceRef": "9055eb9344dac1300311337cb1f0040d8094e3c2",
+      "applicableHead": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-host-api.md",
+      "acquisition": "Existing official corpus; complete compare shows path unchanged through pinned head",
+      "localSha256": "2610bbfd29749630a35edad59ed944c2524f1722ae75a24622d50c40de003789",
+      "localLines": 322
+    },
+    {
+      "path": "docs/reference/plugin-authoring.md",
+      "sourceRef": "9055eb9344dac1300311337cb1f0040d8094e3c2",
+      "applicableHead": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-authoring.md",
+      "acquisition": "Existing official corpus; complete compare shows path unchanged through pinned head",
+      "localSha256": "57ca6562d70df2486b08fb57c6e7c23a01975c8b80b40e527bf76a05e7d7e437",
+      "localLines": 746
+    },
+    {
+      "path": "src/shared/plugins/contributions/plugin-contribution-points.ts",
+      "sourceRef": "9055eb9344dac1300311337cb1f0040d8094e3c2",
+      "applicableHead": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/contributions/plugin-contribution-points.ts",
+      "acquisition": "Existing official corpus; complete compare shows path unchanged through pinned head",
+      "localSha256": "154f12223f5deca21f1c1612e96a1dc5b1de009d690ac524ba2a5e24f9044c64",
+      "localLines": 274
+    },
+    {
+      "path": "src/shared/plugins/contributions/plugin-panel-contribution.ts",
+      "sourceRef": "9055eb9344dac1300311337cb1f0040d8094e3c2",
+      "applicableHead": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/contributions/plugin-panel-contribution.ts",
+      "acquisition": "Existing official corpus; complete compare shows path unchanged through pinned head",
+      "localSha256": "74bd6442f713178def15abed88937408115c227aa7baa6630a4043c5e6bc3da9",
+      "localLines": 154
+    },
+    {
+      "path": "src/shared/project-group-types.ts",
+      "sourceRef": "9055eb9344dac1300311337cb1f0040d8094e3c2",
+      "applicableHead": "52b8a24d275fe0cb598abb54119426712fae7a70",
+      "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/project-group-types.ts",
+      "acquisition": "Existing official corpus; complete compare shows path unchanged through pinned head",
+      "localSha256": "0bd6b8b0f0adc91e9b6e9d873ec428d86529a4b06ec52f7047e9a2679820ec26",
+      "localLines": 61
+    }
+  ],
+  "license": {
+    "source": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/LICENSE",
+    "localPath": "sources/LICENSE-ORCA",
+    "sha256": "ff1b611f80580d49f4b97e93a97b24eb050b0671b26b8afe16341fab699112f3",
+    "gitBlobSha": "fbf46fc17dacb1f65e03e2b6290eb53ba94b149d"
+  }
+}

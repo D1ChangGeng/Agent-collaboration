@@ -1,0 +1,17 @@
+{
+  "status": "needs_inspection",
+  "actual_acs_path": null,
+  "actual_acs_commit": null,
+  "actual_client_path": null,
+  "actual_client_commit": null,
+  "adopted_orca_commit": null,
+  "existing_local_changes_preserved": null,
+  "primary_target": "windows-x64",
+  "model_access": [],
+  "core_modes": [
+    "managed-local",
+    "existing-service"
+  ],
+  "reference_file": "../contracts/source-lock.json",
+  "note": "This is an execution template. Null is not evidence of failure or absence; inspect current workspace."
+}

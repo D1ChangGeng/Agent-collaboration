@@ -189,6 +189,30 @@ def test_router_reconciles_original_host_ack_into_existing_unknown_row_without_a
         assert connection.execute("SELECT count(*) FROM receiver_requests WHERE local_dispatch_marker=1").fetchone()[0] == 1
 
 
+def test_acknowledged_source_survives_a_cold_host_without_renewing_execution_ownership(signed):
+    port, owner, command, _allowed = backend(signed)
+    verified = port.verify_dispatch(command)
+    port.admit_verified(verified, lambda _value: {"schema_version": "acs-adapter/1",
+        "operation_id": command.operation_id, "outcome": "accepted", "effect_possible": True,
+        "evidence_ref": "cold-source-receipt", "native_input_ref": "cold-source-input",
+        "binding_epoch": command.binding_epoch, "provider_generation": command.provider_generation, "reason_code": None})
+
+    def forbidden(*_args):
+        pytest.fail("reading a retained ACK entered a live Host path")
+
+    cold = ExistingOrcaReceiverBackend(signed.service, current_ownership=forbidden)
+    router = OrcaReceiverRouter(cold, admit_original=forbidden, observe_readiness=forbidden,
+                                reconcile_original=forbidden)
+    provider = ProviderAdmission(provider_ref=owner["session"]["providerRef"], native_authority="orca",
+                                 selection=_original_selection(signed.invocation))
+    request = signed.factory.request("delivery.readback", NativeSourceReadbackBody(
+        operation_id=signed.invocation.operation_id, dispatch_id=signed.invocation.dispatch_id,
+        native_source=True, provider_admission=provider.model_dump(mode="json")))
+    observed = router.handle(request).receipt.evidence["native_source"]
+    assert observed["available"] and observed["value"]["nativeInputRef"] == "cold-source-input"
+    assert observed["value"]["nativeSession"] == owner["session"]
+
+
 def test_original_host_reader_cannot_settle_another_generation_or_revoke_during_lookup(signed):
     port, _owner, command, allowed = backend(signed)
     port.admit_verified(port.verify_dispatch(command), lambda _value: (_ for _ in ()).throw(OSError("ACK lost")))

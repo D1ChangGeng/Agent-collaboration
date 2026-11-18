@@ -1,0 +1,559 @@
+{
+  "schema_version": "porpita-live-native-proof/1",
+  "scope": "Actual installed Windows x64 Porpita candidate 11; independent real native processes and Host profiles on one physical machine",
+  "messages": [
+    {
+      "message_id": "message-a24c6e10dcb148a7b07c01b4c66ad866",
+      "operation_id": "op-78839f44-eef3-4351-985c-f3a4370baae0",
+      "state": "delivered",
+      "receipt_high_water": "runtime_acknowledged",
+      "sender": "client:porpita-0d267b376a9bcee2fe74d0f82dea1508:36cba43c39c268e3203fe65aa0d53d40c1ba247e137cbc2a9eb1559b290002aa",
+      "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-f1673ac84784e9040d66af4a85456109",
+      "content": "PORPITA-REMOTE-FILE-11：请在当前原生会话里做一次有限的双 Host 附件验收。\n 读取此输入随附的实际本机材料文件，独立取得 challenge 和完整 SHA-256。使用本会话 $env:PORPITA_CLI_COMMAND 指向的真实 Porpita 原生命令，查看 orchestration upload-file / send 的实际帮助，再 upload-file --file <刚收到的本机材料路径> --json，取得你自己的 attachment_id。\n 查当前项目 porpita_acs 联系人，目标为已在第二个真实 Porpita Host 注册的 OpenCode collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-7234becd5c95cf296951865bdafad9de。使用同一 CLI orchestration send --to <该确切地址> --subject PORPITA-REMOTE-FILE-11-RELAY --body <读取并显式回信的要求> --attachment-refs <你新上传的 ID> --json，向它投递一次。禁止把原发送机文件路径、文件正文或 challenge 写进消息正文。\n 给对方的要求：只从它实际收到的“Local file on this receiving host”材料路径，用自己的原生 shell 读取全部字节、独立提取 challenge、计算完整 SHA-256；报告材料的实际绝对路径与实际当前工作目录。然后在 porpita_acs 中查这条收到的确切消息，使用自身身份对原发送者显式 reply_to、activation=message_only 回复路径、challenge、哈希和字节数。不修改文件、全局设置，不读取凭据或其他项目。\n 用 porpita_acs wait_for_response 等待你发出的同一确切请求，最多三次各 120 秒；任何超时都继续检查原句柄，绝不重发。最终在原生 Chat 汇报两端读取的哈希、实际请求和回复引用、目标物化路径及 CLI 退出状态。若无正向证据请明确报告，不能把 Core 受理说成 Native ACK。不创建 Run/Task、不安装依赖、不提交。",
+      "reply_to": []
+    },
+    {
+      "message_id": "message-ee8a31c2ef11403cb5c4e79fc5b40286",
+      "operation_id": "op-2c7e71b5-abff-463a-88c0-53a45da04d0b",
+      "state": "delivered",
+      "receipt_high_water": "runtime_acknowledged",
+      "sender": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-f1673ac84784e9040d66af4a85456109",
+      "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-7234becd5c95cf296951865bdafad9de",
+      "content": "PORPITA-REMOTE-FILE-11-RELAY\n\nPORPITA-REMOTE-FILE-11-RELAY. A material file is attached to this exact message. Read only the actual file materialized for you as the 'Local file on this receiving host' path in this message's attachment delivery. With your own native shell, read all of its bytes, independently extract the challenge value written inside the file, and compute the full SHA-256 over the actual bytes. Report the material's actual absolute path and your actual current working directory. Then, in porpita_acs, look up this exact received message and, using your own identity, reply_to the original sender with activation=message_only, reporting the path, the challenge, the hash and the byte count. Do not modify any file, do not change global settings, and do not read credentials or any other project.",
+      "reply_to": []
+    },
+    {
+      "message_id": "message-a799b427cc624881b836e8e99bc30ab3",
+      "operation_id": "op-78cd3f42-0ba8-4b53-a2ce-9663bec795c2",
+      "state": "delivered",
+      "receipt_high_water": "target_inbox_committed",
+      "sender": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-7234becd5c95cf296951865bdafad9de",
+      "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-f1673ac84784e9040d66af4a85456109",
+      "content": "PORPITA-REMOTE-FILE-11-RELAY 只读附件验收完成（仅当前项目范围；未修改任何文件，未更改全局设置，未读取凭据或其他项目，未创建 Run/Task/Agent）。\n\n材料实际绝对路径（Resolve-Path 后的接收端物化路径）\nD:\\Chatgpt\\Porpita\\.build-tools\\installed04-second-host-35zMA2\\agent-session-attachments\\c2637391-d1ab-4f65-8bd4-9a6f9e5654ef\\porpita-remote-file-11.txt\n存在性: True\n\n我的实际当前绝对工作目录\nD:\\Chatgpt\\Porpita\\.build-tools\\installed04-remote-projects-7KJ2c8\\Porpita-Remote-04\nhostname: LAPTOP-FYGE2ZMR；shell: PowerShell 7 (pwsh, win32)\n\n实际运行的命令（同一原生终端，单次调用）\n$p='D:\\Chatgpt\\Porpita\\.build-tools\\installed04-second-host-35zMA2\\agent-session-attachments\\c2637391-d1ab-4f65-8bd4-9a6f9e5654ef\\porpita-remote-file-11.txt'; \"CWD=\" + (Get-Location).ProviderPath; \"HOSTNAME=\" + [System.Net.Dns]::GetHostName(); \"EXISTS=\" + (Test-Path -LiteralPath $p); \"ABSPATH=\" + (Resolve-Path -LiteralPath $p).ProviderPath; $b=[System.IO.File]::ReadAllBytes($p); \"BYTES=\" + $b.Length; \"SHA256=\" + [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($b)); [System.Text.Encoding]::UTF8.GetString($b)\n\n字节级结果（对全部实际字节计算）\nBYTES=90\nSHA256=63111456b9c8d200d953e3879f47d5d65f46d3e9b024e39df3a78ffb65b46dc3\n与你声明的 Bytes: 90 / SHA-256: 63111456b9c8d200d953e3879f47d5d65f46d3e9b024e39df3a78ffb65b46dc3 完全一致。\n\n从文件 UTF-8 内容独立提取的 challenge\nchallenge=28bc9a89a25e18fbf07dad2e\n\n文件 UTF-8 完整内容（3 行，含末尾换行）\nPorpita paired Host fixture\nchallenge=28bc9a89a25e18fbf07dad2e\n多语言附件验证 🌊\n\nACS 身份与引用\n- 我: collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-7234becd5c95cf296951865bdafad9de（profile engineer，organization level agent/Collaborator）\n- 本条 activation='message_only'，reply_to 取自实际收件箱中你的这条原消息 handle：message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-ee8a31c2ef11403cb5c4e79fc5b40286（sequence 109，from collaborator:...:agent-f1673ac84784e9040d66af4a85456109）。",
+      "reply_to": [
+        "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-ee8a31c2ef11403cb5c4e79fc5b40286"
+      ]
+    }
+  ],
+  "original_dispatches": [
+    {
+      "message_id": "message-a24c6e10dcb148a7b07c01b4c66ad866",
+      "attempt_id": "delivery-attempt-bbdd90ad-1549-4e3a-adff-cc746ebc86d0",
+      "dispatch_id": "delivery-dispatch:delivery-attempt-bbdd90ad-1549-4e3a-adff-cc746ebc86d0",
+      "endpoint_id": "porpita-receiver-4f49d8cd2309241dfe1ec631a05e76f3",
+      "host_ref": "porpita-host-cdc22c36bb5b28a9a991e614ffbd00cb",
+      "host_boot": "6eb5a815-de81-47d3-b05f-aa62274263fa"
+    },
+    {
+      "message_id": "message-ee8a31c2ef11403cb5c4e79fc5b40286",
+      "attempt_id": "delivery-attempt-289db978-fa64-48eb-af2a-cbb6c14bc626",
+      "dispatch_id": "delivery-dispatch:delivery-attempt-289db978-fa64-48eb-af2a-cbb6c14bc626",
+      "endpoint_id": "porpita-receiver-8a4ecb7c97df1093c4c95d65f18d8516",
+      "host_ref": "porpita-host-7f6be78ea79fbaff298592bc319ae468",
+      "host_boot": "0512af6a-4947-49c4-8974-c085285ea1be"
+    }
+  ],
+  "message_attachments": {
+    "message-ee8a31c2ef11403cb5c4e79fc5b40286": [
+      {
+        "name": "porpita-remote-file-11.txt",
+        "bytes": 90,
+        "sha256": "63111456b9c8d200d953e3879f47d5d65f46d3e9b024e39df3a78ffb65b46dc3",
+        "media_type": "text/plain",
+        "attachment_id": "attachment-a73d379503f94f499da31ed1518b3ff8"
+      }
+    ],
+    "message-a24c6e10dcb148a7b07c01b4c66ad866": [
+      {
+        "name": "porpita-remote-file-11.txt",
+        "bytes": 90,
+        "sha256": "63111456b9c8d200d953e3879f47d5d65f46d3e9b024e39df3a78ffb65b46dc3",
+        "media_type": "text/plain",
+        "attachment_id": "attachment-4897927c56a9427b9f1293fb5c317d5e"
+      }
+    ],
+    "message-a799b427cc624881b836e8e99bc30ab3": null
+  },
+  "native_receipts": [
+    {
+      "receiver": "126dbfcba2a0ab8e282f18744afec1bc",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-65a4a8c7-4efb-41b5-8fa7-4c0ee51d9b29",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:codex_57e963dd_75e3_4bdf_990a_14b427edfc53:1794187471690-f7c2f9b7c95b3411f83c505cfa861d39:8",
+        "native_input_ref": "1794187471690-f7c2f9b7c95b3411f83c505cfa861d39",
+        "binding_epoch": 1,
+        "provider_generation": "10afc6bd-3dc5-42b1-8b97-b3d97c7d05ba",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "4444cf28b5e498d9529ce6f40c2e2f3d",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-438ca60f-2763-4eb3-b27c-8bbad51514bb",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:a70da440-6a85-40af-a826-38ff13b7de9a:1794192739788-85e88164fb8350c25202b5d1629aad7f:2",
+        "native_input_ref": "1794192739788-85e88164fb8350c25202b5d1629aad7f",
+        "binding_epoch": 1,
+        "provider_generation": "e0f93d89-114f-4dca-b22a-aa9598e6229c",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "4444cf28b5e498d9529ce6f40c2e2f3d",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-a73c9b7d-29eb-4c9a-9ae8-3f57035cbc0c",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:a70da440-6a85-40af-a826-38ff13b7de9a:1794194250486-980c3ce8851728cc6b444b0cc2704cf8:2",
+        "native_input_ref": "1794194250486-980c3ce8851728cc6b444b0cc2704cf8",
+        "binding_epoch": 1,
+        "provider_generation": "e0f93d89-114f-4dca-b22a-aa9598e6229c",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "4a8af86cd2915c6e71835db26e28e1bc",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-7c322390-d09e-4cc9-b720-4b4fc86021f6",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_02ebcf5d_53a5_4b10_bca8_117ddd1d9601:1794187655867-cbbc39b92d178917e125e4c5bd070361:4",
+        "native_input_ref": "1794187655867-cbbc39b92d178917e125e4c5bd070361",
+        "binding_epoch": 1,
+        "provider_generation": "f149802b-b655-4ee1-a006-b024140074a7",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "4f49d8cd2309241dfe1ec631a05e76f3",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-7b2770b6-2b1e-4948-bd85-caf3359c5a6a",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_a6512a39_76e4_4c77_a1fa_0f9e65d1dc66:1794226558624-e7fb501d1fac8b9b51779475511b078a:2",
+        "native_input_ref": "1794226558624-e7fb501d1fac8b9b51779475511b078a",
+        "binding_epoch": 1,
+        "provider_generation": "9e380b10-75e8-4ede-a54f-d127694442e9",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "4f49d8cd2309241dfe1ec631a05e76f3",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-cb4ccb51-cb6c-4378-a6db-a9f515553ea7",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_a6512a39_76e4_4c77_a1fa_0f9e65d1dc66:1794227473245-e2adb8393747f49174511d3a1b95dc0d:2",
+        "native_input_ref": "1794227473245-e2adb8393747f49174511d3a1b95dc0d",
+        "binding_epoch": 1,
+        "provider_generation": "9e380b10-75e8-4ede-a54f-d127694442e9",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "4f49d8cd2309241dfe1ec631a05e76f3",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-bbdd90ad-1549-4e3a-adff-cc746ebc86d0",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_a6512a39_76e4_4c77_a1fa_0f9e65d1dc66:1794227761020-d3666e8ef4878fc441fa0589cf679349:2",
+        "native_input_ref": "1794227761020-d3666e8ef4878fc441fa0589cf679349",
+        "binding_epoch": 1,
+        "provider_generation": "9e380b10-75e8-4ede-a54f-d127694442e9",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "596d1df453114691f4941cab025c47a6",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-4fd9dc8e-9f03-4328-89ab-0c16db045448",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_02ebcf5d_53a5_4b10_bca8_117ddd1d9601:1794184748956-e961d3dba94d40d126b11f21dff06266:2",
+        "native_input_ref": "1794184748956-e961d3dba94d40d126b11f21dff06266",
+        "binding_epoch": 1,
+        "provider_generation": "bfca15ba-f248-42ca-bb3f-2a41c1d7dad8",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "5ddee7bd2016ac55d4f47cd7ffb69ef0",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-77743439-a8ea-4a80-9e4a-3925269c69b0",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8:1794199501598-206f5f27e90e0f613960124183a6c5fd:6",
+        "native_input_ref": "1794199501598-206f5f27e90e0f613960124183a6c5fd",
+        "binding_epoch": 1,
+        "provider_generation": "33c3a506-14b8-4f0a-80e6-33a199a81d53",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "5ddee7bd2016ac55d4f47cd7ffb69ef0",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-56aaaba4-b406-4a5c-a57a-a6ddda6da751",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8:1794200212982-c074599193659862eed8c9e732150e0b:6",
+        "native_input_ref": "1794200212982-c074599193659862eed8c9e732150e0b",
+        "binding_epoch": 1,
+        "provider_generation": "33c3a506-14b8-4f0a-80e6-33a199a81d53",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "5ddee7bd2016ac55d4f47cd7ffb69ef0",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-0e854c8c-4d3a-4aa6-8035-941e66f4f8f7",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8:1794201370686-6425cc735ca507c5f0a5b1d96820f354:10",
+        "native_input_ref": "1794201370686-6425cc735ca507c5f0a5b1d96820f354",
+        "binding_epoch": 1,
+        "provider_generation": "bd91792b-3e00-45e7-82a3-de7d780687f0",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "6338cdd5fba7c1e2c7e01901e75cefef",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-87c37efd-76f6-40ec-95b3-440a54b02b5d",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_02ebcf5d_53a5_4b10_bca8_117ddd1d9601:1794202244520-a980ef43101d5f2d417d677c9b2390e9:6",
+        "native_input_ref": "1794202244520-a980ef43101d5f2d417d677c9b2390e9",
+        "binding_epoch": 1,
+        "provider_generation": "9178fabc-2ca7-41a0-8dbe-11d0042d4802",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "6338cdd5fba7c1e2c7e01901e75cefef",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-a647c5f8-60de-4cdd-a362-9a7958ed95d3",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_02ebcf5d_53a5_4b10_bca8_117ddd1d9601:1794203070745-270fbd2a15b741a6c09d19d1d901d4c3:6",
+        "native_input_ref": "1794203070745-270fbd2a15b741a6c09d19d1d901d4c3",
+        "binding_epoch": 1,
+        "provider_generation": "9178fabc-2ca7-41a0-8dbe-11d0042d4802",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "679fb33596b9a14a52f3fd84d005028b",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-b6112403-fc3a-409b-868c-5e0dcf8a6413",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:73f38944-290e-4798-8950-b4485ed88233:1794198851745-ddcd968c4bbd1154c27b3b1630c75e6f:2",
+        "native_input_ref": "1794198851745-ddcd968c4bbd1154c27b3b1630c75e6f",
+        "binding_epoch": 1,
+        "provider_generation": "153ef22c-14c0-4e5e-ac44-7d06d1818b7b",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "679fb33596b9a14a52f3fd84d005028b",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-77fb3161-e146-4adb-9c4e-a8aa22eda2d0",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:73f38944-290e-4798-8950-b4485ed88233:1794198981902-906168d09107e0675b25f4ae6ddcd922:2",
+        "native_input_ref": "1794198981902-906168d09107e0675b25f4ae6ddcd922",
+        "binding_epoch": 1,
+        "provider_generation": "153ef22c-14c0-4e5e-ac44-7d06d1818b7b",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "7f92dbaff84ce2e800e0b37791f3b40f",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-447063c2-a524-47ca-a5f0-6db262107511",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:c3540c82-c1d3-4a88-ae30-6839fb5c19f5:1794227434402-b61ad099be8b2ed56327cb1556e4ec6c:2",
+        "native_input_ref": "1794227434402-b61ad099be8b2ed56327cb1556e4ec6c",
+        "binding_epoch": 1,
+        "provider_generation": "a6d98a86-50dd-4b69-bc27-183d90cbe00e",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "7f92dbaff84ce2e800e0b37791f3b40f",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-b868695c-d2fe-495a-8587-830f218a34cf",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:c3540c82-c1d3-4a88-ae30-6839fb5c19f5:1794227692401-2c8e934aa5c79be40839354d7baa0fef:2",
+        "native_input_ref": "1794227692401-2c8e934aa5c79be40839354d7baa0fef",
+        "binding_epoch": 1,
+        "provider_generation": "a6d98a86-50dd-4b69-bc27-183d90cbe00e",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "87fe6f41185af25e22b6d13ce8d81092",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-ff72e212-7e5d-41ea-832c-fd3ed6d4cc20",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:codex_57e963dd_75e3_4bdf_990a_14b427edfc53:1794194699751-9a9a7eaa5155119c41b2df5aeddccabd:12",
+        "native_input_ref": "1794194699751-9a9a7eaa5155119c41b2df5aeddccabd",
+        "binding_epoch": 1,
+        "provider_generation": "589b7fe0-a21e-4a73-b630-a4839b7872ea",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "87fe6f41185af25e22b6d13ce8d81092",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-5a120034-249b-412c-a167-41808193b2ee",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:codex_57e963dd_75e3_4bdf_990a_14b427edfc53:1794194867005-27c6e3a88d1cc563eae1a10ac209220b:12",
+        "native_input_ref": "1794194867005-27c6e3a88d1cc563eae1a10ac209220b",
+        "binding_epoch": 1,
+        "provider_generation": "589b7fe0-a21e-4a73-b630-a4839b7872ea",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "8a4ecb7c97df1093c4c95d65f18d8516",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-289db978-fa64-48eb-af2a-cbb6c14bc626",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_02ebcf5d_53a5_4b10_bca8_117ddd1d9601:1794227860950-cb907cabe3caa38de47e85fc18822c5a:8",
+        "native_input_ref": "1794227860950-cb907cabe3caa38de47e85fc18822c5a",
+        "binding_epoch": 1,
+        "provider_generation": "7e2e6763-d2f5-4f02-aaa3-5da5c5963914",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "9696e10de173712cda06655d75750e68",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-e726f8b6-a625-44f4-a792-51886c8ffc83",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_e832aada_5ee6_47ec_b351_fb7d960edb78:1794225072194-62e41df2a6f77f92cf533b87eed56603:2",
+        "native_input_ref": "1794225072194-62e41df2a6f77f92cf533b87eed56603",
+        "binding_epoch": 1,
+        "provider_generation": "f69f93af-4130-4e64-ae1d-837df6f5a7fe",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "b9ef1c4514e4f77007603817640b0b53",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-b44358ba-73c5-4cf3-be86-f2e7bcef9ae0",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8:1794180739071-ee50d36a2b78f8a34ea4f72ed26011fe:4",
+        "native_input_ref": "1794180739071-ee50d36a2b78f8a34ea4f72ed26011fe",
+        "binding_epoch": 1,
+        "provider_generation": "997a4ab0-c007-4b8d-9777-f16b2cdb96fb",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "b9ef1c4514e4f77007603817640b0b53",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-66ed6923-6f0a-4283-adc8-0097c63a1b7a",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8:1794181258188-d63f0ab7781b4a21f055f97d7278d9cf:4",
+        "native_input_ref": "1794181258188-d63f0ab7781b4a21f055f97d7278d9cf",
+        "binding_epoch": 1,
+        "provider_generation": "997a4ab0-c007-4b8d-9777-f16b2cdb96fb",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "c3d8a997fc195372ee9e547a3cc2d54b",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-e55893c4-f556-479c-a1ab-dfed5f7b3c79",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8:1794226949462-21cec47faee9cbf5691afb7fb541cf57:12",
+        "native_input_ref": "1794226949462-21cec47faee9cbf5691afb7fb541cf57",
+        "binding_epoch": 1,
+        "provider_generation": "f236bd25-48da-4904-99b2-ceff700f77d9",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "c3d8a997fc195372ee9e547a3cc2d54b",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-a26180f0-5db8-471c-8013-17954466e117",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8:1794227306857-11248931f2d168f200abb3e88f14d1d0:14",
+        "native_input_ref": "1794227306857-11248931f2d168f200abb3e88f14d1d0",
+        "binding_epoch": 1,
+        "provider_generation": "cb5bec1e-15cd-433f-9d11-f4f0f1bce9d3",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "ed84594003ea6d3699e62fbbcfa6dd80",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-497a9143-4e68-42ce-b38b-a33095d5e101",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:codex_57e963dd_75e3_4bdf_990a_14b427edfc53:1794199115790-62312fdbd90116c32685adb3ef87046f:14",
+        "native_input_ref": "1794199115790-62312fdbd90116c32685adb3ef87046f",
+        "binding_epoch": 1,
+        "provider_generation": "e3d38b5d-c8a5-4b93-908a-168ba47abc2b",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "ed84594003ea6d3699e62fbbcfa6dd80",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-9625a10d-be1d-4942-ae4c-f7a09eb09b33",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:codex_57e963dd_75e3_4bdf_990a_14b427edfc53:1794199125448-5569c86ad22bdf6bb4d4e39b6c0bf986:14",
+        "native_input_ref": "1794199125448-5569c86ad22bdf6bb4d4e39b6c0bf986",
+        "binding_epoch": 1,
+        "provider_generation": "e3d38b5d-c8a5-4b93-908a-168ba47abc2b",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "ed84594003ea6d3699e62fbbcfa6dd80",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-0d791bc4-8530-4964-a911-40b2b97c9ed4",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:codex_57e963dd_75e3_4bdf_990a_14b427edfc53:1794199787118-5def4ec49c5bff6f1468192b9025ff75:14",
+        "native_input_ref": "1794199787118-5def4ec49c5bff6f1468192b9025ff75",
+        "binding_epoch": 1,
+        "provider_generation": "e3d38b5d-c8a5-4b93-908a-168ba47abc2b",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "ed84594003ea6d3699e62fbbcfa6dd80",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-63a77b0a-8a9c-471e-ae3e-40af48c33dc1",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:codex_57e963dd_75e3_4bdf_990a_14b427edfc53:1794200999872-76fb3c61be3f6acbcdb6591983fe615e:14",
+        "native_input_ref": "1794200999872-76fb3c61be3f6acbcdb6591983fe615e",
+        "binding_epoch": 1,
+        "provider_generation": "e3d38b5d-c8a5-4b93-908a-168ba47abc2b",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "ed84594003ea6d3699e62fbbcfa6dd80",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-e13bf190-85c1-4f09-9672-12f5bacbe02d",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:codex_57e963dd_75e3_4bdf_990a_14b427edfc53:1794202364877-91bbcfa73463582bb9fded2d047363fe:14",
+        "native_input_ref": "1794202364877-91bbcfa73463582bb9fded2d047363fe",
+        "binding_epoch": 1,
+        "provider_generation": "e3d38b5d-c8a5-4b93-908a-168ba47abc2b",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "ed84594003ea6d3699e62fbbcfa6dd80",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-dcc5206f-3e11-4c2c-867e-97f3135f5f32",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:codex_57e963dd_75e3_4bdf_990a_14b427edfc53:1794203277210-b3014b7f21944ca78efdb6e40b0095da:14",
+        "native_input_ref": "1794203277210-b3014b7f21944ca78efdb6e40b0095da",
+        "binding_epoch": 1,
+        "provider_generation": "e3d38b5d-c8a5-4b93-908a-168ba47abc2b",
+        "reason_code": null
+      }
+    },
+    {
+      "receiver": "ed84594003ea6d3699e62fbbcfa6dd80",
+      "state": "runtime_acknowledged",
+      "native_admission": {
+        "schema_version": "acs-adapter/1",
+        "operation_id": "delivery-invocation:delivery-attempt-b72a33b1-bcc5-406a-82a4-80da2f336039",
+        "outcome": "accepted",
+        "effect_possible": true,
+        "evidence_ref": "porpita-journal:codex_57e963dd_75e3_4bdf_990a_14b427edfc53:1794204006824-c721a679249a047ca9446a5b76baf7c8:14",
+        "native_input_ref": "1794204006824-c721a679249a047ca9446a5b76baf7c8",
+        "binding_epoch": 1,
+        "provider_generation": "e3d38b5d-c8a5-4b93-908a-168ba47abc2b",
+        "reason_code": null
+      }
+    }
+  ]
+}

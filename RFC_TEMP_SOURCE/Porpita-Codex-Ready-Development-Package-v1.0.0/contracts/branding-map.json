@@ -1,0 +1,125 @@
+{
+  "schema_version": "porpita-branding/1",
+  "items": [
+    {
+      "id": "B01",
+      "surface": "产品标题、菜单、onboarding、通知、帮助",
+      "action": "replace_visible",
+      "target": "Porpita",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B02",
+      "surface": "安装器/卸载项/桌面快捷方式/图标",
+      "action": "replace_visible",
+      "target": "Porpita原创或授权资产",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B03",
+      "surface": "appId、协议、单实例识别",
+      "action": "isolate_identity",
+      "target": "io.github.d1changgeng.porpita / porpita",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B04",
+      "surface": "userData、缓存、日志、私有服务",
+      "action": "isolate_identity",
+      "target": "Porpita私有目录；不覆盖Orca",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B05",
+      "surface": "CLI、daemon、help和生成skills",
+      "action": "replace_public_command",
+      "target": "porpita / porpitad",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B06",
+      "surface": "更新与release channels",
+      "action": "replace_service",
+      "target": "真实Porpita源或明确手动更新",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B07",
+      "surface": "telemetry/crash收集",
+      "action": "disable_or_replace",
+      "target": "默认不向Orca专属服务发送",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B08",
+      "surface": "登录/OAuth回调/自有云/支持网站",
+      "action": "classify_service",
+      "target": "只配置真实可用自有或用户服务",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B09",
+      "surface": "SSH/remote启动器/Node依赖下载",
+      "action": "adapt_distribution",
+      "target": "使用Porpita兼容产物与明确来源",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B10",
+      "surface": "第三方Provider/Git/用户SSH",
+      "action": "retain_external",
+      "target": "保留原能力和真实服务身份",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B11",
+      "surface": "MIT与第三方许可/作者",
+      "action": "retain_legal",
+      "target": "原声明不删除",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B12",
+      "surface": "旧数据格式、协议枚举、SDK类型名",
+      "action": "retain_compatibility",
+      "target": "可保留orca技术名，记录用途",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B13",
+      "surface": "插件window.orca等兼容API",
+      "action": "retain_compatibility",
+      "target": "不因品牌全量重命名破坏插件",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B14",
+      "surface": "原始源码历史/来源链接",
+      "action": "retain_provenance",
+      "target": "完整保留上游来源",
+      "status": "needs_inspection",
+      "evidence": null
+    },
+    {
+      "id": "B15",
+      "surface": "首代版本和产物名",
+      "action": "set_product_version",
+      "target": "默认0.1.0，不复用Orca版本为Porpita发布号",
+      "status": "needs_inspection",
+      "evidence": null
+    }
+  ]
+}

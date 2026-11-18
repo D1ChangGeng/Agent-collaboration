@@ -1,0 +1,52 @@
+{
+  "candidate": "prototype-11",
+  "actual": {
+    "name": "Porpita",
+    "version": "0.1.0",
+    "packaged": true,
+    "userDataBase": "installed11-fresh-8MJjtW",
+    "applicationMenu": [
+      "文件",
+      "编辑",
+      "查看",
+      "窗口",
+      "帮助"
+    ],
+    "windowsHidden": true,
+    "protocolDefault": false,
+    "cliVersion": "0.1.0",
+    "cliExit": 0,
+    "oldUpdateYmlPresent": false,
+    "packagedLicenseNames": [
+      "ripgrep",
+      "shadcn"
+    ]
+  },
+  "rendererTitle": "Porpita",
+  "productConfig": {
+    "name": "Porpita",
+    "version": "0.1.0",
+    "applicationId": "io.github.d1changgeng.porpita",
+    "scheme": "porpita",
+    "cli": "porpita",
+    "daemon": "porpitad",
+    "dataDirectory": ".porpita",
+    "updateEndpoint": null,
+    "telemetryEndpoint": null,
+    "diagnosticsEndpoint": null,
+    "website": null,
+    "upstream": {
+      "repository": "https://github.com/stablyai/orca",
+      "commit": "26179069b664b2fc172963564ed419d97892b6c9",
+      "license": "MIT"
+    }
+  },
+  "inventory": "docs/porpita/handoff/BRAND_AND_SERVICES.md",
+  "installedLicensesAndScheme": {
+    "orcaLicenseSha256": "5cb0b3c27e68b4d23e6337ccbf1f79ae0cc76c2b1884f3f3f1a6e39bdf4eb186",
+    "acsLicenseSha256": "bacb0bd691b3a7982adcd442c10f6a428ff3ce1a73714a828710ecbc1a77fd96",
+    "priorProtocolOwner": false,
+    "temporaryOwnRegistration": true,
+    "temporaryRegistrationCleared": true
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "candidate": "prototype-11",
+  "state": {
+    "ok": true,
+    "state": "connected",
+    "mode": "managed-local",
+    "version": "2.3.1",
+    "authority": "porpita-b67d7d3f3cdae8bf70cf06a1095cd4d0",
+    "incarnation": "installation-1",
+    "error": null
+  },
+  "where": {
+    "node": false,
+    "python": false,
+    "postgres": false,
+    "git": true
+  },
+  "dataRoot": "D:\\Chatgpt\\Porpita\\.build-tools\\installed11-fresh-8MJjtW",
+  "ui": "Onboarding / Integrations / Start local service"
+}

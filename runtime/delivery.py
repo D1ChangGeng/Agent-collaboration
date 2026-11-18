@@ -4,7 +4,7 @@ import hashlib
 import json
 import uuid
 from copy import copy
-from datetime import datetime
+from datetime import UTC, datetime
 
 import psycopg
 
@@ -45,6 +45,16 @@ class DeliveryRejected(RuntimeError):
     def __init__(self, code, state="blocked"):
         self.code, self.state = code, state
         super().__init__(code)
+
+
+def selection_expiry(value):
+    """A binding's instant is independent of the connection's presentation timezone."""
+    if value is None or value == "None":
+        return "None"
+    instant = value if isinstance(value, datetime) else datetime.fromisoformat(value)
+    if instant.tzinfo is None or instant.utcoffset() is None:
+        raise DeliveryRejected("attempt_selection_expiry_invalid")
+    return instant.astimezone(UTC).isoformat()
 
 
 class DeliveryService:
@@ -158,7 +168,11 @@ class DeliveryService:
                 or len(packet.model_dump_json().encode()) > max_packet_bytes):
             raise DeliveryRejected("packet_bound_exceeded")
         direct_inbox = isinstance(packet, MessagePacket) and (packet.recipient.startswith("client:") or packet.activation == "message_only")
-        attachment_hold = isinstance(packet, MessagePacket) and bool(packet.attachment_refs) and packet.activation == "invoke" and not direct_inbox
+        from runtime.native_attachment_delivery import native_attachment_delivery_supported
+
+        attachment_hold = (isinstance(packet, MessagePacket) and bool(packet.attachment_refs)
+                           and packet.activation == "invoke" and not direct_inbox
+                           and not native_attachment_delivery_supported(self.authority, endpoint_id))
         if not direct_inbox and (not endpoint_id or type(binding_revision) is not int or binding_revision < 1):
             raise DeliveryRejected("invalid_endpoint_selection")
         extra = {"packet": packet.model_dump(mode="json"), "endpoint_id": endpoint_id, "binding_revision": binding_revision}
@@ -467,7 +481,7 @@ class DeliveryDispatcher:
             "boot_incarnation": binding["boot_incarnation"],
             "supports_invoke": binding["supports_invoke"],
             "evidence_class": binding["evidence_class"],
-            "expires_at": str(binding["expires_at"]),
+            "expires_at": selection_expiry(binding["expires_at"]),
         }
 
     @staticmethod
@@ -504,7 +518,9 @@ class DeliveryDispatcher:
             raise DeliveryRejected("attempt_selection_scope_changed")
         if selection["endpoint_id"] == row["endpoint_id"] and selection["revision"] == row["binding_revision"]:
             expected = self._selection(row, binding)
-            if selection != expected:
+            # Keep the stored digest/history exact, including older non-UTC formatting.
+            comparable = {**selection, "expires_at": selection_expiry(selection["expires_at"])}
+            if comparable != expected:
                 raise DeliveryRejected("attempt_selection_changed")
         else:
             cursor.execute("SELECT to_jsonb(e) FROM delivery_endpoints e WHERE tenant_id=%s AND endpoint_id=%s FOR UPDATE",

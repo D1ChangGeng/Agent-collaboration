@@ -1,0 +1,28 @@
+[
+  {
+    "id": "v1",
+    "source": "D:\\D26FO\\Videos\\屏幕录制\\屏幕录制 2026-11-06 061639.mp4",
+    "bytes": 108160027,
+    "sha256": "c879c9e7cab2091bfc59558d6fb8308f279df0dd474395fcf1314f4718f98851",
+    "fps": 30.0,
+    "frames": 2903,
+    "width": 1796,
+    "height": 1172,
+    "duration_seconds": 96.76666666666667,
+    "decoder": "OpenCV 5.0.0",
+    "source_role": "User supplied screen recording of Orca promotional website; depicted app behavior is authored demonstration, not independently exercised runtime"
+  },
+  {
+    "id": "v2",
+    "source": "D:\\D26FO\\Videos\\屏幕录制\\屏幕录制 2026-11-06 062022.mp4",
+    "bytes": 142394400,
+    "sha256": "00b522f159eef4fac3e7f491156b9e34c8b219c1df6cb18c733b2edbacd1607f",
+    "fps": 30.0,
+    "frames": 4734,
+    "width": 1772,
+    "height": 950,
+    "duration_seconds": 157.8,
+    "decoder": "OpenCV 5.0.0",
+    "source_role": "User supplied screen recording of Orca promotional website; depicted app behavior is authored demonstration, not independently exercised runtime"
+  }
+]

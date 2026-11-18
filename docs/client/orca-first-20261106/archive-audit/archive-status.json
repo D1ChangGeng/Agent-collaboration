@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-06",
+  "method": "in-place archive with original-byte entry snapshot",
+  "current_decision": "docs/client/ORCA-FIRST.zh-CN.md",
+  "entries": [
+    {
+      "path": "docs/client/COMMUNICATION-EXPERIENCE.zh-CN.md",
+      "status": "archived",
+      "original_sha256": "57253807d97a2d0ac4e2fd4f6d449cd025c1c94a17978e9b3e2ef1a8a15c0371",
+      "payload_sha256": "5b1ca2a75993607b5c1d1cd0fea7d8d9d07989d031f75377942a7328b6297b23",
+      "payload_bytes": 25211
+    },
+    {
+      "path": "docs/client/PRODUCT-REVIEW.zh-CN.md",
+      "status": "archived",
+      "original_sha256": "79a9237effaf6590e539a22b511f6fb50a9de0b9ad4c9a567b95c1f127d934c9",
+      "payload_sha256": "49c2695b64866d3b47eac90f4d3d70e700e95cfeef8c14ab029d1d06d7bf9744",
+      "payload_bytes": 43683
+    },
+    {
+      "path": "docs/client/USER-FLOWS.zh-CN.md",
+      "status": "archived",
+      "original_sha256": "147fd33c55065d8b1b89350a22227328d535e95d7732c46db35c76c5e12fb2a0",
+      "payload_sha256": "4324e429d257d7d6a68ebc80046bd1779105c08d396f2dcb8fcb6427bd12adc5",
+      "payload_bytes": 570596
+    },
+    {
+      "path": "docs/client/UX-DESIGN.zh-CN.md",
+      "status": "archived",
+      "original_sha256": "c18ef599b7a144815708b832ca37c8b5ec4500ac794645b847057a9c73dc1b66",
+      "payload_sha256": "021855c492b44af116e0787fe1e36159f16c601c098434922c4b4bf83fe84a77",
+      "payload_bytes": 82893
+    },
+    {
+      "path": "docs/client/WORKBENCH-ADOPTION.zh-CN.md",
+      "status": "archived",
+      "original_sha256": "0f64d988f4f9a6e0a441ef5fec2589311f70885cca868d23f8bf381eb1799d0f",
+      "payload_sha256": "d873f00529cfe4407821c2552417d3744a9e96db82b476bcb14faac9b00c6ba2",
+      "payload_bytes": 23962
+    },
+    {
+      "path": "docs/client/PRODUCT-REVIEW.html",
+      "status": "archived",
+      "original_sha256": "a15ce4144e83c0f41657b6c1a24b8acfc976ef65393ceda794aeea81b0aefc9d"
+    },
+    {
+      "path": "docs/client/COMMUNICATION-EXPERIENCE.html",
+      "status": "archived",
+      "original_sha256": "204dcbac7a7c12f464a5cc69d435e24eb6f6762c9f4fbcef9161739c9c881bc1"
+    },
+    {
+      "path": "docs/client/WORKBENCH-ADOPTION.html",
+      "status": "archived",
+      "original_sha256": "51537dd3ef2f5873942af99b297bafb38c392cdfe8946277f4b80dfff0502c96"
+    }
+  ],
+  "historical_asset_roots": [
+    "docs/client/review-20261105/",
+    "docs/client/communication-20261105/",
+    "docs/client/workbench-20261106/"
+  ],
+  "preservation_baseline": "inventory.json",
+  "scope": "Former Client product, UI, flow, confirmation, gap and development plans; Runtime contracts retain separate authority"
+}

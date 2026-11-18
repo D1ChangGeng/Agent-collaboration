@@ -1,0 +1,2082 @@
+From 50a1e8645a98d9951182ac3d04bee77290a710d6 Mon Sep 17 00:00:00 2001
+From: D1 <278324052+D1ChangGeng@users.noreply.github.com>
+Date: Wed, 18 Nov 2026 20:44:55 +0900
+Subject: [PATCH 4/4] WIP(round-91): implement F03 P.*/P.13/Q.* high-contrast,
+ reduced-motion, a11y, and locale alignment
+
+---
+ src/renderer/index.html                       |   2 +-
+ .../src/app-shell/AppWorkspaceShell.tsx       |  89 +++---
+ .../main-css-accessibility-motion.test.ts     | 104 +++++++
+ src/renderer/src/assets/main.css              | 150 ++++++++++
+ src/renderer/src/assets/markdown-preview.css  |   7 +
+ src/renderer/src/assets/mobile-page.css       |  12 +
+ .../src/assets/rich-markdown-editor.css       |  14 +
+ src/renderer/src/assets/terminal.css          |   8 +
+ .../onboarding/ThemeLookCarousel.tsx          |   8 +-
+ .../appearance/AppearanceInterfaceSection.tsx |   4 +-
+ .../settings/appearance/AppearanceSection.tsx |   2 +-
+ .../settings/appearance/UIZoomControl.tsx     |   2 +
+ .../appearance/WindowMaterialSetting.tsx      |   4 +-
+ .../settings/appearance/appearance-search.ts  |  25 +-
+ .../appearance-status-bar-search.ts           |   2 +-
+ .../appearance-system-presence-search.ts      |   9 +-
+ .../themes/AppearanceThemeControl.tsx         |   7 +-
+ ...ngsFormControls.segmented-control.test.tsx |  73 ++++-
+ .../form-controls/SettingsFormControls.tsx    |  46 ++-
+ .../settings/navigation/SettingsSidebar.tsx   |  16 +-
+ ...gs-interface-primary-section-renderers.tsx |   2 +-
+ .../settings/page/settings-page-renderer.tsx  |   5 +-
+ .../src/components/tab-bar/drop-indicator.ts  |   5 +-
+ src/renderer/src/components/ui/accordion.tsx  |   2 +-
+ src/renderer/src/components/ui/command.tsx    |   2 +-
+ .../src/components/ui/context-menu.tsx        |   2 +-
+ src/renderer/src/components/ui/dialog.tsx     |   4 +-
+ src/renderer/src/components/ui/select.tsx     |   2 +-
+ src/renderer/src/components/ui/sheet.tsx      |   4 +-
+ src/renderer/src/components/ui/sonner.tsx     |  11 +-
+ src/renderer/src/components/ui/switch.tsx     |   4 +-
+ src/renderer/src/components/ui/tooltip.tsx    |   2 +-
+ .../ui/ui-primitives-reduced-motion.test.tsx  | 282 ++++++++++++++++++
+ src/renderer/src/i18n/I18nProvider.test.tsx   |  19 ++
+ src/renderer/src/i18n/I18nProvider.tsx        |  18 +-
+ .../src/i18n/en-runtime-required.json         |  31 --
+ src/renderer/src/i18n/locales/en.json         |  12 +-
+ src/renderer/src/i18n/locales/zh-Hant.json    |  91 +++++-
+ src/renderer/src/i18n/locales/zh.json         |  81 ++++-
+ src/renderer/src/main.tsx                     |   4 +-
+ 40 files changed, 1021 insertions(+), 146 deletions(-)
+ create mode 100644 src/renderer/src/assets/main-css-accessibility-motion.test.ts
+ create mode 100644 src/renderer/src/components/ui/ui-primitives-reduced-motion.test.tsx
+
+diff --git a/src/renderer/index.html b/src/renderer/index.html
+index 14ea640723..941de2e932 100644
+--- a/src/renderer/index.html
++++ b/src/renderer/index.html
+@@ -1,5 +1,5 @@
+ <!doctype html>
+-<html class="native-shell">
++<html lang="en" class="native-shell">
+   <head>
+     <meta charset="UTF-8" />
+     <meta
+diff --git a/src/renderer/src/app-shell/AppWorkspaceShell.tsx b/src/renderer/src/app-shell/AppWorkspaceShell.tsx
+index 0c72b588e4..dddc27c801 100644
+--- a/src/renderer/src/app-shell/AppWorkspaceShell.tsx
++++ b/src/renderer/src/app-shell/AppWorkspaceShell.tsx
+@@ -147,6 +147,51 @@ export function AppWorkspaceShell(props: {
+     [setOpenWithFocus]
+   )
+ 
++  const selfOwnedMainView =
++    layout.activeView === 'settings' ||
++    layout.activeView === 'skills' ||
++    layout.activeView === 'artifacts' ||
++    layout.activeView === 'automations' ||
++    layout.activeView === 'activity'
++  const workbenchContent = (
++    <>
++      {layout.shouldMountTerminalWorkbench ? (
++        <TerminalWorkbenchContainer
++          isVisible={layout.terminalWorkbenchVisible && !showPreview}
++        >
++          <Suspense fallback={null}>
++            <RecoverableRenderErrorBoundary
++              boundaryId="terminal.workbench"
++              surface="terminal-workbench"
++              resetKey="terminal"
++              title={translate('auto.App.5a9519aef0', 'The workspace workbench hit an error.')}
++              description={translate(
++                'auto.App.98d4ea2823',
++                'Terminal, browser, or editor rendering failed in this workspace. Retry to remount it.'
++              )}
++            >
++              <Terminal />
++            </RecoverableRenderErrorBoundary>
++          </Suspense>
++        </TerminalWorkbenchContainer>
++      ) : null}
++      <Suspense fallback={null}>
++        <RecoverableRenderErrorBoundary
++          boundaryId={`page.${layout.activeView}`}
++          surface="page"
++          resetKey={layout.activeView}
++          title={translate('auto.App.b7a714db1e', 'This page hit an error.')}
++          description={translate(
++            'auto.App.03a14f6b5b',
++            'Retry the page or navigate to another Porpita surface.'
++          )}
++        >
++          <ActivePage layout={layout} />
++        </RecoverableRenderErrorBoundary>
++      </Suspense>
++    </>
++  )
++
+   return (
+     // Avoid active-worktree reset keys that remount whole surfaces during wake.
+     <RecoverableRenderErrorBoundary
+@@ -235,45 +280,11 @@ export function AppWorkspaceShell(props: {
+                     {layout.showRightSidebarControls ? <RightSidebarToggle /> : null}
+                   </div>
+                 )}
+-                <div className="flex flex-1 min-w-0 min-h-0 flex-col">
+-                  {layout.shouldMountTerminalWorkbench ? (
+-                    <TerminalWorkbenchContainer
+-                      isVisible={layout.terminalWorkbenchVisible && !showPreview}
+-                    >
+-                      <Suspense fallback={null}>
+-                        <RecoverableRenderErrorBoundary
+-                          boundaryId="terminal.workbench"
+-                          surface="terminal-workbench"
+-                          resetKey="terminal"
+-                          title={translate(
+-                            'auto.App.5a9519aef0',
+-                            'The workspace workbench hit an error.'
+-                          )}
+-                          description={translate(
+-                            'auto.App.98d4ea2823',
+-                            'Terminal, browser, or editor rendering failed in this workspace. Retry to remount it.'
+-                          )}
+-                        >
+-                          <Terminal />
+-                        </RecoverableRenderErrorBoundary>
+-                      </Suspense>
+-                    </TerminalWorkbenchContainer>
+-                  ) : null}
+-                  <Suspense fallback={null}>
+-                    <RecoverableRenderErrorBoundary
+-                      boundaryId={`page.${layout.activeView}`}
+-                      surface="page"
+-                      resetKey={layout.activeView}
+-                      title={translate('auto.App.b7a714db1e', 'This page hit an error.')}
+-                      description={translate(
+-                        'auto.App.03a14f6b5b',
+-                        'Retry the page or navigate to another Orca surface.'
+-                      )}
+-                    >
+-                      <ActivePage layout={layout} />
+-                    </RecoverableRenderErrorBoundary>
+-                  </Suspense>
+-                </div>
++                {selfOwnedMainView ? (
++                  <div className="flex flex-1 min-w-0 min-h-0 flex-col">{workbenchContent}</div>
++                ) : (
++                  <main className="flex flex-1 min-w-0 min-h-0 flex-col">{workbenchContent}</main>
++                )}
+                 {floatingWorkspace.showToggleButton && !capturingPluginShot ? (
+                   <MemoFloatingTerminalToggleButton
+                     open={floatingWorkspace.open}
+diff --git a/src/renderer/src/assets/main-css-accessibility-motion.test.ts b/src/renderer/src/assets/main-css-accessibility-motion.test.ts
+new file mode 100644
+index 0000000000..b81d08e4ff
+--- /dev/null
++++ b/src/renderer/src/assets/main-css-accessibility-motion.test.ts
+@@ -0,0 +1,104 @@
++import { readFileSync } from 'node:fs'
++import { describe, expect, it } from 'vitest'
++
++const readAsset = (name: string): string =>
++  readFileSync(new URL(`./${name}`, import.meta.url), 'utf8')
++
++const mainCss = readAsset('main.css')
++const markdownPreviewCss = readAsset('markdown-preview.css')
++const richMarkdownEditorCss = readAsset('rich-markdown-editor.css')
++const mobilePageCss = readAsset('mobile-page.css')
++const terminalCss = readAsset('terminal.css')
++
++describe('main.css high contrast and forced-colors rules', () => {
++  it('strengthens hairline, ring, and divider tokens under prefers-contrast: more', () => {
++    const match = mainCss.match(/@media \(prefers-contrast: more\)\s*\{[\s\S]*?\n\}/)
++    expect(match).not.toBeNull()
++    const block = match![0]
++    for (const token of [
++      '--border',
++      '--input',
++      '--ring',
++      '--sidebar-border',
++      '--worktree-sidebar-border',
++      '--worktree-sidebar-ring',
++      '--split-divider'
++    ]) {
++      expect(block).toContain(token)
++    }
++  })
++
++  it('adds forced-colors: active rules for focus-visible, selected rows, switch, and dividers', () => {
++    const match = mainCss.match(/@media \(forced-colors: active\)\s*\{[\s\S]*?\n\}/)
++    expect(match).not.toBeNull()
++    const block = match![0]
++    for (const selector of [
++      ':focus-visible',
++      ".jump-palette-item[data-selected='true']",
++      "[data-file-explorer-row][data-selected='true']",
++      "[data-worktree-card-surface][data-worktree-card-active='primary']",
++      "[data-current='true']",
++      "[data-slot='switch']",
++      '.tab-group-split-resize-handle::after',
++      '.pane-divider::after',
++      "[data-slot='separator']"
++    ]) {
++      expect(block).toContain(selector)
++    }
++    expect(block).toContain('Highlight')
++    expect(block).toContain('CanvasText')
++  })
++})
++
++describe('CSS prefers-reduced-motion rules', () => {
++  it('avoids destructive global wildcard animation-duration: 0ms overrides', () => {
++    expect(mainCss).not.toMatch(/\*\s*\{[^}]*animation-duration\s*:\s*0m?s\s*!important/)
++  })
++
++  it('covers shell, sheet, sidebar, update card, waveform, copy toast, drop indicator, and feature-wall rules', () => {
++    const blocks = [...mainCss.matchAll(/@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\n\}/g)]
++      .map((m) => m[0])
++      .join('\n')
++    for (const selector of [
++      '.settings-view-shell',
++      ".workspace-kanban-sheet-content[data-state='open']",
++      ".workspace-kanban-sheet-content[data-state='closed']",
++      '.sidebar',
++      '.animate-update-card-enter',
++      '.animate-update-card-exit',
++      '.animate-waveform',
++      '.editor-header-copy-toast',
++      "[data-workspace-board-card-drop-indicator='true']",
++      '.feature-wall-marquee-track',
++      '.feature-wall-click-ring',
++      '.feature-wall-meta-pulse'
++    ]) {
++      expect(blocks).toContain(selector)
++    }
++  })
++
++  it('covers markdown-preview, rich-markdown-editor, mobile-page, and terminal reduced-motion rules', () => {
++    expect(markdownPreviewCss).toContain('@media (prefers-reduced-motion: reduce)')
++    expect(markdownPreviewCss).toContain('.markdown-annotation-card.is-attention')
++
++    expect(richMarkdownEditorCss).toContain('@media (prefers-reduced-motion: reduce)')
++    expect(richMarkdownEditorCss).toContain('.rich-markdown-annotation-selection-active')
++    expect(richMarkdownEditorCss).toContain('.rich-markdown-review-note-card.is-attention')
++
++    const mobileReduced = mobilePageCss.match(
++      /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\n\}/
++    )
++    expect(mobileReduced).not.toBeNull()
++    expect(mobileReduced![0]).toContain('.mp-network-refresh.is-spinning')
++    expect(mobileReduced![0]).toContain('.is-tapping')
++    expect(mobileReduced![0]).toContain('.mp-wl-spinner')
++    expect(mobileReduced![0]).toContain('.mp-term-cursor')
++
++    const terminalReduced = terminalCss.match(
++      /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\n\}/
++    )
++    expect(terminalReduced).not.toBeNull()
++    expect(terminalReduced![0]).toContain('.pane-divider::after')
++    expect(terminalReduced![0]).toContain('.pane-focus-rim-flash::before')
++  })
++})
+diff --git a/src/renderer/src/assets/main.css b/src/renderer/src/assets/main.css
+index 8b19cc1da8..cf64135a29 100644
+--- a/src/renderer/src/assets/main.css
++++ b/src/renderer/src/assets/main.css
+@@ -529,6 +529,121 @@
+   --dialog-surface: var(--orca-security-dialog-surface);
+ }
+ 
++@media (prefers-contrast: more) {
++  :root {
++    --orca-security-border: #737373;
++    --orca-security-input: #525252;
++    --orca-security-ring: #171717;
++    --border: #737373;
++    --input: #525252;
++    --ring: #171717;
++    --sidebar-border: #737373;
++    --sidebar-ring: #171717;
++    --worktree-sidebar-border: #737373;
++    --worktree-sidebar-ring: #171717;
++    --split-divider: #525252;
++    --split-divider-hover: #171717;
++  }
++
++  .dark {
++    --orca-security-border: rgb(255 255 255 / 0.34);
++    --orca-security-input: rgb(255 255 255 / 0.42);
++    --orca-security-ring: #e5e5e5;
++    --border: rgb(255 255 255 / 0.34);
++    --input: rgb(255 255 255 / 0.42);
++    --ring: #e5e5e5;
++    --sidebar-border: rgb(255 255 255 / 0.34);
++    --sidebar-ring: #e5e5e5;
++    --worktree-sidebar-border: rgb(255 255 255 / 0.34);
++    --worktree-sidebar-ring: #e5e5e5;
++    --split-divider: #a1a1aa;
++    --split-divider-hover: #f0f0f0;
++  }
++}
++
++@media (forced-colors: active) {
++  :is(
++    button,
++    [role='button'],
++    [role='radio'],
++    [role='tab'],
++    [role='menuitem'],
++    [role='option'],
++    [role='switch'],
++    a,
++    input,
++    textarea,
++    select,
++    [tabindex],
++    .tab-group-split-resize-handle,
++    .worktree-agent-send-target-button
++  ):focus-visible {
++    outline: 2px solid Highlight;
++    outline-offset: 2px;
++  }
++
++  .tab-group-split-resize-handle:focus-visible,
++  [data-testid='sortable-tab']:focus-visible {
++    outline: 2px solid Highlight;
++    outline-offset: -2px;
++  }
++
++  [data-slot='command-item'].jump-palette-item[data-selected='true'],
++  [role='option'].jump-palette-item[data-selected='true'],
++  .jump-palette-command [data-slot='command-item'][data-selected='true'],
++  .jump-palette-command [role='option'][data-selected='true'],
++  .ai-vault-session-row[data-selected='true'],
++  .plugin-list-row:has([data-plugin-row-name]:focus-visible),
++  [data-file-explorer-row][data-selected='true'],
++  [data-worktree-card-surface][data-worktree-card-active='primary'],
++  [data-worktree-card-surface][data-worktree-card-active='secondary'],
++  [data-worktree-card-surface][data-worktree-card-selected] {
++    border: 1px solid Highlight;
++    outline: 1px solid Highlight;
++    outline-offset: -1px;
++  }
++
++  [data-current='true'],
++  [aria-current='page'],
++  [data-testid='sortable-tab'][data-active='true'] {
++    outline: 1px solid Highlight;
++    outline-offset: -1px;
++  }
++
++  [data-slot='switch'],
++  [data-slot='switch-indicator'] {
++    border: 1px solid ButtonText;
++  }
++
++  [data-slot='switch'][data-state='checked'],
++  [data-slot='switch-indicator'][data-state='checked'] {
++    background-color: Highlight;
++    border-color: Highlight;
++  }
++
++  [data-slot='switch-thumb'] {
++    background-color: ButtonText;
++    border: 1px solid ButtonText;
++  }
++
++  [data-state='checked'] > [data-slot='switch-thumb'] {
++    background-color: HighlightText;
++    border-color: HighlightText;
++  }
++
++  .tab-group-split-resize-handle::after,
++  .pane-divider::after,
++  [data-slot='separator'] {
++    background-color: CanvasText;
++  }
++
++  .tab-group-split-resize-handle:hover::after,
++  .tab-group-split-resize-handle:focus-visible::after,
++  .pane-divider:hover::after {
++    background-color: Highlight;
++  }
++}
++
+ .linear-priority-bars {
+   --linear-priority-bar-inactive-fill: color-mix(in srgb, lch(39.576 1.25 282) 34%, transparent);
+ }
+@@ -3858,4 +3973,39 @@ body:has([data-contextual-tour-target='tab-create-menu'][data-state='open'])
+   .browser-agent-cursor-layer[data-agent-active]::before {
+     animation: none;
+   }
++
++  .settings-view-shell,
++  .workspace-kanban-sheet-content[data-state='open'],
++  .workspace-kanban-sheet-content[data-state='closed'],
++  .animate-update-card-enter,
++  .animate-update-card-exit,
++  .feature-wall-marquee-track,
++  .feature-wall-click-ring,
++  .feature-wall-msg-received,
++  .feature-wall-child-card-shell,
++  .feature-wall-meta-pulse {
++    animation: none;
++  }
++
++  .animate-waveform {
++    animation: none;
++    transform: scaleY(0.7);
++    opacity: 0.85;
++  }
++
++  .sidebar,
++  [data-workspace-board-card-drop-indicator='true'],
++  .feature-wall-orch-arrows,
++  .feature-wall-bubble.in-flight,
++  .feature-wall-bubble.landed,
++  .feature-wall-children-wrapper,
++  .feature-wall-spawn-row,
++  .feature-wall-spawn-row[data-pending='true'] {
++    transition: none;
++  }
++
++  .editor-header-copy-toast {
++    transition: none;
++    transform: none;
++  }
+ }
+diff --git a/src/renderer/src/assets/markdown-preview.css b/src/renderer/src/assets/markdown-preview.css
+index c469ce93e0..9288584941 100644
+--- a/src/renderer/src/assets/markdown-preview.css
++++ b/src/renderer/src/assets/markdown-preview.css
+@@ -418,6 +418,13 @@
+   animation: markdown-note-attention 900ms ease-out;
+ }
+ 
++@media (prefers-reduced-motion: reduce) {
++  .markdown-annotation-card.is-attention > .orca-diff-comment-card {
++    animation: none;
++    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ring) 45%, transparent);
++  }
++}
++
+ @keyframes markdown-note-attention {
+   0% {
+     transform: translateX(0);
+diff --git a/src/renderer/src/assets/mobile-page.css b/src/renderer/src/assets/mobile-page.css
+index a79e8d5357..b5ef3eb350 100644
+--- a/src/renderer/src/assets/mobile-page.css
++++ b/src/renderer/src/assets/mobile-page.css
+@@ -1888,6 +1888,18 @@
+   .mobile-page-root .mp-flow-screen {
+     transition: none;
+   }
++
++  .mobile-page-root .mp-network-refresh.is-spinning svg,
++  .mobile-page-root .is-tapping,
++  .mobile-page-root .mp-term-cursor {
++    animation: none;
++  }
++
++  .mobile-page-root .mp-wl-spinner {
++    animation: none;
++    border-top-color: #eab308;
++    opacity: 0.85;
++  }
+ }
+ 
+ @media (max-width: 920px) {
+diff --git a/src/renderer/src/assets/rich-markdown-editor.css b/src/renderer/src/assets/rich-markdown-editor.css
+index dda532e0c8..222e0fcfb6 100644
+--- a/src/renderer/src/assets/rich-markdown-editor.css
++++ b/src/renderer/src/assets/rich-markdown-editor.css
+@@ -223,6 +223,13 @@
+   animation: rich-markdown-source-attention 900ms ease-out;
+ }
+ 
++@media (prefers-reduced-motion: reduce) {
++  .rich-markdown-annotation-selection-active {
++    animation: none;
++    background: color-mix(in srgb, var(--annotation-highlight) 28%, transparent);
++  }
++}
++
+ @keyframes rich-markdown-source-attention {
+   0% {
+     background: color-mix(in srgb, var(--annotation-highlight) 44%, transparent);
+@@ -318,6 +325,13 @@
+   animation: rich-markdown-note-attention 900ms ease-out;
+ }
+ 
++@media (prefers-reduced-motion: reduce) {
++  .rich-markdown-review-note-card.is-attention > .orca-diff-comment-card {
++    animation: none;
++    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ring) 45%, transparent);
++  }
++}
++
+ @keyframes rich-markdown-note-attention {
+   0% {
+     transform: translateX(0);
+diff --git a/src/renderer/src/assets/terminal.css b/src/renderer/src/assets/terminal.css
+index 1127ddff05..dde344a62a 100644
+--- a/src/renderer/src/assets/terminal.css
++++ b/src/renderer/src/assets/terminal.css
+@@ -196,6 +196,14 @@
+   .pane-focus-rim-flash::before {
+     animation: none;
+   }
++
++  .pane-divider::after,
++  .pane-drag-handle,
++  .pane-title-drag-handle,
++  .pane-title-close,
++  .pane-title-split-trigger {
++    transition: none;
++  }
+ }
+ 
+ .is-pane-dragging .pane {
+diff --git a/src/renderer/src/components/onboarding/ThemeLookCarousel.tsx b/src/renderer/src/components/onboarding/ThemeLookCarousel.tsx
+index 6cc1800d96..bb23f4ac1a 100644
+--- a/src/renderer/src/components/onboarding/ThemeLookCarousel.tsx
++++ b/src/renderer/src/components/onboarding/ThemeLookCarousel.tsx
+@@ -2,6 +2,7 @@ import type React from 'react'
+ import { useEffect, useRef, useState } from 'react'
+ import { Check, ChevronLeft, ChevronRight, ExternalLink, Puzzle } from 'lucide-react'
+ import { cn } from '@/lib/utils'
++import { motionSafeScrollBehavior } from '@/hooks/usePrefersReducedMotion'
+ import { translate } from '@/i18n/i18n'
+ import { Button } from '@/components/ui/button'
+ import type { ThemeLook } from './onboarding-theme-looks'
+@@ -59,7 +60,10 @@ export function ThemeLookCarousel({
+ 
+   const page = (direction: 1 | -1): void => {
+     const el = trackRef.current
+-    el?.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: 'smooth' })
++    el?.scrollBy({
++      left: direction * el.clientWidth * 0.8,
++      behavior: motionSafeScrollBehavior('smooth')
++    })
+   }
+ 
+   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+@@ -157,7 +161,7 @@ export function ThemeLookCarousel({
+         })}
+         <button
+           type="button"
+-          className="flex w-40 shrink-0 snap-start flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border p-1.5 text-center text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
++          className="flex w-40 shrink-0 snap-start flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border p-1.5 text-center text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground motion-reduce:transition-none"
+           onClick={openThemePluginDirectory}
+         >
+           <Puzzle className="size-4" />
+diff --git a/src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx b/src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx
+index 5ebb5fefad..6fe5eca9ca 100644
+--- a/src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx
++++ b/src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx
+@@ -371,7 +371,7 @@ export function AppearanceInterfaceSection({
+                   // Explain the non-obvious platform restriction and keep-running consequence.
+                   description={translate(
+                     'auto.components.settings.AppearancePane.b707773a0d',
+-                    'When enabled, closing the window keeps Orca running in the system tray instead of quitting.'
++                    'When enabled, closing the window keeps Porpita running in the system tray instead of quitting.'
+                   )}
+                   checked={settings.minimizeToTrayOnClose === true}
+                   onChange={() =>
+@@ -392,7 +392,7 @@ export function AppearanceInterfaceSection({
+                   // Hiding the status item preserves Dock activation and close-keeps-running behavior.
+                   description={translate(
+                     'settings.appearance.menuBarIcon.description',
+-                    'Keep an Orca shortcut and activity indicator in the macOS menu bar.'
++                    'Keep a Porpita shortcut and activity indicator in the macOS menu bar.'
+                   )}
+                   checked={settings.showMenuBarIcon !== false}
+                   onChange={() =>
+diff --git a/src/renderer/src/components/settings/appearance/AppearanceSection.tsx b/src/renderer/src/components/settings/appearance/AppearanceSection.tsx
+index 08b6b4e5c1..b0eecf8b0d 100644
+--- a/src/renderer/src/components/settings/appearance/AppearanceSection.tsx
++++ b/src/renderer/src/components/settings/appearance/AppearanceSection.tsx
+@@ -51,7 +51,7 @@ export function AppearanceSection({
+         </span>
+         <ChevronRight
+           className={cn(
+-            'size-[18px] shrink-0 text-muted-foreground transition-transform',
++            'size-[18px] shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none',
+             open && 'rotate-90 text-foreground'
+           )}
+         />
+diff --git a/src/renderer/src/components/settings/appearance/UIZoomControl.tsx b/src/renderer/src/components/settings/appearance/UIZoomControl.tsx
+index 42d8a1385e..cf6cefb0ae 100644
+--- a/src/renderer/src/components/settings/appearance/UIZoomControl.tsx
++++ b/src/renderer/src/components/settings/appearance/UIZoomControl.tsx
+@@ -33,6 +33,7 @@ export function UIZoomControl(): React.JSX.Element {
+       <Button
+         variant="outline"
+         size="icon-sm"
++        aria-label={translate('auto.components.settings.UIZoomControl.zoomOut', 'Zoom out')}
+         onClick={() => applyZoom(zoomLevel - ZOOM_STEP)}
+         disabled={zoomLevel <= ZOOM_MIN}
+       >
+@@ -42,6 +43,7 @@ export function UIZoomControl(): React.JSX.Element {
+       <Button
+         variant="outline"
+         size="icon-sm"
++        aria-label={translate('auto.components.settings.UIZoomControl.zoomIn', 'Zoom in')}
+         onClick={() => applyZoom(zoomLevel + ZOOM_STEP)}
+         disabled={zoomLevel >= ZOOM_MAX}
+       >
+diff --git a/src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx b/src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx
+index 8d434cce3c..b123846aad 100644
+--- a/src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx
++++ b/src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx
+@@ -98,7 +98,7 @@ function RestartBanner(): React.JSX.Element {
+         <p className="text-xs text-muted-foreground">
+           {translate(
+             'settings.windowMaterial.restartDescription',
+-            'Restart Orca to apply the window material change.'
++            'Restart Porpita to apply the window material change.'
+           )}
+         </p>
+       </div>
+@@ -109,7 +109,7 @@ function RestartBanner(): React.JSX.Element {
+         disabled={relaunching}
+         onClick={() => void relaunch()}
+       >
+-        <RotateCw className={`size-3 ${relaunching ? 'animate-spin' : ''}`} />
++        <RotateCw className={`size-3 ${relaunching ? 'animate-spin motion-reduce:animate-none' : ''}`} />
+         {relaunching
+           ? translate('auto.components.settings.TerminalWindowSection.907131d741', 'Restarting…')
+           : translate('auto.components.settings.TerminalWindowSection.8abdab9f7c', 'Restart now')}
+diff --git a/src/renderer/src/components/settings/appearance/appearance-search.ts b/src/renderer/src/components/settings/appearance/appearance-search.ts
+index 38742c483b..7fddbc91a9 100644
+--- a/src/renderer/src/components/settings/appearance/appearance-search.ts
++++ b/src/renderer/src/components/settings/appearance/appearance-search.ts
+@@ -15,7 +15,7 @@ export const getThemeEntries = createLocalizedCatalog((): SettingsSearchEntry[]
+     title: translate('auto.components.settings.appearance.search.71e06350b4', 'Theme'),
+     description: translate(
+       'auto.components.settings.appearance.search.0709c794f7',
+-      'Choose how Orca looks in the app window.'
++      'Choose how Porpita looks in the app window.'
+     ),
+     keywords: [
+       ...translateSearchKeyword('auto.components.settings.appearance.search.262fe1d24f', 'dark'),
+@@ -54,13 +54,13 @@ export const getLanguageEntries = createLocalizedCatalog((): SettingsSearchEntry
+     title: translate('settings.appearance.language.title', 'Language'),
+     description: translate(
+       'settings.appearance.language.description',
+-      'Choose the language used by the Orca interface.'
++      'Choose the language used by the Porpita interface.'
+     ),
+     keywords: [
+       ...translateSearchKeyword('settings.appearance.language.title', 'Language'),
+       ...translateSearchKeyword(
+         'settings.appearance.language.description',
+-        'Choose the language used by the Orca interface.'
++        'Choose the language used by the Porpita interface.'
+       ),
+       ...translateSearchKeyword('settings.appearance.language.system', 'System'),
+       ...translateSearchKeyword('settings.appearance.language.english', 'English'),
+@@ -120,7 +120,7 @@ export const getTypographyEntries = createLocalizedCatalog((): SettingsSearchEnt
+     title: translate('auto.components.settings.appearance.search.ddb991024d', 'IDE Font'),
+     description: translate(
+       'auto.components.settings.appearance.search.07c7c38fac',
+-      'Choose the font used by the Orca interface.'
++      'Choose the font used by the Porpita interface.'
+     ),
+     keywords: [
+       ...translateSearchKeyword('auto.components.settings.appearance.search.24094af355', 'font'),
+@@ -134,6 +134,11 @@ export const getTypographyEntries = createLocalizedCatalog((): SettingsSearchEnt
+       ),
+       ...translateSearchKeyword('auto.components.settings.appearance.search.fab91464dd', 'ide'),
+       ...translateSearchKeyword('auto.components.settings.appearance.search.1f2880a9d5', 'orca'),
++      ...translateSearchKeyword(
++        'auto.components.settings.appearance.search.porpita',
++        'porpita',
++        { englishOnly: true }
++      ),
+       ...translateSearchKeyword(
+         'auto.components.settings.appearance.search.5095258df2',
+         'interface'
+@@ -200,7 +205,7 @@ export const getTitlebarEntries = createLocalizedCatalog((): SettingsSearchEntry
+     title: translate('auto.components.settings.appearance.search.fdd31b00d0', 'Titlebar App Name'),
+     description: translate(
+       'auto.components.settings.appearance.search.18b4c4c30b',
+-      'Show Orca in the titlebar.'
++      'Show Porpita in the titlebar.'
+     ),
+     keywords: [
+       ...translateSearchKeyword(
+@@ -208,6 +213,11 @@ export const getTitlebarEntries = createLocalizedCatalog((): SettingsSearchEntry
+         'titlebar'
+       ),
+       ...translateSearchKeyword('auto.components.settings.appearance.search.1f2880a9d5', 'orca'),
++      ...translateSearchKeyword(
++        'auto.components.settings.appearance.search.porpita',
++        'porpita',
++        { englishOnly: true }
++      ),
+       ...translateSearchKeyword('auto.components.settings.appearance.search.36e006efc1', 'app'),
+       ...translateSearchKeyword('auto.components.settings.appearance.search.51f957ce39', 'name'),
+       ...translateSearchKeyword('auto.components.settings.appearance.search.a895d0f938', 'brand')
+@@ -237,6 +247,11 @@ export const getAppIconEntries = createLocalizedCatalog((): SettingsSearchEntry[
+         'app icon'
+       ),
+       ...translateSearchKeyword('auto.components.settings.appearance.search.1f2880a9d5', 'orca'),
++      ...translateSearchKeyword(
++        'auto.components.settings.appearance.search.porpita',
++        'porpita',
++        { englishOnly: true }
++      ),
+       ...translateSearchKeyword('auto.components.settings.appearance.search.d18b54ca90', 'dock'),
+       ...translateSearchKeyword('auto.components.settings.appearance.search.e5bc35d59e', 'window'),
+       ...translateSearchKeyword(
+diff --git a/src/renderer/src/components/settings/appearance/appearance-status-bar-search.ts b/src/renderer/src/components/settings/appearance/appearance-status-bar-search.ts
+index 1f35cb0c0d..b479a2e5cb 100644
+--- a/src/renderer/src/components/settings/appearance/appearance-status-bar-search.ts
++++ b/src/renderer/src/components/settings/appearance/appearance-status-bar-search.ts
+@@ -198,7 +198,7 @@ export const getStatusBarToggles = createLocalizedCatalog(
+       ],
+       toggleDescription: translate(
+         'settings.appearance.statusBar.sshToggleDescription',
+-        'Show configured SSH and remote Orca hosts when any are available.'
++        'Show configured SSH and remote Porpita hosts when any are available.'
+       )
+     },
+     {
+diff --git a/src/renderer/src/components/settings/appearance/appearance-system-presence-search.ts b/src/renderer/src/components/settings/appearance/appearance-system-presence-search.ts
+index a9e65a56e8..af42f8bc61 100644
+--- a/src/renderer/src/components/settings/appearance/appearance-system-presence-search.ts
++++ b/src/renderer/src/components/settings/appearance/appearance-system-presence-search.ts
+@@ -13,7 +13,7 @@ const getSystemTrayEntryCatalog = createLocalizedCatalog((): SettingsSearchEntry
+     ),
+     description: translate(
+       'auto.components.settings.appearance.search.4d5b9427b5',
+-      'When enabled, closing the window keeps Orca running in the system tray instead of quitting.'
++      'When enabled, closing the window keeps Porpita running in the system tray instead of quitting.'
+     ),
+     keywords: [
+       ...translateSearchKeyword('auto.components.settings.appearance.search.tray.tray', 'tray', {
+@@ -52,7 +52,7 @@ const getMenuBarIconEntryCatalog = createLocalizedCatalog((): SettingsSearchEntr
+     title: translate('settings.appearance.menuBarIcon.title', 'Show Menu Bar Icon'),
+     description: translate(
+       'settings.appearance.menuBarIcon.description',
+-      'Keep an Orca shortcut and activity indicator in the macOS menu bar.'
++      'Keep a Porpita shortcut and activity indicator in the macOS menu bar.'
+     ),
+     keywords: [
+       ...translateSearchKeyword('settings.appearance.menuBarIcon.keyword.menuBar', 'menu bar', {
+@@ -62,6 +62,11 @@ const getMenuBarIconEntryCatalog = createLocalizedCatalog((): SettingsSearchEntr
+         englishOnly: true
+       }),
+       ...translateSearchKeyword('auto.components.settings.appearance.search.1f2880a9d5', 'orca'),
++      ...translateSearchKeyword(
++        'auto.components.settings.appearance.search.porpita',
++        'porpita',
++        { englishOnly: true }
++      ),
+       ...translateSearchKeyword(
+         'settings.appearance.menuBarIcon.keyword.statusItem',
+         'status item',
+diff --git a/src/renderer/src/components/settings/appearance/themes/AppearanceThemeControl.tsx b/src/renderer/src/components/settings/appearance/themes/AppearanceThemeControl.tsx
+index f00e01c62c..57de65ab2f 100644
+--- a/src/renderer/src/components/settings/appearance/themes/AppearanceThemeControl.tsx
++++ b/src/renderer/src/components/settings/appearance/themes/AppearanceThemeControl.tsx
+@@ -1,5 +1,6 @@
+ import type React from 'react'
+-import { Loader2, Store, Zap } from 'lucide-react'
++import { Store, Zap } from 'lucide-react'
++import { LoadingSpinner } from '../../../LoadingSpinner'
+ import type { GlobalSettings } from '../../../../../../shared/global-settings-types'
+ import type { PluginThemeRegistration } from '../../../../../../shared/plugins/artifacts/plugin-theme-artifact'
+ import {
+@@ -247,7 +248,7 @@ export function AppearanceThemeSlotSelect({
+         status={
+           catalog.loading ? (
+             <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground">
+-              <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
++              <LoadingSpinner className="size-3.5" />
+               {translate(
+                 'auto.components.settings.AppearanceThemeControl.moreThemesLoading',
+                 'Loading themes…'
+@@ -259,7 +260,7 @@ export function AppearanceThemeSlotSelect({
+       />
+       {catalog.installing ? (
+         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+-          <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
++          <LoadingSpinner className="size-3.5" />
+           {translate(
+             'auto.components.settings.AppearanceThemeControl.installingTheme',
+             'Installing {{value0}}…',
+diff --git a/src/renderer/src/components/settings/form-controls/SettingsFormControls.segmented-control.test.tsx b/src/renderer/src/components/settings/form-controls/SettingsFormControls.segmented-control.test.tsx
+index 935b9f7800..cebc5e1ca5 100644
+--- a/src/renderer/src/components/settings/form-controls/SettingsFormControls.segmented-control.test.tsx
++++ b/src/renderer/src/components/settings/form-controls/SettingsFormControls.segmented-control.test.tsx
+@@ -1,9 +1,9 @@
+ // @vitest-environment happy-dom
+-// @vitest-environment happy-dom
++import '@testing-library/jest-dom/vitest'
+ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+ import { afterEach, describe, expect, it, vi } from 'vitest'
+ import { TooltipProvider } from '../../ui/tooltip'
+-import { SettingsSegmentedControl } from './SettingsFormControls'
++import { ColorField, SettingsSegmentedControl } from './SettingsFormControls'
+ 
+ afterEach(cleanup)
+ 
+@@ -53,4 +53,73 @@ describe('SettingsSegmentedControl unavailable options', () => {
+     fireEvent.click(screen.getByRole('radio', { name: 'Stable' }))
+     expect(onChange).toHaveBeenCalledWith('stable')
+   })
++
++  it('supports ArrowLeft, ArrowRight, Home, and End navigation with roving tabIndex', () => {
++    const onChange = vi.fn()
++    render(
++      <TooltipProvider>
++        <SettingsSegmentedControl<'system' | 'dark' | 'light'>
++          ariaLabel="Theme"
++          value="system"
++          onChange={onChange}
++          options={[
++            { value: 'system', label: 'System' },
++            { value: 'dark', label: 'Dark' },
++            { value: 'light', label: 'Light' }
++          ]}
++        />
++      </TooltipProvider>
++    )
++
++    const system = screen.getByRole('radio', { name: 'System' })
++    const dark = screen.getByRole('radio', { name: 'Dark' })
++    const light = screen.getByRole('radio', { name: 'Light' })
++
++    expect(system.tabIndex).toBe(0)
++    expect(dark.tabIndex).toBe(-1)
++    expect(light.tabIndex).toBe(-1)
++
++    system.focus()
++    fireEvent.keyDown(system, { key: 'ArrowRight' })
++    expect(document.activeElement).toBe(dark)
++    expect(onChange).toHaveBeenCalledWith('dark')
++
++    fireEvent.keyDown(dark, { key: 'End' })
++    expect(document.activeElement).toBe(light)
++    expect(onChange).toHaveBeenCalledWith('light')
++
++    fireEvent.keyDown(light, { key: 'Home' })
++    expect(document.activeElement).toBe(system)
++
++    fireEvent.keyDown(system, { key: 'ArrowLeft' })
++    expect(document.activeElement).toBe(light)
++  })
++
++  it('allows ArrowRight onto an aria-disabled option without triggering onChange', () => {
++    const { onChange } = renderControl()
++    const stable = screen.getByRole('radio', { name: 'Stable' })
++    const hourly = screen.getByRole('radio', { name: 'Hourly (macOS and Windows only)' })
++
++    stable.focus()
++    fireEvent.keyDown(stable, { key: 'ArrowRight' })
++    expect(document.activeElement).toBe(hourly)
++    expect(onChange).not.toHaveBeenCalled()
++  })
++})
++
++describe('ColorField accessibility', () => {
++  it('exposes accessible names on both the color input and text input', () => {
++    render(
++      <ColorField
++        label="Sidebar tint"
++        description="Color mixed into the sidebar surface."
++        value="#123456"
++        fallback="#000000"
++        onChange={vi.fn()}
++      />
++    )
++
++    expect(screen.getByLabelText('Sidebar tint color picker')).toHaveAttribute('type', 'color')
++    expect(screen.getByRole('textbox', { name: 'Sidebar tint' })).toHaveValue('#123456')
++  })
+ })
+diff --git a/src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx b/src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx
+index 635bda101c..b6a29662ff 100644
+--- a/src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx
++++ b/src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx
+@@ -1,6 +1,6 @@
+ // @protected-copy: preserve copy used by security settings.
+ import type React from 'react'
+-import { useState } from 'react'
++import { useRef, useState } from 'react'
+ import { Input } from '../../ui/input'
+ import { Label } from '../../ui/label'
+ import { Tooltip, TooltipContent, TooltipTrigger } from '../../ui/tooltip'
+@@ -143,6 +143,35 @@ export function SettingsSegmentedControl<T extends string | number>({
+   equalWidth = false,
+   wrap = false
+ }: SettingsSegmentedControlProps<T>): React.JSX.Element {
++  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([])
++  const activeIndex = options.findIndex((opt) => opt.value === value)
++  const focusableIndex = activeIndex >= 0 ? activeIndex : 0
++
++  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number): void => {
++    if (options.length === 0) {
++      return
++    }
++    let nextIndex: number | null = null
++    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
++      nextIndex = (index + 1) % options.length
++    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
++      nextIndex = (index - 1 + options.length) % options.length
++    } else if (event.key === 'Home') {
++      nextIndex = 0
++    } else if (event.key === 'End') {
++      nextIndex = options.length - 1
++    }
++    if (nextIndex === null) {
++      return
++    }
++    event.preventDefault()
++    buttonRefs.current[nextIndex]?.focus()
++    const target = options[nextIndex]
++    if (target && !target.disabled && target.value !== value) {
++      onChange(target.value)
++    }
++  }
++
+   return (
+     <div
+       role="radiogroup"
+@@ -155,24 +184,29 @@ export function SettingsSegmentedControl<T extends string | number>({
+         wrap && 'flex-wrap'
+       )}
+     >
+-      {options.map((opt) => {
++      {options.map((opt, index) => {
+         const active = opt.value === value
+         const button = (
+           <button
+             key={String(opt.value)}
++            ref={(el) => {
++              buttonRefs.current[index] = el
++            }}
+             type="button"
+             role="radio"
+             aria-checked={active}
+             aria-label={opt.ariaLabel}
++            tabIndex={index === focusableIndex ? 0 : -1}
+             // Keep unavailable options focusable for explanatory tooltips; the click guard enforces aria-disabled.
+             aria-disabled={opt.disabled}
++            onKeyDown={(event) => handleKeyDown(event, index)}
+             onClick={() => {
+               if (!opt.disabled) {
+                 onChange(opt.value)
+               }
+             }}
+             className={cn(
+-              'rounded-sm text-center outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50',
++              'rounded-sm text-center outline-none transition-colors motion-reduce:transition-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+               size === 'sm' ? 'px-2.5 py-0.5 text-xs' : 'px-3 py-1 text-sm',
+               equalWidth && 'flex-1',
+               active
+@@ -298,11 +332,17 @@ export function ColorField({
+         <div className="flex items-center gap-2">
+           <input
+             type="color"
++            aria-label={translate(
++              'auto.components.settings.SettingsFormControls.colorPickerAria',
++              '{{value0}} color picker',
++              { value0: label }
++            )}
+             value={normalized}
+             onChange={(e) => onChange(e.target.value)}
+             className="h-8 w-10 rounded-md border border-input bg-transparent p-1"
+           />
+           <Input
++            aria-label={label}
+             value={value}
+             onChange={(e) => onChange(e.target.value)}
+             placeholder={fallback}
+diff --git a/src/renderer/src/components/settings/navigation/SettingsSidebar.tsx b/src/renderer/src/components/settings/navigation/SettingsSidebar.tsx
+index 4553474519..45444d34ca 100644
+--- a/src/renderer/src/components/settings/navigation/SettingsSidebar.tsx
++++ b/src/renderer/src/components/settings/navigation/SettingsSidebar.tsx
+@@ -63,10 +63,17 @@ function SettingsSearchField({
+   return (
+     <div className="border-b border-worktree-sidebar-border px-3 py-3">
+       <div className="relative">
+-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
++        <Search
++          aria-hidden="true"
++          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
++        />
+         <Input
+           ref={searchInputRef}
+           autoFocus={searchAutoFocus}
++          aria-label={translate(
++            'auto.components.settings.SettingsSidebar.dbceaa8840',
++            'Search settings'
++          )}
+           value={searchQuery}
+           onChange={(event) => onSearchChange(event.target.value)}
+           placeholder={translate(
+@@ -217,7 +224,10 @@ export function SettingsSidebar({
+         </div>
+       ) : null}
+ 
+-      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-sleek px-3 py-4">
++      <nav
++        aria-label={translate('menu.settings', 'Settings')}
++        className="min-h-0 flex-1 overflow-y-auto scrollbar-sleek px-3 py-4"
++      >
+         <div className="space-y-5">
+           {generalGroups.map((group) => (
+             <div key={group.id} className="space-y-2">
+@@ -308,7 +318,7 @@ export function SettingsSidebar({
+             )}
+           </div>
+         </div>
+-      </div>
++      </nav>
+     </aside>
+   )
+ }
+diff --git a/src/renderer/src/components/settings/page/settings-interface-primary-section-renderers.tsx b/src/renderer/src/components/settings/page/settings-interface-primary-section-renderers.tsx
+index f3e7e81fac..ac886f6ac4 100644
+--- a/src/renderer/src/components/settings/page/settings-interface-primary-section-renderers.tsx
++++ b/src/renderer/src/components/settings/page/settings-interface-primary-section-renderers.tsx
+@@ -100,7 +100,7 @@ export function renderMobileEmulatorSettingsSection(
+       title={translate('auto.components.settings.Settings.f75daf1002', 'Mobile Emulator')}
+       description={translate(
+         'auto.components.settings.Settings.01f9d36292',
+-        'Configure mobile emulator support for Orca and coding agents.'
++        'Configure mobile emulator support for Porpita and coding agents.'
+       )}
+       searchEntries={navigation.getSectionSearchEntries('mobile-emulator')}
+     >
+diff --git a/src/renderer/src/components/settings/page/settings-page-renderer.tsx b/src/renderer/src/components/settings/page/settings-page-renderer.tsx
+index f2a9dd0d34..9d3dcdf741 100644
+--- a/src/renderer/src/components/settings/page/settings-page-renderer.tsx
++++ b/src/renderer/src/components/settings/page/settings-page-renderer.tsx
+@@ -105,7 +105,8 @@ export function renderSettingsPage(context: SettingsRenderContext): React.JSX.El
+             onChoose={model.setSettingsHostChoice}
+           />
+         ) : null}
+-        <div
++        <main
++          aria-label={translate('menu.settings', 'Settings')}
+           ref={interactions.setContentScrollNode}
+           className={cn(
+             'min-h-0 flex-1',
+@@ -173,7 +174,7 @@ export function renderSettingsPage(context: SettingsRenderContext): React.JSX.El
+               </SettingsContentScrollElementProvider>
+             )}
+           </div>
+-        </div>
++        </main>
+       </div>
+       {/* Why page level: Plugins and the Appearance theme pickers both install through it. */}
+       <PluginInstallTrustDialogHost />
+diff --git a/src/renderer/src/components/tab-bar/drop-indicator.ts b/src/renderer/src/components/tab-bar/drop-indicator.ts
+index 505b01a1df..773af4a782 100644
+--- a/src/renderer/src/components/tab-bar/drop-indicator.ts
++++ b/src/renderer/src/components/tab-bar/drop-indicator.ts
+@@ -16,9 +16,10 @@ export const ACTIVE_TAB_INDICATOR_CLASSES =
+   'pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-tab-active-indicator z-20 group-data-[single-tab]/tab-strip:hidden'
+ 
+ export function getTabRootStateClasses(isActive: boolean): string {
++  const focusRing = 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset'
+   return isActive
+-    ? 'bg-tab-active text-tab-active-foreground'
+-    : 'bg-tab-inactive text-tab-inactive-foreground hover:text-tab-active-foreground'
++    ? `bg-tab-active text-tab-active-foreground ${focusRing}`
++    : `bg-tab-inactive text-tab-inactive-foreground hover:text-tab-active-foreground ${focusRing}`
+ }
+ 
+ export function getTabStripBorderClasses(
+diff --git a/src/renderer/src/components/ui/accordion.tsx b/src/renderer/src/components/ui/accordion.tsx
+index 993b40010f..084df21c81 100644
+--- a/src/renderer/src/components/ui/accordion.tsx
++++ b/src/renderer/src/components/ui/accordion.tsx
+@@ -42,7 +42,7 @@ function AccordionTrigger({
+         {...props}
+       >
+         {children}
+-        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200" />
++        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none" />
+       </AccordionPrimitive.Trigger>
+     </AccordionPrimitive.Header>
+   )
+diff --git a/src/renderer/src/components/ui/command.tsx b/src/renderer/src/components/ui/command.tsx
+index a26738b0ac..e3b5f510a3 100644
+--- a/src/renderer/src/components/ui/command.tsx
++++ b/src/renderer/src/components/ui/command.tsx
+@@ -90,7 +90,7 @@ function CommandDialog({
+             ref={focusScopeRef}
+             // Match DialogContent’s surface/border/shadow recipe so the palette remains distinct in dark mode.
+             className={cn(
+-              'fixed top-[20%] left-[50%] z-50 w-[660px] max-w-[90vw] translate-x-[-50%] rounded-lg border border-black/14 bg-dialog-surface text-foreground shadow-[0_20px_60px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] outline-none dark:border-white/14 dark:shadow-[0_24px_72px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
++              'fixed top-[20%] left-[50%] z-50 w-[660px] max-w-[90vw] translate-x-[-50%] rounded-lg border border-black/14 bg-dialog-surface text-foreground shadow-[0_20px_60px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] outline-none dark:border-white/14 dark:shadow-[0_24px_72px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+               surface === 'palette' &&
+                 'rounded-xl border-border/70 shadow-[0_26px_84px_rgba(0,0,0,0.32)]',
+               contentClassName
+diff --git a/src/renderer/src/components/ui/context-menu.tsx b/src/renderer/src/components/ui/context-menu.tsx
+index d99d985887..4debb65891 100644
+--- a/src/renderer/src/components/ui/context-menu.tsx
++++ b/src/renderer/src/components/ui/context-menu.tsx
+@@ -59,7 +59,7 @@ const contentAnimationVariants = cva('', {
+   variants: {
+     animation: {
+       default:
+-        'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-150 data-[state=open]:zoom-in-[0.98]',
++        'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none data-[state=open]:fade-in-0 data-[state=open]:duration-150 data-[state=open]:zoom-in-[0.98]',
+       none: 'data-[state=closed]:pointer-events-none'
+     }
+   },
+diff --git a/src/renderer/src/components/ui/dialog.tsx b/src/renderer/src/components/ui/dialog.tsx
+index f02d8f9013..7d4dfa2b06 100644
+--- a/src/renderer/src/components/ui/dialog.tsx
++++ b/src/renderer/src/components/ui/dialog.tsx
+@@ -38,7 +38,7 @@ function DialogOverlay({
+     <DialogPrimitive.Overlay
+       data-slot="dialog-overlay"
+       className={cn(
+-        'fixed inset-0 z-50 bg-black/55 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0',
++        'fixed inset-0 z-50 bg-black/55 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none',
+         className
+       )}
+       {...props}
+@@ -121,7 +121,7 @@ function DialogContent({
+         data-size={size}
+         // Match dropdown surface/border/shadow tokens for dark-mode contrast; minmax(0,1fr) prevents long tokens from widening the grid and pushing footers outside.
+         className={cn(
+-          'fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] grid-cols-[minmax(0,1fr)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border border-black/14 bg-dialog-surface p-6 text-foreground shadow-[0_20px_60px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] duration-200 outline-none dark:border-white/14 dark:shadow-[0_24px_72px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg data-[size=compact]:sm:max-w-sm',
++          'fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] grid-cols-[minmax(0,1fr)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border border-black/14 bg-dialog-surface p-6 text-foreground shadow-[0_20px_60px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] duration-200 outline-none dark:border-white/14 dark:shadow-[0_24px_72px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg data-[size=compact]:sm:max-w-sm',
+           dialogContentSurfaceVariants({ surface }),
+           scrollable && 'max-h-[calc(100vh-3rem)] overflow-y-auto scrollbar-sleek',
+           className
+diff --git a/src/renderer/src/components/ui/select.tsx b/src/renderer/src/components/ui/select.tsx
+index 196027547d..f016442f30 100644
+--- a/src/renderer/src/components/ui/select.tsx
++++ b/src/renderer/src/components/ui/select.tsx
+@@ -88,7 +88,7 @@ function SelectContent({
+           data-slot="select-content"
+           // Match dropdown surface/border/shadow tokens so options remain distinct from the dark canvas.
+           className={cn(
+-            'relative z-[70] max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto scrollbar-sleek rounded-md border border-black/14 bg-floating-surface text-popover-foreground shadow-[0_16px_36px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl dark:border-white/14 dark:shadow-[0_20px_44px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.04)] data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
++            'relative z-[70] max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto scrollbar-sleek rounded-md border border-black/14 bg-floating-surface text-popover-foreground shadow-[0_16px_36px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl dark:border-white/14 dark:shadow-[0_20px_44px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.04)] data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+             position === 'popper' &&
+               'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
+             className
+diff --git a/src/renderer/src/components/ui/sheet.tsx b/src/renderer/src/components/ui/sheet.tsx
+index 83ece453f2..5a82f7babf 100644
+--- a/src/renderer/src/components/ui/sheet.tsx
++++ b/src/renderer/src/components/ui/sheet.tsx
+@@ -32,7 +32,7 @@ function SheetOverlay({
+     <SheetPrimitive.Overlay
+       data-slot="sheet-overlay"
+       className={cn(
+-        'fixed inset-0 z-50 bg-black/55 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0',
++        'fixed inset-0 z-50 bg-black/55 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none',
+         className
+       )}
+       // Disable native dragging: the titlebar hit-test ignores z-index and would drag the window instead of activating sheet controls.
+@@ -44,7 +44,7 @@ function SheetOverlay({
+ 
+ const sheetContentVariants = cva(
+   // Match dropdown/dialog surface/border/shadow tokens for a visible edge in either theme.
+-  'fixed z-50 flex flex-col gap-0 bg-dialog-surface text-foreground shadow-[0_20px_60px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] outline-none transition ease-in-out dark:shadow-[0_24px_72px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:animate-in data-[state=open]:duration-300',
++  'fixed z-50 flex flex-col gap-0 bg-dialog-surface text-foreground shadow-[0_20px_60px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] outline-none transition ease-in-out motion-reduce:transition-none dark:shadow-[0_24px_72px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:animate-in data-[state=open]:duration-300 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none',
+   {
+     variants: {
+       side: {
+diff --git a/src/renderer/src/components/ui/sonner.tsx b/src/renderer/src/components/ui/sonner.tsx
+index 0ca08a3c8e..23b327f269 100644
+--- a/src/renderer/src/components/ui/sonner.tsx
++++ b/src/renderer/src/components/ui/sonner.tsx
+@@ -1,12 +1,7 @@
+-import {
+-  CircleCheckIcon,
+-  InfoIcon,
+-  Loader2Icon,
+-  OctagonXIcon,
+-  TriangleAlertIcon
+-} from 'lucide-react'
++import { CircleCheckIcon, InfoIcon, OctagonXIcon, TriangleAlertIcon } from 'lucide-react'
+ import { useEffect, useRef, type SyntheticEvent } from 'react'
+ import { Toaster as Sonner, type ToasterProps } from 'sonner'
++import { LoadingSpinner } from '@/components/LoadingSpinner'
+ import { useAppStore } from '@/store/index'
+ import { addAppKeyListener, removeAppKeyListener } from '@/lib/app-keyboard-router'
+ import { MODAL_OVERLAY_CHILD_SELECTOR } from '@/lib/body-overlay-attributes'
+@@ -127,7 +122,7 @@ const Toaster = ({ hotkey = NOTIFICATION_HOTKEY, ...props }: ToasterProps) => {
+           info: <InfoIcon className="size-4" />,
+           warning: <TriangleAlertIcon className="size-4" />,
+           error: <OctagonXIcon className="size-4" />,
+-          loading: <Loader2Icon className="size-4 animate-spin" />
++          loading: <LoadingSpinner className="size-4" />
+         }}
+         style={
+           {
+diff --git a/src/renderer/src/components/ui/switch.tsx b/src/renderer/src/components/ui/switch.tsx
+index fdf1a31666..25ca78c919 100644
+--- a/src/renderer/src/components/ui/switch.tsx
++++ b/src/renderer/src/components/ui/switch.tsx
+@@ -4,9 +4,9 @@ import * as SwitchPrimitive from 'radix-ui/switch'
+ import { cn } from '@/lib/utils'
+ 
+ const trackClassName =
+-  'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent p-0.5 transition-colors data-[state=checked]:bg-foreground data-[state=unchecked]:bg-muted-foreground/30'
++  'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent p-0.5 transition-colors motion-reduce:transition-none data-[state=checked]:bg-foreground data-[state=unchecked]:bg-muted-foreground/30'
+ const thumbClassName =
+-  'pointer-events-none block size-3.5 translate-x-0 rounded-full bg-background shadow-sm transition-transform data-[state=checked]:translate-x-4'
++  'pointer-events-none block size-3.5 translate-x-0 rounded-full bg-background shadow-sm transition-transform motion-reduce:transition-none data-[state=checked]:translate-x-4'
+ const compactTrackClassName = 'h-3.5 w-6 border-0 p-0.5'
+ const compactThumbClassName = 'size-2.5 data-[state=checked]:translate-x-2.5'
+ 
+diff --git a/src/renderer/src/components/ui/tooltip.tsx b/src/renderer/src/components/ui/tooltip.tsx
+index 984015875f..da601c14d5 100644
+--- a/src/renderer/src/components/ui/tooltip.tsx
++++ b/src/renderer/src/components/ui/tooltip.tsx
+@@ -36,7 +36,7 @@ const tooltipContentVariants = cva('z-[90] rounded-md text-xs', {
+   variants: {
+     variant: {
+       default:
+-        'pointer-events-none w-fit origin-(--radix-tooltip-content-transform-origin) animate-in bg-foreground px-3 py-1.5 text-balance text-background fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
++        'pointer-events-none w-fit origin-(--radix-tooltip-content-transform-origin) animate-in bg-foreground px-3 py-1.5 text-balance text-background fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 motion-reduce:animate-none motion-reduce:data-[state=closed]:animate-none',
+       'tab-preview': ['pointer-events-none', TAB_PREVIEW_CLASSES],
+       // Why: a preview with its own controls takes the pointer; pair it with hoverable content.
+       'tab-preview-interactive': TAB_PREVIEW_CLASSES
+diff --git a/src/renderer/src/components/ui/ui-primitives-reduced-motion.test.tsx b/src/renderer/src/components/ui/ui-primitives-reduced-motion.test.tsx
+new file mode 100644
+index 0000000000..46a998c03f
+--- /dev/null
++++ b/src/renderer/src/components/ui/ui-primitives-reduced-motion.test.tsx
+@@ -0,0 +1,282 @@
++// @vitest-environment happy-dom
++import '@testing-library/jest-dom/vitest'
++import { readFileSync } from 'node:fs'
++import { resolve } from 'node:path'
++import { cleanup, fireEvent, render, screen } from '@testing-library/react'
++import { afterEach, describe, expect, it, vi } from 'vitest'
++import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './accordion'
++import { CommandDialog } from './command'
++import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from './context-menu'
++import { Dialog, DialogContent, DialogDescription, DialogTitle } from './dialog'
++import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
++import { Sheet, SheetContent, SheetDescription, SheetTitle } from './sheet'
++import { Toaster } from './sonner'
++import { Switch } from './switch'
++import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
++import { ThemeLookCarousel } from '../onboarding/ThemeLookCarousel'
++import { AppearanceSection } from '../settings/appearance/AppearanceSection'
++import { UIZoomControl } from '../settings/appearance/UIZoomControl'
++import { WindowMaterialSetting } from '../settings/appearance/WindowMaterialSetting'
++import { SettingsSidebar } from '../settings/navigation/SettingsSidebar'
++import { getDefaultSettings } from '../../../../shared/constants'
++
++afterEach(() => {
++  cleanup()
++  vi.restoreAllMocks()
++})
++
++describe('UI primitives motion-reduce support', () => {
++  it('adds motion-reduce classes to Dialog, Sheet, Select, CommandDialog, Tooltip, Accordion, and Switch', () => {
++    render(
++      <TooltipProvider>
++        <Dialog open>
++          <DialogContent>
++            <DialogTitle>Confirm action</DialogTitle>
++            <DialogDescription>Check reduced motion</DialogDescription>
++          </DialogContent>
++        </Dialog>
++        <Sheet open>
++          <SheetContent>
++            <SheetTitle>Details</SheetTitle>
++            <SheetDescription>Sheet body</SheetDescription>
++          </SheetContent>
++        </Sheet>
++        <Select open defaultValue="a">
++          <SelectTrigger aria-label="Select demo">
++            <SelectValue />
++          </SelectTrigger>
++          <SelectContent>
++            <SelectItem value="a">Option A</SelectItem>
++          </SelectContent>
++        </Select>
++        <CommandDialog open>
++          <div>Cmd item</div>
++        </CommandDialog>
++        <Tooltip open>
++          <TooltipTrigger asChild>
++            <button type="button">Tip trigger</button>
++          </TooltipTrigger>
++          <TooltipContent>Tooltip body</TooltipContent>
++        </Tooltip>
++        <Accordion type="single" collapsible>
++          <AccordionItem value="item-1">
++            <AccordionTrigger>Accordion title</AccordionTrigger>
++            <AccordionContent>Body</AccordionContent>
++          </AccordionItem>
++        </Accordion>
++        <Switch aria-label="Toggle switch" />
++      </TooltipProvider>
++    )
++
++    const dialogOverlay = document.querySelector("[data-slot='dialog-overlay']")
++    const dialogContent = document.querySelector("[data-slot='dialog-content']")
++    const sheetOverlay = document.querySelector("[data-slot='sheet-overlay']")
++    const sheetContent = document.querySelector("[data-slot='sheet-content']")
++    const selectContent = document.querySelector("[data-slot='select-content']")
++    const commandContent = document.querySelector("[data-slot='command-dialog-content']")
++    const tooltipContent = document.querySelector("[data-slot='tooltip-content']")
++    const accordionTrigger = document.querySelector("[data-slot='accordion-trigger']")
++    const accordionSvg = accordionTrigger?.querySelector('svg')
++    const switchEl = document.querySelector("[data-slot='switch']")
++    const switchThumb = document.querySelector("[data-slot='switch-thumb']")
++
++    expect(dialogOverlay?.className).toContain('motion-reduce:data-[state=open]:animate-none')
++    expect(dialogContent?.className).toContain('motion-reduce:data-[state=open]:animate-none')
++    expect(sheetOverlay?.className).toContain('motion-reduce:data-[state=open]:animate-none')
++    expect(sheetContent?.className).toContain('motion-reduce:transition-none')
++    expect(sheetContent?.className).toContain('motion-reduce:data-[state=open]:animate-none')
++    expect(selectContent?.className).toContain('motion-reduce:data-[state=open]:animate-none')
++    expect(commandContent?.className).toContain('motion-reduce:data-[state=open]:animate-none')
++    expect(tooltipContent?.className).toContain('motion-reduce:animate-none')
++    expect(accordionSvg?.getAttribute('class')).toContain('motion-reduce:transition-none')
++    expect(switchEl?.className).toContain('motion-reduce:transition-none')
++    expect(switchThumb?.className).toContain('motion-reduce:transition-none')
++  })
++
++  it('includes motion-reduce classes in ContextMenuContent and uses LoadingSpinner in Toaster', () => {
++    const contextMenuSrc = readFileSync(
++      resolve('src/renderer/src/components/ui/context-menu.tsx'),
++      'utf8'
++    )
++    expect(contextMenuSrc).toContain('motion-reduce:data-[state=open]:animate-none')
++    expect(contextMenuSrc).toContain('motion-reduce:data-[state=closed]:animate-none')
++
++    // Keep ContextMenu import exercised in JSX compilation
++    render(
++      <ContextMenu>
++        <ContextMenuTrigger>Trigger</ContextMenuTrigger>
++        <ContextMenuContent>
++          <ContextMenuItem>Item</ContextMenuItem>
++        </ContextMenuContent>
++      </ContextMenu>
++    )
++
++    const sonnerSrc = readFileSync(resolve('src/renderer/src/components/ui/sonner.tsx'), 'utf8')
++    expect(sonnerSrc).toContain('<LoadingSpinner className="size-4" />')
++    expect(Toaster).toBeTypeOf('function')
++  })
++})
++
++describe('Appearance, Onboarding, and Settings accessibility & reduced-motion', () => {
++  it('ThemeLookCarousel uses motionSafeScrollBehavior for paged scrolling', () => {
++    const matchMediaMock = vi.fn().mockImplementation((query: string) => ({
++      matches: query === '(prefers-reduced-motion: reduce)',
++      media: query,
++      addEventListener: vi.fn(),
++      removeEventListener: vi.fn()
++    }))
++    vi.stubGlobal('matchMedia', matchMediaMock)
++
++    render(
++      <ThemeLookCarousel
++        ariaLabel="Light looks"
++        header={<span>Light looks</span>}
++        selectedId="builtin"
++        onPick={vi.fn()}
++        looks={[
++          {
++            id: 'builtin',
++            kind: 'built-in',
++            label: 'Built-in',
++            source: 'Porpita',
++            base: 'light',
++            palette: {
++              background: '#ffffff',
++              sidebar: '#f5f5f5',
++              accent: '#171717',
++              primary: '#171717',
++              border: '#e5e5e5',
++              foreground: '#0a0a0a',
++              mutedForeground: '#696969',
++              terminal: {
++                background: '#ffffff',
++                foreground: '#0a0a0a',
++                muted: '#696969',
++                red: '#e40014',
++                green: '#147638',
++                yellow: '#ca8a04',
++                blue: '#0969da',
++                magenta: '#8250df',
++                cyan: '#007acc'
++              }
++            }
++          }
++        ]}
++      />
++    )
++
++    const track = screen.getByRole('group', { name: 'Light looks' })
++    const scrollBySpy = vi.fn()
++    track.scrollBy = scrollBySpy
++    Object.defineProperty(track, 'clientWidth', { value: 200, configurable: true })
++
++    fireEvent.click(screen.getByRole('button', { name: 'More looks' }))
++    expect(scrollBySpy).toHaveBeenCalledWith({ left: 160, behavior: 'auto' })
++  })
++
++  it('UIZoomControl exposes Zoom out and Zoom in aria-labels', () => {
++    Object.defineProperty(window, 'api', {
++      configurable: true,
++      value: {
++        ui: {
++          getZoomLevel: () => 0,
++          onTerminalZoom: () => () => {},
++          set: vi.fn()
++        }
++      }
++    })
++    render(<UIZoomControl />)
++    expect(screen.getByRole('button', { name: 'Zoom out' })).toBeInTheDocument()
++    expect(screen.getByRole('button', { name: 'Zoom in' })).toBeInTheDocument()
++  })
++
++  it('SettingsSidebar exposes <nav> landmark and search input aria-label', () => {
++    render(
++      <SettingsSidebar
++        activeSectionId="appearance"
++        settings={getDefaultSettings('/tmp')}
++        generalGroups={[]}
++        repoSections={[]}
++        hasRepos={false}
++        onBack={vi.fn()}
++        onSelectSection={vi.fn()}
++      />
++    )
++    expect(screen.getByRole('navigation', { name: 'Settings' })).toBeInTheDocument()
++    expect(screen.getByRole('textbox', { name: 'Search settings' })).toBeInTheDocument()
++  })
++
++  it('AppearanceSection chevron respects motion-reduce and WindowMaterialSetting spinner respects motion-reduce', () => {
++    const { container } = render(
++      <AppearanceSection
++        id="interface"
++        icon={<span>I</span>}
++        title="Interface"
++        summary="Summary"
++        open={false}
++        onToggle={vi.fn()}
++      >
++        <div>Child</div>
++      </AppearanceSection>
++    )
++    const chevron = container.querySelector('svg')
++    expect(chevron?.getAttribute('class')).toContain('motion-reduce:transition-none')
++
++    const wmSrc = readFileSync(
++      resolve('src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx'),
++      'utf8'
++    )
++    expect(wmSrc).toContain('motion-reduce:animate-none')
++    expect(wmSrc).toContain('Restart Porpita to apply the window material change.')
++    expect(WindowMaterialSetting).toBeTypeOf('function')
++  })
++
++  it('zh.json and zh-Hant.json cover all Appearance, WindowMaterial, and AppearanceControl keys without Orca leaks', () => {
++    const en = JSON.parse(readFileSync(resolve('src/renderer/src/i18n/locales/en.json'), 'utf8'))
++    const zh = JSON.parse(readFileSync(resolve('src/renderer/src/i18n/locales/zh.json'), 'utf8'))
++    const zht = JSON.parse(
++      readFileSync(resolve('src/renderer/src/i18n/locales/zh-Hant.json'), 'utf8')
++    )
++    const flatten = (obj: Record<string, unknown>, prefix = ''): Record<string, string> => {
++      const out: Record<string, string> = {}
++      for (const [k, v] of Object.entries(obj)) {
++        const p = prefix ? `${prefix}.${k}` : k
++        if (v && typeof v === 'object' && !Array.isArray(v)) {
++          Object.assign(out, flatten(v as Record<string, unknown>, p))
++        } else if (typeof v === 'string') {
++          out[p] = v
++        }
++      }
++      return out
++    }
++    const fen = flatten(en)
++    const fzh = flatten(zh)
++    const fzht = flatten(zht)
++    const prefixes = [
++      'settings.appearance.',
++      'settings.windowMaterial.',
++      'auto.components.settings.Appearance'
++    ]
++    for (const key of Object.keys(fen)) {
++      if (prefixes.some((p) => key.startsWith(p))) {
++        expect(fzh, `zh.json missing ${key}`).toHaveProperty(key)
++        expect(fzht, `zh-Hant.json missing ${key}`).toHaveProperty(key)
++      }
++    }
++    expect(fen['settings.appearance.menuBarIcon.description']).not.toContain('an Porpita')
++    expect(fen['settings.appearance.menuBarIcon.description']).toContain('a Porpita')
++
++    // Verify F03-owned fallbacks contain no Orca copy leaks
++    for (const rel of [
++      'src/renderer/src/components/settings/page/settings-interface-primary-section-renderers.tsx',
++      'src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx',
++      'src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx',
++      'src/renderer/src/components/settings/appearance/appearance-status-bar-search.ts',
++      'src/renderer/src/app-shell/AppWorkspaceShell.tsx',
++      'src/renderer/src/main.tsx'
++    ]) {
++      const text = readFileSync(resolve(rel), 'utf8')
++      expect(text, `${rel} still contains Orca copy`).not.toMatch(/['"`][^'"`]*\bOrca\b[^'"`]*['"`]/)
++    }
++  })
++})
+diff --git a/src/renderer/src/i18n/I18nProvider.test.tsx b/src/renderer/src/i18n/I18nProvider.test.tsx
+index 8e8b3f9ee8..e50106619c 100644
+--- a/src/renderer/src/i18n/I18nProvider.test.tsx
++++ b/src/renderer/src/i18n/I18nProvider.test.tsx
+@@ -238,3 +238,22 @@ it("re-applies a plugin language only when the selected pack's content changes",
+   await vi.waitFor(() => expect(changeLanguage).toHaveBeenCalledWith(pluginLanguageResourceId(id)))
+   expect(rendererI18n.translate('common.save', 'Save')).toBe('Sichern')
+ })
++
++it('syncs document.documentElement.lang when uiLanguage switches between en, zh, and zh-Hant', async () => {
++  vi.spyOn(rendererI18n, 'loadRendererUiLanguage').mockImplementation(async (language) =>
++    typeof language === 'string' && language !== 'system' ? language : 'en'
++  )
++  useAppStore.setState({ settings: { ...getDefaultSettings('/tmp'), uiLanguage: 'en' } })
++  await renderProvider()
++  await vi.waitFor(() => expect(document.documentElement.lang).toBe('en'))
++
++  await act(async () => {
++    useAppStore.setState({ settings: { ...getDefaultSettings('/tmp'), uiLanguage: 'zh' } })
++  })
++  await vi.waitFor(() => expect(document.documentElement.lang).toBe('zh'))
++
++  await act(async () => {
++    useAppStore.setState({ settings: { ...getDefaultSettings('/tmp'), uiLanguage: 'zh-Hant' } })
++  })
++  await vi.waitFor(() => expect(document.documentElement.lang).toBe('zh-Hant'))
++})
+diff --git a/src/renderer/src/i18n/I18nProvider.tsx b/src/renderer/src/i18n/I18nProvider.tsx
+index ab32982b86..eac5a3bfa1 100644
+--- a/src/renderer/src/i18n/I18nProvider.tsx
++++ b/src/renderer/src/i18n/I18nProvider.tsx
+@@ -1,6 +1,11 @@
+ import { useEffect, useRef, type ReactNode } from 'react'
+ import { useAppStore } from '../store'
+-import { i18n, setRendererPluginLanguagePacks, loadRendererUiLanguage } from './i18n'
++import {
++  getIntlLocale,
++  i18n,
++  setRendererPluginLanguagePacks,
++  loadRendererUiLanguage
++} from './i18n'
+ import { usePluginLanguagePacks } from '../store/plugins/localization/plugin-language-packs'
+ import { isPluginUiLanguage } from '../../../shared/ui-language'
+ import { initializeLanguageDetection, useLanguageReadiness } from './language-readiness'
+@@ -23,6 +28,17 @@ export function I18nProvider({ children }: { children: ReactNode }): React.JSX.E
+     setRendererPluginLanguagePacks(packs)
+   }, [packs])
+ 
++  useEffect(() => {
++    const syncDocumentLang = (): void => {
++      document.documentElement.lang = getIntlLocale()
++    }
++    syncDocumentLang()
++    i18n.on('languageChanged', syncDocumentLang)
++    return () => {
++      i18n.off('languageChanged', syncDocumentLang)
++    }
++  }, [packs])
++
+   useEffect(() => {
+     if (uiLanguage === null) {
+       return
+diff --git a/src/renderer/src/i18n/en-runtime-required.json b/src/renderer/src/i18n/en-runtime-required.json
+index 60e8c4997f..b9e4a59d94 100644
+--- a/src/renderer/src/i18n/en-runtime-required.json
++++ b/src/renderer/src/i18n/en-runtime-required.json
+@@ -69,15 +69,10 @@
+   },
+   "app": {
+     "recoverableError": {
+-      "rootDescription": "The app shell could not finish rendering. Retry to remount it, or relaunch Porpita if the error persists.",
+-      "rootTitle": "Porpita hit a renderer error.",
+       "webTitle": "Porpita web hit a renderer error."
+     }
+   },
+   "auto": {
+-    "App": {
+-      "03a14f6b5b": "Retry the page or navigate to another Porpita surface."
+-    },
+     "components": {
+       "GitHubItemDialog": {
+         "filesViewed_one": "{{viewed}} / {{count}} file viewed",
+@@ -1010,9 +1005,6 @@
+         "AgentsPane": {
+           "codexSessionSourceTooltip": "Porpita runs Codex in an isolated home. Point this at your existing Codex home to import that session history. Empty uses ~/.codex."
+         },
+-        "AppearancePane": {
+-          "b707773a0d": "When enabled, closing the window keeps Porpita running in the system tray instead of quitting."
+-        },
+         "AutoRenameBranchFromWorkSetting": {
+           "12ea4a408d": "When an agent starts working in a new workspace, Porpita renames its auto-generated branch (e.g.",
+           "commandTemplateDescription": "Use <basePrompt>{basePrompt}</basePrompt> to include Porpita's <promptLink>built-in branch-name prompt</promptLink>. You can also reference <firstPrompt>{firstPrompt}</firstPrompt> and <assistantMessage>{assistantMessage}</assistantMessage>. Porpita generates only the final segment, like <example>fix-login-flow</example>; your branch prefix setting still applies.",
+@@ -1336,7 +1328,6 @@
+           "descriptionShareComputer": "{{name}} no longer accepts this computer. On {{name}}, open Settings → Remote Porpita Servers → Share this computer, create a link for another Porpita, then paste it here."
+         },
+         "Settings": {
+-          "01f9d36292": "Configure mobile emulator support for Porpita and coding agents.",
+           "084d8fac5b": "Privacy & Security",
+           "21f09426ea": "Optional. Porpita works with your existing provider logins; add accounts only if you want Porpita to help switch between them.",
+           "23931df7e8": "Remote Hosts",
+@@ -1488,14 +1479,6 @@
+             "ff8de8a2ad": "display"
+           }
+         },
+-        "appearance": {
+-          "search": {
+-            "0709c794f7": "Choose how Porpita looks in the app window.",
+-            "07c7c38fac": "Choose the font used by the Porpita interface.",
+-            "18b4c4c30b": "Show Porpita in the titlebar.",
+-            "4d5b9427b5": "When enabled, closing the window keeps Porpita running in the system tray instead of quitting."
+-          }
+-        },
+         "automations": {
+           "howItWorksDescription": "Schedule agent work once, then let Porpita create each run and keep its results together.",
+           "runStepTitle": "Porpita starts each run"
+@@ -3905,17 +3888,6 @@
+       "permissionOverridesKept_other": "{{count}} agents still use their own permission setting:",
+       "permissionOwnLegacyDescription": "Porpita adds no permission flag in terminals; chats use Settings → Chat."
+     },
+-    "appearance": {
+-      "language": {
+-        "description": "Choose the language used by the Porpita interface."
+-      },
+-      "menuBarIcon": {
+-        "description": "Keep an Porpita shortcut and activity indicator in the macOS menu bar."
+-      },
+-      "statusBar": {
+-        "sshToggleDescription": "Show configured SSH and remote Porpita hosts when any are available."
+-      }
+-    },
+     "browser": {
+       "extensions": {
+         "desktopOnly": "Browser extensions run only in the Porpita desktop app.",
+@@ -4009,9 +3981,6 @@
+       "description": "Wait this many days after a release is published before Porpita offers it.",
+       "heldTitle": "Porpita {{version}} is on hold",
+       "progress": "Time until Porpita {{version}} is available"
+-    },
+-    "windowMaterial": {
+-      "restartDescription": "Restart Porpita to apply the window material change."
+     }
+   },
+   "sidebar": {
+diff --git a/src/renderer/src/i18n/locales/en.json b/src/renderer/src/i18n/locales/en.json
+index 86d0009ca2..8d7f3a6b8e 100644
+--- a/src/renderer/src/i18n/locales/en.json
++++ b/src/renderer/src/i18n/locales/en.json
+@@ -669,7 +669,7 @@
+       },
+       "menuBarIcon": {
+         "title": "Show Menu Bar Icon",
+-        "description": "Keep an Porpita shortcut and activity indicator in the macOS menu bar.",
++        "description": "Keep a Porpita shortcut and activity indicator in the macOS menu bar.",
+         "keyword": {
+           "menuBar": "menu bar",
+           "statusItem": "status item",
+@@ -9381,7 +9381,8 @@
+           "plugin_themes": "Plugins",
+           "from_plugin": "From {{value0}}",
+           "delete_imported_theme": "Delete {{value0}}",
+-          "delete_theme": "Delete theme"
++          "delete_theme": "Delete theme",
++          "colorPickerAria": "{{value0}} color picker"
+         },
+         "SettingsSidebar": {
+           "e0900f83e7": "SSH",
+@@ -9854,7 +9855,9 @@
+           "reset_light_color_overrides": "Reset light color overrides"
+         },
+         "UIZoomControl": {
+-          "c2c64b24d0": "Reset"
++          "c2c64b24d0": "Reset",
++          "zoomOut": "Zoom out",
++          "zoomIn": "Zoom in"
+         },
+         "VoicePane": {
+           "6fa734ed95": "Delete {{value0}}",
+@@ -10282,7 +10285,8 @@
+             "museUsageTitle": "Muse Usage",
+             "museUsageDescription": "Show Muse subscription quota in the status bar.",
+             "muse": "muse",
+-            "meta": "meta"
++            "meta": "meta",
++            "porpita": "porpita"
+           }
+         },
+         "auto": {
+diff --git a/src/renderer/src/i18n/locales/zh-Hant.json b/src/renderer/src/i18n/locales/zh-Hant.json
+index 7f2220a716..ad6d3f009f 100644
+--- a/src/renderer/src/i18n/locales/zh-Hant.json
++++ b/src/renderer/src/i18n/locales/zh-Hant.json
+@@ -536,6 +536,30 @@
+         "openManageSessions": "開啟管理工作階段",
+         "administratorSearchDescription": "檢視 Porpita 的 Windows 權限，或經系統管理員核准後重新啟動。",
+         "administratorApproval": "Windows 將要求核准。請使用您常用的帳戶。"
++      },
++      "limit": {
++        "label": "執行中的終端機上限",
++        "description": "限制此主機上所有專案執行中的終端機數量。",
++        "system": "系統 PTY 上限：{{value}}",
++        "unknown": "無法使用",
++        "shared": "與其他終端機應用程式共用。此為總容量，而非剩餘配額。",
++        "disconnected": "此主機已中斷連線。請重新連線以檢視或變更終端機上限。",
++        "unsupported": "此主機的終端機服務尚未支援變更此上限。",
++        "environment": "此 Porpita 執行個體的終端機上限由環境變數設定。請移除此主機上的覆寫後再於此編輯。",
++        "savedUnreadable": "無法讀取此主機已儲存的終端機上限，目前使用 {{value}}。請輸入數值並按 Enter 以取代。",
++        "failed": "無法確認終端機上限，請再試一次。",
++        "retry": "重試",
++        "unit": "個終端機",
++        "search": {
++          "limit": "上限",
++          "maximum": "最大",
++          "pty": "pty",
++          "capacity": "容量"
++        }
++      },
++      "wordSeparators": {
++        "description": "雙擊選取時視為單字邊界的字元（包含空格）。",
++        "noSpaceHint": "未包含空格 — 雙擊將會跨空格選取。"
+       }
+     },
+     "appearance": {
+@@ -568,7 +592,8 @@
+         "antigravityToggleDescription": "顯示目前工作區的 Antigravity 訂閱用量。",
+         "grokToggleDescription": "透過 Grok CLI 登入後顯示 Grok 訂閱額度用量。",
+         "cursorToggleDescription": "透過 cursor-agent 或 Cursor IDE 登入後顯示 Cursor 方案用量。",
+-        "zcodeToggleDescription": "顯示 ZCode Coding Plan 配額用量。"
++        "zcodeToggleDescription": "顯示 ZCode Coding Plan 配額用量。",
++        "museToggleDescription": "顯示來自 Muse CLI 的 Muse 訂閱配額。"
+       },
+       "menuBarIcon": {
+         "title": "顯示選單列圖示",
+@@ -609,6 +634,32 @@
+         "sharper": "更清晰",
+         "terminalControlledHint": "由終端機介面設定。",
+         "terminalControlledTooltip": "目前與終端機介面一致。若要變更此項，請關閉「與終端機介面一致」。"
++      },
++      "editorTheme": {
++        "light": "淺色編輯器主題",
++        "lightDescription": "應用程式處於淺色模式時，程式碼編輯器、Diff 與 Notebook 的配色。",
++        "dark": "深色編輯器主題",
++        "darkDescription": "應用程式處於深色模式時，程式碼編輯器、Diff 與 Notebook 的配色。",
++        "followApp": "與目前應用程式主題一致",
++        "title": "編輯器主題",
++        "description": "獨立於應用程式主題的程式碼編輯器、Diff 與 Notebook 配色。",
++        "keyword": {
++          "editor": "編輯器",
++          "code": "程式碼",
++          "monaco": "monaco",
++          "syntax": "語法"
++        }
++      },
++      "reduceVisualEffects": {
++        "title": "減少視覺效果",
++        "description": "關閉對話框與選單背後的模糊效果，並在重新啟動後關閉視窗半透明效果。適合遠端桌面與無 GPU 的裝置。",
++        "keywords": {
++          "blur": "模糊",
++          "transparency": "透明",
++          "performance": "效能",
++          "remote": "遠端",
++          "gpu": "gpu"
++        }
+       }
+     },
+     "browser": {
+@@ -958,6 +1009,22 @@
+       "commandHelp": "在檔案所在主機的工作區根目錄中執行。從 stdin 讀取緩衝區，且只能將格式化後的文字輸出到 stdout。使用 ${file} 或 ${relativeFile} 表示路徑。引數會直接傳遞，不經由 shell。請勿使用 --write。留空即可在此專案中停用。",
+       "include": "包含的 glob（每行一個）",
+       "includeHelp": "比對相對於工作區根目錄的路徑。沒有相符的 glob 時不會格式化。* 和 ** 會略過以點開頭的名稱；請明確列出，例如 .github/**/*.yml。若要使用此指令，請在一般 > 編輯器中啟用「儲存時格式化」。"
++    },
++    "windowMaterial": {
++      "title": "視窗材質",
++      "description": "決定半透明終端機背後顯示的內容。需要重新啟動。",
++      "off": "不透明",
++      "translucent": "半透明",
++      "acrylic": "壓克力模糊",
++      "blur": "模糊",
++      "reducedEffects": "啟用「減少視覺效果」或系統「減少透明度」設定時關閉。",
++      "needsOpacity": "將背景不透明度調低至 1 以下，即可透過終端機看到桌面。",
++      "linuxCompositor": "由視窗合成器決定是否啟用模糊效果。需要重新啟動。",
++      "restartDescription": "重新啟動 Porpita 以套用視窗材質變更。",
++      "keywords": {
++        "acrylic": "壓克力"
++      },
++      "windowsUnsupported": "需要 Windows 11 22H2 或更新版本。"
+     }
+   },
+   "menu": {
+@@ -8797,7 +8864,8 @@
+           "cb330ef7f8": "/{{value0}}",
+           "c822571b2e": " 符合「{{value0}}」",
+           "plugin_themes": "外掛",
+-          "from_plugin": "來自 {{value0}}"
++          "from_plugin": "來自 {{value0}}",
++          "colorPickerAria": "{{value0}} 色彩選擇器"
+         },
+         "SettingsSidebar": {
+           "e0900f83e7": "SSH",
+@@ -9267,7 +9335,9 @@
+           "reset_light_color_overrides": "重設淺色主題顏色覆寫設定"
+         },
+         "UIZoomControl": {
+-          "c2c64b24d0": "重設"
++          "c2c64b24d0": "重設",
++          "zoomOut": "縮小",
++          "zoomIn": "放大"
+         },
+         "VoicePane": {
+           "6fa734ed95": "刪除 {{value0}}",
+@@ -9691,7 +9761,8 @@
+                 "cursor": "cursor"
+               }
+             },
+-            "matchTerminal": "與終端機一致"
++            "matchTerminal": "與終端機一致",
++            "porpita": "porpita"
+           }
+         },
+         "auto": {
+@@ -13163,6 +13234,11 @@
+             "description": "來自已啟用外掛的檔案與資料夾圖示。",
+             "builtIn": "內建",
+             "search": "搜尋圖示主題…"
++          },
++          "lightTheme": "淺色主題",
++          "darkTheme": "深色主題",
++          "themeSlot": {
++            "description": "此模式下的應用程式配色。"
+           }
+         },
+         "PluginAddMenu": {
+@@ -13241,7 +13317,12 @@
+           "matchTerminal": "與終端機一致",
+           "dynamic": "動態",
+           "searchThemes": "搜尋主題…",
+-          "noThemes": "沒有符合搜尋條件的主題。"
++          "noThemes": "沒有符合搜尋條件的主題。",
++          "useTerminalTheme": "使用其終端機配色",
++          "browseThemes": "瀏覽主題",
++          "moreThemes": "更多主題",
++          "moreThemesLoading": "正在載入主題…",
++          "installingTheme": "正在安裝 {{value0}}…"
+         },
+         "SettingsSearchableSelect": {
+           "noMatches": "沒有符合的項目。"
+diff --git a/src/renderer/src/i18n/locales/zh.json b/src/renderer/src/i18n/locales/zh.json
+index 4726d81a65..f4403caf19 100644
+--- a/src/renderer/src/i18n/locales/zh.json
++++ b/src/renderer/src/i18n/locales/zh.json
+@@ -130,6 +130,10 @@
+           "pty": "pty",
+           "capacity": "容量"
+         }
++      },
++      "wordSeparators": {
++        "description": "双击选择时视作单词边界的字符（包含空格）。",
++        "noSpaceHint": "未包含空格 — 双击将会跨空格选中。"
+       }
+     },
+     "appearance": {
+@@ -162,7 +166,8 @@
+         "antigravityToggleDescription": "显示当前工作区的 Antigravity 订阅使用情况。",
+         "grokToggleDescription": "通过 Grok CLI 登录后显示 Grok 订阅额度使用情况。",
+         "cursorToggleDescription": "通过 cursor-agent 或 Cursor IDE 登录后显示 Cursor 套餐用量。",
+-        "zcodeToggleDescription": "显示 ZCode 编码计划配额使用情况。"
++        "zcodeToggleDescription": "显示 ZCode 编码计划配额使用情况。",
++        "museToggleDescription": "显示来自 Muse CLI 的 Muse 订阅配额。"
+       },
+       "menuBarIcon": {
+         "title": "显示菜单栏图标",
+@@ -203,6 +208,32 @@
+         "sharper": "更清晰",
+         "terminalControlledHint": "由终端界面设置。",
+         "terminalControlledTooltip": "正在匹配终端外观。要更改此项，请关闭“匹配终端外观”。"
++      },
++      "editorTheme": {
++        "light": "浅色编辑器主题",
++        "lightDescription": "应用处于浅色模式时，代码编辑器、Diff 和 Notebook 的配色。",
++        "dark": "深色编辑器主题",
++        "darkDescription": "应用处于深色模式时，代码编辑器、Diff 和 Notebook 的配色。",
++        "followApp": "与当前应用主题一致",
++        "title": "编辑器主题",
++        "description": "独立于应用主题的代码编辑器、Diff 和 Notebook 配色。",
++        "keyword": {
++          "editor": "编辑器",
++          "code": "代码",
++          "monaco": "monaco",
++          "syntax": "语法"
++        }
++      },
++      "reduceVisualEffects": {
++        "title": "减弱视觉效果",
++        "description": "关闭对话框和菜单背后的模糊效果，并在重启后关闭窗口半透明效果。适合远程桌面和无 GPU 的设备。",
++        "keywords": {
++          "blur": "模糊",
++          "transparency": "透明",
++          "performance": "性能",
++          "remote": "远程",
++          "gpu": "gpu"
++        }
+       }
+     },
+     "browser": {
+@@ -559,6 +590,22 @@
+       "commandHelp": "在文件所在主机的工作区根目录中运行。从 stdin 读取缓冲区，并且只能向 stdout 输出格式化后的文本。使用 ${file} 或 ${relativeFile} 表示路径。参数直接传递，不经过 shell。请勿使用 --write。留空可在此项目中禁用。",
+       "include": "包含的 glob（每行一个）",
+       "includeHelp": "匹配相对于工作区根目录的路径。没有匹配的 glob 时不会格式化。* 和 ** 会跳过以点开头的名称；请明确列出，例如 .github/**/*.yml。要使用此命令，请在通用 > 编辑器中启用“保存时格式化”。"
++    },
++    "windowMaterial": {
++      "title": "窗口材质",
++      "description": "决定半透明终端背后显示的内容。需要重启。",
++      "off": "不透明",
++      "translucent": "半透明",
++      "acrylic": "亚克力模糊",
++      "blur": "模糊",
++      "reducedEffects": "启用“减弱视觉效果”或系统“减少透明度”设置时关闭。",
++      "needsOpacity": "将背景不透明度降低到 1 以下，即可透过终端看到桌面。",
++      "linuxCompositor": "由窗口合成器决定是否启用模糊效果。需要重启。",
++      "restartDescription": "重启 Porpita 以应用窗口材质更改。",
++      "keywords": {
++        "acrylic": "亚克力"
++      },
++      "windowsUnsupported": "需要 Windows 11 22H2 或更高版本。"
+     }
+   },
+   "menu": {
+@@ -7085,7 +7132,7 @@
+           "3057983501": "未分配",
+           "0cd9b8228f": "选择 Dock 和窗口切换器中显示的应用程序图标。",
+           "ca1590d42f": "应用程序图标",
+-          "61d842eca0": "在侧边栏中显示 Porpita 手机端 快捷方式。它仍然可以从工具箱中获取。",
++          "61d842eca0": "在侧边栏中显示 Porpita 手机端快捷方式。它仍然可以从工具箱中获取。",
+           "9da1020447": "显示 Porpita 手机端按钮",
+           "511f270ebb": "显示自动化按钮",
+           "cf81907069": "显示任务按钮",
+@@ -7094,7 +7141,7 @@
+           "9868f39007": "标题栏应用程序名称",
+           "0fafabcf35": "显示 Git 忽略的文件",
+           "d496901cd0": "文件浏览器",
+-          "102d6b5f9b": "IDE字体",
++          "102d6b5f9b": "IDE 字体",
+           "ef89200c1f": "当不在终端窗格中时。",
+           "5e6d7aba8d": "用户界面缩放",
+           "fd89b5487c": "浅色",
+@@ -7123,7 +7170,7 @@
+           "statusBarDescription": "选择状态栏中显示哪些指示器。",
+           "showPinnedWorktreesInGroups": {
+             "title": "也在原来的列表中显示已固定的工作树",
+-            "description": "已固定的工作树会保留在 Pinned 中，同时也显示在全部、项目、状态和 PR 中。"
++            "description": "已固定的工作树会保留在“已固定”分组中，同时也显示在全部、项目、状态和 PR 中。"
+           }
+         },
+         "AutoRenameBranchFromWorkSetting": {
+@@ -8410,7 +8457,8 @@
+           "imported_themes": "已导入",
+           "search_terminal_themes": "搜索终端主题",
+           "plugin_themes": "插件",
+-          "from_plugin": "来自 {{value0}}"
++          "from_plugin": "来自 {{value0}}",
++          "colorPickerAria": "{{value0}} 颜色选择器"
+         },
+         "SettingsSidebar": {
+           "e0900f83e7": "SSH",
+@@ -8876,7 +8924,9 @@
+           "reset_light_color_overrides": "重置浅色主题颜色覆盖"
+         },
+         "UIZoomControl": {
+-          "c2c64b24d0": "重置"
++          "c2c64b24d0": "重置",
++          "zoomOut": "缩小",
++          "zoomIn": "放大"
+         },
+         "VoicePane": {
+           "68de13f72c": "删除模型失败。",
+@@ -9129,7 +9179,7 @@
+             "f586abfa35": "蓝色",
+             "651f35b2c6": "切换器",
+             "e5bc35d59e": "窗口",
+-            "d18b54ca90": "码头",
++            "d18b54ca90": "Dock",
+             "1f2880a9d5": "orca",
+             "2cfb3420c0": "应用程序图标",
+             "e80c2af428": "选择 Dock 和窗口切换器中显示的应用程序图标。",
+@@ -9161,9 +9211,9 @@
+             "fdd31b00d0": "标题栏应用程序名称",
+             "c1bca1885a": "文件浏览器",
+             "9f2df826ac": "被忽略",
+-            "08c86bf58e": "吉蒂诺尔",
++            "08c86bf58e": "gitignore",
+             "bce3ac317a": "git",
+-            "7164edf71a": "文件资源管理器中与 .gitignore 匹配的暗淡文件。",
++            "7164edf71a": "在文件资源管理器中淡化显示与 .gitignore 匹配的文件。",
+             "f8129fb544": "显示 Git 忽略的文件",
+             "2f12e1aa3a": "用户界面",
+             "5095258df2": "界面",
+@@ -9172,8 +9222,8 @@
+             "a0e09aed9c": "字体",
+             "24094af355": "字体",
+             "07c7c38fac": "选择 Porpita 界面使用的字体。",
+-            "ddb991024d": "IDE字体",
+-            "0c83659f48": "捷径",
++            "ddb991024d": "IDE 字体",
++            "0c83659f48": "快捷键",
+             "0952091186": "比例",
+             "3ae5de6101": "缩放",
+             "adddb91a3d": "缩放整个应用程序界面。",
+@@ -9300,7 +9350,8 @@
+             "zcode": "零码",
+             "zai": "在",
+             "glm": "格鲁姆",
+-            "matchTerminal": "匹配终端"
++            "matchTerminal": "匹配终端",
++            "porpita": "porpita"
+           }
+         },
+         "auto": {
+@@ -12609,7 +12660,11 @@
+           "matchTerminal": "匹配终端",
+           "dynamic": "动态",
+           "searchThemes": "搜索主题…",
+-          "noThemes": "没有与搜索内容匹配的主题。"
++          "noThemes": "没有与搜索内容匹配的主题。",
++          "browseThemes": "浏览主题",
++          "moreThemes": "更多主题",
++          "moreThemesLoading": "正在加载主题…",
++          "installingTheme": "正在安装 {{value0}}…"
+         },
+         "AppearanceInterfaceSection": {
+           "pluginIconTheme": {
+diff --git a/src/renderer/src/main.tsx b/src/renderer/src/main.tsx
+index bc8c5a7f7d..77c57e2fb9 100644
+--- a/src/renderer/src/main.tsx
++++ b/src/renderer/src/main.tsx
+@@ -75,10 +75,10 @@ function RendererRoot(): React.JSX.Element {
+     <RecoverableRenderErrorBoundary
+       boundaryId="app.root"
+       surface="app-root"
+-      title={translate('app.recoverableError.rootTitle', 'Orca hit a renderer error.')}
++      title={translate('app.recoverableError.rootTitle', 'Porpita hit a renderer error.')}
+       description={translate(
+         'app.recoverableError.rootDescription',
+-        'The app shell could not finish rendering. Retry to remount it, or relaunch Orca if the error persists.'
++        'The app shell could not finish rendering. Retry to remount it, or relaunch Porpita if the error persists.'
+       )}
+     >
+       <App />
+-- 
+2.55.0.windows.5
+

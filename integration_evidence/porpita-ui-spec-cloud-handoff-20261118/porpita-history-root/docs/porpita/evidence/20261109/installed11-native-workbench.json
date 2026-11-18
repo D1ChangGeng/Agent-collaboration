@@ -1,0 +1,23 @@
+{
+  "candidate": "prototype-11",
+  "worktree": {
+    "repo": {
+      "id": "f5defab3-3dc7-473c-aeda-1b41ed8f2fcd",
+      "displayName": "product-workbench11"
+    },
+    "id": "f5defab3-3dc7-473c-aeda-1b41ed8f2fcd::C:/Users/D26FO/porpita/workspaces/product-workbench11/porpita-workbench-11",
+    "path": "C:/Users/D26FO/porpita/workspaces/product-workbench11/porpita-workbench-11",
+    "branch": "refs/heads/porpita-workbench-11",
+    "head": "aec12907c904862043180f53bbb5b16a58b7e38a"
+  },
+  "editorSaved": true,
+  "file": "C:\\Users\\D26FO\\porpita\\workspaces\\product-workbench11\\porpita-workbench-11\\test-workbench.txt",
+  "gitDiffVisible": true,
+  "sourceControlCommit": "619ad0d1238195b03c0753d4125f09b8d3fe8396",
+  "terminalMarker": "PORPITA-WORKBENCH-TERMINAL-11",
+  "panes": 2,
+  "browser": {
+    "title": "preview.html",
+    "body": "PORPITA-WORKBENCH-PREVIEW-11"
+  }
+}

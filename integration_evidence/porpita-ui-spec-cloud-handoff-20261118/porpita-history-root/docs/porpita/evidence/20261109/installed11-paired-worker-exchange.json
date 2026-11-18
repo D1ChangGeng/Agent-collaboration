@@ -1,0 +1,73 @@
+{
+  "schema_version": "porpita-live-native-proof/1",
+  "scope": "Actual installed Windows x64 Porpita candidate 11; original Dispatch only; two independent Hosts on one physical machine",
+  "messages": [
+    {
+      "message_id": "message-c4b072992b3e4b9a8dc2494af5fa7600",
+      "operation_id": "op-0d96edf3-e4f1-491f-9950-bccd2e2ff1d2",
+      "state": "delivered",
+      "receipt_high_water": "runtime_acknowledged",
+      "sender": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-a56a3f3aca59ccb92acf20a4157c2a44",
+      "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-e71d4f9567af6c9ab8a402a3ca3b2186",
+      "content": "You are working inside Porpita. You are a dispatched worker.\nYour coordinator's ACS address is: collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-a56a3f3aca59ccb92acf20a4157c2a44\nYour task ID is: task_5daae3cc3a21\nYour Porpita session address is: orca_session_id:c3540c82-c1d3-4a88-ae30-6839fb5c19f5\n\nThe coordinator cannot see this chat. Reach it with the `porpita orchestration` commands\nbelow, and message it only to ask, report a blocker, or finish; it needs no progress updates\nunless the task asks.\nDo only this task, yourself: no subagents or helper workers unless the task asks.\n\n=== CLI COMMANDS ===\n\n```sh\n  # Ask the coordinator, then end your turn; Porpita delivers the answer to this chat.\n  # Never use a local question prompt such as AskUserQuestion; the\n  # coordinator cannot see or answer it.\n  porpita orchestration ask --from orca_session_id:c3540c82-c1d3-4a88-ae30-6839fb5c19f5 --question \"<your question>\"\n\n  # Blocked, and the coordinator must act before you can continue:\n  porpita orchestration send --from orca_session_id:c3540c82-c1d3-4a88-ae30-6839fb5c19f5 --type escalation --subject \"Blocked: <reason>\" --body \"<details>\" --task-id task_5daae3cc3a21 --dispatch-id ctx_7248bf6a5f12\n\n  # Finish: send exactly once. --body is three sentences: what you did, what\n  # you found, what is left. Use --outcome failed if the work is not done;\n  # never hide failure in prose. Add --files-modified or --report-path only\n  # with real values. You are done when it confirms; if it fails, follow the\n  # recovery it prints.\n  porpita orchestration send --from orca_session_id:c3540c82-c1d3-4a88-ae30-6839fb5c19f5 --type worker_done --subject \"<short status>\" --body \"<3-sentence summary: what you did, what you found, what's left>\" --task-id task_5daae3cc3a21 --dispatch-id ctx_7248bf6a5f12 --outcome succeeded\n```\n\n=== AFTER YOU SEND worker_done ===\n\nworker_done ends your turn for this task: return to an idle prompt. Do NOT\nstart other work, do NOT run a sleep/poll loop, and do NOT keep calling\n`porpita orchestration check`.\n\nA direct instruction from the user takes precedence over this idle rule: it is\nnew work, so do it without the settled task or Dispatch IDs.\nNever refuse a direct user request because you were a worker.\n\nMore supervised work arrives in this chat as a fresh preamble and TASK\nblock; follow it under its new Dispatch.\n\n=== SUB-DISPATCH ===\nIf the task asks for sub-workers, create your own Run first, then:\n\n```sh\n  porpita orchestration run-create --objective \"<what the sub-workers are for>\" --json\n  porpita orchestration task-create --spec \"<sub-task>\" --json\n  porpita orchestration worker-start --task <task_id> --worktree current --agent <agent> --json\n```\n\nWait until every sub-worker has settled (worker_done, a failed start, stop, or\nabandon) before reporting your own, and name any that failed. Nesting is\ncapped; your sub-workers may not be able to dispatch further.\n\n---\n\n=== TASK ===\nPORPITA-FINAL-PAIRED-11\n你是本次远端 OpenCode Worker，只在分配的既有工作区 D:/Chatgpt/Porpita/.build-tools/installed04-remote-projects-7KJ2c8/Porpita-Remote-04 工作。先用自己的原生 shell 核对实际绝对 cwd 并运行 git status --short --branch，记录实际结果和退出码。若工作区不符，报告实际情况。\n用本会话随包的真实 Porpita CLI 和 task preamble 的自身身份，执行一次 porpita orchestration ask --question \"PORPITA-FINAL-CHOICE-11: blue or green?\" --options \"blue,green\" --json。取得实际原问题消息句柄后记录它，结束当前 Native Chat 轮次，等待同一 Worker 收到协调者的显式 Native Chat 回复。收到回复前不写文件。不使用 --wait、替代问题或手工转述；如命令失败，保留实际错误。\n收到 Native Chat 对原问题的实际颜色回复后，在当前工作区写 paired-worker-11.txt。文件第一行精确为 PORPITA-FINAL-PAIRED-11，第二行为 choice= 加实际收到的颜色，使用 UTF-8 无 BOM、LF 行尾并在末尾保留 LF。用自己的原生 shell 读回实际文件全部字节并计算完整 SHA-256。\n最后严格按 task preamble 以自身身份和准确 Task、Dispatch ID 执行一次 worker_done。使用 orchestration send --type worker_done --task-id <实际Task ID> --dispatch-id <实际Dispatch ID> --outcome succeeded --subject PORPITA-FINAL-PAIRED-11 --body <实际结果> --files-modified paired-worker-11.txt --json 并遵循 preamble 的身份参数。报告实际文件绝对路径、完整 SHA-256、字节数和实际颜色。若已确定失败，按同一 preamble 报告一次真实失败 worker_done。\n只写指定结果文件。不读取凭据、不访问其他项目、不修改配置、不安装依赖、不提交或启动其他 Worker。",
+      "reply_to": []
+    },
+    {
+      "message_id": "message-42e62701b92442dc93b6f4840c44f723",
+      "operation_id": "op-c1752cf9-f2fd-4c34-a7e9-9085863d881a",
+      "state": "retry_wait",
+      "receipt_high_water": "accepted_by_authority",
+      "sender": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-e71d4f9567af6c9ab8a402a3ca3b2186",
+      "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-a56a3f3aca59ccb92acf20a4157c2a44",
+      "content": "Question\n\nPORPITA-FINAL-CHOICE-11: blue or green?\n\nOptions: blue, green",
+      "reply_to": []
+    },
+    {
+      "message_id": "message-1c49994872d54331b8bbe370315298e2",
+      "operation_id": "op-6cd4f434-904f-45bb-9ecd-e094a75f8753",
+      "state": "delivered",
+      "receipt_high_water": "runtime_acknowledged",
+      "sender": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-a56a3f3aca59ccb92acf20a4157c2a44",
+      "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-e71d4f9567af6c9ab8a402a3ca3b2186",
+      "content": "green",
+      "reply_to": [
+        "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-42e62701b92442dc93b6f4840c44f723"
+      ]
+    },
+    {
+      "message_id": "message-71f0244cda944dee865a2ef89850f209",
+      "operation_id": "op-bdb8ee29-9fc9-4af5-9ff4-da6bb63c980a",
+      "state": "retry_wait",
+      "receipt_high_water": "accepted_by_authority",
+      "sender": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-e71d4f9567af6c9ab8a402a3ca3b2186",
+      "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-a56a3f3aca59ccb92acf20a4157c2a44",
+      "content": "PORPITA-FINAL-PAIRED-11\n\nWrote paired-worker-11.txt at D:\\Chatgpt\\Porpita\\.build-tools\\installed04-remote-projects-7KJ2c8\\Porpita-Remote-04\\paired-worker-11.txt (37 bytes, SHA-256 6C95F3EE311702104A17CD7781FF608DF1B92F25189DF86C6266C7EC79AD17CE) after the ask message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-42e62701b92442dc93b6f4840c44f723. The coordinator replied green, so line 2 is choice=green. Nothing else is left.\n\n{\"taskId\":\"task_5daae3cc3a21\",\"dispatchId\":\"ctx_7248bf6a5f12\",\"outcome\":\"succeeded\",\"filesModified\":[\"paired-worker-11.txt\"]}",
+      "reply_to": []
+    }
+  ],
+  "original_dispatches": [
+    {
+      "message_id": "message-1c49994872d54331b8bbe370315298e2",
+      "attempt_id": "delivery-attempt-b868695c-d2fe-495a-8587-830f218a34cf",
+      "dispatch_id": "delivery-dispatch:delivery-attempt-b868695c-d2fe-495a-8587-830f218a34cf",
+      "endpoint_id": "porpita-receiver-7f92dbaff84ce2e800e0b37791f3b40f",
+      "host_ref": "porpita-host-7f6be78ea79fbaff298592bc319ae468",
+      "host_boot": "0512af6a-4947-49c4-8974-c085285ea1be"
+    },
+    {
+      "message_id": "message-c4b072992b3e4b9a8dc2494af5fa7600",
+      "attempt_id": "delivery-attempt-447063c2-a524-47ca-a5f0-6db262107511",
+      "dispatch_id": "delivery-dispatch:delivery-attempt-447063c2-a524-47ca-a5f0-6db262107511",
+      "endpoint_id": "porpita-receiver-7f92dbaff84ce2e800e0b37791f3b40f",
+      "host_ref": "porpita-host-7f6be78ea79fbaff298592bc319ae468",
+      "host_boot": "0512af6a-4947-49c4-8974-c085285ea1be"
+    }
+  ],
+  "message_attachments": {
+    "message-c4b072992b3e4b9a8dc2494af5fa7600": null,
+    "message-42e62701b92442dc93b6f4840c44f723": null,
+    "message-1c49994872d54331b8bbe370315298e2": null,
+    "message-71f0244cda944dee865a2ef89850f209": null
+  },
+  "native_receipts": []
+}

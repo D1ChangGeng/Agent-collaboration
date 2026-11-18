@@ -1,0 +1,65 @@
+{
+  "schema_version": "porpita-authority/1",
+  "items": [
+    {
+      "fact": "ACS identity/contacts/Project/Route",
+      "authority": "ACS",
+      "implementation": "existing Domain",
+      "boundary": "host mappings only"
+    },
+    {
+      "fact": "ACS Message/reply/Inbox/history",
+      "authority": "ACS",
+      "implementation": "existing Authority/Outbox",
+      "boundary": "authorized view/native input copy"
+    },
+    {
+      "fact": "communication receipts",
+      "authority": "ACS + actual Host receipt source",
+      "implementation": "existing operation/Receiver ledger",
+      "boundary": "no independent new delivery authority"
+    },
+    {
+      "fact": "Native Session/process/input queue",
+      "authority": "Porpita Host/Harness",
+      "implementation": "existing session store/journal",
+      "boundary": "ACS stores references"
+    },
+    {
+      "fact": "tools/approvals/transcript/Diff",
+      "authority": "Porpita Host/Harness",
+      "implementation": "existing native pipeline",
+      "boundary": "no implicit ACS reply"
+    },
+    {
+      "fact": "personal read/draft/preferences",
+      "authority": "ACS viewer state",
+      "implementation": "existing client resources",
+      "boundary": "SDK/render caches"
+    },
+    {
+      "fact": "Run/Task/Dispatch/Gate",
+      "authority": "optional host workflow",
+      "implementation": "existing workflow store",
+      "boundary": "ACS message references only"
+    },
+    {
+      "fact": "workspace/Git/layout/model settings",
+      "authority": "Porpita Host",
+      "implementation": "existing host configuration",
+      "boundary": "do not move into Core"
+    },
+    {
+      "fact": "attachment bytes and message association",
+      "authority": "ACS",
+      "implementation": "existing attachment store",
+      "boundary": "target Host materialization"
+    },
+    {
+      "fact": "historical Native SourceLink",
+      "authority": "original Core + Host records",
+      "implementation": "existing provenance",
+      "boundary": "not current session or text matching"
+    }
+  ]
+}

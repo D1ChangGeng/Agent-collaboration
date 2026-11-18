@@ -33,6 +33,31 @@ async def stop(task):
         await task
 
 
+def test_host_endpoint_registered_after_worker_start_is_used(comm):
+    endpoint = comm.authority._delivery_endpoints.pop('endpoint-b')
+
+    async def run():
+        task = asyncio.create_task(
+            maintain_communication_deliveries(comm.clients['a'].service.service)
+        )
+        try:
+            await asyncio.sleep(0.05)
+            comm.authority._delivery_endpoints['endpoint-b'] = endpoint
+            sent = send(comm, content='A Host enrolled while maintenance was running')['data']
+            await eventually(lambda: bool(comm.drivers['b'].calls))
+            return sent
+        finally:
+            comm.authority._delivery_endpoints['endpoint-b'] = endpoint
+            await stop(task)
+
+    sent = asyncio.run(run())
+    assert len(comm.drivers['b'].calls) == 1
+    with comm.authority._connect() as connection:
+        assert connection.execute(
+            'SELECT state FROM delivery_messages WHERE message_id=%s', (sent['message_id'],)
+        ).fetchone() == ('delivered',)
+
+
 def test_adapter_exception_on_first_page_cannot_starve_a_later_peer(comm):
     def unavailable(*_args, **_kwargs):
         raise RuntimeError("controlled unexpected Adapter failure before Native")

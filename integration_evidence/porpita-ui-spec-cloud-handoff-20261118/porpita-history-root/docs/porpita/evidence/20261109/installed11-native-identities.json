@@ -1,0 +1,49 @@
+{
+  "candidate": "prototype-11",
+  "project": "porpita-0d267b376a9bcee2fe74d0f82dea1508",
+  "actualIndependentContacts": [
+    {
+      "harness": "Codex",
+      "slot": "agent-a56a3f3aca59ccb92acf20a4157c2a44",
+      "contact": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-a56a3f3aca59ccb92acf20a4157c2a44",
+      "receiverRefs": [
+        "porpita-receiver-03b4cc1544d87f05e5ad70f6d8e6c139",
+        "porpita-receiver-0a97d0ecc29d08e25eb75c5995d7e47e",
+        "porpita-receiver-126dbfcba2a0ab8e282f18744afec1bc",
+        "porpita-receiver-41096771d59fcae46005d9249f1be4fd",
+        "porpita-receiver-5439e466a3b548293f1f55a6f80bc3fe",
+        "porpita-receiver-5e08d7c9fbc2e8e220754dff82473797",
+        "porpita-receiver-7458b13f20c257c2203962c49c27ca2f",
+        "porpita-receiver-76429827318ffe227e32cc4c5b76cbe2",
+        "porpita-receiver-76ed3787a08ad6eb877127ec6b11bafa",
+        "porpita-receiver-87fe6f41185af25e22b6d13ce8d81092",
+        "porpita-receiver-ec9371e6cf5f294b1b7a8d9e4edebad8",
+        "porpita-receiver-ed84594003ea6d3699e62fbbcfa6dd80"
+      ],
+      "sourceSession": "codex_57e963dd_75e3_4bdf_990a_14b427edfc53",
+      "nativeInputRef": "1794187471690-f7c2f9b7c95b3411f83c505cfa861d39"
+    },
+    {
+      "harness": "OpenCode",
+      "slot": "agent-b81ba3554e9bb35d6836910b6d955ad0",
+      "contact": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-b81ba3554e9bb35d6836910b6d955ad0",
+      "receiverRefs": [
+        "porpita-receiver-17f1c511d90345ffd9ffee36b776a3df",
+        "porpita-receiver-305e5fcdedd4e68b9558f28ea7fc41c3",
+        "porpita-receiver-5ddee7bd2016ac55d4f47cd7ffb69ef0",
+        "porpita-receiver-60527f9e3585b9ee81b30635328fcf80",
+        "porpita-receiver-6f519e486dfed452f2b6c6d01eeab37a",
+        "porpita-receiver-9d65041aa271dc1f2eee24dd516b5b63",
+        "porpita-receiver-b9ef1c4514e4f77007603817640b0b53",
+        "porpita-receiver-c3d8a997fc195372ee9e547a3cc2d54b",
+        "porpita-receiver-c4a76d27e2f64830ae0ae21e117d33c9",
+        "porpita-receiver-d35644c4908734b8849104fa7bee4844",
+        "porpita-receiver-e727eb80f631ba635da69f1b368a545d",
+        "porpita-receiver-ef2398ddb155116d44b94df42336666a"
+      ],
+      "sourceSession": "opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8",
+      "nativeInputRef": "1794199501598-206f5f27e90e0f613960124183a6c5fd"
+    }
+  ],
+  "trust": "Signed original Native admissions and original authored ACS messages."
+}

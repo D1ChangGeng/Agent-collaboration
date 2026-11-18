@@ -42,7 +42,7 @@ from runtime.receiver_models import (
     RecoveryBody,
     ResponseReadbackBody,
 )
-from runtime.remote_endpoint import RemoteNodeTransport, RemoteTransportRejected
+from runtime.remote_endpoint import RemoteNodeTransport, RemotePeerChanged, RemoteTransportRejected
 from runtime.sender import AdmissionFactory, DeliveryIdentity
 
 
@@ -381,8 +381,16 @@ class RemoteNodeEndpointAdapter:
         try:
             prepared = self._send(self._issue(invocation, "delivery.prepare", prepare_body))
         except (RemoteTransportRejected, ValueError, RuntimeError) as error:
+            # Preparation may still be completing on a cold Host. No Domain
+            # dispatch marker exists here; retain the exact preparation identity.
+            # Peer/signature rejections retain their definitive refusal path.
+            if (isinstance(error, RemoteTransportRejected) and not isinstance(error, RemotePeerChanged)
+                    and isinstance(error.__cause__, TimeoutError)):
+                raise InvocationDeferred("preparing") from error
             raise InvocationPreCallRejected("receiver prepare rejected before Domain marker") from error
-        reject_native_attachments(invocation)
+        host_port = prepared.receipt.evidence.get("adapter_receiver")
+        if not (isinstance(host_port, dict) and host_port.get("orca_native_attachments") is True):
+            reject_native_attachments(invocation)
         # A process-restart probe may stop the Core only after both the receiver
         # SQLite preparation and its PostgreSQL admission/receipt are durable.
         # Ordinary callers leave this bounded fault seam unset.

@@ -1,0 +1,16 @@
+{
+  "candidate": "prototype-11",
+  "containsChallenge": true,
+  "textHash": true,
+  "imageHash": true,
+  "actualPixelValues": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "originalAttachmentTurn": true,
+  "recipient": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-f1673ac84784e9040d66af4a85456109",
+  "session": "opencode_a6512a39_76e4_4c77_a1fa_0f9e65d1dc66",
+  "realNativeToolResults": true
+}

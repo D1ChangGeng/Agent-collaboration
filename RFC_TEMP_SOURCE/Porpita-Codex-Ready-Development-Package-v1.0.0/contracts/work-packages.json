@@ -1,0 +1,383 @@
+{
+  "schema_version": "porpita-work-plan/1",
+  "items": [
+    {
+      "id": "WP00",
+      "title": "接续当前源码并固定可执行基线",
+      "depends_on": [],
+      "actions": [
+        "确认ACS/现有Porpita/Orca工作树、HEAD和本地变更；已有成果逐项复用。",
+        "采用可构建的固定上游；读package脚本/依赖锁，不无故升级工具链。",
+        "定位原生UI、消息入口、Host handover、品牌/服务出口。",
+        "记录真实目标平台、模型凭据可用性、Core服务方式；历史问题仅在仍影响时修复。"
+      ],
+      "outputs": [
+        "两个源码实际引用、路径定位和初始功能状态",
+        "已能执行的原生启动命令"
+      ],
+      "exit_condition": "不产生新产品方案评审；开始WP01。",
+      "requirements": [
+        "PR03"
+      ],
+      "features": [],
+      "acceptance": [],
+      "sources": [
+        "S01",
+        "S02",
+        "S03",
+        "S27"
+      ]
+    },
+    {
+      "id": "WP01",
+      "title": "接管完整桌面产品而非制作界面Demo",
+      "depends_on": [
+        "WP00"
+      ],
+      "actions": [
+        "没有Porpita时建立独立派生工作树，保留Orca历史与上游remote。",
+        "运行真实Electron应用，保留窗口/侧栏/工作区/原生Chat/Terminal/编辑器/Diff/浏览器。",
+        "复用现有stores/preload/RPC和组件，建立一个固定基线截图与正常操作记录。",
+        "新增代码依现有模块约定放置，不把ACS runtime嵌进renderer。"
+      ],
+      "outputs": [
+        "完整原生应用可运行",
+        "28项功能清单中的继承入口有实际路径"
+      ],
+      "exit_condition": "用户可执行正常原生开发操作；不以静态UI结束。",
+      "requirements": [
+        "PR02",
+        "PR25"
+      ],
+      "features": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F09",
+        "F10",
+        "F11",
+        "F12",
+        "F13"
+      ],
+      "acceptance": [
+        "UX02"
+      ],
+      "sources": [
+        "S03",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S25"
+      ]
+    },
+    {
+      "id": "WP02",
+      "title": "Porpita品牌与独立运行身份",
+      "depends_on": [
+        "WP01"
+      ],
+      "actions": [
+        "逐项执行branding-map，建立集中品牌配置；替换可见品牌、真实图标和安装元数据。",
+        "隔离appId/协议/userData/daemon/CLI/凭据与更新源，支持与Orca并存。",
+        "审查上游专属云/遥测/更新/下载出口；使用真实自有或用户服务，未提供则清楚禁用相应外部服务。",
+        "保留MIT/第三方/ACS许可和必要内部兼容名称；更新生成文案与skills构建源。"
+      ],
+      "outputs": [
+        "Porpita实际应用身份",
+        "品牌与外部服务出口完成表"
+      ],
+      "exit_condition": "安装/运行可见身份独立；不以全文替换破坏协议。",
+      "requirements": [
+        "PR04",
+        "PR05",
+        "PR23"
+      ],
+      "features": [
+        "F28"
+      ],
+      "acceptance": [
+        "UX18"
+      ],
+      "sources": [
+        "S04",
+        "S23",
+        "S24"
+      ]
+    },
+    {
+      "id": "WP03",
+      "title": "产品级Core启动与Agent接入",
+      "depends_on": [
+        "WP02"
+      ],
+      "actions": [
+        "接入现有ACS wheel/SDK，完成托管本地Python/PG与已有服务模式。",
+        "用原生onboarding/Settings完成依赖准备、现有schema/features采用、登录与状态。",
+        "内部映射Project与工作区，可信配置每个Agent的Slot/MCP/Receiver；不暴露技术表单。",
+        "复用既有Root/Route管理与自然消息上下文；普通通信不创建Run/Task。"
+      ],
+      "outputs": [
+        "实际服务与首次启动流程",
+        "Agent自动注册和稳定联系人"
+      ],
+      "exit_condition": "没有开发工具的用户可启动本地协作；已有服务也可真实连接。",
+      "requirements": [
+        "PR09",
+        "PR10",
+        "PR13",
+        "PR14"
+      ],
+      "features": [
+        "F14",
+        "F15"
+      ],
+      "acceptance": [
+        "UX04",
+        "UX17"
+      ],
+      "sources": [
+        "S15",
+        "S18",
+        "S22"
+      ]
+    },
+    {
+      "id": "WP04",
+      "title": "真实Host接收和原生执行接通",
+      "depends_on": [
+        "WP03"
+      ],
+      "actions": [
+        "接线Python ExistingOrcaReceiverBackend/Router与宿主当前owner、observe、admit、原operation查询。",
+        "复用原生handover/queue，在真实Host完成input接纳；移除不必要重复wrapper。",
+        "保留用户composer/stop/steer/审批与tool/transcript；停用同会话的第二Native Driver。",
+        "先完成空闲A→B→A，再完成忙时到达、明确回复和直接影响的重复/目标切换回归。"
+      ],
+      "outputs": [
+        "真实双Harness输入链路",
+        "Host Wiring实际说明和必要源码增量"
+      ],
+      "exit_condition": "真实Host接通；不能用host_extension_required/stub结束该阶段。",
+      "requirements": [
+        "PR07",
+        "PR08",
+        "PR11",
+        "PR22"
+      ],
+      "features": [
+        "F05",
+        "F06",
+        "F07",
+        "F08",
+        "F16"
+      ],
+      "acceptance": [
+        "UX03",
+        "UX07",
+        "UX16"
+      ],
+      "sources": [
+        "S06",
+        "S07",
+        "S14",
+        "S16",
+        "S17"
+      ]
+    },
+    {
+      "id": "WP05",
+      "title": "全部A2A路径切换与可选编排兼容",
+      "depends_on": [
+        "WP04"
+      ],
+      "actions": [
+        "按message-paths完整替换send/ask/reply/check/group/report/wake等路径。",
+        "复用任务mutation receipt保持工作流结算，ACS只存通信；不解析普通正文宣布Task完成。",
+        "更新CLI/preamble/skill生成源，使Agent使用实际Porpita/ACS命令。",
+        "普通正式构建只启用ACS后端；旧消息只读/显式导入，上游原消息写入路径不再承担正常工作。"
+      ],
+      "outputs": [
+        "14条路径的实际实现映射",
+        "任务/提问/决策界面和行为继续可用"
+      ],
+      "exit_condition": "不只是另加send按钮；没有正常功能依赖旧消息权威。",
+      "requirements": [
+        "PR06",
+        "PR12"
+      ],
+      "features": [
+        "F24"
+      ],
+      "acceptance": [
+        "UX13",
+        "UX14"
+      ],
+      "sources": [
+        "S05",
+        "S09"
+      ]
+    },
+    {
+      "id": "WP06",
+      "title": "最小原生UI扩展与P1/P2功能落地",
+      "depends_on": [
+        "WP05"
+      ],
+      "actions": [
+        "在现有组件/抽屉/设置内接入联系人、会话、消息、通知、阅读/草稿/搜索/附件。",
+        "复用已有SDK的snapshot/events/reducer/paging，区别ACS与Native数据来源。",
+        "实现SourceLink查看执行，关联真实input/turn而不是文本匹配。",
+        "接通目标Host附件材料化与原生读取；现有原生Chat附件不回归。",
+        "按原生基线检查键盘、IME、滚动、焦点、密度和响应体验。"
+      ],
+      "outputs": [
+        "真实客户端通信与产品功能",
+        "少量自然UI扩展和可见执行关联"
+      ],
+      "exit_condition": "核心消息和P2交互不用外部命令，不出现独立控制台。",
+      "requirements": [
+        "PR15",
+        "PR16",
+        "PR17",
+        "PR18",
+        "PR19",
+        "PR27"
+      ],
+      "features": [
+        "F17",
+        "F18",
+        "F19",
+        "F20",
+        "F21",
+        "F22",
+        "F23"
+      ],
+      "acceptance": [
+        "UX06",
+        "UX09",
+        "UX10",
+        "UX11",
+        "UX12",
+        "UX19"
+      ],
+      "sources": [
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S15",
+        "S18",
+        "S19",
+        "S20",
+        "S21"
+      ]
+    },
+    {
+      "id": "WP07",
+      "title": "远端、连续使用与历史接续",
+      "depends_on": [
+        "WP06"
+      ],
+      "actions": [
+        "接通实际远端Receiver与Host，保留SSH/paired workspace控制能力。",
+        "完成窗口关闭/退出重开、短暂断线、原生会话变化后的稳定身份和历史。",
+        "独立数据目录与显式导入；原Orca数据不被覆盖，旧消息不重放。",
+        "群组/远端能力范围准确，文件在目标Host可读。"
+      ],
+      "outputs": [
+        "真实远端通信和日常连续性",
+        "支持范围与导入策略"
+      ],
+      "exit_condition": "不是全平台实验；正常远端和重开使用通过。",
+      "requirements": [
+        "PR20",
+        "PR21",
+        "PR28"
+      ],
+      "features": [
+        "F25",
+        "F26"
+      ],
+      "acceptance": [
+        "UX15",
+        "UX21"
+      ],
+      "sources": [
+        "S09",
+        "S15",
+        "S16",
+        "S17"
+      ]
+    },
+    {
+      "id": "WP08",
+      "title": "安装包、依赖与完整产品交付",
+      "depends_on": [
+        "WP07"
+      ],
+      "actions": [
+        "复用electron-builder与native资源链制作Windows x64安装器。",
+        "打包/受控下载实际Core/Python/PG依赖，最终用户无开发checkout前置。",
+        "验证更新源/手动更新、并存、卸载保留数据；声明签名状态。",
+        "记录Porpita/ACS实际提交与SDK/wheel/依赖产物，保留macOS/Linux配置和真实构建结果。"
+      ],
+      "outputs": [
+        "Windows安装器及SHA-256",
+        "必要Core产物、依赖清单和安装运行说明"
+      ],
+      "exit_condition": "在安装目录实际运行，不只dev服务器或unpacked文件夹。",
+      "requirements": [
+        "PR01",
+        "PR24",
+        "PR29"
+      ],
+      "features": [
+        "F27"
+      ],
+      "acceptance": [
+        "UX01",
+        "UX20"
+      ],
+      "sources": [
+        "S03",
+        "S04",
+        "S23",
+        "S24"
+      ]
+    },
+    {
+      "id": "WP09",
+      "title": "安装版功能验收与最终移交",
+      "depends_on": [
+        "WP08"
+      ],
+      "actions": [
+        "执行required场景，至少一条双真实模型原生工具/显式回复闭环。",
+        "检查UI继承、品牌、A2A切换、文件、历史、任务与远端正常链路。",
+        "修本轮影响的实际缺陷；不展开大规模防御研究或模型质量排名。",
+        "填写交付manifest与报告；缺凭据/环境列阻塞，不把模拟结果计为真实完成。"
+      ],
+      "outputs": [
+        "PRODUCT_ACCEPTED或明确候选阻塞报告",
+        "同一安装产物的真实场景证据和源码交接"
+      ],
+      "exit_condition": "只有真实完整客户端满足要求才签署完成。",
+      "requirements": [
+        "PR26",
+        "PR30"
+      ],
+      "features": [],
+      "acceptance": [
+        "UX05",
+        "UX08",
+        "UX22"
+      ],
+      "sources": [
+        "S25",
+        "S27"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "observed_date": "2026-11-06",
+  "method": "GitHub connector, pinned raw source",
+  "repository": "https://github.com/earendil-works/pi",
+  "former_repository": "https://github.com/badlogic/pi-mono",
+  "commit": "36142c1c7eab1d756e977b5f39149a634cc472ac",
+  "acquisition_scope": "Research only; not installed or executed",
+  "files": [
+    {
+      "path": "sources/pi/LICENSE",
+      "url": "https://raw.githubusercontent.com/earendil-works/pi/36142c1c7eab1d756e977b5f39149a634cc472ac/LICENSE",
+      "bytes": 1069,
+      "sha256": "0457f5bcec3b3b211605dfb5d1a49042fd638f3686a410fe099c24a25af13c48"
+    },
+    {
+      "path": "sources/pi/README.md",
+      "url": "https://raw.githubusercontent.com/earendil-works/pi/36142c1c7eab1d756e977b5f39149a634cc472ac/README.md",
+      "bytes": 10679,
+      "sha256": "e5a75074d9a53e6d00d616a42fbe138200b46022e8e392ace1c4c08a40af6cd5"
+    },
+    {
+      "path": "sources/pi/packages/coding-agent/README.md",
+      "url": "https://raw.githubusercontent.com/earendil-works/pi/36142c1c7eab1d756e977b5f39149a634cc472ac/packages/coding-agent/README.md",
+      "bytes": 4080,
+      "sha256": "fbc7abec7d0829ac8bc4b217e950794e1ba4d8d1b3e0850f970da318ad72e863"
+    },
+    {
+      "path": "sources/pi/packages/coding-agent/docs/containerization.md",
+      "url": "https://raw.githubusercontent.com/earendil-works/pi/36142c1c7eab1d756e977b5f39149a634cc472ac/packages/coding-agent/docs/containerization.md",
+      "bytes": 7589,
+      "sha256": "e309fcb9a0a7592c0dba000ef8ee90f2d7ef1e01e6a1ac2f0cd9760dd63dee0c"
+    },
+    {
+      "path": "sources/pi/packages/coding-agent/docs/extensions.md",
+      "url": "https://raw.githubusercontent.com/earendil-works/pi/36142c1c7eab1d756e977b5f39149a634cc472ac/packages/coding-agent/docs/extensions.md",
+      "bytes": 158143,
+      "sha256": "d59f4ded8e49275120c8379dbeabb847267efd36e15fc21f6189026d0fbf8f22"
+    },
+    {
+      "path": "sources/pi/packages/coding-agent/docs/skills.md",
+      "url": "https://raw.githubusercontent.com/earendil-works/pi/36142c1c7eab1d756e977b5f39149a634cc472ac/packages/coding-agent/docs/skills.md",
+      "bytes": 4793,
+      "sha256": "5b9805525b194474ef1fe5455a0917ef15ed7f710aa9bec2eee11879556469e5"
+    }
+  ]
+}

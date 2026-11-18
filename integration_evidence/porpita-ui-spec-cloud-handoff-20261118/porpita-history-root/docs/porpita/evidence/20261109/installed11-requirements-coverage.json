@@ -1,0 +1,271 @@
+{
+  "candidate": "prototype-11",
+  "requirements": [
+    {
+      "id": "PR01",
+      "title": "独立产品与实际安装",
+      "acceptance": [
+        "UX01",
+        "UX20"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR02",
+      "title": "原生产品外形",
+      "acceptance": [
+        "UX02",
+        "UX19"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR03",
+      "title": "阶段无关接续",
+      "acceptance": [
+        "UX22"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR04",
+      "title": "品牌独立",
+      "acceptance": [
+        "UX01",
+        "UX18"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR05",
+      "title": "版权与兼容命名",
+      "acceptance": [
+        "UX18"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR06",
+      "title": "全部正常A2A运输",
+      "acceptance": [
+        "UX05",
+        "UX13",
+        "UX14",
+        "UX21"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR07",
+      "title": "原生执行保留",
+      "acceptance": [
+        "UX03",
+        "UX07",
+        "UX08"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR08",
+      "title": "真实宿主接收",
+      "acceptance": [
+        "UX05",
+        "UX07"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR09",
+      "title": "统一可信身份",
+      "acceptance": [
+        "UX04",
+        "UX05",
+        "UX16"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR10",
+      "title": "组织模型内部化",
+      "acceptance": [
+        "UX04",
+        "UX06"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR11",
+      "title": "单一原生输入owner",
+      "acceptance": [
+        "UX05",
+        "UX16"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR12",
+      "title": "可选编排兼容",
+      "acceptance": [
+        "UX13",
+        "UX14"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR13",
+      "title": "托管本地首次启动",
+      "acceptance": [
+        "UX01",
+        "UX04"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR14",
+      "title": "已有ACS服务接入",
+      "acceptance": [
+        "UX17"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR15",
+      "title": "客户端API复用",
+      "acceptance": [
+        "UX06",
+        "UX09"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR16",
+      "title": "实时同步",
+      "acceptance": [
+        "UX09",
+        "UX15"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR17",
+      "title": "Native来源关联",
+      "acceptance": [
+        "UX10"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR18",
+      "title": "P2用户功能",
+      "acceptance": [
+        "UX09",
+        "UX11"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR19",
+      "title": "文件分享实际可用",
+      "acceptance": [
+        "UX12"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR20",
+      "title": "日常连续性",
+      "acceptance": [
+        "UX15",
+        "UX16"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR21",
+      "title": "远端功能继承",
+      "acceptance": [
+        "UX21"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR22",
+      "title": "正常路径简化",
+      "acceptance": [
+        "UX19",
+        "UX22"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR23",
+      "title": "上游服务出口",
+      "acceptance": [
+        "UX18"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR24",
+      "title": "当前产物一致",
+      "acceptance": [
+        "UX20",
+        "UX22"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR25",
+      "title": "原生功能完整",
+      "acceptance": [
+        "UX02",
+        "UX03"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR26",
+      "title": "真实双模型验收",
+      "acceptance": [
+        "UX05",
+        "UX08"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR27",
+      "title": "最小UI扩展",
+      "acceptance": [
+        "UX06",
+        "UX19"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR28",
+      "title": "历史并存",
+      "acceptance": [
+        "UX15",
+        "UX20"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR29",
+      "title": "平台诚实交付",
+      "acceptance": [
+        "UX01",
+        "UX20"
+      ],
+      "status": "verified"
+    },
+    {
+      "id": "PR30",
+      "title": "不以研究替代产品",
+      "acceptance": [
+        "UX22"
+      ],
+      "status": "verified"
+    }
+  ]
+}

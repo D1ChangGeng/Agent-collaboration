@@ -1,0 +1,16 @@
+{
+  "candidate": "prototype-11",
+  "mode": "installed",
+  "retainedRealHistoryCount": 65,
+  "newestWindowBeforeOlder": true,
+  "olderVisible": true,
+  "liveWithoutRefresh": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-20533df96f3c4c21b31e9cbf358c4556",
+  "liveDelayMs": 11454,
+  "submitMs": 6016,
+  "earlierCandidateLiveDelayMs": 22982,
+  "readRevision": 11,
+  "unreadRevision": 10,
+  "duplicateOriginal": true,
+  "searchMatched": true,
+  "privateControlsExercised": true
+}

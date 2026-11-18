@@ -1,0 +1,13 @@
+{
+  "started": true,
+  "candidate": "prototype-11",
+  "cliPid": 31688,
+  "runtimeId": "1e9a5cef-3d2a-4418-81ae-e83fbfc35516",
+  "port": 51781,
+  "pairingAvailable": true,
+  "scope": "runtime",
+  "samePhysicalMachine": true,
+  "dataRoot": "D:/Chatgpt/Porpita/.build-tools/installed04-second-host-35zMA2",
+  "installedAsarSha256": "370b91f7f850fc16f0500e44e5e52395830d4d3b7d7f283b4b549d721507359e",
+  "qualification": "Exact running installed CLI path, actual runtime identity, installed package digest and retained isolated Host profile. Launcher label was corrected after checking the live process."
+}

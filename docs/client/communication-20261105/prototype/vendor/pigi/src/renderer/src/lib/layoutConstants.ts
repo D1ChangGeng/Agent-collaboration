@@ -1,0 +1,117 @@
+import type { Platform } from '../../../shared/platform';
+
+/** Max height (px) for collapsible thinking content before showing expand button */
+export const BLOCK_CONTENT_MAX_HEIGHT = 300;
+
+/** Max height (px) of an injected message's body before Show more. A real
+ *  pi-peer delivery comes to ~180px at the transcript's width, so this only
+ *  folds genuinely long messages; the delivery boilerplate it carries stays
+ *  visible, because nothing is parsed out of the content. */
+export const CUSTOM_MESSAGE_MAX_HEIGHT = 200;
+
+/** Tool block body height (px) while collapsed. Output of bash/read/other
+ *  tools sizes to content up to MAX_HEIGHT. edit/write bodies also reserve
+ *  MIN_HEIGHT_LARGE (filled by the skeleton, so the card never shrinks when the
+ *  diff/file arrives) and may grow to MAX_HEIGHT_LARGE. */
+export const TOOL_BLOCK_BODY_MAX_HEIGHT = 100;
+export const TOOL_BLOCK_BODY_MIN_HEIGHT_LARGE = 120;
+export const TOOL_BLOCK_BODY_MAX_HEIGHT_LARGE = 300;
+/** Line height (px) of monospace body rows; the heights above are multiples of it. */
+export const TOOL_BLOCK_LINE_HEIGHT = 20;
+
+export const MESSAGE_LIST_MAX_WIDTH = 860;
+export const MESSAGE_LIST_HORIZONTAL_PADDING = 20;
+export const MESSAGE_CONTENT_MAX_WIDTH =
+  MESSAGE_LIST_MAX_WIDTH - MESSAGE_LIST_HORIZONTAL_PADDING * 2;
+export const CHAT_INPUT_MAX_WIDTH = MESSAGE_CONTENT_MAX_WIDTH;
+/** Settings rows carry a label and a control, so they read better in a
+ *  narrower column than the transcript. */
+export const SETTINGS_CONTENT_MAX_WIDTH = 660;
+export const MESSAGE_ROW_GAP = 4;
+
+/** Max entries a collapsed read group previews before its "Show more" toggle. */
+export const READ_GROUP_MAX_COLLAPSED_ENTRIES = 3;
+
+/** Vertical inset above the first list row. Modeled as the virtualizer's
+ *  paddingStart so virtual coordinates match real scroll coordinates and
+ *  the at-end check (getVirtualDistanceFromEnd) is exact. */
+export const MESSAGE_LIST_TOP_INSET = 24;
+
+/** Breathing room below the last row's content. Modeled as the
+ *  virtualizer's paddingEnd AND applied as the last row's bottom margin: the
+ *  margin makes the rows-wrapper's bottom edge track the last row's DOM
+ *  growth immediately (a growing row pushes the wrapper past the spacer,
+ *  growing scrollHeight in the same layout pass), so the same-frame follow
+ *  write in the scroll controller sees the real end, not a stale spacer. */
+export const MESSAGE_LIST_BOTTOM_INSET = 16;
+
+/** Distance (px) from the content end within which the list counts as
+ *  "at the bottom", i.e. the user's scroll-up slack before follow disengages
+ *  and the zone in which scrolling back re-engages it. Purely a user-intent
+ *  threshold: follow itself always glues to the exact end, and only user
+ *  input changes the follow state (see useMessageListScrollController). */
+export const MESSAGE_LIST_SCROLL_END_THRESHOLD = 16;
+
+export const TERMINAL_DEFAULT_HEIGHT = 280;
+/** Shared by the terminal and chat viewport, including live pointer resizing. */
+export const TERMINAL_HEIGHT_PROPERTY = '--terminal-height';
+export const TERMINAL_HEIGHT_VALUE = `var(${TERMINAL_HEIGHT_PROPERTY})`;
+export const TERMINAL_MIN_HEIGHT = 120;
+/** Cap the panel at this fraction of the window height. */
+export const TERMINAL_MAX_HEIGHT_RATIO = 0.8;
+
+/** Visible rise per streaming-queue bar. The bar is `pt-2` (8) + one
+ *  `text-caption` line + `pb-15` (60), and every bar after the first overlaps the
+ *  one below by `-mt-14` (56). The caption step ships no line-height, so its line
+ *  is the inherited body 1.6 × 13px = 20.8px: 8 + 20.8 + 60 − 56 = 32.8, rounded
+ *  up. This drifted once when the bar's step was renamed and nothing measured it,
+ *  so a browser test compares this number to the rendered bar. */
+export const STREAMING_QUEUE_BAR_STEP_PX = 33;
+
+export const SIDEBAR_DEFAULT_WIDTH = 244;
+export const SIDEBAR_MIN_WIDTH = 220;
+/** Wide enough for the Git tab's file paths. */
+export const SIDEBAR_MAX_WIDTH = 480;
+export const SIDEBAR_WIDTH_PROPERTY = '--sidebar-width';
+
+/** Tabbed right sidebar (see components/rightSidebar). */
+export const RIGHT_SIDEBAR_DEFAULT_WIDTH = 320;
+export const RIGHT_SIDEBAR_MIN_WIDTH = 260;
+/** The right sidebar may always grow this wide, as on a small window. */
+export const RIGHT_SIDEBAR_ALWAYS_ALLOWED_WIDTH = 520;
+/** Beyond that it stops where the rest of the window would get narrower than
+ *  the widest left sidebar plus a 480px transcript. */
+export const RIGHT_SIDEBAR_RESERVED_WIDTH = SIDEBAR_MAX_WIDTH + 480;
+/** The dragged width; CSS caps it by the window into --right-sidebar-width. */
+export const RIGHT_SIDEBAR_PREFERRED_WIDTH_PROPERTY = '--right-sidebar-preferred-width';
+export const RIGHT_SIDEBAR_WIDTH_PROPERTY = '--right-sidebar-width';
+
+/** The sidebar toggle sits right of the macOS traffic lights (main window
+ *  `trafficLightPosition` x 16, three 12px lights with 8px gaps). */
+export const SIDEBAR_TOGGLE_LEFT_MAC_PX = 76;
+export const SIDEBAR_TOGGLE_LEFT_PX = 8;
+/** Toggle button width; the Chat tab's own left border is the gap after it. */
+export const SIDEBAR_TOGGLE_CLEARANCE_PX = 28;
+
+/** Shared by the sidebar width and the toolbar title inset so both move in step. */
+export const SIDEBAR_TRANSITION_CLASS_NAME =
+  'duration-[240ms] ease-[cubic-bezier(0.32,0.72,0,1)] reduce-motion:transition-none';
+
+export function sidebarToggleLeft(platform: Platform): number {
+  return platform === 'mac' ? SIDEBAR_TOGGLE_LEFT_MAC_PX : SIDEBAR_TOGGLE_LEFT_PX;
+}
+
+/**
+ * Used by Dialog, Popover, and ContextMenu: they need backdrop-blur, which
+ * renders incorrectly in vibrant regions, so they get their own configuration.
+ *
+ * The hairline is an outline, not a ring: a 0.5px box-shadow loses the whole arc
+ * of a 20px corner to antialiasing (the straight edges draw, the curves vanish),
+ * while an outline keeps 0.5px all the way round.
+ */
+export const VIBRANCY_OVERLAY_CONTENT =
+  'rounded-surface bg-popover/88 backdrop-blur-sm p-4 text-body text-popover-foreground shadow-md outline-[0.5px] outline-foreground/25 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95';
+
+/** Background color used by transparent floating panels. */
+export const OVERLAY_BG = 'bg-popover/40';
+

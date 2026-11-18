@@ -1,0 +1,18 @@
+{
+  "scope": "host-owned home path roots, internal filenames retained",
+  "adapted_paths": [
+    "src/main/agent-hooks/installer-utils.ts",
+    "src/main/bitbucket/credential-store.ts",
+    "src/main/credentials/encrypted-api-key-file-store.ts",
+    "src/main/grok/grok-hook-owners.ts",
+    "src/main/jcode/hook-settings.ts",
+    "src/main/jira/site-credential-store.ts",
+    "src/main/linear/linear-credential-paths.ts",
+    "src/main/minimax/minimax-cookie-store.ts",
+    "src/main/orcad/orcad-app-paths.ts",
+    "src/main/orcad/orcad-plaintext-credential-migration.ts",
+    "src/main/speech/openai-api-key-store.ts",
+    "src/main/zcode/zcode-plan-api-key-store.ts",
+    "src/main/runtime/terminal/launch/claude-agent-teams-shim-env.ts"
+  ]
+}

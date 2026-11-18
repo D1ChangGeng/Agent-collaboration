@@ -1,0 +1,408 @@
+{
+  "window_id": "w-124519318",
+  "chrome_executable_version": "157.0.8103.38",
+  "capture_scale_factor": 1.5,
+  "capture_size": [
+    1920,
+    2160
+  ],
+  "browser_zoom": "not measured",
+  "website_theme": "dark",
+  "website_language": "English",
+  "scope": "actual Windows Chrome carrier page and sampled marketing-demo states",
+  "screenshots": [
+    {
+      "file": "00-online-hero.png",
+      "bytes": 520351,
+      "sha256": "e3113deff8cb5f3482c9384986ea7128a9f1f2c21c2663e8a45b2810282f4e09",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:29:54.206287+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "00-online-hero.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "01-grid.png",
+      "bytes": 583030,
+      "sha256": "6939e46257fb4782b50aa083bed5ca039580cf90e4754b87553eb5114fda3f15",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:31:06.674664+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "01-grid.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "02-cli-modal-a.png",
+      "bytes": 391946,
+      "sha256": "1127c44ee64d79473c84e4ed45dbe686e56742801dd3220da767b267c3540422",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:31:32.968997+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "02-cli-modal-a.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "03-cli-modal-b.png",
+      "bytes": 393748,
+      "sha256": "883e29704def0867e9579fbaaa16ae158c57ab902ffda39952269b4649192562",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:31:51.057514+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "03-cli-modal-b.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "04-split-a.png",
+      "bytes": 380649,
+      "sha256": "2a58af159338f0623c14f03d39c21aa2a23670023fd66f02c52999e4ea103b3d",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:32:08.249516+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "04-split-a.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "05-jump.png",
+      "bytes": 483815,
+      "sha256": "c82da027d5e9956449f22be7845ae49b6e87ec1dc377ac3c191877c00414769b",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:32:39.498221+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "05-jump-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "06-drag-a.png",
+      "bytes": 417250,
+      "sha256": "bf02d15ccb6e782f98b706e56d1150044c1f2b26ab41bb8d28d73dfd36599520",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:33:22.951565+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "06-drag-a-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "06-drag-b.png",
+      "bytes": 388837,
+      "sha256": "0263b28b8fa529b7569eed61b7cd13a5e2b930676107708af5025886cbce5d55",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:33:27.171821+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "06-drag-b-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "07-design-a.png",
+      "bytes": 426922,
+      "sha256": "5b0191063408aeb738dbeb4418f4d6ee6dba05b3a0e07dcc43db32bc1b3d38b6",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:33:49.845206+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "07-design-a-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "07-design-b.png",
+      "bytes": 420469,
+      "sha256": "2e7d8db52d7a58e5976397050a53ba0ef853fbb69eed6f743ef4c920ace98136",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:33:54.415730+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "07-design-b-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "08-rich-b.png",
+      "bytes": 419215,
+      "sha256": "2764708c38b302e8c21dbe53618caf4ee33a119f16456a24f60716c60d80032e",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:34:32.765135+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "08-rich-b-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "09-rich-preview-b.png",
+      "bytes": 406739,
+      "sha256": "6494221ff576553db2480287c31e6b548f74f076076e4170c7b2dbda85b190ed",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:35:04.587015+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "09-rich-preview-b-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "10-mobile-a.png",
+      "bytes": 421656,
+      "sha256": "ee02308d9f1030d2f31feb36805a9ddf1a9757dae1f185cf377aacd4cc90d084",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:36:22.075316+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "10-mobile-a-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "10-mobile-b.png",
+      "bytes": 388636,
+      "sha256": "69fa0545435110a702dac5c27fd5a5a1db6aa48d8cd053d4813bea381a925a77",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:36:27.227103+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "10-mobile-b-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "11-dictation-a.png",
+      "bytes": 378015,
+      "sha256": "cea10c3bf423fbdc3f6bcab3d723212283eadeab5f20785faaea37f2d43a85b6",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:36:42.742715+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "11-dictation-a-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "11-dictation-b.png",
+      "bytes": 376718,
+      "sha256": "62d7580253e68011bbabf0a0dc2d5fa030f1b0dbbf87eabee8d7a385fa851e7c",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:36:46.447964+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "11-dictation-b-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "12-usage-a.png",
+      "bytes": 357024,
+      "sha256": "12ab769f4e8e61cb1272a1b9c3e78e4c9c0c19b64d14f8a97a27f7c055ba91c0",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:37:11.758862+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "12-usage-a-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "12-usage-b.png",
+      "bytes": 418712,
+      "sha256": "a35ba39d4eaaecd31cf5ebc04cc62607d4d3080a9caf14c267ce455c10e999c7",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:37:17.298683+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "12-usage-b-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "13-automations-a.png",
+      "bytes": 380904,
+      "sha256": "660adc3cedc1184f625d4c65abb8cdaf1d3119cb521d25e144bc92f37c01c3bd",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:37:43.883331+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "13-automations-a-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "13-automations-b.png",
+      "bytes": 386288,
+      "sha256": "170624b7f538e50e8e6a4ee91b852aec526eb3e6237c8b90549b68e8c9ff5b69",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:37:49.240551+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "13-automations-b-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "14-computer-use-a.png",
+      "bytes": 380188,
+      "sha256": "ade8c06effcff5ccfd9dfb6f16e52bd8cf364124e76a46db5518f3b8be391df9",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:38:46.616404+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "14-computer-use-a-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "14-computer-use-b.png",
+      "bytes": 373353,
+      "sha256": "9e6c7bb162832f5f6cd4fcc5e154838eccdfe80c99847c96837a59fd342b4619",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:38:51.212404+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "14-computer-use-b-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "15-plugins-a.png",
+      "bytes": 462219,
+      "sha256": "01eef9388e4fb7b25346d0009301b6a6dedcd57131098d0032f09450c96e2713",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:39:39.977055+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "15-plugins-a-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "15-plugins-b.png",
+      "bytes": 465861,
+      "sha256": "538546bc7781a4ebd245fde71708b2afc7bb8d09152355fa496b8ddfb6ad7efb",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:39:45.045079+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "15-plugins-b-crop.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "16-run-anywhere-a.png",
+      "bytes": 480876,
+      "sha256": "888b0c98809b6d8f1a055684edbbd3a209755c3f4a130dde3940e70f15c1d628",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:41:15.400400+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "16-run-anywhere-a.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "16-run-anywhere-b.png",
+      "bytes": 493347,
+      "sha256": "c2cbe8c937f7eb094ac30576b0eaf77e1700006179e0cea6c545e97f35c3f0c5",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:41:18.792226+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "16-run-anywhere-b.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "17-chat-terminal-a.png",
+      "bytes": 424204,
+      "sha256": "b78ec0c1f18733a4527ee30f9173aff010e8bbb7a54f6ee1ba7844f49f51bc62",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:42:16.635035+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "17-chat-terminal-a.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    },
+    {
+      "file": "17-chat-terminal-b.png",
+      "bytes": 455566,
+      "sha256": "1b5b64eb5c62448a3bd2dca460d2af73e895c95f0df309ed2c74e4bdb623b17a",
+      "dimensions": [
+        1920,
+        2160
+      ],
+      "mtime_utc": "2026-11-05T21:42:21.431850+00:00",
+      "visually_reviewed": true,
+      "reviewed_via": "17-chat-terminal-b.png",
+      "source": "https://www.onorca.dev/",
+      "evidence": "marketing demo; not installed application"
+    }
+  ],
+  "verification_scope": "Online carrier controls and sampled preset demo states; installed app and execution were not exercised"
+}

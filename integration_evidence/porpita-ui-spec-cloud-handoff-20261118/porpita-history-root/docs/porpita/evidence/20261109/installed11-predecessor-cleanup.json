@@ -1,0 +1,7 @@
+{
+  "removed": "prototype-10 installer and blockmap",
+  "bytes": 407261467.0,
+  "freeBefore": 46009589760,
+  "freeAfter": 46416683008,
+  "retainedInstallerSha256": "b7f817ffa12fbf42b05195a91948c64619fcab33d8c938b152184fcdb912a90b"
+}

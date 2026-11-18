@@ -1,0 +1,582 @@
+{
+  "repository_full_name": "stablyai/orca",
+  "base": "9055eb9344dac1300311337cb1f0040d8094e3c2",
+  "head": "52b8a24d275fe0cb598abb54119426712fae7a70",
+  "status": "ahead",
+  "ahead_by": 5,
+  "behind_by": 0,
+  "total_commits": 5,
+  "too_large": null,
+  "base_commit": {
+    "sha": "9055eb9344dac1300311337cb1f0040d8094e3c2",
+    "url": "https://api.github.com/repos/stablyai/orca/commits/9055eb9344dac1300311337cb1f0040d8094e3c2",
+    "html_url": "https://github.com/stablyai/orca/commit/9055eb9344dac1300311337cb1f0040d8094e3c2"
+  },
+  "merge_base_commit": {
+    "sha": "9055eb9344dac1300311337cb1f0040d8094e3c2",
+    "url": "https://api.github.com/repos/stablyai/orca/commits/9055eb9344dac1300311337cb1f0040d8094e3c2",
+    "html_url": "https://github.com/stablyai/orca/commit/9055eb9344dac1300311337cb1f0040d8094e3c2"
+  },
+  "files": [
+    {
+      "filename": "config/mobile-ci.vitest.config.mjs",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 3,
+      "changes": 3,
+      "previous_filename": null
+    },
+    {
+      "filename": "config/scripts/ci/sharding/ci-shard-timings.json",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 1,
+      "changes": 1,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/.oxlintrc.json",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "changes": 1,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/MobileMarkdownDetails.tsx",
+      "status": "added",
+      "additions": 39,
+      "deletions": 0,
+      "changes": 39,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/katex-page-style.generated.ts",
+      "status": "added",
+      "additions": 87,
+      "deletions": 0,
+      "changes": 87,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/markdown-inline-matcher.test.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 94,
+      "changes": 94,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/markdown-inline-matcher.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 69,
+      "changes": 69,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/mobile-markdown-blocks.tsx",
+      "status": "modified",
+      "additions": 16,
+      "deletions": 0,
+      "changes": 16,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/mobile-markdown-details.ts",
+      "status": "added",
+      "additions": 114,
+      "deletions": 0,
+      "changes": 114,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/mobile-markdown-mdast-nodes.d.ts",
+      "status": "added",
+      "additions": 26,
+      "deletions": 0,
+      "changes": 26,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/mobile-markdown-preview-html.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 1,
+      "changes": 3,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/mobile-markdown-styles.ts",
+      "status": "modified",
+      "additions": 19,
+      "deletions": 0,
+      "changes": 19,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/mobile-markdown-tree.test.ts",
+      "status": "modified",
+      "additions": 72,
+      "deletions": 0,
+      "changes": 72,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/mobile-markdown-tree.ts",
+      "status": "modified",
+      "additions": 20,
+      "deletions": 3,
+      "changes": 23,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/CommentMarkdown.tsx",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 326,
+      "changes": 326,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/PRCommentCard.tsx",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/PRCommentsSection.test.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 1,
+      "changes": 3,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/PRCommentsSection.tsx",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 2,
+      "changes": 5,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/PrTabOverviewCards.tsx",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 2,
+      "changes": 5,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/PrThreadRow.tsx",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/PrThreadScreen.tsx",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/markdown-blocks.test.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 206,
+      "changes": 206,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/markdown-blocks.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 254,
+      "changes": 254,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/markdown-link-scheme.test.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 32,
+      "changes": 32,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/markdown-link-scheme.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 10,
+      "changes": 10,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/markdown-table-delimiter-performance.test.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 36,
+      "changes": 36,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/components/pr-sidebar/markdown-tag-stripping-performance.test.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 47,
+      "changes": 47,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/files/MobileFileMarkdownPreview.tsx",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 4,
+      "changes": 6,
+      "previous_filename": null
+    },
+    {
+      "filename": "mobile/src/source-control/source-control-status-retry.test.tsx",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3,
+      "changes": 6,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/cli/handlers/orchestration/worker-release-agent-view.ts",
+      "status": "modified",
+      "additions": 38,
+      "deletions": 11,
+      "changes": 49,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/cli/handlers/orchestration/worker-terminal-handlers.ts",
+      "status": "modified",
+      "additions": 16,
+      "deletions": 12,
+      "changes": 28,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/cli/root-help-text-primary.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/cli/specs/orchestration-worker-specs.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 1,
+      "changes": 3,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/api-runtime/browser-extension-api-host.test.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 359,
+      "changes": 362,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/api-runtime/browser-extension-api.electron.test.ts",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 5,
+      "changes": 5,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/api-runtime/browser-extension-content-script-persistence.test.ts",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 66,
+      "changes": 66,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/api-runtime/browser-extension-worker-api-host.test.ts",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 18,
+      "changes": 18,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/api/browser-extension-api-namespaces.test.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 381,
+      "changes": 383,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/api/declarative-net-request.test.ts",
+      "status": "modified",
+      "additions": 6,
+      "deletions": 78,
+      "changes": 84,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/api/downloads.test.ts",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 153,
+      "changes": 153,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/api/notifications.test.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 96,
+      "changes": 97,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/api/tabs-capture.test.ts",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 114,
+      "changes": 114,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/browser-extension-management.test.ts",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 109,
+      "changes": 113,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/declarative-net-request/engine-stages.test.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 97,
+      "changes": 98,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/declarative-net-request/engine.test.ts",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 150,
+      "changes": 150,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/declarative-net-request/indexed-rule.test.ts",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 414,
+      "changes": 414,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/declarative-net-request/session/browser-extension-dnr-requests.test.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 260,
+      "changes": 262,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/declarative-net-request/url-pattern.test.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 18,
+      "changes": 19,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/installation/browser-extension-load-directory.test.ts",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 89,
+      "changes": 89,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/installation/browser-extension-webstore-install.test.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 78,
+      "changes": 79,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/browser/extensions/native-messaging/browser-extension-native-host-lookup.test.ts",
+      "status": "modified",
+      "additions": 0,
+      "deletions": 138,
+      "changes": 138,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/orchestration-open-dialog-delivery-hold.test.ts",
+      "status": "modified",
+      "additions": 78,
+      "deletions": 0,
+      "changes": 78,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/orchestration/db/worker-dispatch/worker-dispatch-start.ts",
+      "status": "modified",
+      "additions": 7,
+      "deletions": 0,
+      "changes": 7,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/orchestration/db/worker-dispatch/worker-dispatch-stop.ts",
+      "status": "modified",
+      "additions": 19,
+      "deletions": 0,
+      "changes": 19,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/rpc/methods/orchestration/federation/federated-transport-safety.test.ts",
+      "status": "modified",
+      "additions": 73,
+      "deletions": 1,
+      "changes": 74,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/rpc/methods/orchestration/federation/federated-worker-stop-host.ts",
+      "status": "added",
+      "additions": 80,
+      "deletions": 0,
+      "changes": 80,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/rpc/methods/orchestration/federation/federation-control.ts",
+      "status": "modified",
+      "additions": 9,
+      "deletions": 70,
+      "changes": 79,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/rpc/methods/orchestration/worker/single-worker-stop.ts",
+      "status": "added",
+      "additions": 292,
+      "deletions": 0,
+      "changes": 292,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/rpc/methods/orchestration/worker/worker-stop-helpers.integration.test.ts",
+      "status": "added",
+      "additions": 153,
+      "deletions": 0,
+      "changes": 153,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/rpc/methods/orchestration/worker/worker-stop-remote-receipt.ts",
+      "status": "added",
+      "additions": 59,
+      "deletions": 0,
+      "changes": 59,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/rpc/methods/orchestration/worker/worker-stop.ts",
+      "status": "modified",
+      "additions": 177,
+      "deletions": 276,
+      "changes": 453,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/rpc/methods/orchestration/worker/workers.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 0,
+      "changes": 3,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/terminal-run-facts.ts",
+      "status": "modified",
+      "additions": 15,
+      "deletions": 0,
+      "changes": 15,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/main/runtime/terminal/wait/terminal-wait-settlements.ts",
+      "status": "modified",
+      "additions": 18,
+      "deletions": 5,
+      "changes": 23,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/preload/browser-extension-api-surface.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/renderer/src/components/editor/rich-markdown/document/tiptap-marked-facade.ts",
+      "status": "modified",
+      "additions": 10,
+      "deletions": 3,
+      "changes": 13,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/renderer/src/components/editor/rich-markdown/links/rich-markdown-link-mark.ts",
+      "status": "modified",
+      "additions": 42,
+      "deletions": 3,
+      "changes": 45,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/renderer/src/components/editor/rich-markdown/links/rich-markdown-prose-url-boundary.test.ts",
+      "status": "added",
+      "additions": 55,
+      "deletions": 0,
+      "changes": 55,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/shared/orchestration-runtime-capabilities.ts",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0,
+      "changes": 4,
+      "previous_filename": null
+    },
+    {
+      "filename": "src/shared/orchestration-worker-stop-receipt.ts",
+      "status": "added",
+      "additions": 26,
+      "deletions": 0,
+      "changes": 26,
+      "previous_filename": null
+    }
+  ]
+}

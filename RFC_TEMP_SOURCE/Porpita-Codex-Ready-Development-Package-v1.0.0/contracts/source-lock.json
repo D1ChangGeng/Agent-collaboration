@@ -1,0 +1,253 @@
+{
+  "schema_version": "porpita-source-lock/1",
+  "prepared_date": "2026-11-08",
+  "repositories": {
+    "acs": {
+      "repository": "D1ChangGeng/Agent-collaboration",
+      "ref": "e5d71968a13e67e3dc51e318867d4ed9a1f946ac",
+      "historical_baseline": "19d7881d49ee887315c54c5bc02e0cc424061376"
+    },
+    "orca": {
+      "repository": "stablyai/orca",
+      "ref": "26179069b664b2fc172963564ed419d97892b6c9",
+      "observed_package_version": "1.4.214"
+    }
+  },
+  "policy": "Reference pins are not reset instructions. Adopt current usable trees, record actual commit, retain local work.",
+  "sources": [
+    {
+      "id": "S01",
+      "repository_key": "acs",
+      "path": "branches/main",
+      "inspection": "observed_ref",
+      "git_blob_sha": null,
+      "url": "https://api.github.com/repos/D1ChangGeng/Agent-collaboration/branches/main",
+      "finding": "main resolves to e5d71968 on package preparation"
+    },
+    {
+      "id": "S02",
+      "repository_key": "orca",
+      "path": "branches/main",
+      "inspection": "observed_ref",
+      "git_blob_sha": null,
+      "url": "https://api.github.com/repos/stablyai/orca/branches/main",
+      "finding": "main resolves to 26179069 on package preparation"
+    },
+    {
+      "id": "S03",
+      "repository_key": "orca",
+      "path": "package.json",
+      "inspection": "reviewed_excerpt",
+      "git_blob_sha": "5205a914fbf263685f1255d1e154e0ba0086e2b6",
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/package.json",
+      "finding": "version 1.4.214; desktop/build:win and test:e2e scripts"
+    },
+    {
+      "id": "S04",
+      "repository_key": "orca",
+      "path": "config/electron-builder.config.cjs",
+      "inspection": "reviewed_excerpt",
+      "git_blob_sha": "524d67736433ef9d2951c40d4db46afa2263fba5",
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/config/electron-builder.config.cjs",
+      "finding": "brand identity, release channels, packaged native/daemon assets"
+    },
+    {
+      "id": "S05",
+      "repository_key": "orca",
+      "path": "src/main/runtime/rpc/methods/orchestration/messaging/send-methods.ts",
+      "inspection": "reviewed_excerpt",
+      "git_blob_sha": "e2ab3020f9aa9b1d9ba336f459f0076e2d474deb",
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/src/main/runtime/rpc/methods/orchestration/messaging/send-methods.ts",
+      "finding": "actual sender/routing and run/dispatch/report paths"
+    },
+    {
+      "id": "S06",
+      "repository_key": "orca",
+      "path": "src/main/native-chat/agent-session-wire/delivery/structured-agent-session-input-handover.ts",
+      "inspection": "reviewed_excerpt",
+      "git_blob_sha": "33ddf83fffdc203315d872fb8d3fcd05ea6fe8da",
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/src/main/native-chat/agent-session-wire/delivery/structured-agent-session-input-handover.ts",
+      "finding": "serialized prepare/validate/enqueue seam"
+    },
+    {
+      "id": "S07",
+      "repository_key": "orca",
+      "path": "src/shared/agent-session/lifecycle/agent-session-mutation-envelope.ts",
+      "inspection": "reviewed_excerpt",
+      "git_blob_sha": "43b79172f29d46b9729c699d2c476f4dc09b98e2",
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/src/shared/agent-session/lifecycle/agent-session-mutation-envelope.ts",
+      "finding": "ordinary mutations ignore expectedRuntimeFence"
+    },
+    {
+      "id": "S08",
+      "repository_key": "orca",
+      "path": "docs/reference/plugin-host-api.md",
+      "inspection": "reviewed_excerpt",
+      "git_blob_sha": "f5e2c6e36bbbf2d2dec34fcae18e21c02ea549d9",
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/docs/reference/plugin-host-api.md",
+      "finding": "Host API 1.4 methods; not a full ACS atomic receiver contract"
+    },
+    {
+      "id": "S09",
+      "repository_key": "orca",
+      "path": "docs/site/content/docs/cli/orchestration.mdx",
+      "inspection": "reviewed_excerpt",
+      "git_blob_sha": "3f6551f3753a4b988ac3a139b08ac4dfd1bfd821",
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/docs/site/content/docs/cli/orchestration.mdx",
+      "finding": "normal/task messages, groups, ask/reply/check/gate semantics"
+    },
+    {
+      "id": "S10",
+      "repository_key": "orca",
+      "path": "src/renderer/src/components/native-chat/NativeChatView.tsx",
+      "inspection": "located_search",
+      "git_blob_sha": null,
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/src/renderer/src/components/native-chat/NativeChatView.tsx",
+      "finding": "native chat renderer reuse entry; inspect implementation when editing"
+    },
+    {
+      "id": "S11",
+      "repository_key": "orca",
+      "path": "src/renderer/src/components/native-chat/pane/actions/NativeChatPaneHeader.tsx",
+      "inspection": "located_search",
+      "git_blob_sha": null,
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/src/renderer/src/components/native-chat/pane/actions/NativeChatPaneHeader.tsx",
+      "finding": "header/menu minimal extensions"
+    },
+    {
+      "id": "S12",
+      "repository_key": "orca",
+      "path": "src/renderer/src/components/native-chat/pane/actions/NativeChatPaneMenuItems.tsx",
+      "inspection": "located_search",
+      "git_blob_sha": null,
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/src/renderer/src/components/native-chat/pane/actions/NativeChatPaneMenuItems.tsx",
+      "finding": "pane actions"
+    },
+    {
+      "id": "S13",
+      "repository_key": "orca",
+      "path": "src/renderer/src/components/native-chat/attachments/intake/NativeChatPaneFileDropSurface.tsx",
+      "inspection": "located_search",
+      "git_blob_sha": null,
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/src/renderer/src/components/native-chat/attachments/intake/NativeChatPaneFileDropSurface.tsx",
+      "finding": "native attachment intake"
+    },
+    {
+      "id": "S14",
+      "repository_key": "acs",
+      "path": "sdk/orca-receiver-port.ts",
+      "inspection": "reviewed_excerpt",
+      "git_blob_sha": "4200f1284910c501f71e04de39f81619d9a4acf1",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/e5d71968a13e67e3dc51e318867d4ed9a1f946ac/sdk/orca-receiver-port.ts",
+      "finding": "existing 4-operation port and actual Host callback needs"
+    },
+    {
+      "id": "S15",
+      "repository_key": "acs",
+      "path": "docs/runtime/COMMUNICATION-CLIENT-API.md",
+      "inspection": "reviewed_excerpt",
+      "git_blob_sha": "db0a8cbdc01abab3750c660ec86b21e8f0ba726c",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/e5d71968a13e67e3dc51e318867d4ed9a1f946ac/docs/runtime/COMMUNICATION-CLIENT-API.md",
+      "finding": "adoption flags, client API, actual search/personal state semantics"
+    },
+    {
+      "id": "S16",
+      "repository_key": "acs",
+      "path": "sdk/ORCA-RECEIVER-INTEGRATION.md",
+      "inspection": "prior_audit_at_same_acs_ref",
+      "git_blob_sha": null,
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/e5d71968a13e67e3dc51e318867d4ed9a1f946ac/sdk/ORCA-RECEIVER-INTEGRATION.md",
+      "finding": "existing Python backend/router; actual Host not installed in prior audit"
+    },
+    {
+      "id": "S17",
+      "repository_key": "acs",
+      "path": "runtime/orca_receiver_backend.py",
+      "inspection": "prior_audit_at_same_acs_ref",
+      "git_blob_sha": null,
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/e5d71968a13e67e3dc51e318867d4ed9a1f946ac/runtime/orca_receiver_backend.py",
+      "finding": "reuse signed verifier/prepared/original dispatch storage"
+    },
+    {
+      "id": "S18",
+      "repository_key": "acs",
+      "path": "sdk/communication-client.ts",
+      "inspection": "prior_audit_at_same_acs_ref",
+      "git_blob_sha": null,
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/e5d71968a13e67e3dc51e318867d4ed9a1f946ac/sdk/communication-client.ts",
+      "finding": "adopt existing HTTP client; do not re-specify wire"
+    },
+    {
+      "id": "S19",
+      "repository_key": "acs",
+      "path": "sdk/communication-state.ts",
+      "inspection": "prior_audit_at_same_acs_ref",
+      "git_blob_sha": null,
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/e5d71968a13e67e3dc51e318867d4ed9a1f946ac/sdk/communication-state.ts",
+      "finding": "reuse local SDK state and owner changes"
+    },
+    {
+      "id": "S20",
+      "repository_key": "acs",
+      "path": "sdk/communication-stream.ts",
+      "inspection": "prior_audit_at_same_acs_ref",
+      "git_blob_sha": null,
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/e5d71968a13e67e3dc51e318867d4ed9a1f946ac/sdk/communication-stream.ts",
+      "finding": "SSE client"
+    },
+    {
+      "id": "S21",
+      "repository_key": "acs",
+      "path": "sdk/integration-ports.ts",
+      "inspection": "prior_audit_at_same_acs_ref",
+      "git_blob_sha": null,
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/e5d71968a13e67e3dc51e318867d4ed9a1f946ac/sdk/integration-ports.ts",
+      "finding": "Native/Workspace/management delegates"
+    },
+    {
+      "id": "S22",
+      "repository_key": "acs",
+      "path": "runtime/client_models.schema.json",
+      "inspection": "prior_audit_at_same_acs_ref",
+      "git_blob_sha": null,
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/e5d71968a13e67e3dc51e318867d4ed9a1f946ac/runtime/client_models.schema.json",
+      "finding": "adopted source of DTOs"
+    },
+    {
+      "id": "S23",
+      "repository_key": "orca",
+      "path": "LICENSE",
+      "inspection": "reviewed_full",
+      "git_blob_sha": "fbf46fc17dacb1f65e03e2b6290eb53ba94b149d",
+      "url": "https://github.com/stablyai/orca/blob/26179069b664b2fc172963564ed419d97892b6c9/LICENSE",
+      "finding": "MIT; retain notices"
+    },
+    {
+      "id": "S24",
+      "repository_key": "acs",
+      "path": "LICENSE",
+      "inspection": "reviewed_excerpt",
+      "git_blob_sha": "461186b1d50631b8537c69dec3905c44a5ded477",
+      "url": "https://github.com/D1ChangGeng/Agent-collaboration/blob/e5d71968a13e67e3dc51e318867d4ed9a1f946ac/LICENSE",
+      "finding": "Sustainable Use License 1.0; preserve distinct licensing"
+    },
+    {
+      "id": "S25",
+      "inspection": "official_docs_observed_not_installed_app",
+      "url": "https://www.onorca.dev/docs/agents/native-chat",
+      "finding": "native Chat surfaces and supported interactions; website may evolve independently of pin"
+    },
+    {
+      "id": "S26",
+      "inspection": "primary_paper_abstract_checked",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/40551163/",
+      "finding": "2025-06-23; Zooid arrangement and colony growth in Porpita porpita; DOI 10.1186/s12983-025-00565-3; name rationale only"
+    },
+    {
+      "id": "S27",
+      "inspection": "provided_prior_audit",
+      "path": "references/PRIOR_AUDIT_CONTEXT.md",
+      "finding": "historical audit known CI/qualification limits; not a mandate to repeat all defensive work"
+    }
+  ]
+}

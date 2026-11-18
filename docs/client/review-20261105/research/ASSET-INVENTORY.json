@@ -1,0 +1,419 @@
+{
+  "acquired_on": "2026-11-05",
+  "note": "Original public reference media and sampled derivatives. Inventory does not establish live interaction or playback. See RESEARCH-NOTES.md for actual viewing claims and source URLs.",
+  "assets": [
+    {
+      "file": "codex-app-20260202-official.webp",
+      "bytes": 1461920,
+      "sha256": "a47813010848b3bf0e047df0508bf9fda0d5c48ce0ae1621c1219844d2314986",
+      "width": 3600,
+      "height": 2026,
+      "format": "WEBP"
+    },
+    {
+      "file": "codex-windows-20260304-official.webp",
+      "bytes": 110018,
+      "sha256": "5997a49996a1407bb7c5aedb2549d3d44afe92f93a46dbd76c306086f62c4c6b",
+      "width": 1919,
+      "height": 1145,
+      "format": "WEBP"
+    },
+    {
+      "file": "linear-inbox-official.png",
+      "bytes": 2038039,
+      "sha256": "0754627b5db89fec5b1819a799d17940105c2bbb5ef830c215caf8d0b6fe14b3",
+      "width": 3600,
+      "height": 2080,
+      "format": "PNG"
+    },
+    {
+      "file": "opencode-active-session-official.png",
+      "bytes": 747629,
+      "sha256": "7dc78994b679d039d7bd1a1bed70484e13abb620d693032398644a348e7912e9",
+      "width": 2766,
+      "height": 1970,
+      "format": "PNG"
+    },
+    {
+      "file": "opencode-new-session-official.png",
+      "bytes": 623348,
+      "sha256": "baab6b9d8c3341d54db833cc288d9a799e9efdef7d87cf15738c76ee8ddc9c6c",
+      "width": 2766,
+      "height": 1970,
+      "format": "PNG"
+    },
+    {
+      "file": "opencode-servers-official.png",
+      "bytes": 680136,
+      "sha256": "a0937b5a7fff19e4a9b1412a06da527daad3785a3351e5696e8dcc98c773d97e",
+      "width": 2766,
+      "height": 1970,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-00.00s.png",
+      "bytes": 6606,
+      "sha256": "08fbfc2251a226edac822d80e7006e283680d94cd7723d2a5faf614999e7b2c1",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-02.00s.png",
+      "bytes": 34255,
+      "sha256": "8b6baa5687661c2c00cd24e8dc51146c06559c87455a7f042049548bc2e93478",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-04.00s.png",
+      "bytes": 134220,
+      "sha256": "810b0591c0de098ae5f500b52747463927b3c9465c009ab5a7951ab90ab0af37",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-06.00s.png",
+      "bytes": 133232,
+      "sha256": "dcfa706c0f736dff06f6d32410dc0b1465abf4ed18c4162ab5cb7d46c6dae8cd",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-08.00s.png",
+      "bytes": 140990,
+      "sha256": "a4d324c13e6a09f3893d01d8803ac028e2d849c1774dd5798e23b0f1be3d3783",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-10.00s.png",
+      "bytes": 136639,
+      "sha256": "19e36bd0279d4a92081b42a63b32f23ed212050677e8c5f9a77dd29c4e6123fd",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-12.00s.png",
+      "bytes": 140944,
+      "sha256": "60f81c0a69eb2a2b7c16ee0b58eba0b2d45654c0ebeda594b2bd84bb8d290419",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-14.00s.png",
+      "bytes": 151895,
+      "sha256": "b7921e4661f006075f4f03255b6d640a6d4d09891986859b8973229d5b538ea2",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-16.00s.png",
+      "bytes": 152985,
+      "sha256": "6a2e1bd91500c0eb1b36ca1a4f05ba67da172768f3c68c53150331f5eb3f0b7c",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-18.00s.png",
+      "bytes": 154567,
+      "sha256": "06fc0bbe17f2091a44baaebf767e75911e59a2d27feca6022b556646547f7c4e",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-20.00s.png",
+      "bytes": 125190,
+      "sha256": "174625a6a94dffae032d7ee2db8e74251c87a163403cadad08e1c903abfab8bb",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-21.70s.png",
+      "bytes": 6588,
+      "sha256": "457a4bd5805fefd6aebe00c083cec591b70192eb509e1efdd41bbe81688d2f9a",
+      "width": 1460,
+      "height": 1000,
+      "format": "PNG"
+    },
+    {
+      "file": "slack-activity-contact-sheet.jpg",
+      "bytes": 372067,
+      "sha256": "3f57cf759769d4a44e86c09c93c95ce4fbe1efc178b93d284924259aa9afbdf4",
+      "width": 1920,
+      "height": 1436,
+      "format": "JPEG"
+    },
+    {
+      "file": "slack-activity-intro-official.gif",
+      "bytes": 6852208,
+      "sha256": "3aa7ab6335c70ca3c99c1e36fbd5af7ac8ed3dde9d10c1f564c3514b8b9362cb",
+      "width": 1460,
+      "height": 1000,
+      "format": "GIF"
+    },
+    {
+      "file": "slack-activity-official.gif",
+      "bytes": 6852208,
+      "sha256": "3aa7ab6335c70ca3c99c1e36fbd5af7ac8ed3dde9d10c1f564c3514b8b9362cb",
+      "width": 1460,
+      "height": 1000,
+      "format": "GIF"
+    },
+    {
+      "file": "slack-thread-official.png",
+      "bytes": 311547,
+      "sha256": "d33e9b357328a1d89b91d1fe680b81672891d1f6cbc604124951f916cf3516a2",
+      "width": 1400,
+      "height": 1063,
+      "format": "PNG"
+    },
+    {
+      "file": "vscode-floating-editor-official.png",
+      "bytes": 968115,
+      "sha256": "44e8ab0168d531569fb5cc7222358ebb68c096c2bc35925afb11eb911bf47b9d",
+      "width": 1280,
+      "height": 800,
+      "format": "PNG"
+    },
+    {
+      "file": "vscode-side-by-side-official.png",
+      "bytes": 481070,
+      "sha256": "b8d2f25386517b6bb9428f9b859e3ba4e75c2f01e3038313963915bf709fcf95",
+      "width": 1201,
+      "height": 669,
+      "format": "PNG"
+    },
+    {
+      "file": "vscode-ui-official.png",
+      "bytes": 455485,
+      "sha256": "c813500df6be03419383ced61b3a1cb4a97bdb44c7eebd4fd7856019d578fd58",
+      "width": 1200,
+      "height": 796,
+      "format": "PNG"
+    },
+    {
+      "file": "zulip-channels-topics.webp",
+      "bytes": 52238,
+      "sha256": "a3125b985064524c51125a5aa43441e651619de48d0dea312513c58af73ded36",
+      "width": 1388,
+      "height": 770,
+      "format": "WEBP"
+    },
+    {
+      "file": "zulip-navigation-official.mp4",
+      "bytes": 12214539,
+      "sha256": "fffe1bb0baefab1a448fd9082738eaf271feb7ec247901242cd7bccb2280914b"
+    },
+    {
+      "file": "zulip-tour-000.00s.jpg",
+      "bytes": 39027,
+      "sha256": "2e912088190d7b3f9c72e8f799842380e421e48de752e96d53ba107a4d1ac44f",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-010.00s.jpg",
+      "bytes": 173681,
+      "sha256": "af68f3428c1c1fc7085c9797a370c94e42c6ad4d6f2dcbd24816546e3b74ec42",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-020.00s.jpg",
+      "bytes": 171366,
+      "sha256": "b5074e47890b6e832cb0f55eda89b0c98f5ed12da9fdce051fbd23318e8686b4",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-026.00s.jpg",
+      "bytes": 164279,
+      "sha256": "f8da40fa6f5a03ff5387d0dc9f3aa03fd98175e07b55ff7c56a83830f2da8d6d",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-028.00s.jpg",
+      "bytes": 159463,
+      "sha256": "82d45f5ca1ce12c9fb882295ac00ab34c21008f99387b3bdfa2c32bb5ef68909",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-030.00s.jpg",
+      "bytes": 171300,
+      "sha256": "bcfe93679d5b4e0328de33bfe972419d29f400bf97064a574490309c2dd358db",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-032.00s.jpg",
+      "bytes": 190820,
+      "sha256": "5c3ec88938751eb4fef73cdf047d14f7d36c768667565c88cc7ef44d2863d0d3",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-034.00s.jpg",
+      "bytes": 185901,
+      "sha256": "965384236dc08ce0bffb2b2019cc1ca2bbaa1247a334db8f5c7f697683c5c7b7",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-036.00s.jpg",
+      "bytes": 210374,
+      "sha256": "8a1b5a35186f754f51ae24f373d8e5d87a8383afd88d221a80f3e579165ffb50",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-038.00s.jpg",
+      "bytes": 193927,
+      "sha256": "611d081f90a07eaa8c40bcb16fbf293554af3115a94a37d38f44014a7b3715b3",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-040.00s.jpg",
+      "bytes": 184694,
+      "sha256": "f67d4a9caba4c886095c5933e13a9e5f4d91c0a08edf00704469eb212e83a3cd",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-042.00s.jpg",
+      "bytes": 192501,
+      "sha256": "c1890590c8b985e1b83f0f3d562d9aa618b19a757950a44db7ae62c3a2d06efc",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-044.00s.jpg",
+      "bytes": 223839,
+      "sha256": "c0251c959c0d013ae1337539567bbbac6aa9f1a29adc2a78419387750cd71965",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-046.00s.jpg",
+      "bytes": 198932,
+      "sha256": "19604add2712ed7644db7c11c606678a8a5e9644b987154b7c89a37a99ba79ee",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-048.00s.jpg",
+      "bytes": 218526,
+      "sha256": "b8fda57e916a24ddbd5ef88efd4393ec5456b805db230850d894b0a6d25b13be",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-050.00s.jpg",
+      "bytes": 207386,
+      "sha256": "1b8d30b94a04d2c8bcb0ba8a49d29720b2fbd12e01982adb95fd4d66450c83ad",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-060.00s.jpg",
+      "bytes": 182169,
+      "sha256": "fd7363addf3ca5349f486afea1b6522e6dc9ee55ef6ed169eaffd0b77bcaff9d",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-070.00s.jpg",
+      "bytes": 187834,
+      "sha256": "3ffc57d24a8df3b8d07dfc3612402f7266b8055caa15a4fa2322c104b9bacdf9",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-080.00s.jpg",
+      "bytes": 202096,
+      "sha256": "1d665c0f2cdd6b25187fc3d43a45b959b58a67c10331de5e6e04791b6d9fe608",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-090.00s.jpg",
+      "bytes": 221520,
+      "sha256": "1ec2a7e7562757c99e2fa4d6bc42defb5cbb8256b28931fc545ba37ab14317be",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-100.00s.jpg",
+      "bytes": 218896,
+      "sha256": "aa60aa8fd63c821a4c1db4751f1cb249fc5f53b53c4fcb07983865c1b2541cc1",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-110.00s.jpg",
+      "bytes": 159274,
+      "sha256": "ef6b2d1c3ec65db0aacd9051fe6cc32718b2e2835a45d6f5b22190e41874c62a",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-116.00s.jpg",
+      "bytes": 64800,
+      "sha256": "2ee6bf7a3fe01d63416b6dd4cd42f83bcc05e0eb356c78771fce1427dfd8bd74",
+      "width": 1920,
+      "height": 1080,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-contact-sheet.jpg",
+      "bytes": 462742,
+      "sha256": "128cea8e9800874a605db525f300bf1e1916bde8d495436b1ee8f80b302fbf8e",
+      "width": 1920,
+      "height": 1950,
+      "format": "JPEG"
+    },
+    {
+      "file": "zulip-tour-reading-episode.jpg",
+      "bytes": 343002,
+      "sha256": "a5962a66dc97285d83e657130799cd0925e7a832b933d246a4d05cf1e7a1c4f9",
+      "width": 1920,
+      "height": 1200,
+      "format": "JPEG"
+    }
+  ]
+}

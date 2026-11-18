@@ -1,0 +1,252 @@
+[
+  {
+    "id": "F01",
+    "video": "V1",
+    "requested_seek_seconds": 2,
+    "source_derivative": "episode-orchestration\\v1_002.000s.jpg",
+    "file": "curated\\01_v1_002.000s_workers-started.jpg",
+    "sha256": "8f4999d72b48257e2c529d14ca1fef5ded5e3dd310e20bcd66c06df220ad866c",
+    "label": "workers-started",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F02",
+    "video": "V1",
+    "requested_seek_seconds": 8,
+    "source_derivative": "episode-orchestration\\v1_008.000s.jpg",
+    "file": "curated\\02_v1_008.000s_parallel-work.jpg",
+    "sha256": "1d21f11af152212ac296bd9580415d9d76bf7f4c8a1001f330b1b7622a09f5db",
+    "label": "parallel-work",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F03",
+    "video": "V1",
+    "requested_seek_seconds": 10,
+    "source_derivative": "episode-orchestration\\v1_010.000s.jpg",
+    "file": "curated\\03_v1_010.000s_worker-report.jpg",
+    "sha256": "8deee5a9603d81fcd93f535e956d18993559b41251999ab2a5beeb202103237c",
+    "label": "worker-report",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F04",
+    "video": "V1",
+    "requested_seek_seconds": 16,
+    "source_derivative": "sparse\\v1_016.000s.jpg",
+    "file": "curated\\04_v1_016.000s_chat-terminal-files.jpg",
+    "sha256": "d5823952e6df9fb582ce424d6b924005f115b2d3779c76b35c883d1dd16ae395",
+    "label": "chat-terminal-files",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F05",
+    "video": "V1",
+    "requested_seek_seconds": 32,
+    "source_derivative": "sparse\\v1_032.000s.jpg",
+    "file": "curated\\05_v1_032.000s_cli-agent.jpg",
+    "sha256": "cebf594e88a006ef2205321e9c0b886ae304260b2f87cc87ecb652f9fba84365",
+    "label": "cli-agent",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F06",
+    "video": "V1",
+    "requested_seek_seconds": 40,
+    "source_derivative": "episode-browser\\v1_040.000s.jpg",
+    "file": "curated\\06_v1_040.000s_feedback-mode.jpg",
+    "sha256": "c8a404adde82dc6ebba934691072a2c28bce0c177229587495fbfaa5bbaf0df1",
+    "label": "feedback-mode",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F07",
+    "video": "V1",
+    "requested_seek_seconds": 43,
+    "source_derivative": "episode-browser\\v1_043.000s.jpg",
+    "file": "curated\\07_v1_043.000s_element-annotation.jpg",
+    "sha256": "3b74df1936fdd3a802c881265246e6f4a48dbb1eb132cf95e9d6ce0ba93d4425",
+    "label": "element-annotation",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F08",
+    "video": "V1",
+    "requested_seek_seconds": 45,
+    "source_derivative": "episode-browser\\v1_045.000s.jpg",
+    "file": "curated\\08_v1_045.000s_feedback-recipient.jpg",
+    "sha256": "4d6cfbe550f82792717f842f3d76817a16a7304f9503511573546f9fb04a9d5b",
+    "label": "feedback-recipient",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F09",
+    "video": "V1",
+    "requested_seek_seconds": 48,
+    "source_derivative": "episode-browser\\v1_048.000s.jpg",
+    "file": "curated\\09_v1_048.000s_feedback-in-chat.jpg",
+    "sha256": "14e269c9991cd9d9c674e1cd4904a59e4d78371e0ae3f911d46b39f9ecd504f2",
+    "label": "feedback-in-chat",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F10",
+    "video": "V1",
+    "requested_seek_seconds": 56,
+    "source_derivative": "episode-git-review\\v1_056.000s.jpg",
+    "file": "curated\\10_v1_056.000s_staged-commit.jpg",
+    "sha256": "296ff5dec91f9fdcb785c0c7ed6cca5b618f91aab5c708cfaf183ba0745c7a7d",
+    "label": "staged-commit",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F11",
+    "video": "V1",
+    "requested_seek_seconds": 64,
+    "source_derivative": "episode-git-review\\v1_064.000s.jpg",
+    "file": "curated\\11_v1_064.000s_pr-checks-review.jpg",
+    "sha256": "5e9ce276eda71aa1e5c58359392a00c1c6d75009830b3d9dca58754af0306a15",
+    "label": "pr-checks-review",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F12",
+    "video": "V1",
+    "requested_seek_seconds": 72,
+    "source_derivative": "episode-git-review\\v1_072.000s.jpg",
+    "file": "curated\\12_v1_072.000s_review-to-agent.jpg",
+    "sha256": "cb25f53006e6ed30c08b242d74fc6909d7f3a325b07204352f23d014c8ace92f",
+    "label": "review-to-agent",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F13",
+    "video": "V1",
+    "requested_seek_seconds": 80,
+    "source_derivative": "sparse\\v1_080.000s.jpg",
+    "file": "curated\\13_v1_080.000s_plugins.jpg",
+    "sha256": "c602813af1fb84de711e052af5a4d4bfbd55866ac850bc73d903d6014c066f21",
+    "label": "plugins",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F14",
+    "video": "V1",
+    "requested_seek_seconds": 96,
+    "source_derivative": "episode-phone\\v1_096.000s.jpg",
+    "file": "curated\\14_v1_096.000s_phone-desktop-result.jpg",
+    "sha256": "25faddaaae7d2e8127c8d80979511eefcf96d702801a6c2a0a00250381c2d5ab",
+    "label": "phone-desktop-result",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F15",
+    "video": "V2",
+    "requested_seek_seconds": 34,
+    "source_derivative": "episode-chat-terminal\\v2_034.000s.jpg",
+    "file": "curated\\15_v2_034.000s_chat-to-terminal-menu.jpg",
+    "sha256": "d0fe6a9759c7f6b149ef658bb94ec6b900ccbca0a6cc322b6d0b0f263dcbc806",
+    "label": "chat-to-terminal-menu",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F16",
+    "video": "V2",
+    "requested_seek_seconds": 38,
+    "source_derivative": "episode-chat-terminal\\v2_038.000s.jpg",
+    "file": "curated\\16_v2_038.000s_terminal-context-result.jpg",
+    "sha256": "d56f04c6308826c85d7bcc949b533f3b6a2fd2d3d671324299d9fa96db23ac6d",
+    "label": "terminal-context-result",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F17",
+    "video": "V2",
+    "requested_seek_seconds": 40,
+    "source_derivative": "episode-chat-terminal\\v2_040.000s.jpg",
+    "file": "curated\\17_v2_040.000s_terminal-to-chat-menu.jpg",
+    "sha256": "5ed9756357bd84892c3e79dd90f2c46ccc7e06f0f49af3541b60012e452b0449",
+    "label": "terminal-to-chat-menu",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F18",
+    "video": "V2",
+    "requested_seek_seconds": 42,
+    "source_derivative": "episode-chat-terminal\\v2_042.000s.jpg",
+    "file": "curated\\18_v2_042.000s_chat-context-result.jpg",
+    "sha256": "8c86570515c191856e4394f79764d96c3efa6969ec9af9de012868bee700b334",
+    "label": "chat-context-result",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F19",
+    "video": "V2",
+    "requested_seek_seconds": 53,
+    "source_derivative": "episode-remote\\v2_053.000s.jpg",
+    "file": "curated\\19_v2_053.000s_host-selection.jpg",
+    "sha256": "7921456ea775d4150d30404d32309d1428288b0678aa6fe9e167479e3d3126d1",
+    "label": "host-selection",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F20",
+    "video": "V2",
+    "requested_seek_seconds": 59,
+    "source_derivative": "episode-remote\\v2_059.000s.jpg",
+    "file": "curated\\20_v2_059.000s_remote-worktree-task.jpg",
+    "sha256": "ca45a1977d16e7a2b886f08816eb312cc65b36f772211498e658d54210a4b230",
+    "label": "remote-worktree-task",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F21",
+    "video": "V2",
+    "requested_seek_seconds": 96,
+    "source_derivative": "sparse\\v2_096.000s.jpg",
+    "file": "curated\\21_v2_096.000s_split-terminal.jpg",
+    "sha256": "3ab6e51b5da41651e87e3452896d5fd674ad907201cdcf06a66204f35fa1a804",
+    "label": "split-terminal",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F22",
+    "video": "V2",
+    "requested_seek_seconds": 104,
+    "source_derivative": "sparse\\v2_104.000s.jpg",
+    "file": "curated\\22_v2_104.000s_issue-to-worktree.jpg",
+    "sha256": "2e32e72c729fb5ea641399735d0de57d3af47dd3a9fe59466b5124577ca22011",
+    "label": "issue-to-worktree",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F23",
+    "video": "V2",
+    "requested_seek_seconds": 120,
+    "source_derivative": "sparse\\v2_120.000s.jpg",
+    "file": "curated\\23_v2_120.000s_markdown-editor.jpg",
+    "sha256": "a648c93d60472cb4ba70e26e61092ed32f825c39dc259003ea397ded19664370",
+    "label": "markdown-editor",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F24",
+    "video": "V2",
+    "requested_seek_seconds": 129,
+    "source_derivative": "episode-notes\\v2_129.000s.jpg",
+    "file": "curated\\24_v2_129.000s_line-note-entry.jpg",
+    "sha256": "23ebd8cf9a75682d106f50ee56a33ccbf546ec29f87280d56e55cac7575871ac",
+    "label": "line-note-entry",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  },
+  {
+    "id": "F25",
+    "video": "V2",
+    "requested_seek_seconds": 136,
+    "source_derivative": "episode-notes\\v2_136.000s.jpg",
+    "file": "curated\\25_v2_136.000s_line-note-to-agent.jpg",
+    "sha256": "78e7a2e9b5ff06d024e8171928a4833f21b27d05c520bb8093ad9aa1227eddbc",
+    "label": "line-note-to-agent",
+    "role": "Timestamped whole frame of website promotional demonstration; not actual app runtime verification"
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "status": "adopted",
+  "actual_acs_path": "D:\\Chatgpt\\Agent-collaboration",
+  "actual_acs_commit": "e5d71968a13e67e3dc51e318867d4ed9a1f946ac",
+  "actual_client_path": "D:\\Chatgpt\\Porpita",
+  "actual_client_commit": "26179069b664b2fc172963564ed419d97892b6c9",
+  "adopted_orca_commit": "26179069b664b2fc172963564ed419d97892b6c9",
+  "existing_local_changes_preserved": true,
+  "primary_target": "windows-x64",
+  "core_modes": [
+    "managed-local",
+    "existing-service"
+  ],
+  "model_access": [],
+  "branch": "codex/porpita-desktop",
+  "push_status": "not-pushed-no-porpita-remote-supplied"
+}

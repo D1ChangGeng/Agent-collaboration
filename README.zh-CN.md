@@ -194,6 +194,8 @@ Tunnel 连接使用已激活版本，现有会话继续使用当前版本。兼�
 项目元数据随仓库同步；运行观测和凭据留在本机私有存储。消息投递与 Git 同步
 分别记录。[setup Skill](SKILL.md)提供受控的建立、接管、修复、升级和验证。
 
+[ORCA优先采用：能力评估与路线决策](docs/client/ORCA-FIRST.zh-CN.md)是现行产品方向：先验原版ORCA与Skills／配置，再按真实缺口验证插件，Fork与Core保留由实证决定。[此前Client设计与研究](docs/client/ORCA-FIRST.zh-CN.md#archive)已整体原位归档，作为历史资料保留。
+
 仓库提供[贡献说明](CONTRIBUTING.md)、[安全报告方式](SECURITY.md)、
 [变更记录](CHANGELOG.md)与 [Sustainable Use License 1.0](LICENSE)。许可允许在其
 用途和再分发条款内免费公开分发。发行包附带源码绑定清单和 SHA-256 摘要。

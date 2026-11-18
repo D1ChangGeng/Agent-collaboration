@@ -135,6 +135,10 @@ async def maintain_communication_deliveries(service):
     next_housekeeping = 0
     try:
         while True:
+            if dispatcher is not None:
+                # Trusted Host capacity may enroll after the service starts. Each cycle
+                # gets a fresh registry snapshot; in-flight dispatch keeps its binding.
+                dispatcher.service.endpoints = dict(authority._delivery_endpoints)
             for message_id, task in list(running.items()):
                 if task.done():
                     await task

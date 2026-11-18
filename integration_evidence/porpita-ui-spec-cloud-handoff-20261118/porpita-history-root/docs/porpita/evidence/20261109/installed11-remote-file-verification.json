@@ -1,0 +1,48 @@
+{
+  "result": "pass",
+  "scope": "actual installed candidate 11; two separate Porpita Hosts on one physical Windows x64 machine",
+  "human_upload_and_wake": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-a24c6e10dcb148a7b07c01b4c66ad866",
+  "actual_agent_relay": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-ee8a31c2ef11403cb5c4e79fc5b40286",
+  "remote_explicit_reply": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-a799b427cc624881b836e8e99bc30ab3",
+  "attachment_ids": [
+    "attachment-4897927c56a9427b9f1293fb5c317d5e",
+    "attachment-a73d379503f94f499da31ed1518b3ff8"
+  ],
+  "bytes": 90,
+  "sha256": "63111456b9c8d200d953e3879f47d5d65f46d3e9b024e39df3a78ffb65b46dc3",
+  "target_path": "D:\\Chatgpt\\Porpita\\.build-tools\\installed04-second-host-35zMA2\\agent-session-attachments\\c2637391-d1ab-4f65-8bd4-9a6f9e5654ef\\porpita-remote-file-11.txt",
+  "target_bytes_match_original": true,
+  "remote_dispatch": {
+    "message_id": "message-ee8a31c2ef11403cb5c4e79fc5b40286",
+    "attempt_id": "delivery-attempt-289db978-fa64-48eb-af2a-cbb6c14bc626",
+    "dispatch_id": "delivery-dispatch:delivery-attempt-289db978-fa64-48eb-af2a-cbb6c14bc626",
+    "endpoint_id": "porpita-receiver-8a4ecb7c97df1093c4c95d65f18d8516",
+    "host_ref": "porpita-host-7f6be78ea79fbaff298592bc319ae468",
+    "host_boot": "0512af6a-4947-49c4-8974-c085285ea1be"
+  },
+  "original_native_acks": [
+    {
+      "schema_version": "acs-adapter/1",
+      "operation_id": "delivery-invocation:delivery-attempt-bbdd90ad-1549-4e3a-adff-cc746ebc86d0",
+      "outcome": "accepted",
+      "effect_possible": true,
+      "evidence_ref": "porpita-journal:opencode_a6512a39_76e4_4c77_a1fa_0f9e65d1dc66:1794227761020-d3666e8ef4878fc441fa0589cf679349:2",
+      "native_input_ref": "1794227761020-d3666e8ef4878fc441fa0589cf679349",
+      "binding_epoch": 1,
+      "provider_generation": "9e380b10-75e8-4ede-a54f-d127694442e9",
+      "reason_code": null
+    },
+    {
+      "schema_version": "acs-adapter/1",
+      "operation_id": "delivery-invocation:delivery-attempt-289db978-fa64-48eb-af2a-cbb6c14bc626",
+      "outcome": "accepted",
+      "effect_possible": true,
+      "evidence_ref": "porpita-journal:opencode_02ebcf5d_53a5_4b10_bca8_117ddd1d9601:1794227860950-cb907cabe3caa38de47e85fc18822c5a:8",
+      "native_input_ref": "1794227860950-cb907cabe3caa38de47e85fc18822c5a",
+      "binding_epoch": 1,
+      "provider_generation": "7e2e6763-d2f5-4f02-aaa3-5da5c5963914",
+      "reason_code": null
+    }
+  ],
+  "challenge_absent_from_send_bodies": true
+}

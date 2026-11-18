@@ -1,0 +1,30 @@
+{
+  "browser": "156.0.8078.76",
+  "mode": "headless Chrome, file protocol",
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "width": 1100,
+      "height": 900
+    }
+  ],
+  "assertions": "peer boundary, exact focus closure, reply independence, full-view and original-return anchors, per-peer draft and reading-state restoration, local invoke/message-only send, empty peer, partial parent, long outgoing Markdown measure, sidebar/context/search, source trial, zero network requests",
+  "measures": {
+    "incoming": 820,
+    "outgoing": 792,
+    "viewport": 1440,
+    "scrollWidth": 1440
+  },
+  "narrow": {
+    "sidebar": 244,
+    "width": 1100,
+    "viewport": 1100,
+    "composer": 815,
+    "reading": 807
+  },
+  "pageErrors": [],
+  "networkRequests": []
+}

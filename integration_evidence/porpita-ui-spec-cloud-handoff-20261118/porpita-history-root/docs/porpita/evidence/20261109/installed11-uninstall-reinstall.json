@@ -1,0 +1,74 @@
+{
+  "candidate": "prototype-11",
+  "installerSha256": "b7f817ffa12fbf42b05195a91948c64619fcab33d8c938b152184fcdb912a90b",
+  "authenticode": "NotSigned",
+  "installedAsarSha256": "370b91f7f850fc16f0500e44e5e52395830d4d3b7d7f283b4b549d721507359e",
+  "uninstallExit": 0,
+  "executableAndRegistrationRemoved": true,
+  "before": {
+    "managedConfiguration": "29a4dc063fc85becc4a5f00d929ce3e6b3cd80cdb2445ceda94c1549d111dc40",
+    "orchestration": "480729ff5f264f861769da1905b75239d95f834d098bc11cb661ed015ca80453",
+    "localProof": "c92d0503ad0926a21b15801642a76924f6552d1f58fab7c535a42129f5de2cac",
+    "stockExecutable": "06b3fd151b005203ba77251c80e953bbdf1b201b8582ea004d960a03b519da25",
+    "stockAsar": "cc769191ca128562bb874627c10b99629513b00115000abb143e1f056c7dcae0",
+    "defaultProfileStore": "c5f4337c2e3ea0a39eec702b5ead4820c45f2ee286972b2833422a35b82d8463"
+  },
+  "afterUninstall": {
+    "managedConfiguration": "29a4dc063fc85becc4a5f00d929ce3e6b3cd80cdb2445ceda94c1549d111dc40",
+    "orchestration": "480729ff5f264f861769da1905b75239d95f834d098bc11cb661ed015ca80453",
+    "localProof": "c92d0503ad0926a21b15801642a76924f6552d1f58fab7c535a42129f5de2cac",
+    "stockExecutable": "06b3fd151b005203ba77251c80e953bbdf1b201b8582ea004d960a03b519da25",
+    "stockAsar": "cc769191ca128562bb874627c10b99629513b00115000abb143e1f056c7dcae0",
+    "defaultProfileStore": "c5f4337c2e3ea0a39eec702b5ead4820c45f2ee286972b2833422a35b82d8463"
+  },
+  "originalPorpitaProfileRetained": true,
+  "ownedRepoUnchanged": true,
+  "isolatedStockOrcaProcessUnaffected": true,
+  "shortcutBefore": [
+    {
+      "path": "D:\\Desktop\\Porpita.lnk",
+      "target": "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Porpita\\Porpita.exe",
+      "arguments": ""
+    },
+    {
+      "path": "C:\\Users\\D26FO\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Porpita.lnk",
+      "target": "C:\\Users\\D26FO\\AppData\\Local\\Programs\\Porpita\\Porpita.exe",
+      "arguments": ""
+    }
+  ],
+  "registrationBefore": [
+    {
+      "DisplayName": "Porpita",
+      "DisplayVersion": "0.1.0",
+      "InstallLocation": null
+    }
+  ],
+  "reinstallExit": 0,
+  "afterReinstall": {
+    "managedConfiguration": "29a4dc063fc85becc4a5f00d929ce3e6b3cd80cdb2445ceda94c1549d111dc40",
+    "orchestration": "480729ff5f264f861769da1905b75239d95f834d098bc11cb661ed015ca80453",
+    "localProof": "c92d0503ad0926a21b15801642a76924f6552d1f58fab7c535a42129f5de2cac",
+    "stockExecutable": "06b3fd151b005203ba77251c80e953bbdf1b201b8582ea004d960a03b519da25",
+    "stockAsar": "cc769191ca128562bb874627c10b99629513b00115000abb143e1f056c7dcae0",
+    "defaultProfileStore": "c5f4337c2e3ea0a39eec702b5ead4820c45f2ee286972b2833422a35b82d8463"
+  },
+  "shortcutAfter": [
+    {
+      "path": "D:\\Desktop\\Porpita.lnk",
+      "target": "C:\\Users\\D26FO\\AppData\\Local\\Programs\\porpita\\Porpita.exe",
+      "arguments": ""
+    },
+    {
+      "path": "C:\\Users\\D26FO\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Porpita.lnk",
+      "target": "C:\\Users\\D26FO\\AppData\\Local\\Programs\\porpita\\Porpita.exe",
+      "arguments": ""
+    }
+  ],
+  "registrationAfter": [
+    {
+      "DisplayName": "Porpita",
+      "DisplayVersion": "0.1.0",
+      "InstallLocation": null
+    }
+  ]
+}

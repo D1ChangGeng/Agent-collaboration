@@ -1,0 +1,58 @@
+{
+  "candidate": "prototype-11",
+  "home": {
+    "taskId": "task_5daae3cc3a21",
+    "taskState": "completed",
+    "runId": "run_051de675d0c3",
+    "dispatchId": "ctx_7248bf6a5f12",
+    "state": "succeeded",
+    "stage": "settled",
+    "error": null
+  },
+  "workerContact": {
+    "authority": "porpita-f6df910bb487f4b723bffa02cc8beb4e",
+    "incarnation": "installation-1",
+    "project": "porpita-0d267b376a9bcee2fe74d0f82dea1508",
+    "address": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-e71d4f9567af6c9ab8a402a3ca3b2186"
+  },
+  "instruction": {
+    "backend": "acs",
+    "messageHandle": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-c4b072992b3e4b9a8dc2494af5fa7600",
+    "operationRef": "op-0d96edf3-e4f1-491f-9950-bccd2e2ff1d2",
+    "nativeState": "accepted"
+  },
+  "attachment": {
+    "dispatch_id": "ctx_7248bf6a5f12",
+    "state": "succeeded",
+    "stage": "worker_report_settled",
+    "worktree_id": "756ad76b-99eb-4377-932a-50056593f2ab::D:/Chatgpt/Porpita/.build-tools/installed04-remote-projects-7KJ2c8/Porpita-Remote-04",
+    "terminal_handle": "structworker_3a2d55e7-075f-417d-a496-abde07ad7a9c",
+    "last_error": null
+  },
+  "relay": [
+    {
+      "kind": "worker_done",
+      "sequence": 1,
+      "acked": true,
+      "reference": {
+        "action": "worker_done",
+        "dispatchId": "ctx_7248bf6a5f12",
+        "taskId": "task_5daae3cc3a21",
+        "outcome": "succeeded",
+        "filesModified": [
+          "paired-worker-11.txt"
+        ],
+        "messageHandle": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-71f0244cda944dee865a2ef89850f209",
+        "operationRef": "op-bdb8ee29-9fc9-4af5-9ff4-da6bb63c980a"
+      },
+      "hasBody": false
+    }
+  ],
+  "workerFile": {
+    "bytes": 37,
+    "sha256": "6c95f3ee311702104a17cd7781ff608df1b92f25189df86c6266c7ec79ad17ce",
+    "expected": true
+  },
+  "originalQuestion": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-42e62701b92442dc93b6f4840c44f723",
+  "explicitReply": "message-1c49994872d54331b8bbe370315298e2"
+}

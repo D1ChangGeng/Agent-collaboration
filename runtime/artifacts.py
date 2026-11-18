@@ -345,15 +345,18 @@ class WindowsArtifactStore:
         from runtime.receiver_paths import PathSecurityRejected, private_parent
 
         self._root = Path(root).absolute()
+        # Explicit Win32 extended paths keep the digest and atomic staging
+        # names usable below long installed profiles, without machine policy.
+        self._io_root = self._extended_path(self._root)
         self._scope_id = scope_id
         self._max_bytes = max_bytes
         self._lock = threading.RLock()
-        self._root.mkdir(parents=True, exist_ok=True)
+        self._io_root.mkdir(parents=True, exist_ok=True)
         try:
-            private_parent(self._root)
+            private_parent(self._io_root)
         except PathSecurityRejected:
             raise ArtifactError("Windows artifact root ACL or identity rejected") from None
-        marker = self._root / ".scope"
+        marker = self._io_root / ".scope"
         if marker.exists() and marker.read_bytes() != scope_id.encode():
             raise ArtifactError("artifact scope binding differs")
         if not marker.exists():
@@ -371,6 +374,15 @@ class WindowsArtifactStore:
     @property
     def max_bytes(self) -> int:
         return self._max_bytes
+
+    @staticmethod
+    def _extended_path(path: Path) -> Path:
+        value = str(path)
+        if value.startswith("\\\\?\\"):
+            return path
+        if value.startswith("\\\\"):
+            return Path("\\\\?\\UNC\\" + value[2:])
+        return Path("\\\\?\\" + value)
 
     @staticmethod
     def _relative_path(sha256: str) -> str:
@@ -395,7 +407,7 @@ class WindowsArtifactStore:
                 path=self._relative_path(digest), sha256=digest, size_bytes=len(data),
                 media_type=media_type, kind=kind, scope_id=self.scope_id, immutable=True,
             )
-            target = self._root / ref.path
+            target = self._io_root / ref.path
             target.parent.mkdir(exist_ok=True)
             if target.exists():
                 if target.read_bytes() != data:
@@ -426,7 +438,7 @@ class WindowsArtifactStore:
         with self._lock:
             if self._closed or not isinstance(digest, str) or re.fullmatch(r"[a-f0-9]{64}", digest) is None:
                 raise ArtifactError("Windows artifact digest is unavailable")
-            target = self._root / self._relative_path(digest)
+            target = self._io_root / self._relative_path(digest)
             try:
                 info = target.stat(follow_symlinks=False)
             except OSError as error:
@@ -444,7 +456,7 @@ class WindowsArtifactStore:
     def read(self, ref: ArtifactRef) -> bytes:
         with self._lock:
             self._validate_ref(ref)
-            data = (self._root / ref.path).read_bytes()
+            data = (self._io_root / ref.path).read_bytes()
             if len(data) != ref.size_bytes or hashlib.sha256(data).hexdigest() != ref.sha256:
                 raise ArtifactError("Windows artifact digest or size differs")
             return data

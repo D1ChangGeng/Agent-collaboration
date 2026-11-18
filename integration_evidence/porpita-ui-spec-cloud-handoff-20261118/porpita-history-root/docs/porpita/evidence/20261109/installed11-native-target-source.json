@@ -1,0 +1,22 @@
+{
+  "candidate": "prototype-11",
+  "requestId": "porpita-final-target-11-original",
+  "handle": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-4f173bd02320486abe17a8e45d8edb30",
+  "session": "opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8",
+  "peer": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-b81ba3554e9bb35d6836910b6d955ad0",
+  "operation": "op-20e034a4-9047-4a53-8bb8-778b0a814e74",
+  "duplicate": true,
+  "actualNativeAck": true,
+  "actualDelivery": {
+    "state": "accepted",
+    "operation_ref": "op-20e034a4-9047-4a53-8bb8-778b0a814e74",
+    "binding_epoch": 1,
+    "provider_generation": null,
+    "evidence_ref": "receiver:receiver:delivery-attempt-a26180f0-5db8-471c-8013-17954466e117:delivery-dispatch:delivery-attempt-a26180f0-5db8-471c-8013-17954466e117:delivery.dispatch:runtime_acknowledged",
+    "native_input_ref": null,
+    "reason_code": null
+  },
+  "originalNativeInput": "1794227306857-11248931f2d168f200abb3e88f14d1d0",
+  "switchedFromDifferentActiveChat": true,
+  "openedOriginalExecution": true
+}

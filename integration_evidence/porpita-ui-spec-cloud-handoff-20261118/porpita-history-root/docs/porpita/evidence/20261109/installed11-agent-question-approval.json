@@ -1,0 +1,18 @@
+{
+  "candidate": "prototype-11",
+  "question": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-cddc5301ee6941979cec46864249a1e9",
+  "questioner": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-b81ba3554e9bb35d6836910b6d955ad0",
+  "coordinator": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-a56a3f3aca59ccb92acf20a4157c2a44",
+  "beforeNativePermission": true,
+  "beforeFileAbsent": true,
+  "operatorAction": "Allow on original Native approval card",
+  "file": "D:/Chatgpt/Agent-collaboration/.tmp/porpita-development/qa-approval09/agent-question-approved-11.txt",
+  "fileAfter": true,
+  "followBefore": "accepted_by_authority",
+  "followAfter": "runtime_acknowledged",
+  "followMessage": "message-4e06a0ecf591489a8ca05f857bd30a09",
+  "explicitOriginalReply": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-527954da83594509b2fe4733bbf5e94e",
+  "originalReplyTo": [
+    "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-cddc5301ee6941979cec46864249a1e9"
+  ]
+}

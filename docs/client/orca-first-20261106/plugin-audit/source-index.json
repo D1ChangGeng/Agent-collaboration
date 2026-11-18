@@ -1,0 +1,282 @@
+[
+  {
+    "id": "P01",
+    "path": "docs/reference/plugin-host-api.md",
+    "start": 5,
+    "end": 43,
+    "claim": "Host API public method table",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-host-api.md#L5-L43"
+  },
+  {
+    "id": "P02",
+    "path": "src/shared/plugins/workers/plugin-host-api.ts",
+    "start": 15,
+    "end": 28,
+    "claim": "Public facade: internal raw RPC registry not exposed",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/workers/plugin-host-api.ts#L15-L28"
+  },
+  {
+    "id": "P03",
+    "path": "src/shared/plugins/contributions/plugin-panel-contribution.ts",
+    "start": 97,
+    "end": 150,
+    "claim": "Panel schema: right sidebar HTML/components",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/contributions/plugin-panel-contribution.ts#L97-L150"
+  },
+  {
+    "id": "P04",
+    "path": "docs/reference/plugin-declarative-ui.md",
+    "start": 349,
+    "end": 392,
+    "claim": "Native controls for organization/message workflows",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-declarative-ui.md#L349-L392"
+  },
+  {
+    "id": "P05",
+    "path": "src/shared/plugins/contributions/plugin-contribution-points.ts",
+    "start": 104,
+    "end": 111,
+    "claim": "Reserved slots constrained empty",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/contributions/plugin-contribution-points.ts#L104-L111"
+  },
+  {
+    "id": "P06",
+    "path": "src/shared/plugins/contributions/plugin-contribution-points.ts",
+    "start": 154,
+    "end": 158,
+    "claim": "Worker hooks implemented",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/contributions/plugin-contribution-points.ts#L154-L158"
+  },
+  {
+    "id": "P07",
+    "path": "src/shared/plugins/contributions/plugin-contribution-points.ts",
+    "start": 229,
+    "end": 234,
+    "claim": "Actual reserved contribution points",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/contributions/plugin-contribution-points.ts#L229-L234"
+  },
+  {
+    "id": "P08",
+    "path": "src/shared/plugins/contributions/plugin-hook-contribution.ts",
+    "start": 5,
+    "end": 17,
+    "claim": "Eight hook names",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/contributions/plugin-hook-contribution.ts#L5-L17"
+  },
+  {
+    "id": "P09",
+    "path": "src/shared/plugins/contributions/plugin-hook-contribution.ts",
+    "start": 48,
+    "end": 55,
+    "claim": "onError pass/deny schema",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/contributions/plugin-hook-contribution.ts#L48-L55"
+  },
+  {
+    "id": "P10",
+    "path": "docs/reference/plugin-host-api.md",
+    "start": 279,
+    "end": 294,
+    "claim": "Hook semantics and harness/host limitations",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-host-api.md#L279-L294"
+  },
+  {
+    "id": "P11",
+    "path": "docs/reference/plugin-authoring.md",
+    "start": 700,
+    "end": 714,
+    "claim": "Conflicting planned-hooks text",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-authoring.md#L700-L714"
+  },
+  {
+    "id": "P12",
+    "path": "docs/reference/plugin-authoring.md",
+    "start": 46,
+    "end": 64,
+    "claim": "Execution profiles; full-access Node worker",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-authoring.md#L46-L64"
+  },
+  {
+    "id": "P13",
+    "path": "src/main/plugins/workers/plugin-host-process.ts",
+    "start": 54,
+    "end": 68,
+    "claim": "Node fork with scrubbed environment; no Node permission flags",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-host-process.ts#L54-L68"
+  },
+  {
+    "id": "P14",
+    "path": "src/main/plugins/workers/plugin-worker-env.ts",
+    "start": 1,
+    "end": 45,
+    "claim": "Worker environment allowlist excludes ORCA identity vars",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-worker-env.ts#L1-L45"
+  },
+  {
+    "id": "P15",
+    "path": "src/shared/plugins/capabilities/plugin-capability-gate.ts",
+    "start": 32,
+    "end": 61,
+    "claim": "Per call surface/consent/capability gate",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/capabilities/plugin-capability-gate.ts#L32-L61"
+  },
+  {
+    "id": "P16",
+    "path": "src/main/plugins/workers/plugin-host-methods.ts",
+    "start": 41,
+    "end": 111,
+    "claim": "Strict params + mutation attempt audit + live active check",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-host-methods.ts#L41-L111"
+  },
+  {
+    "id": "P17",
+    "path": "src/main/plugins/plugin-service-host-call.ts",
+    "start": 40,
+    "end": 68,
+    "claim": "Live manifest/install/approval revocation check",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/plugin-service-host-call.ts#L40-L68"
+  },
+  {
+    "id": "P18",
+    "path": "docs/reference/plugin-isolated-frames.md",
+    "start": 12,
+    "end": 55,
+    "claim": "Desktop guest process/origin/network/isolation fence",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-isolated-frames.md#L12-L55"
+  },
+  {
+    "id": "P19",
+    "path": "src/main/plugins/workers/plugin-worker-controller.ts",
+    "start": 82,
+    "end": 106,
+    "claim": "Per-spawn integrity/admission; explicitly not a sandbox",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-worker-controller.ts#L82-L106"
+  },
+  {
+    "id": "P20",
+    "path": "src/main/plugins/workers/plugin-resident-worker.ts",
+    "start": 6,
+    "end": 13,
+    "claim": "Resident worker on hooks/statusbar",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-resident-worker.ts#L6-L13"
+  },
+  {
+    "id": "P21",
+    "path": "docs/reference/plugin-authoring.md",
+    "start": 136,
+    "end": 141,
+    "claim": "Worker activate/deactivate and idle stopping",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-authoring.md#L136-L141"
+  },
+  {
+    "id": "P22",
+    "path": "docs/reference/plugin-authoring.md",
+    "start": 728,
+    "end": 744,
+    "claim": "Worker lifecycle experimental / can stop anytime",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/docs/reference/plugin-authoring.md#L728-L744"
+  },
+  {
+    "id": "P23",
+    "path": "src/shared/plugins/workers/plugin-host-api-storage-schemas.ts",
+    "start": 11,
+    "end": 16,
+    "claim": "Storage caps",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/workers/plugin-host-api-storage-schemas.ts#L11-L16"
+  },
+  {
+    "id": "P24",
+    "path": "src/main/plugins/plugin-storage-store.ts",
+    "start": 25,
+    "end": 35,
+    "claim": "Own disk storage file",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/plugin-storage-store.ts#L25-L35"
+  },
+  {
+    "id": "P25",
+    "path": "src/main/plugins/plugin-secrets-store.ts",
+    "start": 88,
+    "end": 104,
+    "claim": "Refuse secrets writes without OS keyring/basic_text",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/plugin-secrets-store.ts#L88-L104"
+  },
+  {
+    "id": "P26",
+    "path": "src/main/plugins/workers/plugin-host-workspace-method-bindings.ts",
+    "start": 183,
+    "end": 213,
+    "claim": "Launch terminal then async prompt; no delivery receipt",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/main/plugins/workers/plugin-host-workspace-method-bindings.ts#L183-L213"
+  },
+  {
+    "id": "P27",
+    "path": "src/shared/project-group-types.ts",
+    "start": 1,
+    "end": 20,
+    "claim": "Native groups metadata",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/project-group-types.ts#L1-L20"
+  },
+  {
+    "id": "P28",
+    "path": "src/cli/handlers/orchestration/message-send-handler.ts",
+    "start": 97,
+    "end": 124,
+    "claim": "Actual CLI send identity + runtime mutation",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/cli/handlers/orchestration/message-send-handler.ts#L97-L124"
+  },
+  {
+    "id": "P29",
+    "path": "src/cli/handlers/orchestration/message-check-handler.ts",
+    "start": 45,
+    "end": 72,
+    "claim": "Actual CLI check identity + read/peek/ack modes",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/cli/handlers/orchestration/message-check-handler.ts#L45-L72"
+  },
+  {
+    "id": "P30",
+    "path": "src/cli/handlers/orchestration/question-handler.ts",
+    "start": 42,
+    "end": 80,
+    "claim": "Actual CLI ask path",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/cli/handlers/orchestration/question-handler.ts#L42-L80"
+  },
+  {
+    "id": "P31",
+    "path": "src/cli/handlers/orchestration/terminal-identity.ts",
+    "start": 15,
+    "end": 59,
+    "claim": "Caller identity resolution and identity-less refusal",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/cli/handlers/orchestration/terminal-identity.ts#L15-L59"
+  },
+  {
+    "id": "P32",
+    "path": "src/cli/specs/skills.ts",
+    "start": 72,
+    "end": 101,
+    "claim": "Native skills installation contract (bundled registry only)",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/cli/specs/skills.ts#L72-L101"
+  },
+  {
+    "id": "P33",
+    "path": "src/shared/skills.ts",
+    "start": 5,
+    "end": 43,
+    "claim": "Native skill inventory metadata",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/skills.ts#L5-L43"
+  },
+  {
+    "id": "P34",
+    "path": "src/shared/mcp-config.ts",
+    "start": 45,
+    "end": 70,
+    "claim": "Native MCP configuration candidates/inspection",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/mcp-config.ts#L45-L70"
+  },
+  {
+    "id": "P35",
+    "path": "src/shared/plugins/workers/plugin-hook-chain.ts",
+    "start": 64,
+    "end": 101,
+    "claim": "Fail closed only for current blocking participants",
+    "url": "https://github.com/stablyai/orca/blob/52b8a24d275fe0cb598abb54119426712fae7a70/src/shared/plugins/workers/plugin-hook-chain.ts#L64-L101"
+  }
+]

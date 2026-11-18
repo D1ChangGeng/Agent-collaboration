@@ -1,0 +1,16 @@
+{
+  "candidate": "prototype-11",
+  "peer": "collaborator:porpita-0d267b376a9bcee2fe74d0f82dea1508:agent-f1673ac84784e9040d66af4a85456109",
+  "before": 4,
+  "firstLaunch": {
+    "kind": "structured",
+    "session": "opencode_a6512a39_76e4_4c77_a1fa_0f9e65d1dc66"
+  },
+  "emptyBefore": true,
+  "fromVisibleNativeChat": true,
+  "conversation": "conversation-f3d2a84726c3c21c2c0a28259e369cfe6ed3190eb70f0bfd838e2b9e33c68107",
+  "after": 4,
+  "ordinaryMessage": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-b233eec0b46848c5a158f4250aa4cc4d",
+  "explicitReply": "message:porpita-0d267b376a9bcee2fe74d0f82dea1508:message-af04e1cec39341e59153ba74b52f82a5",
+  "tasksUnchanged": true
+}

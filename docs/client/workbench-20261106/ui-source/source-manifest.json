@@ -1,0 +1,22 @@
+[
+  {
+    "path": "src/renderer/src/components/Sidebar.tsx",
+    "source_url": "https://github.com/stablyai/orca/blob/9055eb9344dac1300311337cb1f0040d8094e3c2/src/renderer/src/components/Sidebar.tsx",
+    "git_blob": "f14f3ce5d5383096f6263dac119f54154693d467"
+  },
+  {
+    "path": "src/renderer/src/components/TerminalWorkbenchContainer.tsx",
+    "source_url": "https://github.com/stablyai/orca/blob/9055eb9344dac1300311337cb1f0040d8094e3c2/src/renderer/src/components/TerminalWorkbenchContainer.tsx",
+    "git_blob": "8d34a86bf707d44bd4a85e2cda549646a14aae14"
+  },
+  {
+    "path": "src/renderer/src/components/TerminalSplitWorkspaceSurfaces.tsx",
+    "source_url": "https://github.com/stablyai/orca/blob/9055eb9344dac1300311337cb1f0040d8094e3c2/src/renderer/src/components/TerminalSplitWorkspaceSurfaces.tsx",
+    "git_blob": "49d1dde2006ae887002ddb9f2d0afe10bf0669c3"
+  },
+  {
+    "path": "src/renderer/src/components/TerminalTitlebarTabs.tsx",
+    "source_url": "https://github.com/stablyai/orca/blob/9055eb9344dac1300311337cb1f0040d8094e3c2/src/renderer/src/components/TerminalTitlebarTabs.tsx",
+    "git_blob": "14aa9fcf44b4446e423eb16771eb9b6055c20cab"
+  }
+]

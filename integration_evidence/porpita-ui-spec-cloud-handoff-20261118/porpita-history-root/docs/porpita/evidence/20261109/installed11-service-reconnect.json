@@ -1,0 +1,37 @@
+{
+  "candidate": "prototype-11",
+  "before": {
+    "authority": "porpita-f6df910bb487f4b723bffa02cc8beb4e",
+    "incarnation": "installation-1",
+    "conversation": "conversation-f3d2a84726c3c21c2c0a28259e369cfe6ed3190eb70f0bfd838e2b9e33c68107",
+    "draftRevision": 7,
+    "draftDigest": "49b32f805e78e4f5ae4dbcd40284cd0ccf893d5a5f71c4360e04ea458f0c132f",
+    "draftCorrect": true,
+    "historyDigest": "168793712a59de236cd5e6977bd527d509a77d58bf6ae769368cbb69c53199c4",
+    "messages": 4,
+    "contactsDigest": "86389d1a89af896e6d40ac2e8a52c307267a160193382a78397310f52a0bd5ae",
+    "source": "dd0c5ec55248d0fa415fbdbeb715f541b682a34e5668e5f2d93bdb3cb0cb63f6",
+    "sourceSession": "opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8",
+    "nativeInput": "1794181258188-d63f0ab7781b4a21f055f97d7278d9cf",
+    "pendingDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "actualCorePortClosed": true,
+  "serviceAfterDisconnect": "disconnected",
+  "after": {
+    "authority": "porpita-f6df910bb487f4b723bffa02cc8beb4e",
+    "incarnation": "installation-1",
+    "conversation": "conversation-f3d2a84726c3c21c2c0a28259e369cfe6ed3190eb70f0bfd838e2b9e33c68107",
+    "draftRevision": 7,
+    "draftDigest": "49b32f805e78e4f5ae4dbcd40284cd0ccf893d5a5f71c4360e04ea458f0c132f",
+    "draftCorrect": true,
+    "historyDigest": "168793712a59de236cd5e6977bd527d509a77d58bf6ae769368cbb69c53199c4",
+    "messages": 4,
+    "contactsDigest": "86389d1a89af896e6d40ac2e8a52c307267a160193382a78397310f52a0bd5ae",
+    "source": "dd0c5ec55248d0fa415fbdbeb715f541b682a34e5668e5f2d93bdb3cb0cb63f6",
+    "sourceSession": "opencode_1800aadb_f32d_4d4a_9427_c96b9d0d26d8",
+    "nativeInput": "1794181258188-d63f0ab7781b4a21f055f97d7278d9cf",
+    "pendingDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "exactFactsRetained": true,
+  "settingsReopened": true
+}

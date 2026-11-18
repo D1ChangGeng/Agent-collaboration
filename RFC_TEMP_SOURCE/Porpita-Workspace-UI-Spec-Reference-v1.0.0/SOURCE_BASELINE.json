@@ -1,0 +1,30 @@
+{
+  "porpita": {
+    "repository": "D1ChangGeng/Porpita",
+    "branch": "codex/porpita-desktop",
+    "commit": "517555d5ce68ba8e417cdd2192b561a4061237ef"
+  },
+  "orca_upstream": {
+    "repository": "stablyai/orca",
+    "commit": "26179069b664b2fc172963564ed419d97892b6c9"
+  },
+  "acs": {
+    "repository": "D1ChangGeng/Agent-collaboration",
+    "commit": "e5d71968a13e67e3dc51e318867d4ed9a1f946ac"
+  },
+  "verified_paths": [
+    "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+    "src/renderer/src/app-shell/TitlebarMainStrip.tsx",
+    "src/renderer/src/components/sidebar/index.tsx",
+    "src/renderer/src/components/sidebar/SidebarAgentsList.tsx",
+    "src/renderer/src/components/right-sidebar/index.tsx",
+    "src/renderer/src/components/right-sidebar/right-sidebar-panel-content.tsx",
+    "src/renderer/src/components/right-sidebar/use-right-sidebar-activity-items.ts",
+    "src/renderer/src/store/slices/tabs/tabs-slice-contract.ts"
+  ],
+  "notes": [
+    "Reference only; Codex must verify local checkout before UI SPEC work.",
+    "Existing Orca tabs/groups/layout are worktree-scoped in inspected TabsSlice contract.",
+    "Existing RightSidebar is App Shell scoped, not a generic standalone SidePanel Instance host."
+  ]
+}

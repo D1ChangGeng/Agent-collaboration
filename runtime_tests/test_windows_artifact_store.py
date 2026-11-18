@@ -35,6 +35,21 @@ def test_windows_artifact_roundtrip_and_corruption_detection(tmp_path):
             store.read(ref)
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows CAS backend")
+def test_windows_artifact_roundtrip_below_a_long_installed_profile(tmp_path):
+    root = tmp_path / ("private-" + "x" * max(1, 222 - len(str(tmp_path)) - len("private-") - 1))
+    _private(root)
+    payload = "Porpita installed path · 多语言附件\n".encode()
+    with WindowsArtifactStore(root, "long-profile-scope") as store:
+        ref = store.put_bytes(payload, media_type="text/plain")
+        assert len(str(root / ref.path)) > 260
+        assert store.put_bytes(payload, media_type="text/plain") == ref
+        assert store.read(ref) == payload
+    with WindowsArtifactStore(root, "long-profile-scope") as reopened:
+        observed = reopened.reference_for_digest(ref.sha256, kind=ref.kind, media_type=ref.media_type)
+        assert observed == ref and reopened.read(observed) == payload
+
+
 @pytest.mark.skipif(os.name != "nt", reason="Windows ACL backend")
 def test_windows_inherited_broad_acl_is_rejected(tmp_path):
     inherited = tmp_path / "inherited"

@@ -574,9 +574,12 @@ class CommunicationActions:
                        (self.context.tenant_id, project_id, args["to"], request_ids, message_id))
         wait_expiry = cursor.fetchone()[0]
         through_wait = wait_expiry is not None
-        attachment_hold = bool(packet.attachment_refs) and packet.activation == "invoke" and not client_target
-        reserved = through_wait and not direct_inbox and not attachment_hold and getattr(authority, "_wait_ingress_recovery_enabled", False)
-        if through_wait and not direct_inbox and not attachment_hold:
+        from runtime.native_attachment_delivery import native_attachment_delivery_supported
+
+        attachment_native = bool(packet.attachment_refs) and packet.activation == "invoke" and not client_target
+        attachment_hold = attachment_native and not native_attachment_delivery_supported(authority, endpoints[0][0])
+        reserved = through_wait and not direct_inbox and not attachment_native and getattr(authority, "_wait_ingress_recovery_enabled", False)
+        if through_wait and not direct_inbox and not attachment_native:
             if reserved:
                 from runtime.communication_wait_ingress import reserve
 
@@ -599,8 +602,8 @@ class CommunicationActions:
                 "message_handle": message_handle, "response_handle": response_handle, "sequence": sequence,
                 "from": sender, "to": args["to"], "activation": packet.activation,
                 "native_status": "client_inbox" if client_target else "not_requested" if packet.activation == "message_only"
-                    else "native_attachment_delivery_unsupported" if packet.attachment_refs
-                    else "wait_result_reserved" if reserved else "active_wait_ingress" if through_wait else "pending",
+                    else "native_attachment_delivery_unsupported" if attachment_hold
+                    else "wait_result_reserved" if reserved else "active_wait_ingress" if through_wait and not attachment_native else "pending",
                 "client_request_id": args.get("client_request_id"),
                 "delivery_recovery": "active" if getattr(self.service.authority, "_communication_maintenance_running", False)
                     else "external_dispatcher_configured" if getattr(self.service.authority, "_communication_maintenance_mode", "auto") == "external"
