@@ -1,0 +1,358 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "自动化",
+  "section": [
+    "automations"
+  ],
+  "text": "返回应用\nCtrl\n+\nF\n入门清单\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n~\n自动化\n\n安排智能体工作并选择自动化是否显示在侧栏中。\n\n显示自动化按钮\n\n在侧边栏中显示自动化快捷方式。\n\n自动化如何工作\n\n安排智能体工作一次，然后让 Porpita 创建每次运行并将其结果保存在一起。\n\n1\n\n描述工作\n\n选择项目、智能体、提示和时间表。\n\n2\n\nPorpita 会启动每次运行\n\n当时间表到期时，选定的智能体将获得一个新的工作区。\n\n3\n\n查看结果\n\n检查最近的运行并在需要时继续工作。\n\n开放式自动化\n创建时间表并检查最近的运行。\n关闭\n—\n·\n0\nPorpita 中的 Codex 现在使用 ~/.codex\nCodex 可能会再次要求信任文件夹或批准命令。重新添加您仅在 Porpita 中添加的所有 MCP 服务器。\n入门流程已完成！\n\n如果你目前喜欢 Porpita，在 GitHub 上加星可以帮助其他开发者发现它。\n\n打开 GitHub\n稍后\nPorpita 现在无需共享服务器即可运行 Codex\n这使得智能体状态更加可靠。您可以在“设置”中将其重新打开。\n打开设置",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "入门清单",
+      "label": "入门清单，已完成 1/8。显示设置指南。",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "~",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示自动化按钮",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "开放式自动化\n创建时间表并检查最近的运行。",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开 GitHub",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "稍后",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开设置",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "14-settings-automations.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 40172
+}

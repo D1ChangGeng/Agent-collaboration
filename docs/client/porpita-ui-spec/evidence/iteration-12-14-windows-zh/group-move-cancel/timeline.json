@@ -1,0 +1,82 @@
+{
+  "actions": [
+    {
+      "name": "Drag the tab to the group selector",
+      "startMs": 88682.2111,
+      "endMs": 88879.1202
+    },
+    {
+      "name": "Press Escape before choosing a destination",
+      "startMs": 88879.1535,
+      "endMs": 88899.5733
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794703478.010912,
+      "receivedAtMs": 88682.20659999999,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.09332,
+      "receivedAtMs": 88716.0264,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.100569,
+      "receivedAtMs": 88723.04,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.101802,
+      "receivedAtMs": 88724.17719999999,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.112324,
+      "receivedAtMs": 88733.9844,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.175338,
+      "receivedAtMs": 88797.3248,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.181705,
+      "receivedAtMs": 88803.0744,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.194196,
+      "receivedAtMs": 88815.4518,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.20796,
+      "receivedAtMs": 88829.3337,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.212982,
+      "receivedAtMs": 88834.4243,
+      "file": "009.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.225448,
+      "receivedAtMs": 88847.2162,
+      "file": "010.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.256736,
+      "receivedAtMs": 88878.4289,
+      "file": "011.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703478.263041,
+      "receivedAtMs": 88885.4804,
+      "file": "012.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

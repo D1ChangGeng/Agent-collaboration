@@ -1,0 +1,152 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "reduce",
+  "focus": "Find files",
+  "section": [],
+  "text": "Release planning and production readiness · 发布计划与生产准备\nRelease review · 发版核对\nUI-spec-sample\nUI-spec-sample\ndocs\nrelease-checklist.md\nOff\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "Release planning and production readiness · 发布计划与生产准备",
+      "label": "Choose group: Release planning and production readiness · 发布计划与生产准备",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Release review · 发版核对",
+      "label": null,
+      "title": "Release review · 发版核对",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Release review · 发版核对",
+      "title": "Close Release review · 发版核对",
+      "test": null
+    },
+    {
+      "text": "UI-spec-sample",
+      "label": null,
+      "title": "UI-spec-sample",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close UI-spec-sample",
+      "title": "Close UI-spec-sample",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New work object",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open work",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Return to worktree",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Parent folder",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Explorer",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer placement",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Clear file filter",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "release-checklist.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i11-detach.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 36383
+}

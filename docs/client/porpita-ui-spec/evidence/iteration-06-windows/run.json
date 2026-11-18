@@ -1,0 +1,43 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i6-palette",
+      "trigger": "Search for a closed conversation in Open chats",
+      "elapsedMs": 6397,
+      "result": "captured"
+    },
+    {
+      "id": "i6-hand-off",
+      "trigger": "Use the keyboard to carry the query into Vault without opening a chat",
+      "elapsedMs": 7201,
+      "result": "captured"
+    },
+    {
+      "id": "i6-narrow",
+      "trigger": "Transfer a different query from a narrow command palette",
+      "elapsedMs": 2796,
+      "result": "captured"
+    },
+    {
+      "id": "i6-empty-query",
+      "trigger": "Open session history with an empty jump query and browse it",
+      "elapsedMs": 2271,
+      "result": "captured"
+    },
+    {
+      "id": "i6-dock-unavailable",
+      "trigger": "Open the jump palette from Skills while the workspace Dock is unavailable",
+      "elapsedMs": 1969,
+      "result": "captured"
+    }
+  ]
+}

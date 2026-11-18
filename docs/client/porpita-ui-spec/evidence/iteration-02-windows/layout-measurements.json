@@ -1,0 +1,80 @@
+[
+  {
+    "label": "split wide",
+    "viewport": 1280,
+    "left": 280,
+    "center": 650,
+    "right": 350,
+    "focus": null,
+    "terminals": 2,
+    "terminalWidths": [
+      312,
+      312
+    ]
+  },
+  {
+    "label": "split 820",
+    "viewport": 820,
+    "left": 280,
+    "center": 320,
+    "right": 220,
+    "focus": null,
+    "terminals": 2,
+    "terminalWidths": [
+      147,
+      147
+    ]
+  },
+  {
+    "label": "split 600, left preferred",
+    "viewport": 600,
+    "left": 280,
+    "center": 320,
+    "right": 0,
+    "focus": "right",
+    "terminals": 2,
+    "terminalWidths": [
+      147,
+      147
+    ]
+  },
+  {
+    "label": "split 600, right preferred and reduced motion",
+    "viewport": 600,
+    "left": 0,
+    "center": 320,
+    "right": 280,
+    "focus": "right",
+    "terminals": 2,
+    "terminalWidths": [
+      147,
+      147
+    ]
+  },
+  {
+    "label": "split wide restored",
+    "viewport": 1280,
+    "left": 280,
+    "center": 650,
+    "right": 350,
+    "focus": "right",
+    "terminals": 2,
+    "terminalWidths": [
+      312,
+      312
+    ]
+  },
+  {
+    "label": "split 820, side activity bar",
+    "viewport": 820,
+    "left": 240,
+    "center": 320,
+    "right": 260,
+    "focus": null,
+    "terminals": 2,
+    "terminalWidths": [
+      147,
+      147
+    ]
+  }
+]

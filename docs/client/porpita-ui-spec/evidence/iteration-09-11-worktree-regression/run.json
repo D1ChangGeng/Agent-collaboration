@@ -1,0 +1,37 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i7-split",
+      "trigger": "Place two actual terminal tabs in separate content panes",
+      "elapsedMs": 5256,
+      "result": "captured"
+    },
+    {
+      "id": "i7-keyboard",
+      "trigger": "Adjust the split by keyboard while keeping the active content",
+      "elapsedMs": 1102,
+      "result": "captured"
+    },
+    {
+      "id": "i7-cancel",
+      "trigger": "Preview a pointer resize and cancel back to the committed ratio",
+      "elapsedMs": 1758,
+      "result": "captured"
+    },
+    {
+      "id": "i7-narrow",
+      "trigger": "Change a split in a narrow window with reduced motion",
+      "elapsedMs": 1432,
+      "result": "captured"
+    }
+  ]
+}

@@ -1,0 +1,260 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Ask anything, @ to mention files, / for commands",
+  "section": [],
+  "text": "Release planning and production readiness · 发布计划与生产准备\nRelease review · 发版核对\nRelease review · 发版核对\nUI-spec-sample\n\nStart a chat with Codex\n\nAsk Codex to inspect code, explain output, or make a change.\n\nCodex isn't signed in. Run `codex login`.\n\nChecklist draft A\n\nFull access\nModel\nmain\n· Main checkout\nmain\nBuild triage · 构建排查\nUI-spec-folder\n\nStart a chat with Codex\n\nAsk Codex to inspect code, explain output, or make a change.\n\nCodex isn't signed in. Run `codex login`.\n\nBuild draft B\n\nFull access\nModel\nmain\n· Main checkout\nmain\nUI-spec-sample\ndocs\nrelease-checklist.md\nOff\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "Release planning and production readiness · 发布计划与生产准备",
+      "label": "Choose group: Release planning and production readiness · 发布计划与生产准备",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Release review · 发版核对",
+      "label": null,
+      "title": "Release review · 发版核对",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Release review · 发版核对",
+      "title": "Close Release review · 发版核对",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New work object",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open work",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Return to worktree",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Dismiss",
+      "title": "Dismiss",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Attach file",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Full access",
+      "label": "Permissions Full access",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More chat controls",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Model",
+      "label": "Model",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Start dictation",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Send",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· Main checkout",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Dismiss",
+      "title": "Dismiss",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Attach file",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Full access",
+      "label": "Permissions Full access",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More chat controls",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Model",
+      "label": "Model",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Start dictation",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Send",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· Main checkout",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Parent folder",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Explorer",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer placement",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Clear file filter",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "release-checklist.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i13-focus-chat.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 81408
+}

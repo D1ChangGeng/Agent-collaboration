@@ -1,0 +1,57 @@
+# id|界面／对象|源码|当前行为|处置|目标规范|回放
+O.modal.new-workspace-composer|新工作区 Composer 覆盖层|NewWorkspaceComposerModal.tsx,AppRootSurfaces.tsx|全局 modal 与 pending creation 交接|保留|持久化可编辑草稿，退出回到触发点；与新建用户布局区别|J02,J07
+O.modal.add-repo|添加项目入口|AddRepoDialog.tsx,AppRootSurfaces.tsx|本机／Host，浏览、克隆或新建不同步骤|保留|目标范围在每步可见，取消不变更原布局|J02,J07,J12
+O.modal.confirm-non-git-folder|普通文件夹确认|NonGitFolderDialog.tsx|提示普通目录可用操作；确认后登记|保留|说明普通目录和 Git 工作树能力差异；可返回路径选择|J02,J07
+O.modal.confirm-add-project-from-folder|目录升为项目确认|AddProjectFromFolderDialog.tsx|从目录触发项目导入|保留|显示作用目标及源路径，取消不改变目录树|J07,J08
+O.modal.project-added|项目接入完成|ProjectAddedDialog.tsx|接入完成提示后续打开或创建|保留|仅依据真实接入结果，焦点可返回|J02,J07
+O.modal.agent-session-history|Agent 历史选择|AiVaultSessionHistoryDialog.tsx,AppRootSurfaces.tsx|全局承载 /resume 与历史；隔离 Chat 键盘处理|保留|来源和可恢复性分开；查看不启动；恢复定位同一 Session|J03,J05
+O.modal.chat-account-usage|原生 Chat 账号用量|NativeChatAccountUsageDialog.tsx|/usage 或界面进入；按账户展示|保留|可滚动、可刷新；零、未知、当前时段分开|J05,J11
+O.modal.node-dist-mirror|Node 镜像诊断与选择|NodeDistMirrorDialog.tsx|来自设置、SSH、终端或提示，修改镜像|保留|区分网络不可用和未配置，说明生效范围|J11,J12
+O.modal.diagram-viewer|图表查看覆盖层|DiagramViewerModal.tsx|虚拟消息退场后查看器仍存在|保留|保留缩放/返回/错误，关闭回到原消息或可达替代|J05,J08
+O.modal.workspace-cleanup|工作区清理|WorkspaceCleanupDialog.tsx|按执行环境选择可清理对象|保留|受影响分支和未保存结果可见，Porpita 布局不被当清理目标|J06,J07
+O.modal.quick-open|文件 Quick Open|QuickOpen.tsx,AppRootSurfaces.tsx|命令面板搜索和打开文件，按 Host 归属|保留|保留搜索、预览和键盘；不拿全局焦点代替原 Host|J02,J08
+O.modal.worktree-palette|全局跳转与最近访问|WorktreeJumpPalette.tsx,AppRootSurfaces.tsx|工作树、浏览器等可由搜索打开|改造|保留 cmdk 控件并区分 Session/工作对象类别；Esc 归还焦点|J02,J03
+O.modal.setup-guide|入门清单弹窗|SetupGuideModal.tsx|分项进度，跳转到对应工具或设置|保留|成功依据实际完成；返回保持来源|J01,J02
+O.modal.feature-wall|特性墙与演示|FeatureWallModal.tsx|可选特性教育与入口|保留|演示可退出；不将样例数据解释成运行结果|J01,J10,J13
+O.modal.feature-tips|特性提示列表|FeatureTipsModal.tsx|提示可按使用阶段进入或关闭|保留|文案与实际可达功能一致，支持无动效路径|J01,J13
+O.modal.delete-worktree|删除工作树确认|DeleteWorktreeDialog.tsx|删除执行工作树及可选相关资源|保留|明确数据后果、原生运行与分支影响；关闭布局不进入此确认|J06,J07
+O.modal.preserved-branch-review|保留分支批量复核|PreservedBranchBatchReviewModal.tsx|可处理清理中留存的分支|保留|逐对象显示保留/可删/失败和明确确认|J07,J12
+O.modal.ssh-passphrase|SSH 口令队列|SshPassphraseDialog.tsx|按认证请求进入独立口令 Dialog|保留|按 Host 和请求对齐，取消不提交，不记录凭据|J07,J11
+O.modal.markdown-template-picker|Markdown 模板选择|MarkdownTemplatePicker.tsx|选择模板并关联到文档创建|保留|使用模板不替换未保存稿，取消回到文件上下文|J08
+O.modal.crash-report|崩溃报告|CrashReportDialog.tsx|崩溃报告为条件根弹窗|保留|展示范围、状态和退出；与恢复动作分开|J01,J12
+O.modal.onboarding|首次设置 Dialog|OnboardingFlow.tsx,AppRootSurfaces.tsx|Portal 覆盖工作台，Radix FocusScope 环绕焦点与关闭回焦，支持 600×400 窄窗滚动及语言加载子态|改造|沿用原布局；一致翻译和清晰的退出顺序|J01,J13
+O.overlay.floating-workspace|浮动工作区 Host|FloatingTerminalPanel.tsx,AppRootSurfaces.tsx|按打开状态装载，可局部重试|保留|浮动焦点独立，关闭不误退主工作对象|J04,J11
+O.overlay.status-bar|状态栏 Host|StatusBar.tsx,AppRootSurfaces.tsx|有延迟加载壳和局部失败状态|保留|保留稳定高度与可用重试|J02,J12
+O.overlay.pet|Pet 浮层|PetOverlay.tsx,AppRootSurfaces.tsx|由实验配置和可见性开关控制|保留|保持低优先级、可关闭，静态等价|J11,J13
+O.overlay.native-chat-resume-on-restart|重开后的原生会话恢复|NativeChatResumeRuntimeModal.tsx|条件呈现按 Host/Agent 分组的恢复和报告|保留|布局恢复和运行恢复分别确认，失败按对象重试|J05,J06,J12
+O.overlay.star-nag-toast|价值时刻提示|StarNagToastHost.tsx|按提示条件可忽略|保留|不覆盖关键控件或屏蔽首次任务|J01,J13
+O.overlay.telemetry-first-launch|遥测首次选择|TelemetryFirstLaunchSurface.tsx|由当前同意和队列决定|保留|明确可用/禁用，按真实产品配置|J01,J12
+O.overlay.zoom|窗口缩放反馈|ZoomOverlay.tsx|全局短期显示缩放级别|保留|不移动焦点；反馈与实际缩放一致|J13
+O.overlay.dictation|语音输入状态|DictationController.tsx|权限/模型/录音活动时挂载|保留|正在听、处理、失败和停止可辨；结果只写原输入目标|J05,J11
+O.overlay.recent-tab-switcher|内容 Tab MRU|RecentTabSwitcher.tsx|当前 workbench 内容的最近选择器|保留|保留局部行为；顶层切换用独立动作|J03,J04
+O.overlay.skill-freshness-update-dialog|技能更新详情|SkillFreshnessUpdateDialog.tsx|状态和更新命令在 Dialog 显示|保留|显示目标、版本和真实结果，可退出后台等待|J10,J12
+O.overlay.remote-server-update-dialog|远程服务更新|RemoteServerUpdateDialog.tsx|连接和更新后重启/恢复有独立流程|保留|仅影响指定 Host，保留其他布局和可用对象|J11,J12
+O.overlay.chat-ui-here-corner-card|Chat UI 教育提示|AppNotificationCards.tsx|按 Launch tip 分支展示两种入口|保留|明确“今后新会话”而非即时转换；可关闭，窄窗不叠压主控件|J01,J05,J13
+O.overlay.update-card|更新进度和失败|UpdateCard.tsx,UpdateErrorCardContent.tsx|版本、检查、下载和错误详情分支|保留|产品无 updateEndpoint 时不承诺自动更新；已有平台 UI 保留适用性检查|J01,J12
+O.overlay.unexpected-signout|异常退出登录|UnexpectedSignoutCard.tsx|账户状态变化显示提示|保留|提示所属账号、可用恢复与回到原对象|J05,J11,J12
+O.overlay.star-nag|GitHub 提示卡|StarNagCard.tsx|可稍后处理或打开外部站点|保留|非必要提示优先级低，可关闭且不遮住设置|J01,J13
+O.overlay.codex-shared-settings-notice|Codex 配置提示|CodexSharedSettingsNoticeCard.tsx|按配置/迁移时机提示|保留|说明实际档案影响；关闭不调整运行设置|J01,J05
+O.local.contextual-tour|首用／功能导览浮层|ContextualTourOverlaySurface.tsx,ContextualTourOverlay.tsx|按目标定位，600×400 窄窗自动约束宽高与边界，卸载或跳过时恢复原焦点并阻止背景输入|改造|文案与语言一致，锚点不可见时安全退出，先处理权威确认再继续引导|J01,J13
+O.local.edit-meta|Worktree 元数据表单|WorktreeMetaDialog.tsx,WorktreeMetaDialogDraft.tsx|工作树名称、相关任务/PR 等局部修改|保留|保留源环境和草稿；与布局命名分开|J07,J08
+O.local.confirm-remove-folder|移除目录确认|RemoveFolderDialog.tsx|解除已打开目录或其工作空间|保留|区别解除引用与删磁盘文件，保留退出动作|J06,J07
+O.local.confirm-sleep-twin|休眠关联工作树确认|SleepTwinWorkspaceDialog.tsx|关联环境进行休眠前确认|保留|列具体 Host/工作树及终端影响，不归入布局关闭|J06,J07,J12
+O.local.worktree-visibility|Worktree 可见性|WorktreeVisibilityDialog.tsx|按仓库查看/隐藏工作树|保留|标识隐藏不删除，恢复可见后使用同一身份|J02,J07
+O.local.confirm-orca-yaml-hooks|项目配置与 Hooks 信任|OrcaYamlTrustDialog.tsx|执行配置钩子前决策|保留|明确命令作用域，取消不执行；继续原工作需要正确 owner|J05,J07,J12
+O.local.forget-ssh-workspace|忘记 SSH 工作树|ForgetSshWorkspaceDialog.tsx|远端条目取消记忆与恢复分支|保留|提示本地/远端影响，断线不误报已删除|J07,J12
+O.local.wsl-move|WSL 移动与进度|src/renderer/src/components/wsl-move|独立 Host 管理迁移对话，不能被其他 modal 抢占|保留|进行中保持目标与取消含义，发生错误可检查或按实际支持撤销|J07,J11,J12
+O.local.macos-update|macOS 更新门槛|MacosUpdateRequirementHost.tsx|按平台和版本出现系统要求|保留|保留真实条件、可达帮助与退出；Windows 不继承其状态|J01,J12,J13
+O.local.link-routing|链接打开方式确认|link-routing-preference-dialog.tsx|首次或有歧义的链接打开方式可询问|保留|显示目标和选项；取消保持原选区/页面|J08,J11
+O.local.browser-webauthn|浏览器账号认证对话|browser-webauthn-account-dialog.tsx|系统认证/账号受页面和状态约束|保留|标明真实 origin，取消返回，不误称已认证|J11,J12
+O.local.browser-extension|浏览器扩展安装确认|browser-extension-install-dialog.tsx|显示扩展、权限与确认|保留|保持安全样式与权限清单，拒绝不变更|J10,J11
+O.local.trust|Agent 工作区信任|AgentWorkspaceTrustDecisionDialog.tsx|首次/策略要求时出现，支持让 Agent 问或信任|保留|原范围与行为说明保留；焦点正确，拒绝不自动提升权限|J01,J05
+O.local.account-switch|Claude 账号切换与会话树|ClaudeAccountSwitchDialog.tsx,ClaudeAccountSwitchSessionTree.tsx|显示受影响会话并确认账号行为|保留|明确继续、重启或放弃影响，持久化按原账户 owner|J05,J11
+O.local.worktree-base|分支基底回退说明|WorktreeBaseFallbackDialog.tsx|创建工作树时分支或 base 需要选择|保留|实际分支失败与可用替代可辨，不隐式建错 base|J07,J08
+O.local.close|固定 Tab、运行终端与未保存内容确认|TerminalWorkspaceDialogs.tsx,use-terminal-close-actions.ts,App.tsx|独立规则保护 pinned、运行和文件写入|保留|复用旧确认于内容动作；顶层关闭和 Session End 不复用错误的确认语义|J04,J06,J12
+O.native.file-dialog|平台原生打开、保存、选择目录|single-flight-open-dialog.ts,src/main/ipc|Electron 文件选择器用于项目、导入、保存与附件|保留|取消与选择严格分开；返回后保持触发面与目标 owner；OS 样式为原生|J01,J07,J08,J13
+O.native.edit-menu|平台可编辑区域菜单|editable-context-menu-popup.ts,editable-context-menu.ts,register-app-menu.ts|文字编辑的原生菜单按焦点和窗口生命周期退役|保留|保留实际剪切板和焦点所有者；Esc、原生输入与覆盖层互不抢占|J05,J08,J13
+O.native.recovery|原生档案错误与写入失败|profile-state-startup-recovery-dialog.ts,profile-state-write-failure.ts,main-window-actions.ts|主进程在 UI 无法加载时显示原生恢复或错误框|保留|明确失败、保存条件和恢复点；不自动清空原档案|J01,J06,J12,J13

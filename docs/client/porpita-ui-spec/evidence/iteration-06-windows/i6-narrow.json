@@ -1,0 +1,242 @@
+{
+  "size": [
+    600,
+    420
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "reduce",
+  "focus": "Search sessions",
+  "section": [],
+  "text": "Terminal 1\nAgents\nIndexed history\nView options\nWorkspace\nProject\nAll\nScanned 2 files\nJust now\n\nEnable full-text search? Orca builds an index on this computer from local agent transcripts, including full conversations and up to 3,072 characters per tool output. Content is not redacted. Authenticated paired clients can search it.\n\nEnable\n0 of 2 sessions\nLast updated\n\nNo sessions match the current filters\n\nOff\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab Terminal 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New tab",
+      "title": "New tab",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Add quick command",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Split Terminal Right",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle right sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Agents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Source Control (Ctrl+⇧+G)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Checks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Session History host: Local Windows",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "View options",
+      "label": "Session History view options",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Session History",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Workspace",
+      "label": null,
+      "title": "Workspace",
+      "test": null
+    },
+    {
+      "text": "Project",
+      "label": null,
+      "title": "Project",
+      "test": null
+    },
+    {
+      "text": "All",
+      "label": null,
+      "title": "All",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Clear search",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Scanned 2 files\nJust now",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Enable",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Last updated",
+      "label": "Sort sessions: Last updated",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i6-narrow.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 40522
+}

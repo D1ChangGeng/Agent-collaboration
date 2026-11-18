@@ -1,0 +1,584 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "reduce",
+  "focus": "\n    搜索Ctrl+⇧+J任务工件技能自动化Porpita 手机端新功能项目0UI-spec-sample当前main主要Local WindowsmainStudio-project当前main主要StudiomainReview t",
+  "section": [],
+  "text": "搜索\n任务\n工件\n技能\n自动化\nPorpita 手机端\n新功能\n项目\n0\nUI-spec-sample\n当前\nmain\n主要\nLocal Windows\nmain\nStudio-project\n当前\nmain\n主要\nStudio\nmain\nReview the release checklist - The Studio queue contains the release checklist.\n71d\n\n添加设置脚本\n\nStudio-project\n\n添加在 Porpita 创建新工作树时运行的设置命令。\n\n配置\nReview the release checklist\nTerminal\n执行\n\nReview the release checklist\n\n21:00\n\nThe Studio queue contains the release checklist.\n\n21:00\n跳到最新消息\n\nCodex 尚未登录。请运行 `codex login`。\n\n\n\n\n完全访问\n模型\nStudio\nmain\n· 主工作副本\nmain\n智能体会话历史\n索引历史记录\nAll hosts\n查看选项\n工作区\n项目\n全部\n2 个结果\n最相关的\nReview the release checklist\n你: Review the release checklist\nCodex\nLocal Windows\n2 条消息\n·\n2 个月前\nmain\nReview the release checklist\n你: Review the release checklist\nCodex\nStudio\n2 条消息\n·\n2 个月前\n当前工作树\nmain\n在新终端中恢复\n移交给另一个智能体\n最近提示\n你\n复制\n\nReview the release checklist\n\n最近轮次\n智能体\n\nThe Studio queue contains the release checklist.\n\n工作树\n当前工作树\n·\nmain\nporpita-ui-spec-NXXgmD/Studio-project\n账户\n未知\nStudio 上没有用量\n关闭\n—\n·\n0\n1 个主机",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "前进",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "搜索",
+      "label": "搜索工作树和浏览器选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 GitHub 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 Jira 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "技能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 手机端\n新功能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse all projects",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "查看活动",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区选项",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "添加项目",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "UI-spec-sample 的项目操作",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 UI-spec-sample 创建新工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标为未读",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Studio-project 的项目操作",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 Studio-project 创建新工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标为未读",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭安装脚本",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "配置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "帮助",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示活动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区看板",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Review the release checklist",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Terminal",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新标签页",
+      "title": "新标签页",
+      "test": null
+    },
+    {
+      "text": "执行",
+      "label": "运行快捷命令",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更快捷的命令",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移交给另一个智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用终端智能体继续",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "向右拆分终端",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "聊天设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "复制消息",
+      "title": "复制消息",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "复制消息",
+      "title": "复制消息",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "从此回复创建分支",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "将此消息滚动到顶部",
+      "title": "将此消息滚动到顶部",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Review the release checklist",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "跳到最新消息",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "关闭",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "附加文件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "完全访问",
+      "label": "权限 完全访问",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更多聊天控件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "模型",
+      "label": "模型",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "开始听写",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "发送",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· 主工作副本",
+      "label": "复制 main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "复制 main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换右侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "资源管理器 (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "源代码控制 (Ctrl+⇧+G)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "检查项",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "All hosts",
+      "label": "会话历史主机：All hosts",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "查看选项",
+      "label": "会话历史查看选项",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新会话历史",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工作区",
+      "label": null,
+      "title": "工作区",
+      "test": null
+    },
+    {
+      "text": "项目",
+      "label": null,
+      "title": "项目",
+      "test": null
+    },
+    {
+      "text": "全部",
+      "label": null,
+      "title": "全部",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "清除搜索",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "最相关的",
+      "label": "排序结果：最相关的",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "跳转到工作树",
+      "title": "",
+      "test": "ai-vault-session-jump-worktree"
+    },
+    {
+      "text": "",
+      "label": "移交给另一个智能体",
+      "title": "",
+      "test": "ai-vault-session-continue-in-new-session"
+    },
+    {
+      "text": "",
+      "label": "在工作树中恢复",
+      "title": "",
+      "test": "ai-vault-session-resume"
+    },
+    {
+      "text": "",
+      "label": "Codex 会话详情",
+      "title": "",
+      "test": "ai-vault-session-toggle-details"
+    },
+    {
+      "text": "",
+      "label": "更多会话操作",
+      "title": "",
+      "test": "ai-vault-session-more-actions"
+    },
+    {
+      "text": "",
+      "label": "移交给另一个智能体",
+      "title": "",
+      "test": "ai-vault-session-continue-in-new-session"
+    },
+    {
+      "text": "",
+      "label": "跳转到原始窗格",
+      "title": "",
+      "test": "ai-vault-session-jump-original-pane"
+    },
+    {
+      "text": "",
+      "label": "Codex 会话详情",
+      "title": "",
+      "test": "ai-vault-session-toggle-details"
+    },
+    {
+      "text": "",
+      "label": "更多会话操作",
+      "title": "",
+      "test": "ai-vault-session-more-actions"
+    },
+    {
+      "text": "在新终端中恢复",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移交给另一个智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "复制",
+      "label": "复制最近提示",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Studio 上没有用量",
+      "label": "Studio 上没有用量",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "1 个主机",
+      "label": "远程主机连接状态",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i5-owning-chat.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 43873
+}

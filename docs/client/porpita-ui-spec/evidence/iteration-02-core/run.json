@@ -1,0 +1,43 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 642,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 1267,
+      "result": "captured"
+    },
+    {
+      "id": "i2-core-start",
+      "trigger": "Start the bundled local Core in an isolated installed profile",
+      "elapsedMs": 78515,
+      "result": "captured"
+    },
+    {
+      "id": "i2-core-disconnect",
+      "trigger": "Disconnect the configured service and observe Settings",
+      "elapsedMs": 3810,
+      "result": "captured"
+    },
+    {
+      "id": "i2-core-reconnect",
+      "trigger": "Reconnect the same local Core and observe the Settings status",
+      "elapsedMs": 14569,
+      "result": "captured"
+    }
+  ]
+}

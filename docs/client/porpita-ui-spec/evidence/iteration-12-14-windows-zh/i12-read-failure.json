@@ -1,0 +1,86 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "default",
+  "focus": "\n    无法打开已保存的工作空间。返回工作树重试搜索Ctrl+⇧+J工作空间（预览）任务工件技能自动化Porpita 手机端新功能项目0Terminal 1Release review · 发版核对release-checklist.md",
+  "section": [],
+  "text": "无法打开已保存的工作空间。\n\n返回工作树\n重试\n关闭\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "返回工作树",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "重试",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i12-read-failure.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 79583
+}

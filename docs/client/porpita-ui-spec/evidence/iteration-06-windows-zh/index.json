@@ -1,0 +1,7 @@
+{
+  "queryTransferred": true,
+  "searchFocused": true,
+  "originalTabsRetained": true,
+  "emptyQueryClears": true,
+  "actionRequiresVisibleDockHost": true
+}

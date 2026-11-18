@@ -1,0 +1,152 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "reduce",
+  "focus": "查找文件",
+  "section": [],
+  "text": "Release planning and production readiness · 发布计划与生产准备\nRelease review · 发版核对\nUI-spec-sample\nUI-spec-sample\ndocs\nrelease-checklist.md\n关闭\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "Release planning and production readiness · 发布计划与生产准备",
+      "label": "选择分组：Release planning and production readiness · 发布计划与生产准备",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Release review · 发版核对",
+      "label": null,
+      "title": "Release review · 发版核对",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭 Release review · 发版核对",
+      "title": "关闭 Release review · 发版核对",
+      "test": null
+    },
+    {
+      "text": "UI-spec-sample",
+      "label": null,
+      "title": "UI-spec-sample",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭 UI-spec-sample",
+      "title": "关闭 UI-spec-sample",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新建工作对象",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "查找工作对象",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "上一级文件夹",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新文件管理器",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "资源管理器位置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "清除文件筛选器",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "release-checklist.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i11-fixed-scope.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 43861
+}

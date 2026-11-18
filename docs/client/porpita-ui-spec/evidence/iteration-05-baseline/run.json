@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i5-two-sources",
+      "trigger": "Search for the same Codex session ID on Local and Studio",
+      "elapsedMs": 10940,
+      "result": "captured"
+    },
+    {
+      "id": "i5-unreachable",
+      "trigger": "Repeat the same search after Studio becomes unreachable",
+      "elapsedMs": 11123,
+      "result": "captured"
+    }
+  ]
+}

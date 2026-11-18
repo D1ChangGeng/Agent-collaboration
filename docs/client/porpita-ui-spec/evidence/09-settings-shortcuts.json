@@ -1,0 +1,952 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "快捷键",
+  "section": [
+    "shortcuts"
+  ],
+  "text": "返回应用\nCtrl\n+\nF\n入门清单\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n~\n快捷键\n\n常见操作的键盘快捷键。\n\n终端中的快捷键\n\n决定谁首先拦截捷径\n\nPorpita 优先\n键盘快捷键\n\n直观地自定义快捷键或编辑 C:\\Users\\D26FO\\AppData\\Local\\Temp\\porpita-ui-spec-RVm3oo\\profile\\home\\.orca\\keybindings.json 直接地。\n\n在 Porpita 中编辑文件\n搜索快捷键\n140/140\n\n状态\n\n全部\n140\n已修改\n0\n未分配\n65\n冲突\n0\n全局\n转到文件\nPorpita 优先\nCtrl\n+\nP\n打开设置\n强制重新加载\nPorpita 优先\nCtrl\n+\n⇧\n+\nR\n切换工作树\nPorpita 优先\nCtrl\n+\n⇧\n+\nJ\n上一个工作树\nPorpita 优先\nCtrl\n+\n⇧\n+\n↑\n下一个工作树\nPorpita 优先\nCtrl\n+\n⇧\n+\n↓\n创建工作树\nPorpita 优先\nCtrl\n+\nN\nCtrl\n+\n⇧\n+\nN\n重命名工作树\n删除工作区\n终端活跃\nCtrl\n+\n⇧\n+\nBackspace\n切换工作区看板\n选择工作区 1–9\nPorpita 优先\nCtrl\n+\n1–9\n听写\nPorpita 优先\nCtrl\n+\nE\n打开任务\n打开插件\nPorpita 优先\nCtrl\n+\n⇧\n+\nY\n切换侧边栏\nPorpita 优先\nCtrl\n+\nB\n切换右侧边栏\nPorpita 优先\nCtrl\n+\nL\n显示资源管理器\nPorpita 优先\nCtrl\n+\n⇧\n+\nE\n显示搜索\nPorpita 优先\nCtrl\n+\n⇧\n+\nF\n显示源代码控制\nPorpita 优先\nCtrl\n+\n⇧\n+\nG\n显示检查项\n显示端口\n切换休眠工作区\n聚焦工作树列表\nPorpita 优先\nCtrl\n+\n⇧\n+\n0\n切换浮动终端\n终端活跃\nCtrl\n+\nAlt\n+\nA\n最大化浮动工作区面板\n最小化浮动工作区面板\n放大\nPorpita 优先\nCtrl\n+\n=\nCtrl\n+\n⇧\n+\n+\nCtrl\n+\nNumpad +\n缩小\nPorpita 优先\nCtrl\n+\n-\nCtrl\n+\nNumpad -\n重置缩放\nPorpita 优先\nCtrl\n+\n0\n工作树历史后退\nPorpita 优先\nCtrl\n+\nAlt\n+\n←\n工作树历史前进\nPorpita 优先\nCtrl\n+\nAlt\n+\n→\n将评审笔记发送给智能体\nCollapse / Expand All Projects\nPorpita 优先\nCtrl\n+\n⇧\n+\nH\n切换子工作区\n标签页\n新建终端标签页\nPorpita 优先\nCtrl\n+\nT\n新建智能体标签页（默认智能体）\n新建浏览器标签页\nPorpita 优先\nCtrl\n+\n⇧\n+\nB\nNew browser tab in right split\n新建手机模拟器标签页\n新建 Markdown 标签页\nPorpita 优先\nCtrl\n+\n⇧\n+\nM\n打开 Markdown 标签页\nPorpita 优先\nCtrl\n+\n⇧\n+\nO\n关闭当前标签页\nPorpita 优先\nCtrl\n+\nW\n关闭所有编辑器标签页\nPorpita 优先\nCtrl\n+\nAlt\n+\nW\n重命名当前标签页\n重新打开已关闭的标签页\nPorpita 优先\nCtrl\n+\n⇧\n+\nT\n标签页导航\n下一个标签页（同类型）\nPorpita 优先\nCtrl\n+\nAlt\n+\n]\n上一个标签页（同类型）\nPorpita 优先\nCtrl\n+\nAlt\n+\n[\n下一个标签页（所有类型）\nPorpita 优先\nCtrl\n+\n⇧\n+\n]\n上一个标签页（所有类型）\nPorpita 优先\nCtrl\n+\n⇧\n+\n[\n上一个最近使用的标签页\n终端活跃\nCtrl\n+\nTab\n下一个终端标签页\n终端活跃\nCtrl\n+\nPageDown\n上一个终端标签页\n终端活跃\nCtrl\n+\nPageUp\n选择标签页 1–9\nPorpita 优先\nAlt\n+\n1–9\n快捷命令\n切换快捷命令菜单\n浏览器\n在浏览器中查找\nPorpita 优先\nCtrl\n+\nF\n浏览器后退\nPorpita 优先\nAlt\n+\n←\n浏览器前进\nPorpita 优先\nAlt\n+\n→\n显示浏览器历史记录\nPorpita 优先\nCtrl\n+\nH\n重新加载浏览器页面\nPorpita 优先\nCtrl\n+\nR\n硬刷新浏览器页面\nPorpita 优先\nCtrl\n+\n⇧\n+\nR\n聚焦浏览器地址栏\nPorpita 优先\nCtrl\n+\nL\n抓取页面元素\nPorpita 优先\nCtrl\n+\nC\n批注页面元素\nPorpita 优先\nAlt\n+\n⇧\n+\nN\n编辑器\n在编辑器中查找\nPorpita 优先\nCtrl\n+\nF\n在编辑器中替换\nPorpita 优先\nCtrl\n+\nH\n保存文件\nPorpita 优先\nCtrl\n+\nS\n显示 Markdown 预览\nPorpita 优先\nCtrl\n+\n⇧\n+\nV\n切换自动换行\nPorpita 优先\nAlt\n+\nZ\n复制上下文\nPorpita 优先\nCtrl\n+\nAlt\n+\nC\n转到上一个更改\nPorpita 优先\n⇧\n+\nF7\n转到下一个更改\nPorpita 优先\nF7\n添加评审笔记\nPorpita 优先\nCtrl\n+\n⇧\n+\nA\n文件浏览器\n撤销文件操作\nPorpita 优先\nCtrl\n+\nZ\n重做文件操作\nPorpita 优先\nCtrl\n+\n⇧\n+\nZ\nCtrl\n+\nY\n复制文件路径\nPorpita 优先\nAlt\n+\n⇧\n+\nC\n复制文件相对路径\nPorpita 优先\nCtrl\n+\nAlt\n+\n⇧\n+\nC\n删除文件\nPorpita 优先\nDelete\n设置\n搜索设置\nPorpita 优先\nCtrl\n+\nF\n终端窗格\n复制终端选中内容\n终端\nCtrl\n+\n⇧\n+\nC\nCtrl\n+\nC\n全选终端文本\nPorpita 优先\nCtrl\n+\n⇧\n+\nA\n粘贴到终端\n终端\nCtrl\n+\nV\nCtrl\n+\n⇧\n+\nV\n⇧\n+\nInsert\n搜索当前窗格\nPorpita 优先\nCtrl\n+\nF\n清除当前窗格\nPorpita 优先\nCtrl\n+\nK\n聚焦下一个窗格\n终端\nCtrl\n+\n]\n聚焦上一个窗格\n终端\nCtrl\n+\n[\n均分窗格大小\n展开/折叠窗格\n终端\nCtrl\n+\n⇧\n+\nEnter\n设置标题…\n清除窗格标题\n关闭当前窗格\nPorpita 优先\nCtrl\n+\nW\n向右拆分终端\nPorpita 优先\nCtrl\n+\n⇧\n+\nD\n向下拆分终端\nPorpita 优先\nAlt\n+\n⇧\n+\nD\n切换输入法/语言（原生）\n聊天\n在聊天中查找\nPorpita 优先\nCtrl\n+\nF\n在聊天界面和终端之间切换\n终端\nCtrl\n+\n⇧\n+\nF11\nCtrl\n+\n⇧\n+\nJ\n智能体\n新建 Claude 标签页\n新建 Claude Agent Teams 标签页\n新建 CodeBuddy 标签页\n新建 OpenClaude 标签页\n新建 Codex 标签页\n新建 Devin 标签页\n新建 Ante 标签页\n新建 Trae 标签页\n新建 Muse 标签页\n新建 DeepSeek Harness 标签页\n新建 ZCode 标签页\n新建 Autohand Code 标签页\n新建 OpenCode 标签页\n新建 OpenCode 2 标签页\n新建 MiMo Code 标签页\n新建 Pi 标签页\n新建 OMP 标签页\n新建 Prime Agent 标签页\n新建 Qoder CLI 标签页\n新建 Qoder CLI China 标签页\n新建 Gemini 标签页\n新建 Antigravity 标签页\n新建 Aider 标签页\n新建 Goose 标签页\n新建 Amp 标签页\n新建 Kilocode 标签页\n新建 Kiro 标签页\n新建 Charm 标签页\n新建 Auggie 标签页\n新建 Cline 标签页\n新建 Codebuff 标签页\n新建 Freebuff 标签页\n新建 Command Code 标签页\n新建 Continue 标签页\n新建 Cursor 标签页\n新建 Droid 标签页\n新建 Kimi 标签页\n新建 Mistral Vibe 标签页\n新建 Qwen Code 标签页\n新建 Rovo Dev 标签页\n新建 Hermes 标签页\n新建 OpenClaw 标签页\n新建 GitHub Copilot 标签页\n新建 Grok 标签页\n新建 Jcode 标签页\n关闭\n—\n·\n0\nPorpita 中的 Codex 现在使用 ~/.codex\nCodex 可能会再次要求信任文件夹或批准命令。重新添加您仅在 Porpita 中添加的所有 MCP 服务器。\n入门流程已完成！\n\n如果你目前喜欢 Porpita，在 GitHub 上加星可以帮助其他开发者发现它。\n\n打开 GitHub\n稍后\nPorpita 现在无需共享服务器即可运行 Codex\n这使得智能体状态更加可靠。您可以在“设置”中将其重新打开。\n打开设置",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "入门清单",
+      "label": "入门清单，已完成 1/8。显示设置指南。",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "~",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 优先",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "在 Porpita 中编辑文件",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开键绑定文件菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "全部\n140",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已修改\n0",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "未分配\n65",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "冲突\n0",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 转到文件 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 转到文件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nP",
+      "label": "更改 转到文件 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 打开设置 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 强制重新加载 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 强制重新加载",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nR",
+      "label": "更改 强制重新加载 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 切换工作树 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 切换工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nJ",
+      "label": "更改 切换工作树 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 上一个工作树 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 上一个工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\n↑",
+      "label": "更改 上一个工作树 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 下一个工作树 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 下一个工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\n↓",
+      "label": "更改 下一个工作树 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 创建工作树 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 创建工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移除 创建工作树 快捷键 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nN",
+      "label": "更改 创建工作树 的第 1/2 个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移除 创建工作树 快捷键 2",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nN",
+      "label": "更改 创建工作树 的第 2/2 个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 重命名工作树 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 删除工作区 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 删除工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nBackspace",
+      "label": "更改 删除工作区 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 切换工作区看板 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 选择工作区 1–9 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 选择工作区 1–9",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n1–9",
+      "label": "更改 选择工作区 1–9 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 听写 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 听写",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nE",
+      "label": "更改 听写 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 打开任务 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 打开插件 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 打开插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nY",
+      "label": "更改 打开插件 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 切换侧边栏 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 切换侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nB",
+      "label": "更改 切换侧边栏 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 切换右侧边栏 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 切换右侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nL",
+      "label": "更改 切换右侧边栏 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 显示资源管理器 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 显示资源管理器",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nE",
+      "label": "更改 显示资源管理器 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 显示搜索 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 显示搜索",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nF",
+      "label": "更改 显示搜索 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 显示源代码控制 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 显示源代码控制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nG",
+      "label": "更改 显示源代码控制 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 显示检查项 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 显示端口 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 切换休眠工作区 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 聚焦工作树列表 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 聚焦工作树列表",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\n0",
+      "label": "更改 聚焦工作树列表 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 切换浮动终端 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 切换浮动终端",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nAlt\n+\nA",
+      "label": "更改 切换浮动终端 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 最大化浮动工作区面板 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 最小化浮动工作区面板 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 放大 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 放大",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移除 放大 快捷键 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n=",
+      "label": "更改 放大 的第 1/3 个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移除 放大 快捷键 2",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\n+",
+      "label": "更改 放大 的第 2/3 个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移除 放大 快捷键 3",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nNumpad +",
+      "label": "更改 放大 的第 3/3 个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 缩小 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 缩小",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移除 缩小 快捷键 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n-",
+      "label": "更改 缩小 的第 1/2 个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移除 缩小 快捷键 2",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nNumpad -",
+      "label": "更改 缩小 的第 2/2 个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 重置缩放 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 重置缩放",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n0",
+      "label": "更改 重置缩放 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 工作树历史后退 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 工作树历史后退",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nAlt\n+\n←",
+      "label": "更改 工作树历史后退 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 工作树历史前进 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 工作树历史前进",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nAlt\n+\n→",
+      "label": "更改 工作树历史前进 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 将评审笔记发送给智能体 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 Collapse / Expand All Projects 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 Collapse / Expand All Projects",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nH",
+      "label": "更改 Collapse / Expand All Projects 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 切换子工作区 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 新建终端标签页 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 新建终端标签页",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nT",
+      "label": "更改 新建终端标签页 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 新建智能体标签页（默认智能体） 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 新建浏览器标签页 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 新建浏览器标签页",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nB",
+      "label": "更改 新建浏览器标签页 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 New browser tab in right split 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 新建手机模拟器标签页 添加快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 新建 Markdown 标签页 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 新建 Markdown 标签页",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nM",
+      "label": "更改 新建 Markdown 标签页 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 打开 Markdown 标签页 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 打开 Markdown 标签页",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\n⇧\n+\nO",
+      "label": "更改 打开 Markdown 标签页 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 关闭当前标签页 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 关闭当前标签页",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ctrl\n+\nW",
+      "label": "更改 关闭当前标签页 的快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 关闭所有编辑器标签页 添加另一个快捷键",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "禁用 关闭所有编辑器标签页",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "09-settings-shortcuts.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 35529
+}

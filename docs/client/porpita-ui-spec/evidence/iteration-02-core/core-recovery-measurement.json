@@ -1,0 +1,6 @@
+{
+  "immediate": false,
+  "connectedAfterReopen": true,
+  "transport": "same Windows host, managed local service",
+  "performed": "start, disconnect, reconnect"
+}

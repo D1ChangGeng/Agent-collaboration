@@ -1,0 +1,72 @@
+{
+  "actions": [
+    {
+      "name": "focus the history row action",
+      "startMs": 13122.598899999999,
+      "endMs": 13166.7115
+    },
+    {
+      "name": "activate the original pane with Enter",
+      "startMs": 13166.7226,
+      "endMs": 13243.2139
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794710529.898604,
+      "receivedAtMs": 13122.591299999998,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710529.918028,
+      "receivedAtMs": 13128.919100000001,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710529.931312,
+      "receivedAtMs": 13142.7165,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710529.937624,
+      "receivedAtMs": 13150.435599999999,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710529.94432,
+      "receivedAtMs": 13155.188100000001,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710529.955167,
+      "receivedAtMs": 13165.028400000001,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710529.988768,
+      "receivedAtMs": 13211.5277,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710530.006033,
+      "receivedAtMs": 13216.7982,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710530.00887,
+      "receivedAtMs": 13220.758100000001,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710530.022477,
+      "receivedAtMs": 13237.077899999998,
+      "file": "009.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710530.030832,
+      "receivedAtMs": 13241.490899999999,
+      "file": "010.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

@@ -1,0 +1,338 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Sessions",
+  "section": [],
+  "text": "Search\nWorkspaces (preview)\nTasks\nArtifacts\nSkills\nAutomations\nOrca Mobile\nNew\nSessions\n0\nAll local worktrees\nSearch history\nNo open local chats\nTerminal 1\nCommand\nUI-spec-sample\nNames\nContents\ndocs\nU\nnotes.md\nM\npreview.html\nOff\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Workspaces (preview)",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Artifacts",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Skills",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Orca Mobile\nNew",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Sessions",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "All local worktrees",
+      "label": "Session filters",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Search history",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab Terminal 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New tab",
+      "title": "New tab",
+      "test": null
+    },
+    {
+      "text": "Command",
+      "label": "Add quick command",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Split Terminal Right",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle right sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Agents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Source Control (Ctrl+⇧+G)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Checks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse All",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Explorer",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More Explorer Actions",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Names",
+      "label": "Filter files by name",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Contents",
+      "label": "Search file contents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "docs\nU",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "notes.md\nM",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "preview.html",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i15-empty.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 29012
+}

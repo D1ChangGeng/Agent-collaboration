@@ -1,0 +1,19 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "preview-disabled",
+      "trigger": "Verify the regular desktop shell with the Workspace and sidebar Sessions preview flag unset",
+      "elapsedMs": 789,
+      "result": "captured"
+    }
+  ]
+}

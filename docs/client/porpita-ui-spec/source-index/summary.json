@@ -1,0 +1,499 @@
+{
+  "roots": [
+    {
+      "path": "src/renderer/src/main.tsx",
+      "reachableModules": 8571
+    },
+    {
+      "path": "src/renderer/src/popout.tsx",
+      "reachableModules": 1739
+    },
+    {
+      "path": "src/renderer/src/space.tsx",
+      "reachableModules": 1681
+    },
+    {
+      "path": "src/renderer/src/web/main.tsx",
+      "reachableModules": 8623
+    }
+  ],
+  "rendererModules": 9051,
+  "rendererRows": 2321,
+  "noStaticEntryPoint": 29,
+  "interactableCandidates": 6309,
+  "primitiveUseSites": 7966,
+  "styleFiles": 10,
+  "nativeHostCandidates": 82,
+  "parseErrors": [],
+  "registry": {
+    "activeView": [
+      {
+        "id": "settings",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 101
+      },
+      {
+        "id": "skills",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 102
+      },
+      {
+        "id": "artifacts",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 103
+      },
+      {
+        "id": "tasks",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 104
+      },
+      {
+        "id": "automations",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 105
+      },
+      {
+        "id": "activity",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 106
+      },
+      {
+        "id": "space",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 107
+      },
+      {
+        "id": "mobile",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 108
+      },
+      {
+        "id": "terminal",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 109
+      },
+      {
+        "id": "terminal",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 115
+      },
+      {
+        "id": "terminal",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 128
+      }
+    ],
+    "modal": [
+      {
+        "id": "overlay.floating-workspace",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 152
+      },
+      {
+        "id": "overlay.status-bar",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 175
+      },
+      {
+        "id": "modal.new-workspace-composer",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 189
+      },
+      {
+        "id": "modal.add-repo",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 195
+      },
+      {
+        "id": "modal.confirm-non-git-folder",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 201
+      },
+      {
+        "id": "modal.confirm-add-project-from-folder",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 206
+      },
+      {
+        "id": "modal.project-added",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 211
+      },
+      {
+        "id": "modal.agent-session-history",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 217
+      },
+      {
+        "id": "modal.chat-account-usage",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 222
+      },
+      {
+        "id": "modal.node-dist-mirror",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 230
+      },
+      {
+        "id": "modal.diagram-viewer",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 236
+      },
+      {
+        "id": "modal.workspace-cleanup",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 245
+      },
+      {
+        "id": "modal.quick-open",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 254
+      },
+      {
+        "id": "modal.worktree-palette",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 260
+      },
+      {
+        "id": "modal.setup-guide",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 267
+      },
+      {
+        "id": "modal.feature-wall",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 272
+      },
+      {
+        "id": "modal.feature-tips",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 277
+      },
+      {
+        "id": "overlay.pet",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 295
+      },
+      {
+        "id": "overlay.native-chat-resume-on-restart",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 307
+      },
+      {
+        "id": "overlay.star-nag-toast",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 310
+      },
+      {
+        "id": "overlay.telemetry-first-launch",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 315
+      },
+      {
+        "id": "overlay.zoom",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 318
+      },
+      {
+        "id": "modal.delete-worktree",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 323
+      },
+      {
+        "id": "modal.preserved-branch-review",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 328
+      },
+      {
+        "id": "modal.ssh-passphrase",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 335
+      },
+      {
+        "id": "modal.markdown-template-picker",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 340
+      },
+      {
+        "id": "modal.crash-report",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 344
+      },
+      {
+        "id": "modal.onboarding",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 361
+      },
+      {
+        "id": "overlay.dictation",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 385
+      },
+      {
+        "id": "overlay.recent-tab-switcher",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 390
+      },
+      {
+        "id": "overlay.skill-freshness-update-dialog",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 394
+      },
+      {
+        "id": "overlay.remote-server-update-dialog",
+        "path": "src/renderer/src/app-shell/AppRootSurfaces.tsx",
+        "line": 398
+      }
+    ],
+    "notice": [
+      {
+        "id": "overlay.chat-ui-here-corner-card",
+        "path": "src/renderer/src/app-shell/AppNotificationCards.tsx",
+        "line": 40
+      },
+      {
+        "id": "overlay.update-card",
+        "path": "src/renderer/src/app-shell/AppNotificationCards.tsx",
+        "line": 48
+      },
+      {
+        "id": "overlay.unexpected-signout",
+        "path": "src/renderer/src/app-shell/AppNotificationCards.tsx",
+        "line": 54
+      },
+      {
+        "id": "overlay.star-nag",
+        "path": "src/renderer/src/app-shell/AppNotificationCards.tsx",
+        "line": 58
+      },
+      {
+        "id": "overlay.codex-shared-settings-notice",
+        "path": "src/renderer/src/app-shell/AppNotificationCards.tsx",
+        "line": 61
+      }
+    ],
+    "rightDock": [
+      {
+        "id": "explorer",
+        "path": "src/renderer/src/components/right-sidebar/right-sidebar-panel-content.tsx",
+        "line": 38
+      },
+      {
+        "id": "source-control",
+        "path": "src/renderer/src/components/right-sidebar/right-sidebar-panel-content.tsx",
+        "line": 39
+      },
+      {
+        "id": "checks",
+        "path": "src/renderer/src/components/right-sidebar/right-sidebar-panel-content.tsx",
+        "line": 45
+      },
+      {
+        "id": "ports",
+        "path": "src/renderer/src/components/right-sidebar/right-sidebar-panel-content.tsx",
+        "line": 47
+      },
+      {
+        "id": "ports",
+        "path": "src/renderer/src/components/right-sidebar/right-sidebar-panel-content.tsx",
+        "line": 48
+      },
+      {
+        "id": "vault",
+        "path": "src/renderer/src/components/right-sidebar/right-sidebar-panel-content.tsx",
+        "line": 50
+      },
+      {
+        "id": "workspaces",
+        "path": "src/renderer/src/components/right-sidebar/right-sidebar-panel-content.tsx",
+        "line": 51
+      },
+      {
+        "id": "pr-checks",
+        "path": "src/renderer/src/components/right-sidebar/right-sidebar-panel-content.tsx",
+        "line": 52
+      },
+      {
+        "id": "pr-checks",
+        "path": "src/renderer/src/components/right-sidebar/right-sidebar-panel-content.tsx",
+        "line": 54
+      }
+    ],
+    "setting": [
+      {
+        "id": "advanced",
+        "path": "src/renderer/src/components/settings/page/settings-advanced-section-renderers.tsx",
+        "line": 20
+      },
+      {
+        "id": "dev",
+        "path": "src/renderer/src/components/settings/page/settings-advanced-section-renderers.tsx",
+        "line": 40
+      },
+      {
+        "id": "experimental",
+        "path": "src/renderer/src/components/settings/page/settings-advanced-section-renderers.tsx",
+        "line": 64
+      },
+      {
+        "id": "agents",
+        "path": "src/renderer/src/components/settings/page/settings-capability-section-renderers.tsx",
+        "line": 19
+      },
+      {
+        "id": "accounts",
+        "path": "src/renderer/src/components/settings/page/settings-capability-section-renderers.tsx",
+        "line": 56
+      },
+      {
+        "id": "orchestration",
+        "path": "src/renderer/src/components/settings/page/settings-capability-section-renderers.tsx",
+        "line": 110
+      },
+      {
+        "id": "linear",
+        "path": "src/renderer/src/components/settings/page/settings-capability-section-renderers.tsx",
+        "line": 132
+      },
+      {
+        "id": "computer-use",
+        "path": "src/renderer/src/components/settings/page/settings-capability-section-renderers.tsx",
+        "line": 153
+      },
+      {
+        "id": "voice",
+        "path": "src/renderer/src/components/settings/page/settings-capability-section-renderers.tsx",
+        "line": 166
+      },
+      {
+        "id": "git",
+        "path": "src/renderer/src/components/settings/page/settings-git-task-section-renderers.tsx",
+        "line": 12
+      },
+      {
+        "id": "tasks",
+        "path": "src/renderer/src/components/settings/page/settings-git-task-section-renderers.tsx",
+        "line": 56
+      },
+      {
+        "id": "terminal",
+        "path": "src/renderer/src/components/settings/page/settings-interface-primary-section-renderers.tsx",
+        "line": 13
+      },
+      {
+        "id": "quick-commands",
+        "path": "src/renderer/src/components/settings/page/settings-interface-primary-section-renderers.tsx",
+        "line": 47
+      },
+      {
+        "id": "browser",
+        "path": "src/renderer/src/components/settings/page/settings-interface-primary-section-renderers.tsx",
+        "line": 71
+      },
+      {
+        "id": "mobile-emulator",
+        "path": "src/renderer/src/components/settings/page/settings-interface-primary-section-renderers.tsx",
+        "line": 97
+      },
+      {
+        "id": "floating-workspace",
+        "path": "src/renderer/src/components/settings/page/settings-interface-primary-section-renderers.tsx",
+        "line": 122
+      },
+      {
+        "id": "appearance",
+        "path": "src/renderer/src/components/settings/page/settings-interface-secondary-section-renderers.tsx",
+        "line": 14
+      },
+      {
+        "id": "input",
+        "path": "src/renderer/src/components/settings/page/settings-interface-secondary-section-renderers.tsx",
+        "line": 82
+      },
+      {
+        "id": "notifications",
+        "path": "src/renderer/src/components/settings/page/settings-interface-secondary-section-renderers.tsx",
+        "line": 101
+      },
+      {
+        "id": "shortcuts",
+        "path": "src/renderer/src/components/settings/page/settings-interface-secondary-section-renderers.tsx",
+        "line": 120
+      },
+      {
+        "id": "stats",
+        "path": "src/renderer/src/components/settings/page/settings-interface-secondary-section-renderers.tsx",
+        "line": 141
+      },
+      {
+        "id": "servers",
+        "path": "src/renderer/src/components/settings/page/settings-remote-security-section-renderers.tsx",
+        "line": 17
+      },
+      {
+        "id": "ssh",
+        "path": "src/renderer/src/components/settings/page/settings-remote-security-section-renderers.tsx",
+        "line": 59
+      },
+      {
+        "id": "developer-permissions",
+        "path": "src/renderer/src/components/settings/page/settings-remote-security-section-renderers.tsx",
+        "line": 83
+      },
+      {
+        "id": "privacy",
+        "path": "src/renderer/src/components/settings/page/settings-remote-security-section-renderers.tsx",
+        "line": 103
+      },
+      {
+        "id": "orca-account",
+        "path": "src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx",
+        "line": 19
+      },
+      {
+        "id": "setup-guide",
+        "path": "src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx",
+        "line": 36
+      },
+      {
+        "id": "general",
+        "path": "src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx",
+        "line": 54
+      },
+      {
+        "id": "integrations",
+        "path": "src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx",
+        "line": 86
+      },
+      {
+        "id": "mobile",
+        "path": "src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx",
+        "line": 107
+      },
+      {
+        "id": "automations",
+        "path": "src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx",
+        "line": 128
+      },
+      {
+        "id": "artifacts",
+        "path": "src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx",
+        "line": 148
+      },
+      {
+        "id": "share-skills",
+        "path": "src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx",
+        "line": 171
+      },
+      {
+        "id": "session-history",
+        "path": "src/renderer/src/components/settings/page/settings-setup-workflow-section-renderers.tsx",
+        "line": 192
+      }
+    ]
+  },
+  "limits": [
+    "Static import reachability is not runtime reachability. Check registration, feature gates, same-name components, module aliases and nonliteral imports.",
+    "JSX/event/conditional/CSS candidates are discovery inputs. They include some internals and omit non-JSX behavior, guest UIs and OS-owned UI."
+  ]
+}

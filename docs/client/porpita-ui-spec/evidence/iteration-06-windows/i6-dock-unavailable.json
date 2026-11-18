@@ -1,0 +1,338 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "reduce",
+  "focus": "Search worktrees and browser tabs",
+  "section": [],
+  "text": "Search\nCtrl\n+\n⇧\n+\nJ\nTasks\nArtifacts\nSkills\nAutomations\nOrca Mobile\nNew\nProjects\n0\nUI-spec-sample\nActive\nmain\nprimary\nmain\nSkills\n0 skills\n·\n0 sources\n·\nThis machine\nShare skills\nInstall from link\nAll agents\nSkills\nShared links\nAll\n0\nHome\n0\nWorkspace\n0\nBundled\n0\nPlugin\n0\n0 results\nNo skills found\n\nThe scanned skill folders are empty. Install a shared bundle, or refresh after adding a skill.\n\nInstall from link\nRefresh\nOff\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Search\nCtrl\n+\n⇧\n+\nJ",
+      "label": "Search worktrees and browser tabs",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Artifacts",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Skills",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Orca Mobile\nNew",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse all projects",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace options",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Add project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Project actions for UI-spec-sample",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Create new worktree for UI-spec-sample",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Mark as unread",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close skills",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0 sources",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Share skills",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Install from link",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More actions",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "All agents",
+      "label": "Filter by agent",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Skills",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Shared links",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "All\n0",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Home\n0",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Workspace\n0",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Bundled\n0",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Plugin\n0",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Install from link",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Refresh",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i6-dock-unavailable.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 44800
+}

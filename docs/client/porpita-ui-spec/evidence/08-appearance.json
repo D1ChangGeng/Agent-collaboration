@@ -1,0 +1,844 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "外观",
+  "section": [
+    "appearance"
+  ],
+  "text": "返回应用\nCtrl\n+\nF\n入门清单\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n~\n外观\n\n主题、缩放、应用程序和终端外观、侧边栏和状态栏。\n\n界面\n主题\nBrowse themes\n系统\n深色\n浅色\n浅色主题\n内置\n深色主题\n内置\nLight editor theme\n\nCode editor, diff and notebook colors while the app is light.\n\nSame as app theme\nDark editor theme\n\nCode editor, diff and notebook colors while the app is dark.\n\nSame as app theme\n语言\n系统\n用户界面缩放\n\nCtrl\n+\n=\n / \nCtrl\n+\n-\n 当不在终端窗格中时。\n\n100%\n重置\nIDE字体\n高级\n终端\n终端排版\n从 Ghostty 导入\nImport from Kitty\n字体大小\n像素\n字体家族\n高级\n终端主题\n从 Warp 导入\n从 YAML 导入\n\n主题模式\n\n深色\n浅色\n匹配深色模式\n\n在浅色模式中共享深色终端主题和分隔线颜色。\n\n浅色主题\n\n选择 Porpita 处于浅色模式时使用的主题。\n\n已选择： Builtin Tango Light\n显示中 36/36\n\n内置\n\nAyu Dark\nBuiltin Tango Light\n当前\nCatppuccin Latte\nCatppuccin Mocha\nDracula\nEverforest Dark\nEverforest Light\nGhostty Default Style Dark\nGitHub Light\nGruvbox Dark\nGruvbox Light\nHomebrew\nHorizon Dark\nKanagawa\nMaterial Dark\nMonokai\nNight Owl\nNightfox\nNord\nOne Dark\nOne Light\nPalenight\nRose Pine\nRose Pine Dawn\nSlatewave\nSnazzy\nSolarized Dark\nSolarized Light\nTango Dark\nTokyo Night\nTokyo Night Light\n\n插件\n\nGitHub Light Default\n来自 GitHub Themes for Orca · light\nGitHub Light High Contrast\n来自 GitHub Themes for Orca · light\nGitHub Dark Default\n来自 GitHub Themes for Orca · dark\nGitHub Dark High Contrast\n来自 GitHub Themes for Orca · dark\nGitHub Dark Dimmed\n来自 GitHub Themes for Orca · dark\n浅色模式分隔线颜色\n\n控制浅色模式下窗格之间的分割分隔线。\n\n高级\n浅色模式预览\n显示实际生效的浅色终端外观。\n窗格分隔线\n~/orca main * $ npm test\n  PASS  src/preview.test.ts\n ✓ renders sample output (3ms)\n ✗ ligatures: => != >= <= ===\ndef total(xs: list[int]) -> int:\n    \"\"\"Sum the values.\"\"\"\n    return sum(x for x in xs)\n~/orca main * $ git diff\n@@ -1,2 +1,3 @@\n-const size = 13\n+const size = 14\n~/orca main * $  \n窗口和侧边栏\n左侧边栏外观\n\n保持左侧边栏默认或为其着色。要跟随终端，请将浅色或深色主题设为“匹配终端”。\n\n默认\n色调\n状态栏\n\n选择状态栏中显示哪些指示器。\n\n用量百分比\n\n选择以已用或剩余百分比显示提供商限额。\n\n已用\n剩余\nCodex 使用情况\n\n显示当前工作区的 Codex Token 与费用消耗情况。\n\nOpenCode Go 使用情况\n\n显示当前工作区的 OpenCode Go Token 与费用消耗情况。\n\nKimi 使用情况\n\n显示当前工作区的 Kimi 订阅使用情况。\n\nMiniMax 使用情况\n\n显示当前工作区的 MiniMax 订阅使用情况。\n\nCursor 用量\n\n通过 cursor-agent 或 Cursor IDE 登录后显示 Cursor 套餐用量。\n\n远程主机\n\n当有可用的已配置 SSH 和远程 Porpita 主机时显示它们。\n\n资源管理器\n\n显示资源管理器。点击可查看 CPU、内存、会话、守护进程控制和工作区磁盘扫描。\n\n端口\n\n显示实时工作区端口。点击可查看工作区范围的端口和外部监听器。\n\n高级\n关闭\n—\n·\n0\nPorpita 中的 Codex 现在使用 ~/.codex\nCodex 可能会再次要求信任文件夹或批准命令。重新添加您仅在 Porpita 中添加的所有 MCP 服务器。\n入门流程已完成！\n\n如果你目前喜欢 Porpita，在 GitHub 上加星可以帮助其他开发者发现它。\n\n打开 GitHub\n稍后\nPorpita 现在无需共享服务器即可运行 Codex\n这使得智能体状态更加可靠。您可以在“设置”中将其重新打开。\n打开设置",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "入门清单",
+      "label": "入门清单，已完成 1/8。显示设置指南。",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "~",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Browse themes",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "系统",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "深色",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浅色",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "内置",
+      "label": "浅色主题",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "内置",
+      "label": "深色主题",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Same as app theme",
+      "label": "Light editor theme",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Same as app theme",
+      "label": "Dark editor theme",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "系统",
+      "label": "语言",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "重置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "清除字体选择",
+      "title": "清除",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换字体建议",
+      "title": "字体",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "从 Ghostty 导入",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Import from Kitty",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "清除字体选择",
+      "title": "清除",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换字体建议",
+      "title": "字体",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "从 Warp 导入",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "从 YAML 导入",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "深色",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浅色",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "匹配深色模式",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ayu Dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Builtin Tango Light\n当前",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Catppuccin Latte",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Catppuccin Mocha",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Dracula",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Everforest Dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Everforest Light",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Ghostty Default Style Dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "GitHub Light",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Gruvbox Dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Gruvbox Light",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Homebrew",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Horizon Dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Kanagawa",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Material Dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Monokai",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Night Owl",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Nightfox",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Nord",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "One Dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "One Light",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Palenight",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Rose Pine",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Rose Pine Dawn",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Slatewave",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Snazzy",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Solarized Dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Solarized Light",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tango Dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tokyo Night",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tokyo Night Light",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "GitHub Light Default\n来自 GitHub Themes for Orca · light",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "GitHub Light High Contrast\n来自 GitHub Themes for Orca · light",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "GitHub Dark Default\n来自 GitHub Themes for Orca · dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "GitHub Dark High Contrast\n来自 GitHub Themes for Orca · dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "GitHub Dark Dimmed\n来自 GitHub Themes for Orca · dark",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在预览中显示窗格分隔线",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "窗口和侧边栏",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "默认",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "色调",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "已用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "剩余",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Codex 使用情况",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "OpenCode Go 使用情况",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Kimi 使用情况",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "MiniMax 使用情况",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Cursor 用量",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "远程主机",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "资源管理器",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "上一个图标",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "下一个图标",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开 GitHub",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "稍后",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开设置",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "08-appearance.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 33821
+}

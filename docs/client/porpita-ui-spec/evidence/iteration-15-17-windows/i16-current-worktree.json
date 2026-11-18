@@ -1,0 +1,350 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Session filters",
+  "section": [],
+  "text": "Search\nWorkspaces (preview)\nTasks\nArtifacts\nSkills\nAutomations\nOrca Mobile\nNew\nSessions\n0\nCurrent worktree\nSearch history\nIncident response · 运行排查与复盘记录\nUI-spec-folder · main · Codex\nBuild triage · 构建排查\nUI-spec-folder · main · Codex\nOpen in Release review · 发版核对\nTerminal 1\nBuild triage · 构建排查\nIncident response · 运行排查与复盘记录\nCommand\n\nStart a chat with Codex\n\nAsk Codex to inspect code, explain output, or make a change.\n\nCodex isn't signed in. Run `codex login`.\n\n\n\n\nFull access\nModel\nLAPTOP-FYGE2ZMR\nmain\n· Main checkout\nmain\nOff\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Workspaces (preview)",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Artifacts",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Skills",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Orca Mobile\nNew",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Sessions",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Current worktree",
+      "label": "Session filters",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Search history",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle right sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab Terminal 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab Build triage · 构建排查",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab Incident response · 运行排查与复盘记录",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New tab",
+      "title": "New tab",
+      "test": null
+    },
+    {
+      "text": "Command",
+      "label": "Add quick command",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Hand Off to Another Agent",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Continue with Terminal Agent",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Split Terminal Right",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Chat settings",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Dismiss",
+      "title": "Dismiss",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Attach file",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Full access",
+      "label": "Permissions Full access",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More chat controls",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Model",
+      "label": "Model",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Start dictation",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Send",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· Main checkout",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Agents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More sidebar tabs",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i16-current-worktree.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 48793
+}

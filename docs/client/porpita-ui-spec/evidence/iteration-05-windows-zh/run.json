@@ -1,0 +1,67 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i5-two-sources",
+      "trigger": "Search for the same Codex session ID on Local and Studio",
+      "elapsedMs": 7048,
+      "result": "captured"
+    },
+    {
+      "id": "i5-source-disappears",
+      "trigger": "Withdraw the Studio fixture transcript and refresh the same search",
+      "elapsedMs": 11918,
+      "result": "captured"
+    },
+    {
+      "id": "i5-unreachable",
+      "trigger": "Repeat the same search after Studio becomes unreachable",
+      "elapsedMs": 1051,
+      "result": "captured"
+    },
+    {
+      "id": "i5-partial-empty",
+      "trigger": "Search for a session that only the unavailable Studio host can return",
+      "elapsedMs": 882,
+      "result": "captured"
+    },
+    {
+      "id": "i5-retry-offline",
+      "trigger": "Use Enter on the inline retry while Studio is still offline",
+      "elapsedMs": 535,
+      "result": "captured"
+    },
+    {
+      "id": "i5-retry",
+      "trigger": "Restart Studio and retry without changing the query or host scope",
+      "elapsedMs": 4749,
+      "result": "captured"
+    },
+    {
+      "id": "i5-compact",
+      "trigger": "Inspect both owners and the host selector at 860×520 with reduced motion",
+      "elapsedMs": 903,
+      "result": "captured"
+    },
+    {
+      "id": "i5-owning-chat",
+      "trigger": "Read the Studio transcript and open it on its owning runtime",
+      "elapsedMs": 4831,
+      "result": "captured"
+    },
+    {
+      "id": "i5-return-chat",
+      "trigger": "Return from the local worktree to the same Studio chat",
+      "elapsedMs": 1251,
+      "result": "captured"
+    }
+  ]
+}

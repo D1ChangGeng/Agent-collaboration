@@ -1,0 +1,19 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i6-palette",
+      "trigger": "Search for a closed conversation in Open chats",
+      "elapsedMs": 3354,
+      "result": "captured"
+    }
+  ]
+}

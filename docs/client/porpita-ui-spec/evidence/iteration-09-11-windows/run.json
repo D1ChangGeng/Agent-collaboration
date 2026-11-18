@@ -1,0 +1,79 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i9-two-worktrees",
+      "trigger": "Open two real local Native Chats side by side from separate worktrees",
+      "elapsedMs": 1375,
+      "result": "captured"
+    },
+    {
+      "id": "i9-return-to-pane",
+      "trigger": "Switch at 600px without moving either session and restore the split",
+      "elapsedMs": 854,
+      "result": "captured"
+    },
+    {
+      "id": "i9-pane-budget",
+      "trigger": "Keep two panes readable near the split threshold",
+      "elapsedMs": 506,
+      "result": "captured"
+    },
+    {
+      "id": "i9-reopen",
+      "trigger": "Close only the Workspace tab and reopen the same layout and drafts",
+      "elapsedMs": 882,
+      "result": "captured"
+    },
+    {
+      "id": "i10-groups",
+      "trigger": "Create a long-named group and move the active Workspace from the context menu",
+      "elapsedMs": 4133,
+      "result": "captured"
+    },
+    {
+      "id": "i10-narrow-search",
+      "trigger": "Find a hidden tab across all groups at 600px with window buttons clear",
+      "elapsedMs": 1435,
+      "result": "captured"
+    },
+    {
+      "id": "i10-layout-restore",
+      "trigger": "Reload the isolated desktop renderer and restore the selected group and Workspace",
+      "elapsedMs": 3714,
+      "result": "captured"
+    },
+    {
+      "id": "i11-fixed-scope",
+      "trigger": "Open a standalone Explorer for the original worktree and find a real file",
+      "elapsedMs": 2040,
+      "result": "captured"
+    },
+    {
+      "id": "i11-move-panel",
+      "trigger": "Move the same Explorer into a Workspace and back while selecting the other worktree chat",
+      "elapsedMs": 963,
+      "result": "captured"
+    },
+    {
+      "id": "i11-detach",
+      "trigger": "Return the same Explorer instance to its top-level tab",
+      "elapsedMs": 672,
+      "result": "captured"
+    },
+    {
+      "id": "i11-original-file",
+      "trigger": "Open the file through its original worktree editor",
+      "elapsedMs": 1951,
+      "result": "captured"
+    }
+  ]
+}

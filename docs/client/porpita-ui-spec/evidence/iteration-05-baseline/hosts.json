@@ -1,0 +1,11 @@
+{
+  "searchViaPairedRuntime": true,
+  "sameTitleAndProviderId": 2,
+  "unreachable": {
+    "visibleRows": 1,
+    "usesHostName": false,
+    "localRowNamed": false,
+    "retry": false,
+    "loadMore": true
+  }
+}

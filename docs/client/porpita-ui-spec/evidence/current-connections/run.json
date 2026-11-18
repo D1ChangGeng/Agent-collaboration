@@ -1,0 +1,43 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 530,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 1285,
+      "result": "captured"
+    },
+    {
+      "id": "44-source-collaboration",
+      "trigger": "Open current build Collaboration without configuring Core",
+      "elapsedMs": 643,
+      "result": "captured"
+    },
+    {
+      "id": "45-source-general",
+      "trigger": "Open current build General settings",
+      "elapsedMs": 1468,
+      "result": "captured"
+    },
+    {
+      "id": "46-source-mobile",
+      "trigger": "Open the current build Mobile pairing entry",
+      "elapsedMs": 1667,
+      "result": "captured"
+    }
+  ]
+}

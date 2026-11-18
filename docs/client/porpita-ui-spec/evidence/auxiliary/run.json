@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "53-space-window",
+      "trigger": "Resource Manager > Space > Review",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "54-dashboard-window",
+      "trigger": "Open the seeded Agent Dashboard sidebar entry in pop-out mode",
+      "elapsedMs": 2125,
+      "result": "captured"
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "\n    SearchCtrl+⇧+JTasksArtifactsSkillsAutomationsOrca MobileNewProjects0No workspaces foundPorpitaAdd a project to get ",
+  "section": [],
+  "text": "Search\nTasks\nArtifacts\nSkills\nAutomations\nOrca Mobile\nNew\nProjects\n0\nNo workspaces found\nPorpita\n\nAdd a project to get started.\n\nAdd project\nCreate workspace\nCreate workspace\nCtrl\n+\nN\nMove up workspace\nCtrl\n+\n⇧\n+\n↑\nMove down workspace\nCtrl\n+\n⇧\n+\n↓\nSelect a workspace to browse files\nOff\n—\n·\n0\nChat UI is here\nExplain login\nMap out how login works\nRead\nauth.ts\n\nLogin starts in auth.ts: the browser posts to /login, the server checks the password and creates a session, then redirects you to the app. Here’s the flow:\n\nBrowser\npassword\n/login\nSession\ncookie\nApp\nAsk anything, @ to mention files, / for commands\nAsk for approval\nOpus\nAgents can now open as a chat, with rich messages, visuals and images.\nChange anytime in Settings → Chat UI.\nStay in terminal\nUse Chat UI",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Artifacts",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Skills",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Orca Mobile\nNew",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace options",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Add project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Add project",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Create workspace",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle right sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Agents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Source Control (Ctrl+⇧+G)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Checks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Dismiss",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Stay in terminal",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Use Chat UI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "preview-disabled.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 6366
+}

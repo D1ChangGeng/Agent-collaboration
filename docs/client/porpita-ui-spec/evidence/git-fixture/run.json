@@ -1,0 +1,43 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 710,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 1098,
+      "result": "captured"
+    },
+    {
+      "id": "37-git-worktree",
+      "trigger": "Activate the disposable Git checkout via the project header/row",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 9000ms exceeded."
+    },
+    {
+      "id": "38-git-changes",
+      "trigger": "Open Source Control and wait for the modified fixture file",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "39-git-diff",
+      "trigger": "Open the fixture diff from the changes list",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+# ID|设计|源码|本轮验收|已验证条件及下一步|证据ID
+A.04|Landing 使用共享 Button 并支持窄窗纵向滚动|已接入 Landing.tsx 滚动容器与共享 Button|本轮局部通过|Windows 隐藏 Electron 600×400 英/简中已验证可纵向滚动与按钮聚焦，隐藏首次使用卡片，Vitest 通过。系统前台窗口与其余宿主页待验|I9006,I9007
+B|首次设置向导焦点隔离、窄窗滚动与 Porpita 品牌化|OnboardingFlow 使用 FocusScope 与共享控件并清除主/渲染进程残留 Orca 回退|本轮局部通过|1280×800 与 600×400 英/简中实机确认 Tab 聚焦留在弹层、取消跳过确认回焦原弹层控件（含原控件禁用时回退至弹层根）且无水平溢出；实测英文 Help 菜单与 main-i18n/Vitest 覆盖。真实安装版前台聚焦与全部 6 步端到端保存待验|I9001,I9002,I9003,I9004,I9005
+B.01|向导语言切换与 AgentSurfaceStep 中英一致性|AgentSurfaceStep 与 zh.json/en-runtime-required.json 补齐 Porpita 词条|本轮局部通过|Windows 实机 1280×800 与 600×400 核对中英文案、Porpita 标识及保留演示代码一致。其余语言包未纳入本轮实测|I9001,I9002,I9005
+B.05|功能导览窄窗排版、卸载回焦与引导文案统一|ContextualTourOverlaySurface 窄窗限位，useContextualTourFocus 与 contextual-tour-gate 修正折叠容器判定与卸载回焦|本轮局部通过|600×400 英/简中实机确认引导弹层完全在视口内且退出后焦点回到搜索输入框；Vitest 覆盖滚动容器、0 高 overflow:hidden 拒绝与回焦。其余页面引导与系统读屏待验|I9008,I9009
+L.04|Artifacts 未配置账户时展示诚实不可用与返回工作区，并统一「工件」译名|ArtifactsPage/States/SettingsPane 移除死链重定向并修正 zh.json|本轮局部通过|Windows 实机验证未配置服务下展示 Unavailable/不可用 并可返回工作区，设置页同步提示；Vitest 覆盖骨架屏与模拟已登录态。线上发布/列表需有效账户服务再验|I9012,I9013,I9015
+M.01|侧栏改名 Porpita Mobile、中文化样例与 Relay 诚实不可用边界|SidebarNav、MobileHero、HomeSlide、TerminalSlide、MobileSettingsPane 与 zh.json 更新|本轮局部通过|Windows 英/简中实机验证侧栏入口、中文化 PhoneCarousel 与 TerminalSlide 示例预览、保留上游客户端说明与 Relay 不可用提示，Vitest 通过。真机扫码与线上 Relay 需受控移动端与账户服务再验|I9010,I9011,I9016
+N.orca-account|设置侧栏与面板统一使用 Porpita 账户并诚实呈现未配置不可用状态|OrcaAccountSettingsPane、导航分段与搜索项对齐 Porpita 术语|本轮局部通过|Windows 简中设置页实机确认「Porpita 账户」标题及「Porpita 登录在此版本中不可用」提示。实际 OAuth 登录/注销需有效云服务环境再验|I9014
+O.modal.onboarding|向导模态 FocusScope 焦点环绕、取消确认回焦与窄窗滚动壳|OnboardingFlow Portal 复用 Radix FocusScope、Skip 确认关闭回焦与滚动区|本轮局部通过|1280×800 Tab 循环留于模态、取消 Skip 确认回焦原弹层按钮、600×400 水平零溢出实测通过，Vitest 覆盖未 mock 对话框取消/Escape/原控件禁用回退路径。跨平台系统读屏待验|I9001,I9002,I9003,I9004,I9005
+O.local.contextual-tour|局部引导浮层窄窗边界约束、中英统一与卸载回焦|ContextualTourOverlaySurface 与 contextual-tour-gate 协同处理|本轮局部通过|600×400 英/简中浮层边界完全落在视口内，卸载时焦点回到触发输入控件，Vitest 覆盖折叠容器拒绝。多步跨页导览与动态窗口缩放下重定位待进一步覆盖|I9008,I9009

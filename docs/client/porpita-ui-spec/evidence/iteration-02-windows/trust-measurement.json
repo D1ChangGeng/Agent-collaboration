@@ -1,0 +1,24 @@
+{
+  "security": true,
+  "size": [
+    600,
+    400
+  ],
+  "actions": [
+    {
+      "label": "让智能体询问",
+      "hit": true
+    },
+    {
+      "label": "信任仓库",
+      "hit": true
+    }
+  ],
+  "toast": [
+    true
+  ],
+  "notificationStack": [
+    true
+  ],
+  "liveToasts": 2
+}

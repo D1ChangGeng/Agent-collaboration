@@ -1,0 +1,272 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Ask anything, @ to mention files, / for commands",
+  "section": [],
+  "text": "General\nDependency audit · 依赖审查与版本升级\nDeployment verification · 部署验证记录\nRelease review · 发版核对\nDraggable item 26ac3ecf-4f15-48f3-829c-39f37a34e64d was dropped over droppable area workspace-preview-group-selector\nRelease review · 发版核对\nUI-spec-sample\n\nStart a chat with Codex\n\nAsk Codex to inspect code, explain output, or make a change.\n\nChecklist draft A\n\nFull access\nModel\nmain\n· Main checkout\nmain\nBuild triage · 构建排查\nUI-spec-folder\n\nStart a chat with Codex\n\nAsk Codex to inspect code, explain output, or make a change.\n\nBuild draft B\n\nFull access\nModel\nmain\n· Main checkout\nmain\nUI-spec-sample\ndocs\nrelease-checklist.md\nOff\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "General",
+      "label": "Choose group: General",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Dependency audit · 依赖审查与版本升级",
+      "label": null,
+      "title": "Dependency audit · 依赖审查与版本升级",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Dependency audit · 依赖审查与版本升级",
+      "title": "Close Dependency audit · 依赖审查与版本升级",
+      "test": null
+    },
+    {
+      "text": "Deployment verification · 部署验证记录",
+      "label": null,
+      "title": "Deployment verification · 部署验证记录",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Deployment verification · 部署验证记录",
+      "title": "Close Deployment verification · 部署验证记录",
+      "test": null
+    },
+    {
+      "text": "Release review · 发版核对",
+      "label": null,
+      "title": "Release review · 发版核对",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close Release review · 发版核对",
+      "title": "Close Release review · 发版核对",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New work object",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open work",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Return to worktree",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Attach file",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Full access",
+      "label": "Permissions Full access",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More chat controls",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Model",
+      "label": "Model",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Start dictation",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Send",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· Main checkout",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Attach file",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Full access",
+      "label": "Permissions Full access",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More chat controls",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Model",
+      "label": "Model",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Start dictation",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Send",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· Main checkout",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Parent folder",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Explorer",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer placement",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Clear file filter",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "release-checklist.md",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i14-move-to-group.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 93692
+}

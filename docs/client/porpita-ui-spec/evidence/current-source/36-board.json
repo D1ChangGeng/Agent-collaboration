@@ -1,0 +1,407 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "default",
+  "focus": "工作区看板",
+  "section": [],
+  "text": "搜索\n入门清单\n隐藏\n任务\n自动化\nPorpita 手机端\n新功能\n项目\n0\n没有智能体活动与这些筛选条件匹配。\nTerminal 1\nC:\\Program Files\\PowerShell\\7\\pwsh.exe\n命令\n关闭\n—\n·\n0\nPorpita 中的 Codex 现在使用 ~/.codex\nCodex 可能会再次要求信任文件夹或批准命令。重新添加您仅在 Porpita 中添加的所有 MCP 服务器。\nPorpita 现在无需共享服务器即可运行 Codex\n这使得智能体状态更加可靠。您可以在“设置”中将其重新打开。\n打开设置\n入门流程已完成！\n\n如果你目前喜欢 Porpita，在 GitHub 上加星可以帮助其他开发者发现它。\n\n打开 GitHub\n稍后\n工作区看板\n\n按状态组织工作区并打开工作区卡。\n\n已固定\n拖放到此处即可固定，无需更改状态。\nTodo\n0\n空的\nIn progress\n1\n当前\n~\n~\nhome\nIn review\n0\n空的\nDone\n0\n空的\n在看板中规划工作\n\n想按状态而不是按项目查看工作区时，请使用看板。\n\n1 / 2\n下一步",
+  "dialogs": [
+    "工作区看板\n\n按状态组织工作区并打开工作区卡。\n\n已固定\n拖放到此处即可固定，无需更改状态。\nTodo\n0\n空的\nIn progress\n1\n当前\n~\n~\nhome\nIn review\n0\n空的\nDone\n0\n空的\n在看板中规划工作\n\n想按状态而不是按项目查看工作区时，请使用看板。\n\n1 / 2\n下一步",
+    "在看板中规划工作\n\n想按状态而不是按项目查看工作区时，请使用看板。\n\n1 / 2\n下一步"
+  ],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "前进",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "搜索",
+      "label": "搜索工作树和浏览器选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "入门清单",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐藏",
+      "label": "从侧边栏隐藏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 GitHub 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 Jira 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 手机端\n新功能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "关闭活动视图",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "线程列表选项",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "添加项目",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "帮助",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示活动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区看板",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换右侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Terminal 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新标签页",
+      "title": "新标签页",
+      "test": null
+    },
+    {
+      "text": "命令",
+      "label": "添加快捷命令",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移交给另一个智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "向右拆分终端",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "资源管理器 (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更多侧边栏选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开设置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开 GitHub",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "稍后",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "搜索工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区看板设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在 Todo 中新建工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在 Todo 中新建工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在 In progress 中新建工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标为未读",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在 In progress 中新建工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在 In review 中新建工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在 In review 中新建工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在 Done 中新建工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在 Done 中新建工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "跳过导览",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "下一步",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "36-board.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 31986
+}

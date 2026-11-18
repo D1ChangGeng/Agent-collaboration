@@ -1,0 +1,26 @@
+{
+  "size": [
+    1100,
+    700
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "\n    Agents0 totalCtrl+KFilterNeeds You0NoneWorking0NoneDone0None\n  \n\n",
+  "section": [],
+  "text": "Agents\n0 total\nCtrl\n+\nK\nFilter\nNEEDS YOU\n0\n\nNone\n\nWORKING\n0\n\nNone\n\nDONE\n0\n\nNone",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "Filter",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "54-dashboard-window.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 24544
+}

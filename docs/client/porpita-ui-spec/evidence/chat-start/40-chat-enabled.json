@@ -1,0 +1,562 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "\n    Terminal 1Terminal 2命令\n    To pick up a draggable item, press the space bar.\n    While dragging, use the arrow keys",
+  "section": [
+    "chat"
+  ],
+  "text": "返回应用\nCtrl\n+\nF\n入门清单\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n~\n聊天界面\n\n选择聊天的外观和行为方式。\n\nChat UI 已开启\n\n新智能体默认以聊天模式启动。\n\n关闭\n每个智能体的默认启动模式\n\n选择每个智能体在 Chat UI 还是 CLI 中打开。\n\nClaude\n聊天\nCLI\nCodex\n聊天\nCLI\nGrok\n聊天\nCLI\nOpenCode 2\n聊天\nCLI\nOpenCode\n聊天\nCLI\nPi\n聊天\nCLI\nOMP\n聊天\nCLI\nAntigravity\n聊天\nCLI\n外观\n匹配终端外观\n\n整个聊天使用与终端相同的字体和配色。更改终端主题后，聊天会自动同步。\n\n对比度\n\n调整聊天文字相对于背景的亮度。滑到最右端可恢复以前更明亮的外观。\n\n更柔和\n更清晰\n100\n字体\n\n用于消息、活动和消息输入框的字体。\n\n这段文字用于预览聊天字体。 fontFamily\n\n文字大小\n\n消息、工具活动和消息输入框。在聊天中按 Ctrl+= / Ctrl+- 也会更改此设置。· 默认： 14\n\npx\n代码文字大小\n\n代码块、行内代码、命令和工具输出。· 默认： 12\n\npx\n宽度\n\n消息和输入框在宽窗格中可以扩展到的最大宽度。\n\n舒适\n宽\n全宽\n重置聊天外观\n\n恢复上述默认设置。\n\n重置\n回合活动\n每轮更改\n\n在回复下方显示每轮更改的文件及其行数。\n\n已创建的拉取请求\n\n在回复下方显示每轮创建的拉取请求及其标题和行数。\n\n内联可视化\n\n允许智能体在其回复中显示图表、示意图和原型图。适用于新启动的聊天。\n\n行为\n新聊天的权限\n\n新聊天遵循设置 → 智能体中各智能体的权限。\n\n设置 → 智能体\nClaude\n完全访问\nCodex\n完全访问\nOpenCode\n完全访问\nOpenCode 2\n完全访问\nOMP\n完全访问\nAntigravity\n完全访问\nGrok\n完全访问\n重启后自动恢复工作聊天\n\n当 Porpita 退出或安装更新时，重新打开 Porpita 后，正在工作的聊天会自动恢复。\n\n空闲多久后停止智能体\n\n聊天空闲达到此时长后，结束该聊天的智能体以释放内存。聊天会保留，你发送下一条消息时智能体会重新启动。如果智能体在轮次之间仍会在后台继续工作，请选择“从不”。\n\n30分钟\n使用额度重置后自动继续聊天\n\n额度重置后，Porpita 会发送“Continue where you left off.”。适用于所有已知重置时间的聊天。\n\n将后续消息加入队列\n\n智能体工作时发送的消息会作为卡片等待，直到本轮结束，而不是进入当前轮次。Cmd/Ctrl+Enter 对单条消息执行相反操作；输入框为空时，该快捷键会将第一张等待中的卡片引入当前轮次。带图片的消息也会作为卡片等待。\n\n发送时滚动到最新消息\n\n向上滚动时发送消息会跳到最新消息并跟随回复。关闭后将保持当前位置。\n\nLink previews\n\nHovering a web link shows a preview card. Orca fetches the page to build it, so the site can see the request.\n\n使用 shell 环境\n\nCodex 和 Claude 聊天启动时会带上登录 shell 导出的所有变量，与终端一致。关闭后可选择传递哪些变量。\n\n聊天名称\n\n使用各聊天的智能体根据首条消息命名。可在高级设置中选择其他命名智能体。名称生成前，聊天会显示首条消息。\n\n高级\n关闭\n—\n·\n0\nPorpita 中的 Codex 现在使用 ~/.codex\nCodex 可能会再次要求信任文件夹或批准命令。重新添加您仅在 Porpita 中添加的所有 MCP 服务器。\n入门流程已完成！\n\n如果你目前喜欢 Porpita，在 GitHub 上加星可以帮助其他开发者发现它。\n\n打开 GitHub\n稍后\nPorpita 现在无需共享服务器即可运行 Codex\n这使得智能体状态更加可靠。您可以在“设置”中将其重新打开。\n打开设置",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "入门清单",
+      "label": "入门清单，已完成 1/8。显示设置指南。",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "~",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "CLI",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "匹配终端外观",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换字体建议",
+      "title": "字体",
+      "test": null
+    },
+    {
+      "text": "舒适",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "宽",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "全宽",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "重置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "每轮更改",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "已创建的拉取请求",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换内联可视化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "设置 → 智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "重启后切换自动恢复",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "30分钟",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换使用额度重置后自动继续聊天",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "将后续消息加入队列",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "发送时滚动到最新消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle link previews",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换使用 shell 环境",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "自动为聊天命名",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开 GitHub",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "稍后",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开设置",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "40-chat-enabled.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 26455
+}

@@ -1,0 +1,856 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "UI-spec-sample",
+  "section": [
+    "repo-e39a9213-6c1e-459e-89bb-406f810918ab"
+  ],
+  "text": "返回应用\nCtrl\n+\nF\n入门清单\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n~\nUI-spec-sample\n项目设置 > UI-spec-sample\n\n<isolated>/UI-spec-sample\n\n身份\n\n侧边栏和选项卡的项目特定显示详细信息。\n类型： Git\n\n显示名称\nRepo 图标\nDefault\n重置\n颜色\nCustom\n头像\n图标\n表情符号\n使用 GitHub 头像\n\n默认使用 — GitHub 始终提供一个，即使所有者尚未设置自定义图像。\n\n上传PNG\n网站图标\n\nPNG 上传必须为 256KB 或更小。\n\n默认 Jira 项目\n\n无默认项目\n\n在集成中连接 Jira 以选择项目。\n\n智能体文件夹信任\n\nPorpita 在此仓库的工作树中启动的智能体是否跳过“Do you trust this folder?”提示，并立即加载项目的智能体设置和钩子。\n\n信任仓库\n让智能体询问\n\n尚未决定。下次你在这里启动智能体时，Porpita 会询问。\n\n项目运行时\n\n无项目覆盖。通用设置选择 Windows。\n\n默认 (Windows)\nWindows\nWSL\n\n运行时更改应用于此项目的新终端、智能体检查和技能发现。已有终端保留其当前运行时。\n\n1 个正在运行的终端会继续在当前运行时中运行。继续前请等待任务完成或重启终端。\n\nGitHub 账户\n\nPorpita 会将所选密钥环登录的短期令牌注入此项目的每次 gh 调用。项目视图继续使用当前活动的 gh 登录。\n\n账户\n默认（当前活动的 gh 登录）\n外部工作树\n\n正在使用全局设置：隐藏\n\n使用全局设置\n默认工作树基础\nmain\n\n跟随主分支 (main)\n\n跟随主分支\n工作树位置\n\n相对路径从该项目根解析。\n\n工作树挂钩\n\n创建或归档工作树时运行的脚本。本地脚本存储在本机上； `orca.yaml` 脚本与您的团队共享。\n\n设置脚本\n\n创建新工作树后运行；安装 deps，复制 env 文件，运行迁移。\n\n可用的环境变量（将鼠标悬停以查看详细信息）：\n\n$ORCA_ROOT_PATH\n$ORCA_WORKTREE_PATH\n$ORCA_WORKSPACE_NAME\n\n作为单个 shell 脚本运行。保存在本机上。\n\n何时执行\n\n创建新工作树时的默认行为。\n\n每次都问\n默认运行\n默认跳过\n等待设置完成后再启动智能体\n存档脚本\n\n在归档或删除工作树之前运行。\n\n可用的环境变量（将鼠标悬停以查看详细信息）：\n\n$ORCA_ROOT_PATH\n$ORCA_WORKTREE_PATH\n$ORCA_WORKSPACE_NAME\n\n作为单个 shell 脚本运行。保存在本机上。\n\n自定义 GitHub 议题命令\n\n可选覆盖。使用 {{artifact_url}} 表示关联议题或 PR 的 URL。\n\n留空则使用 orca.yaml 中的仓库默认值（如果有）。\n\n高级\n命令源 & orca.yaml\n仅 Porpita.yaml\n格式化程序命令\n\n保存时格式化使用此项目的格式化程序。\n\n命令\n\n在文件所在主机的工作区根目录中运行。从 stdin 读取缓冲区，并且只能向 stdout 输出格式化后的文本。使用 ${file} 或 ${relativeFile} 表示路径。参数直接传递，不经过 shell。请勿使用 --write。留空可在此项目中禁用。\n\n包含的 glob（每行一个）\n\n匹配相对于工作区根目录的路径。没有匹配的 glob 时不会格式化。* 和 ** 会跳过以点开头的名称；请明确列出，例如 .github/**/*.yml。要使用此命令，请在通用 > 编辑器中启用“保存时格式化”。\n\n保存格式化程序\n源代码控制 AI\n\n这些覆盖项应用于此项目设置，并继承客户端的源代码管理 AI 默认值，直至自定义。\n\n显示源代码控制 AI 操作\n\n控制是否为此仓库显示源代码控制 AI 按钮。单独功能使用的生成会遵循这些功能各自的设置。全局默认值为 显示。\n\n使用全局\n自定义命令\n\n选择自定义命令的文本操作的 Repo 回退。\n\n使用全局\n操作方案\n\nCommit message\n\n根据已暂存的更改生成提交信息。\n\nUsing global settings\nOrca default prompt\nNo args\n使用全局\n智能体\nSonnet · Claude · Low\n\n此预设支持的智能体：OMP, Claude, Codex, OpenCode, OpenCode 2, Pi, Amp, Cursor, Kimi, Muse, DeepSeek Harness, GitHub Copilot, Antigravity, Jcode, 自定义命令。\n\n参数\n提示词模板\n变量\n{basePrompt}\n{branch}\n{stagedFiles}\n{stagedPatch}\n{linkedIssue}\n\nPull request details\n\n生成托管评论标题和描述。\n\nUsing global settings\nOrca default prompt\nNo args\n使用全局\n智能体\nSonnet · Claude · Low\n\n此预设支持的智能体：OMP, Claude, Codex, OpenCode, OpenCode 2, Pi, Amp, Cursor, Kimi, Muse, DeepSeek Harness, GitHub Copilot, Antigravity, Jcode, 自定义命令。\n\n参数\n提示词模板\n变量\n{basePrompt}\n{branch}\n{baseBranch}\n{currentTitle}\n{currentBody}\n{commitSummary}\n{changedFiles}\n{patch}\n{linkedIssue}\n\nBranch name\n\n重命名 Porpita 从初始智能体任务创建的分支。\n\nUsing global settings\nOrca default prompt\nNo args\n使用全局\n智能体\nSonnet · Claude · Low\n\n此预设支持的智能体：OMP, Claude, Codex, OpenCode, OpenCode 2, Pi, Amp, Cursor, Kimi, Muse, DeepSeek Harness, GitHub Copilot, Antigravity, Jcode, 自定义命令。\n\n参数\n提示词模板\n变量\n{basePrompt}\n{firstPrompt}\n{assistantMessage}\n\nCommit failure fixes\n\n当 commit 挂钩或 git commit 失败时启动智能体。\n\nUsing global settings\nOrca default prompt\nNo args\n使用全局\n智能体\n使用默认智能体\n提示词模板\n变量\n{basePrompt}\n\nPush failure fixes\n\n当 pre-push 钩子或 git push 失败时启动智能体。\n\nUsing global settings\nOrca default prompt\nNo args\n使用全局\n智能体\n使用默认智能体\n提示词模板\n变量\n{basePrompt}\n\nBroken checks fixes\n\n从失败的托管评审检查中启动智能体。\n\nUsing global settings\nOrca default prompt\nNo args\n使用全局\n智能体\n使用默认智能体\n提示词模板\n变量\n{basePrompt}\n\nConflict resolution\n\n启动用于解决本地或托管评审合并冲突的智能体。\n\nUsing global settings\nOrca default prompt\nNo args\n使用全局\n智能体\n使用默认智能体\n提示词模板\n变量\n{basePrompt}\n\nReview comment resolution\n\n从选中的未解决 PR 或 MR 评论启动智能体。\n\nUsing global settings\nOrca default prompt\nNo args\n使用全局\n智能体\n使用默认智能体\n提示词模板\n变量\n{basePrompt}\n托管评审创建默认值\n默认草稿\n全局默认是 Off.\n使用全局\n可用时使用评审模板\n全局默认是 Off.\n使用全局\n打开 Create PR 时生成详细信息\n全局默认是 Off.\n使用全局\n创建后打开托管评审\n全局默认是 Off.\n使用全局\n工作树共享路径\n\n创建新工作树时，此处列出的每个路径会在可能时通过 macOS 上的 APFS clone-copy 复制；否则，会从主检出目录创建符号链接。\n\n添加路径\n此仓库未配置共享路径。\n稀疏检出预设\n\n管理保存的目录集以创建稀疏工作树。\n\n新预设\n没有为此仓库保存稀疏预设。\nMCP 配置\n\n检查智能体在此仓库中工作时可以使用的 MCP 服务器定义。\n\n添加 MCP 配置\n已检测到 0 个 · 0 个服务器\n未找到 MCP 配置。当您希望此仓库定义其自己的 MCP 服务器时，添加一个空的工作区配置。\n\n已检查\n\n.mcp.json\n.cursor/mcp.json\n.claude.json\n.claude/mcp.json\n关闭\n—\n·\n0\nPorpita 中的 Codex 现在使用 ~/.codex\nCodex 可能会再次要求信任文件夹或批准命令。重新添加您仅在 Porpita 中添加的所有 MCP 服务器。\n入门流程已完成！\n\n如果你目前喜欢 Porpita，在 GitHub 上加星可以帮助其他开发者发现它。\n\n打开 GitHub\n稍后\nPorpita 现在无需共享服务器即可运行 Codex\n这使得智能体状态更加可靠。您可以在“设置”中将其重新打开。\n打开设置",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "入门清单",
+      "label": "入门清单，已完成 1/8。显示设置指南。",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "~",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "UI-spec-sample",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Remove Project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "重置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用 #737373 仓库颜色",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用 #ef4444 仓库颜色",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用 #f97316 仓库颜色",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用 #eab308 仓库颜色",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用 #22c55e 仓库颜色",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用 #14b8a6 仓库颜色",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用 #8b5cf6 仓库颜色",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "使用 #ec4899 仓库颜色",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Custom",
+      "label": "选择自定义仓库颜色",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "头像",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "图标",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "表情符号",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用 GitHub 头像",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "上传PNG",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "网站图标",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "无默认项目",
+      "label": "默认 Jira 项目",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "信任仓库",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "让智能体询问",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "默认 (Windows)",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Windows",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "WSL",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新 GitHub 帐户",
+      "title": "刷新 GitHub 帐户",
+      "test": null
+    },
+    {
+      "text": "默认（当前活动的 gh 登录）",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局设置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "跟随主分支",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "每次都问",
+      "label": null,
+      "title": "运行安装程序之前提示。",
+      "test": null
+    },
+    {
+      "text": "默认运行",
+      "label": null,
+      "title": "自动运行安装程序。",
+      "test": null
+    },
+    {
+      "text": "默认跳过",
+      "label": null,
+      "title": "仅在选择时运行安装程序。",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "等待设置完成后再启动智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "保存格式化程序",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Sonnet · Claude · Low",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{branch}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{stagedFiles}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{stagedPatch}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{linkedIssue}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Sonnet · Claude · Low",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{branch}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{baseBranch}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{currentTitle}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{currentBody}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{commitSummary}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{changedFiles}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{patch}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{linkedIssue}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Sonnet · Claude · Low",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{firstPrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{assistantMessage}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用默认智能体",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用默认智能体",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用默认智能体",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用默认智能体",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用默认智能体",
+      "label": "选择智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "{basePrompt}",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "使用全局",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "添加路径",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "新预设",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新 MCP 配置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "添加 MCP 配置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开 GitHub",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "稍后",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开设置",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "39a-project-settings.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 41222
+}

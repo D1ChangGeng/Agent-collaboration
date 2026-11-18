@@ -1,0 +1,87 @@
+{
+  "actions": [
+    {
+      "name": "Focus the left chat and adjust the divider",
+      "startMs": 24222.8299,
+      "endMs": 24305.4189
+    },
+    {
+      "name": "Narrow to a single visible pane and choose the other chat",
+      "startMs": 24305.426000000003,
+      "endMs": 24592.424300000002
+    },
+    {
+      "name": "Restore the wide split",
+      "startMs": 24592.4276,
+      "endMs": 24670.820300000003
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794703309.61457,
+      "receivedAtMs": 24222.8158,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703309.678124,
+      "receivedAtMs": 24254.366400000003,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703309.707284,
+      "receivedAtMs": 24281.697799999998,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703309.727352,
+      "receivedAtMs": 24304.306999999997,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703309.770065,
+      "receivedAtMs": 24340.060200000004,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703309.781179,
+      "receivedAtMs": 24350.490800000003,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703309.790615,
+      "receivedAtMs": 24359.3601,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703309.812886,
+      "receivedAtMs": 24385.703100000002,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703309.81715,
+      "receivedAtMs": 24388.7646,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703309.86052,
+      "receivedAtMs": 24430.261800000004,
+      "file": "009.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703309.953049,
+      "receivedAtMs": 24523.0214,
+      "file": "010.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703310.01534,
+      "receivedAtMs": 24585.5692,
+      "file": "011.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703310.091876,
+      "receivedAtMs": 24660.0935,
+      "file": "012.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

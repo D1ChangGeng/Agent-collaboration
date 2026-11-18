@@ -1,0 +1,104 @@
+{
+  "engine": "157.0.8103.50",
+  "results": [
+    {
+      "id": "small-geometry",
+      "width": 240,
+      "chooser": 74,
+      "tabs": 1,
+      "stripWidth": 93,
+      "stripScrollWidth": 144,
+      "activeVisible": 94,
+      "groups": 1,
+      "theme": "light"
+    },
+    {
+      "id": "small",
+      "status": "verified",
+      "group": "0",
+      "active": "work-0-0"
+    },
+    {
+      "id": "compact-geometry",
+      "width": 420,
+      "chooser": 130,
+      "tabs": 8,
+      "stripWidth": 169,
+      "stripScrollWidth": 1152,
+      "activeVisible": 144,
+      "groups": 4,
+      "theme": "light"
+    },
+    {
+      "id": "compact",
+      "status": "verified",
+      "group": "0",
+      "active": "work-0-0"
+    },
+    {
+      "id": "dense-geometry",
+      "width": 920,
+      "chooser": 132,
+      "tabs": 30,
+      "stripWidth": 667,
+      "stripScrollWidth": 4320,
+      "activeVisible": 144,
+      "groups": 12,
+      "theme": "dark"
+    },
+    {
+      "id": "dense",
+      "status": "verified",
+      "group": "0",
+      "active": "work-0-0"
+    },
+    {
+      "id": "compactDense-geometry",
+      "width": 240,
+      "chooser": 74,
+      "tabs": 30,
+      "stripWidth": 93,
+      "stripScrollWidth": 4320,
+      "activeVisible": 94,
+      "groups": 12,
+      "theme": "dark"
+    },
+    {
+      "id": "compactDense",
+      "status": "verified",
+      "group": "0",
+      "active": "work-0-0"
+    },
+    {
+      "id": "keyboard-switch-and-restore",
+      "status": "verified",
+      "group": "0",
+      "active": "work-0-1"
+    },
+    {
+      "id": "keyboard-overflow-and-reveal",
+      "status": "verified",
+      "group": "0",
+      "active": "work-0-29"
+    },
+    {
+      "id": "pointer-cancel",
+      "status": "verified",
+      "group": "0",
+      "active": "work-0-0"
+    },
+    {
+      "id": "pointer-drop-then-choose",
+      "status": "verified",
+      "group": "1",
+      "active": "work-1-0"
+    },
+    {
+      "id": "keyboard-move-to-group",
+      "status": "verified",
+      "group": "1",
+      "active": "work-0-0"
+    }
+  ],
+  "errors": []
+}

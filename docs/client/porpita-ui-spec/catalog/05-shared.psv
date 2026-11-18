@@ -1,0 +1,21 @@
+# id|界面／对象|源码|当前行为|处置|目标规范|回放
+P.01|Button、Button Group、Toggle、Toggle Group|button.tsx,button-group.tsx,toggle.tsx,toggle-group.tsx|按钮有主/次/描边/ghost/危险及不同尺寸；Toggle 表达可保持选择|保留|主要动作唯一；悬停、按压、焦点、禁用可区分；尺寸从已有 CVA 取值；仅图标控件需要名称|J02,J05,J13
+P.02|Input、Textarea、Label 与表单|input.tsx,src/renderer/src/components/ui/textarea.tsx,label.tsx,SettingsFormControls.tsx|共享输入、标签和失效状态，可编辑输入也有 native menu|保留|错误与字段关联；长文和 IME 不抢 Enter；字段禁用理由可见；焦点回到原字段|J01,J05,J13
+P.03|Select、Command、ComboBox 与搜索|select.tsx,command.tsx,repo-multi-combobox.tsx,SettingsSearchableSelect.tsx|已知单选、cmdk 搜索、多选有不同语义和定位|保留|上下键/Enter/Esc 统一；区分 hover、当前和键盘选中；文本溢出仍可查看完整名|J02,J03,J13
+P.04|Menu 与 Context Menu|dropdown-menu.tsx,context-menu.tsx,menu-item-closing-focus.ts,menu-pointer-highlight.ts|下拉、右键、子菜单、指针和关闭后焦点由共享封装处理|保留|单击/右键/键盘命令同义；子菜单不夺取并行动作；Escape 按层级退回|J02,J04,J08,J13
+P.05|Popover、Tooltip 与 HoverCard|popover.tsx,src/renderer/src/components/ui/tooltip.tsx,hover-card.tsx,portal-container-context.ts|弹出表单、仅命名提示、富预览分开；App 根提供延时|保留|Tooltip 不承载关键解释；可操作内容放 Popover；锚点改变可重新定位，离开恢复焦点|J02,J07,J13
+P.06|Dialog、Sheet、SecuritySurface|dialog.tsx,sheet.tsx,security-surface.tsx,use-overlay-focus-scope.ts|不同覆盖层拥有焦点、遮罩、滚动与状态；安全面使用独立主题|保留|保持已验证视觉与无障碍语义；确认理由明确，短窗内容可滚动，Esc 和取消同义|J01,J05,J10,J13
+P.07|Checkbox、Radio、Switch、Slider、Color Picker|checkbox.tsx,radio-group.tsx,switch.tsx,slider.tsx,color-picker.tsx|共享单选、复选、立即生效开关、连续量、颜色选择|保留|真实可用状态驱动控件；方向键/空格支持；不靠颜色说明选择与风险；编辑时保留焦点|J01,J07,J13
+P.08|Card、Badge、状态指示与进度|card.tsx,badge.tsx,progress.tsx,AgentStateDot.tsx,LoadingSpinner.tsx|静态卡片和状态标签；运行、等待、错误有色彩/进度提示|保留|状态必须对应真实轴且有可读文字；未知用中性标识；状态更新不滚动或闪动整行|J05,J09,J12,J13
+P.09|Tabs、Disclosure、分隔线|tabs.tsx,accordion.tsx,collapsible.tsx,separator.tsx|同一视觉家族用于页内切换、展开详情和区域边界|保留|不同层级有独立导航组；展开不会创建顶层对象；分隔条可调时有键盘替代|J03,J04,J07,J13
+P.10|滚动区、虚拟列表和溢出|scroll-area.tsx,virtualized-list.tsx,main.css|局部滚动、列表虚拟化和固定工具区用共享样式|保留|长内容保持锚点和焦点；短窗不裁掉核心控件；水平滚动只限对应内容|J02,J05,J08,J13
+P.11|Sonner、Toast 层级与临时反馈|sonner.tsx,toaster-modal-layer.ts,NotificationCardStack.tsx|已打开 modal 上的新 toast 可交互，旧 toast 不占焦点；另有卡片栈|保留|持续错误、未知或必须采取行动的状态留在原位置；toast 仅短期反馈并返回焦点|J01,J09,J12,J13
+P.12|字体、色彩、图标、间距、尺寸、圆角|main.css,FileTypeIcon.tsx,ShortcutKeyCombo.tsx,native-chat-appearance.css,docs/STYLEGUIDE.md|共享语义 token 和局部可调字号；各工具引擎维持独立绘制|保留|优先复用原值和字号职责；小图标命中区独立；跨语种检验溢出和回退|J01,J05,J08,J13
+P.13|可访问性、语言、主题、系统材质|ui-locale.ts,use-document-appearance.ts,window-material-options.ts,AppearanceThemeControl.tsx|语言优先级、主题和 OS 选项驱动渲染；窗口材质依平台|改造|统一返回、状态词和混排；使用真实高对比/减少动效偏好；主题切换保留当前工作|J01,J05,J13
+Q.01|窗口与页面进入/切换|main.css,settings-page-renderer.tsx,AppWorkspaceShell.tsx|Settings 有 shell 入场；其它页面按各自 source；当前工作台可停放|保留|既有局部效果沿用；顶层切换先更新选中/焦点，内容就绪后出现；共享外壳不做整屏动画|J02,J06,J13
+Q.02|Sidebar/Dock 的打开、缩放和隐藏|src/renderer/src/components/sidebar/index.tsx,src/renderer/src/components/right-sidebar/index.tsx,right-sidebar-width.ts,use-app-chrome-layout.ts|由布局宽度、可见性与 fit 控制；分隔条 hover 有颜色变化|改造|尺寸随指针直接更新，无追随插值；停靠显隐优先同帧布局，复用已有局部效果；反向开合保留位置|J04,J07,J13
+Q.03|Tab 激活、移动、溢出和 Pane 拖放|TabGroupDropOverlay.tsx,SortableTab.tsx,TabGroupPanel.tsx,TabGroupSplitNodeTree.tsx|已有拖放投影、组控件透明度和 split 比例|改造|激活标记同步，放置指示与有效目标一致；取消回到触发对象，键盘移动结果同义|J03,J04,J06,J13
+Q.04|弹窗、Sheet、菜单与通知进出|dialog.tsx,sheet.tsx,sonner.tsx,main.css|Dialog 常用 200ms；Sheet open 300/close 200；部分卡片有独立节奏|保留|继承明确组件配置；起止都能辨识焦点，减少动效时保留显示/关闭；快开/关不留无形遮罩|J01,J10,J12,J13
+Q.05|虚拟列表、展开与定位反馈|main.css,collapsible.tsx,virtualized-list.tsx,WorktreeList.tsx|列表按可见区渲染，展开及定位含局部过渡|保留|更新不抢阅读锚点；增删按稳定 ID；reduced-motion 下直接到达等价位置|J03,J07,J13
+Q.06|流式内容、运行、加载与恢复|NativeChatPacedMarkdown.tsx,LoadingSpinner.tsx,text-shimmer.css,AgentWorkingSpinner.tsx|流式 Markdown、运行指示和异步状态独立|保留|加载节奏和业务回执分开；短等待不闪烁，运行/重连仍可阅读已有内容；降级保持文字状态|J05,J09,J12,J13
+Q.07|教育、媒体、提示及特效|OnboardingFlow.tsx,ContextualTourOverlay.tsx,main.css,PetOverlay.tsx,MediaViewer.tsx|引导 stepper、教程聚焦、Pet 与媒体使用各自计时/生命周期|保留|引导可跳过，离开停止周期效果；媒体保留控制；reduced-motion 下不依赖动态内容完成任务|J01,J08,J11,J13

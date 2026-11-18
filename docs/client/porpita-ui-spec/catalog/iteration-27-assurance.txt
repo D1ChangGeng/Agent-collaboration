@@ -1,0 +1,2 @@
+# ID|设计|源码|本轮验收|已验证条件及下一步|证据ID
+A.03.03|用量随所选 Chat，进入固定 Explorer 延续该 Chat 的用量归属|复用当前布局选择、Host 归属校验、原状态栏及用量入口|本轮局部通过|Windows 双 Runtime 验证同名 Chat、独立 Explorer 及 600×460 的固定 Studio Explorer。系统读屏与不同物理 Host 待验|I2701,I2702

@@ -1,0 +1,61 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i3-empty",
+      "trigger": "Open sidebar search before any chat is opened",
+      "elapsedMs": 1371,
+      "result": "captured"
+    },
+    {
+      "id": "i3-populate",
+      "trigger": "Open and name two real Native Chats in different local worktrees",
+      "elapsedMs": 19207,
+      "result": "captured"
+    },
+    {
+      "id": "i3-same-name",
+      "trigger": "Inspect two equal chat names and their distinct visible origin",
+      "elapsedMs": 1640,
+      "result": "captured"
+    },
+    {
+      "id": "i3-continue-episode",
+      "trigger": "Select by pointer, return by keyboard, and revisit the same original Chat",
+      "elapsedMs": 5034,
+      "result": "captured"
+    },
+    {
+      "id": "i3-no-match",
+      "trigger": "Check a task-style URL stays inside chat search and preserves the current work",
+      "elapsedMs": 1470,
+      "result": "captured"
+    },
+    {
+      "id": "i3-exact-title",
+      "trigger": "Find both original chats with an exact copied title containing a separator",
+      "elapsedMs": 693,
+      "result": "captured"
+    },
+    {
+      "id": "i3-compact",
+      "trigger": "Keep the filtered rows readable at 600x400 with reduced motion",
+      "elapsedMs": 894,
+      "result": "captured"
+    },
+    {
+      "id": "i3-general",
+      "trigger": "Restore the same query in general search and use Escape to return to the draft",
+      "elapsedMs": 974,
+      "result": "captured"
+    }
+  ]
+}

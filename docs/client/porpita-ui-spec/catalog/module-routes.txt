@@ -1,0 +1,92 @@
+# path|coverage IDs|reviewed role
+src/renderer/src/app-shell/ActiveWorkspaceSyncGate.tsx|A.05|后台同步与服务；无独立交互面
+src/renderer/src/app-shell/AppBackgroundServices.tsx|A.05|后台同步与服务；无独立交互面
+src/renderer/src/app-shell/app-root-surface-boundaries.tsx|O|根边界清单；对应 O 的各根条目
+src/renderer/src/components/AgentChildRowContent.tsx|C.07,P.08|Agent 活动行、任务进度和等待指示
+src/renderer/src/components/AgentHibernationGate.tsx|F.04|休眠保护；终端恢复路径
+src/renderer/src/components/AgentProgressRing.tsx|C.07,P.08|Agent 活动行、任务进度和等待指示
+src/renderer/src/components/AgentQuestionIcon.tsx|C.07,P.08|Agent 活动行、任务进度和等待指示
+src/renderer/src/components/AiVaultTabTitleSyncGate.tsx|G.06|Vault 标题同步；宿主内部实现
+src/renderer/src/components/ButtonKeyHint.tsx|P.01,T.04|按钮键位提示
+src/renderer/src/components/CodexRestartChip.tsx|E.10|Codex 运行恢复提示
+src/renderer/src/components/DetachedHeadBadge.tsx|G.03|Git detached HEAD 状态
+src/renderer/src/components/HostedReviewUnlinkMenuItem.tsx|H.05|审阅菜单解除关联
+src/renderer/src/components/JiraIssueRowCopyMenu.tsx|J.05.01|Jira 列表、筛选与来源控件
+src/renderer/src/components/JiraLinkedWorkspaceAction.tsx|J.05|接入指引和开始工作
+src/renderer/src/components/JiraPromptTemplatePopover.tsx|J.05|接入指引和开始工作
+src/renderer/src/components/LinearIssueMarkdownDescriptionEditor.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/LinearIssueMarkdownToolbar.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/LinearIssueTextEditor.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/LinuxPackageInstallRecoveryCard.tsx|O.02.01|Linux 包更新失败恢复卡
+src/renderer/src/components/NativeChatRemoteResumeActions.tsx|O.overlay.native-chat-resume-on-restart|原生恢复弹窗内部状态
+src/renderer/src/components/NativeChatResumeAutoNote.tsx|O.overlay.native-chat-resume-on-restart|原生恢复弹窗内部状态
+src/renderer/src/components/NativeChatResumeDialogHeader.tsx|O.overlay.native-chat-resume-on-restart|原生恢复弹窗内部状态
+src/renderer/src/components/NativeChatResumeOnRestartAgentRow.tsx|O.overlay.native-chat-resume-on-restart|原生恢复弹窗内部状态
+src/renderer/src/components/NativeChatResumeOnRestartGroups.tsx|O.overlay.native-chat-resume-on-restart|原生恢复弹窗内部状态
+src/renderer/src/components/NativeChatResumeOnRestartModal.tsx|O.overlay.native-chat-resume-on-restart|原生恢复弹窗内部状态
+src/renderer/src/components/NativeChatResumeRunStatusIcon.tsx|O.overlay.native-chat-resume-on-restart|原生恢复弹窗内部状态
+src/renderer/src/components/NativeChatResumeRunSummary.tsx|O.overlay.native-chat-resume-on-restart|原生恢复弹窗内部状态
+src/renderer/src/components/NativeChatResumeTreeRow.tsx|O.overlay.native-chat-resume-on-restart|原生恢复弹窗内部状态
+src/renderer/src/components/Sidebar.tsx|C|Sidebar 导出适配
+src/renderer/src/components/StateIndicatorTooltip.tsx|P.08,P.05|状态标记提示
+src/renderer/src/components/TerminalLegacyBrowserPanes.tsx|D,H,I,F|旧工作树/分屏内容的现有路径
+src/renderer/src/components/TerminalLegacyEditorSurface.tsx|D,H,I,F|旧工作树/分屏内容的现有路径
+src/renderer/src/components/TerminalLegacyTerminalPanes.tsx|D,H,I,F|旧工作树/分屏内容的现有路径
+src/renderer/src/components/TerminalLegacyWorkspaceSurface.tsx|D,H,I,F|旧工作树/分屏内容的现有路径
+src/renderer/src/components/TerminalSplitWorkspaceSurfaces.tsx|D,H,I,F|旧工作树/分屏内容的现有路径
+src/renderer/src/components/browser-favicon.tsx|I.01|Browser 页签站点图标
+src/renderer/src/components/file-path-cursor-tooltip.tsx|H.01,P.05|路径悬停提示
+src/renderer/src/components/gitlab-item-dialog-parts.tsx|J.03|GitLab 详情子区
+src/renderer/src/components/host-row-icon.tsx|C.03,P.12|Host 图标随 Host 行
+src/renderer/src/components/integration-status-pill.tsx|N.integrations,P.08|接入状态指示
+src/renderer/src/components/jira-attachment-image.tsx|J.05.02|Jira 详情、转移和附件控件
+src/renderer/src/components/jira-connect-credential-guide.tsx|J.05|接入指引和开始工作
+src/renderer/src/components/jira-issue-assignee-control.tsx|J.05.02|Jira 详情、转移和附件控件
+src/renderer/src/components/jira-issue-markdown.tsx|J.05.02|Jira 详情、转移和附件控件
+src/renderer/src/components/jira-issue-transition-control.tsx|J.05.02|Jira 详情、转移和附件控件
+src/renderer/src/components/jira-issue-workspace-content.tsx|J.05.01|Jira 列表、筛选与来源控件
+src/renderer/src/components/jira-list-columns-menu.tsx|J.05.01|Jira 列表、筛选与来源控件
+src/renderer/src/components/jira-project-picker.tsx|J.05.01|Jira 列表、筛选与来源控件
+src/renderer/src/components/jira-transition-fields-form.tsx|J.05.02|Jira 详情、转移和附件控件
+src/renderer/src/components/jira-user-picker.tsx|J.05.02|Jira 详情、转移和附件控件
+src/renderer/src/components/linear-custom-view-table-content.tsx|J.04.01|Linear 项目、自定义视图和范围控件
+src/renderer/src/components/linear-issue-activity.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-issue-attribute-filter-coverage-notice.tsx|J.04.01|Linear 项目、自定义视图和范围控件
+src/renderer/src/components/linear-issue-attribute-filter-dropdowns.tsx|J.04.01|Linear 项目、自定义视图和范围控件
+src/renderer/src/components/linear-issue-attribute-filter-sections.tsx|J.04.01|Linear 项目、自定义视图和范围控件
+src/renderer/src/components/linear-issue-project-selector.tsx|J.04.01|Linear 项目、自定义视图和范围控件
+src/renderer/src/components/linear-issue-sub-issues.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-issue-workspace-header.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-issue-workspace-sidebar.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-item-drawer-comment-footer.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-item-drawer-edit-chips-layout.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-item-drawer-edit-controller.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-item-drawer-edit-controls.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-item-drawer-edit-properties-layout.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-item-drawer-edit-section.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-item-drawer-sheet.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-priority-icon.tsx|J.04.02|Linear 详情抽屉、子任务、编辑、评论与活动
+src/renderer/src/components/linear-project-overview-content.tsx|J.04.01|Linear 项目、自定义视图和范围控件
+src/renderer/src/components/linear-project-overview-metadata.tsx|J.04.01|Linear 项目、自定义视图和范围控件
+src/renderer/src/components/linear-project-table-content.tsx|J.04.01|Linear 项目、自定义视图和范围控件
+src/renderer/src/components/linear-scope-selector.tsx|J.04.01|Linear 项目、自定义视图和范围控件
+src/renderer/src/components/linear-workspace-picker.tsx|J.04.01|Linear 项目、自定义视图和范围控件
+src/renderer/src/components/local-only-menu-hint.tsx|P.04,S.06|仅本地动作的菜单原因
+src/renderer/src/components/markdown-github-callout.tsx|H.02|Markdown 提示块
+src/renderer/src/components/pr-check-empty-details.tsx|G.04|PR 检查无详情
+src/renderer/src/components/quick-open-install-rg-guidance.tsx|C.09|Quick Open 搜索依赖提示
+src/renderer/src/hooks/MacosTccPromptNoticeHost.tsx|O.05,M.05|macOS 权限通知 Host
+src/renderer/src/i18n/I18nProvider.tsx|P.13|翻译运行上下文
+src/renderer/src/i18n/translation-scope-provider.tsx|P.13|翻译运行上下文
+src/renderer/src/lib/agent-catalog.tsx|B.02,P.12|Agent 目录和图标
+src/renderer/src/lib/agent-icon-glyphs.tsx|B.02,P.12|Agent 目录和图标
+src/renderer/src/lib/agent-type-icon.tsx|B.02,P.12|Agent 目录和图标
+src/renderer/src/lib/list-table-layout.ts|P.10,J.01|列表表格布局工具
+src/renderer/src/lib/open-in-app-catalog.tsx|H.06|外部打开目录
+src/renderer/src/lib/terminal-shortcut-capture-notification.tsx|F.02,T.04|终端快捷键捕获提示
+src/renderer/src/lib/workspace-navigation-toast-action.tsx|C.05.01,O.01|工作树导航、创建完成及基底刷新提示
+src/renderer/src/lib/workspace/creation/worktree-creation-ready-toast.tsx|C.05.01,O.01|工作树导航、创建完成及基底刷新提示
+src/renderer/src/store/slices/worktrees/create/local-base-ref-refresh-toast.tsx|C.05.01,O.01|工作树导航、创建完成及基底刷新提示
+src/renderer/src/web/WebConnect.tsx|—|独立配对 Web 客户端入口；桌面配对入口见 M.01
+src/renderer/src/web/WebPairingSecurityNotice.tsx|—|独立配对 Web 客户端入口；桌面配对入口见 M.01
+src/renderer/src/web/main.tsx|—|独立配对 Web 客户端入口；桌面配对入口见 M.01

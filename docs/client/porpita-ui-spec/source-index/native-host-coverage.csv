@@ -1,0 +1,83 @@
+﻿path,line,call,coverage ids,reviewed role
+src/main/browser/backends/offscreen-browser-backend.ts,49,const win = new BrowserWindow({,I.02,网页进程、扩展页与窗口；OS 控件由原宿主
+src/main/browser/cookies/browser-cookie-debugger-session.ts,14,return new BrowserWindow({,I.04,浏览器档案调试或导入路径
+src/main/browser/cookies/browser-cookie-import-pipeline.ts,160,"? await dialog.showOpenDialog(parentWindow, opts)",I.04,浏览器档案调试或导入路径
+src/main/browser/cookies/browser-cookie-import-pipeline.ts,161,: await dialog.showOpenDialog(opts),I.04,浏览器档案调试或导入路径
+src/main/browser/extensions/actions/browser-extension-popup-host.ts,110,const window = new BrowserWindow({,I.04.01,真实扩展操作弹窗
+src/main/browser/extensions/actions/browser-extension-toolbar-electron-fixture.ts,113,const host = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/browser/extensions/api/downloads-save-as.ts,35,"? await dialog.showSaveDialog(parent, options)",I.02;O.native.file-dialog,下载、保存、导出或打印渲染辅助
+src/main/browser/extensions/api/downloads-save-as.ts,36,: await dialog.showSaveDialog(options),I.02;O.native.file-dialog,下载、保存、导出或打印渲染辅助
+src/main/browser/extensions/api/notifications.ts,115,const notification = new Notification({,I.04;O.05,扩展通知由原生渠道呈现
+src/main/browser/extensions/api-runtime/browser-extension-electron-fixture.ts,105,const host = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/browser/extensions/api-runtime/browser-extension-electron-fixture.ts,138,const sandboxPage = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/browser/extensions/api-runtime/browser-extension-electron-fixture.ts,160,const webPage = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/browser/extensions/api-runtime/browser-extension-native-page.ts,25,window = new BrowserWindow({,I.02,网页进程、扩展页与窗口；OS 控件由原宿主
+src/main/browser/extensions/native-messaging/browser-extension-native-messaging-electron-fixture.ts,106,const host = new BrowserWindow({ show: false }),,测试辅助 renderer，无独立桌面入口
+src/main/browser/extensions/profile-storage/browser-extension-persistence-electron-fixture.ts,93,const host = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/browser/extensions/tabs-and-windows/browser-extension-window-model.ts,216,const window = new BrowserWindow({,I.02,网页进程、扩展页与窗口；OS 控件由原宿主
+src/main/browser/guest-lifecycle/find/browser-find-frame-traversal-electron-fixture.ts,11,const window = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/browser/guest-lifecycle/navigation/browser-link-materialization-electron-fixture.ts,16,const window = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/browser/guest-lifecycle/popups/browser-popup-adapter-probe-fixture.ts,113,const unrelated = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/browser/guest-lifecycle/popups/browser-popup-adapter-probe-fixture.ts,163,"const window = new BrowserWindow({ ...childOptions, show: false })",,测试辅助 renderer，无独立桌面入口
+src/main/browser/guest-lifecycle/popups/browser-popup-compatibility-electron-fixture.ts,99,const host = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/browser/guest-lifecycle/popups/popup-origin-chrome-electron-fixture.ts,64,const window = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/browser/guest-lifecycle/popups/popup-origin-chrome-electron-fixture.ts,161,parent = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/crash-reporting/gpu-fallback-recovered-launch.ts,32,"? await dialog.showMessageBox(parentWindow, options)",A.04;O.02,应用崩溃和 GPU 恢复
+src/main/crash-reporting/gpu-fallback-recovered-launch.ts,33,: await dialog.showMessageBox(options),A.04;O.02,应用崩溃和 GPU 恢复
+src/main/crash-reporting/gpu-fallback-restart-prompt.ts,35,"? await dialog.showMessageBox(parentWindow, options)",A.04;O.02,应用崩溃和 GPU 恢复
+src/main/crash-reporting/gpu-fallback-restart-prompt.ts,36,: await dialog.showMessageBox(options),A.04;O.02,应用崩溃和 GPU 恢复
+src/main/host/electron-runtime-desktop-surface.ts,17,"new Notification({ title, body }).show()",A.06,客户端窗口与共享 host 运行集成
+src/main/index.ts,196,"showMessageBox: (options) => dialog.showMessageBox(options),",A.06,客户端窗口与共享 host 运行集成
+src/main/index.ts,219,"showMessageBox: (options) => dialog.showMessageBox(options),",A.06,客户端窗口与共享 host 运行集成
+src/main/index.ts,248,"showMessageBox: (options) => dialog.showMessageBox(options),",A.06,客户端窗口与共享 host 运行集成
+src/main/ipc/app.ts,66,"? await dialog.showOpenDialog(parentWindow, options)",A.05;O.07,应用动作与菜单
+src/main/ipc/app.ts,67,: await dialog.showOpenDialog(options),A.05;O.07,应用动作与菜单
+src/main/ipc/app.ts,88,"? await dialog.showOpenDialog(parentWindow, options)",A.05;O.07,应用动作与菜单
+src/main/ipc/app.ts,89,: await dialog.showOpenDialog(options),A.05;O.07,应用动作与菜单
+src/main/ipc/browser/browser-passwords-import-ipc.ts,33,"? await dialog.showOpenDialog(parent, options)",I.04,浏览器档案调试或导入路径
+src/main/ipc/browser/browser-passwords-import-ipc.ts,34,: await dialog.showOpenDialog(options),I.04,浏览器档案调试或导入路径
+src/main/ipc/diagnostics.ts,175,const result = await dialog.showMessageBox({,A.04;O.02,应用崩溃和 GPU 恢复
+src/main/ipc/export.ts,39,"? await dialog.showSaveDialog(parent, dialogOptions)",I.02;O.native.file-dialog,下载、保存、导出或打印渲染辅助
+src/main/ipc/export.ts,40,: await dialog.showSaveDialog(dialogOptions),I.02;O.native.file-dialog,下载、保存、导出或打印渲染辅助
+src/main/ipc/filesystem/filesystem-download-handlers.ts,62,"? await dialog.showSaveDialog(parentWindow, { defaultPath: suggestedName })",I.02;O.native.file-dialog,下载、保存、导出或打印渲染辅助
+src/main/ipc/filesystem/filesystem-download-handlers.ts,63,: await dialog.showSaveDialog({ defaultPath: suggestedName }),I.02;O.native.file-dialog,下载、保存、导出或打印渲染辅助
+src/main/ipc/filesystem/filesystem-download-handlers.ts,116,"? await dialog.showSaveDialog(parentWindow, { defaultPath: suggestedName })",I.02;O.native.file-dialog,下载、保存、导出或打印渲染辅助
+src/main/ipc/filesystem/filesystem-download-handlers.ts,117,: await dialog.showSaveDialog({ defaultPath: suggestedName }),I.02;O.native.file-dialog,下载、保存、导出或打印渲染辅助
+src/main/ipc/native-notification-delivery.ts,31,const notification = new Notification({,O.05,原生通知、权限状态与启动注册
+src/main/ipc/notification-permission-probe.ts,40,const probe = new Notification({,O.05,原生通知、权限状态与启动注册
+src/main/ipc/pets/pet-bundle-import.ts,27,"? await dialog.showOpenDialog(senderWindow, options)",O.04,Pet 导入与呈现
+src/main/ipc/pets/pet-bundle-import.ts,28,: await dialog.showOpenDialog(options),O.04,Pet 导入与呈现
+src/main/ipc/pets/pet.ts,56,"? await dialog.showOpenDialog(senderWindow, options)",O.04,Pet 导入与呈现
+src/main/ipc/pets/pet.ts,57,: await dialog.showOpenDialog(options),O.04,Pet 导入与呈现
+src/main/ipc/single-flight-open-dialog.ts,22,"? await dialog.showOpenDialog(parentWindow, options)",O.native.file-dialog,文件选择器
+src/main/ipc/single-flight-open-dialog.ts,23,: await dialog.showOpenDialog(options),O.native.file-dialog,文件选择器
+src/main/ipc/startup-notification-registration.ts,20,const notification = new Notification({,O.05,原生通知、权限状态与启动注册
+src/main/lib/html-to-pdf.ts,52,const win = new BrowserWindow({,I.02;O.native.file-dialog,下载、保存、导出或打印渲染辅助
+src/main/local-builds/local-build-switch.ts,24,"? dialog.showOpenDialog(openParent, openDialogOptions)",A.04;O.02,应用崩溃和 GPU 恢复
+src/main/local-builds/local-build-switch.ts,25,: dialog.showOpenDialog(openDialogOptions)),A.04;O.02,应用崩溃和 GPU 恢复
+src/main/local-builds/local-build-switch.ts,79,"? dialog.showMessageBox(confirmationParent, messageBoxOptions)",A.04;O.02,应用崩溃和 GPU 恢复
+src/main/local-builds/local-build-switch.ts,80,: dialog.showMessageBox(messageBoxOptions)),A.04;O.02,应用崩溃和 GPU 恢复
+src/main/menu/register-app-menu.ts,306,Menu.setApplicationMenu(Menu.buildFromTemplate(template)),A.05;O.07,应用动作与菜单
+src/main/plugins/panels/plugin-external-open-consent.ts,57,"const { response, checkboxChecked } = await dialog.showMessageBox(input.window, {",L.06,插件 Panel 的文件、链接与 guest 授权
+src/main/plugins/panels/plugin-frame-desktop-services.ts,120,"const result = await dialog.showSaveDialog(parent, options)",L.06,插件 Panel 的文件、链接与 guest 授权
+src/main/plugins/panels/plugin-frame-guest-policies.ts,49,Menu.buildFromTemplate(template).popup({ window }),L.06,插件 Panel 的文件、链接与 guest 授权
+src/main/runtime/rpc/server/runtime-rpc-startup-failure.ts,135,"await dialog.showMessageBox(parentWindow, createRuntimeRpcStartupFailureDialogOptions(error))",O.native.recovery,主进程启动/保存/恢复阶段提示
+src/main/startup/main-process-preflight-failure.ts,40,"dialog.showErrorBox(translateMain('startupFailure.title', 'Porpita could not start'), message)",O.native.recovery,主进程启动/保存/恢复阶段提示
+src/main/startup/main-window-actions.ts,136,"return window ? dialog.showMessageBox(window, options) : dialog.showMessageBox(options)",A.05;O.07,应用动作与菜单
+src/main/startup/profile-state-recovery-preflight.ts,77,dialog.showMessageBox({,O.native.recovery,主进程启动/保存/恢复阶段提示
+src/main/startup/profile-state-write-failure.ts,74,"await dialog.showMessageBox(window, options)",O.native.recovery,主进程启动/保存/恢复阶段提示
+src/main/terminal-config-import/choose-config-file.ts,14,"? await dialog.showOpenDialog(ownerWindow, options)",N.terminal.01;O.native.file-dialog,终端配置与主题文件选择
+src/main/terminal-config-import/choose-config-file.ts,15,: await dialog.showOpenDialog(options),N.terminal.01;O.native.file-dialog,终端配置与主题文件选择
+src/main/tray/system-tray.ts,226,tray = new Tray(baseTrayImage),O.07,系统托盘
+src/main/tray/system-tray.ts,245,return Menu.buildFromTemplate([,O.07,系统托盘
+src/main/warp-themes/manual-warp-theme-files.ts,53,"? await dialog.showOpenDialog(ownerWindow, options)",N.terminal.01;O.native.file-dialog,终端配置与主题文件选择
+src/main/warp-themes/manual-warp-theme-files.ts,54,: await dialog.showOpenDialog(options),N.terminal.01;O.native.file-dialog,终端配置与主题文件选择
+src/main/warp-themes/manual-warp-theme-files.ts,86,"? await dialog.showOpenDialog(ownerWindow, options)",N.terminal.01;O.native.file-dialog,终端配置与主题文件选择
+src/main/warp-themes/manual-warp-theme-files.ts,87,: await dialog.showOpenDialog(options),N.terminal.01;O.native.file-dialog,终端配置与主题文件选择
+src/main/window/createMainWindow.ts,113,const mainWindow = new BrowserWindow({,A.01,主窗口
+src/main/window/dashboard-popout-window.ts,146,const window = new BrowserWindow({,M.03,Dashboard 窗口
+src/main/window/editable-context-menu-popup.ts,63,"const menu = Menu.buildFromTemplate(retirableTemplate(template, retirement))",O.native.edit-menu,原生编辑上下文菜单
+src/main/window/main-window-close-lifecycle.ts,77,new Notification({,A.05;O.05,关窗、后台与退出动作
+src/main/window/renderer-publication-throttle-electron-fixture.ts,17,const page = new BrowserWindow({,,测试辅助 renderer，无独立桌面入口
+src/main/window/renderer-publication-throttle-electron-fixture.ts,74,"const host = new BrowserWindow({ show: false, width: 640, height: 480 })",,测试辅助 renderer，无独立桌面入口
+src/main/window/workspace-space-window.ts,50,const window = new BrowserWindow({,M.02,独立 Space 窗口

@@ -1,0 +1,49 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 555,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 1040,
+      "result": "captured"
+    },
+    {
+      "id": "30-theme",
+      "trigger": "Select the Dark appearance control",
+      "elapsedMs": 3190,
+      "result": "captured"
+    },
+    {
+      "id": "34-dock-episode",
+      "trigger": "Close, open, and rapidly reverse the dock via its toggle",
+      "elapsedMs": 2691,
+      "result": "captured"
+    },
+    {
+      "id": "35-activity",
+      "trigger": "Open activity via the sidebar activity button",
+      "elapsedMs": 669,
+      "result": "captured"
+    },
+    {
+      "id": "36-board",
+      "trigger": "Open the Worktree board",
+      "elapsedMs": 936,
+      "result": "captured"
+    }
+  ]
+}

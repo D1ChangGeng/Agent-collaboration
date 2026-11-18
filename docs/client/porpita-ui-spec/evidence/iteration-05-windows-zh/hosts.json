@@ -1,0 +1,36 @@
+{
+  "searchViaPairedRuntime": true,
+  "sameTitleAndProviderId": 2,
+  "sourceDisappears": {
+    "localStillAvailable": true,
+    "staleSourcePresent": false
+  },
+  "unreachable": {
+    "visibleRows": 1,
+    "usesHostName": true,
+    "localRowNamed": true,
+    "retry": true,
+    "loadMore": false
+  },
+  "emptyIsPartial": true,
+  "offlineRetry": {
+    "queryPreserved": true,
+    "focusReturnedToSearch": true
+  },
+  "retry": {
+    "queryPreserved": true,
+    "restoredStudioResult": true,
+    "recovery": "explicit retry"
+  },
+  "studioPreview": true,
+  "owningChat": {
+    "studioOwner": true,
+    "originalTranscript": true,
+    "initialSelection": true
+  },
+  "returnToStudio": {
+    "sameSession": true,
+    "inputFocused": true,
+    "draftPreserved": true
+  }
+}

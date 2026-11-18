@@ -1,0 +1,18 @@
+# id|界面／对象|源码|当前行为|处置|目标规范|回放
+S|状态与恢复规格|RecoverableRenderErrorBoundary.tsx,LoadingSpinner.tsx,NativeChatResolvedView.tsx,CollaborationSettingsSection.tsx|状态由应用、原生工具、Host 和服务分别产生；多个状态可同时成立|改造|状态语义跨域一致，按实际所有者和作用域显示；下列检查可分别关闭|J01,J02,J03,J05,J06,J07,J09,J10,J11,J12,J13
+S.01|当前、悬停、按压、选中、键盘焦点|button.tsx,SortableTab.tsx,SettingsSidebar.tsx,AgentStateDot.tsx|共享 primitives 和区域有各自样式，Tab 激活与运行状态叠加|保留|当前对象、焦点、hover、按压和工作状态在同一屏仍可区分；颜色外有标记和文字|J02,J03,J13
+S.02|首次/无项目、无记录、过滤无结果|Landing.tsx,ArtifactsPageStates.tsx,AiVaultSessionListStates.tsx,AutomationsPageListPanel.tsx|不同来源各有空态；有未配置和查询为空的区分|保留|保留必要上下文；给真实下一步；无项目不是权限失败，无结果不是功能不可用|J01,J02,J03,J09,J11
+S.03|首载、延迟、局部刷新与过时数据|AppRootSurfaces.tsx,ArtifactsPageSkeleton.tsx,AutomationsPageSkeleton.tsx,LoadingSpinner.tsx|受 lazy load 与数据 readiness 双重影响，各页有占位|保留|保留旧内容或明确占位，工具栏稳定，作用域内更新；不同阶段和最终真实结果可辨|J01,J02,J07,J09,J12
+S.04|提交中、运行、排队与流式|NativeChatQueuedMessageList.tsx,NativeChatPacedMarkdown.tsx,AgentWorkingSpinner.tsx,DeliverySummary.tsx|native 执行和 ACS 送达是不同链路；终端、自动化与模型会话各自可运行|保留|进度归所属对象；可停止或取消只出现在支持处；移除/关闭呈现不改变运行|J05,J06,J09,J12
+S.05|待输入、批准、凭据与信任|NativeChatApprovalCard.tsx,NativeChatQuestionCard.tsx,AgentWorkspaceTrustDecisionDialog.tsx,SshPassphraseDialog.tsx|有明确权限或问题需要用户处理，目标由原生服务/Host 决定|改造|保留原确认；待处理能定位对象；不可操作时说明原因，优先保证决策区和焦点|J01,J03,J05,J12,J13
+S.06|不可用、只读、禁用、失权|PluginPanel.tsx,SettingsDisabledControlTooltip.tsx,NativeChatView.tsx,security-surface.tsx|能力 gate、版本、来源或授权决定各操作状态|保留|区分不可用和等待，必要原因在界面可访问，缓存不得绕过授权|J05,J07,J10,J11,J12
+S.07|失败、未确认、部分完成与安全重试|RecoverableRenderErrorBoundary.tsx,PendingInspectionAction.tsx,NativeChatResumeFailureDetails.tsx|错误、结果未知、批量恢复有不同展示和确认机制|保留|未确认先读取结果，失败可按对象重试，成功项与草稿留存；不以 toast 掩盖阻塞|J05,J06,J09,J12
+S.08|断开、重连、恢复与旧状态|TerminalPaneSshReconnectPortals.tsx,TerminalPaneRecoveryPortals.tsx,use-collaboration-connection.ts,NativeChatResumeRuntimeModal.tsx|各连接各自更新，候选 11 有设置滞后记录|改造|明确当时与最新状态、重连作用域和继续操作；保留视图，验证原生 generation 后可写|J06,J07,J11,J12
+S.09|预览、未保存、关闭与终止|TerminalWorkspaceDialogs.tsx,use-terminal-close-actions.ts,src/renderer/src/components/editor/save|文件预览或脏态，终端执行和布局退出各有 guard|改造|预览、锁定、关闭、移除、删除和结束的动作名/后果不同；取消不丢当前对象|J04,J06,J08
+T|输入和连续交互规格|use-global-keybindings.ts,TabGroupDropOverlay.tsx,dialog.tsx|工作台、内容和弹层有各自输入路由|保留|多层导航与输入归属明确；每种操作按焦点与实际结果验收|J02,J03,J04,J05,J06,J07,J08,J13
+T.01|点击、双击、中键与选择|SortableTab.tsx,FileExplorerFilesTreePane.tsx,worktree-card-surface.tsx|Tab 激活、重命名/关闭，文件预览/持久打开与项目选择有各自手势|保留|一击单意图，双击不重复创建会话；中键关闭遵守固定与保存守卫，目标始终明确|J02,J03,J06,J08
+T.02|右键、悬停与弹层退回|context-menu.tsx,dropdown-menu.tsx,src/renderer/src/components/ui/tooltip.tsx,SelectedTextCopyMenu.tsx|不同入口可触发局部操作；各自 focus scope 与状态|保留|Shift+F10/Menu 等价；仅悬停提示不承载必要动作；Escape 分层退回|J02,J04,J08,J13
+T.03|拖放、重排、分屏、调整与取消|TabGroupDropOverlay.tsx,TabGroupSplitNodeTree.tsx,WorktreeList.tsx,FloatingTerminalResizeHandles.tsx|应用不同区域可拖入或调整；终端分割不等同布局分割|改造|投放预览明确动作、方向和 owner；键盘可完成同结果，取消/失捕有定义且不丢失|J03,J04,J07,J13
+T.04|焦点、快捷键、键盘导航与 IME|use-global-keybindings.ts,app-keyboard-router.ts,ime-text-field.tsx,ShortcutKeyCombo.tsx|App、Tab、输入、终端、浏览器与窗口分层路由|保留|可见焦点，按钮名称与键位准确；IME 提交不触发发送，弹层/终端键位不被新分组抢占|J03,J05,J08,J13
+T.05|窗口缩放、折叠、展开与滚动|WindowControls.tsx,ZoomOverlay.tsx,collapsible.tsx,right-sidebar-width.ts|窗口缩放/最小宽、Pane 展开、局部滚动独立|保留|在缩放和窄窗保持主任务可达；展开/恢复不丢比例和选择；滚动保留输入与阅读位置|J04,J07,J13
+T.06|切换、历史返回和恢复焦点|TerminalTitlebarTabs.tsx,RecentTabSwitcher.tsx,use-app-session-persistence.ts|各 worktree 的 Tab、布局与历史路径拥有本地选择|改造|新顶层与内容层命令独立；返回原稳定引用与有效焦点；无访问时退到可用入口|J02,J03,J04,J06,J13

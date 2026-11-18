@@ -1,0 +1,34 @@
+{
+  "rowsFound": 2,
+  "restingOriginal": {
+    "jump": true,
+    "resume": false,
+    "jumpClickable": true
+  },
+  "readWithoutLaunching": true,
+  "originalPane": {
+    "sameTab": true,
+    "sameLeaf": true,
+    "noDuplicateTab": true,
+    "inputFocused": true
+  },
+  "searchFoundTwo": true,
+  "resumeChat": {
+    "openedTabs": 1,
+    "transcriptVisible": true
+  },
+  "originalChat": {
+    "sameTab": true,
+    "sameSession": true,
+    "inputFocused": true,
+    "draftPreserved": true
+  },
+  "resumePicker": {
+    "sameTab": true,
+    "inputFocused": true
+  },
+  "resumeTerminal": {
+    "launchedTabs": 1,
+    "output": "launch verified"
+  }
+}

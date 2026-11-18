@@ -1,0 +1,61 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 555,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 1320,
+      "result": "captured"
+    },
+    {
+      "id": "37-git-worktree",
+      "trigger": "Add Project > Browse folder; picker supplies disposable repository",
+      "elapsedMs": 4300,
+      "result": "captured"
+    },
+    {
+      "id": "37a-content-search",
+      "trigger": "Use Explorer content search in the disposable Git checkout",
+      "elapsedMs": 1699,
+      "result": "captured"
+    },
+    {
+      "id": "37b-vault",
+      "trigger": "Open the Agents history dock without an account",
+      "elapsedMs": 1834,
+      "result": "captured"
+    },
+    {
+      "id": "37c-checks",
+      "trigger": "Open Checks for the temporary repository",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 3500ms exceeded."
+    },
+    {
+      "id": "38-git-changes",
+      "trigger": "Open Source Control and wait for the modified fixture file",
+      "elapsedMs": 1701,
+      "result": "captured"
+    },
+    {
+      "id": "39-git-diff",
+      "trigger": "Open the fixture diff from the changes list",
+      "elapsedMs": 2637,
+      "result": "captured"
+    }
+  ]
+}

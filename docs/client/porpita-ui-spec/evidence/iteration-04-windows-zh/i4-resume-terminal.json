@@ -1,0 +1,464 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "default",
+  "focus": "\n    搜索Ctrl+⇧+J任务工件技能自动化Porpita 手机端新功能项目1UI-spec-sample需要授权main主要mainReview the workspace handoffReview the workspace ha",
+  "section": [],
+  "text": "搜索\n任务\n工件\n技能\n自动化\nPorpita 手机端\n新功能\n项目\n1\nUI-spec-sample\n需要授权\nmain\n主要\nmain\nReview the workspace handoff\nReview the workspace handoff\nTerminal 2\n命令\n智能体会话历史\n索引历史记录\nLocal Windows\n查看选项\n工作区\n项目\n全部\n已扫描 4 个文件\n刚刚\n3 / 4 个会话\n最后更新\nUI-spec-sample\n3\nReview the workspace handoff\n智能体: This conversation belongs to the existing terminal.\nCodex\n2 条消息\n·\n2 个月前\nReview the workspace handoff\n智能体: This conversation can be reopened from history.\nCodex\n2 条消息\n·\n2 个月前\nReview the terminal checklist\n智能体: This conversation is available in Terminal.\nCodex\n2 条消息\n·\n2 个月前\n关闭\n—\n·\n0\nCodex 会话已排队",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "前进",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "搜索",
+      "label": "搜索工作树和浏览器选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 GitHub 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 Jira 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "技能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 手机端\n新功能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse all projects",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "1",
+      "label": "查看活动",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区选项",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "添加项目",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "UI-spec-sample 的项目操作",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 UI-spec-sample 创建新工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标为未读",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "展开2 个智能体：1 个等待中, 1 个已完成。 Codex 已完成; Codex 等待中",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "帮助",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示活动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区看板",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Review the workspace handoff",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Review the workspace handoff",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Terminal 2",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新标签页",
+      "title": "新标签页",
+      "test": null
+    },
+    {
+      "text": "命令",
+      "label": "添加快捷命令",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "在聊天界面中继续",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "向右拆分终端",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换右侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "资源管理器 (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "源代码控制 (Ctrl+⇧+G)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "检查项",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Local Windows",
+      "label": "会话历史主机：Local Windows",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "查看选项",
+      "label": "会话历史查看选项",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新会话历史",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工作区",
+      "label": null,
+      "title": "工作区",
+      "test": null
+    },
+    {
+      "text": "项目",
+      "label": null,
+      "title": "项目",
+      "test": null
+    },
+    {
+      "text": "全部",
+      "label": null,
+      "title": "全部",
+      "test": null
+    },
+    {
+      "text": "已扫描 4 个文件\n刚刚",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "最后更新",
+      "label": "对会话进行排序：最后更新",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "UI-spec-sample\n3",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "移交给另一个智能体",
+      "title": "",
+      "test": "ai-vault-session-continue-in-new-session"
+    },
+    {
+      "text": "",
+      "label": "跳转到原始窗格",
+      "title": "",
+      "test": "ai-vault-session-jump-original-pane"
+    },
+    {
+      "text": "",
+      "label": "Codex 会话详情",
+      "title": "",
+      "test": "ai-vault-session-toggle-details"
+    },
+    {
+      "text": "",
+      "label": "更多会话操作",
+      "title": "",
+      "test": "ai-vault-session-more-actions"
+    },
+    {
+      "text": "",
+      "label": "移交给另一个智能体",
+      "title": "",
+      "test": "ai-vault-session-continue-in-new-session"
+    },
+    {
+      "text": "",
+      "label": "跳转到原始窗格",
+      "title": "",
+      "test": "ai-vault-session-jump-original-pane"
+    },
+    {
+      "text": "",
+      "label": "Codex 会话详情",
+      "title": "",
+      "test": "ai-vault-session-toggle-details"
+    },
+    {
+      "text": "",
+      "label": "更多会话操作",
+      "title": "",
+      "test": "ai-vault-session-more-actions"
+    },
+    {
+      "text": "",
+      "label": "移交给另一个智能体",
+      "title": "",
+      "test": "ai-vault-session-continue-in-new-session"
+    },
+    {
+      "text": "",
+      "label": "跳转到原始窗格",
+      "title": "",
+      "test": "ai-vault-session-jump-original-pane"
+    },
+    {
+      "text": "",
+      "label": "Codex 会话详情",
+      "title": "",
+      "test": "ai-vault-session-toggle-details"
+    },
+    {
+      "text": "",
+      "label": "更多会话操作",
+      "title": "",
+      "test": "ai-vault-session-more-actions"
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i4-resume-terminal.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 17809
+}

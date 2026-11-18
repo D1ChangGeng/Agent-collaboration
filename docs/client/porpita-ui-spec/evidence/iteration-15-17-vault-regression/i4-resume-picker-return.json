@@ -1,0 +1,548 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Ask anything, @ to mention files, / for commands",
+  "section": [],
+  "text": "Search\nTasks\nArtifacts\nSkills\nAutomations\nOrca Mobile\nNew\nProjects\n1\nUI-spec-sample\nNeeds permission\nmain\nprimary\nmain\nReview the workspace handoff\nReview the workspace handoff\nCommand\n\nReview the workspace handoff\n\n9:00 PM\n\nThis conversation can be reopened from history.\n\n9:00 PM\nJump to latest\n\nCodex isn't signed in. Run `codex login`.\n\n\n\n\nFull access\nModel\nLAPTOP-FYGE2ZMR\nmain\n· Main checkout\nmain\nAgent Session History\nIndexed history\nLocal Windows\nView options\nWorkspace\nProject\nAll\nScanned 4 files\nJust now\n3 of 4 sessions\nLast updated\nUI-spec-sample\n3\nReview the workspace handoff\nAgent: This conversation belongs to the existing terminal.\nCodex\n2 msgs\n·\n2mo ago\nReview the workspace handoff\nAgent: This conversation can be reopened from history.\nCodex\n2 msgs\n·\n2mo ago\nReview the terminal checklist\nAgent: This conversation is available in Terminal.\nCodex\n2 msgs\n·\n2mo ago\nOff\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Artifacts",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Skills",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Orca Mobile\nNew",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse all projects",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "1",
+      "label": "View activity",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace options",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Add project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Project actions for UI-spec-sample",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Create new worktree for UI-spec-sample",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Mark as unread",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Expand 2 agents: 1 waiting, 1 done. Codex done; Codex waiting",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab Review the workspace handoff",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab Review the workspace handoff",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New tab",
+      "title": "New tab",
+      "test": null
+    },
+    {
+      "text": "Command",
+      "label": "Add quick command",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Hand Off to Another Agent",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Continue with Terminal Agent",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Split Terminal Right",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Chat settings",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Copy message",
+      "title": "Copy message",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Copy message",
+      "title": "Copy message",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Fork from this response",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Scroll this message to top",
+      "title": "Scroll this message to top",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Review the workspace handoff",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Jump to latest",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Dismiss",
+      "title": "Dismiss",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Attach file",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Full access",
+      "label": "Permissions Full access",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "More chat controls",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Model",
+      "label": "Model",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Start dictation",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Send",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main\n· Main checkout",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "main",
+      "label": "Copy main",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle right sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Agents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Source Control (Ctrl+⇧+G)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Checks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Local Windows",
+      "label": "Session History host: Local Windows",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "View options",
+      "label": "Session History view options",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Session History",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Workspace",
+      "label": null,
+      "title": "Workspace",
+      "test": null
+    },
+    {
+      "text": "Project",
+      "label": null,
+      "title": "Project",
+      "test": null
+    },
+    {
+      "text": "All",
+      "label": null,
+      "title": "All",
+      "test": null
+    },
+    {
+      "text": "Scanned 4 files\nJust now",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Last updated",
+      "label": "Sort sessions: Last updated",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "UI-spec-sample\n3",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Hand Off to Another Agent",
+      "title": "",
+      "test": "ai-vault-session-continue-in-new-session"
+    },
+    {
+      "text": "",
+      "label": "Jump to Original Pane",
+      "title": "",
+      "test": "ai-vault-session-jump-original-pane"
+    },
+    {
+      "text": "",
+      "label": "Codex session details",
+      "title": "",
+      "test": "ai-vault-session-toggle-details"
+    },
+    {
+      "text": "",
+      "label": "More Session Actions",
+      "title": "",
+      "test": "ai-vault-session-more-actions"
+    },
+    {
+      "text": "",
+      "label": "Hand Off to Another Agent",
+      "title": "",
+      "test": "ai-vault-session-continue-in-new-session"
+    },
+    {
+      "text": "",
+      "label": "Jump to Original Pane",
+      "title": "",
+      "test": "ai-vault-session-jump-original-pane"
+    },
+    {
+      "text": "",
+      "label": "Codex session details",
+      "title": "",
+      "test": "ai-vault-session-toggle-details"
+    },
+    {
+      "text": "",
+      "label": "More Session Actions",
+      "title": "",
+      "test": "ai-vault-session-more-actions"
+    },
+    {
+      "text": "",
+      "label": "Hand Off to Another Agent",
+      "title": "",
+      "test": "ai-vault-session-continue-in-new-session"
+    },
+    {
+      "text": "",
+      "label": "Resume in Worktree",
+      "title": "",
+      "test": "ai-vault-session-resume"
+    },
+    {
+      "text": "",
+      "label": "Codex session details",
+      "title": "",
+      "test": "ai-vault-session-toggle-details"
+    },
+    {
+      "text": "",
+      "label": "More Session Actions",
+      "title": "",
+      "test": "ai-vault-session-more-actions"
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i4-resume-picker-return.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 22652
+}

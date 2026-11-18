@@ -1,0 +1,706 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": null,
+  "section": [
+    "general"
+  ],
+  "text": "返回应用\nCtrl\n+\nF\n入门清单\n\nAI 能力\n\n智能体\nAI 提供商账户\n可选\n编排\n计算机控制\n语音\n\n初始设置\n\nPorpita 账户\n通用\n集成\n移动端\n\n工作流程\n\n自动化\n工件\n测试版\n分享技能\n测试版\n智能体会话搜索\nGit 和源代码控制\n任务来源\n终端\n快捷命令\n浏览器\n手机模拟器\n浮动工作区\n\n界面\n\n外观\n聊天界面\n输入与编辑\n通知\n快捷键\n统计和使用情况\n\n远程主机\n\nSSH 主机\n远程 Porpita 服务器\n\n隐私与安全\n\n隐私与遥测\n\n高级\n\n高级\n\n实验性\n\n实验性\n插件\nALPHA 版\n\n项目\n\n~\n通用\n\n工作区默认值、应用程序设置和维护。\n\n协作\n\n连接智能体，在原生工作区中查看对话与工具执行。\n\n已连接\n协作服务\n在此设备使用\n连接已有服务\n服务版本 2.3.1\n断开\n启动本地服务\n本机智能体\n\n准备随附的 OpenCode 版本，并将已有登录信息复制到 Porpita 私有账户。\n\n准备智能体\nOrca 配置\n\n选择 profile-state.db 或 orca-data.json，把工作区、常用设置和可读的原生会话历史复制到独立 Porpita 配置。\n\n导入配置\nOrca 消息历史\n\n从 Orca 的编排数据库导入一份只读历史。\n\n导入历史\n导航\n制表符顺序\n最近的\n浏览文件时重复使用预览选项卡\n\n单击资源管理器中的文件，或点击 Markdown 源中的链接，可以重复使用每组一个斜体预览选项卡，而不是打开一个新选项卡。编辑、双击或固定可以使该选项卡保持打开状态。关闭此选项可为每个文件提供自己的选项卡。\n\n关闭固定标签页前确认\n\n关闭固定标签页前显示确认对话框。\n\n关闭活动聊天或终端前确认\n\n关闭聊天或终端时，在停止正在运行的智能体或命令前询问。\n\n工作区\n\n配置创建新工作区的位置。\n\n工作区目录\n浏览\n\n使用相对路径（例如 .orca/worktrees）可让每个项目使用各自的位置，使用绝对路径则所有项目共用一个文件夹。\n\n来源\n\n设为显示的来源，其当前及未来工作树会显示在侧边栏中。\n\nClaude Code\n.claude/worktrees/*\n显示\n隐藏\nGSD\n.gsd-workspaces/*\n显示\n隐藏\n其他位置\n所列来源之外\n显示\n隐藏\n工作树根目录\n添加\n\nPorpita 会识别此文件夹下的工作树。\n\n嵌套工作区\n\n在以仓库命名的子文件夹内创建工作区。\n\n删除工作区之前询问\n\n从上下文菜单中删除工作区之前显示确认信息。失败的删除仍然会出现强制删除后备。\n\n删除自动化之前询问\n\n在删除自动化及其运行历史记录之前显示确认信息。\n\n删除工件之前询问\n\n在删除共享工件之前显示确认信息。任何持有其公共链接的人都会失去访问权限。\n\n在应用程序中打开\n\n从工作区的“打开方式”菜单中选择可用的应用程序。\n\n添加应用程序\nVS Code\ncode\n项目运行时\n\n不覆盖此项的本地 Windows 项目的默认运行时。\n\n默认项目运行时\n\n除非项目覆盖，否则项目继承 Windows。\n\nWindows\nWSL\n编辑\n\n配置 Porpita 如何保留文件编辑。\n\n保存时格式化\n\n在手动保存和自动保存前格式化文本。在设置 > 项目中配置格式化程序命令。默认关闭。\n\n插入末尾换行符\n\n保存非空代码文件时，如果文件末尾没有换行符，则添加一个。默认关闭。\n\n自动保存文件\n\n短暂暂停后自动保存编辑器和可编辑差异更改。\n\n自动保存延迟\n\nPorpita 在您上次编辑后等待多长时间才会自动保存。首次启动默认为 1000 ms。\n\nms\n默认差异视图\n\n默认情况下显示 git diff 的首选演示格式。\n\n内联\n并排\n编辑器字体\n\n文件编辑器和差异视图使用的字体，留空则跟随终端字体。\n\nEditor Font Size\n\nBase size for file editors and diff views. Leave empty to follow the terminal font size.\n\npx\nEditor Font Weight\n\nWeight for file editors and diff views. Leave empty for regular weight (400).\n\n100-900\nEditor Line Height\n\nLine spacing as a multiple of the editor font size; values of 8 or more are read as pixels. Leave empty or 0 for automatic spacing.\n\nEditor Font Ligatures\n\nRender ligatures such as => and !== in file editors and diff views.\n\nOff\nAuto\nOn\n编辑器自动换行\n\n在文件编辑器中自动换行长行，而无需水平滚动。\n\n关闭\n开启\n差异显示空白\n\n显示差异中前导和尾随空白的差异。\n\n关闭\n开启\n折叠未更改的区域\n\n在文件差异中仅显示更改的行和一些周围的上下文，将其余部分隐藏在可扩展带后面。查看所有更改差异总是以这种方式折叠。\n\n关闭\n开启\n差异自动换行\n\n在差异编辑器中换行显示长行，而不是要求水平滚动。\n\n关闭\n开启\n默认差异文件树\n\n打开组合差异视图时显示或隐藏文件树。\n\n显示\n隐藏\n小地图\n\n编辑文件时显示小地图概述。\n\nDefault Markdown View\n\nThe view Markdown files open in. Right-click the view switcher in a Markdown tab to change it there.\n\n源码\n富文本编辑器\nMarkdown 拼写检查（富文本）\n\n在编辑富 Markdown 时显示浏览器拼写下划线和建议。\n\nMarkdown 评审笔记\n\n在所有 Markdown 视图中显示 Markdown 笔记控件，并在智能体交接操作中包含这些笔记。\n\nPorpita CLI\n\nPorpita 终端已内置 `orca`。开启后可在 Porpita 以外的其他终端中使用 `orca`。\n\nShell 命令\n\nRegister <home>\\AppData\\Local\\Programs\\porpita\\resources\\bin\\porpita.exe to use Porpita from Command Prompt or PowerShell.\n\n命令路径： <home>\\AppData\\Local\\Programs\\porpita\\resources\\bin\\porpita.exe\n\n在资源管理器中显示\n智能体技能\n\n为智能体提供 Porpita 感知的工作区、终端和进度工作流程。\n\nCLI技能\n未安装\n\n使智能体能够使用 Porpita 工作区、终端和进度命令。\n\n安装\n重新检查\nWSL shell 命令\n\nRegister /home/d26fo/.local/bin/porpita to use Porpita from WSL.\n\n命令路径： /home/d26fo/.local/bin/porpita\n\nUpdates\nCurrent version: 0.1.0\n\nInstall updates with a newer Porpita installer.\n\nManual updates\nAbout Porpita\nPorpita\n\n0.1.0\n\nBased on Orca · Open-source attribution\n关闭\n—\n·\n0\nPorpita 中的 Codex 现在使用 ~/.codex\nCodex 可能会再次要求信任文件夹或批准命令。重新添加您仅在 Porpita 中添加的所有 MCP 服务器。\n入门流程已完成！\n\n如果你目前喜欢 Porpita，在 GitHub 上加星可以帮助其他开发者发现它。\n\n打开 GitHub\n稍后\nPorpita 现在无需共享服务器即可运行 Codex\n这使得智能体状态更加可靠。您可以在“设置”中将其重新打开。\n打开设置",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "返回应用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "入门清单",
+      "label": "入门清单，已完成 1/8。显示设置指南。",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "AI 提供商账户\n可选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "编排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "计算机控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "语音",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 账户",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "集成",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "移动端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "分享技能\n测试版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "智能体会话搜索",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Git 和源代码控制",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务来源",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "终端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷命令",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "手机模拟器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浮动工作区",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "外观",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "聊天界面",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "输入与编辑",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "通知",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "快捷键",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "统计和使用情况",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "SSH 主机",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "远程 Porpita 服务器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐私与遥测",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "高级",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "实验性",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "插件\nALPHA 版",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "~",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "在此设备使用",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "连接已有服务",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "断开",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "启动本地服务",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "准备智能体",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "导入配置",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "导入历史",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "最近的",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "浏览文件时重复使用预览选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭固定标签页前确认",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭活动聊天或终端前确认",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "浏览",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "显示",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐藏",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "显示",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐藏",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "显示",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐藏",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "添加",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "嵌套工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "删除工作区之前询问",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "删除自动化之前询问",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "删除工件之前询问",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "添加应用程序",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "编辑应用程序",
+      "title": "编辑应用程序",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "删除应用程序",
+      "title": "删除应用程序",
+      "test": null
+    },
+    {
+      "text": "Windows",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "WSL",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "保存时格式化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插入末尾换行符",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "自动保存文件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "内联",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "并排",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换字体建议",
+      "title": "字体",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Auto",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "On",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "开启",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "开启",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "开启",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "开启",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "显示",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐藏",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "小地图",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "源码",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "富文本编辑器",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Markdown 拼写检查（富文本）",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Markdown 评审笔记",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新 CLI 状态",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Shell 命令",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "在资源管理器中显示",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "安装",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "重新检查",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新 WSL CLI 状态",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "WSL shell 命令",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Based on Orca · Open-source attribution",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开 GitHub",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "稍后",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开设置",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i2-core-reconnect.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 115924
+}

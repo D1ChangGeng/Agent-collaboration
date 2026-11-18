@@ -1,0 +1,182 @@
+{
+  "actions": [
+    {
+      "name": "Focus the left chat and adjust the divider",
+      "startMs": 41632.403600000005,
+      "endMs": 41800.125799999994
+    },
+    {
+      "name": "Narrow to a single visible pane and choose the other chat",
+      "startMs": 41800.14659999999,
+      "endMs": 42442.5318
+    },
+    {
+      "name": "Restore the wide split",
+      "startMs": 42442.5389,
+      "endMs": 42600.791800000006
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794674909.384574,
+      "receivedAtMs": 41632.3875,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.456661,
+      "receivedAtMs": 41638.0494,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.461322,
+      "receivedAtMs": 41642.727,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.485512,
+      "receivedAtMs": 41662.28140000001,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.55609,
+      "receivedAtMs": 41731.229600000006,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.573001,
+      "receivedAtMs": 41746.4065,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.601699,
+      "receivedAtMs": 41777.0549,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.664517,
+      "receivedAtMs": 41840.7524,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.68218,
+      "receivedAtMs": 41842.9198,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.719873,
+      "receivedAtMs": 41879.686499999996,
+      "file": "009.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.727219,
+      "receivedAtMs": 41884.7335,
+      "file": "010.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.737622,
+      "receivedAtMs": 41894.75719999999,
+      "file": "011.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.751401,
+      "receivedAtMs": 41908.91499999999,
+      "file": "012.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.758204,
+      "receivedAtMs": 41916.345799999996,
+      "file": "013.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.774778,
+      "receivedAtMs": 41931.159400000004,
+      "file": "014.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.786196,
+      "receivedAtMs": 41951.456099999996,
+      "file": "015.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.835499,
+      "receivedAtMs": 41998.666,
+      "file": "016.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.899019,
+      "receivedAtMs": 42062.831099999996,
+      "file": "017.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.911295,
+      "receivedAtMs": 42072.782999999996,
+      "file": "018.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.919908,
+      "receivedAtMs": 42083.748600000006,
+      "file": "019.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.942997,
+      "receivedAtMs": 42105.00169999999,
+      "file": "020.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.94956,
+      "receivedAtMs": 42110.428199999995,
+      "file": "021.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.961038,
+      "receivedAtMs": 42123.0652,
+      "file": "022.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.973417,
+      "receivedAtMs": 42138.5401,
+      "file": "023.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.979714,
+      "receivedAtMs": 42143.5763,
+      "file": "024.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674909.992135,
+      "receivedAtMs": 42156.149000000005,
+      "file": "025.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674910.107106,
+      "receivedAtMs": 42270.5272,
+      "file": "026.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674910.243258,
+      "receivedAtMs": 42405.8193,
+      "file": "027.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674910.284205,
+      "receivedAtMs": 42447.2276,
+      "file": "028.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674910.287718,
+      "receivedAtMs": 42452.838,
+      "file": "029.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674910.390072,
+      "receivedAtMs": 42549.51639999999,
+      "file": "030.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674910.391915,
+      "receivedAtMs": 42566.659499999994,
+      "file": "031.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

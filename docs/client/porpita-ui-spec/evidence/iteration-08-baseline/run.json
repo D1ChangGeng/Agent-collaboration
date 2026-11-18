@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i8-filter",
+      "trigger": "Find a real file by name in Explorer",
+      "elapsedMs": 1924,
+      "result": "captured"
+    },
+    {
+      "id": "i8-dock-return",
+      "trigger": "Switch to the history tool and back to Explorer",
+      "elapsedMs": 1625,
+      "result": "captured"
+    }
+  ]
+}

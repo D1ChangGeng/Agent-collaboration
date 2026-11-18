@@ -1,0 +1,26 @@
+{
+  "size": [
+    1100,
+    700
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "\n    See where workspace storage goesScan your workspaces to compare sizes, inspect their largest folders, and review sp",
+  "section": [],
+  "text": "See where workspace storage goes\n\nScan your workspaces to compare sizes, inspect their largest folders, and review space you can reclaim.\n\nScan workspaces",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "Scan workspaces",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "53-space-window.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 21939
+}

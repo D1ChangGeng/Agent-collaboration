@@ -1,0 +1,26 @@
+{
+  "size": [
+    1100,
+    700
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "\n    智能体共 0 个Ctrl+K筛选需要你0无工作中0无已完成0无\n  \n\n",
+  "section": [],
+  "text": "智能体\n共 0 个\nCtrl\n+\nK\n筛选\n需要你\n0\n\n无\n\n工作中\n0\n\n无\n\n已完成\n0\n\n无",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "筛选",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "54-dashboard-window.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 23712
+}

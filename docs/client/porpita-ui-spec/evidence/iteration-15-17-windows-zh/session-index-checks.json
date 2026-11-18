@@ -1,0 +1,71 @@
+{
+  "workspaceFixture": {
+    "separateProjects": true,
+    "paneCount": 2
+  },
+  "directory": {
+    "rows": 3,
+    "localProjects": 2,
+    "workspaceDestinationVisible": true
+  },
+  "worktreeTarget": {
+    "originalComposerFocused": true,
+    "noAdditionalTab": true
+  },
+  "workspaceTarget": {
+    "sameWorkspace": true,
+    "samePanes": true,
+    "draftsPreserved": true,
+    "composerFocused": true
+  },
+  "worktreeScope": {
+    "matches": 2,
+    "querySurvivedReturn": true
+  },
+  "workspaceScope": {
+    "matches": 2,
+    "projects": 2,
+    "geometry": {
+      "completeRows": 2,
+      "listBounds": [
+        234,
+        451
+      ],
+      "rowBounds": [
+        [
+          268,
+          329
+        ],
+        [
+          369,
+          430
+        ]
+      ],
+      "scrollTop": 0
+    },
+    "escapeRestoredTriggerFocus": true,
+    "reducedMotion": true
+  },
+  "minimumWindow": {
+    "navigationScrolled": true,
+    "listHeight": 97,
+    "filterAndSearchVisible": true
+  },
+  "historySearch": {
+    "queryTransferred": true,
+    "searchFocused": true,
+    "retainedTranscript": true,
+    "retries": 0
+  },
+  "historyReturn": {
+    "sameWorkspace": true,
+    "samePanes": true,
+    "noDuplicateChat": true,
+    "focusedOriginalComposer": true
+  },
+  "returnDirectory": {
+    "query": true,
+    "scope": true,
+    "grouping": true
+  }
+}

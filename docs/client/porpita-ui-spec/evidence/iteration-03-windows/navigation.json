@@ -1,0 +1,26 @@
+{
+  "sameTitle": "Review · 交付检查",
+  "steps": [
+    {
+      "origin": "first Git project",
+      "originalTab": true,
+      "originalPane": true,
+      "count": 2,
+      "composerFocused": true
+    },
+    {
+      "origin": "second Git project",
+      "originalTab": true,
+      "originalPane": true,
+      "count": 2,
+      "composerFocused": true
+    },
+    {
+      "origin": "second Git project",
+      "originalTab": true,
+      "originalPane": true,
+      "count": 2,
+      "composerFocused": true
+    }
+  ]
+}

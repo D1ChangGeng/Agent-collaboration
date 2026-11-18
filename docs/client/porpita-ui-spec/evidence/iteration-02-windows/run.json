@@ -1,0 +1,109 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 768,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 1055,
+      "result": "captured"
+    },
+    {
+      "id": "i2-trust-narrow",
+      "trigger": "Resize the real startup trust dialog to 600×400; hit-test both actions and verify its modal state",
+      "elapsedMs": 609,
+      "result": "captured"
+    },
+    {
+      "id": "i2-trust-answer",
+      "trigger": "Choose Let agents ask with the keyboard and verify the blocking overlay closes",
+      "elapsedMs": 762,
+      "result": "captured"
+    },
+    {
+      "id": "i2-split-wide",
+      "trigger": "Split the current terminal via Split Terminal Right and measure both docks",
+      "elapsedMs": 1289,
+      "result": "captured"
+    },
+    {
+      "id": "i2-split-820",
+      "trigger": "Narrow the native window with two visible terminal panes and both sidebars",
+      "elapsedMs": 1062,
+      "result": "captured"
+    },
+    {
+      "id": "i2-split-600",
+      "trigger": "Focus the Explorer, then resize to the native minimum and check focus recovery",
+      "elapsedMs": 1196,
+      "result": "captured"
+    },
+    {
+      "id": "i2-split-600-right",
+      "trigger": "Use Enter on the visible right toggle, switching sides at minimum width",
+      "elapsedMs": 895,
+      "result": "captured"
+    },
+    {
+      "id": "i2-split-restored",
+      "trigger": "Return to wide size, verify saved widths and two terminal panes",
+      "elapsedMs": 1060,
+      "result": "captured"
+    },
+    {
+      "id": "i2-help",
+      "trigger": "Open the Porpita Help menu and verify the internal release and support labels",
+      "elapsedMs": 732,
+      "result": "captured"
+    },
+    {
+      "id": "i2-split-820-side",
+      "trigger": "Move the Dock activity bar to the side and resize to 820px",
+      "elapsedMs": 1832,
+      "result": "captured"
+    },
+    {
+      "id": "i2-project-scope",
+      "trigger": "Add a second local Git project through the real folder intake and inspect its Source Control",
+      "elapsedMs": 7050,
+      "result": "captured"
+    },
+    {
+      "id": "i2-project-return",
+      "trigger": "Switch between the local Git project and the previous folder workspace",
+      "elapsedMs": 2162,
+      "result": "captured"
+    },
+    {
+      "id": "i2-chat-open",
+      "trigger": "Open the native Codex Chat from the current desktop build",
+      "elapsedMs": 8231,
+      "result": "captured"
+    },
+    {
+      "id": "i2-chat-narrow",
+      "trigger": "Verify the original Native Chat remains visible at the 600×400 workbench size",
+      "elapsedMs": 1116,
+      "result": "captured"
+    },
+    {
+      "id": "i2-chat-terminal-split",
+      "trigger": "Use the native Chat pane action to create a sibling terminal in the same worktree",
+      "elapsedMs": 2025,
+      "result": "captured"
+    }
+  ]
+}

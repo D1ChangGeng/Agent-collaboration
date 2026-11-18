@@ -1,0 +1,15 @@
+# id|界面／对象|源码|当前行为|处置|目标规范|回放
+R|用户路径与连续操作|AppWorkspaceShell.tsx,AppRootSurfaces.tsx,use-global-keybindings.ts|入口、局部状态与返回依赖各界面及现有 worktree owner|改造|在保留原有路径的同时验证新组织模型从进入、执行到恢复的闭环|J01,J02,J03,J04,J05,J06,J07,J08,J09,J10,J11,J12,J13
+R.01|首次启动 → 选择工作方式 → 首次会话|OnboardingFlow.tsx,use-onboarding-flow.ts,AgentWorkspaceTrustDecisionDialog.tsx,Terminal.tsx|引导、信任、Launch 与工作台按各自结果流转|改造|选择/稍后均回可用工作台，信任只确认原目标；优先找到可继续的会话|J01
+R.02|添加项目 → 日常搜索 → 设置 → 原工作点|AddRepoDialog.tsx,WorktreeJumpPalette.tsx,QuickOpen.tsx,Settings.tsx|项目和搜索改变工作台选择，Settings 有返回状态|保留|原始焦点、编辑和查询可恢复，未完成接入保持原入口|J02
+R.03|找 Session → 打开 → 跨组定位已有|SidebarAgentsList.tsx,AiVaultSessionVirtualList.tsx,ai-vault-original-pane-actions.ts,RecentTabSwitcher.tsx|跳转面板定位已开聊天，Vault 按历史行定位 Chat 或终端并沿用恢复路径|新增|稳定 ref、无重复输入，跨组定位还原已存布局，筛选独立|J03,J05,J06
+R.04|组合 Session 与 Panel → 分屏 → 调整和恢复|TabGroupSplitNodeTree.tsx,TabGroupDropOverlay.tsx,right-sidebar-panel-content.tsx|现有 split 和 Dock 各有 owner；跨 Worktree 布局与通用 Panel 不在现版|新增|原输入、scope、草稿与比例在同一连续序列正确；失捕与 Esc 验证|J04
+R.05|发起原生工作 → 等待与审批 → 检视 → 继续|NativeChatResolvedView.tsx,NativeChatComposer.tsx,NativeChatApprovalCard.tsx,TerminalPaneNativeChatPortal.tsx|原生提供方负责执行、工具、等待和历史|保留|布局切换期间流、输入、授权和回显不会错绑，返回保留读点|J05
+R.06|后台运行 → 关闭呈现 → 退出 → 重开|use-app-session-persistence.ts,main-window-close-lifecycle.ts,NativeChatResumeRuntimeModal.tsx|现版退出保护与恢复存在，含原生终端/文件生命周期|改造|恢复用户布局独立于执行；关闭与结束可分别验证；不可用对象保留可恢复位置|J06
+R.07|固定 SidePanel → 换 Session → 移入移出|right-sidebar-panel-content.tsx,right-sidebar-route.ts,TabGroupSplitNodeTree.tsx|现版 Dock 跟随上下文，按类型有内部状态|新增|同一 Panel 的 scope、内部 Tab 和结果连续，旧宿主卸载、取消回原位|J07
+R.08|文件与任务来源 → 编辑、Diff/Review → 原会话|FileExplorer.tsx,EditorContent.tsx,DiffViewer.tsx,PullRequestPage.tsx|工作区内容工具和 Review 在原宿主链路呈现|保留|保持 scope 和原生 owner；保存、阅读、提交、评论和打开任务按各权威结果反馈|J08
+R.09|任务/协作/自动化 → 结果 → 源工作对象|TaskPage.tsx,CollaborationConversation.tsx,AutomationsPage.tsx|不同工作任务和状态有独立表面，来源路径由实际能力决定|改造|以稳定 Session/任务/消息引用返回；来源保持，投递和运行结果不混合|J09
+R.10|扩展发现 → 权限 → 承载 → 撤销|PluginsSettingsSection.tsx,PluginPanel.tsx,SkillsPage.tsx|安装、授权、启用、运行和卸载状态独立|保留|新导航不绕过原授权，Panel 在失权后退役，工作区可继续|J10
+R.11|使用 Browser、远程／配对辅助 → 返回|src/renderer/src/components/browser-pane/BrowserPane.tsx,MobilePage.tsx,RuntimeEnvironmentsPane.tsx|Chrome 与 guest、设备配对及环境管理分权|保留|任务主焦点、Host 与地址/设备状态一致，失效可恢复|J11
+R.12|部分失败、断线／撤权 → 检查 → 同对象恢复|TerminalPaneRecoveryPortals.tsx,PendingInspectionAction.tsx,CollaborationSettingsSection.tsx,RecoverableRenderErrorBoundary.tsx|工具和服务各自报告失败与恢复入口|改造|作用域清楚；可读状态与写权限独立；未知结果先核对，不自动重复执行|J12
+R.13|输入、主题、语言、窄窗、减少动效 → 重复主路径|use-document-appearance.ts,use-global-keybindings.ts,ui-locale.ts,main.css|同一数据在平台、输入、颜色和布局上有变体|保留|保持可达性及焦点，按状态证据分别确认；保留任意运行宿主的归属|J13

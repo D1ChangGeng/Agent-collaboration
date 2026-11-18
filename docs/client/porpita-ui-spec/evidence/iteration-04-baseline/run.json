@@ -1,0 +1,19 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i4-history",
+      "trigger": "Read two same-title Codex transcripts through the actual history scanner",
+      "elapsedMs": 8570,
+      "result": "captured"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+# 第 90 轮 · F01 首次设置/导览/Landing 与 F02 移动端/工件诚实不可用对齐
+
+第 87–89 轮已完成校验。本轮聚焦修复基线评审指出的 **F01**（`A.04`、`B`、`B.01`、`B.05`、`O.modal.onboarding`、`O.local.contextual-tour`）与 **F02**（`L.04`、`M.01`、`N.orca-account`）缺陷，在 Porpita 隔离工作树 `codex/porpita-ui-spec-90`（提交 `492ba96e45b9f398bbbde0a2dd81b1f88a74d32c`）完成源码修订、单元测试补充与 Windows 隐藏窗口 Electron 实机核对。
+
+## 主要修订（F01）
+
+1. **首次设置向导品牌、主进程英语词典与焦点隔离（`B`、`B.01`、`O.modal.onboarding`）**：清除 `OnboardingFlow`、渲染层引导模块（含 `settings-navigation-workflow-sections.ts` 手机模拟器设置描述回退与 `review-notes-terminal-phase.ts` 演示文案）及主进程 `translateMain` / `register-app-menu` 残留的 `'Orca'` 英文回退文案（在 `main-i18n.ts` 接入 `en.json` 并由构建插件裁剪主进程键，实测 Help 菜单呈现 `Explore Porpita` 与 `Getting Started with Porpita`，保留 `BRAND.md` 列明的技术与上游兼容例外）；补齐 `zh.json` 与 `en-runtime-required.json` 词条使 21,902 条本地化引用全部对齐。在 `OnboardingFlow` 接入 Radix `FocusScope`、跨步及关闭确认对话框取消回焦（取消 `OnboardingSkipConfirmationDialog` 后实测焦点回到 `[data-onboarding-modal]` 内的 `Continue` 按钮，且若原聚焦控件在弹窗期间变为 `disabled` 无法接焦则显式回退至 `[data-onboarding-modal]`，永不落至 `document.body`）与响应式滚动布局，确保 `1280×800` 下 Tab 焦点约束在模态内、`600×400` 窄窗下无水平溢出（`scrollWidth 566 === clientWidth 566`）。 [英文向导](evidence/iteration-90-windows/i90-en-onboarding-agent-surface-1280.png) · [简中向导](evidence/iteration-90-windows/i90-zh-onboarding-agent-surface-1280.png) · [窄窗向导](evidence/iteration-90-windows/i90-zh-onboarding-narrow-600.png)
+2. **Landing 窄窗滚动与按钮原语对齐（`A.04`）**：`Landing.tsx` 复用共享 `Button` 控件，并改用 `overflow-y-auto` 与安全居中容器 `m-auto`，确保 `600×400` 窄窗在英文（`scrollHeight 492 > clientHeight 340`）和简中（`scrollHeight 410 > clientHeight 340`）下均可纵向滚动到达底部快捷键。 [简中窄窗首页](evidence/iteration-90-windows/i90-zh-landing-narrow-600.png) · [英文首页](evidence/iteration-90-windows/i90-en-landing-1280.png)
+3. **功能导览窄窗限位与卸载回焦（`B.05`、`O.local.contextual-tour`）**：`ContextualTourOverlaySurface` 增加窄窗最大宽高与内边距约束，`useContextualTourFocus` 与 `contextual-tour-gate` 在卸载时将焦点归还触发控件，并修正按裁剪轴判定 `overflow` 祖先矩形（拒绝高度或宽度为 `0` 的折叠 `overflow: hidden` 祖先误判），同时统一 `SetupGuideModal`、`FeatureWallModal` 等引导术语。实机验证在 `600×400` 英/简中下浮层完全处于视口内（`rect 268..588 × 108..246`），退出后焦点恢复至搜索框（`Search automations` / `搜索自动化`）。 [英文窄窗导览](evidence/iteration-90-windows/i90-en-tour-narrow-600.png) · [简中窄窗导览](evidence/iteration-90-windows/i90-zh-tour-narrow-600.png)
+
+## 主要修订（F02）
+
+1. **Porpita Mobile 入口、预览中文化与诚实 Relay 边界（`M.01`）**：侧栏与设置导航将默认回退由 `"Orca Mobile"` 改为 `"Porpita Mobile"`（简中 `"Porpita 手机端"`），并对齐 `MobileEmulatorExamples.tsx` 示例提示词为 `Porpita CLI`，保留 `"Upstream Orca Mobile downloads"` 上游客户端下载说明与 `orca emulator` 兼容命令。补齐并校对 `HomeSlide`、`TerminalSlide` 与 `PhoneCarousel`（静态示例界面）`zh.json` 译文（清除 `TerminalSlide` 内的分支/命令机器直译并保留 `feat/mobile-page`、`orca/feat-mobile-page`、`PASS`、`Tab`、`Esc` 等真实开发标识符），对未配置账号服务的构建如实显示 `Porpita Relay 不可用 / Unavailable` 并引导使用局域网二维码配对。 [英文配对](evidence/iteration-90-windows/i90-en-mobile-pairing-1280.png) · [简中配对](evidence/iteration-90-windows/i90-zh-mobile-pairing-1280.png) · [终端示例预览](evidence/iteration-90-windows/i90-zh-mobile-terminal-slide-1280.png)
+2. **Artifacts 诚实不可用状态与「工件」译名统一（`L.04`、`N.orca-account`）**：`ArtifactsPage` 与 `ArtifactsPageStates` 在 `authStatus.configured === false` 时不再重定向到失效账户登录流程，改为渲染 `Unavailable / 不可用` 说明及可用的 `Back to workspace / 返回工作区` 动作（加载阶段复用 `ArtifactsPageSkeleton`）；同步更新 `ArtifactsSettingsPane`、`ArtifactPublishButton` 与 `OrcaAccountSettingsPane` 等导航文案，并将 `zh.json` 中的「神器」「开设账户设置」统一修正为「工件」「打开账户设置」。 [简中工件不可用](evidence/iteration-90-windows/i90-zh-artifacts-unavailable-1280.png) · [简中工件设置](evidence/iteration-90-windows/i90-zh-settings-artifacts-1280.png) · [简中账户设置](evidence/iteration-90-windows/i90-zh-settings-account-1280.png)
+
+## 环境边界说明
+
+- 本轮实机构建未配置生产 Porpita 云端账户服务（`authStatus.configured === false`），因此 **在线 Artifact 发布/列表、真实 OAuth `Porpita Account` 登录/注销、以及线上 `Porpita Relay` 隧道路由** 按预期保持不可用诚实反馈；其已连接态仅由 Vitest 单元测试模拟覆盖。
+- 物理手机端（Upstream Orca Mobile iOS/Android 客户端）实际扫码配对及 Windows 系统可见前台窗口焦点切换超出本轮无后台抢占的自动化隔离窗口边界，相关项继续保留后续受控真机/前台环境验收记录。

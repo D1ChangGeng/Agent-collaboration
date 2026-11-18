@@ -1,0 +1,91 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i15-empty",
+      "trigger": "Distinguish an empty local directory and retain access to past conversations",
+      "elapsedMs": 1140,
+      "result": "captured"
+    },
+    {
+      "id": "i9-two-worktrees",
+      "trigger": "Open two real local Native Chats side by side from separate worktrees",
+      "elapsedMs": 1701,
+      "result": "captured"
+    },
+    {
+      "id": "i15-directory",
+      "trigger": "Open the desktop Sessions sidebar and read the actual chat origins and destinations",
+      "elapsedMs": 1018,
+      "result": "captured"
+    },
+    {
+      "id": "i15-native-target",
+      "trigger": "Choose a live conversation outside a Workspace and reach its original worktree composer",
+      "elapsedMs": 608,
+      "result": "captured"
+    },
+    {
+      "id": "i15-keyboard-route",
+      "trigger": "Search by title and use the keyboard to return to the same Workspace pane",
+      "elapsedMs": 643,
+      "result": "captured"
+    },
+    {
+      "id": "i16-current-worktree",
+      "trigger": "Return to Sessions and narrow the query to the active local worktree",
+      "elapsedMs": 1003,
+      "result": "captured"
+    },
+    {
+      "id": "i16-project-menu",
+      "trigger": "Inspect available location and grouping choices with the keyboard at 640px",
+      "elapsedMs": 721,
+      "result": "captured"
+    },
+    {
+      "id": "i16-scoped-projects",
+      "trigger": "Show only chats in open workspaces, grouped by their two actual projects",
+      "elapsedMs": 932,
+      "result": "captured"
+    },
+    {
+      "id": "i16-short-navigation",
+      "trigger": "Scroll global navigation independently at the 600×400 desktop minimum",
+      "elapsedMs": 672,
+      "result": "captured"
+    },
+    {
+      "id": "i16-no-results",
+      "trigger": "Show the filter-and-query empty state with history still reachable",
+      "elapsedMs": 545,
+      "result": "captured"
+    },
+    {
+      "id": "i17-history-search",
+      "trigger": "Send the directory query to the live Vault scanner and find the retained transcript",
+      "elapsedMs": 1148,
+      "result": "captured"
+    },
+    {
+      "id": "i17-original-workspace",
+      "trigger": "Open the original pane from history and keep the workspace and both drafts",
+      "elapsedMs": 838,
+      "result": "captured"
+    },
+    {
+      "id": "i17-return-directory",
+      "trigger": "Return to the worktree with the prior query, filter and grouping",
+      "elapsedMs": 720,
+      "result": "captured"
+    }
+  ]
+}

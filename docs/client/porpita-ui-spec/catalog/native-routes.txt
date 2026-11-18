@@ -1,0 +1,53 @@
+# path|coverage IDs|reviewed role
+src/main/browser/backends/offscreen-browser-backend.ts|I.02|网页进程、扩展页与窗口；OS 控件由原宿主
+src/main/browser/cookies/browser-cookie-debugger-session.ts|I.04|浏览器档案调试或导入路径
+src/main/browser/cookies/browser-cookie-import-pipeline.ts|I.04|浏览器档案调试或导入路径
+src/main/browser/extensions/actions/browser-extension-popup-host.ts|I.04.01|真实扩展操作弹窗
+src/main/browser/extensions/actions/browser-extension-toolbar-electron-fixture.ts|—|测试辅助 renderer，无独立桌面入口
+src/main/browser/extensions/api-runtime/browser-extension-electron-fixture.ts|—|测试辅助 renderer，无独立桌面入口
+src/main/browser/extensions/api-runtime/browser-extension-native-page.ts|I.02|网页进程、扩展页与窗口；OS 控件由原宿主
+src/main/browser/extensions/api/downloads-save-as.ts|I.02,O.native.file-dialog|下载、保存、导出或打印渲染辅助
+src/main/browser/extensions/api/notifications.ts|I.04,O.05|扩展通知由原生渠道呈现
+src/main/browser/extensions/native-messaging/browser-extension-native-messaging-electron-fixture.ts|—|测试辅助 renderer，无独立桌面入口
+src/main/browser/extensions/profile-storage/browser-extension-persistence-electron-fixture.ts|—|测试辅助 renderer，无独立桌面入口
+src/main/browser/extensions/tabs-and-windows/browser-extension-window-model.ts|I.02|网页进程、扩展页与窗口；OS 控件由原宿主
+src/main/browser/guest-lifecycle/find/browser-find-frame-traversal-electron-fixture.ts|—|测试辅助 renderer，无独立桌面入口
+src/main/browser/guest-lifecycle/navigation/browser-link-materialization-electron-fixture.ts|—|测试辅助 renderer，无独立桌面入口
+src/main/browser/guest-lifecycle/popups/browser-popup-adapter-probe-fixture.ts|—|测试辅助 renderer，无独立桌面入口
+src/main/browser/guest-lifecycle/popups/browser-popup-compatibility-electron-fixture.ts|—|测试辅助 renderer，无独立桌面入口
+src/main/browser/guest-lifecycle/popups/popup-origin-chrome-electron-fixture.ts|—|测试辅助 renderer，无独立桌面入口
+src/main/crash-reporting/gpu-fallback-recovered-launch.ts|A.04,O.02|应用崩溃和 GPU 恢复
+src/main/crash-reporting/gpu-fallback-restart-prompt.ts|A.04,O.02|应用崩溃和 GPU 恢复
+src/main/host/electron-runtime-desktop-surface.ts|A.06|客户端窗口与共享 host 运行集成
+src/main/index.ts|A.06|客户端窗口与共享 host 运行集成
+src/main/ipc/app.ts|A.05,O.07|应用动作与菜单
+src/main/ipc/browser/browser-passwords-import-ipc.ts|I.04|浏览器档案调试或导入路径
+src/main/ipc/diagnostics.ts|A.04,O.02|应用崩溃和 GPU 恢复
+src/main/ipc/export.ts|I.02,O.native.file-dialog|下载、保存、导出或打印渲染辅助
+src/main/ipc/filesystem/filesystem-download-handlers.ts|I.02,O.native.file-dialog|下载、保存、导出或打印渲染辅助
+src/main/ipc/native-notification-delivery.ts|O.05|原生通知、权限状态与启动注册
+src/main/ipc/notification-permission-probe.ts|O.05|原生通知、权限状态与启动注册
+src/main/ipc/pets/pet-bundle-import.ts|O.04|Pet 导入与呈现
+src/main/ipc/pets/pet.ts|O.04|Pet 导入与呈现
+src/main/ipc/single-flight-open-dialog.ts|O.native.file-dialog|文件选择器
+src/main/ipc/startup-notification-registration.ts|O.05|原生通知、权限状态与启动注册
+src/main/lib/html-to-pdf.ts|I.02,O.native.file-dialog|下载、保存、导出或打印渲染辅助
+src/main/local-builds/local-build-switch.ts|A.04,O.02|应用崩溃和 GPU 恢复
+src/main/menu/register-app-menu.ts|A.05,O.07|应用动作与菜单
+src/main/plugins/panels/plugin-external-open-consent.ts|L.06|插件 Panel 的文件、链接与 guest 授权
+src/main/plugins/panels/plugin-frame-desktop-services.ts|L.06|插件 Panel 的文件、链接与 guest 授权
+src/main/plugins/panels/plugin-frame-guest-policies.ts|L.06|插件 Panel 的文件、链接与 guest 授权
+src/main/runtime/rpc/server/runtime-rpc-startup-failure.ts|O.native.recovery|主进程启动/保存/恢复阶段提示
+src/main/startup/main-process-preflight-failure.ts|O.native.recovery|主进程启动/保存/恢复阶段提示
+src/main/startup/main-window-actions.ts|A.05,O.07|应用动作与菜单
+src/main/startup/profile-state-recovery-preflight.ts|O.native.recovery|主进程启动/保存/恢复阶段提示
+src/main/startup/profile-state-write-failure.ts|O.native.recovery|主进程启动/保存/恢复阶段提示
+src/main/terminal-config-import/choose-config-file.ts|N.terminal.01,O.native.file-dialog|终端配置与主题文件选择
+src/main/tray/system-tray.ts|O.07|系统托盘
+src/main/warp-themes/manual-warp-theme-files.ts|N.terminal.01,O.native.file-dialog|终端配置与主题文件选择
+src/main/window/createMainWindow.ts|A.01|主窗口
+src/main/window/dashboard-popout-window.ts|M.03|Dashboard 窗口
+src/main/window/editable-context-menu-popup.ts|O.native.edit-menu|原生编辑上下文菜单
+src/main/window/main-window-close-lifecycle.ts|A.05,O.05|关窗、后台与退出动作
+src/main/window/renderer-publication-throttle-electron-fixture.ts|—|测试辅助 renderer，无独立桌面入口
+src/main/window/workspace-space-window.ts|M.02|独立 Space 窗口

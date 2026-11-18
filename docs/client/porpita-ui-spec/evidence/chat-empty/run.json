@@ -1,0 +1,43 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 514,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 1210,
+      "result": "captured"
+    },
+    {
+      "id": "40-chat-enabled",
+      "trigger": "Enable Chat UI from settings in the disposable profile",
+      "elapsedMs": 2592,
+      "result": "captured"
+    },
+    {
+      "id": "41-chat-agent-menu",
+      "trigger": "Open New Tab and reveal Codex launch modes",
+      "result": "not reached",
+      "reason": "locator.hover: Timeout 5000ms exceeded."
+    },
+    {
+      "id": "42-chat-empty",
+      "trigger": "Choose the Chat launch mode; do not send a message",
+      "result": "not reached",
+      "reason": "locator.click: Timeout 5000ms exceeded."
+    }
+  ]
+}

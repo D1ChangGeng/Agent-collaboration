@@ -1,0 +1,87 @@
+{
+  "actions": [
+    {
+      "name": "Focus the left chat and adjust the divider",
+      "startMs": 21180.5724,
+      "endMs": 21262.3896
+    },
+    {
+      "name": "Narrow to a single visible pane and choose the other chat",
+      "startMs": 21262.397100000002,
+      "endMs": 21542.7572
+    },
+    {
+      "name": "Restore the wide split",
+      "startMs": 21542.7642,
+      "endMs": 21619.2407
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794674840.383135,
+      "receivedAtMs": 21180.5662,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.420975,
+      "receivedAtMs": 21198.0165,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.462036,
+      "receivedAtMs": 21236.6453,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.476961,
+      "receivedAtMs": 21251.7689,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.506532,
+      "receivedAtMs": 21281.9564,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.536044,
+      "receivedAtMs": 21306.8182,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.542419,
+      "receivedAtMs": 21311.387600000002,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.543634,
+      "receivedAtMs": 21312.2915,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.569932,
+      "receivedAtMs": 21340.7483,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.586666,
+      "receivedAtMs": 21356.3123,
+      "file": "009.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.682579,
+      "receivedAtMs": 21453.6067,
+      "file": "010.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.751233,
+      "receivedAtMs": 21522.055800000002,
+      "file": "011.jpg"
+    },
+    {
+      "rendererTimestamp": 1794674840.835244,
+      "receivedAtMs": 21605.1189,
+      "file": "012.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

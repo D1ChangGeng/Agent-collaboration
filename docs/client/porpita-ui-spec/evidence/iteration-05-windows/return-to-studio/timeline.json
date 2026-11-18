@@ -1,0 +1,52 @@
+{
+  "actions": [
+    {
+      "name": "choose the Studio history row",
+      "startMs": 50155.161100000005,
+      "endMs": 50688.6419
+    },
+    {
+      "name": "wait for the original chat input",
+      "startMs": 50688.6552,
+      "endMs": 50751.5445
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794660352.014658,
+      "receivedAtMs": 50155.148,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794660352.598223,
+      "receivedAtMs": 50666.4414,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794660352.60661,
+      "receivedAtMs": 50675.6383,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794660352.608962,
+      "receivedAtMs": 50686.3312,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794660352.642772,
+      "receivedAtMs": 50708.252,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794660352.6478,
+      "receivedAtMs": 50717.9789,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794660352.681343,
+      "receivedAtMs": 50749.3278,
+      "file": "006.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

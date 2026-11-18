@@ -1,0 +1,57 @@
+{
+  "actions": [
+    {
+      "name": "confirm the filtered chat with Enter",
+      "startMs": 47178.0565,
+      "endMs": 47328.5657
+    },
+    {
+      "name": "check the original Workspace, pane and composer",
+      "startMs": 47328.5735,
+      "endMs": 47383.0407
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794710533.620604,
+      "receivedAtMs": 47178.0487,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710533.635706,
+      "receivedAtMs": 47184.2869,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710533.643261,
+      "receivedAtMs": 47192.205799999996,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710533.775081,
+      "receivedAtMs": 47320.368599999994,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710533.806297,
+      "receivedAtMs": 47355.269799999995,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710533.811172,
+      "receivedAtMs": 47358.949799999995,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710533.823616,
+      "receivedAtMs": 47373.131499999996,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794710533.829892,
+      "receivedAtMs": 47376.8554,
+      "file": "007.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

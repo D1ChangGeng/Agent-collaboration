@@ -1,0 +1,72 @@
+{
+  "actions": [
+    {
+      "name": "click Jump to Original Pane on the Chat history row",
+      "startMs": 14796.6433,
+      "endMs": 14938.412499999999
+    },
+    {
+      "name": "wait for the original composer",
+      "startMs": 14938.4221,
+      "endMs": 14949.5203
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794646666.314463,
+      "receivedAtMs": 14796.636999999999,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646666.32406,
+      "receivedAtMs": 14801.3269,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646666.336408,
+      "receivedAtMs": 14815.497599999999,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646666.343342,
+      "receivedAtMs": 14820.9388,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646666.35584,
+      "receivedAtMs": 14832.7634,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646666.362431,
+      "receivedAtMs": 14842.862000000001,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646666.373649,
+      "receivedAtMs": 14851.5844,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646666.386376,
+      "receivedAtMs": 14866.563900000001,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646666.4582,
+      "receivedAtMs": 14937.326000000001,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646666.459476,
+      "receivedAtMs": 14940.9012,
+      "file": "009.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646666.467375,
+      "receivedAtMs": 14946.7111,
+      "file": "010.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

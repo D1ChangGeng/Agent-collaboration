@@ -1,0 +1,542 @@
+{
+  "size": [
+    820,
+    540
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "dark",
+  "motion": "reduce",
+  "focus": "The original scope contains the release checklist.",
+  "section": [],
+  "text": "搜索\n工作空间（预览）\n任务\n工件\n技能\n自动化\nPorpita 手机端\n新功能\n项目\n0\nUI-spec-sample\n当前\nmain\n主要\nmain\nUI-spec-folder\n当前\nmain\n主要\nmain\nTerminal 1\nRelease review · 发版核对\nrelease-checklist.md\nU\n<isolated>/UI-spec-sample/docs/\nrelease-checklist.md\n已复制文件路径\nB\nI\nS\n\nThe original scope contains the release checklist.\n\nUI-spec-sample\n名称\n内容\ndocs\nU\nbuild-notes.md\nU\nrelease-checklist.md\nU\nnotes.md\nM\npreview.html\n关闭\n—\n·\n0",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "前进",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "搜索",
+      "label": "搜索工作树和浏览器选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工作空间（预览）",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 GitHub 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 Jira 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "工件",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "技能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 手机端\n新功能",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse all projects",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "查看活动",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区选项",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "添加项目",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "UI-spec-sample 的项目操作",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 UI-spec-sample 创建新工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标为未读",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "UI-spec-folder 的项目操作",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 UI-spec-folder 创建新工作树",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标为未读",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "帮助",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示活动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区看板",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "向左滚动标签页",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Terminal 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡 Release review · 发版核对",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "向右滚动标签页",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新标签页",
+      "title": "新标签页",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "添加快捷命令",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "<isolated>/UI-spec-sample/docs/\nrelease-checklist.md",
+      "label": null,
+      "title": "<isolated>/UI-spec-sample/docs/release-checklist.md",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "源码",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "富文本编辑器",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更改",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "目录",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "分享为工件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "文件操作",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "正文",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标题 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标题 2",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标题 3",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "B",
+      "label": "粗体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "I",
+      "label": "斜体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "S",
+      "label": "删除线",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "项目符号列表",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "编号列表",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "清单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "引用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关联",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "图像",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更多块",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换右侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "资源管理器 (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "智能体",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "源代码控制 (Ctrl+⇧+G)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "检查项",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "全部折叠",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新文件管理器",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "更多文件管理器操作",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "名称",
+      "label": "按名称筛选文件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "内容",
+      "label": "搜索文件内容",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "docs\nU",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "build-notes.md\nU",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "release-checklist.md\nU",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "notes.md\nM",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "preview.html",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i11-original-file.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 47755
+}

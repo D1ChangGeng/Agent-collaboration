@@ -1,0 +1,416 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "\n    SearchCtrl+⇧+JTasksArtifactsSkillsAutomationsOrca MobileNewProjects0UI-spec-sampleActivemainprimaryLocal Windowsmai",
+  "section": [],
+  "text": "Search\nTasks\nArtifacts\nSkills\nAutomations\nOrca Mobile\nNew\nProjects\n0\nUI-spec-sample\nActive\nmain\nprimary\nLocal Windows\nmain\nStudio-project\nInactive\nmain\nprimary\nStudio\nmain\nTerminal 1\nCommand\nAgent Session History\nIndexed history\nAll hosts\nView options\nWorkspace\nProject\nAll\n\nNot searched: Studio (unreachable)\n\nTry again\n1 result\nMost relevant\nReview the release checklist\nYou: Review the release checklist\nCodex\nLocal Windows\n2 msgs\n·\n2mo ago\nCurrent worktree\nmain\nOff\n—\n·\n0\n0 hosts",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "Application menu",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collaboration",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go back",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Go forward",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Search",
+      "label": "Search worktrees and browser tabs",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Tasks",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open GitHub tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Open Jira tasks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Artifacts",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Skills",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Automations",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Orca Mobile\nNew",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse all projects",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "View activity",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace options",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Add project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Project actions for UI-spec-sample",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Create new worktree for UI-spec-sample",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Mark as unread",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Project actions for Studio-project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Create new worktree for Studio-project",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Mark as unread",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Settings",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Help",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Reveal active workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Workspace board",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab Terminal 1",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "New tab",
+      "title": "New tab",
+      "test": null
+    },
+    {
+      "text": "Command",
+      "label": "Add quick command",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Split Terminal Right",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close tab",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Show floating workspace",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Toggle right sidebar",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Explorer (Ctrl+⇧+E)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Agents",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Source Control (Ctrl+⇧+G)",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Checks",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "All hosts",
+      "label": "Session History host: All hosts",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "View options",
+      "label": "Session History view options",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Refresh Session History",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Workspace",
+      "label": null,
+      "title": "Workspace",
+      "test": null
+    },
+    {
+      "text": "Project",
+      "label": null,
+      "title": "Project",
+      "test": null
+    },
+    {
+      "text": "All",
+      "label": null,
+      "title": "All",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Clear search",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Try again",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Most relevant",
+      "label": "Sort results: Most relevant",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Hand Off to Another Agent",
+      "title": "",
+      "test": "ai-vault-session-continue-in-new-session"
+    },
+    {
+      "text": "",
+      "label": "Resume in Worktree",
+      "title": "",
+      "test": "ai-vault-session-resume"
+    },
+    {
+      "text": "",
+      "label": "Codex session details",
+      "title": "",
+      "test": "ai-vault-session-toggle-details"
+    },
+    {
+      "text": "",
+      "label": "More Session Actions",
+      "title": "",
+      "test": "ai-vault-session-more-actions"
+    },
+    {
+      "text": "",
+      "label": "Refresh rate limits",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Plugins",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Off",
+      "label": "Keep computer awake, Off · Inactive",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "Resource Manager, terminal count unavailable",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "Ports, 0 workspace ports",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0 hosts",
+      "label": "Remote host connection status",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Minimize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Maximize",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close",
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "i5-unreachable.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 37134
+}

@@ -1,0 +1,43 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i8-filter",
+      "trigger": "Find a real file by name in Explorer",
+      "elapsedMs": 2727,
+      "result": "captured"
+    },
+    {
+      "id": "i8-dock-return",
+      "trigger": "Switch to the history tool and back to Explorer",
+      "elapsedMs": 2296,
+      "result": "captured"
+    },
+    {
+      "id": "i8-other-worktree",
+      "trigger": "Enter a different worktree and find its own file",
+      "elapsedMs": 5893,
+      "result": "captured"
+    },
+    {
+      "id": "i8-worktree-return",
+      "trigger": "Return to each worktree and recover its own search",
+      "elapsedMs": 2628,
+      "result": "captured"
+    },
+    {
+      "id": "i8-open-original",
+      "trigger": "Open the retained file result from the original worktree",
+      "elapsedMs": 2198,
+      "result": "captured"
+    }
+  ]
+}

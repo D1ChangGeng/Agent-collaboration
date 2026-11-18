@@ -1,0 +1,25 @@
+{
+  "version": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i3-populate",
+      "trigger": "Open and name two real Native Chats in different local worktrees",
+      "elapsedMs": 14691,
+      "result": "captured"
+    },
+    {
+      "id": "i3-same-name",
+      "trigger": "Inspect two equal chat names and their distinct visible origin",
+      "elapsedMs": 1569,
+      "result": "captured"
+    }
+  ]
+}

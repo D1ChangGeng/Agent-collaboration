@@ -1,0 +1,43 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, fresh",
+  "source": "installed app",
+  "steps": [
+    {
+      "id": "02-onboarding",
+      "trigger": "fresh isolated launch",
+      "elapsedMs": 425,
+      "result": "captured"
+    },
+    {
+      "id": "03-onboarding-skip",
+      "trigger": "Set up later or Esc",
+      "elapsedMs": 711,
+      "result": "captured"
+    },
+    {
+      "id": "37-git-worktree",
+      "trigger": "Add Project > Browse folder; picker supplies disposable repository",
+      "elapsedMs": 3480,
+      "result": "captured"
+    },
+    {
+      "id": "38-git-changes",
+      "trigger": "Open Source Control and wait for the modified fixture file",
+      "elapsedMs": 989,
+      "result": "captured"
+    },
+    {
+      "id": "39-git-diff",
+      "trigger": "Open the fixture diff from the changes list",
+      "elapsedMs": 2321,
+      "result": "captured"
+    }
+  ]
+}

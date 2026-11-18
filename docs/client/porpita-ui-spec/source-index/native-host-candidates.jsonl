@@ -1,0 +1,82 @@
+{"path":"src/main/browser/backends/offscreen-browser-backend.ts","line":49,"text":"const win = new BrowserWindow({"}
+{"path":"src/main/browser/cookies/browser-cookie-debugger-session.ts","line":14,"text":"return new BrowserWindow({"}
+{"path":"src/main/browser/cookies/browser-cookie-import-pipeline.ts","line":160,"text":"? await dialog.showOpenDialog(parentWindow, opts)"}
+{"path":"src/main/browser/cookies/browser-cookie-import-pipeline.ts","line":161,"text":": await dialog.showOpenDialog(opts)"}
+{"path":"src/main/browser/extensions/actions/browser-extension-popup-host.ts","line":110,"text":"const window = new BrowserWindow({"}
+{"path":"src/main/browser/extensions/actions/browser-extension-toolbar-electron-fixture.ts","line":113,"text":"const host = new BrowserWindow({"}
+{"path":"src/main/browser/extensions/api/downloads-save-as.ts","line":35,"text":"? await dialog.showSaveDialog(parent, options)"}
+{"path":"src/main/browser/extensions/api/downloads-save-as.ts","line":36,"text":": await dialog.showSaveDialog(options)"}
+{"path":"src/main/browser/extensions/api/notifications.ts","line":115,"text":"const notification = new Notification({"}
+{"path":"src/main/browser/extensions/api-runtime/browser-extension-electron-fixture.ts","line":105,"text":"const host = new BrowserWindow({"}
+{"path":"src/main/browser/extensions/api-runtime/browser-extension-electron-fixture.ts","line":138,"text":"const sandboxPage = new BrowserWindow({"}
+{"path":"src/main/browser/extensions/api-runtime/browser-extension-electron-fixture.ts","line":160,"text":"const webPage = new BrowserWindow({"}
+{"path":"src/main/browser/extensions/api-runtime/browser-extension-native-page.ts","line":25,"text":"window = new BrowserWindow({"}
+{"path":"src/main/browser/extensions/native-messaging/browser-extension-native-messaging-electron-fixture.ts","line":106,"text":"const host = new BrowserWindow({ show: false })"}
+{"path":"src/main/browser/extensions/profile-storage/browser-extension-persistence-electron-fixture.ts","line":93,"text":"const host = new BrowserWindow({"}
+{"path":"src/main/browser/extensions/tabs-and-windows/browser-extension-window-model.ts","line":216,"text":"const window = new BrowserWindow({"}
+{"path":"src/main/browser/guest-lifecycle/find/browser-find-frame-traversal-electron-fixture.ts","line":11,"text":"const window = new BrowserWindow({"}
+{"path":"src/main/browser/guest-lifecycle/navigation/browser-link-materialization-electron-fixture.ts","line":16,"text":"const window = new BrowserWindow({"}
+{"path":"src/main/browser/guest-lifecycle/popups/browser-popup-adapter-probe-fixture.ts","line":113,"text":"const unrelated = new BrowserWindow({"}
+{"path":"src/main/browser/guest-lifecycle/popups/browser-popup-adapter-probe-fixture.ts","line":163,"text":"const window = new BrowserWindow({ ...childOptions, show: false })"}
+{"path":"src/main/browser/guest-lifecycle/popups/browser-popup-compatibility-electron-fixture.ts","line":99,"text":"const host = new BrowserWindow({"}
+{"path":"src/main/browser/guest-lifecycle/popups/popup-origin-chrome-electron-fixture.ts","line":64,"text":"const window = new BrowserWindow({"}
+{"path":"src/main/browser/guest-lifecycle/popups/popup-origin-chrome-electron-fixture.ts","line":161,"text":"parent = new BrowserWindow({"}
+{"path":"src/main/crash-reporting/gpu-fallback-recovered-launch.ts","line":32,"text":"? await dialog.showMessageBox(parentWindow, options)"}
+{"path":"src/main/crash-reporting/gpu-fallback-recovered-launch.ts","line":33,"text":": await dialog.showMessageBox(options)"}
+{"path":"src/main/crash-reporting/gpu-fallback-restart-prompt.ts","line":35,"text":"? await dialog.showMessageBox(parentWindow, options)"}
+{"path":"src/main/crash-reporting/gpu-fallback-restart-prompt.ts","line":36,"text":": await dialog.showMessageBox(options)"}
+{"path":"src/main/host/electron-runtime-desktop-surface.ts","line":17,"text":"new Notification({ title, body }).show()"}
+{"path":"src/main/index.ts","line":196,"text":"showMessageBox: (options) => dialog.showMessageBox(options),"}
+{"path":"src/main/index.ts","line":219,"text":"showMessageBox: (options) => dialog.showMessageBox(options),"}
+{"path":"src/main/index.ts","line":248,"text":"showMessageBox: (options) => dialog.showMessageBox(options),"}
+{"path":"src/main/ipc/app.ts","line":66,"text":"? await dialog.showOpenDialog(parentWindow, options)"}
+{"path":"src/main/ipc/app.ts","line":67,"text":": await dialog.showOpenDialog(options)"}
+{"path":"src/main/ipc/app.ts","line":88,"text":"? await dialog.showOpenDialog(parentWindow, options)"}
+{"path":"src/main/ipc/app.ts","line":89,"text":": await dialog.showOpenDialog(options)"}
+{"path":"src/main/ipc/browser/browser-passwords-import-ipc.ts","line":33,"text":"? await dialog.showOpenDialog(parent, options)"}
+{"path":"src/main/ipc/browser/browser-passwords-import-ipc.ts","line":34,"text":": await dialog.showOpenDialog(options)"}
+{"path":"src/main/ipc/diagnostics.ts","line":175,"text":"const result = await dialog.showMessageBox({"}
+{"path":"src/main/ipc/export.ts","line":39,"text":"? await dialog.showSaveDialog(parent, dialogOptions)"}
+{"path":"src/main/ipc/export.ts","line":40,"text":": await dialog.showSaveDialog(dialogOptions)"}
+{"path":"src/main/ipc/filesystem/filesystem-download-handlers.ts","line":62,"text":"? await dialog.showSaveDialog(parentWindow, { defaultPath: suggestedName })"}
+{"path":"src/main/ipc/filesystem/filesystem-download-handlers.ts","line":63,"text":": await dialog.showSaveDialog({ defaultPath: suggestedName })"}
+{"path":"src/main/ipc/filesystem/filesystem-download-handlers.ts","line":116,"text":"? await dialog.showSaveDialog(parentWindow, { defaultPath: suggestedName })"}
+{"path":"src/main/ipc/filesystem/filesystem-download-handlers.ts","line":117,"text":": await dialog.showSaveDialog({ defaultPath: suggestedName })"}
+{"path":"src/main/ipc/native-notification-delivery.ts","line":31,"text":"const notification = new Notification({"}
+{"path":"src/main/ipc/notification-permission-probe.ts","line":40,"text":"const probe = new Notification({"}
+{"path":"src/main/ipc/pets/pet-bundle-import.ts","line":27,"text":"? await dialog.showOpenDialog(senderWindow, options)"}
+{"path":"src/main/ipc/pets/pet-bundle-import.ts","line":28,"text":": await dialog.showOpenDialog(options)"}
+{"path":"src/main/ipc/pets/pet.ts","line":56,"text":"? await dialog.showOpenDialog(senderWindow, options)"}
+{"path":"src/main/ipc/pets/pet.ts","line":57,"text":": await dialog.showOpenDialog(options)"}
+{"path":"src/main/ipc/single-flight-open-dialog.ts","line":22,"text":"? await dialog.showOpenDialog(parentWindow, options)"}
+{"path":"src/main/ipc/single-flight-open-dialog.ts","line":23,"text":": await dialog.showOpenDialog(options)"}
+{"path":"src/main/ipc/startup-notification-registration.ts","line":20,"text":"const notification = new Notification({"}
+{"path":"src/main/lib/html-to-pdf.ts","line":52,"text":"const win = new BrowserWindow({"}
+{"path":"src/main/local-builds/local-build-switch.ts","line":24,"text":"? dialog.showOpenDialog(openParent, openDialogOptions)"}
+{"path":"src/main/local-builds/local-build-switch.ts","line":25,"text":": dialog.showOpenDialog(openDialogOptions))"}
+{"path":"src/main/local-builds/local-build-switch.ts","line":79,"text":"? dialog.showMessageBox(confirmationParent, messageBoxOptions)"}
+{"path":"src/main/local-builds/local-build-switch.ts","line":80,"text":": dialog.showMessageBox(messageBoxOptions))"}
+{"path":"src/main/menu/register-app-menu.ts","line":306,"text":"Menu.setApplicationMenu(Menu.buildFromTemplate(template))"}
+{"path":"src/main/plugins/panels/plugin-external-open-consent.ts","line":57,"text":"const { response, checkboxChecked } = await dialog.showMessageBox(input.window, {"}
+{"path":"src/main/plugins/panels/plugin-frame-desktop-services.ts","line":120,"text":"const result = await dialog.showSaveDialog(parent, options)"}
+{"path":"src/main/plugins/panels/plugin-frame-guest-policies.ts","line":49,"text":"Menu.buildFromTemplate(template).popup({ window })"}
+{"path":"src/main/runtime/rpc/server/runtime-rpc-startup-failure.ts","line":135,"text":"await dialog.showMessageBox(parentWindow, createRuntimeRpcStartupFailureDialogOptions(error))"}
+{"path":"src/main/startup/main-process-preflight-failure.ts","line":40,"text":"dialog.showErrorBox(translateMain('startupFailure.title', 'Porpita could not start'), message)"}
+{"path":"src/main/startup/main-window-actions.ts","line":136,"text":"return window ? dialog.showMessageBox(window, options) : dialog.showMessageBox(options)"}
+{"path":"src/main/startup/profile-state-recovery-preflight.ts","line":77,"text":"dialog.showMessageBox({"}
+{"path":"src/main/startup/profile-state-write-failure.ts","line":74,"text":"await dialog.showMessageBox(window, options)"}
+{"path":"src/main/terminal-config-import/choose-config-file.ts","line":14,"text":"? await dialog.showOpenDialog(ownerWindow, options)"}
+{"path":"src/main/terminal-config-import/choose-config-file.ts","line":15,"text":": await dialog.showOpenDialog(options)"}
+{"path":"src/main/tray/system-tray.ts","line":226,"text":"tray = new Tray(baseTrayImage)"}
+{"path":"src/main/tray/system-tray.ts","line":245,"text":"return Menu.buildFromTemplate(["}
+{"path":"src/main/warp-themes/manual-warp-theme-files.ts","line":53,"text":"? await dialog.showOpenDialog(ownerWindow, options)"}
+{"path":"src/main/warp-themes/manual-warp-theme-files.ts","line":54,"text":": await dialog.showOpenDialog(options)"}
+{"path":"src/main/warp-themes/manual-warp-theme-files.ts","line":86,"text":"? await dialog.showOpenDialog(ownerWindow, options)"}
+{"path":"src/main/warp-themes/manual-warp-theme-files.ts","line":87,"text":": await dialog.showOpenDialog(options)"}
+{"path":"src/main/window/createMainWindow.ts","line":113,"text":"const mainWindow = new BrowserWindow({"}
+{"path":"src/main/window/dashboard-popout-window.ts","line":146,"text":"const window = new BrowserWindow({"}
+{"path":"src/main/window/editable-context-menu-popup.ts","line":63,"text":"const menu = Menu.buildFromTemplate(retirableTemplate(template, retirement))"}
+{"path":"src/main/window/main-window-close-lifecycle.ts","line":77,"text":"new Notification({"}
+{"path":"src/main/window/renderer-publication-throttle-electron-fixture.ts","line":17,"text":"const page = new BrowserWindow({"}
+{"path":"src/main/window/renderer-publication-throttle-electron-fixture.ts","line":74,"text":"const host = new BrowserWindow({ show: false, width: 640, height: 480 })"}
+{"path":"src/main/window/workspace-space-window.ts","line":50,"text":"const window = new BrowserWindow({"}

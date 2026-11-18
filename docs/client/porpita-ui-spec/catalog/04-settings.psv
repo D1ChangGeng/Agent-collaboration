@@ -1,0 +1,40 @@
+# id（SettingsNavTarget 同名）|界面／对象|源码|当前行为|处置|目标规范|回放
+N.general|通用、窗口/项目、编辑器、CLI、关于|GeneralPane.tsx,GeneralWorkspaceSettingsSection.tsx,GeneralEditorSettingsSection.tsx,GeneralUpdateSettingsSection.tsx|显示全局偏好、默认目标、文件和会话关闭行为、编辑设置、CLI、更新和产品归属；内含协作|改造|保留分组与滚动；明确关闭内容/布局/结束执行三个层次；以产品实际配置决定更新入口|J02,J06,J12,J13
+N.general.01|协作 Core 状态与连接|CollaborationSettingsSection.tsx,use-collaboration-connection.ts|本机托管或已有服务；地址/密钥、准备、断开与版本|改造|连接状态从共享可信源更新；进行中、未知、失效和已连接的动作不同，保留安全输入与原入口|J01,J09,J12
+N.general.02|准备本机 Agent、导入配置和旧历史|CollaborationSettingsSection.tsx,LegacyHistoryImportRow.tsx,src/renderer/src/components/orca-profiles|原生 Agent 准备与旧配置/协作历史的显式导入；来源不同|保留|保留选择和原始来源；导入结果区分只读历史与可运行新会话|J01,J05,J12
+N.integrations|集成与提供方接入|IntegrationsPane.tsx,src/renderer/src/components/integrations|各服务有连接、断开、凭据说明和权限反馈|保留|保留连接路径和权限检查；显示具体提供方和范围，失败保留非秘密字段|J09,J12
+N.accounts|AI 提供商账号与配额|src/renderer/src/components/settings/accounts,src/renderer/src/components/provider-accounts,StatusBarAccountControls.tsx|账号安装/登录、选择、限额及 Host 条件|保留|显示当前 Native Session 使用的真实账号；切换仅在已有的明确生命周期点生效|J05,J11,J12
+N.agents|Agent 列表、默认启动、Host 能力|AgentsPane.tsx,AgentLaunchSettingsSection.tsx,HostAgentLaunchSettings.tsx|本地和 Host Agent 检测、开法、命令和偏好分组|保留|真实能力与偏好分开；切换默认不改变现有 Session；未检测、无权限、准备中分开|J01,J05,J11
+N.orchestration|原生编排、Crew 和角色配置|OrchestrationPane.tsx,src/renderer/src/components/orchestration-crew|继承 Orca 编排设置和 Crew 入口；与 Porpita ACS 协作不同|保留|名称和说明保持各自权威；不把 Crew、Identity 或 Route 变成 Session|J05,J09
+N.linear|Linear 技能设置|LinearAgentSkillPane.tsx|Linear 特定技能接入配置受设置路由控制|保留|保持实际安装/未启用/失败状态，任务页连接与技能安装分开|J09,J10
+N.orca-account|产品账户／登录|OrcaAccountSettingsPane.tsx,OrcaSignInProgress.tsx,UnexpectedSignoutCard.tsx|Porpita 账户设置、登录等待、注销与未配置不可用分支按品牌配置决定|保留|产品账户、模型账号、ACS key 用词各自明确；不可用能力按实际设置呈现|J01,J11,J12
+N.setup-guide|设置内入门清单|SettingsSetupGuidePane.tsx,SetupGuideSidebarEntry.tsx|显示进度并跳到相关设置或向导|保留|回到同一工作对象；清单只按实际完成条件标记|J01,J02
+N.git|Git、Source Control、AI 提交、API 预算|GitPane.tsx,CommitMessageAiPane.tsx,GitProviderApiBudgetPane.tsx|Git 行为、提供方预算、提交文案/提示配置与未保存保护|保留|保持真实作用域，切设置保留或确认未保存提示；Git 样式和动作不随顶层组改变|J08,J12
+N.tasks|任务来源设置|TasksPane.tsx|管理默认任务来源和相关工作流选项|保留|作用域/连接状态清楚；切默认保留旧任务的来源引用|J09,J12
+N.terminal|终端外观、Shell、窗口、会话|src/renderer/src/components/settings/terminal/TerminalPane.tsx,TerminalSettingsPreview.tsx,TerminalWindowsShellSection.tsx,TerminalWindowsAdministratorSection.tsx|字体/光标等即时预览；Shell、管理员与会话管理按平台|保留|视觉预览与重启生效区分；管理员进入原平台确认；旧会话保持自己的运行设置|J05,J06,J13
+N.quick-commands|快捷命令列表、排序、作用域|QuickCommandsPane.tsx,QuickCommandsList.tsx,QuickCommandsScopeFilter.tsx|按作用域查找、创建/编辑、绑定、删除，工作台有独立入口|保留|引用相同命令配置，运行目标/权限单列；未保存保留并明确离开后果|J05,J11
+N.browser|浏览器、路由、UA、扩展、Browser Use|src/renderer/src/components/settings/browser/BrowserPane.tsx,BrowserUsePane.tsx,BrowserExtensionsWebStoreInstall.tsx|按 Host 配置 Browser、链接行为和扩展，部分需重载|保留|明确影响当前或后续 Browser 的配置；遵循来源授权，保留失败与取消|J10,J11,J12
+N.mobile|移动端设置|MobileSettingsPane.tsx,src/renderer/src/components/settings/mobile/pairing|配对、设备与转接设置，区别于 Mobile 桌面展示页|保留|保持配对码寿命、权限和设备状态；不在日志保留有效码|J11,J12
+N.mobile-emulator|手机模拟器、开启与设备|MobileEmulatorSettingsPane.tsx,EmulatorOpeningSettings.tsx|平台/功能启用后选择打开方式及模拟器能力|保留|不可用给出准确依赖，不将设置选项解释为已启动模拟器|J11,J13
+N.floating-workspace|浮动工作区选项|FloatingWorkspacePane.tsx,FloatingTerminalPanel.tsx|控制浮动工作区呈现与开关|保留|只影响已有浮动工具，不改写顶层 Workspace 布局|J04,J13
+N.appearance|外观、主题、字体与窗口|AppearancePane.tsx,AppearanceInterfaceSection.tsx,AppearanceWindowSidebarSection.tsx,AppearanceThemeControl.tsx|外观有子折叠区，支持窗口材质、侧栏、主题和 Host 限制|保留|沿用共享 tokens，主题切换保持焦点和滚动；插件主题不得覆盖安全面|J10,J13
+N.chat|Chat UI 默认值、权限及外观|ChatSettingsSection.tsx,ChatAgentLaunchSettings.tsx,AppearanceChatSection.tsx,ChatPermissionSetting.tsx|Chat/Terminal 默认与每 Agent 行、文字/代码大小、权限链接|保留|保留原生执行方式，区分当前会话与未来默认；改字体不重置 Composer|J05,J13
+N.input|输入、编辑与 IME|InputPane.tsx,EditorTypographySettings.tsx|编辑/输入偏好、字体与按键相关行为|保留|中文 IME、终端和 Monaco 路由保持边界；按键标签反映实际选择|J05,J08,J13
+N.notifications|通知、音效和投递|NotificationsPane.tsx,notification-sound-options.ts|可选择通知/声音，按设备和系统设置生效|保留|本机通知与会话未读分开；权限不可用状态显式|J05,J09,J13
+N.shortcuts|快捷键、搜索、冲突、重置|ShortcutsPane.tsx,settings-navigation-foundations.ts,use-global-keybindings.ts|按组编辑并检测冲突；录制状态下 Escape 有特定优先级|改造|新增顶层动作命令空间，不覆盖终端/编辑器/浏览器；提供键盘的拖放替代路径|J03,J04,J13
+N.stats|统计和用量|StatsPane.tsx,StatusBarProviderSegment.tsx|统计与配额按账号和已有数据源，可能未就绪|保留|区分计量窗口、缺数据与零，保留状态栏到设置的路径|J11,J12
+N.servers|远程 Porpita、运行时环境、更新|RuntimeEnvironmentsPane.tsx,GeneralRemoteServerUpdates.tsx,RemoteServerUpdateDialog.tsx|服务器可注册、连接、更新，状态按环境|保留|配对服务与执行 Host 分开；显示局部失败和恢复来源|J07,J11,J12
+N.ssh|SSH Hosts、口令、配置与路径|SshPane.tsx,SshPaneToolbar.tsx,SshPassphraseDialog.tsx|主机列表、增改、连接/认证和浏览；与 WSL 入口有条件关系|保留|断开一台 Host 只影响其对象，离线提示和请求归属稳定|J07,J11,J12
+N.developer-permissions|开发者权限与平台检测|DeveloperPermissionsPane.tsx,LocalNetworkConnectionTest.tsx|系统权限/网络检查按 OS 条件显示|保留|解释为何需要与能继续做什么；检查状态以系统结果为准|J11,J12,J13
+N.privacy|隐私、遥测与报告|PrivacyPane.tsx,TelemetryFirstLaunchSurface.tsx,CrashReportDialog.tsx|同意和诊断项由配置决定|保留|开关如实对应数据流与权限；保持可撤销选择|J01,J12,J13
+N.computer-use|计算机使用工具、权限及安装|ComputerUsePane.tsx,ComputerUseSkillSetupPanel.tsx|各平台能力、引导和工具安装状态有条件|保留|说明实际依赖和能力；把安装成功、工具可用、授权分开|J10,J11,J13
+N.voice|语音、模型、设备|VoicePane.tsx,VoiceDictationSettingsSection.tsx,OpenAiTranscriptionSettingsRow.tsx|可选择输入、转录方式，模型/凭据有下载或错误状态|保留|权限和加载阶段清楚；取消不丢 Composer，敏感字段不进入日志|J05,J11,J12
+N.advanced|高级、网络、镜像与诊断|AdvancedPane.tsx,AdvancedNetworkSettingsSection.tsx,NodeDistMirrorDialog.tsx|网络和镜像有验证、错误和可恢复入口|保留|复用表单和诊断；网络变更不悄悄改变另一 Host 的配置|J11,J12
+N.dev|开发工具／诊断|DevToolsPane.tsx|开发门控，非默认；对应独立工具和调试入口|保留|按实际 gate 呈现，诊断有明示内容；默认日常用户不被干扰|J12,J13
+N.experimental|实验选项、Dashboard/Pet 等|ExperimentalPane.tsx,DashboardPopoutRoot.tsx,PetOverlay.tsx|实验开关控制相应挂载与可见性|保留|关掉入口后及时归还焦点和卸载，保留已拥有对象；实验能力标明|J10,J13
+N.plugins|插件设置、安装源和权限|PluginsSettingsSection.tsx,PluginManager.tsx|设置入口管理目录、安装和权限；与面板内容独立|保留|权限提示用 SecuritySurface；操作结果匹配插件版本；失败返回同一项|J10,J12
+N.artifacts|工件偏好与可见性|ArtifactsSettingsPane.tsx,ArtifactsPage.tsx|设置影响功能入口和显示/来源行为|保留|入口隐藏不删除数据；设置和列表的范围一致|J09,J12
+N.automations|自动化偏好与入口|AutomationsSettingsPane.tsx,AutomationsPage.tsx|设置与管理页分离；调度行为有相应偏好|保留|隐藏入口与停用调度分开，配置在各自所有者生效|J09,J12
+N.share-skills|分享技能配置|ShareSkillsSettingsPane.tsx,SkillsPage.tsx|管理分享与安装关联的设置|保留|确认作用域和来源；失败不误报已分享|J09,J10
+N.session-history|Agent 会话搜索／历史设置|SessionHistorySettingsPane.tsx,AiVaultSidebarPanel.tsx|历史索引配置与 Vault 入口，来源按 Provider/Host|保留|历史索引状态独立于 Session 当前可操作性；开关不删除布局引用|J03,J05,J12
+N.repo|动态 Project/Repo 设置与 Host Scope|settings-project-section-renderer.tsx,SettingsHostScopePicker.tsx,src/renderer/src/components/settings/repository|按每个 Project/Host 组合展示路径、Git、模板、钩子、工作树、稀疏与信任配置|保留|编辑对象明确；本地、文件夹、WSL、SSH 和同名仓库都验证；布局切换不改写目标|J07,J08,J12,J13

@@ -1,0 +1,332 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "",
+  "userLocale": "zh-CN",
+  "theme": "light",
+  "motion": "default",
+  "focus": "Porpita 手机端",
+  "section": [],
+  "text": "搜索\n入门清单\n隐藏\n任务\n自动化\nPorpita 手机端\n项目\n0\n~\n当前\n~\nhome\n从侧边栏隐藏\nPORPITA\nPair a device\n\nGenerate a pairing code for a compatible client on your network.\n\nGet a pairing code\nPorpita\nJump back in\nfix-auth-redirect\nWaiting for input · MacBook Pro\n2m\n台式机\nMacBook Pro\n40 worktrees · 5 active\n任务\n任务\nBrowse your issues and reviews\nAutomations\nAutomations\nSchedule agent work and view runs\nNew workspace\nMacBook Pro\n筛选\n最近的\n仓库\n已固定\n3\nfeat/mobile-page\n#2491\norca\nfeat/mobile-page\nclaude · refactoring v3 mock to use real screens…\n2\nruntime/web-pairing\n#2487\norca\nfeat/web-pairing\n$ pnpm test --filter web-runtime\n1\ninfra/notifier\norca\nmain\nawaiting permission · sudo apt install\n1\n当前\n37\ndocs/styleguide-update\norca\nfeat/styleguide\n$ pnpm lint\n1\nfeat/runtime-perf\norca\nfeat/runtime-perf\nfix/notifier-cooldown\n#2483\norca\nfeat/notifier-cooldown\nclaude · investigating macOS notification queue…\n1\nchore/deps-bump\norca\nfeat/deps-bump\nexperiment/ssh-multiplex\norca\nfeat/ssh-mux\n$ ssh -O check orca-relay\n2\nrefactor/host-store\norca\nfeat/host-store\n壮举/手机页面\n2 个终端 · Claude 活跃\nclaude\nShell\n计划.md\n开发@mac Porpita/壮举-手机页面 $ claude\n● 读 手机/orca-mobile-sidebar-mock-v3.html\n  ⎿ 阅读2103行\n● 编辑 手机/orca-mobile-sidebar-mock-v3.html\n  ⎿ 用终端会话替换配对扫描幻灯片\n● Bash pnpm 测试 -- 搜索手机设备\n  ⎿ 经过 src/transport/host-store.test.ts\n     经过 src/cache/worktree-cache.test.ts\n     ● 14 次通过，1 次跳过（1.8 秒）\n我已经用高保真幻灯片替换了配对扫描幻灯片\n终端屏幕。Tokyonight 配色，Menlo，真实 Claude\n工具调用格式化。接下来要我添加差异吗？\n› \n粘贴\nEsc键\n选项卡\n⌫\n↑\n↓\n←\n→\nCtrl+C\n输入命令...\n关闭\n—\n·\n0\nPorpita 中的 Codex 现在使用 ~/.codex\nCodex 可能会再次要求信任文件夹或批准命令。重新添加您仅在 Porpita 中添加的所有 MCP 服务器。\n入门流程已完成！\n\n如果你目前喜欢 Porpita，在 GitHub 上加星可以帮助其他开发者发现它。\n\n打开 GitHub\n稍后\nPorpita 现在无需共享服务器即可运行 Codex\n这使得智能体状态更加可靠。您可以在“设置”中将其重新打开。\n打开设置",
+  "dialogs": [],
+  "buttons": [
+    {
+      "text": "",
+      "label": "应用菜单",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "切换侧边栏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "协作消息",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "搜索",
+      "label": "搜索工作树和浏览器选项卡",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "入门清单",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "隐藏",
+      "label": "从侧边栏隐藏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "任务",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 GitHub 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "打开 Jira 任务",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "自动化",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Porpita 手机端",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Collapse all projects",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "查看活动",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区选项",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "添加项目",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "新工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "~ 的项目操作",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "为 ~ 创建工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "标为未读",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "帮助",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示活动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "工作区看板",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "从侧边栏隐藏",
+      "label": "从侧边栏隐藏",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭 Porpita 手机",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "Get a pairing code",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "设置",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "筛选",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "最近的",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "仓库",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "返回",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "源代码管理",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "文件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "显示浮动工作区",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "刷新速率限制",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "插件",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "关闭",
+      "label": "防止电脑休眠，关闭 · 未生效",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "—\n·",
+      "label": "资源管理器，终端数量不可用",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "0",
+      "label": "端口，0 个工作区端口",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最小化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "最大化",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "关闭",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开 GitHub",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "稍后",
+      "label": null,
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "",
+      "label": "Close toast",
+      "title": "",
+      "test": null
+    },
+    {
+      "text": "打开设置",
+      "label": null,
+      "title": "",
+      "test": null
+    }
+  ],
+  "imageFile": "18-mobile.png",
+  "imageMethod": "CDP screenshot",
+  "offsetMs": 46478
+}

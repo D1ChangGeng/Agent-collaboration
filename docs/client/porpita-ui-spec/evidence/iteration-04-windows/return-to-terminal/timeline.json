@@ -1,0 +1,57 @@
+{
+  "actions": [
+    {
+      "name": "focus the history row action",
+      "startMs": 8644.541399999998,
+      "endMs": 8665.8285
+    },
+    {
+      "name": "activate the original pane with Enter",
+      "startMs": 8665.8367,
+      "endMs": 8723.845700000002
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794646750.98986,
+      "receivedAtMs": 8644.5367,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646750.996343,
+      "receivedAtMs": 8649.7919,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646751.004988,
+      "receivedAtMs": 8658.9483,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646751.010938,
+      "receivedAtMs": 8664.939999999999,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646751.032585,
+      "receivedAtMs": 8689.372500000001,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646751.049364,
+      "receivedAtMs": 8707.2095,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646751.055067,
+      "receivedAtMs": 8713.1705,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794646751.060624,
+      "receivedAtMs": 8716.2912,
+      "file": "007.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}

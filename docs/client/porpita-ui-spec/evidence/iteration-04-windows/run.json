@@ -1,0 +1,79 @@
+{
+  "version": "0.1.0",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "profile": "disposable, seeded completed onboarding",
+  "source": "isolated source build",
+  "steps": [
+    {
+      "id": "i4-history",
+      "trigger": "Read two same-title Codex transcripts through the actual history scanner",
+      "elapsedMs": 3604,
+      "result": "captured"
+    },
+    {
+      "id": "i4-actions",
+      "trigger": "Compare navigation and recovery with pointer away from the rows",
+      "elapsedMs": 592,
+      "result": "captured"
+    },
+    {
+      "id": "i4-read-history",
+      "trigger": "Expand the closed row to read its transcript before choosing Resume",
+      "elapsedMs": 447,
+      "result": "captured"
+    },
+    {
+      "id": "i4-original",
+      "trigger": "Use Enter on Jump to Original Pane and return to its exact terminal input",
+      "elapsedMs": 537,
+      "result": "captured"
+    },
+    {
+      "id": "i4-search",
+      "trigger": "Find the same-title records through the Vault search field",
+      "elapsedMs": 447,
+      "result": "captured"
+    },
+    {
+      "id": "i4-compact",
+      "trigger": "Inspect both history actions at 860×520 with reduced motion",
+      "elapsedMs": 636,
+      "result": "captured"
+    },
+    {
+      "id": "i4-resume-chat",
+      "trigger": "Continue the closed Codex transcript in Native Chat with the original history",
+      "elapsedMs": 4486,
+      "result": "captured"
+    },
+    {
+      "id": "i4-chat-original",
+      "trigger": "Return to the recovered Native Chat by clicking its history action",
+      "elapsedMs": 754,
+      "result": "captured"
+    },
+    {
+      "id": "i4-resume-picker",
+      "trigger": "Open /resume with a search on the recovered Native Chat",
+      "elapsedMs": 885,
+      "result": "captured"
+    },
+    {
+      "id": "i4-resume-picker-return",
+      "trigger": "Select the original conversation and return to its composer",
+      "elapsedMs": 568,
+      "result": "captured"
+    },
+    {
+      "id": "i4-resume-terminal",
+      "trigger": "Resume the unopened terminal history in its worktree",
+      "elapsedMs": 894,
+      "result": "captured"
+    }
+  ]
+}

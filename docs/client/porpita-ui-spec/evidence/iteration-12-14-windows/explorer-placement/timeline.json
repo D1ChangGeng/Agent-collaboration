@@ -1,0 +1,162 @@
+{
+  "actions": [
+    {
+      "name": "Move Explorer from its own tab into the Workspace",
+      "startMs": 40597.2231,
+      "endMs": 41147.2181
+    },
+    {
+      "name": "Focus the second project with Explorer still embedded",
+      "startMs": 41147.236699999994,
+      "endMs": 41274.829
+    }
+  ],
+  "frames": [
+    {
+      "rendererTimestamp": 1794703325.972969,
+      "receivedAtMs": 40597.21370000001,
+      "file": "000.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.030557,
+      "receivedAtMs": 40610.773199999996,
+      "file": "001.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.070733,
+      "receivedAtMs": 40650.65210000001,
+      "file": "002.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.221093,
+      "receivedAtMs": 40805.485199999996,
+      "file": "003.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.223767,
+      "receivedAtMs": 40809.5778,
+      "file": "004.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.231555,
+      "receivedAtMs": 40820.134900000005,
+      "file": "005.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.243757,
+      "receivedAtMs": 40827.744900000005,
+      "file": "006.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.252344,
+      "receivedAtMs": 40841.068100000004,
+      "file": "007.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.265277,
+      "receivedAtMs": 40851.173599999995,
+      "file": "008.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.404703,
+      "receivedAtMs": 40993.7111,
+      "file": "009.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.408717,
+      "receivedAtMs": 40997.3131,
+      "file": "010.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.415104,
+      "receivedAtMs": 41000.7723,
+      "file": "011.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.439724,
+      "receivedAtMs": 41027.8527,
+      "file": "012.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.431028,
+      "receivedAtMs": 41033.3707,
+      "file": "013.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.45185,
+      "receivedAtMs": 41038.7917,
+      "file": "014.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.472059,
+      "receivedAtMs": 41069.817500000005,
+      "file": "015.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.477293,
+      "receivedAtMs": 41072.2616,
+      "file": "016.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.484225,
+      "receivedAtMs": 41078.851899999994,
+      "file": "017.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.515067,
+      "receivedAtMs": 41107.774000000005,
+      "file": "018.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.530747,
+      "receivedAtMs": 41123.9029,
+      "file": "019.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.535626,
+      "receivedAtMs": 41129.6084,
+      "file": "020.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.546244,
+      "receivedAtMs": 41144.6839,
+      "file": "021.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.565457,
+      "receivedAtMs": 41168.6556,
+      "file": "022.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.584989,
+      "receivedAtMs": 41177.9008,
+      "file": "023.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.592609,
+      "receivedAtMs": 41186.5889,
+      "file": "024.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.608657,
+      "receivedAtMs": 41199.2963,
+      "file": "025.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.62133,
+      "receivedAtMs": 41212.9408,
+      "file": "026.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.68151,
+      "receivedAtMs": 41266.873900000006,
+      "file": "027.jpg"
+    },
+    {
+      "rendererTimestamp": 1794703326.684286,
+      "receivedAtMs": 41271.866500000004,
+      "file": "028.jpg"
+    }
+  ],
+  "limits": "CDP frames sampled on hidden Windows renderer. Receiver time includes capture and transport; frame count is not FPS."
+}
