@@ -3,6 +3,13 @@ import os from 'node:os'
 import path from 'node:path'
 import { cleanupAllAcsCores } from './lib/acs-core-harness.mjs'
 import { cleanupAllElectronApps } from './lib/electron-harness.mjs'
+import {
+  resolveAgentCollabRoot,
+  resolveDefaultHistoryRoot,
+  resolveDefaultPorpitaRoot,
+  resolveDefaultRefRoot,
+  resolveDefaultSpecRoot
+} from './lib/paths.mjs'
 import { ENV_BOUNDED_ITEMS, runTestCase } from './lib/test-context.mjs'
 import { TIER1_TESTS } from './tests/tier1-features.mjs'
 import { TIER2_TESTS } from './tests/tier2-boundaries.mjs'
@@ -13,9 +20,11 @@ function parseArgs(argv) {
   const opts = {
     tier: 'all',
     mode: 'full',
-    porpitaRoot: 'D:\\Chatgpt\\Agent-collaboration\\.tmp\\porpita-ui-spec-03',
-    specRoot: 'D:\\Chatgpt\\Agent-collaboration\\docs\\client\\porpita-ui-spec',
-    historyRoot: 'D:\\Chatgpt\\Porpita',
+    agentCollabRoot: null,
+    porpitaRoot: null,
+    specRoot: null,
+    historyRoot: null,
+    refRoot: null,
     report: null,
     filter: null
   }
@@ -27,14 +36,16 @@ function parseArgs(argv) {
     }
     if (arg === '--tier') opts.tier = next()
     else if (arg === '--mode') opts.mode = next()
+    else if (arg === '--agent-collab-root') opts.agentCollabRoot = next()
     else if (arg === '--porpita-root') opts.porpitaRoot = next()
     else if (arg === '--spec-root') opts.specRoot = next()
     else if (arg === '--history-root') opts.historyRoot = next()
+    else if (arg === '--ref-root') opts.refRoot = next()
     else if (arg === '--report') opts.report = next()
     else if (arg === '--filter') opts.filter = next()
     else if (arg === '--help' || arg === '-h') {
       console.log(
-        'Usage: node run-e2e.mjs [--tier 1|2|3|4|all] [--mode smoke|full] [--porpita-root <path>] [--spec-root <path>] [--history-root <path>] [--report <path>] [--filter <substring>]'
+        'Usage: node run-e2e.mjs [--tier 1|2|3|4|all] [--mode smoke|full] [--agent-collab-root <path>] [--porpita-root <path>] [--spec-root <path>] [--history-root <path>] [--ref-root <path>] [--report <path>] [--filter <substring>]'
       )
       process.exit(0)
     } else {
@@ -47,7 +58,23 @@ function parseArgs(argv) {
   if (!['smoke', 'full'].includes(opts.mode)) {
     throw new Error(`Invalid --mode: ${opts.mode}`)
   }
-  return opts
+  const agentCollabRoot = resolveAgentCollabRoot(opts.agentCollabRoot)
+  const porpitaRoot = path.resolve(opts.porpitaRoot || resolveDefaultPorpitaRoot(agentCollabRoot))
+  const specRoot = path.resolve(opts.specRoot || resolveDefaultSpecRoot(agentCollabRoot))
+  const historyRoot = path.resolve(
+    opts.historyRoot || resolveDefaultHistoryRoot({ agentCollabRoot, specRoot, porpitaRoot })
+  )
+  const refRoot = path.resolve(
+    opts.refRoot || resolveDefaultRefRoot({ agentCollabRoot, specRoot })
+  )
+  return {
+    ...opts,
+    agentCollabRoot,
+    porpitaRoot,
+    specRoot,
+    historyRoot,
+    refRoot
+  }
 }
 
 function selectTests(opts) {
@@ -95,9 +122,11 @@ async function main() {
 
   const ctx = {
     mode: opts.mode,
-    porpitaRoot: path.resolve(opts.porpitaRoot),
-    specRoot: path.resolve(opts.specRoot),
-    historyRoot: path.resolve(opts.historyRoot),
+    agentCollabRoot: opts.agentCollabRoot,
+    porpitaRoot: opts.porpitaRoot,
+    specRoot: opts.specRoot,
+    historyRoot: opts.historyRoot,
+    refRoot: opts.refRoot,
     onTimeout: async () => {
       await cleanupAllElectronApps().catch(() => {})
       await cleanupAllAcsCores().catch(() => {})

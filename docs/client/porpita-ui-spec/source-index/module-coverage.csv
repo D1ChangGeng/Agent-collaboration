@@ -652,7 +652,7 @@ src/renderer/src/components/LinearItemDrawer.tsx,src/renderer/src/main.tsx;src/r
 src/renderer/src/components/link-actions/LinkActionPopover.tsx,src/renderer/src/main.tsx;src/renderer/src/popout.tsx;src/renderer/src/web/main.tsx,H.06,family path,4,3,0
 src/renderer/src/components/link-routing-preference-dialog.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H.06;O.local.link-routing,explicit,3,4,0
 src/renderer/src/components/LinuxPackageInstallRecoveryCard.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,O.02.01,explicit,0,0,0
-src/renderer/src/components/LoadingSpinner.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.08;Q.06;S;S.03,explicit,0,0,2
+src/renderer/src/components/LoadingSpinner.tsx,src/renderer/src/main.tsx;src/renderer/src/space.tsx;src/renderer/src/web/main.tsx,P.08;Q.06;S;S.03,explicit,0,0,2
 src/renderer/src/components/local-only-menu-hint.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.04;S.06,仅本地动作的菜单原因,0,0,0
 src/renderer/src/components/machine-identity/MachineNameField.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,M.05,family path,2,0,0
 src/renderer/src/components/macos-update-requirement/MacosUpdateRequirementDialog.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,O.02,directory queue; leaf review open,4,0,0
@@ -1308,9 +1308,9 @@ src/renderer/src/components/settings/appearance/fonts/FontAutocomplete.tsx,src/r
 src/renderer/src/components/settings/appearance/LeftSidebarAppearanceSetting.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.appearance.02,explicit,3,4,0
 src/renderer/src/components/settings/appearance/RecentTabOrderControl.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N,directory queue; leaf review open,1,0,0
 src/renderer/src/components/settings/appearance/ReduceVisualEffectsSetting.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.appearance.02,explicit,1,1,0
-src/renderer/src/components/settings/appearance/themes/AppearanceThemeControl.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.appearance;N.appearance.01;P.13,explicit,5,3,2
+src/renderer/src/components/settings/appearance/themes/AppearanceThemeControl.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.appearance;N.appearance.01;P.13,explicit,7,3,0
 src/renderer/src/components/settings/appearance/UIZoomControl.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.appearance.01,explicit,3,0,0
-src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.appearance.02,explicit,2,0,1
+src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.appearance.02,explicit,3,0,0
 src/renderer/src/components/settings/artifacts/ArtifactsSettingsPane.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,L.04;N.artifacts,explicit,4,4,0
 src/renderer/src/components/settings/automations/AutomationsSettingsPane.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.automations,explicit,2,0,0
 src/renderer/src/components/settings/browser/BrowserDefaultZoomSetting.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.browser.01,explicit,1,0,0
@@ -1380,8 +1380,9 @@ src/renderer/src/components/settings/editor/RichMarkdownSpellcheckSetting.tsx,sr
 src/renderer/src/components/settings/floating-workspaces/FloatingWorkspacePane.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.floating-workspace,explicit,3,1,0
 src/renderer/src/components/settings/form-controls/DebouncedSettingsTextInput.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N,directory queue; leaf review open,1,0,0
 src/renderer/src/components/settings/form-controls/SettingsDisabledControlTooltip.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,S.06,explicit,0,0,0
-src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.02,explicit,7,1,1
+src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.02,explicit,6,1,0
 src/renderer/src/components/settings/form-controls/SettingsSearchableSelect.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.03,explicit,6,5,0
+src/renderer/src/components/settings/form-controls/SettingsSegmentedControl.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N,directory queue; leaf review open,1,0,1
 src/renderer/src/components/settings/general/GeneralPane.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.general;O.06,explicit,3,3,0
 src/renderer/src/components/settings/general/GeneralSupportSection.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.general.03,explicit,1,0,0
 src/renderer/src/components/settings/general/GeneralWorkspaceSettingsSection.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.general,explicit,4,0,0
@@ -1655,7 +1656,7 @@ src/renderer/src/components/sidebar/project-admission/dialog/AddProjectFromFolde
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoCloneStep.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,7,1,1
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoCreateStep.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,4,0,3
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoDialog.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.02;O.modal.add-repo;R.02,explicit,1,2,0
-src/renderer/src/components/sidebar/project-admission/dialog/AddRepoDialogChrome.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,1,0,0
+src/renderer/src/components/sidebar/project-admission/dialog/AddRepoDialogChrome.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,O.modal.add-repo,explicit,1,0,0
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoDialogStepContent.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,0,0,0
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoRemoteStep.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,10,3,0
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoServerStartStep.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,12,2,3
@@ -2219,13 +2220,13 @@ src/renderer/src/components/ui/radio-group.tsx,src/renderer/src/main.tsx;src/ren
 src/renderer/src/components/ui/repo-multi-combobox.tsx,,P.03,explicit,6,1,1
 src/renderer/src/components/ui/scroll-area.tsx,src/renderer/src/main.tsx;src/renderer/src/space.tsx;src/renderer/src/web/main.tsx,P.10,explicit,0,0,2
 src/renderer/src/components/ui/security-surface.tsx,src/renderer/src/main.tsx;src/renderer/src/popout.tsx;src/renderer/src/space.tsx;src/renderer/src/web/main.tsx,E.09;O.03;P.06;S.06,explicit,0,0,0
-src/renderer/src/components/ui/select.tsx,src/renderer/src/main.tsx;src/renderer/src/space.tsx;src/renderer/src/web/main.tsx,P.03,explicit,5,0,1
+src/renderer/src/components/ui/select.tsx,src/renderer/src/main.tsx;src/renderer/src/space.tsx;src/renderer/src/web/main.tsx,P.03,explicit,5,0,0
 src/renderer/src/components/ui/separator.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.09,explicit,0,0,0
 src/renderer/src/components/ui/sheet.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.06;Q.04,explicit,0,0,3
 src/renderer/src/components/ui/slider.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.07,explicit,0,0,1
-src/renderer/src/components/ui/sonner.tsx,src/renderer/src/main.tsx;src/renderer/src/space.tsx;src/renderer/src/web/main.tsx,M.02.36;M.02.37;M.02.38;M.02.39;M.02.40;P.11;Q.04,explicit,1,0,1
+src/renderer/src/components/ui/sonner.tsx,src/renderer/src/main.tsx;src/renderer/src/space.tsx;src/renderer/src/web/main.tsx,M.02.36;M.02.37;M.02.38;M.02.39;M.02.40;P.11;Q.04,explicit,2,0,0
 src/renderer/src/components/ui/switch.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.07,explicit,2,0,2
-src/renderer/src/components/ui/tabs.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.09,explicit,0,0,2
+src/renderer/src/components/ui/tabs.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.09,explicit,0,0,1
 src/renderer/src/components/ui/textarea.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.02,explicit,0,0,1
 src/renderer/src/components/ui/toggle-group.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.01,explicit,0,1,0
 src/renderer/src/components/ui/toggle.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,P.01,explicit,0,0,2

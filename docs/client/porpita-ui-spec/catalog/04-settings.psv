@@ -17,7 +17,7 @@ N.browser|浏览器、路由、UA、扩展、Browser Use|src/renderer/src/compon
 N.mobile|移动端设置|MobileSettingsPane.tsx,src/renderer/src/components/settings/mobile/pairing|配对、设备与转接设置，区别于 Mobile 桌面展示页|保留|保持配对码寿命、权限和设备状态；不在日志保留有效码|J11,J12
 N.mobile-emulator|手机模拟器、开启与设备|MobileEmulatorSettingsPane.tsx,EmulatorOpeningSettings.tsx|平台/功能启用后选择打开方式及模拟器能力|保留|不可用给出准确依赖，不将设置选项解释为已启动模拟器|J11,J13
 N.floating-workspace|浮动工作区选项|FloatingWorkspacePane.tsx,FloatingTerminalPanel.tsx|控制浮动工作区呈现与开关|保留|只影响已有浮动工具，不改写顶层 Workspace 布局|J04,J13
-N.appearance|外观、主题、字体与窗口|AppearancePane.tsx,AppearanceInterfaceSection.tsx,AppearanceWindowSidebarSection.tsx,AppearanceThemeControl.tsx|外观有子折叠区，支持窗口材质、侧栏、主题和 Host 限制|保留|沿用共享 tokens，主题切换保持焦点和滚动；插件主题不得覆盖安全面|J10,J13
+N.appearance|外观、主题、字体与窗口|AppearancePane.tsx,AppearanceInterfaceSection.tsx,AppearanceWindowSidebarSection.tsx,AppearanceThemeControl.tsx|外观有子折叠区，支持窗口材质、侧栏、主题、窄窗与高缩放响应式换行和 Host 限制|保留|沿用共享 tokens，主题切换保持焦点和滚动；插件主题不得覆盖安全面|J10,J13
 N.chat|Chat UI 默认值、权限及外观|ChatSettingsSection.tsx,ChatAgentLaunchSettings.tsx,AppearanceChatSection.tsx,ChatPermissionSetting.tsx|Chat/Terminal 默认与每 Agent 行、文字/代码大小、权限链接|保留|保留原生执行方式，区分当前会话与未来默认；改字体不重置 Composer|J05,J13
 N.input|输入、编辑与 IME|InputPane.tsx,EditorTypographySettings.tsx|编辑/输入偏好、字体与按键相关行为|保留|中文 IME、终端和 Monaco 路由保持边界；按键标签反映实际选择|J05,J08,J13
 N.notifications|通知、音效和投递|NotificationsPane.tsx,notification-sound-options.ts|可选择通知/声音，按设备和系统设置生效|保留|本机通知与会话未读分开；权限不可用状态显式|J05,J09,J13

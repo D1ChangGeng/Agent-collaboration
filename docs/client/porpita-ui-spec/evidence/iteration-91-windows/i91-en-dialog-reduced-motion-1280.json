@@ -1,0 +1,33 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "light",
+  "reducedMotion": true,
+  "forcedColors": false,
+  "prefersContrastMore": false,
+  "zoomFactor": "1",
+  "fontFamily": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+  "overflowX": false,
+  "scrollWidth": 1280,
+  "innerWidth": 1280,
+  "mainCount": 1,
+  "nestedMainCount": 0,
+  "navCount": 0,
+  "settingsShellAnimation": null,
+  "dialogAnimation": "none",
+  "focusTag": "BUTTON",
+  "focusLabel": "Local Windows",
+  "focusOutline": "none",
+  "focusOutlineColor": "oklab(0.708995 0.0000324249 0.0000141263 / 0.5)",
+  "focusBoxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.708995 0.0000324249 0.0000141263 / 0.5) 0px 0px 0px 3px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+  "text": "Search\nTasks\nArtifacts\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nNo workspaces found\nPorpita\n\nAdd a project to get started.\n\nAdd project\nCreate workspace\nCreate workspace\nCtrl\n+\nN\nMove up workspace\nCtrl\n+\n⇧\n+\n↑\nMove down workspace\nCtrl\n+\n⇧\n+\n↓\nSelect a workspace to browse files\nOff\n—\n·\n0\nAdd a project\n\nAdd a project to get started with Porpita.\n\nHost\nLocal Windows\nBrowse folder\nLocal project, Git repo, or folder with many repos\n\nOTHER WAYS TO ADD\n\nClone from URL\nClone a remote Git repository\nCreate new project\nStart from an empty folder\nClose",
+  "extra": {
+    "tabInsideDialogAllTrue": true
+  },
+  "imageFile": "i91-en-dialog-reduced-motion-1280.png",
+  "imageMethod": "CDP screenshot"
+}

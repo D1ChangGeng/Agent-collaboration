@@ -6,6 +6,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   writeFileSync
 } from 'node:fs'
@@ -15,6 +16,16 @@ import { loadPorpitaDeps, waitForPorpitaBuildReady } from './porpita-deps.mjs'
 
 const ACTIVE_INSTANCES = new Set()
 const PENDING_CLEANUP_DIRS = new Set()
+
+function normalizeRealPath(targetPath) {
+  let resolved = path.resolve(targetPath)
+  try {
+    if (existsSync(resolved)) resolved = realpathSync(resolved)
+  } catch {
+    // Keep resolved path
+  }
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved
+}
 
 function withTimeout(promise, ms, label) {
   let timer = null
@@ -35,6 +46,10 @@ const SCRUB_EXACT = new Set([
   'HOMEPATH',
   'APPDATA',
   'LOCALAPPDATA',
+  'XDG_CONFIG_HOME',
+  'XDG_DATA_HOME',
+  'XDG_CACHE_HOME',
+  'XDG_STATE_HOME',
   'CLAUDE_CONFIG_DIR',
   'CODEX_HOME',
   'ORCA_CODEX_HOME',
@@ -151,8 +166,20 @@ export function createIsolatedProfileDirs(existingTempRoot = null) {
   const homeDir = path.join(userDataDir, 'home')
   const appDataRoaming = path.join(homeDir, 'AppData', 'Roaming')
   const appDataLocal = path.join(homeDir, 'AppData', 'Local')
-  mkdirSync(appDataRoaming, { recursive: true })
-  mkdirSync(appDataLocal, { recursive: true })
+  const xdgConfigHome = path.join(homeDir, '.config')
+  const xdgDataHome = path.join(homeDir, '.local', 'share')
+  const xdgCacheHome = path.join(homeDir, '.cache')
+  const xdgStateHome = path.join(homeDir, '.local', 'state')
+  for (const dir of [
+    appDataRoaming,
+    appDataLocal,
+    xdgConfigHome,
+    xdgDataHome,
+    xdgCacheHome,
+    xdgStateHome
+  ]) {
+    mkdirSync(dir, { recursive: true })
+  }
   const gitConfigGlobal = path.join(homeDir, 'gitconfig')
   if (!existsSync(gitConfigGlobal)) {
     writeFileSync(
@@ -161,7 +188,18 @@ export function createIsolatedProfileDirs(existingTempRoot = null) {
       'utf8'
     )
   }
-  return { tempRoot, userDataDir, homeDir, appDataRoaming, appDataLocal, gitConfigGlobal }
+  return {
+    tempRoot,
+    userDataDir,
+    homeDir,
+    appDataRoaming,
+    appDataLocal,
+    xdgConfigHome,
+    xdgDataHome,
+    xdgCacheHome,
+    xdgStateHome,
+    gitConfigGlobal
+  }
 }
 
 export function seedPorpitaProfile(userDataDir, options = {}) {
@@ -177,6 +215,10 @@ export function scrubElectronEnv({
   homeDir,
   appDataRoaming,
   appDataLocal,
+  xdgConfigHome,
+  xdgDataHome,
+  xdgCacheHome,
+  xdgStateHome,
   gitConfigGlobal,
   extraEnv = {}
 }) {
@@ -192,6 +234,10 @@ export function scrubElectronEnv({
   env.USERPROFILE = homeDir
   env.APPDATA = appDataRoaming
   env.LOCALAPPDATA = appDataLocal
+  env.XDG_CONFIG_HOME = xdgConfigHome
+  env.XDG_DATA_HOME = xdgDataHome
+  env.XDG_CACHE_HOME = xdgCacheHome
+  env.XDG_STATE_HOME = xdgStateHome
   env.ORCA_BACKGROUND_LAUNCH = '1'
   env.ORCA_E2E_HEADLESS = '1'
   env.ORCA_E2E_USER_DATA_DIR = userDataDir
@@ -341,13 +387,13 @@ export async function launchElectronApp({
       )
 
       assert.equal(
-        path.resolve(isolation.home).toLowerCase(),
-        path.resolve(dirs.homeDir).toLowerCase(),
+        normalizeRealPath(isolation.home),
+        normalizeRealPath(dirs.homeDir),
         `Electron home path leaked: ${isolation.home} !== ${dirs.homeDir}`
       )
       assert.equal(
-        path.resolve(isolation.userData).toLowerCase(),
-        path.resolve(dirs.userDataDir).toLowerCase(),
+        normalizeRealPath(isolation.userData),
+        normalizeRealPath(dirs.userDataDir),
         `Electron userData path leaked: ${isolation.userData} !== ${dirs.userDataDir}`
       )
       for (const w of isolation.windows) {
@@ -388,6 +434,31 @@ export async function launchElectronApp({
   throw lastErr
 }
 
+function collectPosixDescendants(pid, seen = new Set()) {
+  if (seen.has(pid)) return []
+  seen.add(pid)
+  let children = []
+  try {
+    const out = execFileSync('pgrep', ['-P', String(pid)], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 3000
+    })
+    children = out
+      .split(/\r?\n/)
+      .map((s) => Number.parseInt(s.trim(), 10))
+      .filter((n) => Number.isInteger(n) && n > 0)
+  } catch {
+    children = []
+  }
+  const all = []
+  for (const childPid of children) {
+    all.push(...collectPosixDescendants(childPid, seen))
+    all.push(childPid)
+  }
+  return all
+}
+
 function killPidTree(pid) {
   if (!pid || !Number.isInteger(pid) || pid <= 0) return
   if (process.platform === 'win32') {
@@ -400,6 +471,34 @@ function killPidTree(pid) {
     } catch {
       // Fall through to process.kill
     }
+    try {
+      process.kill(pid, 'SIGKILL')
+    } catch {
+      // Already exited
+    }
+    return
+  }
+
+  const descendants = collectPosixDescendants(pid)
+  try {
+    execFileSync('pkill', ['-KILL', '-P', String(pid)], {
+      stdio: 'ignore',
+      timeout: 3000
+    })
+  } catch {
+    // Ignore when no children or pkill unavailable
+  }
+  for (const childPid of descendants) {
+    try {
+      process.kill(childPid, 'SIGKILL')
+    } catch {
+      // Already exited
+    }
+  }
+  try {
+    process.kill(-pid, 'SIGKILL')
+  } catch {
+    // Ignore if pid is not a process group leader
   }
   try {
     process.kill(pid, 'SIGKILL')
@@ -429,20 +528,38 @@ function killDaemonPids(userDataDir) {
 }
 
 function killProcessesReferencingDir(targetDir) {
-  if (process.platform !== 'win32' || !targetDir) return
+  if (!targetDir) return
   const baseName = path.basename(targetDir)
   if (!baseName || baseName.length < 8) return
+  if (process.platform === 'win32') {
+    try {
+      execFileSync(
+        'powershell',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*${baseName.replace(/'/g, "''")}*' -and $_.Name -ne 'powershell.exe' -and $_.Name -ne 'pwsh.exe' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`
+        ],
+        { stdio: 'ignore', timeout: 8000, windowsHide: true }
+      )
+    } catch {
+      // Best-effort process cleanup
+    }
+    return
+  }
   try {
-    execFileSync(
-      'powershell',
-      [
-        '-NoProfile',
-        '-NonInteractive',
-        '-Command',
-        `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*${baseName.replace(/'/g, "''")}*' -and $_.Name -ne 'powershell.exe' -and $_.Name -ne 'pwsh.exe' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`
-      ],
-      { stdio: 'ignore', timeout: 8000, windowsHide: true }
-    )
+    const out = execFileSync('pgrep', ['-f', baseName], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 5000
+    })
+    for (const line of out.split(/\r?\n/)) {
+      const pid = Number.parseInt(line.trim(), 10)
+      if (Number.isInteger(pid) && pid > 0 && pid !== process.pid && pid !== process.ppid) {
+        killPidTree(pid)
+      }
+    }
   } catch {
     // Best-effort process cleanup
   }
@@ -658,7 +775,7 @@ export async function addLocalFolderProject(app, page, folderPath) {
       await dismissStartupDialogs(page)
       await addBtns.first().click({ timeout: 4000 }).catch(() => {})
     }
-    if (await browseBtn.isVisible({ timeout: 2500 }).catch(() => false)) {
+    if (await waitForVisible(browseBtn, 2500)) {
       browseVisible = true
       break
     }
@@ -676,7 +793,7 @@ export async function addLocalFolderProject(app, page, folderPath) {
         name: /^(Open as Folder|作为文件夹打开|Trust repository|信任仓库|Trust folder|信任文件夹|Allow|允许)$/i
       })
       .first()
-    if (await confirmBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await waitForVisible(confirmBtn, 2000)) {
       await confirmBtn.click()
       await sleep(400)
       continue
@@ -699,14 +816,64 @@ export async function addLocalFolderProject(app, page, folderPath) {
   }
 }
 
+export async function waitForVisible(locator, timeoutMs = 3000) {
+  return await locator.waitFor({ state: 'visible', timeout: timeoutMs }).then(
+    () => true,
+    () => false
+  )
+}
+
+/**
+ * Selector contract expected once M3 Workspace shell integrates WorkspacePreview + SidebarSessionIndex.
+ */
+export const M3_SELECTOR_CONTRACT = {
+  workspaceShell:
+    '[data-workspace-preview], [data-workspace-tab-strip], [data-workspace-group-selector], [data-session-index]',
+  tabStrip: '[data-workspace-tab-strip], .terminal-tab-strip',
+  workspaceTab: 'button[data-workspace-preview-tab], button[data-workspace-tab]',
+  groupSelector: '[data-workspace-preview-group], [data-workspace-group-selector]',
+  sessionIndex: '[data-session-index]',
+  sessionIndexRow: '[data-session-index-row]',
+  sessionIndexHistory: '[data-session-index-history]',
+  splitLayout: '[data-workspace-preview-chat-layout], [data-workspace-split-layout]',
+  explorer: '[data-workspace-preview-explorer], [data-workspace-explorer]',
+  explorerScope: '[data-workspace-preview-scope], [data-workspace-explorer-scope]'
+}
+
+export async function detectWorkspaceShell(page) {
+  return await page.evaluate(() => {
+    const previewToggle = [...document.querySelectorAll('button')].some((b) =>
+      /Workspaces \(preview\)|工作空间（预览）/i.test(b.textContent || '')
+    )
+    const hasWorkspaceTabs =
+      Boolean(document.querySelector('[data-workspace-preview]')) ||
+      Boolean(document.querySelector('[data-workspace-tab-strip]')) ||
+      Boolean(document.querySelector('[data-workspace-group-selector]')) ||
+      Boolean(document.querySelector('[data-session-index]')) ||
+      [...document.querySelectorAll('button')].some((b) =>
+        /New workspace|新建工作空间|New work object|新建工作对象/i.test(b.textContent || '')
+      )
+    return {
+      previewToggle,
+      hasWorkspaceTabs,
+      integrated: !previewToggle && hasWorkspaceTabs
+    }
+  })
+}
+
+export async function hasIntegratedWorkspaceShell(page) {
+  const ws = await detectWorkspaceShell(page)
+  return ws.integrated
+}
+
 export async function openSettingsPage(page) {
   const settingsBtn = page.getByRole('button', { name: /^(Settings|设置)$/i }).first()
   await settingsBtn.waitFor({ state: 'visible', timeout: 10000 })
   await settingsBtn.click()
   const section = page.locator('section[data-settings-section]').first()
-  if (!(await section.isVisible({ timeout: 3000 }).catch(() => false))) {
+  if (!(await waitForVisible(section, 3000))) {
     if (await settingsBtn.isVisible().catch(() => false)) {
-      await settingsBtn.click().catch(() => {})
+      await settingsBtn.click({ timeout: 2000 }).catch(() => {})
     }
   }
   await section.waitFor({ state: 'visible', timeout: 15000 })
@@ -715,8 +882,16 @@ export async function openSettingsPage(page) {
 export async function returnFromSettings(page) {
   const backBtn = page.getByRole('button', { name: /^(Back to app|返回应用)$/i }).first()
   if (await backBtn.isVisible().catch(() => false)) {
+    const settingsSection = page.locator('section[data-settings-section]').first()
     await backBtn.click()
-    await sleep(200)
+    const hid = await settingsSection.waitFor({ state: 'hidden', timeout: 1500 }).then(
+      () => true,
+      () => false
+    )
+    if (!hid && (await backBtn.isVisible().catch(() => false))) {
+      await backBtn.click({ timeout: 2000 }).catch(() => {})
+      await settingsSection.waitFor({ state: 'hidden', timeout: 8000 }).catch(() => {})
+    }
   }
 }
 

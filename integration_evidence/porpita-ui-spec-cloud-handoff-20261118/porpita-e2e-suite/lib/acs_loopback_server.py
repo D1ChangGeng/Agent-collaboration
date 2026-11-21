@@ -1,7 +1,7 @@
 """Isolated loopback ACS Core HTTP/SSE server for Porpita opaque-box E2E tests.
 
-Composed strictly from D:\\Chatgpt\\Agent-collaboration\\runtime\\* using temporary
-$env:TEMP storage and ephemeral PostgreSQL (schema or container). Never modifies
+Composed strictly from Agent-collaboration/runtime/* using temporary
+directory storage and ephemeral PostgreSQL (schema or container). Never modifies
 repository files.
 """
 from __future__ import annotations
@@ -29,7 +29,21 @@ import uvicorn
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-ROOT = Path(r"D:\Chatgpt\Agent-collaboration")
+
+def _resolve_agent_collab_root() -> Path:
+    env_root = os.environ.get("PORPITA_E2E_AGENT_COLLAB_ROOT") or os.environ.get("AGENT_COLLAB_ROOT")
+    if env_root:
+        candidate = Path(env_root).resolve()
+        if (candidate / "runtime" / "communication_http.py").is_file():
+            return candidate
+    for base in (Path(__file__).resolve(), Path.cwd().resolve()):
+        for ancestor in (base, *base.parents):
+            if (ancestor / "runtime" / "communication_http.py").is_file():
+                return ancestor
+    return Path(__file__).resolve().parents[2]
+
+
+ROOT = _resolve_agent_collab_root()
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 

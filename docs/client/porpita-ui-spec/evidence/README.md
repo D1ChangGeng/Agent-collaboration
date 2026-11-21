@@ -1,5 +1,16 @@
 # 现版观察与回放证据
 
+## 第 91 轮
+
+Windows x64 在隔离档案与隐藏 Electron 窗口（`ORCA_BACKGROUND_LAUNCH=1`、全部 `!visible && !focused`）运行升级后的 `tools/observe-round-91.cjs`，对 `codex/porpita-ui-spec-91` 提交 `e8062ab946c15a1afd57a78f51d3199b7f2e151d` 对应 `--mode e2e` 构建采集 9 组宽/窄/高缩放/对比/无动效与三语种（`en`/`zh`/`ja`）证据，覆盖 **F03**（`P.*`、`P.13`、`Q.*`、`N.appearance`）及受控 `<Dialog open>` 回焦修复（`O.modal.add-repo`）。 [运行记录](iteration-91-windows/run.json) · [构建与测试条件](../SOURCE_BASELINE.md#第-91-轮来源)
+
+| 范围 | 证据 |
+| --- | --- |
+| 受控弹窗回焦与减少动效（`O.modal.add-repo`、`P.01`、`P.06`、`Q`、`Q.04`） | [无动画弹窗与 Escape 回焦](iteration-91-windows/i91-en-dialog-reduced-motion-1280.json) |
+| 外观浅深主题、滚动保持、实时系统配色与高对比度（`N.appearance`、`P.07`、`P.12`、`P.13`） | [浅色外观](iteration-91-windows/i91-en-settings-appearance-light-1280.json) · [深色与滚动保持](iteration-91-windows/i91-en-settings-appearance-dark-1280.json) · [forced-colors 高对比](iteration-91-windows/i91-en-settings-forced-colors-1280.json) |
+| 设置高缩放、窄窗响应式与折叠无动效（`N.appearance`、`P`、`P.02`、`P.03`、`P.10`、`Q.01`、`Q.05`） | [158% 缩放 1280×800](iteration-91-windows/i91-en-settings-zoom-150-1280.json) · [窄窗 820×580](iteration-91-windows/i91-en-settings-narrow-820.json) · [极窄窗 600×400](iteration-91-windows/i91-en-settings-narrow-600.json) |
+| 实时三语种切换 `en → zh → ja`（`P.13`、`N.appearance`） | [简中外观](iteration-91-windows/i91-zh-settings-appearance-dark-1280.json) · [日文外观](iteration-91-windows/i91-ja-settings-appearance-1280.json) |
+
 ## 第 90 轮
 
 Windows x64 在隔离档案与隐藏 Electron 窗口（`ORCA_BACKGROUND_LAUNCH=1`、`ORCA_E2E_HEADLESS=1`，全部 `!visible && !focused`）运行 `tools/observe-round-90.cjs`，对默认生产模式构建采集 23 组英/简中宽窄屏证据，覆盖 F01 与 F02 修复项。 [运行记录](iteration-90-windows/run.json) · [构建与测试条件](../SOURCE_BASELINE.md#第-90-轮来源)

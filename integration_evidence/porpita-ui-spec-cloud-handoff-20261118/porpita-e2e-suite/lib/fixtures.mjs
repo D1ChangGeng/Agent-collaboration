@@ -5,12 +5,14 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   writeFileSync
 } from 'node:fs'
 import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
+import { resolveAgentCollabRoot } from './paths.mjs'
 
 // Authoritative baseline manifest recorded at E2E Track start (teamwork_explorer_e2e_2/handoff.md)
 export const AGENT_COLLAB_BASELINE_HEAD = 'e5d71968a13e67e3dc51e318867d4ed9a1f946ac'
@@ -374,56 +376,46 @@ export function createSyntheticPluginFixture(porpitaRoot, targetParentDir = null
   }
 }
 
-export function verifyGitBaselines({
-  agentCollabRoot = 'D:\\Chatgpt\\Agent-collaboration',
-  porpitaRoot = 'D:\\Chatgpt\\Porpita'
-} = {}) {
-  const issues = []
-
-  const acHead = runGit(agentCollabRoot, ['rev-parse', 'HEAD'])
-  if (acHead !== AGENT_COLLAB_BASELINE_HEAD) {
-    issues.push(`Agent-collaboration HEAD mismatch: expected ${AGENT_COLLAB_BASELINE_HEAD}, got ${acHead}`)
+function normFsPath(p) {
+  let resolved = path.resolve(p)
+  try {
+    if (existsSync(resolved)) resolved = realpathSync(resolved)
+  } catch {
+    // Keep resolved fallback
   }
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved
+}
 
-  const acDiffFiles = runGit(agentCollabRoot, ['diff', '--name-only'])
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .sort()
-  const expectedFiles = Object.keys(AGENT_COLLAB_TRACKED_MODS).sort()
-  if (JSON.stringify(acDiffFiles) !== JSON.stringify(expectedFiles)) {
-    issues.push(
-      `Agent-collaboration modified tracked files changed: expected ${expectedFiles.length} (${expectedFiles.join(', ')}), got ${acDiffFiles.length} (${acDiffFiles.join(', ')})`
-    )
+function tryRunGit(cwd, args) {
+  if (!cwd || !existsSync(cwd)) return null
+  try {
+    return execFileSync('git', ['-C', cwd, ...args], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 60000
+    }).trim()
+  } catch {
+    return null
   }
+}
 
-  const actualHashes = {}
-  for (const rel of expectedFiles) {
-    const abs = path.join(agentCollabRoot, rel)
-    if (!existsSync(abs)) {
-      issues.push(`Missing Agent-collaboration tracked file: ${rel}`)
-      continue
-    }
-    const hash = sha256File(abs)
-    actualHashes[rel] = hash
-    if (hash !== AGENT_COLLAB_TRACKED_MODS[rel]) {
-      issues.push(
-        `Agent-collaboration baseline file modified: ${rel} expected SHA256=${AGENT_COLLAB_TRACKED_MODS[rel]}, got ${hash}`
-      )
-    }
-  }
+function isDirtyPorpitaUserRoot(targetDir) {
+  const topLevel = tryRunGit(targetDir, ['rev-parse', '--show-toplevel'])
+  if (!topLevel || normFsPath(topLevel) !== normFsPath(targetDir)) return false
+  if (existsSync(path.join(targetDir, 'delivery-manifest.json'))) return true
+  const head = tryRunGit(targetDir, ['rev-parse', 'HEAD'])
+  if (head === PORPITA_BASELINE_HEAD) return true
+  const status = tryRunGit(targetDir, ['status', '--short']) || ''
+  return status.split(/\r?\n/).some((l) => l.startsWith('D ') || l.startsWith(' D '))
+}
 
-  for (const dir of ['RFC_TEMP_SOURCE', 'integration_evidence', 'docs/client/porpita-ui-spec']) {
-    if (!existsSync(path.join(agentCollabRoot, dir))) {
-      issues.push(`Missing Agent-collaboration baseline dir: ${dir}`)
-    }
-  }
-
-  const pHead = runGit(porpitaRoot, ['rev-parse', 'HEAD'])
+function verifyPorpitaDirtyRoot(targetDir, issues) {
+  const pHead = runGit(targetDir, ['rev-parse', 'HEAD'])
   if (pHead !== PORPITA_BASELINE_HEAD) {
     issues.push(`Porpita HEAD mismatch: expected ${PORPITA_BASELINE_HEAD}, got ${pHead}`)
   }
 
-  const pStatusLines = runGit(porpitaRoot, ['status', '--short'])
+  const pStatusLines = runGit(targetDir, ['status', '--short'])
     .split(/\r?\n/)
     .filter(Boolean)
   const deletions = pStatusLines.filter((l) => l.startsWith('D ') || l.startsWith(' D '))
@@ -432,7 +424,9 @@ export function verifyGitBaselines({
     (l) => !l.startsWith('D ') && !l.startsWith(' D ') && !l.startsWith('?? ')
   )
   if (deletions.length !== PORPITA_DELETED_COUNT) {
-    issues.push(`Porpita deleted tracked count mismatch: expected ${PORPITA_DELETED_COUNT}, got ${deletions.length}`)
+    issues.push(
+      `Porpita deleted tracked count mismatch: expected ${PORPITA_DELETED_COUNT}, got ${deletions.length}`
+    )
   }
   if (untracked.length !== 1 || !untracked[0].endsWith('delivery-manifest.json')) {
     issues.push(`Porpita untracked entries unexpected: ${JSON.stringify(untracked)}`)
@@ -440,7 +434,7 @@ export function verifyGitBaselines({
   if (other.length > 0) {
     issues.push(`Porpita unexpected status entries: ${JSON.stringify(other)}`)
   }
-  const manifestPath = path.join(porpitaRoot, 'delivery-manifest.json')
+  const manifestPath = path.join(targetDir, 'delivery-manifest.json')
   if (!existsSync(manifestPath)) {
     issues.push('Porpita delivery-manifest.json missing')
   } else {
@@ -451,11 +445,119 @@ export function verifyGitBaselines({
       )
     }
   }
+  return { mode: 'dirty-user-root', root: targetDir, head: pHead, deletionsCount: deletions.length, untracked }
+}
+
+export function verifyGitBaselines({
+  agentCollabRoot = null,
+  porpitaRoot = null,
+  historyRoot = null
+} = {}) {
+  const issues = []
+  const resolvedAcRoot = resolveAgentCollabRoot(agentCollabRoot)
+
+  const acGitDir = tryRunGit(resolvedAcRoot, ['rev-parse', '--git-dir'])
+  const acCommonDir = tryRunGit(resolvedAcRoot, ['rev-parse', '--git-common-dir'])
+  const acIsPrimaryCheckout = Boolean(
+    acGitDir &&
+      acCommonDir &&
+      normFsPath(path.resolve(resolvedAcRoot, acGitDir)) ===
+        normFsPath(path.resolve(resolvedAcRoot, acCommonDir))
+  )
+  const acHead = tryRunGit(resolvedAcRoot, ['rev-parse', 'HEAD'])
+  const acDiffFiles = (tryRunGit(resolvedAcRoot, ['diff', '--name-only']) || '')
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .sort()
+  const acIsDirtyRoot =
+    acIsPrimaryCheckout &&
+    (acHead === AGENT_COLLAB_BASELINE_HEAD ||
+      acDiffFiles.some((f) => Object.prototype.hasOwnProperty.call(AGENT_COLLAB_TRACKED_MODS, f)))
+
+  const actualHashes = {}
+  if (acIsDirtyRoot) {
+    if (acHead !== AGENT_COLLAB_BASELINE_HEAD) {
+      issues.push(
+        `Agent-collaboration HEAD mismatch: expected ${AGENT_COLLAB_BASELINE_HEAD}, got ${acHead}`
+      )
+    }
+    const expectedFiles = Object.keys(AGENT_COLLAB_TRACKED_MODS).sort()
+    if (JSON.stringify(acDiffFiles) !== JSON.stringify(expectedFiles)) {
+      issues.push(
+        `Agent-collaboration modified tracked files changed: expected ${expectedFiles.length} (${expectedFiles.join(', ')}), got ${acDiffFiles.length} (${acDiffFiles.join(', ')})`
+      )
+    }
+    for (const rel of expectedFiles) {
+      const abs = path.join(resolvedAcRoot, rel)
+      if (!existsSync(abs)) {
+        issues.push(`Missing Agent-collaboration tracked file: ${rel}`)
+        continue
+      }
+      const hash = sha256File(abs)
+      actualHashes[rel] = hash
+      if (hash !== AGENT_COLLAB_TRACKED_MODS[rel]) {
+        issues.push(
+          `Agent-collaboration baseline file modified: ${rel} expected SHA256=${AGENT_COLLAB_TRACKED_MODS[rel]}, got ${hash}`
+        )
+      }
+    }
+  } else if (!existsSync(resolvedAcRoot)) {
+    issues.push(`Missing Agent-collaboration root: ${resolvedAcRoot}`)
+  }
+
+  for (const dir of ['RFC_TEMP_SOURCE', 'integration_evidence', 'docs/client/porpita-ui-spec']) {
+    if (!existsSync(path.join(resolvedAcRoot, dir))) {
+      issues.push(`Missing Agent-collaboration baseline dir: ${dir}`)
+    }
+  }
+
+  const targetHistory = historyRoot || porpitaRoot
+  let porpitaInfo = { mode: 'skipped', head: null, deletionsCount: 0, untracked: [] }
+  let historyInfo = null
+
+  if (targetHistory) {
+    const resolvedTarget = path.resolve(targetHistory)
+    if (!existsSync(resolvedTarget)) {
+      issues.push(`Missing history/porpita root: ${resolvedTarget}`)
+    } else if (isDirtyPorpitaUserRoot(resolvedTarget)) {
+      porpitaInfo = verifyPorpitaDirtyRoot(resolvedTarget, issues)
+      historyInfo = { mode: 'dirty-user-root', root: resolvedTarget }
+    } else {
+      const topLevel = tryRunGit(resolvedTarget, ['rev-parse', '--show-toplevel'])
+      const isTopLevel = Boolean(topLevel && normFsPath(topLevel) === normFsPath(resolvedTarget))
+      const hasDocs = existsSync(path.join(resolvedTarget, 'docs'))
+      const hasPkg = existsSync(path.join(resolvedTarget, 'package.json'))
+      if (!hasDocs && !hasPkg) {
+        issues.push(`History/porpita root lacks docs or package.json: ${resolvedTarget}`)
+      }
+      historyInfo = {
+        mode: isTopLevel ? 'clean-clone' : 'history-subdir',
+        root: resolvedTarget,
+        head: tryRunGit(resolvedTarget, ['rev-parse', 'HEAD'])
+      }
+    }
+  }
+
+  const siblingPorpita = path.resolve(resolvedAcRoot, '..', 'Porpita')
+  const sameAsTarget =
+    targetHistory && normFsPath(siblingPorpita) === normFsPath(targetHistory)
+  if (!sameAsTarget && (acIsDirtyRoot || !targetHistory) && existsSync(siblingPorpita)) {
+    if (isDirtyPorpitaUserRoot(siblingPorpita)) {
+      porpitaInfo = verifyPorpitaDirtyRoot(siblingPorpita, issues)
+    }
+  }
 
   return {
     ok: issues.length === 0,
     issues,
-    agentCollab: { head: acHead, trackedModsCount: acDiffFiles.length, hashes: actualHashes },
-    porpita: { head: pHead, deletionsCount: deletions.length, untracked }
+    agentCollab: {
+      mode: acIsDirtyRoot ? 'dirty-user-root' : acIsPrimaryCheckout ? 'clean-clone' : 'worktree',
+      root: resolvedAcRoot,
+      head: acHead,
+      trackedModsCount: acDiffFiles.length,
+      hashes: actualHashes
+    },
+    porpita: porpitaInfo,
+    history: historyInfo
   }
 }

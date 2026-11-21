@@ -2,13 +2,16 @@ import assert from 'node:assert/strict'
 import {
   addLocalFolderProject,
   closeElectronApp,
+  hasIntegratedWorkspaceShell,
   launchElectronApp,
+  M3_SELECTOR_CONTRACT,
   openCollaborationDialog,
   openSettingsPage,
   returnFromSettings,
   setViewportSize,
   sleep,
-  stubOpenDialog
+  stubOpenDialog,
+  waitForVisible
 } from '../lib/electron-harness.mjs'
 import { startLoopbackAcsCore } from '../lib/acs-core-harness.mjs'
 import {
@@ -17,20 +20,6 @@ import {
   startLoopbackHttpServer
 } from '../lib/fixtures.mjs'
 import { pendingIfSmoke } from '../lib/test-context.mjs'
-
-async function hasIntegratedWorkspaceShell(page) {
-  return await page.evaluate(() => {
-    const previewToggle = [...document.querySelectorAll('button')].some((b) =>
-      /Workspaces \(preview\)|工作空间（预览）/i.test(b.textContent || '')
-    )
-    const hasTabs =
-      Boolean(document.querySelector('[data-workspace-preview]')) ||
-      Boolean(document.querySelector('[data-workspace-tab-strip]')) ||
-      Boolean(document.querySelector('[data-workspace-group-selector]')) ||
-      Boolean(document.querySelector('[data-session-index]'))
-    return !previewToggle && hasTabs
-  })
-}
 
 export const TIER3_TESTS = [
   {
@@ -97,6 +86,7 @@ export const TIER3_TESTS = [
     featureArea: 'E2E-F01+E2E-F03',
     refs: ['F01', 'D.07.01', 'G.09.02', 'J04'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't3-02' })
       const inst = await launchElectronApp({
         porpitaRoot: ctx.porpitaRoot,
         width: 820,
@@ -105,6 +95,7 @@ export const TIER3_TESTS = [
       })
       try {
         const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
         await setViewportSize(app, page, 640, 580)
         await sleep(150)
         await setViewportSize(app, page, 820, 580)
@@ -116,9 +107,29 @@ export const TIER3_TESTS = [
             'Integrated DualPane & Fixed SidePanel pending M3'
           )
         }
-        return { verified: true }
+        const addSessionBtn = page.getByRole('button', { name: /Add session|添加会话/i }).first()
+        if (await waitForVisible(addSessionBtn, 2500)) await addSessionBtn.click()
+        await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(Open Explorer|打开资源管理器)$/i }).first().click()
+        const standaloneExplorer = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="standalone"]`).first()
+        await standaloneExplorer.waitFor({ state: 'visible', timeout: 8000 })
+        await standaloneExplorer.getByRole('button', { name: /Explorer placement|资源管理器位置/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(Move to |移动到)/i }).first().click()
+        const embedded = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="embedded"]`).first()
+        await embedded.waitFor({ state: 'visible', timeout: 8000 })
+        const scopeBefore = (await embedded.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
+        await setViewportSize(app, page, 640, 580)
+        const modeNarrow = await page.locator(M3_SELECTOR_CONTRACT.splitLayout).first().getAttribute('data-preview-split')
+        assert.equal(modeNarrow, 'focused', `Expected focused mode below 646px, got ${modeNarrow}`)
+        await setViewportSize(app, page, 1280, 800)
+        const modeWide = await page.locator(M3_SELECTOR_CONTRACT.splitLayout).first().getAttribute('data-preview-split')
+        assert.equal(modeWide, 'side-by-side', `Expected side-by-side mode at 1280px, got ${modeWide}`)
+        const scopeAfter = (await embedded.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
+        assert.equal(scopeAfter, scopeBefore, 'Embedded Explorer scope drifted across resize')
+        return { modeNarrow, modeWide, scopeAfter }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -128,9 +139,12 @@ export const TIER3_TESTS = [
     featureArea: 'E2E-F01+E2E-F03+E2E-F04',
     refs: ['D.05', 'S.09', 'H.01', 'J06'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't3-03' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -138,9 +152,27 @@ export const TIER3_TESTS = [
             'Top-level Workspace Tab Groups pending M3 integration'
           )
         }
-        return { verified: true }
+        const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
+        await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await groupBtn.click()
+        await page.getByRole('menuitem', { name: /New tab group|新建标签组/i }).first().click()
+        await page.getByRole('dialog').locator('input').first().fill('Group Two')
+        await page.getByRole('dialog').getByRole('button', { name: /^(Create group|Create|创建|确认)$/i }).first().click()
+        await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i }).first().click()
+        const tabsInGroup2 = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
+        assert.ok(tabsInGroup2 >= 1, 'Expected new workspace tab in Group Two')
+        const closeTabBtn = page.locator('[aria-label^="Close "], [aria-label^="关闭 "]').last()
+        await closeTabBtn.click()
+        assert.equal(
+          await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count(),
+          tabsInGroup2 - 1,
+          'Closing workspace tab in Group Two should remove it cleanly'
+        )
+        return { closedWorkspaceTabCleanly: true }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -150,7 +182,7 @@ export const TIER3_TESTS = [
     featureArea: 'E2E-F03+E2E-F05',
     refs: ['K.04', 'C.10.08', 'UX10'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
         // Verify NativeLink + include_native_source=true protocol layer on loopback Core
@@ -194,7 +226,7 @@ export const TIER3_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['N.general.01', 'Meta.limits', 'K.03'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'p1_only' })
+      const core = await startLoopbackAcsCore({ mode: 'p1_only', agentCollabRoot: ctx.agentCollabRoot })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
         const pid = core.info.project_id
@@ -246,7 +278,7 @@ export const TIER3_TESTS = [
     featureArea: 'E2E-F04+E2E-F05',
     refs: ['T03', 'T05', 'I.01', 'UX15'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       const httpSrv = await startLoopbackHttpServer()
       const repo = createTempGitRepo({ name: 't3-06' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })

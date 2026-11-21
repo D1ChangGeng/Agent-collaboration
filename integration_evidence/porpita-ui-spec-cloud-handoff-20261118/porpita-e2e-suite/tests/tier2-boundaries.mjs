@@ -6,16 +6,22 @@ import {
   addLocalFolderProject,
   assertAllWindowsHidden,
   closeElectronApp,
+  dismissStartupDialogs,
+  hasIntegratedWorkspaceShell,
   launchElectronApp,
+  M3_SELECTOR_CONTRACT,
   openSettingsPage,
   returnFromSettings,
   setViewportSize,
-  sleep
+  sleep,
+  stubOpenDialog,
+  waitForVisible
 } from '../lib/electron-harness.mjs'
 import { startLoopbackAcsCore } from '../lib/acs-core-harness.mjs'
 import {
   createSyntheticPluginFixture,
   createTempGitRepo,
+  createTempPlainFolder,
   startLoopbackHttpServer,
   verifyGitBaselines
 } from '../lib/fixtures.mjs'
@@ -26,20 +32,6 @@ import {
   runStagedBuildCoverage
 } from '../lib/spec-audit-harness.mjs'
 import { pendingIfSmoke } from '../lib/test-context.mjs'
-
-async function hasIntegratedWorkspaceShell(page) {
-  return await page.evaluate(() => {
-    const previewToggle = [...document.querySelectorAll('button')].some((b) =>
-      /Workspaces \(preview\)|工作空间（预览）/i.test(b.textContent || '')
-    )
-    const hasTabs =
-      Boolean(document.querySelector('[data-workspace-preview]')) ||
-      Boolean(document.querySelector('[data-workspace-tab-strip]')) ||
-      Boolean(document.querySelector('[data-workspace-group-selector]')) ||
-      Boolean(document.querySelector('[data-session-index]'))
-    return !previewToggle && hasTabs
-  })
-}
 
 export const TIER2_TESTS = [
   // =========================================================================
@@ -95,7 +87,8 @@ export const TIER2_TESTS = [
     async run(ctx) {
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+        const { app, page } = inst
+        if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -103,7 +96,26 @@ export const TIER2_TESTS = [
             'Top-level Workspace tab strip & group selector pending M3 integration'
           )
         }
-        return { verified: true }
+        const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
+        await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await setViewportSize(app, page, 360, 400)
+        const narrowMetrics = await page.evaluate((sel) => {
+          const el = document.querySelector(sel)
+          const r = el?.getBoundingClientRect()
+          return {
+            width: r ? r.width : 0,
+            maxAllowed: Math.min(132, window.innerWidth * 0.31) + 2,
+            insideViewport: Boolean(r && r.left >= 0 && r.right <= window.innerWidth + 1),
+            overflowX: document.documentElement.scrollWidth > window.innerWidth + 2
+          }
+        }, M3_SELECTOR_CONTRACT.groupSelector)
+        assert.ok(
+          narrowMetrics.width > 0 && narrowMetrics.width <= narrowMetrics.maxAllowed,
+          `Group selector exceeded min(132px, 31%): ${JSON.stringify(narrowMetrics)}`
+        )
+        assert.equal(narrowMetrics.insideViewport, true, 'Group selector clipped out of narrow viewport')
+        assert.equal(narrowMetrics.overflowX, false, 'Horizontal overflow at narrow group selector width')
+        return narrowMetrics
       } finally {
         await closeElectronApp(inst)
       }
@@ -117,9 +129,10 @@ export const TIER2_TESTS = [
     async run(ctx) {
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        const landingText = await inst.page.locator('body').innerText()
+        const { page } = inst
+        const landingText = await page.locator('body').innerText()
         assert.match(landingText, /Add project|添加项目/i, 'Empty landing CTA missing')
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+        if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -127,7 +140,13 @@ export const TIER2_TESTS = [
             'Top-level Workspace & General group protection pending M3 integration'
           )
         }
-        return { landingEmptyCtaPresent: true }
+        const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
+        await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await groupBtn.click()
+        const deleteGeneral = page.getByRole('menuitem', { name: /Delete.*General|删除.*通用/i })
+        assert.equal(await deleteGeneral.count(), 0, 'General group must not expose a delete action')
+        await page.keyboard.press('Escape')
+        return { landingEmptyCtaPresent: true, generalGroupProtected: true }
       } finally {
         await closeElectronApp(inst)
       }
@@ -141,7 +160,8 @@ export const TIER2_TESTS = [
     async run(ctx) {
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+        const { page } = inst
+        if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -149,7 +169,36 @@ export const TIER2_TESTS = [
             'Top-level Workspace tab groups pending M3 integration'
           )
         }
-        return { verified: true }
+        const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
+        await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
+        for (let g = 0; g < 2; g++) {
+          await groupBtn.click()
+          await page.getByRole('menuitem', { name: /New tab group|新建标签组/i }).first().click()
+          const input = page.getByRole('dialog').locator('input').first()
+          await input.fill('Alpha')
+          await page.getByRole('dialog').getByRole('button', { name: /^(Create group|Create|创建|确认)$/i }).first().click()
+          await sleep(100)
+        }
+        await groupBtn.click()
+        const alphaCount = await page.getByRole('menuitemradio', { name: /Alpha/i }).count()
+        assert.ok(alphaCount >= 1, 'Duplicate group creation broke group picker')
+        await page.keyboard.press('Escape')
+
+        for (let t = 0; t < 20; t++) {
+          await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+          await page.getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i }).first().click()
+        }
+        const overflowCheck = await page.evaluate((stripSel) => {
+          const strip = document.querySelector(stripSel)
+          return {
+            tabCount: document.querySelectorAll('[data-workspace-preview-tab], [data-workspace-tab]').length,
+            stripScrolls: strip ? strip.scrollWidth >= strip.clientWidth : false,
+            docOverflowX: document.documentElement.scrollWidth > window.innerWidth + 2
+          }
+        }, M3_SELECTOR_CONTRACT.tabStrip)
+        assert.ok(overflowCheck.tabCount >= 20, `Expected >=20 tabs, got ${overflowCheck.tabCount}`)
+        assert.equal(overflowCheck.docOverflowX, false, '20+ tabs leaked document horizontal overflow')
+        return overflowCheck
       } finally {
         await closeElectronApp(inst)
       }
@@ -191,7 +240,15 @@ export const TIER2_TESTS = [
               'App survived corrupt porpita-workspaces.json cleanly; Workspace v3 layout reader pending M3 integration'
             )
           }
-          return { survivedCorruptLayout: true }
+          const retryOrNotice = await relaunched.page.evaluate(() => ({
+            hasNotice: Boolean(document.querySelector('[data-workspace-preview] [role="status"], [role="alert"]')),
+            hasTabs: document.querySelectorAll('[data-workspace-preview-tab], [data-workspace-tab]').length > 0
+          }))
+          assert.ok(
+            retryOrNotice.hasNotice || retryOrNotice.hasTabs,
+            'Expected recoverable status notice or recovered workspace shell after corrupt layout JSON'
+          )
+          return { survivedCorruptLayout: true, ...retryOrNotice }
         } finally {
           await closeElectronApp(relaunched, { removeTempDir: true })
         }
@@ -207,9 +264,12 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F01',
     refs: ['D.07.05', 'J12'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't2-f01-06' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -217,9 +277,17 @@ export const TIER2_TESTS = [
             'Integrated multi-host Workspace layout pending M3'
           )
         }
-        return { verified: true }
+        const activePane = page.locator('[data-workspace-preview-session], [data-workspace-session]').first()
+        await activePane.waitFor({ state: 'visible', timeout: 8000 })
+        const interactive = await page.evaluate(() => {
+          const settingsBtn = document.querySelector('button[aria-label="Settings"], button[aria-label="设置"]')
+          return Boolean(settingsBtn && !settingsBtn.hasAttribute('disabled'))
+        })
+        assert.equal(interactive, true, 'Workbench controls must remain interactive')
+        return { unaffectedPaneInteractive: interactive }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -260,7 +328,7 @@ export const TIER2_TESTS = [
         if (await keepGoingBtn.isVisible().catch(() => false)) {
           await keepGoingBtn.click()
           await confirmDialog.waitFor({ state: 'hidden', timeout: 5000 })
-          assert.equal(await modal.isVisible(), true, 'Onboarding modal should remain open after "No, keep going"')
+          await modal.waitFor({ state: 'visible', timeout: 3000 })
           await page.keyboard.press('Escape')
           await confirmDialog.waitFor({ state: 'visible', timeout: 8000 })
         }
@@ -278,31 +346,229 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F02',
     refs: ['F02', 'O.01', 'STYLEGUIDE:61'],
     async run(ctx) {
-      const repo = createTempGitRepo({ name: 't2-f02-02' })
+      const { execFileSync } = await import('node:child_process')
+      const fs = await import('node:fs')
+      const os = await import('node:os')
+      const path = await import('node:path')
+
+      const plain = createTempPlainFolder({ name: 't2-f02-02-plain' })
+      // Build a real local git repo whose local `main` is 1 commit behind `origin/main` AND has uncommitted
+      // tracked edits so creating a worktree with "Keep Local Main Up to Date" enabled fires Porpita's
+      // persistent (`duration: Infinity`) localBaseRefRefresh warning Sonner toast.
+      const gitTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'porpita-t2-f02-02-'))
+      const seedDir = path.join(gitTmp, 'seed')
+      const bareDir = path.join(gitTmp, 'origin.git')
+      const behindDir = path.join(gitTmp, 'behind-repo')
+      const git = (cwd, args) => execFileSync('git', args, { cwd, stdio: 'pipe', encoding: 'utf8' })
+      fs.mkdirSync(seedDir, { recursive: true })
+      git(seedDir, ['init', '-b', 'main'])
+      git(seedDir, ['config', 'user.name', 'Porpita E2E'])
+      git(seedDir, ['config', 'user.email', 'e2e@porpita.test'])
+      fs.writeFileSync(path.join(seedDir, 'README.md'), 'c1\n', 'utf8')
+      git(seedDir, ['add', 'README.md'])
+      git(seedDir, ['commit', '-m', 'c1'])
+      git(gitTmp, ['clone', '--bare', seedDir, bareDir])
+      git(gitTmp, ['clone', bareDir, behindDir])
+      git(behindDir, ['config', 'user.name', 'Porpita E2E'])
+      git(behindDir, ['config', 'user.email', 'e2e@porpita.test'])
+      fs.writeFileSync(path.join(seedDir, 'README.md'), 'c1\nc2\n', 'utf8')
+      git(seedDir, ['commit', '-am', 'c2'])
+      git(seedDir, ['push', bareDir, 'main:main'])
+      git(behindDir, ['fetch', 'origin'])
+      fs.writeFileSync(path.join(behindDir, 'README.md'), 'dirty-local-edit\n', 'utf8')
+
       const inst = await launchElectronApp({
         porpitaRoot: ctx.porpitaRoot,
-        width: 600,
-        height: 400
+        width: 1024,
+        height: 700
       })
       try {
         const { app, page } = inst
-        await addLocalFolderProject(app, page, repo.repoPath)
-        // Verify SecuritySurface/modal z-order & button reachability at 600x400
+        await dismissStartupDialogs(page)
+
+        // 1. Enable Settings -> Git & Source Control -> Keep Local Main Up to Date
+        await openSettingsPage(page)
+        const gitNav = page
+          .locator('aside button')
+          .filter({ hasText: /Git & Source Control|源代码管理/i })
+          .first()
+        await gitNav.waitFor({ state: 'visible', timeout: 8000 })
+        await gitNav.click()
+        const gitSec = page.locator('section[data-settings-section="git"]').first()
+        await gitSec.waitFor({ state: 'visible', timeout: 8000 })
+        const keepSwitch = gitSec
+          .locator(
+            'button[role="switch"][aria-label*="Keep Local Main"], button[role="switch"][aria-label*="保持本地"]'
+          )
+          .first()
+        await keepSwitch.waitFor({ state: 'visible', timeout: 8000 })
+        if ((await keepSwitch.getAttribute('aria-checked')) !== 'true') {
+          await keepSwitch.click()
+        }
+        await returnFromSettings(page)
+
+        // 2. Add the dirty behind-origin repo and create one worktree so `duration: Infinity` warning toast fires
+        await stubOpenDialog(app, behindDir)
+        const landingAddBtn = page
+          .locator('button:visible')
+          .filter({ hasText: /^(Add project|添加项目)$/i })
+          .first()
+        await landingAddBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await landingAddBtn.click()
+        const browseSeedBtn = page.getByRole('button', { name: /Browse folder|浏览文件夹/i }).first()
+        await browseSeedBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await browseSeedBtn.click()
+        await page.locator('[role="dialog"]').first().waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {})
+
+        const composer = page.locator('[data-workspace-composer-root="true"]').first()
+        if (!(await waitForVisible(composer, 2500))) {
+          const newWsBtn = page
+            .locator(
+              'button[data-contextual-tour-target="workspace-create-control"], button[aria-label="New workspace"], button[aria-label="新建工作空间"]'
+            )
+            .first()
+          await newWsBtn.waitFor({ state: 'visible', timeout: 10000 })
+          await newWsBtn.click()
+          await composer.waitFor({ state: 'visible', timeout: 10000 })
+        }
+        const createBtn = composer
+          .getByRole('button', {
+            name: /^(Create worktree|Create workspace|Create|创建工作树|创建工作空间|创建)$/i
+          })
+          .last()
+        await createBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await createBtn.click()
+
+        const warningToast = page
+          .locator('[data-sonner-toaster] [data-sonner-toast]')
+          .filter({ hasText: /was not refreshed|Local main|未刷新/i })
+          .first()
+        await warningToast.waitFor({ state: 'visible', timeout: 15000 })
+        if ((await page.locator('[role="dialog"]').count()) > 0) {
+          await page.keyboard.press('Escape').catch(() => {})
+          await page.locator('[role="dialog"]').first().waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+        }
+
+        // Dismiss any overlay notification card (e.g. Codex shared-settings card) so 600x400 controls stay unobstructed
+        const cardDismissBtn = page
+          .locator('[data-notification-card-stack] button[aria-label="Dismiss"], [data-notification-card-stack] button[aria-label="关闭"]')
+          .first()
+        for (let i = 0; i < 3 && (await waitForVisible(cardDismissBtn, 500)); i += 1) {
+          await cardDismissBtn.click().catch(() => {})
+        }
+
+        // 3. Resize to 600x400 with the persistent Sonner toast active
         await setViewportSize(app, page, 600, 400)
-        const dialogCount = await page.locator('[role="dialog"]:visible').count()
-        const toastInFront = await page.evaluate(() => {
-          const modal = document.querySelector('[role="dialog"], [role="alertdialog"]')
-          const toaster = document.querySelector('[data-sonner-toaster]')
-          if (!modal || !toaster) return false
-          const mz = Number.parseInt(getComputedStyle(modal).zIndex || '50', 10)
-          const tz = Number.parseInt(getComputedStyle(toaster).zIndex || '40', 10)
-          return tz > mz
-        })
-        assert.equal(toastInFront, false, 'Sonner toast z-index must never exceed active modal dialog')
-        return { viewport: '600x400', dialogCount, toastInFront }
+        await stubOpenDialog(app, plain.folderPath)
+
+        const verifyModalAt600x400 = async (label, controlSelectors) => {
+          const check = await page.evaluate((selectors) => {
+            const dialogs = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')]
+            const modal = dialogs.at(-1)
+            const toaster = document.querySelector('[data-sonner-toaster]')
+            const activeToast = document.querySelector('[data-sonner-toast][data-visible="true"]')
+            if (!modal) return { dialogCount: 0 }
+
+            const mz = Number.parseInt(getComputedStyle(modal).zIndex || '50', 10)
+            const tz = toaster ? Number.parseInt(getComputedStyle(toaster).zIndex || '47', 10) : null
+            const controls = []
+            for (const sel of selectors) {
+              for (const el of modal.querySelectorAll(sel)) {
+                const r = el.getBoundingClientRect()
+                if (r.width <= 0 || r.height <= 0) continue
+                const cx = Math.min(window.innerWidth - 1, Math.max(0, r.left + r.width / 2))
+                const cy = Math.min(window.innerHeight - 1, Math.max(0, r.top + r.height / 2))
+                const stack = document.elementsFromPoint(cx, cy)
+                const top = stack[0] || null
+                const hitsModal = Boolean(top && modal.contains(top))
+                const modalIdx = stack.findIndex((node) => modal.contains(node))
+                const toastIdx = stack.findIndex((node) =>
+                  Boolean(node.closest?.('[data-sonner-toaster], [data-sonner-toast]'))
+                )
+                const hitsToast = toastIdx !== -1 && (modalIdx === -1 || toastIdx <= modalIdx)
+                controls.push({
+                  text: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 40),
+                  fitsViewport:
+                    r.left >= 0 &&
+                    r.top >= 0 &&
+                    r.right <= window.innerWidth + 1 &&
+                    r.bottom <= window.innerHeight + 1,
+                  hitsModal,
+                  hitsToast,
+                  rect: { left: Math.round(r.left), top: Math.round(r.top), right: Math.round(r.right), bottom: Math.round(r.bottom) }
+                })
+              }
+            }
+            return {
+              innerWidth: window.innerWidth,
+              innerHeight: window.innerHeight,
+              dialogCount: dialogs.length,
+              modalOverlayOpen: document.body.hasAttribute('data-modal-overlay-open'),
+              toastsRaised: document.body.querySelector('[data-toasts-raised]') !== null,
+              toasterPresent: Boolean(toaster),
+              activeToastPresent: Boolean(activeToast),
+              mz,
+              tz,
+              toastInFront: tz !== null && mz !== null ? tz > mz : null,
+              controls
+            }
+          }, controlSelectors)
+
+          assert.ok(check.dialogCount >= 1, `${label}: expected >= 1 open dialog at 600x400`)
+          assert.equal(check.modalOverlayOpen, true, `${label}: body[data-modal-overlay-open] missing`)
+          assert.equal(check.toastsRaised, false, `${label}: existing toast unexpectedly raised in front of non-suppressing modal`)
+          assert.equal(check.toasterPresent, true, `${label}: expected active [data-sonner-toaster] in DOM`)
+          assert.equal(check.activeToastPresent, true, `${label}: expected visible [data-sonner-toast][data-visible="true"] in DOM`)
+          assert.equal(check.toastInFront, false, `${label}: toast z-index (${check.tz}) > modal z-index (${check.mz})`)
+          assert.ok(check.controls.length >= 2, `${label}: expected >= 2 modal controls checked, got ${check.controls.length}`)
+          for (const c of check.controls) {
+            assert.equal(c.fitsViewport, true, `${label}: control clipped outside 600x400: ${JSON.stringify(c)}`)
+            assert.equal(c.hitsModal, true, `${label}: elementsFromPoint at control center did not hit modal: ${JSON.stringify(c)}`)
+            assert.equal(c.hitsToast, false, `${label}: toast overlapped modal control: ${JSON.stringify(c)}`)
+          }
+          return check
+        }
+
+        // 3. Open AddRepoDialog via Sidebar Add project button (expanding sidebar if collapsed at 600x400)
+        const sidebarAddBtn = page
+          .locator('button[aria-label="Add project"], button[aria-label="添加项目"]')
+          .first()
+        if (!(await waitForVisible(sidebarAddBtn, 1000))) {
+          const toggleSidebarBtn = page
+            .locator('button[aria-label="Toggle sidebar"], button[aria-label="切换侧边栏"]')
+            .first()
+          if (await waitForVisible(toggleSidebarBtn, 3000)) {
+            await toggleSidebarBtn.click()
+          }
+        }
+        await sidebarAddBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await sidebarAddBtn.focus()
+        await page.keyboard.press('Enter')
+        const browseBtn = page.getByRole('button', { name: /Browse folder|浏览文件夹/i }).first()
+        await browseBtn.waitFor({ state: 'visible', timeout: 8000 })
+        const addRepoCheck = await verifyModalAt600x400('AddRepoDialog', [
+          'button[data-add-repo-action]',
+          '[data-slot="dialog-close"]'
+        ])
+
+        // 4. Click Browse folder -> NonGitFolderDialog with explicit primary + Cancel + Close buttons
+        await browseBtn.click()
+        const openAsFolderBtn = page
+          .getByRole('button', { name: /^(Open as Folder|作为文件夹打开)$/i })
+          .first()
+        await openAsFolderBtn.waitFor({ state: 'visible', timeout: 8000 })
+        const nonGitCheck = await verifyModalAt600x400('NonGitFolderDialog', [
+          '[data-slot="dialog-footer"] button',
+          '[data-slot="dialog-close"]'
+        ])
+        await page.keyboard.press('Escape')
+        return { viewport: '600x400', addRepoCheck, nonGitCheck }
       } finally {
         await closeElectronApp(inst)
-        repo.cleanup()
+        plain.cleanup()
+        try {
+          fs.rmSync(gitTmp, { recursive: true, force: true })
+        } catch {}
       }
     }
   },
@@ -442,9 +708,12 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['D.07.01'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't2-f03-01' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -452,9 +721,27 @@ export const TIER2_TESTS = [
             'Integrated dual-pane Workspace layout pending M3'
           )
         }
-        return { verified: true }
+        const addSessionBtn = page.getByRole('button', { name: /Add session|添加会话/i }).first()
+        if (await waitForVisible(addSessionBtn, 3000)) await addSessionBtn.click()
+        const splitBox = page.locator(M3_SELECTOR_CONTRACT.splitLayout).first()
+        await splitBox.waitFor({ state: 'visible', timeout: 8000 })
+        assert.equal(await splitBox.getAttribute('data-preview-split'), 'side-by-side')
+        await setViewportSize(app, page, 640, 600)
+        await page.waitForFunction(
+          (sel) => document.querySelector(sel)?.getAttribute('data-preview-split') === 'focused',
+          M3_SELECTOR_CONTRACT.splitLayout,
+          { timeout: 6000 }
+        )
+        await setViewportSize(app, page, 1280, 800)
+        await page.waitForFunction(
+          (sel) => document.querySelector(sel)?.getAttribute('data-preview-split') === 'side-by-side',
+          M3_SELECTOR_CONTRACT.splitLayout,
+          { timeout: 6000 }
+        )
+        return { cutoffCollapseAndRestoreVerified: true }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -464,9 +751,12 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['D.03.01'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't2-f03-02' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -474,9 +764,30 @@ export const TIER2_TESTS = [
             'Integrated Workspace split divider pending M3'
           )
         }
-        return { verified: true }
+        const addSessionBtn = page.getByRole('button', { name: /Add session|添加会话/i }).first()
+        if (await waitForVisible(addSessionBtn, 3000)) await addSessionBtn.click()
+        const separator = page.getByRole('separator').first()
+        await separator.waitFor({ state: 'visible', timeout: 8000 })
+        const minVal = Number.parseFloat((await separator.getAttribute('aria-valuemin')) || '15')
+        const maxVal = Number.parseFloat((await separator.getAttribute('aria-valuemax')) || '85')
+        assert.ok(minVal >= 15 && maxVal <= 85, `Expected divider bounds within 15..85, got ${minVal}..${maxVal}`)
+        await separator.focus()
+        await page.keyboard.press('Home')
+        const lowVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
+        assert.ok(lowVal >= minVal, `Home clamped below minVal: ${lowVal} < ${minVal}`)
+        const box = await separator.boundingBox()
+        assert.ok(box, 'Separator missing bounding box')
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+        await page.mouse.down()
+        await page.mouse.move(box.x + 150, box.y + box.height / 2)
+        await page.keyboard.press('Escape')
+        await page.mouse.up()
+        const revertedVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
+        assert.equal(revertedVal, lowVal, `Escape mid-drag must revert ratio (${revertedVal} !== ${lowVal})`)
+        return { minVal, maxVal, lowVal, revertedVal }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -486,9 +797,12 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['C.10', 'S.02', 'C.10.09'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't2-f03-03' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -496,9 +810,19 @@ export const TIER2_TESTS = [
             'Session Index integration pending M3'
           )
         }
-        return { verified: true }
+        const sessionIndex = page.locator(M3_SELECTOR_CONTRACT.sessionIndex).first()
+        await sessionIndex.waitFor({ state: 'visible', timeout: 8000 })
+        const searchInput = sessionIndex.locator('input').first()
+        await searchInput.fill('__zero_match_probe__')
+        const status = sessionIndex.locator('[role="status"]').first()
+        await status.waitFor({ state: 'visible', timeout: 5000 })
+        const statusText = (await status.innerText()).trim()
+        assert.ok(statusText.length > 0, 'Session Index 0-match status message empty')
+        await searchInput.fill('')
+        return { zeroMatchStatusText: statusText }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -508,9 +832,12 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['C.10', 'T.03'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't2-f03-04' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -518,9 +845,22 @@ export const TIER2_TESTS = [
             'Session Index & Workspace drag-drop integration pending M3'
           )
         }
-        return { verified: true }
+        const tab = page.locator(M3_SELECTOR_CONTRACT.workspaceTab).first()
+        await tab.waitFor({ state: 'visible', timeout: 8000 })
+        const beforeCount = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
+        const box = await tab.boundingBox()
+        assert.ok(box, 'Workspace tab missing bounding box')
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+        await page.mouse.down()
+        await page.mouse.move(box.x + box.width / 2, box.y + 200)
+        await page.keyboard.press('Escape')
+        await page.mouse.up()
+        const afterCount = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
+        assert.equal(afterCount, beforeCount, 'Aborted drag must leave tab count unchanged')
+        return { beforeCount, afterCount }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -530,9 +870,14 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['G.09.02'],
     async run(ctx) {
+      const repoA = createTempGitRepo({ name: 't2-f03-05-a', files: { 'shared.md': '# Repo A Unique\n' } })
+      const repoB = createTempGitRepo({ name: 't2-f03-05-b', files: { 'shared.md': '# Repo B Unique\n' } })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repoA.repoPath)
+        await addLocalFolderProject(app, page, repoB.repoPath)
+        if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -540,9 +885,21 @@ export const TIER2_TESTS = [
             'Pinned Fixed-Scope SidePanel Explorer integration pending M3'
           )
         }
-        return { verified: true }
+        // Switch back to Repo A worktree, open Explorer pinned to Repo A, then switch active worktree to Repo B
+        await page.getByText(path.basename(repoA.repoPath)).first().click()
+        await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(Open Explorer|打开资源管理器)$/i }).first().click()
+        const explorer = page.locator(M3_SELECTOR_CONTRACT.explorer).first()
+        await explorer.waitFor({ state: 'visible', timeout: 8000 })
+        const scopeBefore = (await explorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
+        await page.getByText(path.basename(repoB.repoPath)).first().click()
+        const scopeAfter = (await explorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
+        assert.equal(scopeAfter, scopeBefore, 'Pinned Explorer scope drifted after switching active RepoB')
+        return { scopeBefore, scopeAfter }
       } finally {
         await closeElectronApp(inst)
+        repoA.cleanup()
+        repoB.cleanup()
       }
     }
   },
@@ -766,7 +1123,7 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['communication-contract-adoption'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const pid = core.info.project_id
         const conv = await core.request(
@@ -774,12 +1131,15 @@ export const TIER2_TESTS = [
           `/projects/${pid}/conversations/resolve?with=${encodeURIComponent(core.addresses.peer_b)}`,
           { token: core.tokens.client }
         )
+        assert.equal(conv.status, 200, conv.text)
         const cid = conv.json.conversation_id
         const draft = await core.request('GET', `/projects/${pid}/conversations/${cid}/draft`, {
           token: core.tokens.client
         })
         assert.equal(draft.status, 200)
         assert.equal(draft.json.revision, 0)
+        assert.equal(draft.json.content, '', 'Empty rev-0 draft must have empty content')
+        assert.deepEqual(draft.json.attachment_refs, [], 'Empty rev-0 draft must have empty attachment_refs')
         assert.equal(draft.json.updated_at, null, 'Empty rev-0 draft must have updated_at=null')
 
         // Emit legacy notice with created_at=NULL
@@ -803,7 +1163,7 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['T05', 'COMMUNICATION-CLIENT-API'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const pid = core.info.project_id
         const conv = await core.request(
@@ -811,6 +1171,7 @@ export const TIER2_TESTS = [
           `/projects/${pid}/conversations/resolve?with=${encodeURIComponent(core.addresses.peer_b)}`,
           { token: core.tokens.client }
         )
+        assert.equal(conv.status, 200, conv.text)
         const cid = conv.json.conversation_id
 
         const put1 = await core.request('PUT', `/projects/${pid}/conversations/${cid}/draft`, {
@@ -818,7 +1179,8 @@ export const TIER2_TESTS = [
           headers: { 'Idempotency-Key': 'cas-key-1', 'If-Match': '"0"' },
           body: { content: 'First draft content', attachment_refs: [] }
         })
-        assert.equal(put1.status, 200)
+        assert.equal(put1.status, 200, put1.text)
+        assert.equal(put1.json.revision, 1)
 
         // Exact retry with same key and body succeeds idempotently
         const retryExact = await core.request('PUT', `/projects/${pid}/conversations/${cid}/draft`, {
@@ -826,24 +1188,34 @@ export const TIER2_TESTS = [
           headers: { 'Idempotency-Key': 'cas-key-1', 'If-Match': '"0"' },
           body: { content: 'First draft content', attachment_refs: [] }
         })
-        assert.equal(retryExact.status, 200)
+        assert.equal(retryExact.status, 200, retryExact.text)
+        assert.equal(retryExact.json.revision, 1)
+        assert.equal(retryExact.json.content, 'First draft content')
 
-        // Same Idempotency-Key with altered body conflicts (409)
+        // Same Idempotency-Key with altered body conflicts (409 idempotency_conflict)
         const altered = await core.request('PUT', `/projects/${pid}/conversations/${cid}/draft`, {
           token: core.tokens.client,
           headers: { 'Idempotency-Key': 'cas-key-1', 'If-Match': '"0"' },
           body: { content: 'Altered body under same key', attachment_refs: [] }
         })
         assert.equal(altered.status, 409, altered.text)
+        assert.equal(altered.json?.error?.code, 'idempotency_conflict', altered.text)
 
-        // New key with stale If-Match: "0" rejected (409/412)
+        // New key with stale If-Match: "0" rejected (409 revision_conflict)
         const staleCas = await core.request('PUT', `/projects/${pid}/conversations/${cid}/draft`, {
           token: core.tokens.client,
           headers: { 'Idempotency-Key': 'cas-key-2', 'If-Match': '"0"' },
           body: { content: 'Stale write attempt', attachment_refs: [] }
         })
-        assert.ok(staleCas.status === 409 || staleCas.status === 412, staleCas.text)
-        return { exactRetry: retryExact.status, alteredConflict: altered.status, staleCas: staleCas.status }
+        assert.equal(staleCas.status, 409, staleCas.text)
+        assert.equal(staleCas.json?.error?.code, 'revision_conflict', staleCas.text)
+        return {
+          exactRetry: retryExact.status,
+          alteredConflict: altered.status,
+          alteredCode: altered.json?.error?.code,
+          staleCas: staleCas.status,
+          staleCasCode: staleCas.json?.error?.code
+        }
       } finally {
         await core.cleanup()
       }
@@ -855,7 +1227,7 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['T05', 'UX15'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const pid = core.info.project_id
         await core.setFault({ drop_next_send_response: true })
@@ -866,8 +1238,10 @@ export const TIER2_TESTS = [
           headers: { 'Idempotency-Key': idemKey },
           body: { to: core.addresses.peer_b, content: 'Commit before simulated drop' }
         })
-        assert.equal(first.status, 503)
-        assert.equal(first.json.error.effect_state, 'committed')
+        assert.equal(first.status, 503, first.text)
+        assert.equal(first.json?.error?.code, 'post_commit_observation_lost', first.text)
+        assert.equal(first.json?.error?.retryable, true, first.text)
+        assert.equal(first.json?.error?.effect_state, 'committed', first.text)
 
         // Restart loopback Core server against same PostgreSQL DB, then retry with same Idempotency-Key
         await core.restartServer({ reusePort: true })
@@ -877,12 +1251,14 @@ export const TIER2_TESTS = [
           body: { to: core.addresses.peer_b, content: 'Commit before simulated drop' }
         })
         assert.ok(retry.status === 200 || retry.status === 201, retry.text)
+        assert.ok(retry.json?.message?.message_handle, 'Retry response must include committed message_handle')
 
         const list = await core.request(
           'GET',
           `/projects/${pid}/messages?with=${encodeURIComponent(core.addresses.peer_b)}`,
           { token: core.tokens.client }
         )
+        assert.equal(list.status, 200, list.text)
         const matching = list.json.items.filter(
           (m) => (typeof m.content === 'string' ? m.content : m.content?.text) === 'Commit before simulated drop'
         )
@@ -899,7 +1275,7 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['COMMUNICATION-CLIENT-API:92'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const pid = core.info.project_id
         const maxOk = 'a'.repeat(256 * 1024)
@@ -909,6 +1285,7 @@ export const TIER2_TESTS = [
           body: { to: core.addresses.peer_b, content: maxOk }
         })
         assert.equal(resOk.status, 201, `256 KiB payload should succeed: ${resOk.text}`)
+        assert.ok(resOk.json?.message?.message_handle, '256 KiB payload missing message_handle')
 
         const tooBig = 'a'.repeat(256 * 1024 + 1)
         const resBig = await core.request('POST', `/projects/${pid}/messages`, {
@@ -917,7 +1294,7 @@ export const TIER2_TESTS = [
           body: { to: core.addresses.peer_b, content: tooBig }
         })
         assert.equal(resBig.status, 413, `256 KiB + 1 byte must be rejected with 413: ${resBig.text}`)
-        assert.equal(resBig.json.error.code, 'content_too_large')
+        assert.equal(resBig.json?.error?.code, 'content_too_large', resBig.text)
         return { maxOkStatus: resOk.status, oversizeStatus: resBig.status }
       } finally {
         await core.cleanup()
@@ -930,7 +1307,7 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['COMMUNICATION-CLIENT-API:286', 'communication-contract-adoption'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const pid = core.info.project_id
         // Unlinked message (message_only -> no native invocation)
@@ -939,7 +1316,7 @@ export const TIER2_TESTS = [
           headers: { 'Idempotency-Key': 'unlinked-msg-1' },
           body: { to: core.addresses.peer_b, content: 'Plain message_only text', activation: 'message_only' }
         })
-        assert.equal(send.status, 201)
+        assert.equal(send.status, 201, send.text)
         const handle = encodeURIComponent(send.json.message.message_handle)
 
         const invalidBool = await core.request(
@@ -948,26 +1325,49 @@ export const TIER2_TESTS = [
           { token: core.tokens.client }
         )
         assert.equal(invalidBool.status, 400, invalidBool.text)
+        assert.equal(invalidBool.json?.error?.code, 'invalid_argument', invalidBool.text)
 
         const unlinkedRead = await core.request(
           'GET',
           `/projects/${pid}/messages/${handle}?include_native_source=true`,
           { token: core.tokens.client }
         )
-        assert.equal(unlinkedRead.status, 200)
+        assert.equal(unlinkedRead.status, 200, unlinkedRead.text)
         assert.equal(unlinkedRead.json.native_source.available, false, 'Unlinked msg must report available=false')
 
-        // Stale expected_provider_generation on NativeLinkWrite
+        // Stale expected_provider_generation on NativeLinkWrite -> exact 409 native_source_selection_changed
         const staleLink = await core.request('PUT', `/projects/${pid}/native-links/link-stale`, {
           token: core.tokens.client,
           headers: { 'Idempotency-Key': 'link-stale-1' },
           body: { ...core.nativeLinkFixture, expected_provider_generation: 'stale-generation-xyz' }
         })
-        assert.ok(staleLink.status >= 400, `Expected rejection on stale provider generation: ${staleLink.text}`)
+        assert.equal(staleLink.status, 409, `Expected 409 on stale provider generation: ${staleLink.text}`)
+        assert.equal(
+          staleLink.json?.error?.code,
+          'native_source_selection_changed',
+          `Unexpected error code on stale provider generation: ${staleLink.text}`
+        )
+
+        // Stale expected_binding_epoch on NativeLinkWrite -> exact 409 revision_conflict
+        const staleEpoch = await core.request('PUT', `/projects/${pid}/native-links/link-stale-epoch`, {
+          token: core.tokens.client,
+          headers: { 'Idempotency-Key': 'link-stale-epoch-1' },
+          body: { ...core.nativeLinkFixture, expected_binding_epoch: core.nativeLinkFixture.expected_binding_epoch + 1 }
+        })
+        assert.equal(staleEpoch.status, 409, `Expected 409 on stale binding epoch: ${staleEpoch.text}`)
+        assert.equal(
+          staleEpoch.json?.error?.code,
+          'revision_conflict',
+          `Unexpected error code on stale binding epoch: ${staleEpoch.text}`
+        )
+
         return {
           invalidBoolStatus: invalidBool.status,
           unlinkedAvailable: unlinkedRead.json.native_source.available,
-          staleLinkStatus: staleLink.status
+          staleLinkStatus: staleLink.status,
+          staleLinkCode: staleLink.json?.error?.code,
+          staleEpochStatus: staleEpoch.status,
+          staleEpochCode: staleEpoch.json?.error?.code
         }
       } finally {
         await core.cleanup()
@@ -981,7 +1381,8 @@ export const TIER2_TESTS = [
     refs: ['T07', 'T12', 'Meta.limits'],
     async run(ctx) {
       // Part A: Token revocation (T07) & third-party isolation (T12)
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
+      let revokedRead = null
       try {
         const pid = core.info.project_id
         const msg = await core.request('POST', `/projects/${pid}/messages`, {
@@ -989,37 +1390,41 @@ export const TIER2_TESTS = [
           headers: { 'Idempotency-Key': 'acl-msg-1' },
           body: { to: core.addresses.peer_b, content: 'Secret between client and peer_b' }
         })
-        assert.equal(msg.status, 201)
+        assert.equal(msg.status, 201, msg.text)
 
-        // Third party peer_c must be denied (403) reading client<->peer_b message
+        // Third party peer_c must be denied (403 authorization_denied) reading client<->peer_b message
         const thirdParty = await core.request(
           'GET',
           `/projects/${pid}/messages/${encodeURIComponent(msg.json.message.message_handle)}`,
           { token: core.tokens.peer_c }
         )
-        assert.equal(thirdParty.status, 403, `Expected 403 for peer_c, got ${thirdParty.status}`)
+        assert.equal(thirdParty.status, 403, `Expected 403 for peer_c, got ${thirdParty.status}: ${thirdParty.text}`)
+        assert.equal(thirdParty.json?.error?.code, 'authorization_denied', thirdParty.text)
 
-        // Revoke client token -> subsequent reads/writes fail (403) while peer_b remains functional
+        // Revoke client token -> subsequent reads/writes fail (403 authorization_denied) while peer_b remains functional
         await core.revokeToken('client')
-        const revokedRead = await core.request('GET', `/projects/${pid}/messages`, {
+        revokedRead = await core.request('GET', `/projects/${pid}/messages`, {
           token: core.tokens.client
         })
-        assert.ok(revokedRead.status === 401 || revokedRead.status === 403, revokedRead.text)
+        assert.equal(revokedRead.status, 403, `Expected 403 on revoked grant, got ${revokedRead.text}`)
+        assert.equal(revokedRead.json?.error?.code, 'authorization_denied', revokedRead.text)
 
         const validPeerRead = await core.request('GET', `/projects/${pid}/messages`, {
           token: core.tokens.peer_b
         })
-        assert.equal(validPeerRead.status, 200)
+        assert.equal(validPeerRead.status, 200, validPeerRead.text)
+        assert.ok(Array.isArray(validPeerRead.json?.items), 'Peer read must return items array')
       } finally {
         await core.cleanup()
       }
 
       // Part B: P1-only mode /meta.features boundary
-      const p1Core = await startLoopbackAcsCore({ mode: 'p1_only' })
+      const p1Core = await startLoopbackAcsCore({ mode: 'p1_only', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const meta = await p1Core.request('GET', '/meta')
-        assert.equal(meta.status, 200)
+        assert.equal(meta.status, 200, meta.text)
         assert.equal(meta.json.limits.attachment_count, 0)
+        assert.equal(meta.json.limits.event_replay_seconds, 0)
         assert.equal(meta.json.features.includes('attachments'), false)
         assert.equal(meta.json.features.includes('events'), false)
         const disabledAtt = await p1Core.request('POST', `/projects/${p1Core.info.project_id}/attachments`, {
@@ -1027,9 +1432,14 @@ export const TIER2_TESTS = [
           headers: { 'Idempotency-Key': 'p1-att-blocked' },
           body: { name: 'a.txt', media_type: 'text/plain', bytes: 4, sha256: '0'.repeat(64) }
         })
-        assert.equal(disabledAtt.status, 409)
-        assert.equal(disabledAtt.json.error.code, 'capability_unsupported')
-        return { p1OnlyAttachmentStatus: disabledAtt.status }
+        assert.equal(disabledAtt.status, 409, disabledAtt.text)
+        assert.equal(disabledAtt.json?.error?.code, 'capability_unsupported', disabledAtt.text)
+        return {
+          revokedStatus: revokedRead.status,
+          revokedCode: revokedRead.json?.error?.code,
+          p1OnlyAttachmentStatus: disabledAtt.status,
+          p1OnlyAttachmentCode: disabledAtt.json?.error?.code
+        }
       } finally {
         await p1Core.cleanup()
       }
@@ -1049,6 +1459,7 @@ export const TIER2_TESTS = [
         specRoot: ctx.specRoot,
         porpitaRoot: ctx.porpitaRoot,
         historyRoot: ctx.historyRoot,
+        agentCollabRoot: ctx.agentCollabRoot,
         injectBrokenAnchor: true
       })
       assert.notEqual(neg.buildCoverageExitCode, 0, 'Negative probe must exit non-zero on broken anchor')
@@ -1119,7 +1530,7 @@ export const TIER2_TESTS = [
     refs: ['check_design_evidence.py'],
     async run(ctx) {
       const res = runDesignEvidenceCheck({
-        agentCollabRoot: 'D:\\Chatgpt\\Agent-collaboration',
+        agentCollabRoot: ctx.agentCollabRoot,
         porpitaRoot: ctx.porpitaRoot
       })
       if (res.applicable) {
@@ -1135,8 +1546,8 @@ export const TIER2_TESTS = [
     refs: ['PROJECT', 'R3'],
     async run(ctx) {
       const before = verifyGitBaselines({
-        agentCollabRoot: 'D:\\Chatgpt\\Agent-collaboration',
-        porpitaRoot: ctx.historyRoot
+        agentCollabRoot: ctx.agentCollabRoot,
+        historyRoot: ctx.historyRoot
       })
       assert.equal(before.ok, true, `Baseline verification failed: ${before.issues.join(' | ')}`)
       // Also verify .tmp/porpita-ui-spec-03 has not been modified by any E2E suite file

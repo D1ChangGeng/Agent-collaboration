@@ -1,6 +1,6 @@
 # id|界面／对象|源码|当前行为|处置|目标规范|回放
 O.modal.new-workspace-composer|新工作区 Composer 覆盖层|NewWorkspaceComposerModal.tsx,AppRootSurfaces.tsx|全局 modal 与 pending creation 交接|保留|持久化可编辑草稿，退出回到触发点；与新建用户布局区别|J02,J07
-O.modal.add-repo|添加项目入口|AddRepoDialog.tsx,AppRootSurfaces.tsx|本机／Host，浏览、克隆或新建不同步骤|保留|目标范围在每步可见，取消不变更原布局|J02,J07,J12
+O.modal.add-repo|添加项目入口|AddRepoDialog.tsx,AddRepoDialogChrome.tsx,AppRootSurfaces.tsx|本机／Host，浏览、克隆或新建不同步骤；受控打开捕获触发控件并在关闭/Esc 后交接或归还焦点|保留|目标范围在每步可见，取消不变更原布局|J02,J07,J12
 O.modal.confirm-non-git-folder|普通文件夹确认|NonGitFolderDialog.tsx|提示普通目录可用操作；确认后登记|保留|说明普通目录和 Git 工作树能力差异；可返回路径选择|J02,J07
 O.modal.confirm-add-project-from-folder|目录升为项目确认|AddProjectFromFolderDialog.tsx|从目录触发项目导入|保留|显示作用目标及源路径，取消不改变目录树|J07,J08
 O.modal.project-added|项目接入完成|ProjectAddedDialog.tsx|接入完成提示后续打开或创建|保留|仅依据真实接入结果，焦点可返回|J02,J07

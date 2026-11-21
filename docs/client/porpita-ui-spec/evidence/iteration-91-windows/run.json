@@ -1,0 +1,51 @@
+{
+  "version": "43.8.6",
+  "electronVersion": "43.8.6",
+  "windowIsolation": [
+    {
+      "visible": false,
+      "focused": false
+    }
+  ],
+  "checks": {
+    "dialogEscapeFocusRestored": true,
+    "dialogEscapeFocusDetail": {
+      "restored": true,
+      "isBody": false,
+      "inMain": true,
+      "tag": "BUTTON",
+      "label": "Add project"
+    },
+    "themeArrowSwitchPreservesScroll": {
+      "darkClassAfterArrow": true,
+      "scrollBeforeThemeSwitch": 120,
+      "scrollAfterThemeSwitch": 120
+    },
+    "systemColorSchemeLiveFlip": {
+      "systemLightOk": true,
+      "systemDarkOk": true
+    },
+    "zoom150SettingsRowsOk": true,
+    "narrow820SettingsRowsOk": true,
+    "narrow600SettingsRowsOk": true,
+    "settingsReducedMotion": {
+      "sectionChevronTransition": "0s"
+    },
+    "localesLangFlow": {
+      "initial": "en",
+      "zh": "zh",
+      "ja": "ja"
+    }
+  },
+  "captures": {
+    "dialogReducedMotion": "i91-en-dialog-reduced-motion-1280.png",
+    "enAppearanceLight": "i91-en-settings-appearance-light-1280.png",
+    "enAppearanceDark": "i91-en-settings-appearance-dark-1280.png",
+    "enForcedColors": "i91-en-settings-forced-colors-1280.png",
+    "enZoom150": "i91-en-settings-zoom-150-1280.png",
+    "enNarrow820": "i91-en-settings-narrow-820.png",
+    "enNarrow600": "i91-en-settings-narrow-600.png",
+    "zhAppearance": "i91-zh-settings-appearance-dark-1280.png",
+    "jaAppearance": "i91-ja-settings-appearance-1280.png"
+  }
+}

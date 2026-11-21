@@ -9,17 +9,19 @@ import {
   readFileSync,
   rmSync,
   rmdirSync,
+  symlinkSync,
   unlinkSync,
   writeFileSync
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import {
+  resolveAgentCollabRoot,
+  resolveCheckDesignEvidenceScript,
+  resolveDefaultHistoryRoot,
+  resolvePythonExecutable
+} from './paths.mjs'
 import { ENV_BOUNDED_ITEMS } from './test-context.mjs'
-
-const AGENT_COLLAB_ROOT = 'D:\\Chatgpt\\Agent-collaboration'
-const VENV_PYTHON = path.join(AGENT_COLLAB_ROOT, '.venv', 'Scripts', 'python.exe')
-const CHECK_DESIGN_EVIDENCE_SCRIPT =
-  'C:\\Users\\D26FO\\.gemini\\config\\plugins\\ui-spec-studio\\skills\\ui-spec\\scripts\\check_design_evidence.py'
 
 function removeJunctionSafe(junctionPath) {
   try {
@@ -45,10 +47,19 @@ const STAGED_AUDIT_CACHE = new Map()
 export function runStagedBuildCoverage({
   specRoot,
   porpitaRoot,
-  historyRoot = 'D:\\Chatgpt\\Porpita',
+  historyRoot = null,
+  agentCollabRoot = null,
   injectBrokenAnchor = false
 }) {
-  const cacheKey = `${specRoot}::${porpitaRoot}::${historyRoot}`
+  const resolvedAcRoot = resolveAgentCollabRoot(agentCollabRoot)
+  const resolvedHistoryRoot = historyRoot
+    ? path.resolve(historyRoot)
+    : resolveDefaultHistoryRoot({
+        agentCollabRoot: resolvedAcRoot,
+        specRoot,
+        porpitaRoot
+      })
+  const cacheKey = `${specRoot}::${porpitaRoot}::${resolvedHistoryRoot}`
   if (!injectBrokenAnchor && STAGED_AUDIT_CACHE.has(cacheKey)) {
     return STAGED_AUDIT_CACHE.get(cacheKey)
   }
@@ -76,7 +87,7 @@ export function runStagedBuildCoverage({
         timeout: 10000
       })
     } else {
-      throw new Error('Windows junction expected on win32')
+      symlinkSync(realEvidence, evidenceJunction, 'dir')
     }
 
     if (injectBrokenAnchor) {
@@ -92,19 +103,20 @@ export function runStagedBuildCoverage({
 
     const indexOutDir = path.join(stagedRoot, 'source-index')
     const idxRun = spawnSync(
-      'node',
+      process.execPath,
       [path.join(stagedRoot, 'tools', 'source-index.cjs'), porpitaRoot, indexOutDir],
       { encoding: 'utf8', timeout: 180000 }
     )
 
+    const pythonExe = resolvePythonExecutable(resolvedAcRoot)
     const covRun = spawnSync(
-      VENV_PYTHON,
+      pythonExe,
       [
         path.join(stagedRoot, 'tools', 'build_coverage.py'),
         '--source',
         porpitaRoot,
         '--history',
-        historyRoot
+        resolvedHistoryRoot
       ],
       { encoding: 'utf8', timeout: 180000 }
     )
@@ -372,10 +384,11 @@ export function checkEnvBoundedHonesty({ specRoot }) {
   }
 }
 
-export function runDesignEvidenceCheck({ agentCollabRoot = AGENT_COLLAB_ROOT, porpitaRoot }) {
+export function runDesignEvidenceCheck({ agentCollabRoot = null, porpitaRoot }) {
+  const resolvedAcRoot = resolveAgentCollabRoot(agentCollabRoot)
   const candidates = [
     path.join(porpitaRoot, '.ui-spec', 'design-evidence.json'),
-    path.join(agentCollabRoot, '.ui-spec', 'design-evidence.json')
+    path.join(resolvedAcRoot, '.ui-spec', 'design-evidence.json')
   ]
   const found = candidates.find((p) => existsSync(p))
   if (!found) {
@@ -385,10 +398,15 @@ export function runDesignEvidenceCheck({ agentCollabRoot = AGENT_COLLAB_ROOT, po
       reason: 'No .ui-spec/design-evidence.json present (porpita-ui-spec uses native build_coverage.py + observations.json)'
     }
   }
+  const scriptPath = resolveCheckDesignEvidenceScript(resolvedAcRoot)
+  if (!scriptPath) {
+    throw new Error('check_design_evidence.py not found (set UI_SPEC_CHECK_DESIGN_EVIDENCE_SCRIPT)')
+  }
+  const pythonExe = resolvePythonExecutable(resolvedAcRoot)
   const projectRoot = path.dirname(path.dirname(found))
   const res = spawnSync(
-    VENV_PYTHON,
-    [CHECK_DESIGN_EVIDENCE_SCRIPT, '--project-root', projectRoot],
+    pythonExe,
+    [scriptPath, '--project-root', projectRoot],
     { encoding: 'utf8', timeout: 30000 }
   )
   let parsed = null

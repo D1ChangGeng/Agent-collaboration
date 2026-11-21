@@ -2790,8 +2790,8 @@ src/renderer/src/components/onboarding/OnboardingSkipConfirmationDialog.tsx,49,D
 src/renderer/src/components/onboarding/OnboardingSkipConfirmationDialog.tsx,51,DialogFooter,src/renderer/src/components/ui/dialog.tsx,P.06,B.04,explicit,
 src/renderer/src/components/onboarding/OnboardingSkipConfirmationDialog.tsx,52,Button,src/renderer/src/components/ui/button.tsx,P.01,B.04,explicit,onClick
 src/renderer/src/components/onboarding/OnboardingSkipConfirmationDialog.tsx,55,Button,src/renderer/src/components/ui/button.tsx,P.01,B.04,explicit,onClick
-src/renderer/src/components/onboarding/ThemeLookCarousel.tsx,89,Button,src/renderer/src/components/ui/button.tsx,P.01,B,directory queue; leaf review open,disabled;onClick
-src/renderer/src/components/onboarding/ThemeLookCarousel.tsx,98,Button,src/renderer/src/components/ui/button.tsx,P.01,B,directory queue; leaf review open,disabled;onClick
+src/renderer/src/components/onboarding/ThemeLookCarousel.tsx,93,Button,src/renderer/src/components/ui/button.tsx,P.01,B,directory queue; leaf review open,disabled;onClick
+src/renderer/src/components/onboarding/ThemeLookCarousel.tsx,102,Button,src/renderer/src/components/ui/button.tsx,P.01,B,directory queue; leaf review open,disabled;onClick
 src/renderer/src/components/onboarding/WindowsTerminalStep.tsx,225,Select,src/renderer/src/components/ui/select.tsx,P.03,B.02,explicit,disabled;onValueChange
 src/renderer/src/components/onboarding/WindowsTerminalStep.tsx,234,SelectTrigger,src/renderer/src/components/ui/select.tsx,P.03,B.02,explicit,
 src/renderer/src/components/onboarding/WindowsTerminalStep.tsx,242,SelectValue,src/renderer/src/components/ui/select.tsx,P.03,B.02,explicit,
@@ -4152,11 +4152,11 @@ src/renderer/src/components/settings/agents/surfaces/AgentDefaultSurfaceSection.
 src/renderer/src/components/settings/agents/surfaces/AgentDefaultSurfaceSection.tsx,207,CardContent,src/renderer/src/components/ui/card.tsx,P.08,N,directory queue; leaf review open,
 src/renderer/src/components/settings/agents/surfaces/AgentDefaultSurfaceSection.tsx,228,Button,src/renderer/src/components/ui/button.tsx,P.01,N,directory queue; leaf review open,disabled;onClick
 src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,258,Select,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,onValueChange
-src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,262,SelectTrigger,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,
-src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,263,SelectValue,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,
-src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,265,SelectContent,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,
-src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,267,SelectItem,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,
-src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,272,SelectItem,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,
+src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,264,SelectTrigger,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,
+src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,269,SelectValue,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,
+src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,271,SelectContent,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,
+src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,273,SelectItem,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,
+src/renderer/src/components/settings/appearance/AppearanceInterfaceSection.tsx,278,SelectItem,src/renderer/src/components/ui/select.tsx,P.03,N.appearance;N.appearance.01,explicit,
 src/renderer/src/components/settings/appearance/AppIconSelector.tsx,45,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,N.appearance.01,explicit,
 src/renderer/src/components/settings/appearance/AppIconSelector.tsx,46,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,N.appearance.01,explicit,
 src/renderer/src/components/settings/appearance/AppIconSelector.tsx,47,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance.01,explicit,onClick
@@ -4174,17 +4174,17 @@ src/renderer/src/components/settings/appearance/RecentTabOrderControl.tsx,37,Sel
 src/renderer/src/components/settings/appearance/RecentTabOrderControl.tsx,39,SelectContent,src/renderer/src/components/ui/select.tsx,P.03,N,directory queue; leaf review open,
 src/renderer/src/components/settings/appearance/RecentTabOrderControl.tsx,40,SelectItem,src/renderer/src/components/ui/select.tsx,P.03,N,directory queue; leaf review open,
 src/renderer/src/components/settings/appearance/RecentTabOrderControl.tsx,46,SelectItem,src/renderer/src/components/ui/select.tsx,P.03,N,directory queue; leaf review open,
-src/renderer/src/components/settings/appearance/themes/AppearanceThemeControl.tsx,122,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance;N.appearance.01;P.13,explicit,onClick
-src/renderer/src/components/settings/appearance/themes/AppearanceThemeControl.tsx,276,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance;N.appearance.01;P.13,explicit,onClick
-src/renderer/src/components/settings/appearance/UIZoomControl.tsx,33,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance.01,explicit,onClick;disabled
-src/renderer/src/components/settings/appearance/UIZoomControl.tsx,42,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance.01,explicit,onClick;disabled
-src/renderer/src/components/settings/appearance/UIZoomControl.tsx,50,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance.01,explicit,onClick;disabled
-src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,105,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance.02,explicit,disabled;onClick
-src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,140,Select,src/renderer/src/components/ui/select.tsx,P.03,N.appearance.02,explicit,disabled;onValueChange
-src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,150,SelectTrigger,src/renderer/src/components/ui/select.tsx,P.03,N.appearance.02,explicit,
-src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,151,SelectValue,src/renderer/src/components/ui/select.tsx,P.03,N.appearance.02,explicit,
-src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,153,SelectContent,src/renderer/src/components/ui/select.tsx,P.03,N.appearance.02,explicit,
-src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,155,SelectItem,src/renderer/src/components/ui/select.tsx,P.03,N.appearance.02,explicit,
+src/renderer/src/components/settings/appearance/themes/AppearanceThemeControl.tsx,123,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance;N.appearance.01;P.13,explicit,onClick
+src/renderer/src/components/settings/appearance/themes/AppearanceThemeControl.tsx,277,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance;N.appearance.01;P.13,explicit,onClick
+src/renderer/src/components/settings/appearance/UIZoomControl.tsx,34,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance.01,explicit,onClick;disabled
+src/renderer/src/components/settings/appearance/UIZoomControl.tsx,44,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance.01,explicit,onClick;disabled
+src/renderer/src/components/settings/appearance/UIZoomControl.tsx,53,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance.01,explicit,onClick;disabled
+src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,106,Button,src/renderer/src/components/ui/button.tsx,P.01,N.appearance.02,explicit,disabled;onClick
+src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,141,Select,src/renderer/src/components/ui/select.tsx,P.03,N.appearance.02,explicit,disabled;onValueChange
+src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,151,SelectTrigger,src/renderer/src/components/ui/select.tsx,P.03,N.appearance.02,explicit,
+src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,156,SelectValue,src/renderer/src/components/ui/select.tsx,P.03,N.appearance.02,explicit,
+src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,158,SelectContent,src/renderer/src/components/ui/select.tsx,P.03,N.appearance.02,explicit,
+src/renderer/src/components/settings/appearance/WindowMaterialSetting.tsx,160,SelectItem,src/renderer/src/components/ui/select.tsx,P.03,N.appearance.02,explicit,
 src/renderer/src/components/settings/artifacts/ArtifactsSettingsPane.tsx,148,Badge,src/renderer/src/components/ui/badge.tsx,P.08,L.04;N.artifacts,explicit,
 src/renderer/src/components/settings/artifacts/ArtifactsSettingsPane.tsx,199,Button,src/renderer/src/components/ui/button.tsx,P.01,L.04;N.artifacts,explicit,onClick
 src/renderer/src/components/settings/automations/AutomationsSettingsPane.tsx,110,Button,src/renderer/src/components/ui/button.tsx,P.01,N.automations,explicit,onClick
@@ -4426,13 +4426,10 @@ src/renderer/src/components/settings/form-controls/DebouncedSettingsTextInput.ts
 src/renderer/src/components/settings/form-controls/SettingsDisabledControlTooltip.tsx,15,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,S.06,explicit,
 src/renderer/src/components/settings/form-controls/SettingsDisabledControlTooltip.tsx,16,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,S.06,explicit,
 src/renderer/src/components/settings/form-controls/SettingsDisabledControlTooltip.tsx,20,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,S.06,explicit,
-src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,29,Switch,src/renderer/src/components/ui/switch.tsx,P.07,P.02,explicit,disabled
-src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,67,Label,src/renderer/src/components/ui/label.tsx,P.02,P.02,explicit,
-src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,192,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,P.02,explicit,
-src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,193,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,P.02,explicit,
-src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,194,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,P.02,explicit,
-src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,305,Input,src/renderer/src/components/ui/input.tsx,P.02,P.02,explicit,onChange
-src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,392,Input,src/renderer/src/components/ui/input.tsx,P.02,P.02,explicit,disabled;onChange;onBlur;onKeyDown
+src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,28,Switch,src/renderer/src/components/ui/switch.tsx,P.07,P.02,explicit,disabled
+src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,68,Label,src/renderer/src/components/ui/label.tsx,P.02,P.02,explicit,
+src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,227,Input,src/renderer/src/components/ui/input.tsx,P.02,P.02,explicit,onChange
+src/renderer/src/components/settings/form-controls/SettingsFormControls.tsx,316,Input,src/renderer/src/components/ui/input.tsx,P.02,P.02,explicit,disabled;onChange;onBlur;onKeyDown
 src/renderer/src/components/settings/form-controls/SettingsSearchableSelect.tsx,122,Popover,src/renderer/src/components/ui/popover.tsx,P.05,P.03,explicit,onOpenChange
 src/renderer/src/components/settings/form-controls/SettingsSearchableSelect.tsx,123,PopoverTrigger,src/renderer/src/components/ui/popover.tsx,P.05,P.03,explicit,
 src/renderer/src/components/settings/form-controls/SettingsSearchableSelect.tsx,124,Button,src/renderer/src/components/ui/button.tsx,P.01,P.03,explicit,aria-expanded;onKeyDown
@@ -4443,6 +4440,9 @@ src/renderer/src/components/settings/form-controls/SettingsSearchableSelect.tsx,
 src/renderer/src/components/settings/form-controls/SettingsSearchableSelect.tsx,183,CommandGroup,src/renderer/src/components/ui/command.tsx,P.03,P.03,explicit,
 src/renderer/src/components/settings/form-controls/SettingsSearchableSelect.tsx,185,CommandItem,src/renderer/src/components/ui/command.tsx,P.03,P.03,explicit,disabled;onSelect
 src/renderer/src/components/settings/form-controls/SettingsSearchableSelect.tsx,220,Button,src/renderer/src/components/ui/button.tsx,P.01,P.03,explicit,onClick
+src/renderer/src/components/settings/form-controls/SettingsSegmentedControl.tsx,117,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,N,directory queue; leaf review open,
+src/renderer/src/components/settings/form-controls/SettingsSegmentedControl.tsx,118,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,N,directory queue; leaf review open,
+src/renderer/src/components/settings/form-controls/SettingsSegmentedControl.tsx,119,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,N,directory queue; leaf review open,
 src/renderer/src/components/settings/general/GeneralSupportSection.tsx,17,Button,src/renderer/src/components/ui/button.tsx,P.01,N.general.03,explicit,onClick
 src/renderer/src/components/settings/general/OpenInMenuSetting.tsx,120,Button,src/renderer/src/components/ui/button.tsx,P.01,N,directory queue; leaf review open,onClick;aria-expanded
 src/renderer/src/components/settings/general/OpenInMenuSetting.tsx,149,Button,src/renderer/src/components/ui/button.tsx,P.01,N,directory queue; leaf review open,onClick
@@ -4523,8 +4523,8 @@ src/renderer/src/components/settings/mobile/pairing/MobilePairingSetupSection.ts
 src/renderer/src/components/settings/mobile/pairing/MobilePairingSetupSection.tsx,149,Button,src/renderer/src/components/ui/button.tsx,P.01,N.mobile,family path,
 src/renderer/src/components/settings/mobile/pairing/MobilePairingSetupSection.tsx,164,CollapsibleContent,src/renderer/src/components/ui/collapsible.tsx,P.09,N.mobile,family path,
 src/renderer/src/components/settings/mobile/pairing/MobilePairingSetupSection.tsx,184,Button,src/renderer/src/components/ui/button.tsx,P.01,N.mobile,family path,onClick;disabled
-src/renderer/src/components/settings/navigation/SettingsSidebar.tsx,67,Input,src/renderer/src/components/ui/input.tsx,P.02,N;S.01,explicit,onChange
-src/renderer/src/components/settings/navigation/SettingsSidebar.tsx,197,Button,src/renderer/src/components/ui/button.tsx,P.01,N;S.01,explicit,onClick
+src/renderer/src/components/settings/navigation/SettingsSidebar.tsx,71,Input,src/renderer/src/components/ui/input.tsx,P.02,N;S.01,explicit,onChange
+src/renderer/src/components/settings/navigation/SettingsSidebar.tsx,198,Button,src/renderer/src/components/ui/button.tsx,P.01,N;S.01,explicit,onClick
 src/renderer/src/components/settings/notifications/NotificationHostToggles.tsx,39,Separator,src/renderer/src/components/ui/separator.tsx,P.09,N,directory queue; leaf review open,
 src/renderer/src/components/settings/notifications/NotificationHostToggles.tsx,40,Collapsible,src/renderer/src/components/ui/collapsible.tsx,P.09,N,directory queue; leaf review open,
 src/renderer/src/components/settings/notifications/NotificationHostToggles.tsx,41,CollapsibleTrigger,src/renderer/src/components/ui/collapsible.tsx,P.09,N,directory queue; leaf review open,
@@ -5466,8 +5466,8 @@ src/renderer/src/components/sidebar/project-admission/dialog/AddRepoCreateStep.t
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoCreateStep.tsx,134,DialogDescription,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoCreateStep.tsx,151,Input,src/renderer/src/components/ui/input.tsx,P.02,C,directory queue; leaf review open,onChange;disabled
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoCreateStep.tsx,255,Button,src/renderer/src/components/ui/button.tsx,P.01,C,directory queue; leaf review open,onClick;disabled
-src/renderer/src/components/sidebar/project-admission/dialog/AddRepoDialogChrome.tsx,27,Dialog,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,onOpenChange
-src/renderer/src/components/sidebar/project-admission/dialog/AddRepoDialogChrome.tsx,28,DialogContent,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
+src/renderer/src/components/sidebar/project-admission/dialog/AddRepoDialogChrome.tsx,33,Dialog,src/renderer/src/components/ui/dialog.tsx,P.06,O.modal.add-repo,explicit,onOpenChange
+src/renderer/src/components/sidebar/project-admission/dialog/AddRepoDialogChrome.tsx,34,DialogContent,src/renderer/src/components/ui/dialog.tsx,P.06,O.modal.add-repo,explicit,
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoRemoteStep.tsx,60,DialogHeader,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoRemoteStep.tsx,61,DialogTitle,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoRemoteStep.tsx,67,DialogDescription,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
@@ -5499,10 +5499,10 @@ src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.t
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,30,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,C,directory queue; leaf review open,
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,31,Button,src/renderer/src/components/ui/button.tsx,P.01,C,directory queue; leaf review open,onClick
 src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,50,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,C,directory queue; leaf review open,
-src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,148,DialogHeader,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
-src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,149,DialogTitle,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
-src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,153,DialogDescription,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
-src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,248,Button,src/renderer/src/components/ui/button.tsx,P.01,C,directory queue; leaf review open,onClick;onFocus;disabled
+src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,151,DialogHeader,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
+src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,152,DialogTitle,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
+src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,156,DialogDescription,src/renderer/src/components/ui/dialog.tsx,P.06,C,directory queue; leaf review open,
+src/renderer/src/components/sidebar/project-admission/dialog/AddRepoStartSteps.tsx,251,Button,src/renderer/src/components/ui/button.tsx,P.01,C,directory queue; leaf review open,onClick;onFocus;disabled
 src/renderer/src/components/sidebar/project-admission/dialog/NonGitFolderDialog.tsx,158,Dialog,src/renderer/src/components/ui/dialog.tsx,P.06,C.02;O.modal.confirm-non-git-folder,explicit,onOpenChange
 src/renderer/src/components/sidebar/project-admission/dialog/NonGitFolderDialog.tsx,159,DialogContent,src/renderer/src/components/ui/dialog.tsx,P.06,C.02;O.modal.confirm-non-git-folder,explicit,
 src/renderer/src/components/sidebar/project-admission/dialog/NonGitFolderDialog.tsx,160,DialogHeader,src/renderer/src/components/ui/dialog.tsx,P.06,C.02;O.modal.confirm-non-git-folder,explicit,
@@ -7656,11 +7656,11 @@ src/renderer/src/components/ui/command.tsx,86,DialogOverlay,src/renderer/src/com
 src/renderer/src/components/ui/command.tsx,87,OverlayFocusScope,src/renderer/src/components/ui/use-overlay-focus-scope.ts,P,C.10.03;P.03,explicit,
 src/renderer/src/components/ui/context-menu.tsx,81,OverlayFocusScope,src/renderer/src/components/ui/use-overlay-focus-scope.ts,P,P.04;T.02,explicit,
 src/renderer/src/components/ui/context-menu.tsx,115,OverlayFocusScope,src/renderer/src/components/ui/use-overlay-focus-scope.ts,P,P.04;T.02,explicit,
-src/renderer/src/components/ui/dialog.tsx,80,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,P.06;Q.04;T,explicit,
-src/renderer/src/components/ui/dialog.tsx,81,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,P.06;Q.04;T,explicit,
-src/renderer/src/components/ui/dialog.tsx,82,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,P.06;Q.04;T,explicit,
-src/renderer/src/components/ui/dialog.tsx,134,OverlayFocusScope,src/renderer/src/components/ui/use-overlay-focus-scope.ts,P,P.06;Q.04;T,explicit,
-src/renderer/src/components/ui/dialog.tsx,170,Button,src/renderer/src/components/ui/button.tsx,P.01,P.06;Q.04;T,explicit,
+src/renderer/src/components/ui/dialog.tsx,131,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,P.06;Q.04;T,explicit,
+src/renderer/src/components/ui/dialog.tsx,132,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,P.06;Q.04;T,explicit,
+src/renderer/src/components/ui/dialog.tsx,133,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,P.06;Q.04;T,explicit,
+src/renderer/src/components/ui/dialog.tsx,208,OverlayFocusScope,src/renderer/src/components/ui/use-overlay-focus-scope.ts,P,P.06;Q.04;T,explicit,
+src/renderer/src/components/ui/dialog.tsx,244,Button,src/renderer/src/components/ui/button.tsx,P.01,P.06;Q.04;T,explicit,
 src/renderer/src/components/ui/dropdown-menu.tsx,74,PortalContainerContext,src/renderer/src/components/ui/portal-container-context.ts,P,C.10.04;P.04;T.02,explicit,
 src/renderer/src/components/ui/dropdown-menu.tsx,76,OverlayFocusScope,src/renderer/src/components/ui/use-overlay-focus-scope.ts,P,C.10.04;P.04;T.02,explicit,
 src/renderer/src/components/ui/dropdown-menu.tsx,304,PortalContainerContext,src/renderer/src/components/ui/portal-container-context.ts,P,C.10.04;P.04;T.02,explicit,

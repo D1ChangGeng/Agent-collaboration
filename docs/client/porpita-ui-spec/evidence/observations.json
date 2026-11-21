@@ -3244,5 +3244,68 @@
     "path": "iteration-90-windows/i90-zh-mobile-terminal-slide-1280.json",
     "claim": "简中移动端 PhoneCarousel TerminalSlide 示例保留真实分支与命令标识（feat/mobile-page、orca/feat-mobile-page、mobile/orca-mobile-sidebar-mock-v3.html、PASS、PLAN.md、Tab、Esc），清除机器直译痕迹。",
     "rows": ["M.01"]
+  },
+  {
+    "id": "I9101",
+    "kind": "iteration-build",
+    "path": "iteration-91-windows/i91-en-dialog-reduced-motion-1280.json",
+    "claim": "reduced-motion: reduce 下 AddRepoDialog 关闭入场动画（dialogAnimation=none），Local Windows 按钮同步呈现 :focus-visible 外环，4 次 Tab 保持焦点在弹层内，Escape 后精准恢复主区 Add project 按钮（非 document.body）。",
+    "rows": ["O.modal.add-repo", "P.01", "P.06", "Q", "Q.04"]
+  },
+  {
+    "id": "I9102",
+    "kind": "iteration-build",
+    "path": "iteration-91-windows/i91-en-settings-appearance-light-1280.json",
+    "claim": "1280×800 英文浅色 Appearance 界面各行（Theme、Light/Dark theme、编辑器主题、Language、UI Zoom、IDE Font）对比与边界清晰，单主区无嵌套与水平溢出，按 ArrowLeft 切主题前主区滚动位置记录为 120。",
+    "rows": ["N.appearance", "P", "P.07", "P.12"]
+  },
+  {
+    "id": "I9103",
+    "kind": "iteration-build",
+    "path": "iteration-91-windows/i91-en-settings-appearance-dark-1280.json",
+    "claim": "1280×800 经 Theme 分段单选组 ArrowLeft 从浅色切至深色后 main.scrollTop 保持 120 不变；切至 System 时随 prefers-color-scheme light↔dark 实时切换 .dark（systemLightOk 与 systemDarkOk 均为 true）。",
+    "rows": ["N.appearance", "P.07", "P.13"]
+  },
+  {
+    "id": "I9104",
+    "kind": "iteration-build",
+    "path": "iteration-91-windows/i91-en-settings-forced-colors-1280.json",
+    "claim": "1280×800 forced-colors: active 与 prefers-contrast: more 下边界线与高亮框清晰，Tab 聚焦 Zoom in (+) 按钮呈明确青色 :focus-visible 外框，禁用态 Reset 与激活导航均可辨。",
+    "rows": ["N.appearance", "P.01", "P.12", "P.13"]
+  },
+  {
+    "id": "I9105",
+    "kind": "iteration-build",
+    "path": "iteration-91-windows/i91-en-settings-zoom-150-1280.json",
+    "claim": "1280×800 物理窗口在 158% UI 缩放（CSS 视口 811×507）下未裁切完整截图，Theme 标签与控件组响应式换行且不重叠、不裁切（scrollWidth=811=innerWidth）；reducedMotion 下 Window & Sidebar 折叠箭头 transitionDuration=0s。",
+    "rows": ["N.appearance", "P", "P.10", "P.12", "Q", "Q.01", "Q.05"]
+  },
+  {
+    "id": "I9106",
+    "kind": "iteration-build",
+    "path": "iteration-91-windows/i91-en-settings-narrow-820.json",
+    "claim": "820×580 窄窗下 SettingsSidebar 缩窄为 220px 且保留 33 个可见导航入口，SettingsSearchableSelect、Language 与 UI Zoom 保持在容器边界内无水平溢出或文字碰撞。",
+    "rows": ["N.appearance", "P.02", "P.03", "P.10"]
+  },
+  {
+    "id": "I9107",
+    "kind": "iteration-build",
+    "path": "iteration-91-windows/i91-en-settings-narrow-600.json",
+    "claim": "600×400 极窄窗下 SettingsSidebar 压缩为 184px，SettingsRow 将标签/说明 cleanly 折行至全宽控件上方，zero overflowX 与 zero 行重叠/右裁切。",
+    "rows": ["N.appearance", "P", "P.10", "P.12"]
+  },
+  {
+    "id": "I9108",
+    "kind": "iteration-build",
+    "path": "iteration-91-windows/i91-zh-settings-appearance-dark-1280.json",
+    "claim": "1280×800 从 en 无重启实时切换至 zh（<html lang=\"zh\">），外观、主题、编辑器主题、用户界面缩放与「从 Kitty 导入」全量中文化，零英文回退或 Orca 残留。",
+    "rows": ["N.appearance", "P.13"]
+  },
+  {
+    "id": "I9109",
+    "kind": "iteration-build",
+    "path": "iteration-91-windows/i91-ja-settings-appearance-1280.json",
+    "claim": "1280×800 从 zh 无重启实时切换至 ja（<html lang=\"ja\">），補全后的日文外观、エディターテーマ、テーマを探す、UIズーム与「Kitty からインポート」完整呈现，零英文漏译或 Orca 残留。",
+    "rows": ["N.appearance", "P.13"]
   }
 ]

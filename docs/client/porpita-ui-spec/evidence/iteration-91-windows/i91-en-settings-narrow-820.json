@@ -1,0 +1,36 @@
+{
+  "size": [
+    820,
+    580
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "reducedMotion": false,
+  "forcedColors": false,
+  "prefersContrastMore": false,
+  "zoomFactor": "1",
+  "fontFamily": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+  "overflowX": false,
+  "scrollWidth": 820,
+  "innerWidth": 820,
+  "mainCount": 1,
+  "nestedMainCount": 0,
+  "navCount": 1,
+  "settingsShellAnimation": "settings-shell-enter",
+  "dialogAnimation": null,
+  "focusTag": "BODY",
+  "focusLabel": "Back to appCtrl+FAI CapabilitiesAgentsAI Provider AccountsOptionalOrchestrationComputer UseVoiceSet ",
+  "focusOutline": "none",
+  "focusOutlineColor": "oklab(0.555523 0.0000253916 0.0000110865 / 0.5)",
+  "focusBoxShadow": "none",
+  "text": "Back to app\n\nAI CAPABILITIES\n\nAgents\nAI Provider Accounts\nOPTIONAL\nOrchestration\nComputer Use\nVoice\n\nSET UP\n\nPorpita Account\nGeneral\nIntegrations\nMobile\n\nWORKFLOWS\n\nAutomations\nArtifacts\nBETA\nShare Skills\nBETA\nAgent Session Search\nGit & Source Control\nTask Sources\nTerminal\nQuick Commands\nBrowser\nMobile Emulator\nFloating Workspace\n\nINTERFACE\n\nAppearance\nChat UI\nInput & Editing\nNotifications\nShortcuts\nStats & Usage\n\nREMOTE HOSTS\n\nSSH Hosts\nRemote Porpita Servers\n\nPRIVACY & SECURITY\n\nPrivacy & Telemetry\n\nADVANCED\n\nAdvanced\n\nEXPERIMENTAL\n\nExperimental\nPlugins\nALPHA\n\nPROJECTS\n\nNo projects added yet.\n\nAppearance\n\nTheme, zoom, app and terminal appearance, sidebars, and status bar.\n\nInterface\nTheme\nBrowse themes\nSystem\nDark\nLight\nLight theme\nBuilt-in\nDark theme\nBuilt-in\nLight editor theme\n\nCode editor, diff and notebook colors while the app is light.\n\nSame as app theme\nDark editor theme\n\nCode editor, diff and notebook colors while the app is dark.\n\nSame as app theme\nLanguage\nEnglish\nUI Zoom\n\nCtrl\n+\n=\n / \nCtrl\n+\n-\n when not in a terminal pane.\n\n100%\nReset\nIDE Font\nAdvanced\nTerminal\nTerminal Typography\nImport from Ghostty\nImport from Kitty\nFont Size\npx\nFont Family\nAdvanced\nTerminal Themes\nImport from Warp\nImport from YAML\n\nTheme Mode\n\nDark\nLight\nMatch dark mode\n\nShare the dark terminal theme and divider color in light mode.\n\nLight Theme\n\nChoose the theme used when Porpita is in light mode.\n\nSelected: Builtin Tango Light\nShowing 31 of 31\n\nBUILT-IN\n\nAyu Dark\nBuiltin Tango Light\nCURRENT\nCatppuccin Latte\nCatppuccin Mocha\nDracula\nEverforest Dark\nEverforest Light\nGhostty Default Style Dark\nGitHub Light\nGruvbox Dark\nGruvbox Light\nHomebrew\nHorizon Dark\nKanagawa\nMaterial Dark\nMonokai\nNight Owl\nNightfox\nNord\nOne Dark\nOne Light\nPalenight\nRose Pine\nRose Pine Dawn\nSlatewave\nSnazzy\nSolarized Dark\nSolarized Light\nTango Dark\nTokyo Night\nTokyo Night Light\nLight Divider Color\n\nControls the split divider line between panes in light mode.\n\nAdvanced\nLight Mode Preview\nShows the effective light terminal appearance.\nPane divider\nWindow & Sidebar\nLeft Sidebar Appearance\n\nKeep the left sidebar default or tint it. To follow the terminal, pick Match Terminal as the Light or Dark theme.\n\nDefault\nTinted\nStatus Bar\n\nChoose which indicators appear in the status bar.\n\nUsage percentages\n\nChoose whether provider limits show the percentage used or remaining.\n\nUsed\nRemaining\nCodex Usage\n\nShow Codex token and cost usage for the active workspace.\n\nOpenCode Go Usage\n\nShow OpenCode Go token and cost usage for the active workspace.\n\nKimi Usage\n\nShow Kimi subscription usage for the active workspace.\n\nMiniMax Usage\n\nShow MiniMax subscription usage for the active workspace.\n\nCursor Usage\n\nShow Cursor plan usage when signed in through cursor-agent or Cursor IDE.\n\nRemote Hosts\n\nShow configured SSH and remote Porpita hosts when any are available.\n\nResource Manager\n\nShow the Resource Manager. Click it for CPU, memory, sessions, daemon controls, and workspace disk scans.\n\nPorts\n\nShow live workspace ports. Click it for workspace-scoped ports and external listeners.\n\nAdvanced\nOff\n—\n·\n0",
+  "extra": {
+    "settingsRowsGeometry": {
+      "ok": true,
+      "issues": []
+    }
+  },
+  "imageFile": "i91-en-settings-narrow-820.png",
+  "imageMethod": "CDP screenshot"
+}

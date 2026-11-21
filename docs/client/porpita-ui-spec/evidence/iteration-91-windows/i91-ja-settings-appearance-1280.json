@@ -1,0 +1,31 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "ja",
+  "theme": "dark",
+  "reducedMotion": false,
+  "forcedColors": false,
+  "prefersContrastMore": false,
+  "zoomFactor": "1",
+  "fontFamily": "Geist, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+  "overflowX": false,
+  "scrollWidth": 1280,
+  "innerWidth": 1280,
+  "mainCount": 1,
+  "nestedMainCount": 0,
+  "navCount": 1,
+  "settingsShellAnimation": "settings-shell-enter",
+  "dialogAnimation": null,
+  "focusTag": "DIV",
+  "focusLabel": "日本語",
+  "focusOutline": "none",
+  "focusOutlineColor": "oklab(0.555523 0.0000253916 0.0000110865 / 0.5)",
+  "focusBoxShadow": "none",
+  "text": "アプリに戻る\nCtrl\n+\nF\n\nAI 機能\n\nAgent\nAI プロバイダーアカウント\n任意\nオーケストレーション\nコンピュータ操作\n音声\n\nセットアップ\n\nPorpita アカウント\n一般\n連携\nモバイル\n\nワークフロー\n\n自動化\nアーティファクト\nベータ\nスキルを共有する\nベータ\nAgent セッションの検索\nGit とソース管理\nタスクソース\nターミナル\nクイックコマンド\nブラウザ\nモバイルエミュレータ\nフローティングワークスペース\n\nインターフェース\n\n外観\nチャット UI\n入力と編集\n通知\nショートカット\n統計と使用状況\n\nリモートホスト\n\nSSH ホスト\nリモート Porpita サーバー\n\nプライバシーとセキュリティ\n\nプライバシーとテレメトリ\n\n詳細設定\n\n詳細設定\n\n実験的機能\n\n実験的機能\nプラグイン\nアルファ版\n\nプロジェクト\n\nまだ追加されたプロジェクトはありません。\n\n外観\n\nテーマ、ズーム、アプリとターミナルの外観、サイドバー、ステータスバー。\n\nインターフェース\nテーマ\nテーマを探す\nシステム\nダーク\nライト\nライトテーマ\n組み込み\nダークテーマ\n組み込み\nライトエディターテーマ\n\nアプリがライト表示のときのコードエディター、差分、ノートブックの配色です。\n\nアプリテーマと同じ\nダークエディターテーマ\n\nアプリがダーク表示のときのコードエディター、差分、ノートブックの配色です。\n\nアプリテーマと同じ\n言語\n日本語\nUIズーム\n\nCtrl\n+\n=\n / \nCtrl\n+\n-\n ターミナルペインにないとき。\n\n100%\nリセット\nIDE フォント\n詳細設定\nターミナル\nターミナルのタイポグラフィー\nGhostty からインポート\nKitty からインポート\nフォントサイズ\nピクセル\nフォントファミリー\n詳細設定\nターミナルテーマ\nWarp からインポート\nYAML からインポート\n\nテーマモード\n\nダーク\nライト\nダークモードに合わせる\n\nライトモードでダークのターミナルテーマとディバイダー色を共有します。\n\nライトテーマ\n\nPorpita がライトモードのときに使用されるテーマを選択します。\n\n選択済み: Builtin Tango Light\n表示中 31/31\n\n組み込み\n\nAyu Dark\nBuiltin Tango Light\n現在\nCatppuccin Latte\nCatppuccin Mocha\nDracula\nEverforest Dark\nEverforest Light\nGhostty Default Style Dark\nGitHub Light\nGruvbox Dark\nGruvbox Light\nHomebrew\nHorizon Dark\nKanagawa\nMaterial Dark\nMonokai\nNight Owl\nNightfox\nNord\nOne Dark\nOne Light\nPalenight\nRose Pine\nRose Pine Dawn\nSlatewave\nSnazzy\nSolarized Dark\nSolarized Light\nTango Dark\nTokyo Night\nTokyo Night Light\nライトディバイダーの色\n\nライトモードでのペイン間の分割線を制御します。\n\n詳細設定\nライトモードのプレビュー\n有効なライトターミナルの外観を表示します。\nペインディバイダ\nウィンドウとサイドバー\n左サイドバーの外観\n\n左サイドバーをデフォルトのままにするか、色合いを付けます。ターミナルに合わせるには、ライトまたはダークのテーマで「ターミナルに合わせる」を選択します。\n\nデフォルト\n色合い\nステータスバー\n\nステータスバーに表示するインジケーターを選択します。\n\n使用率\n\nプロバイダーの制限を使用済みまたは残りの割合で表示するかを選択します。\n\n使用済み\n残り\nCodex 使用量\n\nアクティブなワークスペースの Codex トークンとコストの使用状況を表示します。\n\nOpenCode Go の使用量\n\nアクティブなワークスペースの OpenCode Go トークンと使用コストを表示します。\n\nKimi 使用量\n\nアクティブなワークスペースの Kimi サブスクリプション使用状況を表示します。\n\nMiniMax 使用量\n\nアクティブなワークスペースの MiniMax サブスクリプション使用状況を表示します。\n\nCursor の使用状況\n\ncursor-agent または Cursor IDE でサインインしている場合に Cursor プランの使用状況を表示します。\n\nリモートホスト\n\n設定済み SSH ホストとリモート Porpita ホストがある場合に表示します。\n\nリソースマネージャー\n\nリソースマネージャーを表示します。クリックすると、CPU、メモリ、セッション、デーモンコントロール、ワークスペースディスクスキャンの情報を確認できます。\n\nポート\n\nライブワークスペースポートを表示します。ワークスペーススコープのポートと外部リスナーの場合はこれをクリックします。\n\n詳細設定\nオフ\n—\n·\n0\nシステム\nEnglish\n中文（简体）\n繁體中文（台灣）\n한국어\n日本語\nEspañol\nFrançais\nPortuguês (Brasil)\nРусский\nTürkçe\nDeutsch",
+  "extra": {},
+  "imageFile": "i91-ja-settings-appearance-1280.png",
+  "imageMethod": "CDP screenshot"
+}

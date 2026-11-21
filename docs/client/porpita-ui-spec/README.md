@@ -1,6 +1,6 @@
 # Porpita 桌面客户端 · 全覆盖 UI SPEC
 
-**设计已推进至第 90 轮。** 覆盖 20 个功能域、371 个条目。第 87–89 轮已归档，第 90 轮完成 F01（首次设置/导览/Landing）与 F02（Porpita 手机端/工件诚实不可用边界与翻译统一）的局部修复、单元测试与 Windows 隐藏窗口 Electron 实机核对。 [第 87 轮](ITERATION_87.md) · [第 88 轮](ITERATION_88.md) · [第 89 轮](ITERATION_89.md) · [第 90 轮](ITERATION_90.md)
+**设计已推进至第 91 轮。** 覆盖 20 个功能域、371 个条目。第 87–90 轮已归档，第 91 轮完成 **F03**（`P.*`、`P.13`、`Q.*`、`N.appearance` 主题/高对比/减少动效/158% 缩放与极窄窗响应式、`en→zh→ja` 实时语种切换）与受控 `<Dialog open>` 聚焦回还（`O.modal.add-repo`）的局部修复与 Windows 隐藏窗口 Electron 实机核对。 [第 87 轮](ITERATION_87.md) · [第 88 轮](ITERATION_88.md) · [第 89 轮](ITERATION_89.md) · [第 90 轮](ITERATION_90.md) · [第 91 轮](ITERATION_91.md)
 
 | 查什么 | 入口 |
 | --- | --- |
@@ -14,7 +14,7 @@
 
 工作循环：用户在 Session Index 找到实际 Harness Session，在 Workspace 打开并和其他会话/工具并行工作，经顶层 Tab 切换与恢复上下文。原生 Chat、Terminal、文件、Diff、Browser 继续拥有各自的内容与操作；Project、Route、Identity、Harness 和 Machine 提供关联与筛选。设置、任务、自动化、插件和远程工具以它们现有的业务对象为中心。
 
-矩阵锚点指向 Porpita 隔离工作树 `codex/porpita-ui-spec-90`。Windows x64 Candidate 11、开发构建、Linux 原生运行端与图形验收包各有源码身份。 [来源与身份](SOURCE_BASELINE.md)
+矩阵锚点指向 Porpita 隔离工作树 `codex/porpita-ui-spec-91`。Windows x64 Candidate 11、开发构建、Linux 原生运行端与图形验收包各有源码身份。 [来源与身份](SOURCE_BASELINE.md)
 
 第二至八轮建立窄窗、信任确认、已有 Chat 搜索、Vault 原位导航、配对历史搜索与 Explorer 恢复。第九至十一轮在开发预览中组合本地 Workspace、标题栏分组和固定范围 Explorer。第十二至十四轮推进实际进程恢复、从已开会话定位和拖放组织。统一 Session Index 的多来源状态、跨 Host、完整 Explorer 与发行平台按验收矩阵继续推进。 [第十二轮](ITERATION_12.md) · [第十三轮](ITERATION_13.md) · [第十四轮](ITERATION_14.md) · [证据](evidence/README.md) · [待闭环](COVERAGE_CLOSURE.md)
 

@@ -5,15 +5,18 @@ import {
   addLocalFolderProject,
   assertAllWindowsHidden,
   closeElectronApp,
+  detectWorkspaceShell,
   dismissStartupDialogs,
   launchElectronApp,
+  M3_SELECTOR_CONTRACT,
   openCollaborationDialog,
   openSettingsPage,
   quitElectronGracefully,
   returnFromSettings,
   setViewportSize,
   sleep,
-  stubOpenDialog
+  stubOpenDialog,
+  waitForVisible
 } from '../lib/electron-harness.mjs'
 import { startLoopbackAcsCore } from '../lib/acs-core-harness.mjs'
 import {
@@ -32,23 +35,6 @@ import {
   runStagedBuildCoverage
 } from '../lib/spec-audit-harness.mjs'
 import { pendingIfSmoke } from '../lib/test-context.mjs'
-
-async function detectProductionWorkspaceShell(page) {
-  return await page.evaluate(() => {
-    const previewToggle = [...document.querySelectorAll('button')].some((b) =>
-      /Workspaces \(preview\)|工作空间（预览）/i.test(b.textContent || '')
-    )
-    const hasWorkspaceTabs =
-      Boolean(document.querySelector('[data-workspace-preview]')) ||
-      Boolean(document.querySelector('[data-workspace-tab-strip]')) ||
-      Boolean(document.querySelector('[data-workspace-group-selector]')) ||
-      Boolean(document.querySelector('[data-session-index]')) ||
-      [...document.querySelectorAll('button')].some((b) =>
-        /New workspace|新建工作空间|New work object|新建工作对象/i.test(b.textContent || '')
-      )
-    return { previewToggle, hasWorkspaceTabs }
-  })
-}
 
 export const TIER1_TESTS = [
   // =========================================================================
@@ -80,8 +66,8 @@ export const TIER1_TESTS = [
         assert.equal(shell.hasSettingsBtn, true, 'Settings button missing')
         assert.equal(shell.hasCollabBtn, true, 'Titlebar Collaboration button missing')
 
-        const ws = await detectProductionWorkspaceShell(page)
-        if (!ws.hasWorkspaceTabs || ws.previewToggle) {
+        const ws = await detectWorkspaceShell(page)
+        if (!ws.integrated) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -89,6 +75,8 @@ export const TIER1_TESTS = [
             `previewToggle=${ws.previewToggle}, hasWorkspaceTabs=${ws.hasWorkspaceTabs}`
           )
         }
+        assert.equal(shell.hasWorkbench, true, 'Main workbench viewport missing')
+        assert.equal(ws.previewToggle, false, 'Preview-only toggle should be retired once integrated')
         return { shell, ws }
       } finally {
         await closeElectronApp(inst)
@@ -106,8 +94,8 @@ export const TIER1_TESTS = [
       try {
         const { page, app } = inst
         await addLocalFolderProject(app, page, repo.repoPath)
-        const ws = await detectProductionWorkspaceShell(page)
-        if (!ws.hasWorkspaceTabs) {
+        const ws = await detectWorkspaceShell(page)
+        if (!ws.integrated) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -115,13 +103,27 @@ export const TIER1_TESTS = [
             'Integrated Workspace tab creation control not yet present in default build'
           )
         }
-        const newWorkBtn = page
-          .getByRole('button', { name: /^(New workspace|新建工作空间|New work object|新建工作对象)$/i })
+        const beforeTabs = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
+        const directNewBtn = page
+          .getByRole('button', { name: /^(New workspace|新建工作空间)$/i })
           .first()
-        await newWorkBtn.click()
-        const tab = page.locator('[data-workspace-preview-tab], [data-workspace-tab]').first()
-        await tab.waitFor({ state: 'visible', timeout: 8000 })
-        return { createdTabText: await tab.innerText() }
+        if (await waitForVisible(directNewBtn, 1500)) {
+          await directNewBtn.click()
+        } else {
+          await page
+            .getByRole('button', { name: /^(New work object|新建工作对象)$/i })
+            .first()
+            .click()
+          await page
+            .getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i })
+            .first()
+            .click()
+        }
+        const tabs = page.locator(M3_SELECTOR_CONTRACT.workspaceTab)
+        await tabs.nth(beforeTabs).waitFor({ state: 'visible', timeout: 8000 })
+        const createdTabText = (await tabs.last().innerText()).trim()
+        assert.ok(createdTabText.length > 0, 'Created workspace tab should have non-empty default title')
+        return { beforeTabs, afterTabs: await tabs.count(), createdTabText }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -136,8 +138,9 @@ export const TIER1_TESTS = [
     async run(ctx) {
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        const ws = await detectProductionWorkspaceShell(inst.page)
-        if (!ws.hasWorkspaceTabs) {
+        const { page } = inst
+        const ws = await detectWorkspaceShell(page)
+        if (!ws.integrated) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -145,11 +148,36 @@ export const TIER1_TESTS = [
             'Top-level Tab Group UI not yet integrated into default production build'
           )
         }
-        const groupBtn = inst.page
-          .locator('[data-workspace-group-selector], [data-workspace-preview-group]')
-          .first()
+        const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
         await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
-        return { groupSelectorVisible: true }
+        await groupBtn.click()
+        const newGroupItem = page
+          .getByRole('menuitem', { name: /New tab group|新建标签组/i })
+          .first()
+        await newGroupItem.waitFor({ state: 'visible', timeout: 5000 })
+        await newGroupItem.click()
+        const nameInput = page.getByRole('dialog').locator('input').first()
+        await nameInput.waitFor({ state: 'visible', timeout: 5000 })
+        await nameInput.fill('E2E Group')
+        await page
+          .getByRole('dialog')
+          .getByRole('button', { name: /^(Create group|Create|创建|确认)$/i })
+          .first()
+          .click()
+        await page.waitForFunction(
+          (sel) => /E2E Group/.test(document.querySelector(sel)?.textContent || ''),
+          M3_SELECTOR_CONTRACT.groupSelector,
+          { timeout: 6000 }
+        )
+        // Switch back to General group and confirm selector updates
+        await groupBtn.click()
+        await page.getByRole('menuitemradio', { name: /^(General|常规|通用)$/i }).first().click()
+        await page.waitForFunction(
+          (sel) => /General|常规|通用/i.test(document.querySelector(sel)?.textContent || ''),
+          M3_SELECTOR_CONTRACT.groupSelector,
+          { timeout: 6000 }
+        )
+        return { groupCreatedAndSwitched: true }
       } finally {
         await closeElectronApp(inst)
       }
@@ -161,10 +189,13 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F01',
     refs: ['D.08.02', 'T.03'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f01-04' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        const ws = await detectProductionWorkspaceShell(inst.page)
-        if (!ws.hasWorkspaceTabs) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        const ws = await detectWorkspaceShell(page)
+        if (!ws.integrated) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -172,9 +203,36 @@ export const TIER1_TESTS = [
             'Top-level Tab Group UI not yet integrated into default production build'
           )
         }
-        return { verified: true }
+        const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
+        await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
+        // Create a destination group first, then return to General and move a tab into it
+        await groupBtn.click()
+        await page.getByRole('menuitem', { name: /New tab group|新建标签组/i }).first().click()
+        const nameInput = page.getByRole('dialog').locator('input').first()
+        await nameInput.waitFor({ state: 'visible', timeout: 5000 })
+        await nameInput.fill('Target Group')
+        await page
+          .getByRole('dialog')
+          .getByRole('button', { name: /^(Create group|Create|创建|确认)$/i })
+          .first()
+          .click()
+        await groupBtn.click()
+        await page.getByRole('menuitemradio', { name: /^(General|常规|通用)$/i }).first().click()
+
+        const firstTab = page.locator(M3_SELECTOR_CONTRACT.workspaceTab).first()
+        await firstTab.waitFor({ state: 'visible', timeout: 8000 })
+        const movedId = await firstTab.getAttribute('data-workspace-preview-tab') || await firstTab.getAttribute('data-workspace-tab')
+        await firstTab.click({ button: 'right' })
+        await page.getByRole('menuitem', { name: /Move to group|移动到组/i }).first().hover()
+        await page.getByRole('menuitem', { name: 'Target Group', exact: true }).first().click()
+        await groupBtn.click()
+        await page.getByRole('menuitemradio', { name: 'Target Group' }).first().click()
+        const targetTabs = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
+        assert.ok(targetTabs >= 1, `Moved tab ${movedId} should appear in Target Group`)
+        return { movedId, targetTabs }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -192,7 +250,7 @@ export const TIER1_TESTS = [
         // Open notes.md before quit to verify standard session/editor cold-start restoration
         await inst.page.getByText('notes.md', { exact: true }).first().dblclick().catch(() => {})
         await sleep(300)
-        const ws = await detectProductionWorkspaceShell(inst.page)
+        const ws = await detectWorkspaceShell(inst.page)
         const exitCode = await quitElectronGracefully(inst)
         assert.equal(exitCode, 0, `Clean quit returned ${exitCode}`)
 
@@ -207,16 +265,16 @@ export const TIER1_TESTS = [
         })
         await inst.page.getByText(path.basename(repo.repoPath)).first().waitFor({ state: 'visible', timeout: 30000 })
 
-        if (!ws.hasWorkspaceTabs || !existsSync(layoutPath)) {
+        if (!ws.integrated || !existsSync(layoutPath)) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
             'porpita-workspaces.json v3 persisted & restored across clean quit in default build',
-            `hasWorkspaceTabs=${ws.hasWorkspaceTabs}, layoutFileExists=${existsSync(layoutPath)}`
+            `integrated=${ws.integrated}, layoutFileExists=${existsSync(layoutPath)}`
           )
         }
         const layout = JSON.parse(readFileSync(layoutPath, 'utf8'))
-        assert.ok(layout.version >= 3 || layout.workspaces, 'Expected v3 workspace layout schema')
+        assert.ok(layout.version >= 3 || layout.workspaces || layout.objects, 'Expected v3 workspace layout schema')
         return { exitCode, layoutVersion: layout.version ?? null }
       } finally {
         await closeElectronApp(inst, { removeTempDir: true })
@@ -334,7 +392,7 @@ export const TIER1_TESTS = [
         const skipBtn = modal.getByRole('button', { name: /Set up later|稍后设置/i }).first()
         await skipBtn.click()
         const confirmSkip = page.getByRole('dialog').getByRole('button', { name: /^(Skip|跳过)$/i }).first()
-        if (await confirmSkip.isVisible({ timeout: 3000 }).catch(() => false)) {
+        if (await waitForVisible(confirmSkip, 3000)) {
           await confirmSkip.click()
         }
         await modal.waitFor({ state: 'hidden', timeout: 10000 })
@@ -453,10 +511,9 @@ export const TIER1_TESTS = [
           .waitFor({ state: 'visible', timeout: 12000 })
         // Trigger Help -> Onboarding or Contextual Tour skip if active
         const skipTour = page.getByRole('button', { name: /Skip tour|Close tour|跳过导览/i }).first()
-        if (await skipTour.isVisible({ timeout: 2500 }).catch(() => false)) {
+        if (await waitForVisible(skipTour, 2500)) {
           await skipTour.click()
-          await sleep(200)
-          assert.equal(await skipTour.isVisible().catch(() => false), false, 'Tour did not dismiss')
+          await skipTour.waitFor({ state: 'hidden', timeout: 5000 })
         }
         // Verify workbench buttons remain clickable (no focus/overlay trap)
         await openSettingsPage(page)
@@ -471,7 +528,7 @@ export const TIER1_TESTS = [
     id: 'T1-F02-06',
     tier: 1,
     featureArea: 'E2E-F02',
-    refs: ['F03', 'P.*', 'Q.*', 'STYLEGUIDE'],
+    refs: ['F03', 'P.*', 'P.13', 'Q.*', 'STYLEGUIDE'],
     async run(ctx) {
       const inst = await launchElectronApp({
         porpitaRoot: ctx.porpitaRoot,
@@ -483,10 +540,13 @@ export const TIER1_TESTS = [
         await page.waitForFunction(() => document.documentElement.classList.contains('dark'), null, {
           timeout: 8000
         })
+        await dismissStartupDialogs(page)
+
         const tokens = await page.evaluate(() => {
           const style = getComputedStyle(document.documentElement)
           const bodyStyle = getComputedStyle(document.body)
           return {
+            initialLang: document.documentElement.lang,
             isDark: document.documentElement.classList.contains('dark'),
             reducedMotionQuery: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
             radius: style.getPropertyValue('--radius').trim(),
@@ -496,11 +556,86 @@ export const TIER1_TESTS = [
             fontFamily: bodyStyle.fontFamily
           }
         })
+        assert.equal(tokens.initialLang, 'en', `Expected initial <html lang="en">, got ${tokens.initialLang}`)
         assert.equal(tokens.isDark, true, 'Dark theme class missing')
         assert.equal(tokens.reducedMotionQuery, true, 'Reduced motion media emulation inactive')
         assert.ok(tokens.radius, '--radius token must be defined')
         assert.ok(tokens.background && tokens.card && tokens.border, 'Semantic surface tokens missing')
-        return tokens
+
+        // Controlled AddRepoDialog Escape focus restoration check (P.* / F03)
+        const addProjectBtn = page.getByRole('button', { name: /^(Add project|添加项目)$/i }).last()
+        await addProjectBtn.waitFor({ state: 'visible', timeout: 10000 })
+        await addProjectBtn.evaluate((el) => {
+          window.__e2eAddRepoTrigger = el
+        })
+        await addProjectBtn.focus()
+        const focusedBeforeOpen = await page.evaluate(
+          () => document.activeElement === window.__e2eAddRepoTrigger
+        )
+        assert.equal(focusedBeforeOpen, true, 'Failed to focus Add project trigger before opening dialog')
+        await addProjectBtn.click()
+        const dialog = page.locator('[data-slot="dialog-content"]').first()
+        await dialog.waitFor({ state: 'visible', timeout: 8000 })
+        for (let i = 0; i < 2; i++) {
+          await page.keyboard.press('Tab')
+          const focusInside = await page.evaluate(() => {
+            const dlg = document.querySelector('[data-slot="dialog-content"]')
+            return Boolean(dlg && dlg.contains(document.activeElement))
+          })
+          assert.equal(focusInside, true, 'Tab focus escaped AddRepoDialog')
+        }
+        await page.keyboard.press('Escape')
+        await dialog.waitFor({ state: 'hidden', timeout: 5000 })
+        let dialogEscapeFocusRestored = false
+        try {
+          await page.waitForFunction(
+            () => document.activeElement === window.__e2eAddRepoTrigger,
+            null,
+            { timeout: 3000 }
+          )
+          dialogEscapeFocusRestored = true
+        } catch {
+          dialogEscapeFocusRestored = false
+        }
+        assert.equal(
+          dialogEscapeFocusRestored,
+          true,
+          'Controlled AddRepoDialog Escape must restore focus to trigger button instead of document.body'
+        )
+
+        // Live <html lang> switch en -> zh -> ja without restart (P.13)
+        await openSettingsPage(page)
+        await page
+          .locator('aside button')
+          .filter({ hasText: /^(Appearance|外观|外観)$/i })
+          .first()
+          .click()
+        const langSelect = page
+          .getByRole('combobox', { name: /^(Language|语言|言語)$/i })
+          .first()
+        await langSelect.waitFor({ state: 'visible', timeout: 8000 })
+        await langSelect.click()
+        await page.getByRole('option', { name: '中文（简体）' }).click()
+        await page.waitForFunction(() => document.documentElement.lang === 'zh', null, {
+          timeout: 8000
+        })
+        const zhLang = await page.evaluate(() => document.documentElement.lang)
+        assert.equal(zhLang, 'zh', `Expected <html lang="zh">, got ${zhLang}`)
+
+        await langSelect.click()
+        await page.getByRole('option', { name: '日本語' }).click()
+        await page.waitForFunction(() => document.documentElement.lang === 'ja', null, {
+          timeout: 8000
+        })
+        const jaLang = await page.evaluate(() => document.documentElement.lang)
+        assert.equal(jaLang, 'ja', `Expected <html lang="ja">, got ${jaLang}`)
+        await returnFromSettings(page)
+
+        return {
+          ...tokens,
+          dialogEscapeFocusRestored,
+          langFlow: [tokens.initialLang, zhLang, jaLang]
+        }
       } finally {
         await closeElectronApp(inst)
       }
@@ -516,10 +651,13 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['C.10.03', 'C.10.04', 'J03'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f03-01' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        const ws = await detectProductionWorkspaceShell(inst.page)
-        if (!ws.hasWorkspaceTabs) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        const ws = await detectWorkspaceShell(page)
+        if (!ws.integrated) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -527,9 +665,19 @@ export const TIER1_TESTS = [
             'Session Index not yet integrated into default production build'
           )
         }
-        return { sessionIndexPresent: true }
+        const sessionIndex = page.locator(M3_SELECTOR_CONTRACT.sessionIndex).first()
+        await sessionIndex.waitFor({ state: 'visible', timeout: 8000 })
+        const searchInput = sessionIndex.locator('input').first()
+        await searchInput.waitFor({ state: 'visible', timeout: 5000 })
+        await searchInput.fill('__no_matching_session_xyz__')
+        await sessionIndex.locator('[role="status"]').first().waitFor({ state: 'visible', timeout: 5000 })
+        await searchInput.fill('')
+        const optionsBtn = sessionIndex.locator('[data-session-index-scope], button').first()
+        assert.equal(await waitForVisible(optionsBtn, 3000), true, 'Session Index filter options control missing')
+        return { sessionIndexFilterVerified: true }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -539,10 +687,13 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['C.10.02', 'DDU-02', 'J03'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f03-02' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        const ws = await detectProductionWorkspaceShell(inst.page)
-        if (!ws.hasWorkspaceTabs) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        const ws = await detectWorkspaceShell(page)
+        if (!ws.integrated) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -550,9 +701,23 @@ export const TIER1_TESTS = [
             'Session Index not yet integrated into default production build'
           )
         }
-        return { verified: true }
+        const sessionIndex = page.locator(M3_SELECTOR_CONTRACT.sessionIndex).first()
+        await sessionIndex.waitFor({ state: 'visible', timeout: 8000 })
+        const rows = sessionIndex.locator(M3_SELECTOR_CONTRACT.sessionIndexRow)
+        await rows.first().waitFor({ state: 'visible', timeout: 8000 })
+        const initialTabCount = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
+        await rows.first().click()
+        await rows.first().dblclick()
+        const afterTabCount = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
+        assert.equal(
+          afterTabCount,
+          initialTabCount,
+          'Activating an already-open session row must reuse existing tab without duplicating'
+        )
+        return { initialTabCount, afterTabCount }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -584,8 +749,8 @@ export const TIER1_TESTS = [
         const searchBox = page.getByRole('textbox', { name: /^(Search sessions|搜索会话)$/i }).first()
         await searchBox.waitFor({ state: 'visible', timeout: 8000 })
 
-        const ws = await detectProductionWorkspaceShell(page)
-        if (!ws.hasWorkspaceTabs) {
+        const ws = await detectWorkspaceShell(page)
+        if (!ws.integrated) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -593,7 +758,15 @@ export const TIER1_TESTS = [
             'Vault search verified; Session Index integration pending M3'
           )
         }
-        return { vaultSearchVisible: true }
+        const sessionIndex = page.locator(M3_SELECTOR_CONTRACT.sessionIndex).first()
+        await sessionIndex.waitFor({ state: 'visible', timeout: 8000 })
+        const query = 'release checklist'
+        await sessionIndex.locator('input').first().fill(query)
+        await sessionIndex.getByRole('button', { name: /Search history|搜索历史/i }).first().click()
+        const historyContainer = sessionIndex.locator(M3_SELECTOR_CONTRACT.sessionIndexHistory).first()
+        await historyContainer.waitFor({ state: 'visible', timeout: 8000 })
+        await historyContainer.getByText(/release checklist/i).first().waitFor({ state: 'visible', timeout: 10000 })
+        return { vaultSearchVisible: true, sessionIndexHistoryHandoff: true }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -606,10 +779,13 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['D.03', 'D.03.01', 'D.04', 'T.03'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f03-04' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        const ws = await detectProductionWorkspaceShell(inst.page)
-        if (!ws.hasWorkspaceTabs) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        const ws = await detectWorkspaceShell(page)
+        if (!ws.integrated) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -617,9 +793,24 @@ export const TIER1_TESTS = [
             'Integrated Workspace split layout pending M3'
           )
         }
-        return { verified: true }
+        const addSessionBtn = page.getByRole('button', { name: /Add session|添加会话/i }).first()
+        if (await waitForVisible(addSessionBtn, 3000)) {
+          await addSessionBtn.click()
+        }
+        const splitLayout = page.locator(`${M3_SELECTOR_CONTRACT.splitLayout}[data-preview-split="side-by-side"]`).first()
+        await splitLayout.waitFor({ state: 'visible', timeout: 8000 })
+        const separator = splitLayout.getByRole('separator').first()
+        await separator.waitFor({ state: 'visible', timeout: 5000 })
+        const beforeVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
+        await separator.focus()
+        await page.keyboard.press('ArrowRight')
+        await sleep(150)
+        const afterVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
+        assert.ok(afterVal > beforeVal, `Expected divider ArrowRight to increase ratio (${beforeVal} -> ${afterVal})`)
+        return { beforeVal, afterVal }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -629,10 +820,13 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['G.09.01', 'G.09.02', 'DDU-05', 'J07'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't1-f03-05' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        const ws = await detectProductionWorkspaceShell(inst.page)
-        if (!ws.hasWorkspaceTabs) {
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+        const ws = await detectWorkspaceShell(page)
+        if (!ws.integrated) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -640,9 +834,21 @@ export const TIER1_TESTS = [
             'Pinned SidePanel Standalone/Embedded integration pending M3'
           )
         }
-        return { verified: true }
+        await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(Open Explorer|打开资源管理器)$/i }).first().click()
+        const standaloneExplorer = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="standalone"]`).first()
+        await standaloneExplorer.waitFor({ state: 'visible', timeout: 8000 })
+        const initialScope = (await standaloneExplorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
+        await standaloneExplorer.getByRole('button', { name: /Explorer placement|资源管理器位置/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(Move to |移动到)/i }).first().click()
+        const embeddedExplorer = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="embedded"]`).first()
+        await embeddedExplorer.waitFor({ state: 'visible', timeout: 8000 })
+        const embeddedScope = (await embeddedExplorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
+        assert.equal(embeddedScope, initialScope, 'Explorer fixed scope must persist across Standalone -> Embedded')
+        return { initialScope, embeddedScope }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },
@@ -835,7 +1041,7 @@ export const TIER1_TESTS = [
         }
         await stubOpenDialog(app, pluginFix.pluginDir)
         const addDevBtn = page.getByRole('button', { name: /Add.*folder|Load.*folder|添加.*目录/i }).first()
-        if (await addDevBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        if (await waitForVisible(addDevBtn, 3000)) {
           await addDevBtn.click()
           await sleep(500)
         }
@@ -895,7 +1101,7 @@ export const TIER1_TESTS = [
     refs: ['N.general.01', 'F04', 'F05', 'UX17'],
     timeoutMs: 360_000,
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       const inst = await launchElectronApp({
         porpitaRoot: ctx.porpitaRoot,
         profileOptions: { locale: 'zh' }
@@ -959,7 +1165,7 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['K.01', 'K.02', 'UX06', 'UX09'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const pid = core.info.project_id
         // Send 3 messages from client -> peer_b (empty pair -> populated conversation, no Run/Task)
@@ -1017,7 +1223,7 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['K.03', 'UX11', 'communication-contract-adoption'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const pid = core.info.project_id
         // Resolve conversation for client <-> peer_b
@@ -1082,7 +1288,7 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['K.04', 'UX10', 'C.10.08', 'communication-contract-adoption'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const pid = core.info.project_id
         const fix = core.nativeLinkFixture
@@ -1129,7 +1335,7 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['K.03', 'K.04', 'T04', 'communication-api-scope'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const pid = core.info.project_id
         const snap = await core.request('GET', `/projects/${pid}/snapshot?limit=10`, {
@@ -1210,7 +1416,7 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['K.03', 'UX12', 'communication-api-scope'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       try {
         const pid = core.info.project_id
         const { createHash } = await import('node:crypto')
@@ -1295,7 +1501,8 @@ export const TIER1_TESTS = [
       const staged = runStagedBuildCoverage({
         specRoot: ctx.specRoot,
         porpitaRoot: ctx.porpitaRoot,
-        historyRoot: ctx.historyRoot
+        historyRoot: ctx.historyRoot,
+        agentCollabRoot: ctx.agentCollabRoot
       })
       assert.equal(staged.sourceIndexExitCode, 0, `source-index failed: ${staged.sourceIndexStderr}`)
       if (staged.buildCoverageExitCode !== 0) {
@@ -1327,7 +1534,8 @@ export const TIER1_TESTS = [
       const staged = runStagedBuildCoverage({
         specRoot: ctx.specRoot,
         porpitaRoot: ctx.porpitaRoot,
-        historyRoot: ctx.historyRoot
+        historyRoot: ctx.historyRoot,
+        agentCollabRoot: ctx.agentCollabRoot
       })
       assert.equal(staged.sourceIndexExitCode, 0, staged.sourceIndexStderr)
       const reg = staged.summary.registry
@@ -1381,9 +1589,7 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F06',
     refs: ['ORIGINAL_REQUEST:R2', 'UI_SPEC_BRIEF'],
     async run(ctx) {
-      const refRoot =
-        'D:\\Chatgpt\\Agent-collaboration\\RFC_TEMP_SOURCE\\Porpita-Workspace-UI-Spec-Reference-v1.0.0'
-      const cw = checkReferenceCrosswalk({ refRoot, specRoot: ctx.specRoot })
+      const cw = checkReferenceCrosswalk({ refRoot: ctx.refRoot, specRoot: ctx.specRoot })
       assert.equal(cw.deliverablesCount, 11)
       assert.equal(cw.openQuestionsCount, 12)
       if (cw.missingDeliverablesInRef.length > 0 || !cw.hasExplicitOpenCrosswalk) {
@@ -1424,8 +1630,8 @@ export const TIER1_TESTS = [
     refs: ['ORIGINAL_REQUEST:R3', 'PROJECT'],
     async run(ctx) {
       const gitCheck = verifyGitBaselines({
-        agentCollabRoot: 'D:\\Chatgpt\\Agent-collaboration',
-        porpitaRoot: ctx.historyRoot
+        agentCollabRoot: ctx.agentCollabRoot,
+        historyRoot: ctx.historyRoot
       })
       assert.equal(gitCheck.ok, true, `Git baseline drift: ${gitCheck.issues.join(' | ')}`)
       return {

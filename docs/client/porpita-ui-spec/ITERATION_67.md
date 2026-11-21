@@ -8,4 +8,4 @@
 
 初次回放发现订阅式请求在手动断开时丢失错误类型。改用保留错误码的配对单次请求，关闭复核时结束当前行对结果的处理。双语复跑验证断开、恢复、再次占用和显式重试。 [首轮记录](evidence/iteration-66-68-trial/paired-first-run.json) · [断线画面](evidence/iteration-66-68-paired-en/i67-paired-host-offline.png) · [简中重试](evidence/iteration-66-68-paired-zh/i67-paired-host-retry.json)
 
-配对隔离的聚焦测试将同一环境 ID 换成另一个配对版本，验证删除在请求发送前被拒绝。 [测试源码](../../../.tmp/porpita-ui-spec-03/src/renderer/src/store/slices/worktrees/teardown/force-delete-preserved-branch.test.ts)
+配对隔离的聚焦测试将同一环境 ID 换成另一个配对版本，验证删除在请求发送前被拒绝（`src/renderer/src/store/slices/worktrees/teardown/force-delete-preserved-branch.test.ts`；[源码覆盖](source-index/module-coverage.csv)）。

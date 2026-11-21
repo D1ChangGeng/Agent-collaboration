@@ -2,25 +2,25 @@
   "roots": [
     {
       "path": "src/renderer/src/main.tsx",
-      "reachableModules": 8571
+      "reachableModules": 8574
     },
     {
       "path": "src/renderer/src/popout.tsx",
-      "reachableModules": 1739
+      "reachableModules": 1741
     },
     {
       "path": "src/renderer/src/space.tsx",
-      "reachableModules": 1681
+      "reachableModules": 1684
     },
     {
       "path": "src/renderer/src/web/main.tsx",
-      "reachableModules": 8623
+      "reachableModules": 8626
     }
   ],
-  "rendererModules": 9051,
-  "rendererRows": 2321,
+  "rendererModules": 9054,
+  "rendererRows": 2322,
   "noStaticEntryPoint": 29,
-  "interactableCandidates": 6309,
+  "interactableCandidates": 6313,
   "primitiveUseSites": 7966,
   "styleFiles": 10,
   "nativeHostCandidates": 82,
@@ -81,6 +81,31 @@
         "id": "terminal",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
         "line": 128
+      },
+      {
+        "id": "settings",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 151
+      },
+      {
+        "id": "skills",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 152
+      },
+      {
+        "id": "artifacts",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 153
+      },
+      {
+        "id": "automations",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 154
+      },
+      {
+        "id": "activity",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 155
       }
     ],
     "modal": [

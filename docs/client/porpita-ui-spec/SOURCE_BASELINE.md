@@ -437,7 +437,7 @@ Windows x64 的开发回放使用 Electron 43.8.6。配对恢复采用 `--space-
 
 ## 第 72–74 轮来源
 
-用户确认第 69–71 轮。首轮部署沿用 Porpita 基线 `5f97010d9a4784a34c0e0035d0ff7e2010117c59`。实机回放发现 SSH 连接重置无法触发保留分支的行内重连，修订为 `7d7a7cbec05531ea5b4c3bbcc706c59b42de17f0`。复验发现成功通知携带旧失败说明和重试入口。本地分支 `codex/porpita-ui-spec-72` 的最终提交为 `6dc5f823007c4808cca606196e03cc1ff38150dd`，tree `1ddbc858a4c537351a2da48ddcd060607e0c5aa0`。最终 Windows 和 Linux 构建使用同一提交，源码分支未推送。 [隧道修订](../../../.tmp/porpita-ui-spec-03/src/main/managed-server/lifecycle/orcad-managed-tunnel-active.ts) · [通知修订](../../../.tmp/porpita-ui-spec-03/src/renderer/src/components/sidebar/workspace-actions/deletion/preserved-branch-batch-toast.tsx)
+用户确认第 69–71 轮。首轮部署沿用 Porpita 基线 `5f97010d9a4784a34c0e0035d0ff7e2010117c59`。实机回放发现 SSH 连接重置无法触发保留分支的行内重连，修订为 `7d7a7cbec05531ea5b4c3bbcc706c59b42de17f0`。复验发现成功通知携带旧失败说明和重试入口。本地分支 `codex/porpita-ui-spec-72` 的最终提交为 `6dc5f823007c4808cca606196e03cc1ff38150dd`，tree `1ddbc858a4c537351a2da48ddcd060607e0c5aa0`。最终 Windows 和 Linux 构建使用同一提交，源码分支未推送（`src/main/managed-server/lifecycle/orcad-managed-tunnel-active.ts`、`src/renderer/src/components/sidebar/workspace-actions/deletion/preserved-branch-batch-toast.tsx`；[源码覆盖](source-index/module-coverage.csv)）。
 
 | 产物 | SHA-256 |
 | --- | --- |
@@ -561,3 +561,15 @@ Porpita 0.1.0 与 Electron 43.8.6 在同一物理 Ubuntu x86_64 验收机重建�
 | `out/renderer/index.html` | `0d600c2f5d73100f64a9a3a3b4892ceef034ab630642b90ba11c825898a522b5` |
 
 Windows x64 使用默认生产模式构建与 Electron 43.8.6，在 `ORCA_BACKGROUND_LAUNCH=1`、`ORCA_E2E_HEADLESS=1` 及隔离临时 `HOME`/`USERPROFILE`/`APPDATA`/`LOCALAPPDATA` 档案下运行 `tools/observe-round-90.cjs`（所有窗口核验 `!visible && !focused`），采集 23 组英/简中宽窄屏截图及状态记录（含 Skip 确认取消焦点恢复至 `Continue` 按钮、英语 Help 菜单 `Explore Porpita` / `Getting Started with Porpita`、以及 `TerminalSlide` 简中终端示例画面）。未配置账户云端服务与物理手机端实机扫面继续在各自边界下保持诚实待验。 [第 90 轮记录](ITERATION_90.md) · [回放工具](tools/observe-round-90.cjs) · [运行记录](evidence/iteration-90-windows/run.json) · [覆盖核对](coverage-audit.json)
+
+## 第 91 轮来源
+
+第 91 轮（Milestone M1-B：F03 视觉/基础组件/动效/可访问性与受控 `<Dialog open>` 回焦）在 `D:/Chatgpt/Agent-collaboration/.tmp/porpita-ui-spec-03` 的本地分支 `codex/porpita-ui-spec-91` 开展（基于 `50a1e8645a98d9951182ac3d04bee77290a710d6`），最终提交为 `e8062ab946c15a1afd57a78f51d3199b7f2e151d`（tree `f57f1b5f071580832c69589a3d51fddf1c0adf19`，涵盖 32 项文件改动：27 项修改、1 项删除旧测试 `main-css-accessibility-motion.test.ts`、4 项新增：`SettingsSegmentedControl.tsx`、`dialog-return-focus.ts`、`dialog-return-focus-targets.ts`、`dialog-return-focus.test.tsx`）。`@porpita-ui` 报告并在提交钩子（`.husky/pre-commit` `lint-staged`、`oxfmt`、`oxlint`、`ast-grep`、`oxlint-react-doctor`）验证通过：`check-changed-code-quality.mjs`（基线 `492ba96e45` 44 个变更文件与 `50a1e8645a` 24 个变更文件均 0 新增报错，含 `anti-slop`、`shadcn(no-restyle)` 与 `design system`）、`check:test-file-runners`、`oxfmt --check`（30 项）、5 工程并行 `corepack pnpm tc`（`15,543` / `4,186` / `12,991` / `38` / `18,357` 文件）、16 份 Vitest 回归（73 项通过）以及 `--mode e2e` 构建；`@verifier` 独立复核并复测通过（含 `--tier all --mode smoke` `total=87 passed=59 pendingMilestone=28 failed=0`）。
+
+| `--mode e2e` 构建文件 | SHA-256 |
+| --- | --- |
+| `out/main/index.js` | `47d1129ad627295542fb06275f8feac51067f9dd09da09a4681c1faf524a33de` |
+| `out/preload/index.js` | `d9bd4929c1e139efe173b7148c87d92a8f9f75d29ac945399049cc0d5c92b809` |
+| `out/renderer/index.html` | `91d430b52b5a8cbb399dba675146d343c43307116c6c8d58f7a789d1a2080469` |
+
+Windows x64 使用 `--mode e2e` 构建与 Electron 43.8.6，在 `ORCA_BACKGROUND_LAUNCH=1` 与临时隔离档案下运行跨平台升级版 `tools/observe-round-91.cjs`（所有窗口核验 `!visible && !focused`），采集 `evidence/iteration-91-windows/` 下 9 组截图与状态 JSON：验证 `AddRepoDialog` 在 `reduced-motion: reduce` 下的 `Local Windows` 焦点环与 `Escape` 精准回焦主区 `Add project` 按钮、Light/Dark `ArrowLeft` 切换保持 `scrollTop=120`、`System` 实时跟随 `prefers-color-scheme`、`forced-colors: active` + `prefers-contrast: more`、`158%` UI 缩放（未裁切 `1280×800` CDP 截图，CSS 视口 `811×507`）、`820×580` 与 `600×400` 极窄窗无碰撞、Settings 折叠箭头 `0s` 过渡以及 `en → zh → ja` 无重启实时切换。真实可见桌面窗口下的 `WindowMaterial` OS 材质合成、物理读屏器与 macOS/Linux 复测保持在各自受限边界外待验。 [第 91 轮记录](ITERATION_91.md) · [回放工具](tools/observe-round-91.cjs) · [运行记录](evidence/iteration-91-windows/run.json) · [覆盖核对](coverage-audit.json)

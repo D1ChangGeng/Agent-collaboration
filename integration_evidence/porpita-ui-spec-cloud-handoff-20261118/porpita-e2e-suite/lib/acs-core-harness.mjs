@@ -6,14 +6,34 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { sleep } from './electron-harness.mjs'
+import { resolveAgentCollabRoot, resolvePythonExecutable } from './paths.mjs'
 
 const THIS_DIR = path.dirname(fileURLToPath(import.meta.url))
 const SERVER_SCRIPT = path.join(THIS_DIR, 'acs_loopback_server.py')
-const AGENT_COLLAB_ROOT = 'D:\\Chatgpt\\Agent-collaboration'
-const VENV_PYTHON = path.join(AGENT_COLLAB_ROOT, '.venv', 'Scripts', 'python.exe')
 
 const ACTIVE_CORES = new Set()
 let SHARED_DOCKER_PG = null
+let CACHED_DOCKER_RUNNER = null
+
+function getDockerRunner() {
+  if (CACHED_DOCKER_RUNNER) return CACHED_DOCKER_RUNNER
+  if (process.platform !== 'win32') {
+    CACHED_DOCKER_RUNNER = { cmd: 'docker', prefix: [] }
+    return CACHED_DOCKER_RUNNER
+  }
+  try {
+    execFileSync('docker', ['info'], { stdio: 'ignore', timeout: 5000 })
+    CACHED_DOCKER_RUNNER = { cmd: 'docker', prefix: [] }
+  } catch {
+    CACHED_DOCKER_RUNNER = { cmd: 'wsl', prefix: ['docker'] }
+  }
+  return CACHED_DOCKER_RUNNER
+}
+
+function runDockerSync(args, options = {}) {
+  const { cmd, prefix } = getDockerRunner()
+  return execFileSync(cmd, [...prefix, ...args], options)
+}
 
 export async function findFreePort() {
   return await new Promise((resolve, reject) => {
@@ -31,12 +51,17 @@ export async function findFreePort() {
   })
 }
 
-function runPythonSync(args, extraEnv = {}, { quiet = false } = {}) {
-  return execFileSync(VENV_PYTHON, args, {
-    cwd: AGENT_COLLAB_ROOT,
+function runPythonSync(
+  args,
+  { agentCollabRoot = resolveAgentCollabRoot(), extraEnv = {}, quiet = false } = {}
+) {
+  const pythonExe = resolvePythonExecutable(agentCollabRoot)
+  return execFileSync(pythonExe, args, {
+    cwd: agentCollabRoot,
     env: {
       ...process.env,
-      PYTHONPATH: AGENT_COLLAB_ROOT,
+      AGENT_COLLAB_ROOT: agentCollabRoot,
+      PYTHONPATH: agentCollabRoot,
       PYTHONIOENCODING: 'utf-8',
       ...extraEnv
     },
@@ -46,7 +71,7 @@ function runPythonSync(args, extraEnv = {}, { quiet = false } = {}) {
   })
 }
 
-async function ensureSharedDockerPg() {
+async function ensureSharedDockerPg(agentCollabRoot) {
   if (SHARED_DOCKER_PG) return SHARED_DOCKER_PG
 
   let lastBindErr = null
@@ -57,10 +82,8 @@ async function ensureSharedDockerPg() {
     const password = `e2e-${randomUUID().replace(/-/g, '')}`
 
     try {
-      execFileSync(
-        'wsl',
+      runDockerSync(
         [
-          'docker',
           'run',
           '--rm',
           '-d',
@@ -87,7 +110,7 @@ async function ensureSharedDockerPg() {
     } catch (err) {
       lastBindErr = err
       try {
-        execFileSync('wsl', ['docker', 'rm', '-f', containerName], { stdio: 'ignore', timeout: 15000 })
+        runDockerSync(['rm', '-f', containerName], { stdio: 'ignore', timeout: 15000 })
       } catch {
         // ignore
       }
@@ -106,8 +129,7 @@ async function ensureSharedDockerPg() {
             'import psycopg, sys; conn = psycopg.connect(sys.argv[1], connect_timeout=2); conn.execute("SELECT 1"); conn.close()',
             baseDsn
           ],
-          {},
-          { quiet: true }
+          { agentCollabRoot, quiet: true }
         )
         lastErr = null
         break
@@ -118,17 +140,21 @@ async function ensureSharedDockerPg() {
     }
     if (lastErr) {
       try {
-        execFileSync('wsl', ['docker', 'rm', '-f', containerName], { stdio: 'ignore', timeout: 15000 })
+        runDockerSync(['rm', '-f', containerName], { stdio: 'ignore', timeout: 15000 })
       } catch {
         // ignore
       }
-      throw new Error(`Ephemeral PostgreSQL container ${containerName} failed to become ready: ${lastErr.message}`)
+      throw new Error(
+        `Ephemeral PostgreSQL container ${containerName} failed to become ready: ${lastErr.message}`
+      )
     }
 
     SHARED_DOCKER_PG = { containerName, pgPort, baseDsn }
     return SHARED_DOCKER_PG
   }
-  throw new Error(`Failed to start ephemeral PostgreSQL container after 4 attempts: ${lastBindErr?.message || 'unknown error'}`)
+  throw new Error(
+    `Failed to start ephemeral PostgreSQL container after 4 attempts: ${lastBindErr?.message || 'unknown error'}`
+  )
 }
 
 async function teardownSharedDockerPg() {
@@ -136,7 +162,7 @@ async function teardownSharedDockerPg() {
   const { containerName } = SHARED_DOCKER_PG
   SHARED_DOCKER_PG = null
   try {
-    execFileSync('wsl', ['docker', 'rm', '-f', containerName], {
+    runDockerSync(['rm', '-f', containerName], {
       stdio: 'ignore',
       timeout: 20000
     })
@@ -145,23 +171,26 @@ async function teardownSharedDockerPg() {
   }
 }
 
-async function provisionPostgres() {
+async function provisionPostgres(agentCollabRoot) {
   const externalDsn = process.env.ACS_E2E_PG_DSN
   let baseDsn = externalDsn
   let kind = 'schema'
   if (!baseDsn) {
-    const shared = await ensureSharedDockerPg()
+    const shared = await ensureSharedDockerPg(agentCollabRoot)
     baseDsn = shared.baseDsn
     kind = 'docker-schema'
   }
 
   const schema = `e2e_${randomUUID().replace(/-/g, '').slice(0, 16)}`
-  runPythonSync([
-    '-c',
-    `import psycopg, sys; conn = psycopg.connect(sys.argv[1], autocommit=True); conn.execute(f'CREATE SCHEMA "{sys.argv[2]}"'); conn.close()`,
-    baseDsn,
-    schema
-  ])
+  runPythonSync(
+    [
+      '-c',
+      `import psycopg, sys; conn = psycopg.connect(sys.argv[1], autocommit=True); conn.execute(f'CREATE SCHEMA "{sys.argv[2]}"'); conn.close()`,
+      baseDsn,
+      schema
+    ],
+    { agentCollabRoot }
+  )
   const sep = baseDsn.includes('?') ? '&' : '?'
   const dsn = `${baseDsn}${sep}options=-c%20search_path%3D${schema}`
   return {
@@ -178,8 +207,7 @@ async function provisionPostgres() {
             baseDsn,
             schema
           ],
-          {},
-          { quiet: true }
+          { agentCollabRoot, quiet: true }
         )
       } catch {
         // Best-effort schema cleanup
@@ -188,12 +216,14 @@ async function provisionPostgres() {
   }
 }
 
-export async function startLoopbackAcsCore({ mode = 'full' } = {}) {
+export async function startLoopbackAcsCore({ mode = 'full', agentCollabRoot = null } = {}) {
+  const resolvedAcRoot = resolveAgentCollabRoot(agentCollabRoot)
+  const pythonExe = resolvePythonExecutable(resolvedAcRoot)
   const tempDir = path.join(os.tmpdir(), `porpita-acs-e2e-${randomUUID().slice(0, 12)}`)
   const stateDir = path.join(tempDir, 'state')
   mkdirSync(stateDir, { recursive: true })
 
-  const pg = await provisionPostgres()
+  const pg = await provisionPostgres(resolvedAcRoot)
   let serverProc = null
   let httpPort = null
   let adminToken = null
@@ -279,7 +309,7 @@ export async function startLoopbackAcsCore({ mode = 'full' } = {}) {
       httpPort = fixedPort || (await findFreePort())
       stderrChunks = []
       serverProc = spawn(
-        VENV_PYTHON,
+        pythonExe,
         [
           SERVER_SCRIPT,
           'serve',
@@ -293,10 +323,12 @@ export async function startLoopbackAcsCore({ mode = 'full' } = {}) {
           newMode
         ],
         {
-          cwd: AGENT_COLLAB_ROOT,
+          cwd: resolvedAcRoot,
+          detached: process.platform !== 'win32',
           env: {
             ...process.env,
-            PYTHONPATH: AGENT_COLLAB_ROOT,
+            AGENT_COLLAB_ROOT: resolvedAcRoot,
+            PYTHONPATH: resolvedAcRoot,
             PYTHONIOENCODING: 'utf-8',
             NO_PROXY: '127.0.0.1,localhost'
           },
@@ -341,23 +373,45 @@ export async function startLoopbackAcsCore({ mode = 'full' } = {}) {
       serverProc = null
       if (proc.exitCode !== null) return
       const exited = new Promise((resolve) => proc.once('exit', resolve))
-      try {
-        if (process.platform === 'win32') {
+      if (process.platform === 'win32') {
+        try {
           execFileSync('taskkill', ['/pid', String(proc.pid), '/T', '/F'], {
             stdio: 'ignore',
             timeout: 5000
           })
-        } else {
-          proc.kill('SIGTERM')
+        } catch {
+          try {
+            proc.kill('SIGKILL')
+          } catch {
+            // ignore
+          }
         }
+        await Promise.race([exited, sleep(5000)])
+        return
+      }
+
+      try {
+        process.kill(-proc.pid, 'SIGTERM')
       } catch {
         try {
-          proc.kill('SIGKILL')
+          proc.kill('SIGTERM')
         } catch {
           // ignore
         }
       }
-      await Promise.race([exited, sleep(5000)])
+      await Promise.race([exited, sleep(4000)])
+      if (proc.exitCode === null) {
+        try {
+          process.kill(-proc.pid, 'SIGKILL')
+        } catch {
+          try {
+            proc.kill('SIGKILL')
+          } catch {
+            // ignore
+          }
+        }
+        await Promise.race([exited, sleep(1500)])
+      }
     },
     async restartServer(opts = {}) {
       const prevPort = httpPort
@@ -382,7 +436,10 @@ export async function startLoopbackAcsCore({ mode = 'full' } = {}) {
   ACTIVE_CORES.add(core)
 
   try {
-    const setupOut = runPythonSync([SERVER_SCRIPT, 'setup', '--dsn', pg.dsn, '--state', stateDir])
+    const setupOut = runPythonSync(
+      [SERVER_SCRIPT, 'setup', '--dsn', pg.dsn, '--state', stateDir],
+      { agentCollabRoot: resolvedAcRoot }
+    )
     const setupJson = JSON.parse(setupOut.trim().split('\n').pop())
     adminToken = setupJson.tokens.admin
     await core.startServer({ newMode: mode })

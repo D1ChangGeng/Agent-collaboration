@@ -7,14 +7,17 @@ import {
   addLocalFolderProject,
   assertAllWindowsHidden,
   closeElectronApp,
+  hasIntegratedWorkspaceShell,
   launchElectronApp,
+  M3_SELECTOR_CONTRACT,
   openCollaborationDialog,
   openSettingsPage,
   quitElectronGracefully,
   returnFromSettings,
   setViewportSize,
   sleep,
-  stubOpenDialog
+  stubOpenDialog,
+  waitForVisible
 } from '../lib/electron-harness.mjs'
 import { startLoopbackAcsCore } from '../lib/acs-core-harness.mjs'
 import {
@@ -36,20 +39,6 @@ import {
   runStagedBuildCoverage
 } from '../lib/spec-audit-harness.mjs'
 import { ENV_BOUNDED_ITEMS, pendingIfSmoke } from '../lib/test-context.mjs'
-
-async function hasIntegratedWorkspaceShell(page) {
-  return await page.evaluate(() => {
-    const previewToggle = [...document.querySelectorAll('button')].some((b) =>
-      /Workspaces \(preview\)|工作空间（预览）/i.test(b.textContent || '')
-    )
-    const hasTabs =
-      Boolean(document.querySelector('[data-workspace-preview]')) ||
-      Boolean(document.querySelector('[data-workspace-tab-strip]')) ||
-      Boolean(document.querySelector('[data-workspace-group-selector]')) ||
-      Boolean(document.querySelector('[data-session-index]'))
-    return !previewToggle && hasTabs
-  })
-}
 
 export const TIER4_TESTS = [
   {
@@ -78,7 +67,7 @@ export const TIER4_TESTS = [
         // Skip / finish onboarding
         await modal.getByRole('button', { name: /Set up later|稍后设置/i }).first().click()
         const confirmSkip = page.getByRole('dialog').getByRole('button', { name: /^(Skip|跳过)$/i }).first()
-        if (await confirmSkip.isVisible({ timeout: 3000 }).catch(() => false)) {
+        if (await waitForVisible(confirmSkip, 3000)) {
           await confirmSkip.click()
         }
         await modal.waitFor({ state: 'hidden', timeout: 10000 })
@@ -140,7 +129,8 @@ export const TIER4_TESTS = [
     async run(ctx) {
       const repoA = createTempGitRepo({ name: 't4-02-repo-a', files: { 'shared.md': '# Repo A\n' } })
       const repoB = createTempGitRepo({ name: 't4-02-repo-b', files: { 'shared.md': '# Repo B\n' } })
-      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      let inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const tempRoot = inst.tempRoot
       try {
         const { app, page } = inst
         await addLocalFolderProject(app, page, repoA.repoPath)
@@ -153,9 +143,34 @@ export const TIER4_TESTS = [
             'Integrated Workspace Tab Groups, Session Index, Split Panes & Pinned SidePanel pending M3'
           )
         }
-        return { verified: true }
+        await page.getByText(path.basename(repoA.repoPath)).first().click()
+        await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(Open Explorer|打开资源管理器)$/i }).first().click()
+        const standaloneExplorer = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="standalone"]`).first()
+        await standaloneExplorer.waitFor({ state: 'visible', timeout: 8000 })
+        const pinnedScope = (await standaloneExplorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
+        await standaloneExplorer.getByRole('button', { name: /Explorer placement|资源管理器位置/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(Move to |移动到)/i }).first().click()
+        const embedded = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="embedded"]`).first()
+        await embedded.waitFor({ state: 'visible', timeout: 8000 })
+        assert.equal(
+          (await embedded.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim(),
+          pinnedScope
+        )
+        const tabCountBefore = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
+        const exitCode = await quitElectronGracefully(inst)
+        assert.equal(exitCode, 0)
+        inst = await launchElectronApp({
+          porpitaRoot: ctx.porpitaRoot,
+          tempRoot,
+          seedCompletedOnboarding: false
+        })
+        await inst.page.locator(M3_SELECTOR_CONTRACT.workspaceTab).first().waitFor({ state: 'visible', timeout: 15000 })
+        const tabCountAfter = await inst.page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
+        assert.ok(tabCountAfter >= tabCountBefore, `Expected >=${tabCountBefore} tabs after relaunch, got ${tabCountAfter}`)
+        return { pinnedScope, tabCountBefore, tabCountAfter }
       } finally {
-        await closeElectronApp(inst)
+        await closeElectronApp(inst, { removeTempDir: true })
         repoA.cleanup()
         repoB.cleanup()
       }
@@ -241,7 +256,7 @@ export const TIER4_TESTS = [
     featureArea: 'E2E-F05',
     refs: ['J09*', 'J12', 'T01-T07*', 'UX06', 'UX09-UX17'],
     async run(ctx) {
-      const core = await startLoopbackAcsCore({ mode: 'full' })
+      const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       const inst = await launchElectronApp({
         porpitaRoot: ctx.porpitaRoot,
         profileOptions: { locale: 'zh' }
@@ -375,7 +390,8 @@ export const TIER4_TESTS = [
         const denied = await core.request('GET', `/projects/${pid}/messages`, {
           token: core.tokens.client
         })
-        assert.ok(denied.status === 401 || denied.status === 403)
+        assert.equal(denied.status, 403, denied.text)
+        assert.equal(denied.json?.error?.code, 'authorization_denied', denied.text)
 
         if (!/Connected|已连接/i.test(titleStatus)) {
           pendingIfSmoke(
@@ -456,20 +472,21 @@ export const TIER4_TESTS = [
       assert.deepEqual(apiParity.missingInP1, [])
 
       const gitCheck = verifyGitBaselines({
-        agentCollabRoot: 'D:\\Chatgpt\\Agent-collaboration',
-        porpitaRoot: ctx.historyRoot
+        agentCollabRoot: ctx.agentCollabRoot,
+        historyRoot: ctx.historyRoot
       })
       assert.equal(gitCheck.ok, true, `Git baseline drift: ${gitCheck.issues.join(' | ')}`)
 
       const staged = runStagedBuildCoverage({
         specRoot: ctx.specRoot,
         porpitaRoot: ctx.porpitaRoot,
-        historyRoot: ctx.historyRoot
+        historyRoot: ctx.historyRoot,
+        agentCollabRoot: ctx.agentCollabRoot
       })
       assert.equal(staged.sourceIndexExitCode, 0, staged.sourceIndexStderr)
 
       const designEv = runDesignEvidenceCheck({
-        agentCollabRoot: 'D:\\Chatgpt\\Agent-collaboration',
+        agentCollabRoot: ctx.agentCollabRoot,
         porpitaRoot: ctx.porpitaRoot
       })
       if (designEv.applicable) {
@@ -481,8 +498,7 @@ export const TIER4_TESTS = [
         specRoot: ctx.specRoot
       })
       const refCw = checkReferenceCrosswalk({
-        refRoot:
-          'D:\\Chatgpt\\Agent-collaboration\\RFC_TEMP_SOURCE\\Porpita-Workspace-UI-Spec-Reference-v1.0.0',
+        refRoot: ctx.refRoot,
         specRoot: ctx.specRoot
       })
 
