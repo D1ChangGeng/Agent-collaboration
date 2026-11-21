@@ -274,9 +274,20 @@ export async function assertAllWindowsHidden(app) {
 
 export async function setViewportSize(app, page, width, height) {
   const win = await withTimeout(app.browserWindow(page), 15000, 'browserWindow')
+  const winId = await withTimeout(win.evaluate((w) => w.id), 10000, 'browserWindowId').catch(() => null)
   for (let attempt = 0; attempt < 3; attempt++) {
     await withTimeout(
-      win.evaluate((w, [cw, ch]) => w.setContentSize(cw, ch), [width, height]),
+      winId !== null
+        ? app.evaluate(
+            ({ BrowserWindow }, [id, cw, ch]) => {
+              const target = BrowserWindow.fromId(id)
+              if (target && !target.isDestroyed()) {
+                target.setContentSize(cw, ch)
+              }
+            },
+            [winId, width, height]
+          )
+        : win.evaluate((w, [cw, ch]) => w.setContentSize(cw, ch), [width, height]),
       10000,
       'setContentSize'
     )
@@ -867,10 +878,13 @@ export async function hasIntegratedWorkspaceShell(page) {
 }
 
 export async function openSettingsPage(page) {
+  const section = page.locator('section[data-settings-section]').first()
+  if (await waitForVisible(section, 250)) {
+    return
+  }
   const settingsBtn = page.getByRole('button', { name: /^(Settings|设置)$/i }).first()
   await settingsBtn.waitFor({ state: 'visible', timeout: 10000 })
   await settingsBtn.click()
-  const section = page.locator('section[data-settings-section]').first()
   if (!(await waitForVisible(section, 3000))) {
     if (await settingsBtn.isVisible().catch(() => false)) {
       await settingsBtn.click({ timeout: 2000 }).catch(() => {})
@@ -902,4 +916,443 @@ export async function openCollaborationDialog(page) {
   const dialog = page.getByRole('dialog').filter({ hasText: /^(Collaboration|协作消息)/i }).first()
   await dialog.waitFor({ state: 'visible', timeout: 10000 })
   return dialog
+}
+
+/**
+ * Returns the platform primary shortcut modifier for Playwright key chords.
+ */
+export function primaryModifierKey() {
+  return process.platform === 'darwin' ? 'Meta' : 'Control'
+}
+
+/**
+ * Verifies a toolbar/surface has no horizontal overflow, clipped controls, or sibling button overlaps.
+ */
+export async function assertHorizontalToolbarLayout(
+  page,
+  containerSelector = 'main',
+  contextLabel = 'layout'
+) {
+  const geo = await page.evaluate((sel) => {
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const root = document.querySelector(sel) || document.querySelector('main')
+    if (!root) {
+      return { found: false, docOverflowX: document.documentElement.scrollWidth > vw + 2 }
+    }
+    const rr = root.getBoundingClientRect()
+    const rawItems = [...root.querySelectorAll('button, input, [role="combobox"], a, [data-slot="button"]')]
+      .map((el) => {
+        const r = el.getBoundingClientRect()
+        return {
+          el,
+          label:
+            el.getAttribute('aria-label') ||
+            el.getAttribute('placeholder') ||
+            el.textContent?.trim().slice(0, 50) ||
+            el.tagName,
+          left: r.left,
+          top: r.top,
+          right: r.right,
+          bottom: r.bottom,
+          width: r.width,
+          height: r.height
+        }
+      })
+      .filter((r) => r.width > 0 && r.height > 0 && r.top < vh && r.bottom > 0)
+
+    const clipped = rawItems
+      .filter((r) => r.right > vw + 1 || r.right > rr.right + 2 || r.left < -1)
+      .map((r) => ({
+        label: r.label,
+        left: Math.round(r.left),
+        right: Math.round(r.right),
+        containerRight: Math.round(rr.right),
+        vw
+      }))
+
+    const overlaps = []
+    for (let i = 0; i < rawItems.length; i++) {
+      for (let j = i + 1; j < rawItems.length; j++) {
+        const a = rawItems[i]
+        const b = rawItems[j]
+        if (a.el.contains(b.el) || b.el.contains(a.el)) continue
+        const ix = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+        const iy = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
+        if (ix > 2 && iy > 2) {
+          overlaps.push({ a: a.label, b: b.label, ix: Math.round(ix), iy: Math.round(iy) })
+        }
+      }
+    }
+
+    return {
+      found: true,
+      itemCount: rawItems.length,
+      scrollWidth: Math.round(root.scrollWidth),
+      clientWidth: Math.round(root.clientWidth),
+      rootOverflowX: root.scrollWidth > root.clientWidth + 2,
+      docOverflowX: document.documentElement.scrollWidth > vw + 2,
+      clipped,
+      overlaps
+    }
+  }, containerSelector)
+
+  assert.equal(geo.found, true, `${contextLabel}: container ${containerSelector} not found`)
+  assert.ok(geo.itemCount >= 1, `${contextLabel}: expected >=1 visible interactive control`)
+  assert.equal(
+    geo.docOverflowX,
+    false,
+    `${contextLabel}: document horizontal overflow detected (${JSON.stringify(geo)})`
+  )
+  assert.equal(
+    geo.rootOverflowX,
+    false,
+    `${contextLabel}: container overflowX (${geo.scrollWidth} > ${geo.clientWidth})`
+  )
+  assert.deepEqual(geo.clipped, [], `${contextLabel}: clipped controls: ${JSON.stringify(geo.clipped)}`)
+  assert.deepEqual(geo.overlaps, [], `${contextLabel}: overlapping controls: ${JSON.stringify(geo.overlaps)}`)
+  return geo
+}
+
+/**
+ * Verifies [data-notification-card-stack] cards stay inside the viewport and do not block primary controls.
+ */
+export async function assertNotificationStackNonBlocking(
+  page,
+  { requireActiveCard = false, contextLabel = 'notification-stack' } = {}
+) {
+  const probe = await page.evaluate(() => {
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const stack = document.querySelector('[data-notification-card-stack]')
+    const setupLayer = document.querySelector('[data-setup-script-prompt-layer]')
+    const cards = [...document.querySelectorAll('[data-notification-card-stack] > *')]
+      .map((el) => {
+        const r = el.getBoundingClientRect()
+        return {
+          text: (el.textContent || '').trim().slice(0, 80),
+          left: Math.round(r.left),
+          top: Math.round(r.top),
+          right: Math.round(r.right),
+          bottom: Math.round(r.bottom),
+          width: Math.round(r.width),
+          height: Math.round(r.height)
+        }
+      })
+      .filter((r) => r.width > 0 && r.height > 0)
+
+    const clippedCards = cards.filter(
+      (c) => c.top < -1 || c.bottom > vh + 1 || c.left < -1 || c.right > vw + 1
+    )
+
+    const primaryTargets = [
+      ...document.querySelectorAll('main button, aside button, [data-worktree-card-surface="true"]')
+    ].filter((el) => {
+      if (setupLayer && setupLayer.contains(el)) return false
+      if (stack && stack.contains(el)) return false
+      const r = el.getBoundingClientRect()
+      return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < vh
+    })
+
+    const blockedControls = []
+    for (const target of primaryTargets) {
+      const tr = target.getBoundingClientRect()
+      const cx = Math.round((tr.left + tr.right) / 2)
+      const cy = Math.round((tr.top + tr.bottom) / 2)
+      const topEl = document.elementFromPoint(cx, cy)
+      const occludedByStack = Boolean(stack && topEl && stack.contains(topEl))
+      const occludedBySetup = Boolean(setupLayer && topEl && setupLayer.contains(topEl))
+      if (occludedByStack || occludedBySetup) {
+        blockedControls.push({
+          label:
+            target.getAttribute('aria-label') ||
+            target.textContent?.trim().slice(0, 50) ||
+            target.tagName,
+          blocker: occludedByStack ? 'notification-card-stack' : 'setup-script-prompt',
+          rect: { left: Math.round(tr.left), top: Math.round(tr.top), right: Math.round(tr.right), bottom: Math.round(tr.bottom) }
+        })
+      }
+    }
+
+    return {
+      vw,
+      vh,
+      stackPresent: Boolean(stack),
+      activeCardsCount: cards.length,
+      cards,
+      clippedCards,
+      blockedControls
+    }
+  })
+
+  if (requireActiveCard) {
+    assert.ok(
+      probe.activeCardsCount >= 1,
+      `${contextLabel}: expected at least 1 active card in [data-notification-card-stack]`
+    )
+  }
+  assert.deepEqual(
+    probe.clippedCards,
+    [],
+    `${contextLabel}: notification card clipped outside viewport: ${JSON.stringify(probe)}`
+  )
+  assert.deepEqual(
+    probe.blockedControls,
+    [],
+    `${contextLabel}: notification card stack overlapped/blocked controls: ${JSON.stringify(probe)}`
+  )
+  return probe
+}
+
+/**
+ * Installs, trusts, and approves a local folder plugin through Settings -> Plugins without silent skips.
+ */
+export async function installAndEnableFolderPlugin(app, page, pluginFix) {
+  const sec = page.locator('section[data-settings-section="plugins"]').first()
+  await sec.waitFor({ state: 'visible', timeout: 10000 })
+
+  const turnOnBtn = page.getByRole('button', { name: /Turn on plugins|开启插件/i }).first()
+  if (await waitForVisible(turnOnBtn, 1200)) {
+    await turnOnBtn.click()
+  }
+
+  const addMenuBtn = page.getByRole('button', { name: /^(Add plugin|添加插件)/i }).first()
+  await addMenuBtn.waitFor({ state: 'visible', timeout: 8000 })
+  await stubOpenDialog(app, [pluginFix.pluginDir])
+  await addMenuBtn.click()
+
+  const fromFolderItem = page.getByRole('menuitem', { name: /From a folder|从文件夹/i }).first()
+  await fromFolderItem.waitFor({ state: 'visible', timeout: 5000 })
+  await fromFolderItem.click()
+
+  const installDialog = page.locator('[role="dialog"]:visible').last()
+  await installDialog.waitFor({ state: 'visible', timeout: 5000 })
+  const folderInput = installDialog.locator('input#plugin-local-path, input').first()
+  await folderInput.waitFor({ state: 'visible', timeout: 5000 })
+  await folderInput.fill(pluginFix.pluginDir)
+
+  const modalInstallBtn = installDialog.getByRole('button', { name: /^(Install|安装|Add|添加)$/i }).first()
+  await modalInstallBtn.waitFor({ state: 'visible', timeout: 5000 })
+  await modalInstallBtn.click()
+
+  const trustConfirmBtn = page
+    .locator('[role="dialog"]:visible, [role="alertdialog"]:visible')
+    .last()
+    .getByRole('button', { name: /^(Add folder|添加文件夹|Install|安装|Approve|Allow|Trust|允许|确认)$/i })
+    .first()
+  if (await waitForVisible(trustConfirmBtn, 5000)) {
+    await trustConfirmBtn.click()
+  }
+
+  // After install, PluginsSettingsSection opens review/detail OR lists the plugin awaiting review.
+  const reviewBtn = sec.getByRole('button', { name: /^(Review|审核|查看)$/i }).first()
+  const enableBtn = sec.getByRole('button', { name: /Enable plugin|启用插件/i }).first()
+  const pluginEntry = page.getByText(pluginFix.title, { exact: false }).first()
+  await pluginEntry.waitFor({ state: 'visible', timeout: 12000 })
+
+  if (await waitForVisible(reviewBtn, 1500)) {
+    await reviewBtn.click()
+  }
+  if (await waitForVisible(enableBtn, 2500)) {
+    await enableBtn.click()
+  }
+
+  const openPanelBtn = sec.getByRole('button', { name: /Open panel|打开面板/i }).first()
+  const enabledSwitch = sec
+    .locator('[role="switch"][aria-checked="true"]')
+    .first()
+  const becameReady =
+    (await waitForVisible(openPanelBtn, 6000)) || (await waitForVisible(enabledSwitch, 2000))
+  assert.equal(
+    becameReady,
+    true,
+    `Plugin ${pluginFix.title} did not reach enabled state after folder install & review`
+  )
+  return { installed: true, enabled: true }
+}
+
+/**
+ * Opens the installed plugin panel in RightSidebar and asserts healthy rendering without load failure.
+ */
+export async function openAndVerifyPluginPanel(page, pluginTitle) {
+  const sec = page.locator('section[data-settings-section="plugins"]').first()
+  let openPanelBtn = sec.getByRole('button', { name: /Open panel|打开面板/i }).first()
+  if (!(await waitForVisible(openPanelBtn, 1500))) {
+    const pluginRow = sec.getByText(pluginTitle, { exact: false }).first()
+    await pluginRow.waitFor({ state: 'visible', timeout: 8000 })
+    await pluginRow.click()
+    openPanelBtn = sec.getByRole('button', { name: /Open panel|打开面板/i }).first()
+  }
+  await openPanelBtn.waitFor({ state: 'visible', timeout: 8000 })
+  await openPanelBtn.click()
+
+  const panelSurface = page.locator('[data-plugin-panel-surface]').first()
+  await panelSurface.waitFor({ state: 'visible', timeout: 12000 })
+
+  // Wait briefly for declarative/frame panel hydration to settle before inspecting errors/content.
+  await page
+    .waitForFunction(() => {
+      const el = document.querySelector('[data-plugin-panel-surface]')
+      if (!el) return false
+      const text = (el.innerText || '').trim()
+      return text.length > 0 && !/^(Loading|加载中)/i.test(text)
+    }, undefined, { timeout: 10000 })
+    .catch(() => {})
+
+  const panelState = await page.evaluate(() => {
+    const surface = document.querySelector('[data-plugin-panel-surface]')
+    if (!surface) return { present: false }
+    const rect = surface.getBoundingClientRect()
+    const text = (surface.innerText || '').trim()
+    const alerts = [...surface.querySelectorAll('[role="alert"]')].map((a) => (a.innerText || '').trim())
+    const hasInteractive =
+      surface.querySelectorAll('button, input, [role="switch"], webview, iframe').length > 0
+    return {
+      present: true,
+      tabKey: surface.getAttribute('data-plugin-panel-surface'),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      text: text.slice(0, 500),
+      alerts,
+      hasInteractive
+    }
+  })
+
+  assert.equal(panelState.present, true, 'RightSidebar plugin panel surface did not mount')
+  assert.ok(
+    panelState.width > 80 && panelState.height > 80,
+    `Plugin panel rendered empty/collapsed: ${JSON.stringify(panelState)}`
+  )
+  assert.equal(
+    /failed to load|加载失败/i.test(panelState.text),
+    false,
+    `Plugin panel showed runtime load error: ${panelState.text}`
+  )
+  assert.equal(
+    panelState.alerts.some((msg) => /failed to load|加载失败/i.test(msg)),
+    false,
+    `Plugin panel emitted alert error: ${JSON.stringify(panelState.alerts)}`
+  )
+  assert.ok(
+    panelState.hasInteractive || panelState.text.length > 0,
+    `Plugin panel rendered no visible content or controls: ${JSON.stringify(panelState)}`
+  )
+  return panelState
+}
+
+/**
+ * Disables an active plugin via its Settings switch and verifies cleanup and connected focus.
+ */
+export async function disablePluginAndVerify(page, pluginTitle) {
+  await openSettingsPage(page)
+  const pluginsNav = page.locator('aside button').filter({ hasText: /^(Plugins|插件)/i }).first()
+  await pluginsNav.waitFor({ state: 'visible', timeout: 8000 })
+  await pluginsNav.click()
+  const sec = page.locator('section[data-settings-section="plugins"]').first()
+  await sec.waitFor({ state: 'visible', timeout: 8000 })
+
+  let disableSwitch = sec
+    .getByRole('switch', { name: new RegExp(`Disable.*${pluginTitle}|停用|禁用`, 'i') })
+    .first()
+  if (!(await waitForVisible(disableSwitch, 1500))) {
+    // PluginManager suppresses uncataloged local plugins on "All" while catalog.loading awaits online seed;
+    // switching to "Installed" renders visibleInstalled immediately offline.
+    const installedTab = sec.locator('button, [role="tab"]').filter({ hasText: /^(Installed|已安装)/i }).first()
+    if (await waitForVisible(installedTab, 1500)) {
+      await installedTab.click()
+    }
+  }
+  if (!(await waitForVisible(disableSwitch, 2000))) {
+    disableSwitch = sec.locator('[role="switch"][aria-checked="true"]').first()
+  }
+  await disableSwitch.waitFor({ state: 'visible', timeout: 8000 })
+  assert.equal(
+    await disableSwitch.getAttribute('aria-checked'),
+    'true',
+    `Expected enabled switch aria-checked="true" for ${pluginTitle}`
+  )
+  await disableSwitch.click()
+  await page.waitForFunction(
+    (namePattern) => {
+      const secEl = document.querySelector('section[data-settings-section="plugins"]')
+      if (!secEl) return false
+      const sw = [...secEl.querySelectorAll('[role="switch"]')].find((el) =>
+        new RegExp(namePattern, 'i').test(el.getAttribute('aria-label') || '')
+      ) || secEl.querySelector('[role="switch"]')
+      return Boolean(sw && sw.getAttribute('aria-checked') === 'false')
+    },
+    pluginTitle,
+    { timeout: 8000 }
+  )
+
+  const focusConnected = await page.evaluate(() => Boolean(document.activeElement?.isConnected))
+  assert.equal(focusConnected, true, 'Document activeElement became disconnected after disabling plugin')
+
+  await returnFromSettings(page)
+  assert.equal(
+    await page.locator('[data-plugin-panel-surface]:visible').count(),
+    0,
+    'Disabled plugin panel remained visible after turning off plugin'
+  )
+  return { disabledCleanly: true, focusConnected }
+}
+
+/**
+ * Dispatches IME composition events with Enter inside a CommandDialog and verifies it does not close.
+ */
+export async function assertImeCompositionKeepsDialogOpen(page, dialogLocator, typedText = 'ma') {
+  await dialogLocator.waitFor({ state: 'visible', timeout: 8000 })
+  const input = dialogLocator.locator('input').first()
+  await input.waitFor({ state: 'visible', timeout: 5000 })
+  await input.click()
+  await input.fill(typedText)
+
+  const stateAfterEnter = await page.evaluate(() => {
+    const el = document.activeElement
+    if (!el || el.tagName !== 'INPUT') {
+      return { activeTag: el?.tagName ?? null, value: null }
+    }
+    el.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '测' }))
+    el.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', keyCode: 229, isComposing: true, bubbles: true })
+    )
+    el.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '测试' }))
+    return { activeTag: el.tagName, value: el.value }
+  })
+
+  assert.equal(
+    stateAfterEnter.activeTag,
+    'INPUT',
+    `Expected focused dialog INPUT during IME Enter, got ${stateAfterEnter.activeTag}`
+  )
+  assert.equal(
+    await dialogLocator.isVisible(),
+    true,
+    'IME Enter (isComposing=true) must NOT prematurely close/submit CommandDialog'
+  )
+  await page.keyboard.press('Escape')
+  await dialogLocator.waitFor({ state: 'hidden', timeout: 5000 })
+  return stateAfterEnter
+}
+
+/**
+ * Opens Markdown Preview from the active editor header path context menu and verifies rendered heading + XSS safety.
+ */
+export async function openMarkdownPreviewAndVerify(page, headingText = 'Release Notes') {
+  const headerRow = page.locator('.editor-header-path-row').first()
+  await headerRow.waitFor({ state: 'visible', timeout: 8000 })
+  await headerRow.click({ button: 'right' })
+  const previewItem = page
+    .getByRole('menuitem', { name: /Open Markdown Preview|打开 Markdown 预览/i })
+    .first()
+  await previewItem.waitFor({ state: 'visible', timeout: 5000 })
+  await previewItem.click()
+  await page
+    .locator('h1')
+    .filter({ hasText: new RegExp(`^${headingText}$`, 'i') })
+    .first()
+    .waitFor({ state: 'visible', timeout: 10000 })
+  const xssTriggered = await page.evaluate(() => Boolean(window.__xss))
+  assert.equal(xssTriggered, false, 'Markdown <script> tag must NEVER execute in Preview')
+  return { previewRendered: true, xssTriggered }
 }

@@ -4,13 +4,18 @@ import path from 'node:path'
 import {
   addLocalFolderProject,
   assertAllWindowsHidden,
+  assertHorizontalToolbarLayout,
   closeElectronApp,
   detectWorkspaceShell,
   dismissStartupDialogs,
+  installAndEnableFolderPlugin,
   launchElectronApp,
   M3_SELECTOR_CONTRACT,
+  openAndVerifyPluginPanel,
   openCollaborationDialog,
+  openMarkdownPreviewAndVerify,
   openSettingsPage,
+  primaryModifierKey,
   quitElectronGracefully,
   returnFromSettings,
   setViewportSize,
@@ -905,6 +910,7 @@ export const TIER1_TESTS = [
     async run(ctx) {
       const repo = createTempGitRepo({ name: 't1-f04-01' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const mod = primaryModifierKey()
       try {
         const { app, page } = inst
         await addLocalFolderProject(app, page, repo.repoPath)
@@ -912,11 +918,60 @@ export const TIER1_TESTS = [
         await notesNode.waitFor({ state: 'visible', timeout: 10000 })
         await notesNode.dblclick()
         await page.getByText('Disposable editor text.', { exact: true }).first().waitFor({ timeout: 10000 })
-        // Verify Quick Open shortcut opens palette
-        await page.keyboard.press('Control+p')
-        await sleep(250)
+
+        // Verify Markdown Preview renders rendered headings without XSS execution
+        await openMarkdownPreviewAndVerify(page, 'Release Notes')
+
+        // Open README.md in Source mode, edit, save via Cmd/Ctrl+S, and verify disk persistence
+        const readmeNode = page.getByText('README.md', { exact: true }).first()
+        await readmeNode.waitFor({ state: 'visible', timeout: 8000 })
+        await readmeNode.dblclick()
+        const sourceToggle = page
+          .locator('[data-testid="markdown-view-switcher"] [aria-label*="Source" i], [data-testid="markdown-view-switcher"] [aria-label*="源码" i]')
+          .first()
+        if (await waitForVisible(sourceToggle, 3000)) {
+          await sourceToggle.click()
+        }
+        const monacoLines = page.locator('.monaco-editor .view-lines').first()
+        await monacoLines.waitFor({ state: 'visible', timeout: 10000 })
+        await monacoLines.click()
+        const marker = 'E2E_SAVED_MARKER_F04_01'
+        await page.keyboard.type(`${marker} `)
+        await page.keyboard.press(`${mod}+s`)
+
+        const readmePath = path.join(repo.repoPath, 'README.md')
+        const saveDeadline = Date.now() + 8000
+        let savedOnDisk = false
+        while (Date.now() < saveDeadline) {
+          if (readFileSync(readmePath, 'utf8').includes(marker)) {
+            savedOnDisk = true
+            break
+          }
+          await sleep(150)
+        }
+        assert.equal(savedOnDisk, true, 'README.md edit did not persist to disk on Cmd/Ctrl+S')
+
+        // Trigger Quick Open (Mod+P) via before-input-event pipeline and assert real dialog + file filtering + Esc close
+        await page.locator('[data-tab-id][data-active="true"]').first().click()
+        await page.keyboard.press(`${mod}+p`)
+        const quickOpenDialog = page.locator('[role="dialog"]:visible').last()
+        const quickOpenInput = quickOpenDialog.locator('input').first()
+        if (!(await waitForVisible(quickOpenInput, 2000))) {
+          // Playwright CDP modifier chords emit rawKeyDown; inject native Electron keyDown through before-input-event.
+          await app.evaluate(({ BrowserWindow }, isMac) => {
+            const win = BrowserWindow.getAllWindows()[0]
+            if (!win) return
+            const modFlag = isMac ? 'meta' : 'control'
+            win.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'P', modifiers: [modFlag] })
+            win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'P', modifiers: [modFlag] })
+          }, process.platform === 'darwin')
+        }
+        await quickOpenInput.waitFor({ state: 'visible', timeout: 8000 })
+        await quickOpenInput.fill('sample.csv')
+        await quickOpenDialog.getByText('sample.csv', { exact: false }).first().waitFor({ state: 'visible', timeout: 8000 })
         await page.keyboard.press('Escape')
-        return { openedNotesMd: true }
+        await quickOpenDialog.waitFor({ state: 'hidden', timeout: 5000 })
+        return { openedNotesMd: true, markdownPreviewOk: true, savedOnDisk: true, quickOpenVerified: true }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -934,13 +989,58 @@ export const TIER1_TESTS = [
       try {
         const { app, page } = inst
         await addLocalFolderProject(app, page, repo.repoPath)
-        for (const fileName of ['sample.csv', 'sample.png', 'preview.html']) {
-          const item = page.getByText(fileName, { exact: true }).first()
-          await item.waitFor({ state: 'visible', timeout: 8000 })
-          await item.dblclick()
-          await sleep(300)
+
+        // 1. CSV viewer: assert real grid, headers, rows, and 1,050 row count
+        const csvItem = page.getByText('sample.csv', { exact: true }).first()
+        await csvItem.waitFor({ state: 'visible', timeout: 8000 })
+        await csvItem.dblclick()
+        const csvGrid = page.locator('[data-testid="csv-grid"]').first()
+        await csvGrid.waitFor({ state: 'visible', timeout: 10000 })
+        const csvCols = await csvGrid.locator('[role="columnheader"]').count()
+        const csvRows = await csvGrid.locator('[role="row"]').count()
+        assert.ok(csvCols >= 4, `Expected >=4 CSV column headers, got ${csvCols}`)
+        assert.ok(csvRows >= 2, `Expected >=2 visible CSV grid rows, got ${csvRows}`)
+        await page.getByText(/1,?050/).first().waitFor({ state: 'visible', timeout: 6000 })
+
+        // 2. PNG viewer: assert decoded <img> with naturalWidth > 0
+        const pngItem = page.getByText('sample.png', { exact: true }).first()
+        await pngItem.waitFor({ state: 'visible', timeout: 8000 })
+        await pngItem.dblclick()
+        const pngImg = page.locator('img[alt="sample.png"]').first()
+        await pngImg.waitFor({ state: 'visible', timeout: 10000 })
+        const pngLoaded = await pngImg.evaluate((el) => el.complete && el.naturalWidth > 0)
+        assert.equal(pngLoaded, true, 'sample.png <img> did not finish decoding with naturalWidth > 0')
+
+        // 3. SVG viewer: assert vector image renders with non-zero natural dimensions
+        const svgItem = page.getByText('sample.svg', { exact: true }).first()
+        await svgItem.waitFor({ state: 'visible', timeout: 8000 })
+        await svgItem.dblclick()
+        const svgImg = page.locator('img[alt="sample.svg"]').first()
+        await svgImg.waitFor({ state: 'visible', timeout: 10000 })
+        const svgLoaded = await svgImg.evaluate((el) => el.complete && el.naturalWidth > 0)
+        assert.equal(svgLoaded, true, 'sample.svg <img> did not render with naturalWidth > 0')
+
+        // 4. HTML preview: verify source loads and Open Preview to the Side mounts guest preview
+        const htmlItem = page.getByText('preview.html', { exact: true }).first()
+        await htmlItem.waitFor({ state: 'visible', timeout: 8000 })
+        await htmlItem.dblclick()
+        const htmlPreviewBtn = page
+          .locator('button[aria-label*="Open Preview to the Side" i], button[aria-label*="在侧边打开预览" i]')
+          .first()
+        await htmlPreviewBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await htmlPreviewBtn.click()
+        const guestWaitDeadline = Date.now() + 8000
+        let htmlGuestLoaded = false
+        while (Date.now() < guestWaitDeadline) {
+          htmlGuestLoaded = await app.evaluate(({ webContents }) =>
+            webContents.getAllWebContents().some((wc) => wc.getURL().toLowerCase().endsWith('/preview.html'))
+          )
+          if (htmlGuestLoaded) break
+          await sleep(200)
         }
-        return { viewedCsvPngHtml: true }
+        assert.equal(htmlGuestLoaded, true, 'preview.html Open Preview to the Side did not load guest webContents')
+        assert.equal(await page.evaluate(() => Boolean(window.__xss)), false)
+        return { csvCols, csvRows, pngLoaded, svgLoaded, htmlGuestLoaded }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -951,7 +1051,7 @@ export const TIER1_TESTS = [
     id: 'T1-F04-03',
     tier: 1,
     featureArea: 'E2E-F04',
-    refs: ['G.03', 'H.04', 'J08'],
+    refs: ['G.03', 'H.04', 'H.05', 'J08'],
     async run(ctx) {
       const repo = createTempGitRepo({
         name: 't1-f04-03',
@@ -968,7 +1068,28 @@ export const TIER1_TESTS = [
         await changedFile.waitFor({ state: 'visible', timeout: 10000 })
         await changedFile.click()
         await page.locator('.monaco-diff-editor').first().waitFor({ state: 'visible', timeout: 10000 })
-        return { diffEditorVisible: true }
+
+        // Verify H.05 Git Graph commit table remains visible even when a commit detail <aside> is selected
+        const gitGraphBtn = page.getByRole('button', { name: /^(Git Graph|Git 图谱|提交图)/i }).first()
+        await gitGraphBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await gitGraphBtn.click()
+        const commitBtn = page.locator('button').filter({ hasText: /^Initial E2E fixture$/i }).first()
+        await commitBtn.waitFor({ state: 'visible', timeout: 10000 })
+        await commitBtn.click()
+        await page.locator('aside').last().waitFor({ state: 'visible', timeout: 5000 })
+        const commitVisibleWithDetails = await commitBtn.evaluate((el) => {
+          const r = el.getBoundingClientRect()
+          return r.height > 8 && r.width > 20 && r.bottom > 0 && r.top < window.innerHeight
+        })
+        assert.equal(
+          commitVisibleWithDetails,
+          true,
+          'Git Graph commit table was pushed off-screen when commit detail <aside> opened'
+        )
+        await setViewportSize(app, page, 600, 400)
+        const overflow600 = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2)
+        assert.equal(overflow600, false, 'Git Graph overflowed 600x400 viewport')
+        return { diffEditorVisible: true, gitGraphCommitVisibleWithAside: true, overflow600 }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -1015,41 +1136,46 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F04',
     refs: ['L.03', 'L.05', 'L.06', 'G.08', 'J10'],
     async run(ctx) {
-      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const repo = createTempGitRepo({ name: 't1-f04-05' })
+      const inst = await launchElectronApp({
+        porpitaRoot: ctx.porpitaRoot,
+        profileOptions: { settings: { showSkillsButton: true, showAutomationsButton: true } }
+      })
       const pluginFix = createSyntheticPluginFixture(ctx.porpitaRoot)
       try {
         const { app, page, homeDir } = inst
         const skill = createSyntheticSkillFixture(homeDir, 'e2e-offline-skill')
+        await addLocalFolderProject(app, page, repo.repoPath)
 
-        // Verify Skills page renders local skill
+        // 1. Verify Skills page strictly renders & filters synthetic local skill
         const skillsBtn = page.getByRole('button', { name: /^(Skills|技能)$/i }).first()
-        if (await skillsBtn.isVisible().catch(() => false)) {
-          await skillsBtn.click()
-          await sleep(400)
-        }
+        await skillsBtn.waitFor({ state: 'visible', timeout: 10000 })
+        await skillsBtn.click()
+        const skillsList = page.locator('[data-skills-page-list="true"]').first()
+        await skillsList.waitFor({ state: 'visible', timeout: 10000 })
+        await skillsList.getByText(skill.skillName, { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 })
 
-        // Open Settings -> Plugins and add dev plugin folder via stubbed dialog
+        const searchInput = page.locator('input[placeholder*="Search skills" i], input[placeholder*="搜索" i]').first()
+        await searchInput.waitFor({ state: 'visible', timeout: 5000 })
+        await searchInput.fill(skill.skillName)
+        await skillsList.getByText(skill.skillName, { exact: false }).first().waitFor({ state: 'visible', timeout: 5000 })
+        const closeSkillsBtn = page.getByRole('button', { name: /^(Close skills|关闭技能)$/i }).first()
+        await closeSkillsBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await closeSkillsBtn.click()
+        await skillsList.waitFor({ state: 'hidden', timeout: 5000 })
+
+        // 2. Open Settings -> Plugins, install & approve folder plugin, and verify RightSidebar panel loads cleanly
         await openSettingsPage(page)
         const pluginsNav = page.locator('aside button').filter({ hasText: /^(Plugins|插件)/i }).first()
         await pluginsNav.waitFor({ state: 'visible', timeout: 8000 })
         await pluginsNav.click()
-        await page.locator('section[data-settings-section="plugins"]').waitFor({ state: 'visible', timeout: 8000 })
-        const enableBtn = page.getByRole('button', { name: /Turn on plugins|开启插件/i }).first()
-        if (await enableBtn.isVisible().catch(() => false)) {
-          await enableBtn.click()
-          await sleep(300)
-        }
-        await stubOpenDialog(app, pluginFix.pluginDir)
-        const addDevBtn = page.getByRole('button', { name: /Add.*folder|Load.*folder|添加.*目录/i }).first()
-        if (await waitForVisible(addDevBtn, 3000)) {
-          await addDevBtn.click()
-          await sleep(500)
-        }
-        await returnFromSettings(page)
-        return { skillCreated: skill.skillName, pluginTitle: pluginFix.title }
+        await installAndEnableFolderPlugin(app, page, pluginFix)
+        const panelState = await openAndVerifyPluginPanel(page, pluginFix.title)
+        return { skillCreated: skill.skillName, pluginTitle: pluginFix.title, panelState }
       } finally {
         await closeElectronApp(inst)
         pluginFix.cleanup()
+        repo.cleanup()
       }
     }
   },
@@ -1057,11 +1183,44 @@ export const TIER1_TESTS = [
     id: 'T1-F04-06',
     tier: 1,
     featureArea: 'E2E-F04',
-    refs: ['N.*', 'L.01', 'L.02', 'J02'],
+    refs: ['N.*', 'L.01', 'L.02', 'L.03', 'J02'],
     async run(ctx) {
-      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const repo = createTempGitRepo({ name: 't1-f04-06-repo' })
+      const inst = await launchElectronApp({
+        porpitaRoot: ctx.porpitaRoot,
+        profileOptions: { settings: { showSkillsButton: true, showAutomationsButton: true } }
+      })
       try {
-        const { page } = inst
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
+
+        // 1. Verify AutomationsPage responsive layout at 1280x800, 820x580, and 600x400 (L.01, L.02)
+        const automationsBtn = page.getByRole('button', { name: /^(Automations|自动化)$/i }).first()
+        await automationsBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await automationsBtn.click()
+        await page.getByRole('heading', { name: /^(Automations|自动化)$/i }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await assertHorizontalToolbarLayout(page, 'main', 'T1-F04-06 Automations 1280x800')
+        await setViewportSize(app, page, 820, 580)
+        await assertHorizontalToolbarLayout(page, 'main', 'T1-F04-06 Automations 820x580')
+        await setViewportSize(app, page, 600, 400)
+        const auto600 = await assertHorizontalToolbarLayout(page, 'main', 'T1-F04-06 Automations 600x400')
+
+        // 2. Verify SkillsPage narrow 600x400 header/filter layout (L.03)
+        await setViewportSize(app, page, 1280, 800)
+        const skillsBtn = page.getByRole('button', { name: /^(Skills|技能)$/i }).first()
+        await skillsBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await skillsBtn.click()
+        await page.locator('[data-skills-page-list="true"]').first().waitFor({ state: 'visible', timeout: 10000 })
+        await setViewportSize(app, page, 600, 400)
+        await assertHorizontalToolbarLayout(page, 'header', 'T1-F04-06 Skills header 600x400')
+        await assertHorizontalToolbarLayout(page, 'main', 'T1-F04-06 Skills main 600x400')
+        const closeSkillsBtn = page.getByRole('button', { name: /^(Close skills|关闭技能)$/i }).first()
+        await closeSkillsBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await closeSkillsBtn.click()
+        await page.locator('[data-skills-page-list="true"]').first().waitFor({ state: 'hidden', timeout: 5000 })
+
+        // 3. Sweep all Settings sections including repo-scoped N.repo section
+        await setViewportSize(app, page, 1280, 800)
         await openSettingsPage(page)
         const navButtons = page
           .locator('aside button:visible')
@@ -1069,6 +1228,7 @@ export const TIER1_TESTS = [
         const count = await navButtons.count()
         assert.ok(count >= 15, `Expected >=15 visible settings targets, got ${count}`)
         const visited = []
+        let repoSectionVisited = false
         for (let i = 0; i < count; i++) {
           const btn = navButtons.nth(i)
           const label = (await btn.innerText()).trim()
@@ -1081,12 +1241,37 @@ export const TIER1_TESTS = [
             .first()
             .getAttribute('data-settings-section')
           assert.ok(sec, `Settings section missing for nav button ${label}`)
+          if (sec.startsWith('repo-')) repoSectionVisited = true
           visited.push(label || sec)
         }
+        assert.equal(repoSectionVisited, true, 'Attached repository section (repo-*) missing from Settings nav')
+
+        await setViewportSize(app, page, 600, 400)
+        const narrowSectionsChecked = []
+        for (const pattern of [
+          /^(General|常规|通用)$/i,
+          /^Git & Source Control|^Git$|源代码控制/i,
+          /^(Terminal|终端)$/i,
+          /t1-f04-06-repo/i
+        ]) {
+          const navBtn = page.locator('aside button:visible').filter({ hasText: pattern }).first()
+          await navBtn.waitFor({ state: 'visible', timeout: 5000 })
+          await navBtn.click()
+          await sleep(150)
+          const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2)
+          assert.equal(overflow, false, `Settings horizontal overflow at 600x400 for ${pattern}`)
+          narrowSectionsChecked.push(pattern.source)
+        }
         await returnFromSettings(page)
-        return { settingsTargetsVisited: visited.length, sample: visited.slice(0, 10) }
+        return {
+          automations600ItemCount: auto600.itemCount,
+          settingsTargetsVisited: visited.length,
+          repoSectionVisited,
+          narrowSectionsChecked
+        }
       } finally {
         await closeElectronApp(inst)
+        repo.cleanup()
       }
     }
   },

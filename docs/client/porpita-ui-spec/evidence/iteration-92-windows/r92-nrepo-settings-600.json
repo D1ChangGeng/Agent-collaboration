@@ -1,0 +1,23 @@
+{
+  "size": [
+    600,
+    400
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 600,
+  "innerWidth": 600,
+  "focusTag": "BUTTON",
+  "focusLabel": "r92-fixture-repo",
+  "textSample": "Back to app\n\nAI CAPABILITIES\n\nAgents\nAI Provider Accounts\nOPTIONAL\nOrchestration\nComputer Use\nVoice\n\nSET UP\n\nPorpita Account\nGeneral\nIntegrations\nMobile\n\nWORKFLOWS\n\nAutomations\nArtifacts\nBETA\nShare Skills\nBETA\nAgent Session Search\nGit & Source Control\nTask Sources\nTerminal\nQuick Commands\nBrowser\nMobile Emulator\nFloating Workspace\n\nINTERFACE\n\nAppearance\nChat UI\nInput & Editing\nNotifications\nShortcuts\nStats & Usage\n\nREMOTE HOSTS\n\nSSH Hosts\nRemote Porpita Servers\n\nPRIVACY & SECURITY\n\nPrivacy & Telemetry\n\nADVANCED\n\nAdvanced\n\nEXPERIMENTAL\n\nExperimental\nPlugins\nALPHA\n\nPROJECTS\n\nr92-fixture-repo\nProject Settings > r92-fixture-repo\n\nC:/Users/D26FO/AppData/Local/Temp/porpita-r92-5n5DqG/r92-fixture-repo\n\nIdentity\n\nProject-specific display details for the sidebar and tabs.\nType: Git\n\nDisplay Name\nRepo Icon\nDefault\nReset\nColor\nCustom\nAvatar\nIcon\nEmoji\nUse GitHub Avatar\n\nUsed by default — GitHub always provides one, even when the owner hasn't set a custom image.\n\nUpload PNG\nFavicon\n\nPNG uploads must be 256KB or smaller.\n\nDefault Jira project\n\nNo default project\n\nConnect Jira in Integrations to choose a project.\n\nAgent Folder Trust\n\nWhether agents Porpita starts in this repository's worktrees skip their \"Do you trust this folder?\" prompt and load the project's agent settings and hooks right away.\n\nTrust repository\nLet agents ask\n\nNot decided yet. Porpita will ask the next time you start an agent here.\n\nProject runtime\n\nNo project override. General settings select Windows.\n\nDefault (Windows)\nWindows\nWSL\n\nRuntime changes apply to new terminals, agent checks, and skill discovery for this project. Existing terminals keep their current runtime.\n\n1 live terminal will keep running in the current runtime. Let tasks finish or restart terminals before continuing.\n\nGitHub Account\n\nPorpita injects a short-lived token from the selected keyring login into each gh call for this project. Project View stays on the ambient login.\n\nAccount\nDefault (ambient gh login)\nExternal worktrees\n\nUsing global: Hide\n\nUse global\nDefault Worktree Base\nmain\n\nFollowing primary branch (main)\n\nUse Primary\nWorktree Location\n\nRelative paths resolve from this project root.\n\nWorktree Hooks\n\nScripts that run when worktrees are created or archived. Local scripts are stored on this machine; `orca.yaml` scripts are shared with your team.\n\nSetup Script\n\nRuns after a new worktree is created; install deps, copy env files, run migrations.\n\nAvailable environment variables (hover for details):\n\n$ORCA_ROOT_PATH\n$ORCA_WORKTREE_PATH\n$ORCA_WORKSPACE_NAME\n\nRuns as a single shell script. Saved on this machine.\n\nWhen to run\n\nDefault behavior when a new worktree is created.\n\nAsk every time\nRun by default\nSkip by default\nWait for setup to complete before starting agent\nArchive Script\n\nRuns before a worktree is archived or removed.\n\nAvailable environment variables (hover for details):\n\n$ORCA_ROOT_PATH\n$ORCA_WORKTREE_PATH\n$ORCA_WORKSPACE_NAME\n\nRuns as a single shell script. Saved on this machine.\n\nCustom GitHub Issue Command\n\nOptional override. Use {{artifact_url}} for the linked issue or PR URL.\n\nLeave blank to use the repo default from orca.yaml when one exists.\n\nAdvanced\nCommand source & orca.yaml\norca.yaml only\nFormatter Command\n\nUse this project’s formatter for Format on Save.\n\nCommand\n\nRuns on the file’s host in the workspace root. Reads the buffer from stdin and must print only formatted text to stdout. Use ${file} or ${relativeFile} for the path. Arguments are passed directly, without a shell. Do not use --write. Leave empty to disable for this project.\n\nInclude globs (one per line)\n\nMatch paths relative to the workspace root. No matching glob means no formatting. * and ** skip dot-prefixed names; list them explicitly, e.g. .github/**/*.yml. Enable Format on Save in General > Editor to use this command.\n\nSave formatter\nSource Control AI\n\nThese overrides apply to this project setup and inherit the client Source Control AI defaults until customized.\n\nShow Source Control AI actions\n\nControls whet",
+  "extra": {
+    "repoGeo600": {
+      "ok": true,
+      "issues": []
+    }
+  },
+  "imageFile": "r92-nrepo-settings-600.png",
+  "imageMethod": "CDP screenshot"
+}

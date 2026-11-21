@@ -1,5 +1,17 @@
 # 现版观察与回放证据
 
+## 第 92 轮
+
+Windows x64 在隔离档案与隐藏 Electron 窗口（`ORCA_BACKGROUND_LAUNCH=1`、全部 `!visible && !focused`）使用 `tools/observe-round-92.cjs` 先于 `e8062ab946c15a1afd57a78f51d3199b7f2e151d` 基线定位窄窗遮挡、溢出、`Git Graph` 挤窄与非打包插件 `orca-runtime.mjs` 模块解析失败等实机问题（临时基线目录已于入库前清理）；随后在 `codex/porpita-ui-spec-91` 提交 `d874c87b6c5a1115667f89b15dac78640b3c8568` 的 `--mode e2e` 构建上以严格模式（`findings: []`、退出码 `0`）采集 19 组宽/窄窗（`1280×800`、`820×580`、`600×400`）证据，覆盖 **F04+** 保留工具与覆盖层（`H.01`–`H.05`、`I.01`、`I.03`、`L.01`、`L.03`、`L.05`–`L.06`、`N.general/git/terminal/shortcuts/plugins/repo`、`O.01.01`、`O.overlay.chat-ui-here-corner-card`、`O.modal.quick-open`、`O.modal.worktree-palette`）。 [最终运行记录](iteration-92-windows/run.json) · [构建与测试条件](../SOURCE_BASELINE.md#第-92-轮来源)
+
+| 范围 | 证据 |
+| --- | --- |
+| `600×400` 通知退让、Landing 并排动作与快捷面板（`O.01.01`、`O.modal.worktree-palette`、`O.modal.quick-open`） | [600×400 通知栈与 Landing](iteration-92-windows/r92-o01-notification-stack-600.json) · [600×400 Quick Open 与紧凑 Setup 卡](iteration-92-windows/r92-o00-quickopen-600.json) |
+| Automations 与 Skills 窄窗自适应折行（`L.01`、`L.03`） | [Automations 1280](iteration-92-windows/r92-l01-automations-1280.json) · [Automations 820](iteration-92-windows/r92-l01-automations-820.json) · [Automations 600](iteration-92-windows/r92-l01-automations-600.json) · [Skills 1280](iteration-92-windows/r92-l03-skills-1280.json) · [Skills 600](iteration-92-windows/r92-l03-skills-600.json) |
+| Markdown 目录、专用查看器、Diff 与窄容器 Git Graph（`H.01`–`H.05`） | [Markdown TOC 1280](iteration-92-windows/r92-h02-markdown-preview-toc-1280.json) · [CSV/PNG/HTML/SVG 查看器](iteration-92-windows/r92-h03-svg-viewer-1280.json) · [Monaco Diff](iteration-92-windows/r92-h04-diff-viewer-1280.json) · [Git Graph 纵排与可读提交表](iteration-92-windows/r92-h05-git-graph-1280.json) |
+| 内置 Browser 环回页、语义页内查找与 DevTools（`I.01`、`I.03`） | [Browser Find 1280](iteration-92-windows/r92-i01-browser-find-1280.json) · [Browser Find 600](iteration-92-windows/r92-i01-browser-find-600.json) · [Browser DevTools Dock](iteration-92-windows/r92-i03-browser-devtools-1280.json) |
+| 插件安装、非打包 Panel 渲染、禁用回焦与设置巡检（`L.05`–`L.06`、`N.*`、`N.repo`） | [Plugins 管理页](iteration-92-windows/r92-l05-plugins-manager-1280.json) · [Hello Components Panel 渲染](iteration-92-windows/r92-l06-plugin-panel-1280.json) · [项目设置 1280](iteration-92-windows/r92-nrepo-settings-1280.json) · [项目设置 600](iteration-92-windows/r92-nrepo-settings-600.json) · [常规等核心设置 600](iteration-92-windows/r92-n-settings-general-600.json) |
+
 ## 第 91 轮
 
 Windows x64 在隔离档案与隐藏 Electron 窗口（`ORCA_BACKGROUND_LAUNCH=1`、全部 `!visible && !focused`）运行升级后的 `tools/observe-round-91.cjs`，对 `codex/porpita-ui-spec-91` 提交 `e8062ab946c15a1afd57a78f51d3199b7f2e151d` 对应 `--mode e2e` 构建采集 9 组宽/窄/高缩放/对比/无动效与三语种（`en`/`zh`/`ja`）证据，覆盖 **F03**（`P.*`、`P.13`、`Q.*`、`N.appearance`）及受控 `<Dialog open>` 回焦修复（`O.modal.add-repo`）。 [运行记录](iteration-91-windows/run.json) · [构建与测试条件](../SOURCE_BASELINE.md#第-91-轮来源)

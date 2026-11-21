@@ -2,7 +2,7 @@
   "roots": [
     {
       "path": "src/renderer/src/main.tsx",
-      "reachableModules": 8574
+      "reachableModules": 8578
     },
     {
       "path": "src/renderer/src/popout.tsx",
@@ -14,10 +14,10 @@
     },
     {
       "path": "src/renderer/src/web/main.tsx",
-      "reachableModules": 8626
+      "reachableModules": 8630
     }
   ],
-  "rendererModules": 9054,
+  "rendererModules": 9058,
   "rendererRows": 2322,
   "noStaticEntryPoint": 29,
   "interactableCandidates": 6313,
@@ -289,12 +289,12 @@
       {
         "id": "overlay.star-nag",
         "path": "src/renderer/src/app-shell/AppNotificationCards.tsx",
-        "line": 58
+        "line": 59
       },
       {
         "id": "overlay.codex-shared-settings-notice",
         "path": "src/renderer/src/app-shell/AppNotificationCards.tsx",
-        "line": 61
+        "line": 64
       }
     ],
     "rightDock": [

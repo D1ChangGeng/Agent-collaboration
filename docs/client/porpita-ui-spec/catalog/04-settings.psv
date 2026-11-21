@@ -32,9 +32,9 @@ N.voice|语音、模型、设备|VoicePane.tsx,VoiceDictationSettingsSection.tsx
 N.advanced|高级、网络、镜像与诊断|AdvancedPane.tsx,AdvancedNetworkSettingsSection.tsx,NodeDistMirrorDialog.tsx|网络和镜像有验证、错误和可恢复入口|保留|复用表单和诊断；网络变更不悄悄改变另一 Host 的配置|J11,J12
 N.dev|开发工具／诊断|DevToolsPane.tsx|开发门控，非默认；对应独立工具和调试入口|保留|按实际 gate 呈现，诊断有明示内容；默认日常用户不被干扰|J12,J13
 N.experimental|实验选项、Dashboard/Pet 等|ExperimentalPane.tsx,DashboardPopoutRoot.tsx,PetOverlay.tsx|实验开关控制相应挂载与可见性|保留|关掉入口后及时归还焦点和卸载，保留已拥有对象；实验能力标明|J10,J13
-N.plugins|插件设置、安装源和权限|PluginsSettingsSection.tsx,PluginManager.tsx|设置入口管理目录、安装和权限；与面板内容独立|保留|权限提示用 SecuritySurface；操作结果匹配插件版本；失败返回同一项|J10,J12
+N.plugins|插件设置、安装源和权限|PluginsSettingsSection.tsx,PluginManager.tsx|设置入口管理目录、安装、权限与禁用开关异步恢复聚焦；与面板内容独立|保留|权限提示用 SecuritySurface；操作结果匹配插件版本；失败返回同一项|J10,J12
 N.artifacts|工件偏好与可见性|ArtifactsSettingsPane.tsx,ArtifactsPage.tsx|设置影响功能入口和显示/来源行为|保留|入口隐藏不删除数据；设置和列表的范围一致|J09,J12
 N.automations|自动化偏好与入口|AutomationsSettingsPane.tsx,AutomationsPage.tsx|设置与管理页分离；调度行为有相应偏好|保留|隐藏入口与停用调度分开，配置在各自所有者生效|J09,J12
 N.share-skills|分享技能配置|ShareSkillsSettingsPane.tsx,SkillsPage.tsx|管理分享与安装关联的设置|保留|确认作用域和来源；失败不误报已分享|J09,J10
 N.session-history|Agent 会话搜索／历史设置|SessionHistorySettingsPane.tsx,AiVaultSidebarPanel.tsx|历史索引配置与 Vault 入口，来源按 Provider/Host|保留|历史索引状态独立于 Session 当前可操作性；开关不删除布局引用|J03,J05,J12
-N.repo|动态 Project/Repo 设置与 Host Scope|settings-project-section-renderer.tsx,SettingsHostScopePicker.tsx,src/renderer/src/components/settings/repository|按每个 Project/Host 组合展示路径、Git、模板、钩子、工作树、稀疏与信任配置|保留|编辑对象明确；本地、文件夹、WSL、SSH 和同名仓库都验证；布局切换不改写目标|J07,J08,J12,J13
+N.repo|动态 Project/Repo 设置与 Host Scope|settings-project-section-renderer.tsx,SettingsHostScopePicker.tsx,src/renderer/src/components/settings/repository|按每个 Project/Host 组合展示路径、Git、模板、钩子、工作树、稀疏与信任配置，项目移除按钮完成三语种国际化与 Porpita 对齐|保留|编辑对象明确；本地、文件夹、WSL、SSH 和同名仓库都验证；布局切换不改写目标|J07,J08,J12,J13

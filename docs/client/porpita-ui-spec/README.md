@@ -1,6 +1,6 @@
 # Porpita 桌面客户端 · 全覆盖 UI SPEC
 
-**设计已推进至第 91 轮。** 覆盖 20 个功能域、371 个条目。第 87–90 轮已归档，第 91 轮完成 **F03**（`P.*`、`P.13`、`Q.*`、`N.appearance` 主题/高对比/减少动效/158% 缩放与极窄窗响应式、`en→zh→ja` 实时语种切换）与受控 `<Dialog open>` 聚焦回还（`O.modal.add-repo`）的局部修复与 Windows 隐藏窗口 Electron 实机核对。 [第 87 轮](ITERATION_87.md) · [第 88 轮](ITERATION_88.md) · [第 89 轮](ITERATION_89.md) · [第 90 轮](ITERATION_90.md) · [第 91 轮](ITERATION_91.md)
+**设计已推进至第 92 轮。** 覆盖 20 个功能域、371 个条目。第 87–91 轮已归档，第 92 轮在 `codex/porpita-ui-spec-91` 提交 `d874c87b6c5a1115667f89b15dac78640b3c8568` 上完成 **F04+** 保留工具与覆盖层（`H.01`–`H.05`、`I.01`、`I.03`、`L.01`、`L.03`、`L.05`–`L.06`、`N.*`、`N.repo`、`O.01.01`、`O.modal.quick-open`、`O.modal.worktree-palette`、`O.overlay.chat-ui-here-corner-card`）的源码修复与 Windows 隐藏窗口 Electron 实机核对。 [第 88 轮](ITERATION_88.md) · [第 89 轮](ITERATION_89.md) · [第 90 轮](ITERATION_90.md) · [第 91 轮](ITERATION_91.md) · [第 92 轮](ITERATION_92.md)
 
 | 查什么 | 入口 |
 | --- | --- |

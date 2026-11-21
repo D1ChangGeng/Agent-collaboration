@@ -1,0 +1,39 @@
+{
+  "size": [
+    600,
+    400
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 600,
+  "innerWidth": 600,
+  "focusTag": "BUTTON",
+  "focusLabel": "Skills",
+  "textSample": "Search\nTasks\nArtifacts\nSkills\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nNo workspaces found\nSkills\n1 skill\n·\n1 source\n·\nThis machine\nShare skills\nInstall from link\nAll agents\nSkills\nShared links\nAll\n1\nHome\n1\nWorkspace\n0\nBundled\n0\nPlugin\n0\n1 result\nr92-probe-skill\nHome\n·\nNov 22\n\nSynthetic Round 92 local skill fixture\n\nOff\n—\n·\n0",
+  "extra": {
+    "skillsHeader600": {
+      "found": true,
+      "ok": true,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "rootOverflowX": false,
+      "itemCount": 5,
+      "clipped": [],
+      "overlaps": []
+    },
+    "skillsMain600": {
+      "found": true,
+      "ok": true,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "rootOverflowX": false,
+      "itemCount": 15,
+      "clipped": [],
+      "overlaps": []
+    }
+  },
+  "imageFile": "r92-l03-skills-600.png",
+  "imageMethod": "CDP screenshot"
+}

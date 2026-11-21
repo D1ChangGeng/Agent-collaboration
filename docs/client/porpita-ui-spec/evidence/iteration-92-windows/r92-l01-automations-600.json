@@ -1,0 +1,29 @@
+{
+  "size": [
+    600,
+    400
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 600,
+  "innerWidth": 600,
+  "focusTag": "INPUT",
+  "focusLabel": "Search automations",
+  "textSample": "Search\nTasks\nArtifacts\nSkills\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nNo workspaces found\nAutomations\nFilters\nRuns\nNew Automation\n\nNo automations across loaded hosts\n\nStart from a template\nREPO HEALTH\nWeekday repo audit\nCheck dependencies, failing tests, and risky open changes each weekday.\nRELEASE PREP\nRelease readiness\nPrepare a weekly release risk summary from the current project state.\nRECURRING REVIEW\nDaily change review\nScan recent work and call out correctness, UX, and test coverage risks.\nMAINTENANCE\nHourly queue check\nLook for stuck work, stale generated files, and failed local validation.\nAdd new\nOff\n—\n·\n0",
+  "extra": {
+    "toolbarGeometry": {
+      "found": true,
+      "ok": true,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "rootOverflowX": false,
+      "itemCount": 6,
+      "clipped": [],
+      "overlaps": []
+    }
+  },
+  "imageFile": "r92-l01-automations-600.png",
+  "imageMethod": "CDP screenshot"
+}

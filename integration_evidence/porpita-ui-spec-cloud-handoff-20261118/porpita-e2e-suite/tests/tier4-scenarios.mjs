@@ -6,11 +6,16 @@ import path from 'node:path'
 import {
   addLocalFolderProject,
   assertAllWindowsHidden,
+  assertNotificationStackNonBlocking,
   closeElectronApp,
+  disablePluginAndVerify,
   hasIntegratedWorkspaceShell,
+  installAndEnableFolderPlugin,
   launchElectronApp,
   M3_SELECTOR_CONTRACT,
+  openAndVerifyPluginPanel,
   openCollaborationDialog,
+  openMarkdownPreviewAndVerify,
   openSettingsPage,
   quitElectronGracefully,
   returnFromSettings,
@@ -91,9 +96,9 @@ export const TIER4_TESTS = [
         await addLocalFolderProject(inst.app, inst.page, plain.folderPath)
         await addLocalFolderProject(inst.app, inst.page, repo.repoPath)
 
-        // Check mobile naming & narrow 600x400 usability
+        // Check mobile naming, narrow 600x400 usability, and non-blocking notice/setup cards
         const navLoc = inst.page.locator('[data-contextual-tour-target="sidebar-navigation"]').first()
-        const sidebarText = (await navLoc.isVisible().catch(() => false))
+        const sidebarText = (await waitForVisible(navLoc, 2000))
           ? await navLoc.innerText()
           : await inst.page.locator('body').innerText()
         await setViewportSize(inst.app, inst.page, 600, 400)
@@ -101,21 +106,73 @@ export const TIER4_TESTS = [
           () => document.documentElement.scrollWidth > window.innerWidth + 2
         )
         assert.equal(narrowOverflow, false, 'Narrow 600x400 horizontal overflow detected')
+        const attachedStackProbe = await assertNotificationStackNonBlocking(inst.page, {
+          requireActiveCard: false,
+          contextLabel: 'T4-01 attached 600x400'
+        })
 
-        if (/How do you want to work with agents\?/i.test(onboardingText)) {
-          pendingIfSmoke(
-            ctx.mode,
-            'M1',
-            'zh onboarding translated & sidebar uses "Porpita Mobile"',
-            `Mixed English onboarding observed; sidebarHasOrcaMobile=${/Orca Mobile/i.test(sidebarText)}`
-          )
-        }
-        if (/Orca Mobile/i.test(sidebarText)) {
-          pendingIfSmoke(ctx.mode, 'M1', 'Sidebar uses "Porpita Mobile"', sidebarText)
-        }
-        return { onboardingNonRepeat: true, narrowOverflow }
-      } finally {
+        // O.01.01 non-vacuous probe: launch isolated profile with active NotificationCardStack card at 600x400
         await closeElectronApp(inst, { removeTempDir: true })
+        inst = null
+        const stackInst = await launchElectronApp({
+          porpitaRoot: ctx.porpitaRoot,
+          width: 600,
+          height: 400,
+          profileOptions: {
+            settings: { agentDefaultSurface: 'terminal' },
+            ui: {
+              featureTipsSeenIds: [],
+              featureInteractions: {},
+              contextualToursAutoEligible: false,
+              browserImportHintHidden: true,
+              codexTerminalServerIsolationNoticeSeen: true
+            },
+            extra: {
+              chatUiLaunchTipAudience: { version: 1, membership: 'eligible', basis: 'chat-ui-off' }
+            }
+          }
+        })
+        try {
+          const stackCard = stackInst.page.locator('[data-notification-card-stack] > *').first()
+          await stackCard.waitFor({ state: 'visible', timeout: 8000 })
+          const activeCardProbe = await assertNotificationStackNonBlocking(stackInst.page, {
+            requireActiveCard: true,
+            contextLabel: 'T4-01 O.01.01 active card 600x400'
+          })
+          // Click Add project directly without dismissing the card stack -> AddRepoDialog must open cleanly
+          const addProjectBtn = stackInst.page
+            .getByRole('button', { name: /^(Add project|添加项目)$/i })
+            .last()
+          await addProjectBtn.waitFor({ state: 'visible', timeout: 8000 })
+          await addProjectBtn.click()
+          await stackInst.page
+            .getByRole('button', { name: /Browse folder|浏览文件夹/i })
+            .first()
+            .waitFor({ state: 'visible', timeout: 8000 })
+          await stackInst.page.keyboard.press('Escape')
+
+          if (/How do you want to work with agents\?/i.test(onboardingText)) {
+            pendingIfSmoke(
+              ctx.mode,
+              'M1',
+              'zh onboarding translated & sidebar uses "Porpita Mobile"',
+              `Mixed English onboarding observed; sidebarHasOrcaMobile=${/Orca Mobile/i.test(sidebarText)}`
+            )
+          }
+          if (/Orca Mobile/i.test(sidebarText)) {
+            pendingIfSmoke(ctx.mode, 'M1', 'Sidebar uses "Porpita Mobile"', sidebarText)
+          }
+          return {
+            onboardingNonRepeat: true,
+            narrowOverflow,
+            attachedCardsCount: attachedStackProbe.activeCardsCount,
+            o01ActiveCardsCount: activeCardProbe.activeCardsCount
+          }
+        } finally {
+          await closeElectronApp(stackInst, { removeTempDir: true })
+        }
+      } finally {
+        if (inst) await closeElectronApp(inst, { removeTempDir: true })
         plain.cleanup()
         repo.cleanup()
       }
@@ -195,14 +252,27 @@ export const TIER4_TESTS = [
         createSyntheticSkillFixture(homeDir, 't4-03-skill')
         await addLocalFolderProject(app, page, repo.repoPath)
 
-        // 1. Open notes.md, sample.csv, preview.html & assert no script execution
-        for (const fname of ['notes.md', 'sample.csv', 'preview.html']) {
-          const el = page.getByText(fname, { exact: true }).first()
-          await el.waitFor({ state: 'visible', timeout: 8000 })
-          await el.dblclick()
-          await sleep(250)
-        }
-        assert.equal(await page.evaluate(() => Boolean(window.__xss)), false)
+        // 1. Open sample.csv, sample.svg, and notes.md Preview -> assert real viewers + no script execution
+        const csvItem = page.getByText('sample.csv', { exact: true }).first()
+        await csvItem.waitFor({ state: 'visible', timeout: 8000 })
+        await csvItem.dblclick()
+        await page.locator('[data-testid="csv-grid"]').first().waitFor({ state: 'visible', timeout: 10000 })
+
+        const svgItem = page.getByText('sample.svg', { exact: true }).first()
+        await svgItem.waitFor({ state: 'visible', timeout: 8000 })
+        await svgItem.dblclick()
+        const svgImg = page.locator('img[alt="sample.svg"]').first()
+        await svgImg.waitFor({ state: 'visible', timeout: 10000 })
+        assert.equal(
+          await svgImg.evaluate((el) => el.complete && el.naturalWidth > 0),
+          true,
+          'sample.svg did not render cleanly'
+        )
+
+        const notesItem = page.getByText('notes.md', { exact: true }).first()
+        await notesItem.waitFor({ state: 'visible', timeout: 8000 })
+        await notesItem.dblclick()
+        await openMarkdownPreviewAndVerify(page, 'Edited Release Notes')
 
         // 2. Source Control -> Diff
         const scBtn = page.getByRole('button', { name: /^(Source Control|源代码管理|源代码控制)/i }).first()
@@ -217,29 +287,30 @@ export const TIER4_TESTS = [
         await addrBar.waitFor({ state: 'visible', timeout: 10000 })
         await addrBar.fill(`${httpSrv.baseUrl}/page2`)
         await addrBar.press('Enter')
-        await sleep(600)
-        const hasGuest = await app.evaluate(({ webContents }, url) =>
-          webContents.getAllWebContents().some((wc) => wc.getURL().startsWith(url)),
-          httpSrv.baseUrl
-        )
+        const guestDeadline = Date.now() + 8000
+        let hasGuest = false
+        while (Date.now() < guestDeadline) {
+          hasGuest = await app.evaluate(({ webContents }, url) =>
+            webContents.getAllWebContents().some((wc) => wc.getURL().startsWith(url)),
+            httpSrv.baseUrl
+          )
+          if (hasGuest) break
+          await sleep(200)
+        }
         assert.equal(hasGuest, true, 'Loopback HTTP Browser failed to load /page2')
 
-        // 4. Synthetic Plugin toggle
+        // 4. Synthetic Plugin install, approve, RightSidebar panel load, and disable lifecycle
         await openSettingsPage(page)
         await page.locator('aside button').filter({ hasText: /^(Plugins|插件)/i }).first().click()
-        await page.locator('section[data-settings-section="plugins"]').waitFor({ state: 'visible', timeout: 8000 })
-        const onBtn = page.getByRole('button', { name: /Turn on plugins|开启插件/i }).first()
-        if (await onBtn.isVisible().catch(() => false)) await onBtn.click()
-        await stubOpenDialog(app, pluginFix.pluginDir)
-        await sleep(200)
-        const offBtn = page.getByRole('button', { name: /Turn off plugins|关闭插件/i }).first()
-        if (await offBtn.isVisible().catch(() => false)) await offBtn.click()
-        await returnFromSettings(page)
+        await installAndEnableFolderPlugin(app, page, pluginFix)
+        const panelState = await openAndVerifyPluginPanel(page, pluginFix.title)
+        const disabledState = await disablePluginAndVerify(page, pluginFix.title)
 
         return {
           diffVerified: true,
           browserVerified: true,
-          pluginToggled: true,
+          pluginPanelLoaded: Boolean(panelState.present),
+          ...disabledState,
           gitHead: repo.getHead()
         }
       } finally {

@@ -1,0 +1,61 @@
+{
+  "size": [
+    600,
+    400
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "light",
+  "overflowX": false,
+  "scrollWidth": 600,
+  "innerWidth": 600,
+  "focusTag": "BODY",
+  "focusLabel": "SearchCtrl+⇧+JTasksAutomationsPorpita MobileNewProjects0No workspaces foundPorpitaAdd a project to g",
+  "textSample": "Search\nTasks\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nNo workspaces found\nPorpita\n\nAdd a project to get started.\n\nAdd project\nCreate workspace\nOff\n—\n·\n0\nChat UI is here\nAgents can now open as a chat, with rich messages, visuals and images.\nChange anytime in Settings → Chat UI.\nStay in terminal\nUse Chat UI",
+  "extra": {
+    "stackPresent": true,
+    "stackZIndex": "30",
+    "cardRect": {
+      "left": 280,
+      "top": 220,
+      "right": 532,
+      "bottom": 360,
+      "width": 252,
+      "height": 140
+    },
+    "asideRect": null,
+    "asideOverlapArea": 0,
+    "addProjectButtons": [
+      {
+        "label": "Add project",
+        "inAside": false,
+        "rect": {
+          "left": 307,
+          "top": 112,
+          "right": 418,
+          "bottom": 144,
+          "width": 111,
+          "height": 32
+        },
+        "overlapArea": 0,
+        "blockedByStack": false
+      },
+      {
+        "label": "Create workspace",
+        "inAside": false,
+        "rect": {
+          "left": 424,
+          "top": 112,
+          "right": 573,
+          "bottom": 144,
+          "width": 148,
+          "height": 32
+        },
+        "overlapArea": 0,
+        "blockedByStack": false
+      }
+    ]
+  },
+  "imageFile": "r92-o01-notification-stack-600.png",
+  "imageMethod": "CDP screenshot"
+}

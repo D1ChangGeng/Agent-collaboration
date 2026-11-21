@@ -1,0 +1,45 @@
+{
+  "size": [
+    600,
+    400
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 600,
+  "innerWidth": 600,
+  "focusTag": "INPUT",
+  "focusLabel": null,
+  "textSample": "Search\nTasks\nArtifacts\nSkills\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nr92-fixture-repo\nActive\nmain\nprimary\nmain\n\nAdd a setup script\n\nConfigure\nTerminal 1\nnotes.md\nC:/Users/D26FO/AppData/Local/Temp/porpita-r92-5n5DqG/r92-fixture-repo/\nnotes.md\nFile path copied\nTable of Contents\nH1\nH2\nH3\nH4\nH5\nRelease Notes\nOverview\nDetails\nB\nI\nS\nRelease Notes\nOverview\n\nDisposable editor text.\n\nDetails\n\nSecond section for Markdown Preview and TOC.\n\nOff\n—\n·\n0\nGo to file\n\nSearch for a file to open\n\nnotes.md\napp.ts\nCHANGELOG.md\npreview.html\nsample.csv\nsample.png\nsample.svg\nEnter\nOpen\nEsc\nClose\n↑↓\nMove",
+  "extra": {
+    "quickOpenVisible": true,
+    "quickOpenTrigger": "sendInputEvent-Mod+P",
+    "quickOpen600": {
+      "found": true,
+      "top": 52,
+      "bottom": 217,
+      "height": 164,
+      "footerBottom": 216,
+      "viewportHeight": 400,
+      "clippedBottom": false
+    },
+    "editorHeader600": {
+      "found": true,
+      "ok": true,
+      "scrollWidth": 319,
+      "clientWidth": 319,
+      "rootOverflowX": false,
+      "itemCount": 8,
+      "clipped": [],
+      "overlaps": []
+    },
+    "editorPathWidth600": 291,
+    "setupCardOverlap600": {
+      "found": true,
+      "overlapArea": 0
+    }
+  },
+  "imageFile": "r92-o00-quickopen-600.png",
+  "imageMethod": "CDP screenshot"
+}

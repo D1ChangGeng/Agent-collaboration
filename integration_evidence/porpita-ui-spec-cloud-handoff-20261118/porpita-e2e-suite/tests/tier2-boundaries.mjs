@@ -5,12 +5,18 @@ import path from 'node:path'
 import {
   addLocalFolderProject,
   assertAllWindowsHidden,
+  assertImeCompositionKeepsDialogOpen,
   closeElectronApp,
+  disablePluginAndVerify,
   dismissStartupDialogs,
   hasIntegratedWorkspaceShell,
+  installAndEnableFolderPlugin,
   launchElectronApp,
   M3_SELECTOR_CONTRACT,
+  openAndVerifyPluginPanel,
+  openMarkdownPreviewAndVerify,
   openSettingsPage,
+  primaryModifierKey,
   returnFromSettings,
   setViewportSize,
   sleep,
@@ -953,18 +959,64 @@ export const TIER2_TESTS = [
     refs: ['H.01', 'O.local.close', 'S.09'],
     async run(ctx) {
       const repo = createTempGitRepo({ name: 't2-f04-01' })
-      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const inst = await launchElectronApp({
+        porpitaRoot: ctx.porpitaRoot,
+        profileOptions: { settings: { autoSave: 'off' } }
+      })
       try {
         const { app, page } = inst
         await addLocalFolderProject(app, page, repo.repoPath)
-        const notesNode = page.getByText('notes.md', { exact: true }).first()
-        await notesNode.waitFor({ state: 'visible', timeout: 10000 })
-        await notesNode.dblclick()
-        await page.getByText('Disposable editor text.', { exact: true }).first().waitFor({ state: 'visible', timeout: 10000 })
-        // Modify notes.md externally on disk and confirm no crash
-        writeFileSync(path.join(repo.repoPath, 'notes.md'), '# Externally Modified\n\nNew disk line.\n', 'utf8')
-        await sleep(400)
-        return { externalChangeHandled: true }
+        const readmeNode = page.getByText('README.md', { exact: true }).first()
+        await readmeNode.waitFor({ state: 'visible', timeout: 10000 })
+        await readmeNode.dblclick()
+        const sourceToggle = page
+          .locator('[data-testid="markdown-view-switcher"] [aria-label*="Source" i], [data-testid="markdown-view-switcher"] [aria-label*="源码" i]')
+          .first()
+        if (await waitForVisible(sourceToggle, 3000)) {
+          await sourceToggle.click()
+        }
+        const monacoLines = page.locator('.monaco-editor .view-lines').first()
+        await monacoLines.waitFor({ state: 'visible', timeout: 10000 })
+        await monacoLines.click()
+        await page.keyboard.type('UNSAVED_LOCAL_DRAFT ')
+
+        // Modify README.md externally on disk while tab has unsaved edits -> assert conflict banner
+        const readmePath = path.join(repo.repoPath, 'README.md')
+        writeFileSync(readmePath, '# Externally Modified\n\nNew disk line.\n', 'utf8')
+        const conflictBanner = page
+          .locator('[role="alert"]')
+          .filter({ hasText: /changed on disk|Reload from Disk|Keep My Edits|磁盘/i })
+          .first()
+        await conflictBanner.waitFor({ state: 'visible', timeout: 12000 })
+        const keepBtn = conflictBanner.getByRole('button', { name: /Keep My Edits|保留/i }).first()
+        await keepBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await keepBtn.click()
+        await conflictBanner.waitFor({ state: 'hidden', timeout: 5000 })
+
+        // Attempt closing still-dirty active editor tab -> assert Unsaved Changes dialog & Don't Save discards safely
+        const activeTab = page.locator('[data-tab-id][data-active="true"]').first()
+        await activeTab.waitFor({ state: 'visible', timeout: 5000 })
+        await activeTab.hover()
+        const closeTabBtn = activeTab.locator('button').last()
+        await closeTabBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await closeTabBtn.click()
+
+        const savePrompt = page
+          .locator('[role="dialog"]:visible')
+          .filter({ hasText: /Unsaved Changes|unsaved changes|未保存/i })
+          .last()
+        await savePrompt.waitFor({ state: 'visible', timeout: 8000 })
+        const dontSaveBtn = savePrompt.getByRole('button', { name: /Don't Save|不保存/i }).first()
+        await dontSaveBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await dontSaveBtn.click()
+        await savePrompt.waitFor({ state: 'hidden', timeout: 5000 })
+
+        assert.equal(
+          readFileSync(readmePath, 'utf8').includes('# Externally Modified'),
+          true,
+          "Don't Save must preserve the external disk modification instead of overwriting"
+        )
+        return { externalConflictBannerVerified: true, dirtyCloseDontSaveVerified: true }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -982,13 +1034,19 @@ export const TIER2_TESTS = [
       try {
         const { app, page } = inst
         await addLocalFolderProject(app, page, repo.repoPath)
-        await page.getByText('sample.csv', { exact: true }).first().dblclick()
-        await sleep(400)
-        await page.getByText('notes.md', { exact: true }).first().dblclick()
-        await sleep(300)
-        const xssTriggered = await page.evaluate(() => Boolean(window.__xss))
-        assert.equal(xssTriggered, false, 'Markdown <script> tag must NEVER execute')
-        return { csvRows: 1050, xssTriggered }
+        const csvItem = page.getByText('sample.csv', { exact: true }).first()
+        await csvItem.waitFor({ state: 'visible', timeout: 8000 })
+        await csvItem.dblclick()
+        const csvGrid = page.locator('[data-testid="csv-grid"]').first()
+        await csvGrid.waitFor({ state: 'visible', timeout: 10000 })
+        await page.getByText(/1,?050/).first().waitFor({ state: 'visible', timeout: 6000 })
+
+        const notesItem = page.getByText('notes.md', { exact: true }).first()
+        await notesItem.waitFor({ state: 'visible', timeout: 8000 })
+        await notesItem.dblclick()
+        const { xssTriggered } = await openMarkdownPreviewAndVerify(page, 'Release Notes')
+        await page.locator('h2').filter({ hasText: /^Overview$/i }).first().waitFor({ state: 'visible', timeout: 6000 })
+        return { csvRows: 1050, markdownPreviewRendered: true, xssTriggered }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -1031,6 +1089,7 @@ export const TIER2_TESTS = [
       const httpSrv = await startLoopbackHttpServer()
       const repo = createTempGitRepo({ name: 't2-f04-04' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const mod = primaryModifierKey()
       try {
         const { app, page } = inst
         await addLocalFolderProject(app, page, repo.repoPath)
@@ -1040,11 +1099,87 @@ export const TIER2_TESTS = [
         await addrBar.waitFor({ state: 'visible', timeout: 10000 })
         await addrBar.fill(`${httpSrv.baseUrl}/page2`)
         await addrBar.press('Enter')
-        await sleep(500)
-        await page.keyboard.press('Control+f')
-        await sleep(250)
+
+        const guestDeadline = Date.now() + 8000
+        let guestReady = false
+        while (Date.now() < guestDeadline) {
+          guestReady = await app.evaluate(
+            ({ webContents }, url) => webContents.getAllWebContents().some((wc) => wc.getURL().startsWith(url) && !wc.isLoading()),
+            `${httpSrv.baseUrl}/page2`
+          )
+          if (guestReady) break
+          await sleep(200)
+        }
+        assert.equal(guestReady, true, 'Loopback guest /page2 did not finish loading')
+
+        // Dismiss the fresh-profile "Draw on screenshot" onboarding tip popover if it pops open over Browser chrome.
+        const drawTipGotIt = page.getByRole('button', { name: /^(Got it|知道了)$/i }).first()
+        if (await waitForVisible(drawTipGotIt, 1200)) {
+          await drawTipGotIt.click()
+        }
+
+        await page.keyboard.press(`${mod}+f`)
+        const findBar = page.locator('[data-testid="browser-find-bar"]').first()
+        if (!(await waitForVisible(findBar, 2500))) {
+          if (await waitForVisible(drawTipGotIt, 500)) {
+            await drawTipGotIt.click()
+            await page.keyboard.press(`${mod}+f`)
+          }
+        }
+        if (!(await waitForVisible(findBar, 2500))) {
+          // If the guest <webview> took native focus on load, dispatch Mod+F to the guest (browser-guest-shortcut-dispatch).
+          await app.evaluate(
+            async ({ webContents }, { urlPrefix, modKey }) => {
+              const guest = webContents.getAllWebContents().find((wc) => wc.getURL().startsWith(urlPrefix))
+              if (guest) {
+                guest.focus()
+                guest.sendInputEvent({ type: 'keyDown', keyCode: 'F', modifiers: [modKey] })
+                guest.sendInputEvent({ type: 'keyUp', keyCode: 'F', modifiers: [modKey] })
+              }
+            },
+            {
+              urlPrefix: `${httpSrv.baseUrl}/page2`,
+              modKey: process.platform === 'darwin' ? 'meta' : 'control'
+            }
+          )
+        }
+        await findBar.waitFor({ state: 'visible', timeout: 8000 })
+        assert.equal(
+          await page.locator('#browser-history-listbox:visible').count(),
+          0,
+          'Address bar suggestion dropdown must close on Enter and Cmd/Ctrl+F instead of overlapping BrowserFind'
+        )
+        const findInput = findBar.locator('input').first()
+        await findInput.waitFor({ state: 'visible', timeout: 5000 })
+        await findInput.fill('marker')
+        await findInput.press('Enter')
+
+        // /page2 has 2 occurrences of "marker" -> assert match count updates from live guest findInPage
+        await findBar.getByText(/(1|2)\s*(of|\/)\s*2/i).first().waitFor({ state: 'visible', timeout: 8000 })
+
+        // Verify narrow 600x400 BrowserFind containment
+        await setViewportSize(app, page, 600, 400)
+        const findBox600 = await findBar.evaluate((el) => {
+          const r = el.getBoundingClientRect()
+          return {
+            left: Math.round(r.left),
+            right: Math.round(r.right),
+            width: Math.round(r.width),
+            vw: window.innerWidth,
+            overflowX: document.documentElement.scrollWidth > window.innerWidth + 2
+          }
+        })
+        assert.ok(
+          findBox600.left >= 0 && findBox600.right <= findBox600.vw + 1 && !findBox600.overflowX,
+          `BrowserFind overflowed 600x400 viewport: ${JSON.stringify(findBox600)}`
+        )
+
+        if (await waitForVisible(drawTipGotIt, 400)) {
+          await drawTipGotIt.click()
+        }
         await page.keyboard.press('Escape')
-        return { browserFindTested: true }
+        await findBar.waitFor({ state: 'hidden', timeout: 5000 })
+        return { browserFindMatchCountVerified: true, findBox600 }
       } finally {
         await closeElectronApp(inst)
         await httpSrv.close()
@@ -1058,28 +1193,22 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F04',
     refs: ['G.08', 'L.06'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't2-f04-05' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       const pluginFix = createSyntheticPluginFixture(ctx.porpitaRoot)
       try {
-        const { page } = inst
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repo.repoPath)
         await openSettingsPage(page)
         await page.locator('aside button').filter({ hasText: /^(Plugins|插件)/i }).first().click()
-        await page.locator('section[data-settings-section="plugins"]').waitFor({ state: 'visible', timeout: 8000 })
-        const toggleBtn = page.getByRole('button', { name: /Turn on plugins|开启插件/i }).first()
-        if (await toggleBtn.isVisible().catch(() => false)) {
-          await toggleBtn.click()
-          await sleep(200)
-        }
-        const turnOffBtn = page.getByRole('button', { name: /Turn off plugins|关闭插件/i }).first()
-        if (await turnOffBtn.isVisible().catch(() => false)) {
-          await turnOffBtn.click()
-          await sleep(200)
-        }
-        await returnFromSettings(page)
-        return { pluginSystemToggledOffCleanly: true }
+        await installAndEnableFolderPlugin(app, page, pluginFix)
+        const panelState = await openAndVerifyPluginPanel(page, pluginFix.title)
+        const disabledState = await disablePluginAndVerify(page, pluginFix.title)
+        return { panelState, ...disabledState }
       } finally {
         await closeElectronApp(inst)
         pluginFix.cleanup()
+        repo.cleanup()
       }
     }
   },
@@ -1092,22 +1221,14 @@ export const TIER2_TESTS = [
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
         const { page } = inst
-        // Open Quick Open / Search and simulate compositionstart -> Enter -> compositionend
         const searchBtn = page
           .getByRole('button', { name: /Search worktrees and browser tabs|搜索工作树/i })
           .first()
+        await searchBtn.waitFor({ state: 'visible', timeout: 10000 })
         await searchBtn.click()
-        await sleep(200)
-        const activeTag = await page.evaluate(() => {
-          const el = document.activeElement
-          if (!el) return null
-          el.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '测' }))
-          el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 229, isComposing: true, bubbles: true }))
-          el.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '测试' }))
-          return el.tagName
-        })
-        await page.keyboard.press('Escape')
-        return { imeGuardExercisedOn: activeTag }
+        const dialog = page.locator('[role="dialog"]:visible').last()
+        const imeResult = await assertImeCompositionKeepsDialogOpen(page, dialog, 'ma')
+        return { imeGuardExercisedOn: imeResult.activeTag, imeValue: imeResult.value }
       } finally {
         await closeElectronApp(inst)
       }

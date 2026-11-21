@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict'
 import {
   addLocalFolderProject,
+  assertImeCompositionKeepsDialogOpen,
   closeElectronApp,
+  disablePluginAndVerify,
   hasIntegratedWorkspaceShell,
+  installAndEnableFolderPlugin,
   launchElectronApp,
   M3_SELECTOR_CONTRACT,
+  openAndVerifyPluginPanel,
   openCollaborationDialog,
   openSettingsPage,
   returnFromSettings,
@@ -370,41 +374,39 @@ export const TIER3_TESTS = [
     featureArea: 'E2E-F02+E2E-F03+E2E-F04',
     refs: ['G.08', 'L.06', 'E.03', 'T.04'],
     async run(ctx) {
+      const repo = createTempGitRepo({ name: 't3-08' })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       const pluginFix = createSyntheticPluginFixture(ctx.porpitaRoot)
       try {
         const { app, page } = inst
-        // Open Search/QuickOpen, exercise IME + Esc layering
-        await page
+        await addLocalFolderProject(app, page, repo.repoPath)
+        // Open Search/QuickOpen, exercise real IME composition + Esc layering
+        const searchBtn = page
           .getByRole('button', { name: /Search worktrees and browser tabs|搜索工作树/i })
           .first()
-          .click()
-        await sleep(200)
-        await page.evaluate(() => {
-          const el = document.activeElement
-          if (el) {
-            el.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: 'a' }))
-            el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 229, isComposing: true, bubbles: true }))
-            el.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: 'a' }))
-          }
-        })
-        await page.keyboard.press('Escape')
+        await searchBtn.waitFor({ state: 'visible', timeout: 10000 })
+        await searchBtn.click()
+        const imeResult = await assertImeCompositionKeepsDialogOpen(
+          page,
+          page.locator('[role="dialog"]:visible').last(),
+          'alpha'
+        )
 
-        // Enable and disable plugin system via Settings -> Plugins
+        // Install, approve, open RightSidebar panel, and disable folder plugin via Settings -> Plugins
         await openSettingsPage(page)
         await page.locator('aside button').filter({ hasText: /^(Plugins|插件)/i }).first().click()
-        await page.locator('section[data-settings-section="plugins"]').waitFor({ state: 'visible', timeout: 8000 })
-        const onBtn = page.getByRole('button', { name: /Turn on plugins|开启插件/i }).first()
-        if (await onBtn.isVisible().catch(() => false)) await onBtn.click()
-        await stubOpenDialog(app, pluginFix.pluginDir)
-        await sleep(200)
-        const offBtn = page.getByRole('button', { name: /Turn off plugins|关闭插件/i }).first()
-        if (await offBtn.isVisible().catch(() => false)) await offBtn.click()
-        await returnFromSettings(page)
-        return { imeAndPluginLifecycleClean: true }
+        await installAndEnableFolderPlugin(app, page, pluginFix)
+        const panelState = await openAndVerifyPluginPanel(page, pluginFix.title)
+        const disabledState = await disablePluginAndVerify(page, pluginFix.title)
+        return {
+          imeGuardActiveTag: imeResult.activeTag,
+          panelState,
+          ...disabledState
+        }
       } finally {
         await closeElectronApp(inst)
         pluginFix.cleanup()
+        repo.cleanup()
       }
     }
   }

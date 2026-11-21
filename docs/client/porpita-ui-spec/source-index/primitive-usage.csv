@@ -795,18 +795,18 @@ src/renderer/src/components/browser-pane/assemble-chrome/browser-toolbar-profile
 src/renderer/src/components/browser-pane/assemble-chrome/browser-toolbar-profile-dialogs.tsx,101,DialogFooter,src/renderer/src/components/ui/dialog.tsx,P.06,I.01,family path,
 src/renderer/src/components/browser-pane/assemble-chrome/browser-toolbar-profile-dialogs.tsx,102,Button,src/renderer/src/components/ui/button.tsx,P.01,I.01,family path,onClick
 src/renderer/src/components/browser-pane/assemble-chrome/browser-toolbar-profile-dialogs.tsx,105,Button,src/renderer/src/components/ui/button.tsx,P.01,I.01,family path,disabled
-src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBar.tsx,344,Popover,src/renderer/src/components/ui/popover.tsx,P.05,I.01,family path,onOpenChange
-src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBar.tsx,358,PopoverTrigger,src/renderer/src/components/ui/popover.tsx,P.05,I.01,family path,
-src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBar.tsx,377,Input,src/renderer/src/components/ui/input.tsx,P.02,I.01,family path,onFocus;onMouseDown;onClick;onBlur;onKeyDown;onSelect;onChange;aria-expanded
-src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBar.tsx,419,PopoverContent,src/renderer/src/components/ui/popover.tsx,P.05,I.01,family path,
+src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBar.tsx,310,Popover,src/renderer/src/components/ui/popover.tsx,P.05,I.01,family path,onOpenChange
+src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBar.tsx,324,PopoverTrigger,src/renderer/src/components/ui/popover.tsx,P.05,I.01,family path,
+src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBar.tsx,343,Input,src/renderer/src/components/ui/input.tsx,P.02,I.01,family path,onFocus;onMouseDown;onClick;onBlur;onKeyDown;onSelect;onChange;aria-expanded
+src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBar.tsx,385,PopoverContent,src/renderer/src/components/ui/popover.tsx,P.05,I.01,family path,
 src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBarSuggestionList.tsx,36,Command,src/renderer/src/components/ui/command.tsx,P.03,I.01,family path,onValueChange
 src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBarSuggestionList.tsx,41,CommandList,src/renderer/src/components/ui/command.tsx,P.03,I.01,family path,
 src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBarSuggestionList.tsx,42,CommandGroup,src/renderer/src/components/ui/command.tsx,P.03,I.01,family path,
 src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBarSuggestionList.tsx,44,CommandItem,src/renderer/src/components/ui/command.tsx,P.03,I.01,family path,onSelect
 src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBarSuggestionList.tsx,68,Button,src/renderer/src/components/ui/button.tsx,P.01,I.01,family path,onMouseDown;onClick
-src/renderer/src/components/browser-pane/assemble-chrome/BrowserFind.tsx,228,Button,src/renderer/src/components/ui/button.tsx,P.01,I.01,explicit,onClick
-src/renderer/src/components/browser-pane/assemble-chrome/BrowserFind.tsx,239,Button,src/renderer/src/components/ui/button.tsx,P.01,I.01,explicit,onClick
-src/renderer/src/components/browser-pane/assemble-chrome/BrowserFind.tsx,252,Button,src/renderer/src/components/ui/button.tsx,P.01,I.01,explicit,onClick
+src/renderer/src/components/browser-pane/assemble-chrome/BrowserFind.tsx,312,Button,src/renderer/src/components/ui/button.tsx,P.01,I.01,explicit,onClick
+src/renderer/src/components/browser-pane/assemble-chrome/BrowserFind.tsx,323,Button,src/renderer/src/components/ui/button.tsx,P.01,I.01,explicit,onClick
+src/renderer/src/components/browser-pane/assemble-chrome/BrowserFind.tsx,336,Button,src/renderer/src/components/ui/button.tsx,P.01,I.01,explicit,onClick
 src/renderer/src/components/browser-pane/assemble-chrome/BrowserImportHintButton.tsx,166,Popover,src/renderer/src/components/ui/popover.tsx,P.05,I.01,family path,onOpenChange
 src/renderer/src/components/browser-pane/assemble-chrome/BrowserImportHintButton.tsx,167,PopoverTrigger,src/renderer/src/components/ui/popover.tsx,P.05,I.01,family path,
 src/renderer/src/components/browser-pane/assemble-chrome/BrowserImportHintButton.tsx,168,Button,src/renderer/src/components/ui/button.tsx,P.01,I.01,family path,
@@ -1180,28 +1180,28 @@ src/renderer/src/components/editor/EditorPanelActionsMenu.tsx,84,DropdownMenuChe
 src/renderer/src/components/editor/EditorPanelActionsMenu.tsx,95,DropdownMenuCheckboxItem,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,H,directory queue; leaf review open,
 src/renderer/src/components/editor/EditorPanelActionsMenu.tsx,102,DropdownMenuSeparator,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,H,directory queue; leaf review open,
 src/renderer/src/components/editor/EditorPanelActionsMenu.tsx,104,DropdownMenuItem,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,H,directory queue; leaf review open,disabled;onSelect
-src/renderer/src/components/editor/EditorPanelHeader.tsx,151,TooltipProvider,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,152,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,153,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,166,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,176,TooltipProvider,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,177,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,178,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,192,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,226,TooltipProvider,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,227,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,228,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,237,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,249,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,250,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,264,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,275,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,276,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,290,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,313,TooltipProvider,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,314,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,315,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
-src/renderer/src/components/editor/EditorPanelHeader.tsx,334,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,152,TooltipProvider,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,153,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,154,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,167,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,177,TooltipProvider,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,178,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,179,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,193,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,227,TooltipProvider,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,228,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,229,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,238,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,250,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,251,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,265,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,279,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,280,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,294,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,317,TooltipProvider,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,318,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,319,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
+src/renderer/src/components/editor/EditorPanelHeader.tsx,338,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,H,explicit,
 src/renderer/src/components/editor/EditorPanelHeaderPath.tsx,130,DropdownMenu,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,H.01,explicit,onOpenChange
 src/renderer/src/components/editor/EditorPanelHeaderPath.tsx,131,DropdownMenuTrigger,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,H.01,explicit,
 src/renderer/src/components/editor/EditorPanelHeaderPath.tsx,139,DropdownMenuContent,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,H.01,explicit,
@@ -1261,8 +1261,8 @@ src/renderer/src/components/editor/markdown/documents/MarkdownTemplatePicker.tsx
 src/renderer/src/components/editor/markdown/documents/MarkdownTemplatePicker.tsx,82,CommandItem,src/renderer/src/components/ui/command.tsx,P.03,O.modal.markdown-template-picker,explicit,onSelect
 src/renderer/src/components/editor/markdown/documents/MarkdownTemplatePicker.tsx,105,CommandGroup,src/renderer/src/components/ui/command.tsx,P.03,O.modal.markdown-template-picker,explicit,
 src/renderer/src/components/editor/markdown/documents/MarkdownTemplatePicker.tsx,107,CommandItem,src/renderer/src/components/ui/command.tsx,P.03,O.modal.markdown-template-picker,explicit,onSelect
-src/renderer/src/components/editor/markdown/navigation/MarkdownTableOfContentsPanel.tsx,115,Button,src/renderer/src/components/ui/button.tsx,P.01,H,directory queue; leaf review open,onClick
-src/renderer/src/components/editor/markdown/navigation/MarkdownTableOfContentsPanel.tsx,151,Button,src/renderer/src/components/ui/button.tsx,P.01,H,directory queue; leaf review open,onClick
+src/renderer/src/components/editor/markdown/navigation/MarkdownTableOfContentsPanel.tsx,117,Button,src/renderer/src/components/ui/button.tsx,P.01,H.02,explicit,onClick
+src/renderer/src/components/editor/markdown/navigation/MarkdownTableOfContentsPanel.tsx,153,Button,src/renderer/src/components/ui/button.tsx,P.01,H.02,explicit,onClick
 src/renderer/src/components/editor/markdown-preview/review/MarkdownPreviewAnnotationComposer.tsx,139,Button,src/renderer/src/components/ui/button.tsx,P.01,H,directory queue; leaf review open,onClick;disabled
 src/renderer/src/components/editor/markdown-preview/review/MarkdownPreviewAnnotationComposer.tsx,142,Button,src/renderer/src/components/ui/button.tsx,P.01,H,directory queue; leaf review open,onClick;disabled
 src/renderer/src/components/editor/markdown-preview/search/MarkdownPreviewSearchBar.tsx,28,Input,src/renderer/src/components/ui/input.tsx,P.02,H,directory queue; leaf review open,onChange;onKeyDown
@@ -1472,8 +1472,8 @@ src/renderer/src/components/feature-tips/ChatUiHereCornerCard.tsx,90,Card,src/re
 src/renderer/src/components/feature-tips/ChatUiHereCornerCard.tsx,95,CardHeader,src/renderer/src/components/ui/card.tsx,P.08,O.01.01;O.01.02,explicit,
 src/renderer/src/components/feature-tips/ChatUiHereCornerCard.tsx,97,CardTitle,src/renderer/src/components/ui/card.tsx,P.08,O.01.01;O.01.02,explicit,
 src/renderer/src/components/feature-tips/ChatUiHereCornerCard.tsx,100,Button,src/renderer/src/components/ui/button.tsx,P.01,O.01.01;O.01.02,explicit,onClick
-src/renderer/src/components/feature-tips/ChatUiHereCornerCard.tsx,118,CardContent,src/renderer/src/components/ui/card.tsx,P.08,O.01.01;O.01.02,explicit,
-src/renderer/src/components/feature-tips/ChatUiHereCornerCard.tsx,120,CardDescription,src/renderer/src/components/ui/card.tsx,P.08,O.01.01;O.01.02,explicit,
+src/renderer/src/components/feature-tips/ChatUiHereCornerCard.tsx,119,CardContent,src/renderer/src/components/ui/card.tsx,P.08,O.01.01;O.01.02,explicit,
+src/renderer/src/components/feature-tips/ChatUiHereCornerCard.tsx,121,CardDescription,src/renderer/src/components/ui/card.tsx,P.08,O.01.01;O.01.02,explicit,
 src/renderer/src/components/feature-tips/ChatUiHereTipDialog.tsx,52,DialogHeader,src/renderer/src/components/ui/dialog.tsx,P.06,B.05,directory queue; leaf review open,
 src/renderer/src/components/feature-tips/ChatUiHereTipDialog.tsx,55,DialogTitle,src/renderer/src/components/ui/dialog.tsx,P.06,B.05,directory queue; leaf review open,
 src/renderer/src/components/feature-tips/ChatUiHereTipDialog.tsx,58,DialogDescription,src/renderer/src/components/ui/dialog.tsx,P.06,B.05,directory queue; leaf review open,
@@ -2051,8 +2051,8 @@ src/renderer/src/components/JiraPromptTemplatePopover.tsx,119,Button,src/rendere
 src/renderer/src/components/JiraPromptTemplatePopover.tsx,122,Button,src/renderer/src/components/ui/button.tsx,P.01,J.05,接入指引和开始工作,disabled;onClick
 src/renderer/src/components/Landing.tsx,77,Button,src/renderer/src/components/ui/button.tsx,P.01,A.04;S.02,explicit,onClick
 src/renderer/src/components/Landing.tsx,89,Button,src/renderer/src/components/ui/button.tsx,P.01,A.04;S.02,explicit,onClick
-src/renderer/src/components/Landing.tsx,172,Button,src/renderer/src/components/ui/button.tsx,P.01,A.04;S.02,explicit,onClick
-src/renderer/src/components/Landing.tsx,182,Button,src/renderer/src/components/ui/button.tsx,P.01,A.04;S.02,explicit,onClick
+src/renderer/src/components/Landing.tsx,177,Button,src/renderer/src/components/ui/button.tsx,P.01,A.04;S.02,explicit,onClick
+src/renderer/src/components/Landing.tsx,187,Button,src/renderer/src/components/ui/button.tsx,P.01,A.04;S.02,explicit,onClick
 src/renderer/src/components/linear-api-key-dialog.tsx,156,Dialog,src/renderer/src/components/ui/dialog.tsx,P.06,J.04,explicit,onOpenChange
 src/renderer/src/components/linear-api-key-dialog.tsx,157,DialogContent,src/renderer/src/components/ui/dialog.tsx,P.06,J.04,explicit,onPointerDownOutside;onKeyDown
 src/renderer/src/components/linear-api-key-dialog.tsx,169,DialogHeader,src/renderer/src/components/ui/dialog.tsx,P.06,J.04,explicit,
@@ -4689,10 +4689,10 @@ src/renderer/src/components/settings/repository/RepositoryGitHubAccountSection.t
 src/renderer/src/components/settings/repository/RepositoryGitHubAccountSection.tsx,271,SelectItem,src/renderer/src/components/ui/select.tsx,P.03,N.repo.01,explicit,disabled
 src/renderer/src/components/settings/repository/RepositoryGitHubAccountSection.tsx,287,SelectItem,src/renderer/src/components/ui/select.tsx,P.03,N.repo.01,explicit,disabled
 src/renderer/src/components/settings/repository/RepositoryPane.tsx,277,Label,src/renderer/src/components/ui/label.tsx,P.02,N.repo,family path,
-src/renderer/src/components/settings/repository/RepositoryRemoveProjectButton.tsx,62,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,N.repo.01,explicit,
-src/renderer/src/components/settings/repository/RepositoryRemoveProjectButton.tsx,63,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,N.repo.01,explicit,
-src/renderer/src/components/settings/repository/RepositoryRemoveProjectButton.tsx,64,Button,src/renderer/src/components/ui/button.tsx,P.01,N.repo.01,explicit,onClick;onBlur
-src/renderer/src/components/settings/repository/RepositoryRemoveProjectButton.tsx,75,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,N.repo.01,explicit,
+src/renderer/src/components/settings/repository/RepositoryRemoveProjectButton.tsx,65,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,N.repo.01,explicit,
+src/renderer/src/components/settings/repository/RepositoryRemoveProjectButton.tsx,66,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,N.repo.01,explicit,
+src/renderer/src/components/settings/repository/RepositoryRemoveProjectButton.tsx,67,Button,src/renderer/src/components/ui/button.tsx,P.01,N.repo.01,explicit,onClick;onBlur
+src/renderer/src/components/settings/repository/RepositoryRemoveProjectButton.tsx,78,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,N.repo.01,explicit,
 src/renderer/src/components/settings/repository/RepositorySettingsDraftInput.tsx,86,Input,src/renderer/src/components/ui/input.tsx,P.02,N.repo,family path,onChange;onBlur;onCompositionStart;onCompositionEnd
 src/renderer/src/components/settings/repository/source-control/RepositorySourceControlAiActionRows.tsx,122,Label,src/renderer/src/components/ui/label.tsx,P.02,N.repo,family path,
 src/renderer/src/components/settings/repository/source-control/RepositorySourceControlAiActionRows.tsx,210,Select,src/renderer/src/components/ui/select.tsx,P.03,N.repo,family path,onValueChange
@@ -6423,12 +6423,12 @@ src/renderer/src/components/skills/SkillsFilterToolbar.tsx,101,TooltipTrigger,sr
 src/renderer/src/components/skills/SkillsFilterToolbar.tsx,102,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,directory queue; leaf review open,disabled;onClick
 src/renderer/src/components/skills/SkillsFilterToolbar.tsx,114,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,directory queue; leaf review open,
 src/renderer/src/components/skills/SkillsFilterToolbar.tsx,121,ToggleGroup,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,onValueChange
-src/renderer/src/components/skills/SkillsFilterToolbar.tsx,130,ToggleGroupItem,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,
-src/renderer/src/components/skills/SkillsFilterToolbar.tsx,133,ToggleGroupItem,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,
-src/renderer/src/components/skills/SkillsFilterToolbar.tsx,140,ToggleGroup,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,onValueChange
-src/renderer/src/components/skills/SkillsFilterToolbar.tsx,158,ToggleGroupItem,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,
-src/renderer/src/components/skills/SkillsFilterToolbar.tsx,163,ToggleGroupItem,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,
-src/renderer/src/components/skills/SkillsFilterToolbar.tsx,180,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,directory queue; leaf review open,onClick
+src/renderer/src/components/skills/SkillsFilterToolbar.tsx,131,ToggleGroupItem,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,
+src/renderer/src/components/skills/SkillsFilterToolbar.tsx,134,ToggleGroupItem,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,
+src/renderer/src/components/skills/SkillsFilterToolbar.tsx,141,ToggleGroup,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,onValueChange
+src/renderer/src/components/skills/SkillsFilterToolbar.tsx,160,ToggleGroupItem,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,
+src/renderer/src/components/skills/SkillsFilterToolbar.tsx,165,ToggleGroupItem,src/renderer/src/components/ui/toggle-group.tsx,P.01,L.03,directory queue; leaf review open,
+src/renderer/src/components/skills/SkillsFilterToolbar.tsx,182,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,directory queue; leaf review open,onClick
 src/renderer/src/components/skills/SkillShareDialog.tsx,266,Dialog,src/renderer/src/components/ui/dialog.tsx,P.06,L.03,directory queue; leaf review open,onOpenChange
 src/renderer/src/components/skills/SkillShareDialog.tsx,268,DialogContent,src/renderer/src/components/ui/dialog.tsx,P.06,L.03,directory queue; leaf review open,
 src/renderer/src/components/skills/SkillShareDialog.tsx,318,DialogFooter,src/renderer/src/components/ui/dialog.tsx,P.06,L.03,directory queue; leaf review open,
@@ -6465,22 +6465,22 @@ src/renderer/src/components/skills/SkillShareReviewContent.tsx,61,DialogDescript
 src/renderer/src/components/skills/SkillShareReviewContent.tsx,153,Progress,src/renderer/src/components/ui/progress.tsx,P.08,L.03,directory queue; leaf review open,
 src/renderer/src/components/skills/SkillShareReviewContent.tsx,176,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,directory queue; leaf review open,onClick
 src/renderer/src/components/skills/SkillShareReviewContent.tsx,185,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,directory queue; leaf review open,onClick
-src/renderer/src/components/skills/SkillsPageHeader.tsx,48,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
-src/renderer/src/components/skills/SkillsPageHeader.tsx,49,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
-src/renderer/src/components/skills/SkillsPageHeader.tsx,50,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,explicit,onClick
-src/renderer/src/components/skills/SkillsPageHeader.tsx,63,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
-src/renderer/src/components/skills/SkillsPageHeader.tsx,89,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,explicit,onClick
-src/renderer/src/components/skills/SkillsPageHeader.tsx,96,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,explicit,onClick
-src/renderer/src/components/skills/SkillsPageHeader.tsx,100,DropdownMenu,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,
-src/renderer/src/components/skills/SkillsPageHeader.tsx,101,DropdownMenuTrigger,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,
-src/renderer/src/components/skills/SkillsPageHeader.tsx,102,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,explicit,
-src/renderer/src/components/skills/SkillsPageHeader.tsx,114,DropdownMenuContent,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,
-src/renderer/src/components/skills/SkillsPageHeader.tsx,115,DropdownMenuItem,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,onSelect
-src/renderer/src/components/skills/SkillsPageHeader.tsx,119,DropdownMenuItem,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,onSelect
-src/renderer/src/components/skills/SkillsPageHeader.tsx,123,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
-src/renderer/src/components/skills/SkillsPageHeader.tsx,124,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
-src/renderer/src/components/skills/SkillsPageHeader.tsx,126,DropdownMenuItem,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,disabled;onSelect
-src/renderer/src/components/skills/SkillsPageHeader.tsx,137,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
+src/renderer/src/components/skills/SkillsPageHeader.tsx,49,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
+src/renderer/src/components/skills/SkillsPageHeader.tsx,50,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
+src/renderer/src/components/skills/SkillsPageHeader.tsx,51,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,explicit,onClick
+src/renderer/src/components/skills/SkillsPageHeader.tsx,64,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
+src/renderer/src/components/skills/SkillsPageHeader.tsx,92,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,explicit,onClick
+src/renderer/src/components/skills/SkillsPageHeader.tsx,99,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,explicit,onClick
+src/renderer/src/components/skills/SkillsPageHeader.tsx,103,DropdownMenu,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,
+src/renderer/src/components/skills/SkillsPageHeader.tsx,104,DropdownMenuTrigger,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,
+src/renderer/src/components/skills/SkillsPageHeader.tsx,105,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,explicit,
+src/renderer/src/components/skills/SkillsPageHeader.tsx,117,DropdownMenuContent,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,
+src/renderer/src/components/skills/SkillsPageHeader.tsx,118,DropdownMenuItem,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,onSelect
+src/renderer/src/components/skills/SkillsPageHeader.tsx,122,DropdownMenuItem,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,onSelect
+src/renderer/src/components/skills/SkillsPageHeader.tsx,126,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
+src/renderer/src/components/skills/SkillsPageHeader.tsx,127,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
+src/renderer/src/components/skills/SkillsPageHeader.tsx,129,DropdownMenuItem,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,L.03,explicit,disabled;onSelect
+src/renderer/src/components/skills/SkillsPageHeader.tsx,143,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,explicit,
 src/renderer/src/components/skills/SkillsSelectionHeader.tsx,43,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,directory queue; leaf review open,
 src/renderer/src/components/skills/SkillsSelectionHeader.tsx,44,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,L.03,directory queue; leaf review open,
 src/renderer/src/components/skills/SkillsSelectionHeader.tsx,45,Button,src/renderer/src/components/ui/button.tsx,P.01,L.03,directory queue; leaf review open,onClick
@@ -6553,10 +6553,10 @@ src/renderer/src/components/ssh-authentication/SshPassphraseDialog.tsx,339,Butto
 src/renderer/src/components/star-nag/StarNagToastHost.tsx,129,Button,src/renderer/src/components/ui/button.tsx,P.01,B.06;O.overlay.star-nag-toast,explicit,onClick;disabled
 src/renderer/src/components/star-nag/StarNagToastHost.tsx,142,Button,src/renderer/src/components/ui/button.tsx,P.01,B.06;O.overlay.star-nag-toast,explicit,onClick;disabled
 src/renderer/src/components/star-nag/StarNagToastHost.tsx,158,Button,src/renderer/src/components/ui/button.tsx,P.01,B.06;O.overlay.star-nag-toast,explicit,onClick;disabled
-src/renderer/src/components/StarNagCard.tsx,130,Card,src/renderer/src/components/ui/card.tsx,P.08,O.overlay.star-nag,explicit,
-src/renderer/src/components/StarNagCard.tsx,139,Button,src/renderer/src/components/ui/button.tsx,P.01,O.overlay.star-nag,explicit,onClick;disabled
-src/renderer/src/components/StarNagCard.tsx,159,Button,src/renderer/src/components/ui/button.tsx,P.01,O.overlay.star-nag,explicit,onClick;disabled
-src/renderer/src/components/StarNagCard.tsx,179,Button,src/renderer/src/components/ui/button.tsx,P.01,O.overlay.star-nag,explicit,onClick;disabled
+src/renderer/src/components/StarNagCard.tsx,131,Card,src/renderer/src/components/ui/card.tsx,P.08,O.overlay.star-nag,explicit,
+src/renderer/src/components/StarNagCard.tsx,140,Button,src/renderer/src/components/ui/button.tsx,P.01,O.overlay.star-nag,explicit,onClick;disabled
+src/renderer/src/components/StarNagCard.tsx,160,Button,src/renderer/src/components/ui/button.tsx,P.01,O.overlay.star-nag,explicit,onClick;disabled
+src/renderer/src/components/StarNagCard.tsx,180,Button,src/renderer/src/components/ui/button.tsx,P.01,O.overlay.star-nag,explicit,onClick;disabled
 src/renderer/src/components/StateIndicatorTooltip.tsx,21,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,P.08;P.05,状态标记提示,
 src/renderer/src/components/StateIndicatorTooltip.tsx,22,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,P.08;P.05,状态标记提示,
 src/renderer/src/components/StateIndicatorTooltip.tsx,23,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,P.08;P.05,状态标记提示,
@@ -6795,9 +6795,9 @@ src/renderer/src/components/status-bar/StatusBarAccountControls.tsx,58,Button,sr
 src/renderer/src/components/status-bar/StatusBarSurface.tsx,120,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,A.03;M.02.16,explicit,
 src/renderer/src/components/status-bar/StatusBarSurface.tsx,121,TooltipTrigger,src/renderer/src/components/ui/tooltip.tsx,P.05,A.03;M.02.16,explicit,
 src/renderer/src/components/status-bar/StatusBarSurface.tsx,149,TooltipContent,src/renderer/src/components/ui/tooltip.tsx,P.05,A.03;M.02.16,explicit,
-src/renderer/src/components/status-bar/StatusBarUsageChangeNoticeCard.tsx,131,Button,src/renderer/src/components/ui/button.tsx,P.01,A.03,directory queue; leaf review open,onClick
-src/renderer/src/components/status-bar/StatusBarUsageChangeNoticeCard.tsx,146,Button,src/renderer/src/components/ui/button.tsx,P.01,A.03,directory queue; leaf review open,onClick
-src/renderer/src/components/status-bar/StatusBarUsageChangeNoticeCard.tsx,155,Button,src/renderer/src/components/ui/button.tsx,P.01,A.03,directory queue; leaf review open,onClick
+src/renderer/src/components/status-bar/StatusBarUsageChangeNoticeCard.tsx,132,Button,src/renderer/src/components/ui/button.tsx,P.01,A.03,directory queue; leaf review open,onClick
+src/renderer/src/components/status-bar/StatusBarUsageChangeNoticeCard.tsx,147,Button,src/renderer/src/components/ui/button.tsx,P.01,A.03,directory queue; leaf review open,onClick
+src/renderer/src/components/status-bar/StatusBarUsageChangeNoticeCard.tsx,156,Button,src/renderer/src/components/ui/button.tsx,P.01,A.03,directory queue; leaf review open,onClick
 src/renderer/src/components/status-bar/StatusBarUsageChangeNotices.tsx,41,Badge,src/renderer/src/components/ui/badge.tsx,P.08,O.01,explicit,
 src/renderer/src/components/status-bar/StatusBarUsageCluster.tsx,141,DropdownMenu,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,A.03.03;A.03.04;A.03.05,explicit,onOpenChange
 src/renderer/src/components/status-bar/StatusBarUsageCluster.tsx,146,DropdownMenuTrigger,src/renderer/src/components/ui/dropdown-menu.tsx,P.04,A.03.03;A.03.04;A.03.05,explicit,
@@ -7652,8 +7652,8 @@ src/renderer/src/components/ui/color-picker.tsx,68,Button,src/renderer/src/compo
 src/renderer/src/components/ui/color-picker.tsx,91,PopoverContent,src/renderer/src/components/ui/popover.tsx,P.05,P.07,explicit,
 src/renderer/src/components/ui/color-picker.tsx,105,Label,src/renderer/src/components/ui/label.tsx,P.02,P.07,explicit,
 src/renderer/src/components/ui/color-picker.tsx,110,Input,src/renderer/src/components/ui/input.tsx,P.02,P.07,explicit,onFocus;onChange;onBlur;aria-invalid
-src/renderer/src/components/ui/command.tsx,86,DialogOverlay,src/renderer/src/components/ui/dialog.tsx,P.06,C.10.03;P.03,explicit,
-src/renderer/src/components/ui/command.tsx,87,OverlayFocusScope,src/renderer/src/components/ui/use-overlay-focus-scope.ts,P,C.10.03;P.03,explicit,
+src/renderer/src/components/ui/command.tsx,88,DialogOverlay,src/renderer/src/components/ui/dialog.tsx,P.06,C.10.03;P.03,explicit,
+src/renderer/src/components/ui/command.tsx,89,OverlayFocusScope,src/renderer/src/components/ui/use-overlay-focus-scope.ts,P,C.10.03;P.03,explicit,
 src/renderer/src/components/ui/context-menu.tsx,81,OverlayFocusScope,src/renderer/src/components/ui/use-overlay-focus-scope.ts,P,P.04;T.02,explicit,
 src/renderer/src/components/ui/context-menu.tsx,115,OverlayFocusScope,src/renderer/src/components/ui/use-overlay-focus-scope.ts,P,P.04;T.02,explicit,
 src/renderer/src/components/ui/dialog.tsx,131,Tooltip,src/renderer/src/components/ui/tooltip.tsx,P.05,P.06;Q.04;T,explicit,

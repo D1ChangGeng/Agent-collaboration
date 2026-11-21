@@ -3307,5 +3307,138 @@
     "path": "iteration-91-windows/i91-ja-settings-appearance-1280.json",
     "claim": "1280×800 从 zh 无重启实时切换至 ja（<html lang=\"ja\">），補全后的日文外观、エディターテーマ、テーマを探す、UIズーム与「Kitty からインポート」完整呈现，零英文漏译或 Orca 残留。",
     "rows": ["N.appearance", "P.13"]
+  },
+  {
+    "id": "I9201",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-o01-notification-stack-600.json",
+    "claim": "600×400 短窗实测 Landing 主动作 Add project 与 Create workspace 顶部并排（y=112..144），ChatUiHereCornerCard 收敛至右下停靠（252×140、y=220..360，避让右下角浮动工作区按钮），两按钮与通知栈重叠面积均为 0 且 blockedByStack=false；随后 WorktreeJumpPalette 按 Esc 恢复搜索触发聚焦。",
+    "rows": ["O", "O.01", "O.01.01", "O.overlay.chat-ui-here-corner-card", "O.modal.worktree-palette"]
+  },
+  {
+    "id": "I9202",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-l01-automations-1280.json",
+    "claim": "1280×800 深色实测 Automations 工具栏与模板列表完整渲染，10 项可见控件无重叠/裁切且 overflowX=false。",
+    "rows": ["L", "L.01"]
+  },
+  {
+    "id": "I9203",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-l01-automations-820.json",
+    "claim": "820×580 窄窗下 Automations 工具栏平稳折行，9 项可见控件无重叠、无右裁切且 overflowX=false。",
+    "rows": ["L", "L.01"]
+  },
+  {
+    "id": "I9204",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-l01-automations-600.json",
+    "claim": "600×400 极窄窗下 Automations 工具栏（Search/Filters/Refresh 与 Runs/New Automation）折为清晰两行，scrollWidth=320=clientWidth、零重叠零裁切。",
+    "rows": ["L", "L.01"]
+  },
+  {
+    "id": "I9205",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-l03-skills-1280.json",
+    "claim": "1280×800 启用 showSkillsButton 后实测合成技能夹具 r92-probe-skill 在 Skills 目录正确渲染，操作按钮与筛选胶囊完整可辨。",
+    "rows": ["L", "L.03"]
+  },
+  {
+    "id": "I9206",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-l03-skills-600.json",
+    "claim": "600×400 极窄窗下 Skills 页头操作区（Share skills、Install from link、More actions）与 All/Home/Workspace/Bundled/Plugin 筛选胶囊均自适应折行，header 与 main 均为 zero clipped、zero overlaps、scrollWidth=320=clientWidth。",
+    "rows": ["L", "L.03"]
+  },
+  {
+    "id": "I9207",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-h02-markdown-preview-toc-1280.json",
+    "claim": "1280×800 实测打开 notes.md 并展开 Markdown Table of Contents 面板（tocOpened=true），「Table of Contents」独立成行完整显示于 H1–H5 过滤栏上方（tocHeaderTruncated=false）。",
+    "rows": ["H", "H.02"]
+  },
+  {
+    "id": "I9208",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-o00-quickopen-600.json",
+    "claim": "600×400 窄窗下 .editor-header 操作区自适应换行且不挤占路径文字；通过 Mod+P 打开 Quick Open（Go to file...），7 个工作树文件与底部 Enter/Esc 提示完整容纳于 400px 视口高内（clippedBottom=false）；同期左侧栏紧凑「Add a setup script」不遮挡 main 工作树卡片。",
+    "rows": ["H", "H.01", "O", "O.modal.quick-open"]
+  },
+  {
+    "id": "I9209",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-h03-svg-viewer-1280.json",
+    "claim": "1280×800 依次双击打开临时 Git 仓库内 sample.csv、sample.png、preview.html 与 sample.svg，专用查看器均正常渲染内容（csvOk=pngOk=htmlOk=svgOk=true）。",
+    "rows": ["H", "H.03"]
+  },
+  {
+    "id": "I9210",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-h04-diff-viewer-1280.json",
+    "claim": "1280×800 切换 Source Control 并点开未暂存修改的 app.ts，Monaco DiffViewer 清晰展示红绿增删对照（diffVisible=true）。",
+    "rows": ["H", "H.04"]
+  },
+  {
+    "id": "I9211",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-h05-git-graph-1280.json",
+    "claim": "1280×800 双侧栏同时开启（容器宽 <720px）下实测外置 @container/git-graph 使 Branch/Tag + SVG 图谱 + 提交信息列与详情 <aside> 上下排布，Commit 列表与完整提交消息可见可读（commitTableVisible=true、msgRectWidth=180、main 与 600×400 均 overflowX=false）。",
+    "rows": ["H", "H.05"]
+  },
+  {
+    "id": "I9212",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-i01-browser-find-1280.json",
+    "claim": "1280×800 在内置 Browser 加载本地 127.0.0.1 /page2 环回页（guestLoaded=true），提交 URL 后地址栏失焦收起建议弹窗（addrSuggestionOverlapArea=0），Ctrl+F 打开带 role=\"search\" 与 data-testid=\"browser-find-bar\" 的语义主题查找条命中「1 of 2」并高亮正文。",
+    "rows": ["I", "I.01"]
+  },
+  {
+    "id": "I9213",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-i01-browser-find-600.json",
+    "claim": "600×400 极窄窗下 BrowserFind 无右裁切且顶栏 Tab 不与窗口控制按钮碰撞（clippedRight=false、tabWindowControlOverlap=false）；回宽后 Esc 稳定关闭查找条（findClosedOnEsc=true），左侧栏紧凑 Setup card 与 main (primary) 行无重叠。",
+    "rows": ["I", "I.01"]
+  },
+  {
+    "id": "I9214",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-i03-browser-devtools-1280.json",
+    "claim": "1280×800 通过 Browser 工具栏打开内置 BrowserDevToolsDock（devToolsOpened=true），网页视口与底部 DevTools 停靠区上下协同无遮挡。",
+    "rows": ["I", "I.03"]
+  },
+  {
+    "id": "I9215",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-l05-plugins-manager-1280.json",
+    "claim": "1280×800 设置 Plugins 页通过 Add plugin -> From a folder 安装、审查并启用合成插件 Hello Components（pluginInstalled=true、pluginEnabled=true），与两个随附主题插件共同展示于 Installed 列表。",
+    "rows": ["L", "L.05", "N.plugins"]
+  },
+  {
+    "id": "I9216",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-l06-plugin-panel-1280.json",
+    "claim": "1280×800 非打包 E2E 构建成功加载 orca-plugin-frame / orca-runtime.mjs 并在右侧栏渲染 Hello Components 实时交互面板（Tasks/Hide done/Clear done，无动态模块加载报错），随后回到 Plugins 列表切换关闭插件并保持焦点落回按钮（pluginDisabledCleanly=true、pluginDisableFocusTag=BUTTON）。",
+    "rows": ["L", "L.06", "N.plugins"]
+  },
+  {
+    "id": "I9217",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-nrepo-settings-1280.json",
+    "claim": "1280×800 设置侧栏打开动态项目设置 r92-fixture-repo（repoSectionVisited=true），仓库路径、Identity、Repo Icon/颜色/Avatar 选择器等控件行无重叠或右裁切（repoGeo1280.ok=true）。",
+    "rows": ["N", "N.repo"]
+  },
+  {
+    "id": "I9218",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-nrepo-settings-600.json",
+    "claim": "600×400 极窄窗下 Project Settings > r92-fixture-repo 控件与文本标签自适应折行，zero overflowX 与 zero 行重叠/右裁切（repoGeo600.ok=true）。",
+    "rows": ["N", "N.repo"]
+  },
+  {
+    "id": "I9219",
+    "kind": "iteration-build",
+    "path": "iteration-92-windows/r92-n-settings-general-600.json",
+    "claim": "600×400 极窄窗依次巡检非协作核心设置分区 General、Git & Source Control、Terminal 与 Shortcuts，设置行几何检查全部通过无重叠与右裁切（all ok=true、overflowX=false）。",
+    "rows": ["N", "N.general", "N.git", "N.terminal", "N.shortcuts"]
   }
 ]

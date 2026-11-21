@@ -122,6 +122,8 @@ export function createTempGitRepo({
       'notes.md':
         '# Release Notes\n\n## Overview\n\nDisposable editor text.\n\n<script>window.__xss = true</script>\n\n![Missing diagram](missing.png)\n',
       'sample.csv': buildSampleCsv(1050),
+      'sample.svg':
+        '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80"><rect width="120" height="80" fill="#2563eb"/><circle cx="60" cy="40" r="24" fill="#ffffff"/></svg>\n',
       'preview.html': '<!doctype html><html><body><h1>Sandbox Preview</h1><p id="html-marker">Porpita HTML Marker</p></body></html>\n',
       'README.md': `# ${name}\n\nFixture repository for Porpita E2E.\n`,
       ...files
@@ -369,6 +371,7 @@ export function createSyntheticPluginFixture(porpitaRoot, targetParentDir = null
   return {
     rootDir,
     pluginDir,
+    pluginId: existsSync(srcExample) ? 'hello-components' : 'e2e-synthetic-plugin',
     title: existsSync(srcExample) ? 'Hello Components' : 'E2E Synthetic Panel',
     cleanup() {
       if (!targetParentDir) rmSync(rootDir, { recursive: true, force: true })

@@ -1,0 +1,200 @@
+{
+  "mode": "strict",
+  "findings": [],
+  "checks": {
+    "notificationStack600": {
+      "metrics": {
+        "stackPresent": true,
+        "stackZIndex": "30",
+        "cardRect": {
+          "left": 280,
+          "top": 220,
+          "right": 532,
+          "bottom": 360,
+          "width": 252,
+          "height": 140
+        },
+        "asideRect": null,
+        "asideOverlapArea": 0,
+        "addProjectButtons": [
+          {
+            "label": "Add project",
+            "inAside": false,
+            "rect": {
+              "left": 307,
+              "top": 112,
+              "right": 418,
+              "bottom": 144,
+              "width": 111,
+              "height": 32
+            },
+            "overlapArea": 0,
+            "blockedByStack": false
+          },
+          {
+            "label": "Create workspace",
+            "inAside": false,
+            "rect": {
+              "left": 424,
+              "top": 112,
+              "right": 573,
+              "bottom": 144,
+              "width": 148,
+              "height": 32
+            },
+            "overlapArea": 0,
+            "blockedByStack": false
+          }
+        ]
+      },
+      "jumpPaletteEscapeOk": true
+    },
+    "automationsGeometry": {
+      "auto1280": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 1000,
+        "clientWidth": 1000,
+        "rootOverflowX": false,
+        "itemCount": 10,
+        "clipped": [],
+        "overlaps": []
+      },
+      "auto820": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 540,
+        "clientWidth": 540,
+        "rootOverflowX": false,
+        "itemCount": 9,
+        "clipped": [],
+        "overlaps": []
+      },
+      "auto600": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "rootOverflowX": false,
+        "itemCount": 6,
+        "clipped": [],
+        "overlaps": []
+      }
+    },
+    "skills": {
+      "skillRendered": true,
+      "skillsHeader600": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "rootOverflowX": false,
+        "itemCount": 5,
+        "clipped": [],
+        "overlaps": []
+      },
+      "skillsMain600": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "rootOverflowX": false,
+        "itemCount": 15,
+        "clipped": [],
+        "overlaps": []
+      }
+    },
+    "editorsAndDiff": {
+      "tocOpened": true,
+      "tocHeaderTruncated": false,
+      "csvOk": true,
+      "pngOk": true,
+      "htmlOk": true,
+      "svgOk": true,
+      "diffVisible": true,
+      "gitGraphOpened": true,
+      "gitGraphMetrics1280": {
+        "mainOverflowX": false,
+        "commitTableVisible": true,
+        "msgRectWidth": 180,
+        "tableOverflowX": true
+      },
+      "gitGraph600Metrics": {
+        "overflowX": false,
+        "scrollWidth": 600,
+        "innerWidth": 600
+      }
+    },
+    "browser": {
+      "guestLoaded": true,
+      "findOpened": true,
+      "findBarMeta": {
+        "hasTestId": true,
+        "role": "search",
+        "bg": "oklab(0.204625 0.00000931323 0.00000409782 / 0.95)",
+        "text": "1 of 2",
+        "addrSuggestionOverlapArea": 0
+      },
+      "findBox600": {
+        "width": 300,
+        "right": 592,
+        "tabWidth": null,
+        "viewportWidth": 600,
+        "clippedRight": false,
+        "tabWindowControlOverlap": false
+      },
+      "findClosedOnEsc": true,
+      "extBtnVisible": false,
+      "foldedExtensionsPresent": false,
+      "devToolsOpened": true
+    },
+    "plugins": {
+      "pluginInstalled": true,
+      "pluginEnabled": true,
+      "pluginPanelOpened": true,
+      "pluginDisabledCleanly": true,
+      "pluginDisableFocusTag": "BUTTON"
+    },
+    "repoSettings": {
+      "repoSectionVisited": true,
+      "repoGeo1280": {
+        "ok": true,
+        "issues": []
+      },
+      "repoGeo600": {
+        "ok": true,
+        "issues": []
+      }
+    },
+    "nonCollabSettings600": {
+      "general": {
+        "ok": true,
+        "issues": []
+      },
+      "git": {
+        "ok": true,
+        "issues": []
+      },
+      "terminal": {
+        "ok": true,
+        "issues": []
+      },
+      "shortcuts": {
+        "ok": true,
+        "issues": []
+      }
+    }
+  },
+  "isolation": {
+    "home": "C:\\Users\\D26FO\\AppData\\Local\\Temp\\porpita-r92-5n5DqG\\profile\\home",
+    "profile": "C:\\Users\\D26FO\\AppData\\Local\\Temp\\porpita-r92-5n5DqG\\profile",
+    "version": "43.8.6",
+    "electronVersion": "43.8.6",
+    "windows": [
+      {
+        "visible": false,
+        "focused": false
+      }
+    ]
+  }
+}

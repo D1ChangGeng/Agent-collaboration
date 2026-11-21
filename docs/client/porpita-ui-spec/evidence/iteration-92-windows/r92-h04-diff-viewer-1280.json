@@ -1,0 +1,20 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 1280,
+  "innerWidth": 1280,
+  "focusTag": "DIV",
+  "focusLabel": null,
+  "textSample": "Search\nTasks\nArtifacts\nSkills\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nr92-fixture-repo\nActive\nmain\nprimary\nmain\n\nAdd a setup script\n\nr92-fixture-repo\n\nAdd a setup command to run when Porpita creates new worktrees.\n\nConfigure\nTerminal 1\nnotes.md\nsample.csv\nsample.png\npreview.html\nsample.svg\napp.ts (diff)\nM\nCommand\nC:/Users/D26FO/AppData/Local/Temp/porpita-r92-5n5DqG/r92-fixture-repo/\napp.ts (diff)\nFile path copied\nmain\n→\nmain\nStage All\nCHANGES\n1\nView all\napp.ts\n+2 -2\nM\nCOMMITS\nOff\n—\n·\n0",
+  "extra": {
+    "diffVisible": true
+  },
+  "imageFile": "r92-h04-diff-viewer-1280.png",
+  "imageMethod": "CDP screenshot"
+}

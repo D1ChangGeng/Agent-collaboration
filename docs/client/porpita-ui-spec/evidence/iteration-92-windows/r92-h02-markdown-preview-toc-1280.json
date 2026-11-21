@@ -1,0 +1,21 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 1280,
+  "innerWidth": 1280,
+  "focusTag": "BUTTON",
+  "focusLabel": "Table of Contents",
+  "textSample": "Search\nTasks\nArtifacts\nSkills\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nr92-fixture-repo\nActive\nmain\nprimary\nmain\n\nAdd a setup script\n\nr92-fixture-repo\n\nAdd a setup command to run when Porpita creates new worktrees.\n\nConfigure\nTerminal 1\nnotes.md\nCommand\nC:/Users/D26FO/AppData/Local/Temp/porpita-r92-5n5DqG/r92-fixture-repo/\nnotes.md\nFile path copied\nTable of Contents\nH1\nH2\nH3\nH4\nH5\nRelease Notes\nOverview\nDetails\nB\nI\nS\nRelease Notes\nOverview\n\nDisposable editor text.\n\nDetails\n\nSecond section for Markdown Preview and TOC.\n\nr92-fixture-repo\nNames\nContents\napp.ts\nM\nCHANGELOG.md\nnotes.md\npreview.html\nsample.csv\nsample.png\nsample.svg\nOff\n—\n·\n0",
+  "extra": {
+    "tocOpened": true,
+    "tocHeaderTruncated": false
+  },
+  "imageFile": "r92-h02-markdown-preview-toc-1280.png",
+  "imageMethod": "CDP screenshot"
+}

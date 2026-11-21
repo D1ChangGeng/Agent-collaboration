@@ -1,0 +1,24 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 1280,
+  "innerWidth": 1280,
+  "focusTag": "WEBVIEW",
+  "focusLabel": null,
+  "textSample": "Search\nTasks\nArtifacts\nSkills\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nr92-fixture-repo\nActive\nmain\nprimary\nmain\n\nAdd a setup script\n\nr92-fixture-repo\n\nAdd a setup command to run when Porpita creates new worktrees.\n\nConfigure\nTerminal 1\nnotes.md\nsample.csv\nsample.png\npreview.html\nsample.svg\napp.ts (diff)\nM\nGit Graph\nLoopback Page 2\nCommand\nTasks\n1 open\nHide done\nRead the components guide\nDone\nBuild a panel\nOpen\nClear done\nRuns isolated with no network; Orca draws every control. Theme changes seen: 0.\nOff\n—\n·\n0",
+  "extra": {
+    "pluginTitle": "Hello Components",
+    "pluginPanelOpened": true,
+    "pluginLoadError": false,
+    "pluginControlsRendered": true,
+    "pluginErrorText": null
+  },
+  "imageFile": "r92-l06-plugin-panel-1280.png",
+  "imageMethod": "CDP screenshot"
+}

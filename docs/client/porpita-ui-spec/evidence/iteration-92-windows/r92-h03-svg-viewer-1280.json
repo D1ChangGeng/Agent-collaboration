@@ -1,0 +1,23 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 1280,
+  "innerWidth": 1280,
+  "focusTag": "BUTTON",
+  "focusLabel": "sample.svg",
+  "textSample": "Search\nTasks\nArtifacts\nSkills\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nr92-fixture-repo\nActive\nmain\nprimary\nmain\n\nAdd a setup script\n\nr92-fixture-repo\n\nAdd a setup command to run when Porpita creates new worktrees.\n\nConfigure\nTerminal 1\nnotes.md\nsample.csv\nsample.png\npreview.html\nsample.svg\nCommand\nC:/Users/D26FO/AppData/Local/Temp/porpita-r92-5n5DqG/r92-fixture-repo/\nsample.svg\nFile path copied\n386%\nsample.svg\n160 x 90\n206 B\nr92-fixture-repo\nNames\nContents\napp.ts\nM\nCHANGELOG.md\nnotes.md\npreview.html\nsample.csv\nsample.png\nsample.svg\nOff\n—\n·\n0",
+  "extra": {
+    "csvOk": true,
+    "pngOk": true,
+    "htmlOk": true,
+    "svgOk": true
+  },
+  "imageFile": "r92-h03-svg-viewer-1280.png",
+  "imageMethod": "CDP screenshot"
+}

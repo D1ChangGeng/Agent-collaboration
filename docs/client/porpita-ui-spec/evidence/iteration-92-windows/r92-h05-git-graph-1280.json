@@ -1,0 +1,26 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 1280,
+  "innerWidth": 1280,
+  "focusTag": "BUTTON",
+  "focusLabel": "Git Graph",
+  "textSample": "Search\nTasks\nArtifacts\nSkills\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nr92-fixture-repo\nActive\nmain\nprimary\nmain\n\nAdd a setup script\n\nr92-fixture-repo\n\nAdd a setup command to run when Porpita creates new worktrees.\n\nConfigure\nTerminal 1\nnotes.md\nsample.csv\nsample.png\npreview.html\nsample.svg\napp.ts (diff)\nM\nGit Graph\nCommand\nAll branches\nBranch / Tag\nGraph\nMessage\nAuthor\nDate\nmain\nMain follow-up commit\nPorpita Spec\nNov 22, 2026, 7:40:38 AM GMT+9\nfeat/r92-graph\nFeature branch commit\nPorpita Spec\nNov 22, 2026, 7:40:38 AM GMT+9\nInitial Round 92 fixture\nPorpita Spec\nNov 22, 2026, 7:40:37 AM GMT+9\nMain follow-up commit\nPorpita Spec <spec@porpita.invalid>\nNov 22, 2026, 7:40:38 AM GMT+9\n12c8ea8c33f5bedaaa29fa636448b31733219268\nParents\nc910644\nFILES\nCHANGELOG.md\n+3\n−0\nA\nOpen all changes together\nmain\n→\nmain\nStage All\nCHANGES\n1\nView all\napp.ts\n+2 -2\nM\nCOMMITS\nOff\n—\n·\n0",
+  "extra": {
+    "gitGraphOpened": true,
+    "gitGraphMetrics1280": {
+      "mainOverflowX": false,
+      "commitTableVisible": true,
+      "msgRectWidth": 180,
+      "tableOverflowX": true
+    }
+  },
+  "imageFile": "r92-h05-git-graph-1280.png",
+  "imageMethod": "CDP screenshot"
+}

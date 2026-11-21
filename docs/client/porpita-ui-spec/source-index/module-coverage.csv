@@ -346,9 +346,9 @@ src/renderer/src/components/editor/markdown-preview/viewport/VirtualMarkdownPrev
 src/renderer/src/components/editor/markdown-source-tools/monaco/MonacoMarkdownAnnotationOverlay.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H,directory queue; leaf review open,2,0,0
 src/renderer/src/components/editor/markdown/documents/MarkdownTemplatePicker.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,O.modal.markdown-template-picker,explicit,4,1,0
 src/renderer/src/components/editor/markdown/navigation/markdown-toc-resize-handle.ts,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H,directory queue; leaf review open,0,0,1
-src/renderer/src/components/editor/markdown/navigation/MarkdownTableOfContentsPanel.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H,directory queue; leaf review open,3,2,0
+src/renderer/src/components/editor/markdown/navigation/MarkdownTableOfContentsPanel.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H.02,explicit,3,2,0
 src/renderer/src/components/editor/markdown/navigation/MarkdownTableOfContentsRow.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H,directory queue; leaf review open,2,1,1
-src/renderer/src/components/editor/markdown/navigation/VirtualMarkdownTableOfContents.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H.02,explicit,0,0,0
+src/renderer/src/components/editor/markdown/navigation/VirtualMarkdownTableOfContents.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H,directory queue; leaf review open,0,0,0
 src/renderer/src/components/editor/MediaViewer.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H.03;Q.07,explicit,1,1,0
 src/renderer/src/components/editor/MermaidBlock.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H,directory queue; leaf review open,2,0,1
 src/renderer/src/components/editor/MermaidViewer.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,H,directory queue; leaf review open,0,0,0

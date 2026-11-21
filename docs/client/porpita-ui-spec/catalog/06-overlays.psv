@@ -9,8 +9,8 @@ O.modal.chat-account-usage|原生 Chat 账号用量|NativeChatAccountUsageDialog
 O.modal.node-dist-mirror|Node 镜像诊断与选择|NodeDistMirrorDialog.tsx|来自设置、SSH、终端或提示，修改镜像|保留|区分网络不可用和未配置，说明生效范围|J11,J12
 O.modal.diagram-viewer|图表查看覆盖层|DiagramViewerModal.tsx|虚拟消息退场后查看器仍存在|保留|保留缩放/返回/错误，关闭回到原消息或可达替代|J05,J08
 O.modal.workspace-cleanup|工作区清理|WorkspaceCleanupDialog.tsx|按执行环境选择可清理对象|保留|受影响分支和未保存结果可见，Porpita 布局不被当清理目标|J06,J07
-O.modal.quick-open|文件 Quick Open|QuickOpen.tsx,AppRootSurfaces.tsx|命令面板搜索和打开文件，按 Host 归属|保留|保留搜索、预览和键盘；不拿全局焦点代替原 Host|J02,J08
-O.modal.worktree-palette|全局跳转与最近访问|WorktreeJumpPalette.tsx,AppRootSurfaces.tsx|工作树、浏览器等可由搜索打开|改造|保留 cmdk 控件并区分 Session/工作对象类别；Esc 归还焦点|J02,J03
+O.modal.quick-open|文件 Quick Open|QuickOpen.tsx,AppRootSurfaces.tsx|命令面板搜索和打开文件，按 Host 归属；CommandDialog 在 600×400 短视口收敛顶部与 max-h 不裁切底栏|保留|保留搜索、预览和键盘；不拿全局焦点代替原 Host|J02,J08
+O.modal.worktree-palette|全局跳转与最近访问|WorktreeJumpPalette.tsx,AppRootSurfaces.tsx|工作树、浏览器等可由搜索打开，共享短视口限高不裁切底栏|改造|保留 cmdk 控件并区分 Session/工作对象类别；Esc 归还焦点|J02,J03
 O.modal.setup-guide|入门清单弹窗|SetupGuideModal.tsx|分项进度，跳转到对应工具或设置|保留|成功依据实际完成；返回保持来源|J01,J02
 O.modal.feature-wall|特性墙与演示|FeatureWallModal.tsx|可选特性教育与入口|保留|演示可退出；不将样例数据解释成运行结果|J01,J10,J13
 O.modal.feature-tips|特性提示列表|FeatureTipsModal.tsx|提示可按使用阶段进入或关闭|保留|文案与实际可达功能一致，支持无动效路径|J01,J13
@@ -31,10 +31,10 @@ O.overlay.dictation|语音输入状态|DictationController.tsx|权限/模型/录
 O.overlay.recent-tab-switcher|内容 Tab MRU|RecentTabSwitcher.tsx|当前 workbench 内容的最近选择器|保留|保留局部行为；顶层切换用独立动作|J03,J04
 O.overlay.skill-freshness-update-dialog|技能更新详情|SkillFreshnessUpdateDialog.tsx|状态和更新命令在 Dialog 显示|保留|显示目标、版本和真实结果，可退出后台等待|J10,J12
 O.overlay.remote-server-update-dialog|远程服务更新|RemoteServerUpdateDialog.tsx|连接和更新后重启/恢复有独立流程|保留|仅影响指定 Host，保留其他布局和可用对象|J11,J12
-O.overlay.chat-ui-here-corner-card|Chat UI 教育提示|AppNotificationCards.tsx|按 Launch tip 分支展示两种入口|保留|明确“今后新会话”而非即时转换；可关闭，窄窗不叠压主控件|J01,J05,J13
+O.overlay.chat-ui-here-corner-card|Chat UI 教育提示|AppNotificationCards.tsx|按 Launch tip 分支展示两种入口，600×400 短窗收敛宽度并保留内联设置引导而不遮主 CTA|保留|明确“今后新会话”而非即时转换；可关闭，窄窗不叠压主控件|J01,J05,J13
 O.overlay.update-card|更新进度和失败|UpdateCard.tsx,UpdateErrorCardContent.tsx|版本、检查、下载和错误详情分支|保留|产品无 updateEndpoint 时不承诺自动更新；已有平台 UI 保留适用性检查|J01,J12
 O.overlay.unexpected-signout|异常退出登录|UnexpectedSignoutCard.tsx|账户状态变化显示提示|保留|提示所属账号、可用恢复与回到原对象|J05,J11,J12
-O.overlay.star-nag|GitHub 提示卡|StarNagCard.tsx|可稍后处理或打开外部站点|保留|非必要提示优先级低，可关闭且不遮住设置|J01,J13
+O.overlay.star-nag|GitHub 提示卡|StarNagCard.tsx|可稍后处理或打开外部站点；全局 Escape 监听尊重 defaultPrevented 与可见遮罩守卫|保留|非必要提示优先级低，可关闭且不遮住设置|J01,J13
 O.overlay.codex-shared-settings-notice|Codex 配置提示|CodexSharedSettingsNoticeCard.tsx|按配置/迁移时机提示|保留|说明实际档案影响；关闭不调整运行设置|J01,J05
 O.local.contextual-tour|首用／功能导览浮层|ContextualTourOverlaySurface.tsx,ContextualTourOverlay.tsx|按目标定位，600×400 窄窗自动约束宽高与边界，卸载或跳过时恢复原焦点并阻止背景输入|改造|文案与语言一致，锚点不可见时安全退出，先处理权威确认再继续引导|J01,J13
 O.local.edit-meta|Worktree 元数据表单|WorktreeMetaDialog.tsx,WorktreeMetaDialogDraft.tsx|工作树名称、相关任务/PR 等局部修改|保留|保留源环境和草稿；与布局命名分开|J07,J08

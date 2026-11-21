@@ -1,0 +1,30 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 1280,
+  "innerWidth": 1280,
+  "focusTag": "INPUT",
+  "focusLabel": null,
+  "textSample": "Search\nTasks\nArtifacts\nSkills\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nr92-fixture-repo\nActive\nmain\nprimary\nmain\n\nAdd a setup script\n\nr92-fixture-repo\n\nAdd a setup command to run when Porpita creates new worktrees.\n\nConfigure\nTerminal 1\nnotes.md\nsample.csv\nsample.png\npreview.html\nsample.svg\napp.ts (diff)\nM\nGit Graph\nLoopback Page 2\nCommand\n1 of 2\nmain\n+2\n-2\n→\nmain\nStage All\nCHANGES\n1\nView all\napp.ts\n+2 -2\nM\nCOMMITS\nOff\n—\n·\n0",
+  "extra": {
+    "guestLoaded": true,
+    "findOpened": true,
+    "findMatchText": "1 of 2",
+    "findBarMeta": {
+      "hasTestId": true,
+      "role": "search",
+      "bg": "oklab(0.204625 0.00000931323 0.00000409782 / 0.95)",
+      "text": "1 of 2",
+      "addrSuggestionOverlapArea": 0
+    },
+    "extBtnVisible": false
+  },
+  "imageFile": "r92-i01-browser-find-1280.png",
+  "imageMethod": "CDP screenshot"
+}

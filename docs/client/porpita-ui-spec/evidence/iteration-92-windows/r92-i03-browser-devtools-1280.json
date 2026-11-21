@@ -1,0 +1,23 @@
+{
+  "size": [
+    1280,
+    800
+  ],
+  "dpr": 1,
+  "lang": "en",
+  "theme": "dark",
+  "overflowX": false,
+  "scrollWidth": 1280,
+  "innerWidth": 1280,
+  "focusTag": "BUTTON",
+  "focusLabel": "Open browser devtools",
+  "textSample": "Search\nTasks\nArtifacts\nSkills\nAutomations\nPorpita Mobile\nNew\nProjects\n0\nr92-fixture-repo\nActive\nmain\nprimary\nmain\n\nAdd a setup script\n\nr92-fixture-repo\n\nAdd a setup command to run when Porpita creates new worktrees.\n\nConfigure\nTerminal 1\nnotes.md\nsample.csv\nsample.png\npreview.html\nsample.svg\napp.ts (diff)\nM\nGit Graph\nLoopback Page 2\nCommand\n649 × 689\nDevTools\nmain\n+2\n-2\n→\nmain\nStage All\nCHANGES\n1\nView all\napp.ts\n+2 -2\nM\nCOMMITS\nOff\n—\n·\n0",
+  "extra": {
+    "guestLoaded": true,
+    "devToolsOpened": true,
+    "extBtnVisible": false,
+    "foldedExtensionsPresent": false
+  },
+  "imageFile": "r92-i03-browser-devtools-1280.png",
+  "imageMethod": "CDP screenshot"
+}
