@@ -743,7 +743,9 @@ export const TIER4_TESTS = [
 
       const designEv = runDesignEvidenceCheck({
         agentCollabRoot: ctx.agentCollabRoot,
-        porpitaRoot: ctx.porpitaRoot
+        porpitaRoot: ctx.porpitaRoot,
+        specRoot: ctx.specRoot,
+        historyRoot: ctx.historyRoot
       })
       if (designEv.applicable) {
         assert.equal(designEv.exitCode, 0, designEv.stderr)
@@ -758,8 +760,12 @@ export const TIER4_TESTS = [
         specRoot: ctx.specRoot
       })
 
+      const designFindingsCount = designEv.structuralFindings?.length ?? -1
       if (
         staged.buildCoverageExitCode !== 0 ||
+        !designEv.applicable ||
+        designEv.recordReadability !== 'readable' ||
+        designFindingsCount !== 0 ||
         !orcaCw.referencedOrcaFirst ||
         orcaCw.untracedTs.length > 0 ||
         !refCw.hasExplicitOpenCrosswalk
@@ -767,14 +773,19 @@ export const TIER4_TESTS = [
         pendingIfSmoke(
           ctx.mode,
           'M4',
-          'Full M4 UI SPEC structural parity + ORCA-FIRST (T01-T12) + Reference #1-#12 crosswalks',
-          `buildCoverageExit=${staged.buildCoverageExitCode}, orcaReferenced=${orcaCw.referencedOrcaFirst}, untracedTs=${orcaCw.untracedTs.join(',')}, openCrosswalk=${refCw.hasExplicitOpenCrosswalk}`
+          'Full M4 UI SPEC structural parity + ORCA-FIRST (T01-T12) + Reference #1-#12 crosswalks + design-evidence',
+          `buildCoverageExit=${staged.buildCoverageExitCode}, designApplicable=${designEv.applicable}, designFindings=${designFindingsCount}, orcaReferenced=${orcaCw.referencedOrcaFirst}, untracedTs=${orcaCw.untracedTs.join(',')}, openCrosswalk=${refCw.hasExplicitOpenCrosswalk}`
+        )
+        assert.fail(
+          `M4 readiness incomplete: buildCoverageExit=${staged.buildCoverageExitCode}, designApplicable=${designEv.applicable}, designReadability=${designEv.recordReadability}, designFindings=${JSON.stringify(designEv.structuralFindings)}, orcaReferenced=${orcaCw.referencedOrcaFirst}, untracedTs=${orcaCw.untracedTs.join(',')}, openCrosswalk=${refCw.hasExplicitOpenCrosswalk}`
         )
       }
       return {
         linksChecked: links.checkedFilesCount,
         apiOps: apiParity.totalOps,
         gitBaselinesOk: gitCheck.ok,
+        designEvidencePath: designEv.recordPath,
+        designFindingsCount,
         domains: staged.stdoutJson?.domains,
         rows: staged.stdoutJson?.rows
       }

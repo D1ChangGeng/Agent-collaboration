@@ -2078,12 +2078,36 @@ export const TIER2_TESTS = [
     async run(ctx) {
       const res = runDesignEvidenceCheck({
         agentCollabRoot: ctx.agentCollabRoot,
-        porpitaRoot: ctx.porpitaRoot
+        porpitaRoot: ctx.porpitaRoot,
+        specRoot: ctx.specRoot,
+        historyRoot: ctx.historyRoot
       })
-      if (res.applicable) {
-        assert.equal(res.exitCode, 0, `check_design_evidence.py failed: ${res.stderr}`)
+      if (!res.applicable) {
+        pendingIfSmoke(
+          ctx.mode,
+          'M4',
+          '.ui-spec/design-evidence.json authored and passes check_design_evidence.py',
+          res.reason
+        )
+        assert.fail(res.reason)
       }
-      return res
+      assert.equal(res.exitCode, 0, `check_design_evidence.py failed: ${res.stderr}`)
+      assert.equal(
+        res.recordReadability,
+        'readable',
+        `Expected readable .ui-spec/design-evidence.json, got ${res.recordReadability}`
+      )
+      assert.deepEqual(
+        res.structuralFindings,
+        [],
+        `Expected empty structural_findings, got: ${JSON.stringify(res.structuralFindings)}`
+      )
+      return {
+        recordPath: res.recordPath,
+        recordReadability: res.recordReadability,
+        structuralFindingsCount: res.structuralFindings.length,
+        counts: res.counts
+      }
     }
   },
   {

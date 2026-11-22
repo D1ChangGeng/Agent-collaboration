@@ -384,18 +384,39 @@ export function checkEnvBoundedHonesty({ specRoot }) {
   }
 }
 
-export function runDesignEvidenceCheck({ agentCollabRoot = null, porpitaRoot }) {
+function findNearestAncestorWithFile(startDir, relSegments) {
+  if (!startDir) return null
+  let current = path.resolve(startDir)
+  while (true) {
+    if (existsSync(path.join(current, ...relSegments))) return current
+    const parent = path.dirname(current)
+    if (parent === current) return null
+    current = parent
+  }
+}
+
+export function runDesignEvidenceCheck({
+  agentCollabRoot = null,
+  porpitaRoot,
+  specRoot = null,
+  historyRoot = null
+}) {
   const resolvedAcRoot = resolveAgentCollabRoot(agentCollabRoot)
+  const relEvidence = ['.ui-spec', 'design-evidence.json']
   const candidates = [
-    path.join(porpitaRoot, '.ui-spec', 'design-evidence.json'),
-    path.join(resolvedAcRoot, '.ui-spec', 'design-evidence.json')
-  ]
-  const found = candidates.find((p) => existsSync(p))
+    specRoot ? findNearestAncestorWithFile(specRoot, relEvidence) : null,
+    historyRoot ? findNearestAncestorWithFile(historyRoot, relEvidence) : null,
+    porpitaRoot,
+    resolvedAcRoot
+  ].filter(Boolean)
+  const found = candidates
+    .map((dir) => path.join(dir, ...relEvidence))
+    .find((p) => existsSync(p))
   if (!found) {
     return {
       applicable: false,
       exitCode: 0,
-      reason: 'No .ui-spec/design-evidence.json present (porpita-ui-spec uses native build_coverage.py + observations.json)'
+      reason: 'No .ui-spec/design-evidence.json present (expected under AC_WORKTREE for M4 F10)'
     }
   }
   const scriptPath = resolveCheckDesignEvidenceScript(resolvedAcRoot)
@@ -406,7 +427,7 @@ export function runDesignEvidenceCheck({ agentCollabRoot = null, porpitaRoot }) 
   const projectRoot = path.dirname(path.dirname(found))
   const res = spawnSync(
     pythonExe,
-    [scriptPath, '--project-root', projectRoot],
+    [scriptPath, '--project-root', projectRoot, '--view', 'overview'],
     { encoding: 'utf8', timeout: 30000 }
   )
   let parsed = null
@@ -418,9 +439,13 @@ export function runDesignEvidenceCheck({ agentCollabRoot = null, porpitaRoot }) 
   return {
     applicable: true,
     recordPath: found,
+    projectRoot,
     exitCode: res.status,
     stdout: res.stdout || '',
     stderr: res.stderr || '',
-    parsed
+    parsed,
+    recordReadability: parsed?.record_readability ?? null,
+    structuralFindings: Array.isArray(parsed?.structural_findings) ? parsed.structural_findings : null,
+    counts: parsed?.counts ?? null
   }
 }

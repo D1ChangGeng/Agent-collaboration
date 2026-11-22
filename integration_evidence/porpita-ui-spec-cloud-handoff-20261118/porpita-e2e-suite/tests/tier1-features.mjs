@@ -2054,6 +2054,8 @@ export const TIER1_TESTS = [
         await connectCollaborationViaSettings(page, core)
         await returnFromSettings(page)
         const trigger = getCollaborationTrigger(page)
+        await page.locator('[data-collaboration-state="connected"]').first().waitFor({ state: 'visible', timeout: 10000 })
+        await sleep(300)
         await core.emitNotice({ legacy_null_created_at: false })
         await core.peerSend({ actor: 'peer_b', to: core.addresses.client, content: 'SSE UI live unread ping' })
         await page.waitForFunction(
@@ -2062,7 +2064,7 @@ export const TIER1_TESTS = [
             return Number(el?.getAttribute('data-collaboration-unread') || 0) >= 1 && Number(el?.getAttribute('data-collaboration-notices') || 0) >= 1
           },
           undefined,
-          { timeout: 10000 }
+          { timeout: 20000 }
         )
         await trigger.locator('span').first().waitFor({ state: 'visible', timeout: 5000 })
 
