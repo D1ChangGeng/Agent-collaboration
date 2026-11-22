@@ -1,14 +1,21 @@
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import {
   addLocalFolderProject,
   assertAllWindowsHidden,
   assertHorizontalToolbarLayout,
+  closeCollaborationDialogWithFocusCheck,
   closeElectronApp,
+  connectCollaborationViaSettings,
   detectWorkspaceShell,
+  disconnectCollaborationViaSettings,
   dismissStartupDialogs,
+  getCollaborationTrigger,
   installAndEnableFolderPlugin,
+  isCollaborationConnectedText,
   launchElectronApp,
   M3_SELECTOR_CONTRACT,
   openAndVerifyPluginPanel,
@@ -17,7 +24,9 @@ import {
   openSettingsPage,
   primaryModifierKey,
   quitElectronGracefully,
+  reconnectCollaborationViaSettings,
   returnFromSettings,
+  selectCollaborationContact,
   setViewportSize,
   sleep,
   stubOpenDialog,
@@ -1292,52 +1301,101 @@ export const TIER1_TESTS = [
         profileOptions: { locale: 'zh' }
       })
       try {
-        const { page } = inst
-        // Open Collaboration dialog first to inspect project dropdown naming ("尚未连接工作区" vs "协作项目")
-        const dlg = await openCollaborationDialog(page)
-        const selectText = await dlg.locator('select').first().innerText()
-        await page.keyboard.press('Escape')
-        await dlg.waitFor({ state: 'hidden', timeout: 5000 })
+        const { app, page } = inst
+        // 1. Disconnected initial state in zh: dropdown must read 尚未连接协作项目 (0 尚未连接工作区)
+        const trigger = getCollaborationTrigger(page)
+        await trigger.waitFor({ state: 'visible', timeout: 10000 })
+        assert.equal(await trigger.getAttribute('data-collaboration-state'), 'disconnected')
+        await trigger.focus()
+        const dlgInitial = await openCollaborationDialog(page)
+        const initialSelectText = (await dlgInitial.locator('select').first().innerText()).trim()
+        const initialStatus = (await dlgInitial.locator('[role="status"]').first().innerText()).trim()
+        assert.equal(/尚未连接工作区/.test(initialSelectText), false, `Found stale copy in zh dropdown: ${initialSelectText}`)
+        assert.match(initialSelectText, /尚未连接协作项目/, `Expected 尚未连接协作项目 copy, got: ${initialSelectText}`)
+        assert.equal(isCollaborationConnectedText(initialStatus), false, `Expected disconnected initially, got: ${initialStatus}`)
+        await closeCollaborationDialogWithFocusCheck(page, dlgInitial)
 
-        // Connect via Settings -> General -> Collaboration ("Connect an existing service")
-        await openSettingsPage(page)
-        const generalNav = page.locator('aside button').filter({ hasText: /^(General|常规|通用)$/i }).first()
-        await generalNav.click()
-        const generalSec = page.locator('section[data-settings-section="general"]').first()
-        await generalSec.waitFor({ state: 'visible', timeout: 8000 })
+        // 2. Connect via Settings -> General -> verify 600x400 narrow Settings inputs -> immediate Titlebar sync
+        const generalSec = await connectCollaborationViaSettings(page, core)
+        await setViewportSize(app, page, 600, 400)
+        const narrowOverflowSettings = await page.evaluate(() => ({
+          docOverflowX: document.documentElement.scrollWidth > window.innerWidth + 2,
+          clippedInputs: [...document.querySelectorAll('section[data-settings-section="general"] input, section[data-settings-section="general"] button')]
+            .map((el) => ({ r: el.getBoundingClientRect(), label: el.getAttribute('aria-label') || el.textContent?.trim() }))
+            .filter(({ r }) => r.width > 0 && r.height > 0 && r.top < window.innerHeight && (r.right > window.innerWidth + 1 || r.left < -1))
+            .map(({ r, label }) => ({ label, left: Math.round(r.left), right: Math.round(r.right), vw: window.innerWidth }))
+        }))
+        assert.equal(narrowOverflowSettings.docOverflowX, false, `Collaboration settings overflowed 600x400: ${JSON.stringify(narrowOverflowSettings)}`)
+        assert.deepEqual(narrowOverflowSettings.clippedInputs, [], `Clipped Settings controls at 600x400: ${JSON.stringify(narrowOverflowSettings)}`)
+        await setViewportSize(app, page, 1280, 800)
+        assert.equal(await generalSec.getByText(/^(Connected|已连接)$/i).first().isVisible(), true)
 
-        const existingRadio = generalSec
-          .getByRole('button', { name: /Connect an existing service|连接已有服务/i })
-          .first()
-        const existingTab = generalSec
-          .getByRole('radio', { name: /Connect an existing service|连接已有服务/i })
-          .first()
-        if (await existingTab.isVisible().catch(() => false)) await existingTab.click()
-        else await existingRadio.click()
-
-        await generalSec.getByLabel(/Service address|服务地址/i).fill(core.baseUrl)
-        await generalSec.getByLabel(/Connection key|连接密钥/i).fill(core.tokens.client)
-        await generalSec.getByRole('button', { name: /^(Connect|连接)$/i }).first().click()
-
-        // Expect Settings badge to transition to Connected
-        await generalSec.getByText(/^(Connected|已连接)$/i).first().waitFor({ state: 'visible', timeout: 10000 })
-
-        // Check Titlebar Collaboration sync immediately (without reopening!)
         await returnFromSettings(page)
-        const dlgAfter = await openCollaborationDialog(page)
-        const statusText = await dlgAfter.locator('[role="status"]').first().innerText()
-        const connectedNow = /Connected|已连接/i.test(statusText)
-        await page.keyboard.press('Escape')
+        await page.waitForFunction(
+          () => document.querySelector('[data-collaboration-state]')?.getAttribute('data-collaboration-state') === 'connected',
+          undefined,
+          { timeout: 6000 }
+        )
+        const dlgConnected = await openCollaborationDialog(page)
+        const connectedStatus = (await dlgConnected.locator('[role="status"]').first().innerText()).trim()
+        const connectedSelect = (await dlgConnected.locator('select').first().innerText()).trim()
+        assert.equal(isCollaborationConnectedText(connectedStatus), true, `Expected immediate Titlebar Connected sync, got: ${connectedStatus}`)
+        assert.match(connectedSelect, /Porpita/, `Expected connected project Porpita in dropdown, got: ${connectedSelect}`)
+        await dlgConnected.locator('aside').getByRole('button', { name: /^slot-b$/i }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await closeCollaborationDialogWithFocusCheck(page, dlgConnected)
 
-        if (!connectedNow || /尚未连接工作区/.test(selectText)) {
-          pendingIfSmoke(
-            ctx.mode,
-            'M2',
-            'Settings <-> Titlebar connection status syncs immediately & dropdown reads "协作项目"',
-            `titlebarStatus=${statusText}, emptySelectText=${JSON.stringify(selectText)}`
-          )
+        // 3. Disconnect in Settings -> immediate Titlebar Disconnected sync without opening dialog first
+        await disconnectCollaborationViaSettings(page)
+        await returnFromSettings(page)
+        await page.waitForFunction(
+          () => document.querySelector('[data-collaboration-state]')?.getAttribute('data-collaboration-state') === 'disconnected',
+          undefined,
+          { timeout: 6000 }
+        )
+        const dlgDisconnected = await openCollaborationDialog(page)
+        const disconnectedStatus = (await dlgDisconnected.locator('[role="status"]').first().innerText()).trim()
+        const disconnectedSelect = (await dlgDisconnected.locator('select').first().innerText()).trim()
+        assert.equal(isCollaborationConnectedText(disconnectedStatus), false, `Titlebar stayed Connected after Settings Disconnect: ${disconnectedStatus}`)
+        assert.match(disconnectedSelect, /尚未连接协作项目/, `Expected 尚未连接协作项目 after Disconnect, got: ${disconnectedSelect}`)
+        await closeCollaborationDialogWithFocusCheck(page, dlgDisconnected)
+
+        // 4. Secondary Reconnect in Settings -> immediate Titlebar Connected sync + 600x400 dialog fit
+        await reconnectCollaborationViaSettings(page)
+        await returnFromSettings(page)
+        await page.waitForFunction(
+          () => document.querySelector('[data-collaboration-state]')?.getAttribute('data-collaboration-state') === 'connected',
+          undefined,
+          { timeout: 6000 }
+        )
+        const dlgReconnected = await openCollaborationDialog(page)
+        const reconnectedStatus = (await dlgReconnected.locator('[role="status"]').first().innerText()).trim()
+        assert.equal(isCollaborationConnectedText(reconnectedStatus), true, `Secondary Reconnect did not sync Titlebar immediately: ${reconnectedStatus}`)
+        await dlgReconnected.locator('aside').getByRole('button', { name: /^slot-b$/i }).first().waitFor({ state: 'visible', timeout: 10000 })
+
+        await setViewportSize(app, page, 600, 400)
+        const dialog600 = await dlgReconnected.evaluate((el) => {
+          const r = el.getBoundingClientRect()
+          return {
+            left: Math.round(r.left),
+            right: Math.round(r.right),
+            vw: window.innerWidth,
+            overflowX: document.documentElement.scrollWidth > window.innerWidth + 2
+          }
+        })
+        assert.ok(
+          dialog600.left >= -1 && dialog600.right <= dialog600.vw + 1 && !dialog600.overflowX,
+          `Collaboration dialog overflowed 600x400: ${JSON.stringify(dialog600)}`
+        )
+        await setViewportSize(app, page, 1280, 800)
+        const focusAfterEsc = await closeCollaborationDialogWithFocusCheck(page, dlgReconnected)
+        return {
+          initialSelectText,
+          connectedStatus,
+          disconnectedStatus,
+          reconnectedStatus,
+          dialog600,
+          focusAfterEsc
         }
-        return { connected: true, selectText, statusText }
       } finally {
         await closeElectronApp(inst)
         await core.cleanup()
@@ -1351,36 +1409,73 @@ export const TIER1_TESTS = [
     refs: ['K.01', 'K.02', 'UX06', 'UX09'],
     async run(ctx) {
       const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
+        const { page } = inst
         const pid = core.info.project_id
-        // Send 3 messages from client -> peer_b (empty pair -> populated conversation, no Run/Task)
-        const sentIds = []
-        for (let i = 1; i <= 3; i++) {
-          const s = await core.request('POST', `/projects/${pid}/messages`, {
-            token: core.tokens.client,
-            headers: { 'Idempotency-Key': `t1-f05-02-msg-${i}` },
-            body: { to: core.addresses.peer_b, content: `Opaque message #${i} needle-alpha` }
-          })
-          assert.equal(s.status, 201, `Expected 201 on send #${i}: ${s.text}`)
-          sentIds.push(s.json.message.message_handle)
-        }
-        // Peer B explicit reply referencing message #1
+        await connectCollaborationViaSettings(page, core)
+        await returnFromSettings(page)
+
+        // 1. Send 2 opaque messages through the real Electron composer UI
+        const dlg = await openCollaborationDialog(page)
+        const composer = await selectCollaborationContact(dlg, 'slot-b')
+        const sendBtn = dlg.getByRole('button', { name: /^(Send|发送)$/i }).first()
+
+        await composer.fill('Opaque UI msg #1 needle-alpha')
+        await sendBtn.click()
+        await dlg.locator('article').getByText('Opaque UI msg #1 needle-alpha', { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await page.waitForFunction(
+          () => (document.querySelector('[role="dialog"] textarea')?.value ?? '') === '',
+          undefined,
+          { timeout: 10000 }
+        )
+
+        await composer.fill('Opaque UI msg #2 needle-alpha')
+        await sendBtn.click()
+        await dlg.locator('article').getByText('Opaque UI msg #2 needle-alpha', { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await page.waitForFunction(
+          () => (document.querySelector('[role="dialog"] textarea')?.value ?? '') === '',
+          undefined,
+          { timeout: 10000 }
+        )
+
+        // Verify DeliverySummary appears on sent UI messages
+        await dlg.getByText(/Delivered to inbox|Queued by the service|Native input|Waiting for native input|已投递|已入队/i).first().waitFor({ state: 'visible', timeout: 10000 })
+
+        // 2. Peer B explicit reply referencing UI message #1 -> verifies reply link + Reply received in UI
+        const listRes = await core.request('GET', `/projects/${pid}/messages?with=${encodeURIComponent(core.addresses.peer_b)}&limit=10`, {
+          token: core.tokens.client
+        })
+        assert.equal(listRes.status, 200)
+        const msg1 = listRes.json.items.find((m) => (typeof m.content === 'string' ? m.content : m.content?.text)?.includes('Opaque UI msg #1'))
+        assert.ok(msg1?.message_handle, 'UI sent message #1 missing from server')
         const reply = await core.peerSend({
           actor: 'peer_b',
           to: core.addresses.client,
-          content: 'Explicit peer reply for #1',
-          reply_to: [sentIds[0]]
+          content: 'Explicit peer reply needle-alpha',
+          reply_to: [msg1.message_handle]
         })
         assert.ok(reply.message?.message_handle, 'Peer reply handle missing')
 
-        // Paginate limit=2 + search exact substring
+        await dlg.locator('article').getByText('Explicit peer reply needle-alpha', { exact: false }).first().waitFor({ state: 'visible', timeout: 15000 })
+        await dlg.getByText(/Reply linked to the original message|回复已关联原消息/i).first().waitFor({ state: 'visible', timeout: 8000 })
+
+        // 3. Real UI Search -> hit list -> click hit back to conversation
+        const searchInput = dlg.getByRole('textbox', { name: /Search messages|搜索消息/i }).first()
+        await searchInput.fill('needle-alpha')
+        await searchInput.press('Enter')
+        const hitBtn = dlg.locator('main button').filter({ hasText: /needle-alpha/i }).first()
+        await hitBtn.waitFor({ state: 'visible', timeout: 10000 })
+        await hitBtn.click()
+        await dlg.locator('textarea').first().waitFor({ state: 'visible', timeout: 8000 })
+
+        // 4. Verify cursor pagination limit=2 on loopback Core
         const page1 = await core.request('GET', `/projects/${pid}/messages?with=${encodeURIComponent(core.addresses.peer_b)}&limit=2`, {
           token: core.tokens.client
         })
         assert.equal(page1.status, 200)
         assert.equal(page1.json.items.length, 2)
         assert.ok(page1.json.page.next_cursor, 'Expected next_cursor for pagination')
-
         const page2 = await core.request(
           'GET',
           `/projects/${pid}/messages?with=${encodeURIComponent(core.addresses.peer_b)}&limit=2&cursor=${encodeURIComponent(page1.json.page.next_cursor)}`,
@@ -1388,16 +1483,10 @@ export const TIER1_TESTS = [
         )
         assert.equal(page2.status, 200)
         assert.ok(page2.json.items.length >= 1)
-
-        const search = await core.request(
-          'GET',
-          `/projects/${pid}/search?q=${encodeURIComponent('needle-alpha')}`,
-          { token: core.tokens.client }
-        )
-        assert.equal(search.status, 200)
-        assert.equal(search.json.items.length, 3)
-        return { sentCount: sentIds.length, searchHits: search.json.items.length }
+        await closeCollaborationDialogWithFocusCheck(page, dlg)
+        return { uiSentVerified: true, uiSearchHitVerified: true, paginatedCount: page1.json.items.length + page2.json.items.length }
       } finally {
+        await closeElectronApp(inst)
         await core.cleanup()
       }
     }
@@ -1409,9 +1498,10 @@ export const TIER1_TESTS = [
     refs: ['K.03', 'UX11', 'communication-contract-adoption'],
     async run(ctx) {
       const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
+        const { page } = inst
         const pid = core.info.project_id
-        // Resolve conversation for client <-> peer_b
         const conv = await core.request(
           'GET',
           `/projects/${pid}/conversations/resolve?with=${encodeURIComponent(core.addresses.peer_b)}`,
@@ -1420,26 +1510,54 @@ export const TIER1_TESTS = [
         assert.equal(conv.status, 200, conv.text)
         const cid = conv.json.conversation_id
 
-        // Viewer A saves draft with If-Match: "0"
-        const putDraft = await core.request('PUT', `/projects/${pid}/conversations/${cid}/draft`, {
-          token: core.tokens.client,
-          headers: { 'Idempotency-Key': 'draft-save-1', 'If-Match': '"0"' },
-          body: { content: 'Viewer A private draft text', attachment_refs: [] }
-        })
-        assert.equal(putDraft.status, 200, putDraft.text)
-        assert.equal(putDraft.json.revision, 1)
-        assert.ok(putDraft.json.updated_at, 'Persisted draft must have aware updated_at')
+        await connectCollaborationViaSettings(page, core)
+        await returnFromSettings(page)
 
-        // Viewer A mutes conversation
-        const putPref = await core.request('PUT', `/projects/${pid}/conversations/${cid}/preferences`, {
-          token: core.tokens.client,
-          headers: { 'Idempotency-Key': 'pref-save-1', 'If-Match': '"0"' },
-          body: { muted: true, archived: false }
-        })
-        assert.equal(putPref.status, 200, putPref.text)
-        assert.equal(putPref.json.muted, true)
+        // 1. Type draft in Electron UI -> wait for debounced server PUT /draft persistence
+        const dlg = await openCollaborationDialog(page)
+        const composer = await selectCollaborationContact(dlg, 'slot-b')
+        await composer.fill('Viewer A UI private draft text')
 
-        // Send 1 message so peer_b also sees this conversation pair, then check Peer B's draft & preferences remain isolated (rev 0)
+        let savedDraft = null
+        const deadline = Date.now() + 10000
+        while (Date.now() < deadline) {
+          const d = await core.request('GET', `/projects/${pid}/conversations/${cid}/draft`, {
+            token: core.tokens.client
+          })
+          if (d.status === 200 && d.json.revision >= 1 && d.json.content === 'Viewer A UI private draft text') {
+            savedDraft = d.json
+            break
+          }
+          await sleep(250)
+        }
+        assert.ok(savedDraft, 'Debounced UI draft did not persist to loopback Core')
+        assert.ok(savedDraft.updated_at, 'Persisted UI draft must have aware updated_at')
+
+        // 2. Toggle Mute & Archive via UI buttons -> verify server preferences updated
+        await dlg.getByRole('button', { name: /Toggle mute|静音/i }).first().click()
+        await dlg.getByRole('button', { name: /Toggle archive|归档/i }).first().click()
+        let prefsSaved = null
+        const prefDeadline = Date.now() + 8000
+        while (Date.now() < prefDeadline) {
+          const p = await core.request('GET', `/projects/${pid}/conversations/${cid}/preferences`, {
+            token: core.tokens.client
+          })
+          if (p.status === 200 && p.json.muted === true && p.json.archived === true) {
+            prefsSaved = p.json
+            break
+          }
+          await sleep(200)
+        }
+        assert.ok(prefsSaved, 'UI Mute/Archive preference toggles did not persist to server')
+
+        // 3. Reopen Collaboration dialog -> UI restores saved server draft
+        await closeCollaborationDialogWithFocusCheck(page, dlg)
+        const dlgReopen = await openCollaborationDialog(page)
+        const composerReopen = await selectCollaborationContact(dlgReopen, 'slot-b')
+        assert.equal(await composerReopen.inputValue(), 'Viewer A UI private draft text')
+        await closeCollaborationDialogWithFocusCheck(page, dlgReopen)
+
+        // 4. Send seed message so peer_b sees pair, then verify peer_b draft remains isolated (rev 0)
         const seedMsg = await core.request('POST', `/projects/${pid}/messages`, {
           token: core.tokens.client,
           headers: { 'Idempotency-Key': 'draft-pair-seed-1' },
@@ -1461,8 +1579,9 @@ export const TIER1_TESTS = [
         assert.equal(bDraft.status, 200)
         assert.equal(bDraft.json.revision, 0)
         assert.equal(bDraft.json.updated_at, null)
-        return { viewerADraftRev: putDraft.json.revision, viewerBDraftRev: bDraft.json.revision }
+        return { viewerADraftRev: savedDraft.revision, viewerBDraftRev: bDraft.json.revision, muted: prefsSaved.muted, archived: prefsSaved.archived }
       } finally {
+        await closeElectronApp(inst)
         await core.cleanup()
       }
     }
@@ -1474,10 +1593,12 @@ export const TIER1_TESTS = [
     refs: ['K.04', 'UX10', 'C.10.08', 'communication-contract-adoption'],
     async run(ctx) {
       const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
+        const { page } = inst
         const pid = core.info.project_id
         const fix = core.nativeLinkFixture
-        // Bind NativeLink
+        // 1. Bind NativeLink + verify 12-field contract & include_native_source=true
         const bind = await core.request('PUT', `/projects/${pid}/native-links/link-e2e-1`, {
           token: core.tokens.client,
           headers: { 'Idempotency-Key': 'bind-link-1' },
@@ -1487,16 +1608,20 @@ export const TIER1_TESTS = [
         assert.equal(Object.keys(bind.json).length, 12, 'NativeLink must return 12 fields')
         assert.equal(bind.json.host_ref, fix.expected_host_ref)
 
-        // Send invoke message to peer_b & dispatch to DriverJournal
         const send = await core.request('POST', `/projects/${pid}/messages`, {
           token: core.tokens.client,
           headers: { 'Idempotency-Key': 'invoke-source-1' },
           body: { to: core.addresses.peer_b, content: 'Inspect native source turn', activation: 'invoke' }
         })
         assert.equal(send.status, 201, send.text)
+        const plainSend = await core.request('POST', `/projects/${pid}/messages`, {
+          token: core.tokens.client,
+          headers: { 'Idempotency-Key': 'plain-source-1' },
+          body: { to: core.addresses.peer_b, content: 'Plain inbox only turn', activation: 'message_only' }
+        })
+        assert.equal(plainSend.status, 201, plainSend.text)
         await core.dispatchPending()
 
-        // Read with include_native_source=true
         const read = await core.request(
           'GET',
           `/projects/${pid}/messages/${encodeURIComponent(send.json.message.message_handle)}?include_native_source=true`,
@@ -1505,11 +1630,41 @@ export const TIER1_TESTS = [
         assert.equal(read.status, 200, read.text)
         assert.equal(read.json.native_source?.available, true, `Expected available=true: ${read.text}`)
         assert.equal(read.json.native_source.value.operationId, send.json.operation_ref)
+
+        // 2. Verify CommunicationMessage <details> + CommunicationSource ("View execution") in Electron UI
+        await connectCollaborationViaSettings(page, core)
+        await returnFromSettings(page)
+        const dlg = await openCollaborationDialog(page)
+        await selectCollaborationContact(dlg, 'slot-b')
+
+        const invokeArticle = dlg.locator('article').filter({ hasText: 'Inspect native source turn' }).first()
+        await invokeArticle.waitFor({ state: 'visible', timeout: 10000 })
+        await invokeArticle.locator('details summary').first().click()
+        await invokeArticle.getByText(/Native input|原生输入/i).first().waitFor({ state: 'visible', timeout: 5000 })
+        await invokeArticle.getByText(/^accepted$/i).first().waitFor({ state: 'visible', timeout: 5000 })
+
+        const viewExecBtn = invokeArticle.getByRole('button', { name: /View execution|查看执行/i }).first()
+        await viewExecBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await viewExecBtn.click()
+        await invokeArticle.locator('[role="status"]').filter({ hasText: /unavailable|不可用/i }).first().waitFor({ state: 'visible', timeout: 5000 })
+
+        const plainArticle = dlg.locator('article').filter({ hasText: 'Plain inbox only turn' }).first()
+        await plainArticle.waitFor({ state: 'visible', timeout: 8000 })
+        await plainArticle.locator('details summary').first().click()
+        await plainArticle.getByText(/^not_requested$/i).first().waitFor({ state: 'visible', timeout: 5000 })
+        assert.equal(
+          await plainArticle.getByRole('button', { name: /View execution|查看执行/i }).count(),
+          0,
+          'message_only turn must not render View execution button'
+        )
+        await closeCollaborationDialogWithFocusCheck(page, dlg)
         return {
           nativeLinkRevision: bind.json.revision,
-          sourceProvider: read.json.native_source.value.nativeSession.providerRef
+          sourceProvider: read.json.native_source.value.nativeSession.providerRef,
+          uiSourceInspected: true
         }
       } finally {
+        await closeElectronApp(inst)
         await core.cleanup()
       }
     }
@@ -1521,8 +1676,11 @@ export const TIER1_TESTS = [
     refs: ['K.03', 'K.04', 'T04', 'communication-api-scope'],
     async run(ctx) {
       const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
+        const { page } = inst
         const pid = core.info.project_id
+        // 1. Verify /snapshot + /events SSE protocol & notice seen CAS
         const snap = await core.request('GET', `/projects/${pid}/snapshot?limit=10`, {
           token: core.tokens.client
         })
@@ -1530,7 +1688,6 @@ export const TIER1_TESTS = [
         const afterCursor = snap.json.after_cursor
         assert.ok(afterCursor, 'Snapshot missing after_cursor')
 
-        // Open SSE stream with after_cursor, trigger peer send & notice
         const controller = new AbortController()
         const ssePromise = (async () => {
           const res = await fetch(
@@ -1567,7 +1724,6 @@ export const TIER1_TESTS = [
         controller.abort()
         assert.match(sseFrame, /event:\s*\S+/, `Unexpected SSE output: ${sseFrame}`)
 
-        // Emit notice and mark seen
         const noticeInfo = await core.emitNotice({ legacy_null_created_at: false })
         const notices = await core.request('GET', `/projects/${pid}/notices`, {
           token: core.tokens.client
@@ -1589,8 +1745,45 @@ export const TIER1_TESTS = [
         )
         assert.equal(seenRes.status, 200, seenRes.text)
         assert.equal(seenRes.json.seen, true)
-        return { sseDelivered: true, noticeSeen: seenRes.json.seen }
+
+        // 2. Connect Electron -> return to Titlebar -> verify live SSE unread indicator, Notice strip dismiss, & Mark Read/Unread
+        await connectCollaborationViaSettings(page, core)
+        await returnFromSettings(page)
+        const trigger = getCollaborationTrigger(page)
+        await core.emitNotice({ legacy_null_created_at: false })
+        await core.peerSend({ actor: 'peer_b', to: core.addresses.client, content: 'SSE UI live unread ping' })
+        await page.waitForFunction(
+          () => {
+            const el = document.querySelector('[data-collaboration-unread]')
+            return Number(el?.getAttribute('data-collaboration-unread') || 0) >= 1 && Number(el?.getAttribute('data-collaboration-notices') || 0) >= 1
+          },
+          undefined,
+          { timeout: 10000 }
+        )
+        await trigger.locator('span').first().waitFor({ state: 'visible', timeout: 5000 })
+
+        const dlg = await openCollaborationDialog(page)
+        const dismissBtn = dlg.locator('[role="status"] button').first()
+        await dismissBtn.waitFor({ state: 'visible', timeout: 6000 })
+        await dismissBtn.click()
+        await dismissBtn.waitFor({ state: 'hidden', timeout: 6000 })
+
+        await selectCollaborationContact(dlg, 'slot-b')
+        await dlg.getByText('SSE UI live unread ping', { exact: false }).first().waitFor({ state: 'visible', timeout: 8000 })
+        await core.peerSend({ actor: 'peer_b', to: core.addresses.client, content: 'SSE live dialog push' })
+        await dlg.getByText('SSE live dialog push', { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await dlg.getByRole('button', { name: /Mark as read|标为已读|标记为已读/i }).first().click()
+        const markUnreadBtn = dlg.getByRole('button', { name: /Mark as unread|标为未读|标记为未读/i }).first()
+        await markUnreadBtn.click()
+        await page.waitForFunction(
+          () => Boolean(document.querySelector('[role="dialog"] button[aria-pressed="true"]')),
+          undefined,
+          { timeout: 6000 }
+        )
+        await closeCollaborationDialogWithFocusCheck(page, dlg)
+        return { sseDelivered: true, noticeSeen: seenRes.json.seen, uiLiveUnreadDotSynced: true }
       } finally {
+        await closeElectronApp(inst)
         await core.cleanup()
       }
     }
@@ -1602,53 +1795,43 @@ export const TIER1_TESTS = [
     refs: ['K.03', 'UX12', 'communication-api-scope'],
     async run(ctx) {
       const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const attTmpDir = mkdtempSync(path.join(os.tmpdir(), 'porpita-e2e-att-'))
       try {
+        const { page } = inst
         const pid = core.info.project_id
-        const { createHash } = await import('node:crypto')
         const payloadBytes = Buffer.from('Porpita attachment binary test payload\n', 'utf8')
         const digestHex = createHash('sha256').update(payloadBytes).digest('hex')
+        const attPath = path.join(attTmpDir, 'report.txt')
+        writeFileSync(attPath, payloadBytes)
 
-        const reserve = await core.request('POST', `/projects/${pid}/attachments`, {
-          token: core.tokens.client,
-          headers: { 'Idempotency-Key': 'att-reserve-1' },
-          body: {
-            name: 'report.txt',
-            media_type: 'text/plain',
-            bytes: payloadBytes.length,
-            sha256: digestHex
-          }
-        })
-        assert.equal(reserve.status, 201, reserve.text)
-        const attId = reserve.json.attachment_id
+        // 1. Connect Electron UI & send real attachment through CommunicationComposer + downloadAttachment verification
+        await connectCollaborationViaSettings(page, core)
+        await returnFromSettings(page)
+        const dlg = await openCollaborationDialog(page)
+        const composer = await selectCollaborationContact(dlg, 'slot-b')
 
-        const upload = await core.request('PUT', `/projects/${pid}/attachments/${attId}/content`, {
-          token: core.tokens.client,
-          headers: {
-            'Idempotency-Key': 'att-upload-1',
-            'Content-Type': 'application/octet-stream'
-          },
-          rawBody: payloadBytes
-        })
-        assert.ok(upload.status === 200 || upload.status === 204, upload.text)
+        await dlg.locator('input[type="file"]').first().setInputFiles(attPath)
+        await dlg.getByText('report.txt', { exact: true }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await composer.fill('Message with UI attachment')
+        await dlg.getByRole('button', { name: /^(Send|发送)$/i }).first().click()
 
-        const fin = await core.request('POST', `/projects/${pid}/attachments/${attId}/finalize`, {
-          token: core.tokens.client,
-          headers: { 'Idempotency-Key': 'att-fin-1' },
-          body: { sha256: digestHex, bytes: payloadBytes.length }
-        })
-        assert.equal(fin.status, 200, fin.text)
-        assert.equal(fin.json.state, 'ready')
+        const msgArticle = dlg.locator('article').filter({ hasText: 'Message with UI attachment' }).first()
+        await msgArticle.waitFor({ state: 'visible', timeout: 10000 })
+        const dlBtn = msgArticle.getByRole('button', { name: /report\.txt/i }).first()
+        await dlBtn.waitFor({ state: 'visible', timeout: 8000 })
+        await dlBtn.click()
+        await msgArticle.getByRole('button', { name: /Show saved file in folder|在文件夹中显示|显示已保存文件/i }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await closeCollaborationDialogWithFocusCheck(page, dlg)
 
-        const send = await core.request('POST', `/projects/${pid}/messages`, {
-          token: core.tokens.client,
-          headers: { 'Idempotency-Key': 'att-send-1' },
-          body: {
-            to: core.addresses.peer_b,
-            content: 'Message with binary attachment',
-            attachment_refs: [attId]
-          }
+        // 2. Confirm Peer B downloads exact SHA-256 bytes from loopback Core
+        const msgList = await core.request('GET', `/projects/${pid}/messages?with=${encodeURIComponent(core.addresses.peer_b)}&limit=10`, {
+          token: core.tokens.client
         })
-        assert.equal(send.status, 201, send.text)
+        assert.equal(msgList.status, 200)
+        const attMsg = msgList.json.items.find((m) => m.attachment_refs?.length > 0)
+        assert.ok(attMsg, 'Sent attachment message missing attachment_refs on Core')
+        const attId = attMsg.attachment_refs[0].attachment_id
 
         const dlRes = await fetch(`${core.apiUrl}/projects/${pid}/attachments/${attId}/content`, {
           headers: { Authorization: `Bearer ${core.tokens.peer_b}` }
@@ -1657,9 +1840,11 @@ export const TIER1_TESTS = [
         const dlBuf = Buffer.from(await dlRes.arrayBuffer())
         const dlDigest = createHash('sha256').update(dlBuf).digest('hex')
         assert.equal(dlDigest, digestHex, 'Downloaded attachment SHA-256 mismatch')
-        return { attachmentId: attId, sha256: dlDigest }
+        return { attachmentId: attId, sha256: dlDigest, uiRoundTripVerified: true }
       } finally {
+        await closeElectronApp(inst)
         await core.cleanup()
+        rmSync(attTmpDir, { recursive: true, force: true })
       }
     }
   },

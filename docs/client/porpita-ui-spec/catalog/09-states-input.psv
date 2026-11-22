@@ -7,7 +7,7 @@ S.04|提交中、运行、排队与流式|NativeChatQueuedMessageList.tsx,Native
 S.05|待输入、批准、凭据与信任|NativeChatApprovalCard.tsx,NativeChatQuestionCard.tsx,AgentWorkspaceTrustDecisionDialog.tsx,SshPassphraseDialog.tsx|有明确权限或问题需要用户处理，目标由原生服务/Host 决定|改造|保留原确认；待处理能定位对象；不可操作时说明原因，优先保证决策区和焦点|J01,J03,J05,J12,J13
 S.06|不可用、只读、禁用、失权|PluginPanel.tsx,SettingsDisabledControlTooltip.tsx,NativeChatView.tsx,security-surface.tsx|能力 gate、版本、来源或授权决定各操作状态|保留|区分不可用和等待，必要原因在界面可访问，缓存不得绕过授权|J05,J07,J10,J11,J12
 S.07|失败、未确认、部分完成与安全重试|RecoverableRenderErrorBoundary.tsx,PendingInspectionAction.tsx,NativeChatResumeFailureDetails.tsx|错误、结果未知、批量恢复有不同展示和确认机制|保留|未确认先读取结果，失败可按对象重试，成功项与草稿留存；不以 toast 掩盖阻塞|J05,J06,J09,J12
-S.08|断开、重连、恢复与旧状态|TerminalPaneSshReconnectPortals.tsx,TerminalPaneRecoveryPortals.tsx,use-collaboration-connection.ts,NativeChatResumeRuntimeModal.tsx|各连接各自更新，候选 11 有设置滞后记录|改造|明确当时与最新状态、重连作用域和继续操作；保留视图，验证原生 generation 后可写|J06,J07,J11,J12
+S.08|断开、重连、恢复与旧状态|TerminalPaneSshReconnectPortals.tsx,TerminalPaneRecoveryPortals.tsx,use-collaboration-connection.ts,collaboration-connection-sync.ts,communication-view-sync.ts,NativeChatResumeRuntimeModal.tsx|各连接各自更新，候选 11 有设置滞后记录|改造|明确当时与最新状态、重连作用域和继续操作；保留视图，验证原生 generation 后可写|J06,J07,J11,J12
 S.09|预览、未保存、关闭与终止|TerminalWorkspaceDialogs.tsx,use-terminal-close-actions.ts,src/renderer/src/components/editor/save|文件预览或脏态，终端执行和布局退出各有 guard|改造|预览、锁定、关闭、移除、删除和结束的动作名/后果不同；取消不丢当前对象|J04,J06,J08
 T|输入和连续交互规格|use-global-keybindings.ts,TabGroupDropOverlay.tsx,dialog.tsx|工作台、内容和弹层有各自输入路由|保留|多层导航与输入归属明确；每种操作按焦点与实际结果验收|J02,J03,J04,J05,J06,J07,J08,J13
 T.01|点击、双击、中键与选择|SortableTab.tsx,FileExplorerFilesTreePane.tsx,worktree-card-surface.tsx|Tab 激活、重命名/关闭，文件预览/持久打开与项目选择有各自手势|保留|一击单意图，双击不重复创建会话；中键关闭遵守固定与保存守卫，目标始终明确|J02,J03,J06,J08

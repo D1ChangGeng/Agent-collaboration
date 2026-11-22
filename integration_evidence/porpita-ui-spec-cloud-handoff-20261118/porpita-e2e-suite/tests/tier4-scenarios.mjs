@@ -7,10 +7,14 @@ import {
   addLocalFolderProject,
   assertAllWindowsHidden,
   assertNotificationStackNonBlocking,
+  closeCollaborationDialogWithFocusCheck,
   closeElectronApp,
+  connectCollaborationViaSettings,
   disablePluginAndVerify,
+  disconnectCollaborationViaSettings,
   hasIntegratedWorkspaceShell,
   installAndEnableFolderPlugin,
+  isCollaborationConnectedText,
   launchElectronApp,
   M3_SELECTOR_CONTRACT,
   openAndVerifyPluginPanel,
@@ -18,7 +22,9 @@ import {
   openMarkdownPreviewAndVerify,
   openSettingsPage,
   quitElectronGracefully,
+  reconnectCollaborationViaSettings,
   returnFromSettings,
+  selectCollaborationContact,
   setViewportSize,
   sleep,
   stubOpenDialog,
@@ -334,28 +340,33 @@ export const TIER4_TESTS = [
       })
       try {
         const pid = core.info.project_id
-        // 1. Connect Electron Settings -> Collaboration to loopback Core
-        const { page } = inst
-        await openSettingsPage(page)
-        await page.locator('aside button').filter({ hasText: /^(General|常规|通用)$/i }).first().click()
-        const sec = page.locator('section[data-settings-section="general"]').first()
-        const existingBtn = sec
-          .getByRole('button', { name: /Connect an existing service|连接已有服务/i })
-          .first()
-        const existingRadio = sec
-          .getByRole('radio', { name: /Connect an existing service|连接已有服务/i })
-          .first()
-        if (await existingRadio.isVisible().catch(() => false)) await existingRadio.click()
-        else await existingBtn.click()
-        await sec.getByLabel(/Service address|服务地址/i).fill(core.baseUrl)
-        await sec.getByLabel(/Connection key|连接密钥/i).fill(core.tokens.client)
-        await sec.getByRole('button', { name: /^(Connect|连接)$/i }).first().click()
-        await sec.getByText(/^(Connected|已连接)$/i).first().waitFor({ state: 'visible', timeout: 10000 })
+        // 1. Connect Electron Settings -> Collaboration to loopback Core, verify zh copy & Disconnect/Reconnect sync
+        const { app, page } = inst
+        const dlgInitial = await openCollaborationDialog(page)
+        const initialSelectText = (await dlgInitial.locator('select').first().innerText()).trim()
+        assert.equal(/尚未连接工作区/.test(initialSelectText), false, `Found stale 尚未连接工作区 in zh dropdown: ${initialSelectText}`)
+        assert.match(initialSelectText, /尚未连接协作项目/, `Expected 尚未连接协作项目, got: ${initialSelectText}`)
+        await closeCollaborationDialogWithFocusCheck(page, dlgInitial)
+
+        await connectCollaborationViaSettings(page, core)
         await returnFromSettings(page)
 
         const dlg = await openCollaborationDialog(page)
-        const titleStatus = await dlg.locator('[role="status"]').first().innerText()
-        await page.keyboard.press('Escape')
+        const titleStatus = (await dlg.locator('[role="status"]').first().innerText()).trim()
+        assert.equal(
+          isCollaborationConnectedText(titleStatus),
+          true,
+          `Settings <-> Titlebar must sync immediately in T4-04, got: ${titleStatus}`
+        )
+        await closeCollaborationDialogWithFocusCheck(page, dlg)
+
+        await disconnectCollaborationViaSettings(page)
+        await reconnectCollaborationViaSettings(page)
+        await returnFromSettings(page)
+        const dlgReconnected = await openCollaborationDialog(page)
+        const reconnectedStatus = (await dlgReconnected.locator('[role="status"]').first().innerText()).trim()
+        assert.equal(isCollaborationConnectedText(reconnectedStatus), true, `Reconnect did not sync Titlebar: ${reconnectedStatus}`)
+        await closeCollaborationDialogWithFocusCheck(page, dlgReconnected)
 
         // 2. Full /api/communication/v1 protocol episode:
         // Draft rev0->rev1, 2 out-of-order questions + replies (T01), Attachment SHA-256,
@@ -456,7 +467,30 @@ export const TIER4_TESTS = [
         })
         assert.ok(recovered.status === 200 || recovered.status === 201)
 
-        // Token revocation (T07)
+        // Verify full UI rendering (messages, out-of-order reply links, attachment, 600x400 fit) post Core restart
+        const dlgLive = await openCollaborationDialog(page)
+        await selectCollaborationContact(dlgLive, 'slot-b')
+        await dlgLive.getByText('Answer to Q2 first', { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await dlgLive.getByText('Answer to Q1 second', { exact: false }).first().waitFor({ state: 'visible', timeout: 8000 })
+        await dlgLive.getByRole('button', { name: /episode\.txt/i }).first().waitFor({ state: 'visible', timeout: 8000 })
+
+        await setViewportSize(app, page, 600, 400)
+        const dialog600 = await dlgLive.evaluate((el) => {
+          const r = el.getBoundingClientRect()
+          return {
+            left: Math.round(r.left),
+            right: Math.round(r.right),
+            vw: window.innerWidth,
+            overflowX: document.documentElement.scrollWidth > window.innerWidth + 2
+          }
+        })
+        assert.ok(
+          dialog600.left >= -1 && dialog600.right <= dialog600.vw + 1 && !dialog600.overflowX,
+          `T4-04 Collaboration dialog overflowed 600x400: ${JSON.stringify(dialog600)}`
+        )
+        await setViewportSize(app, page, 1280, 800)
+
+        // Token revocation (T07): verify 403 authorization_denied & UI search error alert
         await core.revokeToken('client')
         const denied = await core.request('GET', `/projects/${pid}/messages`, {
           token: core.tokens.client
@@ -464,19 +498,19 @@ export const TIER4_TESTS = [
         assert.equal(denied.status, 403, denied.text)
         assert.equal(denied.json?.error?.code, 'authorization_denied', denied.text)
 
-        if (!/Connected|已连接/i.test(titleStatus)) {
-          pendingIfSmoke(
-            ctx.mode,
-            'M2',
-            'Settings <-> Titlebar status synced immediately in T4-04',
-            `Loopback protocol passed 100%; Titlebar status=${titleStatus}`
-          )
-        }
+        const searchInput = dlgLive.locator('main form input').first()
+        await searchInput.fill('Question')
+        await searchInput.press('Enter')
+        await dlgLive.locator('[role="alert"]').first().waitFor({ state: 'visible', timeout: 8000 })
+        await closeCollaborationDialogWithFocusCheck(page, dlgLive)
+
         return {
           titleStatus,
+          reconnectedStatus,
           nativeSourceAvailable: true,
           recoveredStatus: recovered.status,
-          revokedStatus: denied.status
+          revokedStatus: denied.status,
+          dialog600
         }
       } finally {
         await closeElectronApp(inst)

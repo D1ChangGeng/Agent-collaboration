@@ -1,0 +1,19 @@
+{
+  "name": "r93-f05-collab-empty-zh-1280",
+  "imageFile": "r93-f05-collab-empty-zh-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "emptyCopyCheck": {
+    "selectAriaLabel": "协作项目",
+    "selectText": "尚未连接协作项目",
+    "statusText": "未连接",
+    "dialogText": "协作消息\n未连接\n\n与协作项目中的联系人交流、分享文件，并跟踪回信。\n\n尚未连接协作项目\n\n请在设置中连接协作服务后收发消息。\n\n启动本地协作服务\n选择联系人，查看或发送消息。\n关闭",
+    "noLegacyWorkspacePlaceholder": true,
+    "hasCollabProjectCopy": true
+  }
+}

@@ -1,6 +1,6 @@
 # id（SettingsNavTarget 同名）|界面／对象|源码|当前行为|处置|目标规范|回放
 N.general|通用、窗口/项目、编辑器、CLI、关于|GeneralPane.tsx,GeneralWorkspaceSettingsSection.tsx,GeneralEditorSettingsSection.tsx,GeneralUpdateSettingsSection.tsx|显示全局偏好、默认目标、文件和会话关闭行为、编辑设置、CLI、更新和产品归属；内含协作|改造|保留分组与滚动；明确关闭内容/布局/结束执行三个层次；以产品实际配置决定更新入口|J02,J06,J12,J13
-N.general.01|协作 Core 状态与连接|CollaborationSettingsSection.tsx,use-collaboration-connection.ts|本机托管或已有服务；地址/密钥、准备、断开与版本|改造|连接状态从共享可信源更新；进行中、未知、失效和已连接的动作不同，保留安全输入与原入口|J01,J09,J12
+N.general.01|协作 Core 状态与连接|CollaborationSettingsSection.tsx,use-collaboration-connection.ts,collaboration-connection-sync.ts|本机托管或已有服务；地址/密钥、准备、断开与版本|改造|连接状态从共享可信源更新；进行中、未知、失效和已连接的动作不同，保留安全输入与原入口|J01,J09,J12
 N.general.02|准备本机 Agent、导入配置和旧历史|CollaborationSettingsSection.tsx,LegacyHistoryImportRow.tsx,src/renderer/src/components/orca-profiles|原生 Agent 准备与旧配置/协作历史的显式导入；来源不同|保留|保留选择和原始来源；导入结果区分只读历史与可运行新会话|J01,J05,J12
 N.integrations|集成与提供方接入|IntegrationsPane.tsx,src/renderer/src/components/integrations|各服务有连接、断开、凭据说明和权限反馈|保留|保留连接路径和权限检查；显示具体提供方和范围，失败保留非秘密字段|J09,J12
 N.accounts|AI 提供商账号与配额|src/renderer/src/components/settings/accounts,src/renderer/src/components/provider-accounts,StatusBarAccountControls.tsx|账号安装/登录、选择、限额及 Host 条件|保留|显示当前 Native Session 使用的真实账号；切换仅在已有的明确生命周期点生效|J05,J11,J12

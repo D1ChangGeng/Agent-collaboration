@@ -1,0 +1,20 @@
+{
+  "name": "r93-n01-settings-collab-600",
+  "imageFile": "r93-n01-settings-collab-600.png",
+  "window": {
+    "innerWidth": 600,
+    "innerHeight": 401,
+    "scrollWidth": 600,
+    "clientWidth": 600,
+    "overflowX": false
+  },
+  "settingsGeo600": {
+    "found": true,
+    "ok": true,
+    "scrollWidth": 333,
+    "clientWidth": 333,
+    "overflowX": false,
+    "itemCount": 5,
+    "issues": []
+  }
+}

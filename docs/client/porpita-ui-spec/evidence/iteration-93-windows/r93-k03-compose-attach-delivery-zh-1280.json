@@ -1,0 +1,14 @@
+{
+  "name": "r93-k03-compose-attach-delivery-zh-1280",
+  "imageFile": "r93-k03-compose-attach-delivery-zh-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "attachmentExpectedSha": "69add1bc11e29c166bd24dc535ab7acb13f70d33e7ed48135727883995ba4bd2",
+  "attachmentDownloadVerified": true,
+  "linkedReplyRendered": true
+}

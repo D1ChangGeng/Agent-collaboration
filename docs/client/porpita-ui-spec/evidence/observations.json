@@ -3440,5 +3440,89 @@
     "path": "iteration-92-windows/r92-n-settings-general-600.json",
     "claim": "600×400 极窄窗依次巡检非协作核心设置分区 General、Git & Source Control、Terminal 与 Shortcuts，设置行几何检查全部通过无重叠与右裁切（all ok=true、overflowX=false）。",
     "rows": ["N", "N.general", "N.git", "N.terminal", "N.shortcuts"]
+  },
+  {
+    "id": "I9301",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-f05-collab-empty-zh-1280.json",
+    "claim": "1280×800 简中深色实测未连接态点击标题栏协作按钮，弹窗显示「协作消息 / 未连接 / 尚未连接协作项目」及引导（noLegacyWorkspacePlaceholder=true、hasCollabProjectCopy=true），Escape 精准回焦标题栏触发按钮（emptyEscapeFocusRestored=true）。",
+    "rows": ["K", "K.01", "C.10.08"]
+  },
+  {
+    "id": "I9302",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-n01-settings-collab-600.json",
+    "claim": "600×400 极窄窗下 Settings > General > Collaboration 分区几何全检通过，无横向溢出、右裁切或控件碰撞（settingsGeo600.ok=true、overflowX=false、issues=[]），[可选] 侧栏徽标保持单行不折行。",
+    "rows": ["N", "N.general", "N.general.01"]
+  },
+  {
+    "id": "I9303",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-n01-settings-connected-zh-1280.json",
+    "claim": "1280×800 从 Settings 连接隔离 PostgreSQL 环回 ACS Core（mode=full）后立即显式呈现「断开」按钮并实时同步标题栏协作弹窗内的「已连接」与 Porpita 协作项目（connectSyncedImmediate=true），随后点击「断开」即刻同步未连接（disconnectSyncedImmediate=true）。",
+    "rows": ["N", "N.general", "N.general.01", "K.01"]
+  },
+  {
+    "id": "I9304",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-n01-secondary-reconnect-zh-1280.json",
+    "claim": "1280×800 经 Settings「连接」二次重连同一 Core 后，关闭前由对端发送的新消息通过连接级长驻订阅同步至标题栏未读圆点（unreadDotBeforeOpen=true、data-collaboration-unread=1），重开弹窗无需重启或重进页面即刻显示「协作消息 · 1」、「已连接」与联系人 slot-b1、slot-c（reconnectTitlebarSyncedImmediate=true）。",
+    "rows": ["N.general.01", "K", "K.01", "C.10.08", "S.08"]
+  },
+  {
+    "id": "I9305",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-k03-compose-attach-delivery-zh-1280.json",
+    "claim": "1280×800 选定 slot-b 后实测 Draft 契约（初态 revision=0、updated_at=null → 自动保存 revision=1 → 关窗重开精准还原）、上传 r93-attachment.txt 并发送、下载校验渲染「在文件夹中显示已保存文件」（attachmentDownloadVerified=true），并对对端首条消息回复渲染「回复已关联原消息」（linkedReplyRendered=true）。",
+    "rows": ["K", "K.03"]
+  },
+  {
+    "id": "I9306",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-k04-delivery-source-1280.json",
+    "claim": "1280×800 绑定 NativeLink（HTTP 200）后发送激活消息并派发原生接纳，界面呈「原生输入已接纳」（nativeAcceptedRendered=true），展开「投递与来源」可见服务接受/原生状态与「查看执行」（viewExecutionVisible=true、nativeSourceApiAvailable=true），点击跳转触发源定位并关闭弹窗（sourceClickHandled=true）。",
+    "rows": ["K", "K.04", "R.09", "C.10.08", "S.04"]
+  },
+  {
+    "id": "I9307",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-k02-search-hits-zh-1280.json",
+    "claim": "1280×800 在协作弹窗消息搜索栏输入 needle-r93 回车检索，返回 4 条匹配消息列表与「返回会话」入口（hitsCount=4）。",
+    "rows": ["K", "K.02"]
+  },
+  {
+    "id": "I9308",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-r12-search-error-zh-1280.json",
+    "claim": "1280×800 撤销客户端授权令牌后检索，旧检索结果被立即清空（staleHitsClearedOnSearchError=true）并在主区呈「暂时无法加载，请检查连接后重试。」告警同时非破坏性保留既有会话面板；恢复令牌刷新后告警消除（searchErrorClearedOnRefresh=true）。",
+    "rows": ["K.02", "R.12", "S.08"]
+  },
+  {
+    "id": "I9309",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-r12-pending-inspection-zh-1280.json",
+    "claim": "1280×800 触发实时阻塞通知（Notice created_at 非空，点击「知道了」同步服务端 seen=true）并在 POST /messages 提交后注入 503 断流，呈现「核查原请求」与「重试原请求」且保留输入；先点击只读「核查原请求」确认未盲目重发或清稿（stillRetainedAfterReadOnlyInspect=true），再点击「重试原请求」按原 clientRequestId 幂等确认零重复消息入库（faultArticlesCount=1、pendingInspectRecovered=true）。",
+    "rows": ["K.04", "R.12", "S.07"]
+  },
+  {
+    "id": "I9310",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-k00-collab-dialog-600.json",
+    "claim": "600×400 极窄短窗实测紧凑适配后的协作 Dialog 完整落于视口内（left=16, top=8, right=584, bottom=393, inside=true），消息历史区保留 109px 可读高度（historyHeight=109），零水平溢出与控件碰撞（dialogGeo600.ok=true、issues=[]），Escape 退场仍精确回焦标题栏按钮（dialogEscapeFocusRestored=true）。",
+    "rows": ["K", "K.01", "K.02", "K.03"]
+  },
+  {
+    "id": "I9311",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-n01-settings-collab-en-1280.json",
+    "claim": "1280×800 英文深色隔离档案完成 Settings > General > Collaboration 连接、断开与二次重连，未配置/空态呈「Collaboration project / No collaboration project connected」而无遗留 Workspace 措辞。",
+    "rows": ["N.general.01", "K.01"]
+  },
+  {
+    "id": "I9312",
+    "kind": "iteration-build",
+    "path": "iteration-93-windows/r93-k01-collab-en-1280.json",
+    "claim": "1280×800 英文深色二次重连后立即打开标题栏协作弹窗，实时呈现「Collaboration · 1」、「Connected」状态与 slot-b/slot-c 历史消息及附件下载入口（enCollabProjectCopyOk=true、enReconnectSyncedImmediate=true），Escape 退场精准回焦（enEscapeFocusRestored=true）。",
+    "rows": ["K", "K.01", "C.10.08"]
   }
 ]

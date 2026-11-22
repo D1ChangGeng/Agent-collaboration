@@ -1,0 +1,16 @@
+{
+  "name": "r93-k04-delivery-source-1280",
+  "imageFile": "r93-k04-delivery-source-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "nativeLinkBoundStatus": 200,
+  "nativeAcceptedRendered": true,
+  "viewExecutionVisible": true,
+  "msgHandleText": "message:porpita-local:message-379697d8ab9e411f9cadfeabc0abf933",
+  "nativeSourceApiAvailable": true
+}

@@ -585,3 +585,18 @@ Windows x64 使用 `--mode e2e` 构建与 Electron 43.8.6，在 `ORCA_BACKGROUND
 | `out/renderer/index.html` | `b07628e2f447e593a8da9be9d0859a482227aa7e7007b23a602be9e784336b9a` |
 
 Windows x64 使用最终提交 `d874c87b6c` 的 `--mode e2e` 构建与 Electron 43.8.6，在 `ORCA_BACKGROUND_LAUNCH=1` 与临时隔离档案下运行跨平台 `tools/observe-round-92.cjs`（先期基线对照诊断于入库前已清理，仅保留最终严格门禁 `evidence/iteration-92-windows/`）：19 组严格门禁全过（`findings: []`、退出码 `0`）且 19/19 人工视觉复核通过。未配对云服务下的在线插件源/Automations 远端调度、Chrome Web Store 扩展安装（`I.04`）、远端 SSH/WSL 大文件审阅写回、可见桌面前台切换、物理读屏器与 macOS/Linux 三端继续保持在各自边界外待验。 [第 92 轮记录](ITERATION_92.md) · [回放工具](tools/observe-round-92.cjs) · [严格终版运行](evidence/iteration-92-windows/run.json) · [覆盖核对](coverage-audit.json)
+
+## 第 93 轮来源
+
+第 93 轮（Milestone M2：F05 + F06 ACS 协作长驻状态同步、术语对齐、核心全链路与故障核查恢复）在 `D:/Chatgpt/Agent-collaboration/.tmp/porpita-ui-spec-03` 的本地分支 `codex/porpita-ui-spec-91` 开展（基于第 92 轮提交 `d874c87b6c5a1115667f89b15dac78640b3c8568`），最终提交为 `1b27aeb1142a98ba4ac5aae1be711d441a42f9f8`（tree `f347474c0887bd9df3cf3da81df4c1bffbaa8dbe`，`ui(f05,f06): complete Round 93 collaboration state sync, copy unification, and loopback UX`，涵盖 `31` 项文件改动：含新增 `collaboration-connection-sync.ts`、`communication-view-sync.ts`、`communication-view-state.ts`、`communication-view-transport.ts`、`CollaborationSearchResults.tsx`、`collaboration-connection-sync.test.tsx`、`CollaborationDialogFlows.test.tsx` 与 `collaboration-test-fixtures.ts`）。`@porpita-ui` 在提交钩子（`.husky/pre-commit` 含 `oxlint`、`oxlint-js-plugins`、`ast-grep`、`oxlint-react-doctor`、`oxfmt`）与代码门禁验证通过：`check-changed-code-quality.mjs d874c87b6c`（26 个变更文件 9 项门禁均 0 新增发现）、`git diff --check HEAD~1..HEAD`（退出码 0）、5 工程 `corepack pnpm tc`（`15,558` / `4,186` / `18,358` / `38` / `12,991` 文件 0 错）、5 份 Vitest 回归（16/16 项通过）以及从提交树执行的 `build:packages` + `--mode e2e` 构建（23.06s）。`@e2e-harness` 亦于 `#155` 等效 `out/`（`Agent-collaboration` `AC_WORKTREE` `3af1e5b18fd47c7b4a5a1651b7eb55487cde778c`）完成全量 Phase 3 E2E 回归：`15/15` `--mode full` PASS（`T1-F05-01..06` `porpita-e2e-report-1795315933779.json`、`T2-F05-01..06` `porpita-e2e-report-1795316077360.json`、`T3-05` `1795316153163.json`、`T3-06` `1795316231970.json`、`T4-04` `1795316342739.json`）及 `--tier all --mode smoke` `total=87 passed=60 pendingMilestone=27 failed=0 overall=PASS`（`porpita-e2e-report-1795319424820.json`），提交后再由 `@e2e-harness` 复验 `T1-F06-01` 与 `T1-F05-01`。
+
+| `--mode e2e` 构建文件（`1b27aeb114`） | SHA-256 |
+| --- | --- |
+| `out/main/index.js` | `78ede9142487d0c2e8154112da82a632fbe44fc13fbe57f8410b10b39e76bc26` |
+| `out/preload/index.js` | `d9bd4929c1e139efe173b7148c87d92a8f9f75d29ac945399049cc0d5c92b809` |
+| `out/renderer/index.html` | `482bf82c531fc5f0e8378a75586f388b37b6f4595d64dc7e66fdc7d6bc208b7e` |
+| `out/renderer/assets/index-h_2cRRs9.js` | `a1fc84178de1fd6b1c52b228d50ebe8816885f868ecd132703149ca20704e962` |
+| `out/renderer/assets/App-ueB-kzW5.js` | `dca66211f70cd1a67138ae53ee46a22486953a6232de6c3b725e06af2bc6fd1b` |
+| `out/renderer/assets/Settings-DK9ZhbPM.js` | `5864672373fdc7f6976369dfe6dfd69f359d2345011b20ef4d402d302064a1ed` |
+
+Windows x64 使用最终提交 `1b27aeb114` 的 `--mode e2e` 构建、Electron 43.8.6、临时 PostgreSQL 16 隔离回环 `acs_loopback_server.py`（`mode: 'full'`）与 `ORCA_BACKGROUND_LAUNCH=1` 运行跨平台 `tools/observe-round-93.cjs`：12 组严格门禁全过（`findings: []`、退出码 `0`）且 12/12 人工视觉复核通过。真实跨物理 Host 远端 HTTPS/TLS 部署、真实在线 Claude/Codex 远端 Native 执行流式长链路、可见桌面前台切换、物理读屏器与 macOS/Linux 三端继续保持在各自边界外待验。 [第 93 轮记录](ITERATION_93.md) · [回放工具](tools/observe-round-93.cjs) · [严格终版运行](evidence/iteration-93-windows/run.json) · [覆盖核对](coverage-audit.json)

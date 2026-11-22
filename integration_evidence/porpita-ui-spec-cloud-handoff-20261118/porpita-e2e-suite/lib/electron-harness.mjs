@@ -909,13 +909,140 @@ export async function returnFromSettings(page) {
   }
 }
 
+/**
+ * Returns true strictly for a connected Collaboration status label (never false-matching "Not connected").
+ */
+export function isCollaborationConnectedText(text) {
+  const trimmed = (text || '').trim()
+  return (
+    /^(Connected|已连接)$/i.test(trimmed) ||
+    (/^(Connected|已连接)\b/i.test(trimmed) && !/Not connected|未连接|Attention|需要|Checking|正在检查/i.test(trimmed))
+  )
+}
+
+/**
+ * Returns the Titlebar Collaboration trigger button locator.
+ */
+export function getCollaborationTrigger(page) {
+  return page.getByRole('button', { name: /^(Collaboration|协作消息|协作|Collaboration messages)$/i }).first()
+}
+
 export async function openCollaborationDialog(page) {
-  const collabBtn = page.getByRole('button', { name: /^(Collaboration|协作消息|Collaboration messages)$/i }).first()
+  const collabBtn = getCollaborationTrigger(page)
   await collabBtn.waitFor({ state: 'visible', timeout: 10000 })
   await collabBtn.click()
-  const dialog = page.getByRole('dialog').filter({ hasText: /^(Collaboration|协作消息)/i }).first()
+  const dialog = page.getByRole('dialog').filter({ hasText: /^(Collaboration|协作消息|协作)/i }).first()
   await dialog.waitFor({ state: 'visible', timeout: 10000 })
   return dialog
+}
+
+/**
+ * Closes an open Collaboration dialog with Escape and asserts focus returns to a connected element.
+ */
+export async function closeCollaborationDialogWithFocusCheck(page, dialog) {
+  await page.keyboard.press('Escape')
+  await dialog.waitFor({ state: 'hidden', timeout: 5000 })
+  const focus = await page.evaluate(() => ({
+    tag: document.activeElement?.tagName ?? null,
+    ariaLabel: document.activeElement?.getAttribute?.('aria-label') ?? null,
+    connected: Boolean(document.activeElement?.isConnected)
+  }))
+  assert.equal(focus.connected, true, `Collaboration dialog Escape left focus disconnected: ${JSON.stringify(focus)}`)
+  return focus
+}
+
+/**
+ * Connects Porpita Settings -> General -> Collaboration to an existing loopback ACS Core service.
+ */
+export async function connectCollaborationViaSettings(page, core) {
+  await openSettingsPage(page)
+  const generalNav = page.locator('aside button').filter({ hasText: /^(General|常规|通用)$/i }).first()
+  await generalNav.click()
+  const generalSec = page.locator('section[data-settings-section="general"]').first()
+  await generalSec.waitFor({ state: 'visible', timeout: 8000 })
+
+  const existingRadio = generalSec
+    .getByRole('radio', { name: /Connect an existing service|连接已有服务/i })
+    .first()
+  const existingBtn = generalSec
+    .getByRole('button', { name: /Connect an existing service|连接已有服务/i })
+    .first()
+  if (await waitForVisible(existingRadio, 600)) {
+    await existingRadio.click()
+  } else {
+    await existingBtn.click()
+  }
+
+  await generalSec.getByLabel(/Service address|服务地址/i).fill(core.baseUrl)
+  await generalSec.getByLabel(/Connection key|连接密钥/i).fill(core.tokens.client)
+  await generalSec.getByRole('button', { name: /^(Connect|连接)$/i }).first().click()
+  await generalSec.getByText(/^(Connected|已连接)$/i).first().waitFor({ state: 'visible', timeout: 10000 })
+  return generalSec
+}
+
+/**
+ * Disconnects the active Collaboration service from Settings -> General and verifies Reconnect control appears.
+ */
+export async function disconnectCollaborationViaSettings(page) {
+  await openSettingsPage(page)
+  const generalNav = page.locator('aside button').filter({ hasText: /^(General|常规|通用)$/i }).first()
+  await generalNav.click()
+  const generalSec = page.locator('section[data-settings-section="general"]').first()
+  await generalSec.waitFor({ state: 'visible', timeout: 8000 })
+  const disconnectBtn = generalSec.getByRole('button', { name: /^(Disconnect|断开连接|断开)$/i }).first()
+  await disconnectBtn.waitFor({ state: 'visible', timeout: 8000 })
+  await disconnectBtn.click()
+  await generalSec.getByText(/^(Not connected|未连接)$/i).first().waitFor({ state: 'visible', timeout: 10000 })
+  const reconnectBtn = generalSec.getByRole('button', { name: /^(Reconnect|重新连接|重连)$/i }).first()
+  await reconnectBtn.waitFor({ state: 'visible', timeout: 8000 })
+  return generalSec
+}
+
+/**
+ * Reconnects the previously configured Collaboration service via secondary Reconnect button in Settings -> General.
+ */
+export async function reconnectCollaborationViaSettings(page) {
+  await openSettingsPage(page)
+  const generalNav = page.locator('aside button').filter({ hasText: /^(General|常规|通用)$/i }).first()
+  await generalNav.click()
+  const generalSec = page.locator('section[data-settings-section="general"]').first()
+  await generalSec.waitFor({ state: 'visible', timeout: 8000 })
+  const reconnectBtn = generalSec.getByRole('button', { name: /^(Reconnect|重新连接|重连)$/i }).first()
+  await reconnectBtn.waitFor({ state: 'visible', timeout: 8000 })
+  await reconnectBtn.click()
+  await generalSec.getByText(/^(Connected|已连接)$/i).first().waitFor({ state: 'visible', timeout: 10000 })
+  await generalSec.getByRole('button', { name: /^(Disconnect|断开连接|断开)$/i }).first().waitFor({ state: 'visible', timeout: 8000 })
+  return generalSec
+}
+
+/**
+ * Selects a collaborator in the Collaboration dialog aside and waits for the composer textarea.
+ */
+export async function selectCollaborationContact(dialog, contactName = 'slot-b') {
+  await dialog
+    .evaluate((el) => Promise.all(el.getAnimations().map((anim) => anim.finished.catch(() => {}))))
+    .catch(() => {})
+  const contactBtn = dialog
+    .locator('aside')
+    .getByRole('button', { name: new RegExp(`^${contactName}$`, 'i') })
+    .first()
+  await contactBtn.waitFor({ state: 'visible', timeout: 10000 })
+  await contactBtn.click()
+  const composer = dialog.locator('textarea').first()
+  try {
+    await composer.waitFor({ state: 'visible', timeout: 10000 })
+  } catch (err) {
+    const diag = await dialog
+      .evaluate((el) => ({
+        mainText: el.querySelector('main')?.innerText ?? null,
+        statuses: [...el.querySelectorAll('[role="status"]')].map((s) => s.textContent),
+        alerts: [...el.querySelectorAll('[role="alert"]')].map((a) => a.textContent),
+        aside: [...el.querySelectorAll('aside button')].map((b) => b.getAttribute('aria-label') || b.textContent)
+      }))
+      .catch(() => null)
+    throw new Error(`${err.message}\n[selectCollaborationContact(${contactName}) diag] ${JSON.stringify(diag)}`)
+  }
+  return composer
 }
 
 /**

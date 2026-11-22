@@ -2,7 +2,7 @@
   "roots": [
     {
       "path": "src/renderer/src/main.tsx",
-      "reachableModules": 8578
+      "reachableModules": 8583
     },
     {
       "path": "src/renderer/src/popout.tsx",
@@ -14,14 +14,14 @@
     },
     {
       "path": "src/renderer/src/web/main.tsx",
-      "reachableModules": 8630
+      "reachableModules": 8635
     }
   ],
-  "rendererModules": 9058,
-  "rendererRows": 2322,
+  "rendererModules": 9064,
+  "rendererRows": 2323,
   "noStaticEntryPoint": 29,
-  "interactableCandidates": 6313,
-  "primitiveUseSites": 7966,
+  "interactableCandidates": 6314,
+  "primitiveUseSites": 7967,
   "styleFiles": 10,
   "nativeHostCandidates": 82,
   "parseErrors": [],

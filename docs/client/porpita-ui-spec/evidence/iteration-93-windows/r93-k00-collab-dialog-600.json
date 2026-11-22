@@ -1,0 +1,28 @@
+{
+  "name": "r93-k00-collab-dialog-600",
+  "imageFile": "r93-k00-collab-dialog-600.png",
+  "window": {
+    "innerWidth": 600,
+    "innerHeight": 401,
+    "scrollWidth": 600,
+    "clientWidth": 600,
+    "overflowX": false
+  },
+  "dialogGeo600": {
+    "found": true,
+    "ok": true,
+    "scrollWidth": 567,
+    "clientWidth": 567,
+    "overflowX": false,
+    "itemCount": 16,
+    "issues": []
+  },
+  "dialogViewportCheck": {
+    "left": 16,
+    "top": 8,
+    "right": 584,
+    "bottom": 393,
+    "historyHeight": 109,
+    "inside": true
+  }
+}

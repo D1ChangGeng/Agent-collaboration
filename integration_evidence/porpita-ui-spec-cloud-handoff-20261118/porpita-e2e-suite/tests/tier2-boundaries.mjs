@@ -6,7 +6,9 @@ import {
   addLocalFolderProject,
   assertAllWindowsHidden,
   assertImeCompositionKeepsDialogOpen,
+  closeCollaborationDialogWithFocusCheck,
   closeElectronApp,
+  connectCollaborationViaSettings,
   disablePluginAndVerify,
   dismissStartupDialogs,
   hasIntegratedWorkspaceShell,
@@ -14,10 +16,12 @@ import {
   launchElectronApp,
   M3_SELECTOR_CONTRACT,
   openAndVerifyPluginPanel,
+  openCollaborationDialog,
   openMarkdownPreviewAndVerify,
   openSettingsPage,
   primaryModifierKey,
   returnFromSettings,
+  selectCollaborationContact,
   setViewportSize,
   sleep,
   stubOpenDialog,
@@ -1349,8 +1353,10 @@ export const TIER2_TESTS = [
     refs: ['T05', 'UX15'],
     async run(ctx) {
       const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
         const pid = core.info.project_id
+        // 1. Direct protocol contract: 503 post_commit_observation_lost + restartServer + Idempotency-Key dedup
         await core.setFault({ drop_next_send_response: true })
 
         const idemKey = 'fault-send-retry-1'
@@ -1364,7 +1370,6 @@ export const TIER2_TESTS = [
         assert.equal(first.json?.error?.retryable, true, first.text)
         assert.equal(first.json?.error?.effect_state, 'committed', first.text)
 
-        // Restart loopback Core server against same PostgreSQL DB, then retry with same Idempotency-Key
         await core.restartServer({ reusePort: true })
         const retry = await core.request('POST', `/projects/${pid}/messages`, {
           token: core.tokens.client,
@@ -1384,8 +1389,51 @@ export const TIER2_TESTS = [
           (m) => (typeof m.content === 'string' ? m.content : m.content?.text) === 'Commit before simulated drop'
         )
         assert.equal(matching.length, 1, `Expected 1 message (no duplicate), got ${matching.length}`)
-        return { firstStatus: first.status, retryStatus: retry.status, messageCount: matching.length }
+
+        // 2. Real Electron UI PendingInspectionAction + Retry original request across Core restart
+        const { page } = inst
+        await connectCollaborationViaSettings(page, core)
+        await returnFromSettings(page)
+        const dlg = await openCollaborationDialog(page)
+        const composer = await selectCollaborationContact(dlg, 'slot-b')
+        await core.setFault({ drop_next_send_response: true })
+        await composer.fill('UI commit before simulated drop')
+        await dlg.getByRole('button', { name: /^(Send|发送)$/i }).first().click()
+
+        const retryBtn = dlg.getByRole('button', { name: /Retry original request|重试原请求/i }).first()
+        const inspectBtn = dlg.getByRole('button', { name: /Inspect original request|检查原请求/i }).first()
+        await retryBtn.waitFor({ state: 'visible', timeout: 10000 })
+        await inspectBtn.waitFor({ state: 'visible', timeout: 5000 })
+        assert.equal(await composer.inputValue(), 'UI commit before simulated drop', 'Draft text must be retained on uncertain outcome')
+        await dlg.locator('[role="alert"]').first().waitFor({ state: 'visible', timeout: 5000 })
+
+        await core.restartServer({ reusePort: true })
+        await retryBtn.click()
+        await page.waitForFunction(
+          () => (document.querySelector('[role="dialog"] textarea')?.value ?? '') === '',
+          undefined,
+          { timeout: 10000 }
+        )
+        await dlg.getByText('UI commit before simulated drop', { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 })
+
+        const listAfterUi = await core.request(
+          'GET',
+          `/projects/${pid}/messages?with=${encodeURIComponent(core.addresses.peer_b)}`,
+          { token: core.tokens.client }
+        )
+        const matchingUi = listAfterUi.json.items.filter(
+          (m) => (typeof m.content === 'string' ? m.content : m.content?.text) === 'UI commit before simulated drop'
+        )
+        assert.equal(matchingUi.length, 1, `Expected 1 UI message after retry dedup, got ${matchingUi.length}`)
+        await closeCollaborationDialogWithFocusCheck(page, dlg)
+        return {
+          firstStatus: first.status,
+          retryStatus: retry.status,
+          messageCount: matching.length,
+          uiRetryMessageCount: matchingUi.length
+        }
       } finally {
+        await closeElectronApp(inst)
         await core.cleanup()
       }
     }

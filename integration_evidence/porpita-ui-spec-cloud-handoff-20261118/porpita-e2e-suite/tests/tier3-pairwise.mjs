@@ -2,16 +2,20 @@ import assert from 'node:assert/strict'
 import {
   addLocalFolderProject,
   assertImeCompositionKeepsDialogOpen,
+  closeCollaborationDialogWithFocusCheck,
   closeElectronApp,
+  connectCollaborationViaSettings,
   disablePluginAndVerify,
   hasIntegratedWorkspaceShell,
   installAndEnableFolderPlugin,
+  isCollaborationConnectedText,
   launchElectronApp,
   M3_SELECTOR_CONTRACT,
   openAndVerifyPluginPanel,
   openCollaborationDialog,
   openSettingsPage,
   returnFromSettings,
+  selectCollaborationContact,
   setViewportSize,
   sleep,
   stubOpenDialog,
@@ -191,23 +195,31 @@ export const TIER3_TESTS = [
       try {
         // Verify NativeLink + include_native_source=true protocol layer on loopback Core
         const pid = core.info.project_id
-        await core.request('PUT', `/projects/${pid}/native-links/t3-04-link`, {
+        const putLink = await core.request('PUT', `/projects/${pid}/native-links/t3-04-link`, {
           token: core.tokens.client,
           headers: { 'Idempotency-Key': 't3-04-bind' },
           body: core.nativeLinkFixture
         })
+        assert.equal(putLink.status, 200, putLink.text)
         const send = await core.request('POST', `/projects/${pid}/messages`, {
           token: core.tokens.client,
           headers: { 'Idempotency-Key': 't3-04-invoke' },
           body: { to: core.addresses.peer_b, content: 'SourceJump pairwise check', activation: 'invoke' }
         })
-        await core.dispatchPending()
+        assert.equal(send.status, 201, send.text)
+        const disp = await core.dispatchPending()
+        assert.equal(disp.errors.length, 0, JSON.stringify(disp))
         const read = await core.request(
           'GET',
           `/projects/${pid}/messages/${encodeURIComponent(send.json.message.message_handle)}?include_native_source=true`,
           { token: core.tokens.client }
         )
-        assert.equal(read.json.native_source.available, true)
+        assert.equal(read.status, 200, read.text)
+        assert.equal(
+          read.json.native_source.available,
+          true,
+          JSON.stringify({ disp, nativeSource: read.json.native_source })
+        )
 
         if (!(await hasIntegratedWorkspaceShell(inst.page))) {
           pendingIfSmoke(
@@ -238,38 +250,23 @@ export const TIER3_TESTS = [
         assert.equal(meta.json.limits.attachment_count, 0)
         assert.equal(meta.json.features.includes('attachments'), false)
 
-        // Connect Electron UI to P1-only loopback Core
+        // Connect Electron UI to P1-only loopback Core and verify immediate Titlebar sync & messaging
         const { page } = inst
-        await openSettingsPage(page)
-        await page.locator('aside button').filter({ hasText: /^(General|常规|通用)$/i }).first().click()
-        const sec = page.locator('section[data-settings-section="general"]').first()
-        const existingBtn = sec
-          .getByRole('button', { name: /Connect an existing service|连接已有服务/i })
-          .first()
-        const existingRadio = sec
-          .getByRole('radio', { name: /Connect an existing service|连接已有服务/i })
-          .first()
-        if (await existingRadio.isVisible().catch(() => false)) await existingRadio.click()
-        else await existingBtn.click()
-        await sec.getByLabel(/Service address|服务地址/i).fill(core.baseUrl)
-        await sec.getByLabel(/Connection key|连接密钥/i).fill(core.tokens.client)
-        await sec.getByRole('button', { name: /^(Connect|连接)$/i }).first().click()
-        await sec.getByText(/^(Connected|已连接)$/i).first().waitFor({ state: 'visible', timeout: 10000 })
-
+        await connectCollaborationViaSettings(page, core)
         await returnFromSettings(page)
         const dlg = await openCollaborationDialog(page)
-        const statusText = await dlg.locator('[role="status"]').first().innerText()
-        await page.keyboard.press('Escape')
-
-        if (!/Connected|已连接/i.test(statusText)) {
-          pendingIfSmoke(
-            ctx.mode,
-            'M2',
-            'Settings <-> Titlebar sync immediately on P1-only Core connect',
-            `Titlebar status=${statusText}`
-          )
-        }
-        return { p1OnlyConnected: true, titlebarStatus: statusText }
+        const statusText = (await dlg.locator('[role="status"]').first().innerText()).trim()
+        assert.equal(
+          isCollaborationConnectedText(statusText),
+          true,
+          `Settings <-> Titlebar must sync Connected immediately on P1-only Core: ${statusText}`
+        )
+        const composer = await selectCollaborationContact(dlg, 'slot-b')
+        await composer.fill('P1-only UI message test')
+        await dlg.getByRole('button', { name: /^(Send|发送)$/i }).first().click()
+        await dlg.locator('article').getByText('P1-only UI message test', { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await closeCollaborationDialogWithFocusCheck(page, dlg)
+        return { p1OnlyConnected: true, titlebarStatus: statusText, uiMessageSent: true }
       } finally {
         await closeElectronApp(inst)
         await core.cleanup()

@@ -229,8 +229,9 @@ src/renderer/src/components/cmd-j/PaletteFilterFieldOptions.tsx,src/renderer/src
 src/renderer/src/components/cmd-j/PaletteFilterMenu.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.09.01,explicit,4,6,0
 src/renderer/src/components/CodexRestartChip.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,E.10,Codex 运行恢复提示,3,0,0
 src/renderer/src/components/CodexSharedSettingsNoticeCard.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,O.overlay.codex-shared-settings-notice,explicit,1,0,0
-src/renderer/src/components/collaboration/CollaborationButton.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.10.08;K;K.01,explicit,10,7,0
+src/renderer/src/components/collaboration/CollaborationButton.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.10.08;K;K.01,explicit,9,9,0
 src/renderer/src/components/collaboration/CollaborationConversation.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,K;K.02;R.09,explicit,5,3,0
+src/renderer/src/components/collaboration/CollaborationSearchResults.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,K.02,explicit,2,1,0
 src/renderer/src/components/collaboration/CommunicationComposer.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,K.03,explicit,6,2,0
 src/renderer/src/components/collaboration/CommunicationFiles.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,K.03,explicit,2,0,0
 src/renderer/src/components/collaboration/CommunicationMessage.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,K;K.03,explicit,8,5,0

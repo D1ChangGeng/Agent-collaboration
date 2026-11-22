@@ -1,0 +1,12 @@
+{
+  "name": "r93-n01-settings-connected-zh-1280",
+  "imageFile": "r93-n01-settings-connected-zh-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "disconnectBtnVisible": true
+}

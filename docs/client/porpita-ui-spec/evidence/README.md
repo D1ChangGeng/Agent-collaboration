@@ -1,5 +1,16 @@
 # 现版观察与回放证据
 
+## 第 93 轮
+
+Windows x64 在隔离档案、隐藏 Electron 窗口（`ORCA_BACKGROUND_LAUNCH=1`、全部 `!visible && !focused`）与临时 PostgreSQL 16 环回 `acs_loopback_server.py`（`mode: 'full'`）下运行跨平台 `tools/observe-round-93.cjs`，在 `codex/porpita-ui-spec-91` 最终提交 `1b27aeb1142a98ba4ac5aae1be711d441a42f9f8` 的 `--mode e2e` 构建上以严格模式（`findings: []`、退出码 `0`）采集 12 组简/英宽窄窗（`1280×800`、`600×400`）证据，覆盖 **F05 + F06** 协作状态同步、术语对齐与核心全链（`C.10.08`、`K`、`K.01`–`K.04`、`N.general.01`、`R.09`、`R.12`、`S.04`、`S.07`、`S.08`）。 [最终运行记录](iteration-93-windows/run.json) · [构建与测试条件](../SOURCE_BASELINE.md#第-93-轮来源)
+
+| 范围 | 证据 |
+| --- | --- |
+| 空态文案、`600×400` 设置布局与跨视图重连实时同步（`N.general.01`、`K.01`、`C.10.08`、`S.08`） | [未连接简中 1280](iteration-93-windows/r93-f05-collab-empty-zh-1280.json) · [Settings 600](iteration-93-windows/r93-n01-settings-collab-600.json) · [Settings 已连接 1280](iteration-93-windows/r93-n01-settings-connected-zh-1280.json) · [二次重连标题栏未读同步](iteration-93-windows/r93-n01-secondary-reconnect-zh-1280.json) |
+| Draft `rev 0/1`、附件 `SHA-256` 下载、关联回复、`NativeLink` 与查看执行（`K.03`、`K.04`、`R.09`、`S.04`） | [草稿/附件/回复 1280](iteration-93-windows/r93-k03-compose-attach-delivery-zh-1280.json) · [Native 来源与查看执行](iteration-93-windows/r93-k04-delivery-source-1280.json) |
+| 消息搜索、撤权清空旧命中告警、`Notice` 已读与 `503` 核查幂等恢复（`K.02`、`K.04`、`R.12`、`S.07`） | [搜索命中 1280](iteration-93-windows/r93-k02-search-hits-zh-1280.json) · [撤权搜索告警](iteration-93-windows/r93-r12-search-error-zh-1280.json) · [Notice 与 503 核查恢复](iteration-93-windows/r93-r12-pending-inspection-zh-1280.json) |
+| `600×400` 紧凑历史弹窗、英文 `Collaboration project` 与重连同步（`K`、`K.01`–`K.03`、`N.general.01`、`C.10.08`） | [协作弹窗 600×400](iteration-93-windows/r93-k00-collab-dialog-600.json) · [英文 Settings 1280](iteration-93-windows/r93-n01-settings-collab-en-1280.json) · [英文协作弹窗 1280](iteration-93-windows/r93-k01-collab-en-1280.json) |
+
 ## 第 92 轮
 
 Windows x64 在隔离档案与隐藏 Electron 窗口（`ORCA_BACKGROUND_LAUNCH=1`、全部 `!visible && !focused`）使用 `tools/observe-round-92.cjs` 先于 `e8062ab946c15a1afd57a78f51d3199b7f2e151d` 基线定位窄窗遮挡、溢出、`Git Graph` 挤窄与非打包插件 `orca-runtime.mjs` 模块解析失败等实机问题（临时基线目录已于入库前清理）；随后在 `codex/porpita-ui-spec-91` 提交 `d874c87b6c5a1115667f89b15dac78640b3c8568` 的 `--mode e2e` 构建上以严格模式（`findings: []`、退出码 `0`）采集 19 组宽/窄窗（`1280×800`、`820×580`、`600×400`）证据，覆盖 **F04+** 保留工具与覆盖层（`H.01`–`H.05`、`I.01`、`I.03`、`L.01`、`L.03`、`L.05`–`L.06`、`N.general/git/terminal/shortcuts/plugins/repo`、`O.01.01`、`O.overlay.chat-ui-here-corner-card`、`O.modal.quick-open`、`O.modal.worktree-palette`）。 [最终运行记录](iteration-92-windows/run.json) · [构建与测试条件](../SOURCE_BASELINE.md#第-92-轮来源)

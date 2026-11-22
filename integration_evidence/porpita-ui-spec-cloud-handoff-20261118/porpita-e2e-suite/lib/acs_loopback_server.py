@@ -530,7 +530,7 @@ def create_server_app(dsn: str, state: Path, mode: str):
             native_link_metadata_bytes=native_links.metadata_bytes,
         )
         features = [
-            "profile", "projects", "routes", "contacts", "messages", "messages.newest",
+            "profile", "projects", "routes", "contacts", "messages",
             "send", "wait", "delivery", "operations", "conversations", "conversation_resolve",
             "conversation_detail", "read_state", "preferences", "drafts", "search",
             "receivers", "receiver_recovery", "notices", "snapshot", "events",
@@ -547,7 +547,7 @@ def create_server_app(dsn: str, state: Path, mode: str):
             native_link_metadata_bytes=native_links.metadata_bytes,
         )
         features = [
-            "profile", "projects", "routes", "contacts", "messages", "messages.newest",
+            "profile", "projects", "routes", "contacts", "messages",
             "send", "wait", "delivery", "operations", "conversations", "conversation_resolve",
             "conversation_detail", "receivers", "receiver_recovery", "notices",
             "native_links", "native_source", "porpita_host_loopback_v1",

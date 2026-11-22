@@ -7,8 +7,8 @@ J.04|Linear 项目、视图、Issue、Drawer|LinearIssueWorkspace.tsx,LinearItem
 J.05|Jira 项目、快捷筛选、Issue 详情|JiraIssueWorkspace.tsx,jira-connect-dialog.tsx,jira-issue-workspace-chrome.tsx,TaskPageJiraStatusFilters.tsx|项目搜索、指派、工作流转换、附件/评论与链接操作|保留|转换所需字段进入同一决策面；保留筛选和列表选择，失败不丢备注|J09,J12
 J.06|任务创建和开始工作|src/renderer/src/components/task-page,NewWorkspaceComposerCard.tsx,use-task-creation-draft-retention.ts|创建提供方任务，或以任务预填工作树和 Agent 启动参数|保留|创建任务、创建执行环境、打开布局是三个可辨阶段；可继续处理部分完成|J02,J09,J12
 K|ACS 协作消息|CollaborationButton.tsx,CollaborationConversation.tsx,CommunicationMessage.tsx|标题栏 Dialog 组合工作区/联系人/历史/草稿；从原生输入定位源|改造|保留已有协作窗口、对话模型与投递链；可从会话打开关联对话，互不混写|J03,J05,J09,J12
-K.01|连接入口、空间和联系人选择|CollaborationButton.tsx,use-collaboration-connection.ts,use-communication-view.ts|连接状态决定可用入口；依据项目和联系人选中对话|保留|工作布局和当前焦点不授予跨项目权限；连接未配置/准备中/断开/失效的下一步不同|J01,J09,J12
-K.02|会话历史、读状态、归档与搜索|CollaborationConversation.tsx,use-conversation-view.ts,conversation-owner.ts|列表、对话与读状态由实际 ACS 记录；检索/回复保持来源|保留|保留可追溯的 Conversation；未读从 ACS 轴传到 Session Index 时保持来源标识；不要按 Identity 合并历史|J03,J09
+K.01|连接入口、空间和联系人选择|CollaborationButton.tsx,use-collaboration-connection.ts,collaboration-connection-sync.ts,use-communication-view.ts,communication-view-sync.ts,communication-view-state.ts,communication-view-transport.ts|连接状态决定可用入口；依据项目和联系人选中对话|保留|工作布局和当前焦点不授予跨项目权限；连接未配置/准备中/断开/失效的下一步不同|J01,J09,J12
+K.02|会话历史、读状态、归档与搜索|CollaborationConversation.tsx,CollaborationSearchResults.tsx,use-conversation-view.ts,conversation-owner.ts|列表、对话与读状态由实际 ACS 记录；检索/回复保持来源|保留|保留可追溯的 Conversation；未读从 ACS 轴传到 Session Index 时保持来源标识；不要按 Identity 合并历史|J03,J09
 K.03|发送、附件、草稿、回复|CommunicationComposer.tsx,CommunicationFiles.tsx,CommunicationMessage.tsx|收件人、回复关联、附件准备/下载有独立状态|保留|离线或未确定投递保留草稿和引用；安全重试基于同一请求；附件结果归各文件|J05,J09,J12
 K.04|投递阶段、待确认与查看执行|DeliverySummary.tsx,PendingInspectionAction.tsx,CommunicationSource.tsx,use-pending-message.ts|显示收件箱、Native input 接纳、回复等层次，可检查待确认与来源|保留|以可信回执显示具体阶段；查看执行定位已存在 Session/消息，未定位时给检查入口|J05,J09,J12
 L|自动化、Skills、Artifacts 与扩展|AutomationsPage.tsx,SkillsPage.tsx,ArtifactsPage.tsx,PluginManager.tsx|不同辅助页面的可见性由设置、连接或数据决定|保留|继续把独立管理任务留在各页面；运行/打开结果可定位正确 Session/Host|J09,J10,J11,J12

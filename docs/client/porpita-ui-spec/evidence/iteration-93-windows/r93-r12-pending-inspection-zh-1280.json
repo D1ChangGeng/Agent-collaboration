@@ -1,0 +1,15 @@
+{
+  "name": "r93-r12-pending-inspection-zh-1280",
+  "imageFile": "r93-r12-pending-inspection-zh-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "noticeApiOk": true,
+  "noticeUiRendered": true,
+  "pendingInspectVisible": true,
+  "retryOriginalVisible": true
+}

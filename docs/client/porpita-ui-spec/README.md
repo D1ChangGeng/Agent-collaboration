@@ -1,6 +1,6 @@
 # Porpita 桌面客户端 · 全覆盖 UI SPEC
 
-**设计已推进至第 92 轮。** 覆盖 20 个功能域、371 个条目。第 87–91 轮已归档，第 92 轮在 `codex/porpita-ui-spec-91` 提交 `d874c87b6c5a1115667f89b15dac78640b3c8568` 上完成 **F04+** 保留工具与覆盖层（`H.01`–`H.05`、`I.01`、`I.03`、`L.01`、`L.03`、`L.05`–`L.06`、`N.*`、`N.repo`、`O.01.01`、`O.modal.quick-open`、`O.modal.worktree-palette`、`O.overlay.chat-ui-here-corner-card`）的源码修复与 Windows 隐藏窗口 Electron 实机核对。 [第 88 轮](ITERATION_88.md) · [第 89 轮](ITERATION_89.md) · [第 90 轮](ITERATION_90.md) · [第 91 轮](ITERATION_91.md) · [第 92 轮](ITERATION_92.md)
+**设计已推进至第 93 轮。** 覆盖 20 个功能域、371 个条目。第 87–92 轮已归档，第 93 轮在 `codex/porpita-ui-spec-91` 提交 `1b27aeb1142a98ba4ac5aae1be711d441a42f9f8` 上完成 **F05 + F06** ACS 协作长驻状态同步、跨视图未读实时保活、`协作项目 / Collaboration project` 术语统一、Draft/附件/回复、`NativeLink` 与 `CommunicationSource`、检索清理与告警、`Notice` 已读、503 掉包只读核查与同请求幂等重试、以及 `600×400` 紧凑历史适配的源码修复与 Windows 隐藏窗口实机核对（`C.10.08`、`K`、`K.01`–`K.04`、`N.general.01`、`R.09`、`R.12`、`S.04`、`S.07`、`S.08`）。 [第 89 轮](ITERATION_89.md) · [第 90 轮](ITERATION_90.md) · [第 91 轮](ITERATION_91.md) · [第 92 轮](ITERATION_92.md) · [第 93 轮](ITERATION_93.md)
 
 | 查什么 | 入口 |
 | --- | --- |

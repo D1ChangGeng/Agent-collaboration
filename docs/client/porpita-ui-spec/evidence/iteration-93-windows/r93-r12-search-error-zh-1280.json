@@ -1,0 +1,14 @@
+{
+  "name": "r93-r12-search-error-zh-1280",
+  "imageFile": "r93-r12-search-error-zh-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "searchErrorAlertVisible": true,
+  "searchErrorText": "暂时无法加载，请检查连接后重试。",
+  "staleHitsClearedOnSearchError": true
+}

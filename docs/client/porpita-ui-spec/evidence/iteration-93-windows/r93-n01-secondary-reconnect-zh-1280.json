@@ -1,0 +1,30 @@
+{
+  "name": "r93-n01-secondary-reconnect-zh-1280",
+  "imageFile": "r93-n01-secondary-reconnect-zh-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "unreadDotBeforeOpen": true,
+  "triggerAttrsReconnect": {
+    "state": "connected",
+    "unread": "1",
+    "notices": "0"
+  },
+  "reconnectSyncInfo": {
+    "titleText": "协作消息 · 1",
+    "selectAriaLabel": "协作项目",
+    "statusText": "已连接",
+    "options": [
+      "Porpita"
+    ],
+    "contacts": [
+      "slot-b1",
+      "slot-c"
+    ]
+  },
+  "reconnectTitlebarSyncedImmediate": true
+}
