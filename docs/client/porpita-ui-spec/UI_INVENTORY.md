@@ -120,7 +120,7 @@
   - `G.06.01` 跨 Host 搜索、部分结果和重试
 - `G.07` 文件夹 Workspaces 与 PR Checks
 - `G.08` Plugin Panels、iframe/声明式视图
-- `G.09` Standalone/Embedded SidePanel 宿主（目标新增）
+- `G.09` Standalone/Embedded SidePanel 宿主
   - `G.09.01` 固定目录的 Explorer 独立与嵌入呈现（目标新增）
   - `G.09.02` 选择来源与原编辑器回源（目标新增）
   - `G.09.03` 含 Explorer 的窄窗与列表操作

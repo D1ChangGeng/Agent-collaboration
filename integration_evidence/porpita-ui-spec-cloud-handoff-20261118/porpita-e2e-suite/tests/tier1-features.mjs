@@ -4,7 +4,9 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import os from 'node:os'
 import path from 'node:path'
 import {
+  activateWorkspaceTab,
   addLocalFolderProject,
+  addSessionToActiveWorkspace,
   assertAllWindowsHidden,
   assertHorizontalToolbarLayout,
   closeCollaborationDialogWithFocusCheck,
@@ -13,12 +15,14 @@ import {
   detectWorkspaceShell,
   disconnectCollaborationViaSettings,
   dismissStartupDialogs,
+  ensureDualPaneWorkspace,
   getCollaborationTrigger,
   installAndEnableFolderPlugin,
   isCollaborationConnectedText,
   launchElectronApp,
   M3_SELECTOR_CONTRACT,
   openAndVerifyPluginPanel,
+  openCodexChatViaVault,
   openCollaborationDialog,
   openMarkdownPreviewAndVerify,
   openSettingsPage,
@@ -27,6 +31,7 @@ import {
   reconnectCollaborationViaSettings,
   returnFromSettings,
   selectCollaborationContact,
+  selectWorktreeById,
   setViewportSize,
   sleep,
   stubOpenDialog,
@@ -41,6 +46,7 @@ import {
   startLoopbackHttpServer,
   verifyGitBaselines
 } from '../lib/fixtures.mjs'
+import { createIsolatedProfileDirs } from '../lib/electron-harness.mjs'
 import {
   checkEnvBoundedHonesty,
   checkMarkdownLinks,
@@ -74,7 +80,10 @@ export const TIER1_TESTS = [
           hasSidebar: Boolean(document.querySelector('[data-contextual-tour-target="sidebar-navigation"]')),
           hasWorkbench: Boolean(document.querySelector('[data-workbench-viewport]')) || Boolean(document.querySelector('main')),
           hasSettingsBtn: Boolean(document.querySelector('button[aria-label="Settings"], button[aria-label="设置"]')),
-          hasCollabBtn: Boolean(document.querySelector('button[aria-label="Collaboration"], button[aria-label="协作消息"]'))
+          hasCollabBtn: Boolean(document.querySelector('button[aria-label="Collaboration"], button[aria-label="协作消息"]')),
+          hasGroupSelector: Boolean(document.querySelector('[data-workspace-group-selector], [data-workspace-preview-group]')),
+          hasTabStrip: Boolean(document.querySelector('[data-workspace-tab-strip], .terminal-tab-strip')),
+          hasSessionIndex: Boolean(document.querySelector('[data-session-index]'))
         }))
         assert.equal(shell.hasSidebar, true, 'Left sidebar missing')
         assert.equal(shell.hasSettingsBtn, true, 'Settings button missing')
@@ -90,6 +99,9 @@ export const TIER1_TESTS = [
           )
         }
         assert.equal(shell.hasWorkbench, true, 'Main workbench viewport missing')
+        assert.equal(shell.hasGroupSelector, true, 'Top-level group selector missing')
+        assert.equal(shell.hasTabStrip, true, 'Top-level workspace tab strip missing')
+        assert.equal(shell.hasSessionIndex, true, 'Sidebar Session Index missing')
         assert.equal(ws.previewToggle, false, 'Preview-only toggle should be retired once integrated')
         return { shell, ws }
       } finally {
@@ -117,26 +129,27 @@ export const TIER1_TESTS = [
             'Integrated Workspace tab creation control not yet present in default build'
           )
         }
-        const beforeTabs = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
-        const directNewBtn = page
-          .getByRole('button', { name: /^(New workspace|新建工作空间)$/i })
-          .first()
-        if (await waitForVisible(directNewBtn, 1500)) {
-          await directNewBtn.click()
-        } else {
-          await page
-            .getByRole('button', { name: /^(New work object|新建工作对象)$/i })
-            .first()
-            .click()
-          await page
-            .getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i })
-            .first()
-            .click()
-        }
         const tabs = page.locator(M3_SELECTOR_CONTRACT.workspaceTab)
-        await tabs.nth(beforeTabs).waitFor({ state: 'visible', timeout: 8000 })
-        const createdTabText = (await tabs.last().innerText()).trim()
-        assert.ok(createdTabText.length > 0, 'Created workspace tab should have non-empty default title')
+        await tabs.first().waitFor({ state: 'visible', timeout: 8000 })
+        const beforeTabs = await tabs.count()
+        await page
+          .getByRole('button', { name: /^(New work object|新建工作对象)$/i })
+          .first()
+          .click()
+        await page
+          .getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i })
+          .first()
+          .click()
+        await page.waitForFunction(
+          ({ sel, expected }) => document.querySelectorAll(sel).length === expected,
+          { sel: M3_SELECTOR_CONTRACT.workspaceTab, expected: beforeTabs + 1 },
+          { timeout: 8000 }
+        )
+        const activeTab = page.locator(`${M3_SELECTOR_CONTRACT.workspaceTab}[aria-current="page"]`).first()
+        await activeTab.waitFor({ state: 'visible', timeout: 5000 })
+        const createdTabText = (await activeTab.innerText()).trim()
+        assert.match(createdTabText, /Workspace|工作空间/i, `Unexpected default title: ${createdTabText}`)
+        await page.locator('[data-workspace-preview-object]').first().waitFor({ state: 'visible', timeout: 5000 })
         return { beforeTabs, afterTabs: await tabs.count(), createdTabText }
       } finally {
         await closeElectronApp(inst)
@@ -164,18 +177,16 @@ export const TIER1_TESTS = [
         }
         const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
         await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
+
+        // 1. Create group
         await groupBtn.click()
-        const newGroupItem = page
-          .getByRole('menuitem', { name: /New tab group|新建标签组/i })
-          .first()
-        await newGroupItem.waitFor({ state: 'visible', timeout: 5000 })
-        await newGroupItem.click()
+        await page.getByRole('menuitem', { name: /New tab group|新建标签组/i }).first().click()
         const nameInput = page.getByRole('dialog').locator('input').first()
         await nameInput.waitFor({ state: 'visible', timeout: 5000 })
         await nameInput.fill('E2E Group')
         await page
           .getByRole('dialog')
-          .getByRole('button', { name: /^(Create group|Create|创建|确认)$/i })
+          .getByRole('button', { name: /^(Create group|Create|创建分组|创建|确认)$/i })
           .first()
           .click()
         await page.waitForFunction(
@@ -183,7 +194,8 @@ export const TIER1_TESTS = [
           M3_SELECTOR_CONTRACT.groupSelector,
           { timeout: 6000 }
         )
-        // Switch back to General group and confirm selector updates
+
+        // 2. Switch to General and back to E2E Group
         await groupBtn.click()
         await page.getByRole('menuitemradio', { name: /^(General|常规|通用)$/i }).first().click()
         await page.waitForFunction(
@@ -191,7 +203,47 @@ export const TIER1_TESTS = [
           M3_SELECTOR_CONTRACT.groupSelector,
           { timeout: 6000 }
         )
-        return { groupCreatedAndSwitched: true }
+        await groupBtn.click()
+        await page.getByRole('menuitemradio', { name: 'E2E Group', exact: true }).first().click()
+        await page.waitForFunction(
+          (sel) => /E2E Group/.test(document.querySelector(sel)?.textContent || ''),
+          M3_SELECTOR_CONTRACT.groupSelector,
+          { timeout: 6000 }
+        )
+
+        // 3. Rename E2E Group -> E2E Renamed
+        await groupBtn.click()
+        const renameItem = page.locator(M3_SELECTOR_CONTRACT.groupRename).first()
+        await renameItem.waitFor({ state: 'visible', timeout: 5000 })
+        await renameItem.click()
+        const renameInput = page.getByRole('dialog').locator('input').first()
+        await renameInput.waitFor({ state: 'visible', timeout: 5000 })
+        await renameInput.fill('E2E Renamed')
+        await page
+          .getByRole('dialog')
+          .getByRole('button', { name: /^(Save|保存|Confirm|确认)$/i })
+          .first()
+          .click()
+        await page.waitForFunction(
+          (sel) => /E2E Renamed/.test(document.querySelector(sel)?.textContent || ''),
+          M3_SELECTOR_CONTRACT.groupSelector,
+          { timeout: 6000 }
+        )
+
+        // 4. Delete E2E Renamed -> returns to General and removes E2E Renamed
+        await groupBtn.click()
+        const deleteItem = page.locator(M3_SELECTOR_CONTRACT.groupDelete).first()
+        await deleteItem.waitFor({ state: 'visible', timeout: 5000 })
+        await deleteItem.click()
+        await page.waitForFunction(
+          (sel) => /General|常规|通用/i.test(document.querySelector(sel)?.textContent || ''),
+          M3_SELECTOR_CONTRACT.groupSelector,
+          { timeout: 6000 }
+        )
+        await groupBtn.click()
+        assert.equal(await page.getByRole('menuitemradio', { name: 'E2E Renamed', exact: true }).count(), 0)
+        await page.keyboard.press('Escape')
+        return { groupCreateSwitchRenameDelete: true }
       } finally {
         await closeElectronApp(inst)
       }
@@ -219,7 +271,16 @@ export const TIER1_TESTS = [
         }
         const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
         await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
-        // Create a destination group first, then return to General and move a tab into it
+
+        // Ensure General has 2 tabs, then create destination Target Group
+        await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i }).first().click()
+        await page.waitForFunction(
+          (sel) => document.querySelectorAll(sel).length >= 2,
+          M3_SELECTOR_CONTRACT.workspaceTab,
+          { timeout: 6000 }
+        )
+
         await groupBtn.click()
         await page.getByRole('menuitem', { name: /New tab group|新建标签组/i }).first().click()
         const nameInput = page.getByRole('dialog').locator('input').first()
@@ -227,23 +288,60 @@ export const TIER1_TESTS = [
         await nameInput.fill('Target Group')
         await page
           .getByRole('dialog')
-          .getByRole('button', { name: /^(Create group|Create|创建|确认)$/i })
+          .getByRole('button', { name: /^(Create group|Create|创建分组|创建|确认)$/i })
           .first()
           .click()
         await groupBtn.click()
         await page.getByRole('menuitemradio', { name: /^(General|常规|通用)$/i }).first().click()
+        await page.waitForFunction(
+          (sel) => /General|常规|通用/i.test(document.querySelector(sel)?.textContent || ''),
+          M3_SELECTOR_CONTRACT.groupSelector,
+          { timeout: 6000 }
+        )
 
-        const firstTab = page.locator(M3_SELECTOR_CONTRACT.workspaceTab).first()
+        const tabs = page.locator(M3_SELECTOR_CONTRACT.workspaceTab)
+        const firstTab = tabs.first()
         await firstTab.waitFor({ state: 'visible', timeout: 8000 })
-        const movedId = await firstTab.getAttribute('data-workspace-preview-tab') || await firstTab.getAttribute('data-workspace-tab')
-        await firstTab.click({ button: 'right' })
-        await page.getByRole('menuitem', { name: /Move to group|移动到组/i }).first().hover()
-        await page.getByRole('menuitem', { name: 'Target Group', exact: true }).first().click()
+        const beforeGeneralCount = await tabs.count()
+        const movedId =
+          (await firstTab.getAttribute('data-workspace-preview-tab')) ||
+          (await firstTab.getAttribute('data-workspace-tab'))
+        assert.ok(movedId, 'First workspace tab missing tab ID attribute')
+
+        // Real pointer drag of Tab onto Group Selector drop zone + keyboard confirmation
+        const tabBox = await firstTab.boundingBox()
+        const grpBox = await groupBtn.boundingBox()
+        assert.ok(tabBox && grpBox, 'Tab or group selector missing bounding box')
+        await page.mouse.move(tabBox.x + tabBox.width / 2, tabBox.y + tabBox.height / 2)
+        await page.mouse.down()
+        await page.mouse.move(grpBox.x + grpBox.width / 2, grpBox.y + grpBox.height / 2, { steps: 14 })
+        await sleep(100)
+        await page.mouse.up()
+
+        const moveHeading = page.locator('[data-workspace-preview-move-heading]').first()
+        await moveHeading.waitFor({ state: 'visible', timeout: 6000 })
+        const targetItem = page.getByRole('menuitemradio', { name: 'Target Group', exact: true }).first()
+        await targetItem.waitFor({ state: 'visible', timeout: 5000 })
+        await page.keyboard.press('ArrowDown')
+        await page.keyboard.press('End')
+        await targetItem.waitFor({ state: 'visible', timeout: 3000 })
+        await targetItem.hover()
+        await page.keyboard.press('Enter')
+
+        await page.waitForFunction(
+          ({ sel, expected }) => document.querySelectorAll(sel).length === expected,
+          { sel: M3_SELECTOR_CONTRACT.workspaceTab, expected: beforeGeneralCount - 1 },
+          { timeout: 6000 }
+        )
+        const afterGeneralCount = await tabs.count()
+
         await groupBtn.click()
-        await page.getByRole('menuitemradio', { name: 'Target Group' }).first().click()
-        const targetTabs = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
+        await page.getByRole('menuitemradio', { name: 'Target Group', exact: true }).first().click()
+        const movedSelector = `button[data-workspace-preview-tab="${movedId}"], button[data-workspace-tab="${movedId}"]`
+        await page.locator(movedSelector).first().waitFor({ state: 'visible', timeout: 6000 })
+        const targetTabs = await tabs.count()
         assert.ok(targetTabs >= 1, `Moved tab ${movedId} should appear in Target Group`)
-        return { movedId, targetTabs }
+        return { movedId, beforeGeneralCount, afterGeneralCount, targetTabs }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -261,16 +359,49 @@ export const TIER1_TESTS = [
       const tempRoot = inst.tempRoot
       try {
         await addLocalFolderProject(inst.app, inst.page, repo.repoPath)
-        // Open notes.md before quit to verify standard session/editor cold-start restoration
-        await inst.page.getByText('notes.md', { exact: true }).first().dblclick().catch(() => {})
-        await sleep(300)
         const ws = await detectWorkspaceShell(inst.page)
+        if (!ws.integrated) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'porpita-workspaces.json v3 persisted & restored across clean quit in default build',
+            `integrated=${ws.integrated}`
+          )
+        }
+        await activateWorkspaceTab(inst.page, 0)
+        await addSessionToActiveWorkspace(inst.page)
+        const groupBtn = inst.page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
+        await groupBtn.click()
+        await inst.page.getByRole('menuitem', { name: /New tab group|新建标签组/i }).first().click()
+        await inst.page.getByRole('dialog').locator('input').first().fill('Persist Group')
+        await inst.page
+          .getByRole('dialog')
+          .getByRole('button', { name: /^(Create group|Create|创建分组|创建|确认)$/i })
+          .first()
+          .click()
+        await inst.page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+        await inst.page.getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i }).first().click()
+        await inst.page.locator(M3_SELECTOR_CONTRACT.workspaceTab).first().waitFor({ state: 'visible', timeout: 6000 })
+
         const exitCode = await quitElectronGracefully(inst)
         assert.equal(exitCode, 0, `Clean quit returned ${exitCode}`)
 
         const layoutPath = path.join(inst.userDataDir, 'porpita-workspaces.json')
         const orcaDataPath = path.join(inst.userDataDir, 'orca-data.json')
         assert.equal(existsSync(orcaDataPath), true, 'orca-data.json should exist after clean quit')
+        assert.equal(existsSync(layoutPath), true, 'porpita-workspaces.json missing after clean quit')
+        const layout = JSON.parse(readFileSync(layoutPath, 'utf8'))
+        assert.equal(layout.version, 3, `Expected strict schema version 3, got ${layout.version}`)
+        assert.ok(
+          Array.isArray(layout.groups) && layout.groups.some((g) => g.name === 'Persist Group'),
+          'Custom Tab Group missing from saved v3 layout'
+        )
+        const savedWithSession = (layout.objects || []).find(
+          (o) => o.kind === 'workspace' && Array.isArray(o.sessions) && o.sessions.length > 0
+        )
+        assert.ok(savedWithSession, 'Expected saved workspace with local session ref')
+        assert.equal(savedWithSession.sessions[0].executionHostId, 'local')
+        assert.equal(savedWithSession.sessions[0].pairingRevision, null)
 
         inst = await launchElectronApp({
           porpitaRoot: ctx.porpitaRoot,
@@ -278,18 +409,13 @@ export const TIER1_TESTS = [
           seedCompletedOnboarding: false
         })
         await inst.page.getByText(path.basename(repo.repoPath)).first().waitFor({ state: 'visible', timeout: 30000 })
-
-        if (!ws.integrated || !existsSync(layoutPath)) {
-          pendingIfSmoke(
-            ctx.mode,
-            'M3',
-            'porpita-workspaces.json v3 persisted & restored across clean quit in default build',
-            `integrated=${ws.integrated}, layoutFileExists=${existsSync(layoutPath)}`
-          )
-        }
-        const layout = JSON.parse(readFileSync(layoutPath, 'utf8'))
-        assert.ok(layout.version >= 3 || layout.workspaces || layout.objects, 'Expected v3 workspace layout schema')
-        return { exitCode, layoutVersion: layout.version ?? null }
+        await inst.page.waitForFunction(
+          (sel) => /Persist Group/.test(document.querySelector(sel)?.textContent || ''),
+          M3_SELECTOR_CONTRACT.groupSelector,
+          { timeout: 10000 }
+        )
+        await inst.page.locator(M3_SELECTOR_CONTRACT.workspaceTab).first().waitFor({ state: 'visible', timeout: 10000 })
+        return { exitCode, layoutVersion: layout.version, restoredGroup: 'Persist Group' }
       } finally {
         await closeElectronApp(inst, { removeTempDir: true })
         repo.cleanup()
@@ -679,16 +805,39 @@ export const TIER1_TESTS = [
             'Session Index not yet integrated into default production build'
           )
         }
+        await activateWorkspaceTab(page, 0)
+        await addSessionToActiveWorkspace(page)
+
         const sessionIndex = page.locator(M3_SELECTOR_CONTRACT.sessionIndex).first()
         await sessionIndex.waitFor({ state: 'visible', timeout: 8000 })
+        const toggleBtn = sessionIndex.locator(M3_SELECTOR_CONTRACT.sessionIndexToggle).first()
+        if ((await waitForVisible(toggleBtn, 1000)) && (await toggleBtn.getAttribute('aria-expanded')) === 'false') {
+          await toggleBtn.click()
+        }
+        const rows = sessionIndex.locator(M3_SELECTOR_CONTRACT.sessionIndexRow)
+        await rows.first().waitFor({ state: 'visible', timeout: 8000 })
+        const initialRows = await rows.count()
+
         const searchInput = sessionIndex.locator('input').first()
         await searchInput.waitFor({ state: 'visible', timeout: 5000 })
         await searchInput.fill('__no_matching_session_xyz__')
         await sessionIndex.locator('[role="status"]').first().waitFor({ state: 'visible', timeout: 5000 })
-        await searchInput.fill('')
-        const optionsBtn = sessionIndex.locator('[data-session-index-scope], button').first()
-        assert.equal(await waitForVisible(optionsBtn, 3000), true, 'Session Index filter options control missing')
-        return { sessionIndexFilterVerified: true }
+        const clearBtn = sessionIndex.locator(M3_SELECTOR_CONTRACT.sessionIndexClearFilters).first()
+        await clearBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await clearBtn.click()
+        await rows.first().waitFor({ state: 'visible', timeout: 5000 })
+        assert.equal(await searchInput.inputValue(), '', 'Clear filters must reset search query')
+
+        const optionsBtn = sessionIndex.locator('[data-session-index-scope]').first()
+        await optionsBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await optionsBtn.click()
+        await page.getByRole('menuitemradio', { name: /^(Project|项目)$/i }).first().click()
+        await sessionIndex.locator('[cmdk-group-heading]').first().waitFor({ state: 'visible', timeout: 5000 })
+        const groupHeading = (await sessionIndex.locator('[cmdk-group-heading]').first().innerText()).trim()
+        assert.ok(groupHeading.length > 0, 'Project grouping heading missing')
+        await optionsBtn.click()
+        await page.getByRole('menuitemradio', { name: /^(Recent|最近)$/i }).first().click()
+        return { initialRows, groupHeading }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -715,12 +864,27 @@ export const TIER1_TESTS = [
             'Session Index not yet integrated into default production build'
           )
         }
+        await activateWorkspaceTab(page, 0)
+        await addSessionToActiveWorkspace(page)
+
         const sessionIndex = page.locator(M3_SELECTOR_CONTRACT.sessionIndex).first()
         await sessionIndex.waitFor({ state: 'visible', timeout: 8000 })
+        const toggleBtn = sessionIndex.locator(M3_SELECTOR_CONTRACT.sessionIndexToggle).first()
+        if ((await waitForVisible(toggleBtn, 1000)) && (await toggleBtn.getAttribute('aria-expanded')) === 'false') {
+          await toggleBtn.click()
+        }
         const rows = sessionIndex.locator(M3_SELECTOR_CONTRACT.sessionIndexRow)
         await rows.first().waitFor({ state: 'visible', timeout: 8000 })
+        const rowText = await rows.first().innerText()
+        assert.match(rowText, /Open in|打开/i, `Expected Workspace destination badge on row, got: ${rowText}`)
+
         const initialTabCount = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
         await rows.first().click()
+        await page.waitForFunction(
+          () => Boolean(document.activeElement?.closest('[data-workspace-preview-session] [data-native-chat-composer-scope]')),
+          null,
+          { timeout: 6000 }
+        )
         await rows.first().dblclick()
         const afterTabCount = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
         assert.equal(
@@ -728,7 +892,7 @@ export const TIER1_TESTS = [
           initialTabCount,
           'Activating an already-open session row must reuse existing tab without duplicating'
         )
-        return { initialTabCount, afterTabCount }
+        return { initialTabCount, afterTabCount, composerFocused: true }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -742,26 +906,46 @@ export const TIER1_TESTS = [
     refs: ['C.10.05', 'C.10.06', 'G.06'],
     async run(ctx) {
       const repo = createTempGitRepo({ name: 't1-f03-03' })
-      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const dirs = createIsolatedProfileDirs()
+      createCodexHistoryFixture({
+        homeDir: dirs.homeDir,
+        repoPath: repo.repoPath,
+        prompt: 'Follow up on the release checklist',
+        reply: 'The saved release notes are ready for review.'
+      })
+      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot, tempRoot: dirs.tempRoot })
       try {
-        const { app, page, homeDir } = inst
-        createCodexHistoryFixture({
-          homeDir,
-          repoPath: repo.repoPath,
-          prompt: 'Follow up on the release checklist',
-          reply: 'The saved release notes are ready for review.'
-        })
+        const { app, page } = inst
         await addLocalFolderProject(app, page, repo.repoPath)
         // Verify Vault ("Agents") dock opens and finds the synthetic Codex history
         const agentsBtn = page.getByRole('button', { name: /^(Agents|智能体)(?:\s|$)/i }).first()
-        if (!(await agentsBtn.isVisible().catch(() => false))) {
-          const rightToggle = page.locator('[data-workspace-sidebar-toggle="right"]:visible').first()
-          if (await rightToggle.isVisible().catch(() => false)) await rightToggle.click()
+        if (!(await waitForVisible(agentsBtn, 1500))) {
+          const rightToggle = page.locator('[data-workspace-sidebar-toggle="right"]').first()
+          if (await waitForVisible(rightToggle, 3000)) {
+            await rightToggle.click()
+          }
         }
         await agentsBtn.waitFor({ state: 'visible', timeout: 8000 })
         await agentsBtn.click()
         const searchBox = page.getByRole('textbox', { name: /^(Search sessions|搜索会话)$/i }).first()
         await searchBox.waitFor({ state: 'visible', timeout: 8000 })
+        await searchBox.fill('release checklist')
+        const vaultRow = page.locator('.ai-vault-session-row').filter({ hasText: /release checklist/i }).first()
+        if (!(await waitForVisible(vaultRow, 3000))) {
+          const refreshBtn = page
+            .getByRole('button', { name: /Refresh Session History|刷新会话历史/i })
+            .first()
+          if (await waitForVisible(refreshBtn, 1500)) {
+            await refreshBtn.click()
+          }
+        }
+        await vaultRow.waitFor({ state: 'visible', timeout: 10000 })
+
+        // Close right sidebar so Session Index history handoff is unambiguously tested
+        const closeRightBtn = page.locator('[data-workspace-sidebar-toggle="right"][aria-expanded="true"]').first()
+        if (await waitForVisible(closeRightBtn, 1000)) {
+          await closeRightBtn.click()
+        }
 
         const ws = await detectWorkspaceShell(page)
         if (!ws.integrated) {
@@ -776,10 +960,43 @@ export const TIER1_TESTS = [
         await sessionIndex.waitFor({ state: 'visible', timeout: 8000 })
         const query = 'release checklist'
         await sessionIndex.locator('input').first().fill(query)
+
+        // 1. Clicking "Search history" hands off query cleanly into Right-Sidebar Vault
         await sessionIndex.getByRole('button', { name: /Search history|搜索历史/i }).first().click()
+        const vaultSearch = page.getByRole('textbox', { name: /^(Search sessions|搜索会话)$/i }).first()
+        await vaultSearch.waitFor({ state: 'visible', timeout: 8000 })
+        await page.locator('.ai-vault-session-row').filter({ hasText: /release checklist/i }).first().waitFor({ state: 'visible', timeout: 10000 })
+        const closeRightAfterHandoff = page.locator('[data-workspace-sidebar-toggle="right"][aria-expanded="true"]').first()
+        if (await waitForVisible(closeRightAfterHandoff, 1000)) {
+          await closeRightAfterHandoff.click()
+        }
+
+        // 2. Switching SessionIndex view to "Unopened history" mounts [data-session-index-history] and resumes Codex session.
+        // Clear the filter box first so compact Unopened history lists sessions without triggering the FTS consent banner.
+        await sessionIndex.locator('input').first().fill('')
+        await sessionIndex.locator('[data-session-index-scope]').first().click()
+        await page.getByRole('menuitemradio', { name: /Unopened history|未打开的历史会话|未打开的历史记录/i }).first().click()
         const historyContainer = sessionIndex.locator(M3_SELECTOR_CONTRACT.sessionIndexHistory).first()
         await historyContainer.waitFor({ state: 'visible', timeout: 8000 })
-        await historyContainer.getByText(/release checklist/i).first().waitFor({ state: 'visible', timeout: 10000 })
+        const historyRow = historyContainer.locator('.ai-vault-session-row').filter({ hasText: /release checklist/i }).first()
+        if (!(await waitForVisible(historyRow, 3000))) {
+          const histRefresh = historyContainer
+            .getByRole('button', { name: /Refresh Session History|刷新会话历史/i })
+            .first()
+          if (await waitForVisible(histRefresh, 1500)) {
+            await histRefresh.click()
+          }
+        }
+        await historyRow.waitFor({ state: 'visible', timeout: 10000 })
+        await historyRow.getByTestId('ai-vault-session-more-actions').click()
+        await page.getByRole('menuitem', { name: /^(Resume in New Chat|在新聊天中恢复)$/i }).first().click()
+        const trustBtn = page
+          .getByRole('button', { name: /^(Trust repository|信任仓库|Let agents ask|让智能体询问)$/i })
+          .first()
+        if (await waitForVisible(trustBtn, 3000)) {
+          await trustBtn.click()
+        }
+        await page.getByText('The saved release notes are ready for review.', { exact: false }).first().waitFor({ state: 'visible', timeout: 15000 })
         return { vaultSearchVisible: true, sessionIndexHistoryHandoff: true }
       } finally {
         await closeElectronApp(inst)
@@ -807,21 +1024,62 @@ export const TIER1_TESTS = [
             'Integrated Workspace split layout pending M3'
           )
         }
-        const addSessionBtn = page.getByRole('button', { name: /Add session|添加会话/i }).first()
-        if (await waitForVisible(addSessionBtn, 3000)) {
-          await addSessionBtn.click()
+        const closeRightBtn = page.locator('[data-workspace-sidebar-toggle="right"][aria-expanded="true"]').first()
+        if (await waitForVisible(closeRightBtn, 800)) {
+          await closeRightBtn.click()
         }
-        const splitLayout = page.locator(`${M3_SELECTOR_CONTRACT.splitLayout}[data-preview-split="side-by-side"]`).first()
-        await splitLayout.waitFor({ state: 'visible', timeout: 8000 })
+        const splitLayout = await ensureDualPaneWorkspace(page)
+        await page.waitForFunction(
+          () => document.querySelector('[data-workspace-preview-chat-layout]')?.getAttribute('data-preview-split') === 'side-by-side',
+          null,
+          { timeout: 8000 }
+        )
         const separator = splitLayout.getByRole('separator').first()
         await separator.waitFor({ state: 'visible', timeout: 5000 })
         const beforeVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
+        const maxVal = Number.parseFloat((await separator.getAttribute('aria-valuemax')) || '85')
+        const expectedStep = Math.min(maxVal, beforeVal + 5)
         await separator.focus()
         await page.keyboard.press('ArrowRight')
-        await sleep(150)
+        await page.waitForFunction(
+          (expected) => document.querySelector('[data-workspace-preview-chat-layout] [role="separator"]')?.getAttribute('aria-valuenow') === String(expected),
+          expectedStep,
+          { timeout: 5000 }
+        )
         const afterVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
-        assert.ok(afterVal > beforeVal, `Expected divider ArrowRight to increase ratio (${beforeVal} -> ${afterVal})`)
-        return { beforeVal, afterVal }
+        assert.equal(afterVal, expectedStep, `Expected 5% step clamped to ${maxVal} (${beforeVal} -> ${afterVal})`)
+
+        await page.keyboard.press('ArrowLeft')
+        await page.waitForFunction(
+          (expected) => document.querySelector('[data-workspace-preview-chat-layout] [role="separator"]')?.getAttribute('aria-valuenow') === String(expected),
+          beforeVal,
+          { timeout: 5000 }
+        )
+
+        // Collapse left sidebar and shrink below 646px container to verify Switch pane single-focus + wide restore
+        const leftToggle = page.locator('[data-workspace-sidebar-toggle="left"]').first()
+        if ((await waitForVisible(leftToggle, 1000)) && (await leftToggle.getAttribute('aria-expanded')) === 'true') {
+          await leftToggle.click()
+        }
+        await setViewportSize(app, page, 620, 560)
+        await page.waitForFunction(
+          () => document.querySelector('[data-workspace-preview-chat-layout]')?.getAttribute('data-preview-split') === 'focused',
+          null,
+          { timeout: 6000 }
+        )
+        const switchPaneBtn = page.getByRole('button', { name: /Switch pane|切换窗格/i }).first()
+        await switchPaneBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await switchPaneBtn.click()
+        const radios = page.getByRole('menuitemradio')
+        assert.equal(await radios.count(), 2, 'Switch pane menu must list both workspace sessions')
+        await radios.last().click()
+        await setViewportSize(app, page, 1280, 800)
+        await page.waitForFunction(
+          () => document.querySelector('[data-workspace-preview-chat-layout]')?.getAttribute('data-preview-split') === 'side-by-side',
+          null,
+          { timeout: 6000 }
+        )
+        return { beforeVal, afterVal, narrowPaneSwitchAndRestore: true }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -834,11 +1092,27 @@ export const TIER1_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['G.09.01', 'G.09.02', 'DDU-05', 'J07'],
     async run(ctx) {
-      const repo = createTempGitRepo({ name: 't1-f03-05' })
+      const repoA = createTempGitRepo({
+        name: 't1-f03-05-a',
+        files: { 'repo-a-only.txt': 'Alpha file content\n' }
+      })
+      const repoB = createTempGitRepo({
+        name: 't1-f03-05-b',
+        files: { 'repo-b-only.txt': 'Beta file content\n' }
+      })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
         const { app, page } = inst
-        await addLocalFolderProject(app, page, repo.repoPath)
+        await addLocalFolderProject(app, page, repoA.repoPath)
+        const repoAId = await page.evaluate(
+          () => document.querySelector('[data-worktree-sidebar-layout] [role="option"][data-worktree-id][aria-current="page"]')?.getAttribute('data-worktree-id') || null
+        )
+        assert.ok(repoAId, 'Failed to resolve active worktree ID for repoA')
+        await addLocalFolderProject(app, page, repoB.repoPath)
+        const repoBId = await page.evaluate(
+          () => document.querySelector('[data-worktree-sidebar-layout] [role="option"][data-worktree-id][aria-current="page"]')?.getAttribute('data-worktree-id') || null
+        )
+        assert.ok(repoBId && repoBId !== repoAId, 'Failed to resolve distinct active worktree ID for repoB')
         const ws = await detectWorkspaceShell(page)
         if (!ws.integrated) {
           pendingIfSmoke(
@@ -848,21 +1122,51 @@ export const TIER1_TESTS = [
             'Pinned SidePanel Standalone/Embedded integration pending M3'
           )
         }
+        // Switch back to repoA, ensure active workspace + session, then open Explorer pinned to repoA
+        await selectWorktreeById(page, repoAId)
+        await activateWorkspaceTab(page, 0)
+        await addSessionToActiveWorkspace(page)
+
         await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
         await page.getByRole('menuitem', { name: /^(Open Explorer|打开资源管理器)$/i }).first().click()
+        const folderPicker = page.getByRole('dialog').filter({ hasText: /Choose a folder for Explorer|选择资源管理器的目录/i }).first()
+        if (await waitForVisible(folderPicker, 1500)) {
+          await folderPicker.getByRole('option').filter({ hasText: path.basename(repoA.repoPath) }).first().click()
+        }
+
         const standaloneExplorer = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="standalone"]`).first()
         await standaloneExplorer.waitFor({ state: 'visible', timeout: 8000 })
+        const explorerId = await standaloneExplorer.getAttribute('data-workspace-preview-explorer')
+        await standaloneExplorer.getByText('repo-a-only.txt', { exact: false }).first().waitFor({ state: 'visible', timeout: 8000 })
+        assert.equal(await standaloneExplorer.getByText('repo-b-only.txt').count(), 0)
         const initialScope = (await standaloneExplorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
+
+        // Embed Explorer into Workspace 1
         await standaloneExplorer.getByRole('button', { name: /Explorer placement|资源管理器位置/i }).first().click()
-        await page.getByRole('menuitem', { name: /^(Move to |移动到)/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(Move to |移至 )/i }).first().click()
         const embeddedExplorer = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="embedded"]`).first()
         await embeddedExplorer.waitFor({ state: 'visible', timeout: 8000 })
-        const embeddedScope = (await embeddedExplorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
-        assert.equal(embeddedScope, initialScope, 'Explorer fixed scope must persist across Standalone -> Embedded')
-        return { initialScope, embeddedScope }
+        assert.equal(await embeddedExplorer.getAttribute('data-workspace-preview-explorer'), explorerId)
+        assert.equal((await embeddedExplorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim(), initialScope)
+        await embeddedExplorer.getByText('repo-a-only.txt', { exact: false }).first().waitFor({ state: 'visible', timeout: 5000 })
+
+        // Switch active worktree in Sidebar to repoB -> embedded Explorer must stay bound to repoA!
+        await selectWorktreeById(page, repoBId)
+        assert.equal((await embeddedExplorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim(), initialScope)
+        assert.equal(await embeddedExplorer.getByText('repo-a-only.txt').count() > 0, true)
+        assert.equal(await embeddedExplorer.getByText('repo-b-only.txt').count(), 0)
+
+        // Detach back to Standalone tab -> preserves same Explorer ID & scope
+        await embeddedExplorer.getByRole('button', { name: /Explorer placement|资源管理器位置/i }).first().click()
+        await page.getByRole('menuitem', { name: /Open as a tab|作为标签打开/i }).first().click()
+        await standaloneExplorer.waitFor({ state: 'visible', timeout: 8000 })
+        assert.equal(await standaloneExplorer.getAttribute('data-workspace-preview-explorer'), explorerId)
+        assert.equal((await standaloneExplorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim(), initialScope)
+        return { explorerId, initialScope, persistedAcrossRepoBSwitch: true }
       } finally {
         await closeElectronApp(inst)
-        repo.cleanup()
+        repoA.cleanup()
+        repoB.cleanup()
       }
     }
   },

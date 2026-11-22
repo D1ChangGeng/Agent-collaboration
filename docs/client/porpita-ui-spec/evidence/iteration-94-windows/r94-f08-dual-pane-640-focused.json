@@ -1,0 +1,12 @@
+{
+  "name": "r94-f08-dual-pane-640-focused",
+  "imageFile": "r94-f08-dual-pane-640-focused.png",
+  "window": {
+    "innerWidth": 640,
+    "innerHeight": 580,
+    "scrollWidth": 640,
+    "clientWidth": 640,
+    "overflowX": false
+  },
+  "splitAttr640": "focused"
+}

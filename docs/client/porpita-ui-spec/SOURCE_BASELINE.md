@@ -600,3 +600,15 @@ Windows x64 使用最终提交 `d874c87b6c` 的 `--mode e2e` 构建与 Electron 
 | `out/renderer/assets/Settings-DK9ZhbPM.js` | `5864672373fdc7f6976369dfe6dfd69f359d2345011b20ef4d402d302064a1ed` |
 
 Windows x64 使用最终提交 `1b27aeb114` 的 `--mode e2e` 构建、Electron 43.8.6、临时 PostgreSQL 16 隔离回环 `acs_loopback_server.py`（`mode: 'full'`）与 `ORCA_BACKGROUND_LAUNCH=1` 运行跨平台 `tools/observe-round-93.cjs`：12 组严格门禁全过（`findings: []`、退出码 `0`）且 12/12 人工视觉复核通过。真实跨物理 Host 远端 HTTPS/TLS 部署、真实在线 Claude/Codex 远端 Native 执行流式长链路、可见桌面前台切换、物理读屏器与 macOS/Linux 三端继续保持在各自边界外待验。 [第 93 轮记录](ITERATION_93.md) · [回放工具](tools/observe-round-93.cjs) · [严格终版运行](evidence/iteration-93-windows/run.json) · [覆盖核对](coverage-audit.json)
+
+## 第 94 轮来源
+
+第 94 轮（Milestone M3 / Phase 4：F07 默认生产构建一体集成与 F08 工作区／会话目录收口）在 `D:/Chatgpt/Agent-collaboration/.tmp/porpita-ui-spec-03` 的本地分支 `codex/porpita-ui-spec-91` 开展（基于第 93 轮提交 `1b27aeb1142a98ba4ac5aae1be711d441a42f9f8`），最终提交为 `ab899ffee48ff6263a2422b96e59d24a06c2d436`（tree `a7c5abba9e212d36f55d6a0769212aa0b24c6152`，`feat(workspace): integrate unified workspace chrome and F08 session controls`，涵盖 `42` 项文件改动，`+2289/-448`）。工作树通过 `.husky/pre-commit`（`lint-staged`）与仓库门禁（`oxfmt --check`、`oxlint --deny-warnings`、`check-changed-code-quality.mjs 1b27aeb1142a` 0 新增发现、`verify:localization-catalogs`、`corepack pnpm tc` 5 套配置 0 错误、Vitest 9 套件 39/39 通过），并由提交树重新执行 `electron-vite build --outDir out --mode e2e` 生成纯净无预览门控构建。`@e2e-harness` 亦于 `D:/Chatgpt/Agent-collaboration/.tmp/porpita-e2e-suite` 与 `AC_WORKTREE` 同步镜像（`SYNC_DIFF=0 FILES=13`）完成 M3/F01/F03 28/28 `--mode full` PASS（`T1-F01` 6/6、`T1-F03` 6/6、`T2-F01` 6/6 含 `T2-F01-06` 最终加固复通、`T2-F03` 6/6、`T3-02..04` 3/3、`T4-02` 1/1）及全量 `--tier all --mode smoke` `total=87 passed=84 pendingMilestone=3 failed=0 overall=PASS`（余 3 项属 M4 预留 `T1-F06-03`/`T1-F06-04`/`T4-06`）。
+
+| `--mode e2e` 构建文件（`ab899ffee4`） | SHA-256 |
+| --- | --- |
+| `out/main/index.js` | `f738854937911ef383a7843ff3b3fd6e33d24842415f9b88b45bd0de76bea93a` |
+| `out/renderer/index.html` | `9cf32fde3e799ccc10b209211872e77086a9a5d9e2f6567394d49f6dcd59bb1f` |
+| `out/renderer/assets/App-BQAcjRgX.js` | `0431996cdf1a18359da9f118a9b709ea7166a7884d0ddf699717af96f75101ed` |
+
+Windows x64 使用最终提交 `ab899ffee4` 的 `--mode e2e` 构建、Electron 43.8.6、`ORCA_BACKGROUND_LAUNCH=1`（全部 `!visible && !focused`、显式剥离 `VITE_PORPITA_WORKSPACE_PREVIEW`）运行跨平台 `tools/observe-round-94.cjs`：13 组严格门禁全过（`findings: []`、退出码 `0`）且 13/13 人工视觉复核通过。真实在线模型流式、物理多机配对断线／撤权切换（归 M4 Phase 5）、系统可见前台窗口、物理读屏器与 macOS/Linux 三端继续保持在各自边界外待验。 [第 94 轮记录](ITERATION_94.md) · [回放工具](tools/observe-round-94.cjs) · [严格终版运行](evidence/iteration-94-windows/run.json) · [覆盖核对](coverage-audit.json)

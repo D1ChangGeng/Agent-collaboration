@@ -1,0 +1,12 @@
+{
+  "name": "r94-f08-dual-pane-820",
+  "imageFile": "r94-f08-dual-pane-820.png",
+  "window": {
+    "innerWidth": 820,
+    "innerHeight": 580,
+    "scrollWidth": 820,
+    "clientWidth": 820,
+    "overflowX": false
+  },
+  "splitAttr820": "side-by-side"
+}

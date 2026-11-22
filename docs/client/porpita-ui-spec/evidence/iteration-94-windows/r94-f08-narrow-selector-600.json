@@ -1,0 +1,19 @@
+{
+  "name": "r94-f08-narrow-selector-600",
+  "imageFile": "r94-f08-narrow-selector-600.png",
+  "window": {
+    "innerWidth": 600,
+    "innerHeight": 401,
+    "scrollWidth": 600,
+    "clientWidth": 600,
+    "overflowX": false
+  },
+  "narrow600Metrics": {
+    "found": true,
+    "width": 44,
+    "stripWidth": 142,
+    "maxAllowed": 134,
+    "insideViewport": true,
+    "overflowX": false
+  }
+}

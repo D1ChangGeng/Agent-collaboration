@@ -4,9 +4,9 @@ src/renderer/src/app-shell/app-root-surface-boundaries.tsx,src/renderer/src/main
 src/renderer/src/app-shell/AppBackgroundServices.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,A.05,后台同步与服务；无独立交互面,0,0,0
 src/renderer/src/app-shell/AppNotificationCards.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,O;O.01;O.01.01;O.01.02;O.overlay.chat-ui-here-corner-card,explicit,0,0,0
 src/renderer/src/app-shell/AppRootSurfaces.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,B;O;O.modal.add-repo;O.modal.agent-session-history;O.modal.new-workspace-composer;O.modal.onboarding;O.modal.quick-open;O.modal.worktree-palette;O.overlay.floating-workspace;O.overlay.pet;O.overlay.status-bar;R;S.03,explicit,14,19,0
-src/renderer/src/app-shell/AppWorkspaceShell.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,A;Q.01;R,explicit,1,21,0
+src/renderer/src/app-shell/AppWorkspaceShell.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,A;Q.01;R,explicit,1,20,0
 src/renderer/src/app-shell/TitlebarLeftControls.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,A.02,explicit,7,4,0
-src/renderer/src/app-shell/TitlebarMainStrip.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,A.02;D.08,explicit,2,3,0
+src/renderer/src/app-shell/TitlebarMainStrip.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,A.02;D.08,explicit,2,4,0
 src/renderer/src/app-shell/WindowControls.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,A.01;D.08.01;T.05,explicit,3,0,0
 src/renderer/src/App.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,O.local.close,explicit,7,0,0
 src/renderer/src/components/activity/activity-scope-filter-controls.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.07,directory queue; leaf review open,4,0,0
@@ -1678,7 +1678,7 @@ src/renderer/src/components/sidebar/session-index/SessionIndexHostNotice.tsx,src
 src/renderer/src/components/sidebar/session-index/SessionIndexOpenRow.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.10.07;C.10.09,explicit,1,0,0
 src/renderer/src/components/sidebar/session-index/SessionIndexOptionsMenu.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.10.04,explicit,8,1,0
 src/renderer/src/components/sidebar/session-index/SessionIndexRunState.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.10.07,explicit,0,0,0
-src/renderer/src/components/sidebar/session-index/SidebarSessionIndex.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.10;C.10.03;C.10.04;C.10.05;C.10.06,explicit,3,1,0
+src/renderer/src/components/sidebar/session-index/SidebarSessionIndex.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.10;C.10.03;C.10.04;C.10.05;C.10.06,explicit,6,4,0
 src/renderer/src/components/sidebar/SetupGuideSidebarEntry.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,N.setup-guide,explicit,4,0,1
 src/renderer/src/components/sidebar/SetupScriptPromptCard.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,0,0,0
 src/renderer/src/components/sidebar/SetupScriptPromptCardShell.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,2,2,0
@@ -1692,7 +1692,7 @@ src/renderer/src/components/sidebar/sidebar-header-actions.tsx,src/renderer/src/
 src/renderer/src/components/sidebar/sidebar-nav-controls.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,1,0,0
 src/renderer/src/components/sidebar/SidebarAgentsList.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C;C.07;C.10;R.03,explicit,2,0,0
 src/renderer/src/components/sidebar/SidebarHeader.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.10.03;C.10.08,explicit,5,1,0
-src/renderer/src/components/sidebar/SidebarNav.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C;C.01;C.10.04,explicit,16,2,6
+src/renderer/src/components/sidebar/SidebarNav.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C;C.01;C.10.04,explicit,15,2,5
 src/renderer/src/components/sidebar/SidebarSeamScrollbarStrip.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,1,0,0
 src/renderer/src/components/sidebar/SidebarSettingsHelpMenu.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,O.07,explicit,15,4,1
 src/renderer/src/components/sidebar/SidebarTaskNavButton.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C,directory queue; leaf review open,5,4,2
@@ -2261,15 +2261,16 @@ src/renderer/src/components/workspace-cleanup/WorkspaceCleanupDialog.tsx,src/ren
 src/renderer/src/components/workspace-emoji/WorkspaceEmojiPickerButton.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.04.01,explicit,3,1,1
 src/renderer/src/components/workspace-emoji/WorkspaceEmojiPickerPanel.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.04.01,explicit,3,0,0
 src/renderer/src/components/workspace-emoji/WorkspaceEmojiSuggestionPopover.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,C.04.01,directory queue; leaf review open,4,0,0
-src/renderer/src/components/workspace-preview/WorkspacePreview.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.07;D.07.01;D.07.02,explicit,6,0,0
+src/renderer/src/components/workspace-preview/WorkspacePreview.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.07;D.07.01;D.07.02,explicit,7,0,0
 src/renderer/src/components/workspace-preview/WorkspacePreviewExplorer.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,G.09.01;G.09.03;G.09.04,explicit,9,8,0
 src/renderer/src/components/workspace-preview/WorkspacePreviewExplorerPicker.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,G.09.02,explicit,3,1,0
-src/renderer/src/components/workspace-preview/WorkspacePreviewGroupPicker.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.08.02,explicit,5,1,0
+src/renderer/src/components/workspace-preview/WorkspacePreviewGroupPicker.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.08.02,explicit,7,3,0
 src/renderer/src/components/workspace-preview/WorkspacePreviewOpenWork.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.08.01,explicit,3,2,0
 src/renderer/src/components/workspace-preview/WorkspacePreviewSessionPane.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.07.03;D.07.05,explicit,1,2,0
-src/renderer/src/components/workspace-preview/WorkspacePreviewSessionPicker.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.07.03,explicit,3,1,0
-src/renderer/src/components/workspace-preview/WorkspacePreviewSessions.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,A.03.03;D.07.01;D.07.03;D.07.05;G.09.03,explicit,4,4,0
-src/renderer/src/components/workspace-preview/WorkspacePreviewTabs.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.08.01;D.08.02,explicit,15,2,0
+src/renderer/src/components/workspace-preview/WorkspacePreviewSessionPicker.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.07.03,explicit,4,2,0
+src/renderer/src/components/workspace-preview/WorkspacePreviewSessions.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,A.03.03;D.07.01;D.07.03;D.07.05;G.09.03,explicit,6,5,0
+src/renderer/src/components/workspace-preview/WorkspacePreviewTabs.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.08.01;D.08.02,explicit,14,5,0
+src/renderer/src/components/workspace-preview/WorkspacePreviewTopStrip.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,,unassigned discovery candidate,0,0,0
 src/renderer/src/components/workspace-space/SpaceWindowStatePublisher.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,M.02.14;M.02.16,explicit,0,0,0
 src/renderer/src/components/workspace-space/WorkspaceSpacePage.tsx,src/renderer/src/main.tsx;src/renderer/src/space.tsx;src/renderer/src/web/main.tsx,M;M.02;M.02.01,explicit,1,0,0
 src/renderer/src/components/WorkspacePaneOverlayLayers.tsx,src/renderer/src/main.tsx;src/renderer/src/web/main.tsx,D.04,explicit,0,0,0

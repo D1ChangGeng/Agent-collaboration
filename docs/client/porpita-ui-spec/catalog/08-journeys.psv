@@ -2,11 +2,11 @@
 R|用户路径与连续操作|AppWorkspaceShell.tsx,AppRootSurfaces.tsx,use-global-keybindings.ts|入口、局部状态与返回依赖各界面及现有 worktree owner|改造|在保留原有路径的同时验证新组织模型从进入、执行到恢复的闭环|J01,J02,J03,J04,J05,J06,J07,J08,J09,J10,J11,J12,J13
 R.01|首次启动 → 选择工作方式 → 首次会话|OnboardingFlow.tsx,use-onboarding-flow.ts,AgentWorkspaceTrustDecisionDialog.tsx,Terminal.tsx|引导、信任、Launch 与工作台按各自结果流转|改造|选择/稍后均回可用工作台，信任只确认原目标；优先找到可继续的会话|J01
 R.02|添加项目 → 日常搜索 → 设置 → 原工作点|AddRepoDialog.tsx,WorktreeJumpPalette.tsx,QuickOpen.tsx,Settings.tsx|项目和搜索改变工作台选择，Settings 有返回状态|保留|原始焦点、编辑和查询可恢复，未完成接入保持原入口|J02
-R.03|找 Session → 打开 → 跨组定位已有|SidebarAgentsList.tsx,AiVaultSessionVirtualList.tsx,ai-vault-original-pane-actions.ts,RecentTabSwitcher.tsx|跳转面板定位已开聊天，Vault 按历史行定位 Chat 或终端并沿用恢复路径|新增|稳定 ref、无重复输入，跨组定位还原已存布局，筛选独立|J03,J05,J06
-R.04|组合 Session 与 Panel → 分屏 → 调整和恢复|TabGroupSplitNodeTree.tsx,TabGroupDropOverlay.tsx,right-sidebar-panel-content.tsx|现有 split 和 Dock 各有 owner；跨 Worktree 布局与通用 Panel 不在现版|新增|原输入、scope、草稿与比例在同一连续序列正确；失捕与 Esc 验证|J04
+R.03|找 Session → 打开 → 跨组定位已有|SidebarAgentsList.tsx,AiVaultSessionVirtualList.tsx,ai-vault-original-pane-actions.ts,RecentTabSwitcher.tsx|跳转面板与默认集成左栏 SidebarSessionIndex 共同承接会话查找，Vault 按历史行定位 Chat 或终端并沿用恢复路径|新增|稳定 ref、无重复输入，跨组定位还原已存布局，筛选独立|J03,J05,J06
+R.04|组合 Session 与 Panel → 分屏 → 调整和恢复|TabGroupSplitNodeTree.tsx,TabGroupDropOverlay.tsx,right-sidebar-panel-content.tsx|第94轮默认生产包打通双会话 Workspace 分屏、`ResizeHandle` 键盘与 Esc 撤销以及 `646px` 容器窄窗聚焦切换|新增|原输入、scope、草稿与比例在同一连续序列正确；失捕与 Esc 验证|J04
 R.05|发起原生工作 → 等待与审批 → 检视 → 继续|NativeChatResolvedView.tsx,NativeChatComposer.tsx,NativeChatApprovalCard.tsx,TerminalPaneNativeChatPortal.tsx|原生提供方负责执行、工具、等待和历史|保留|布局切换期间流、输入、授权和回显不会错绑，返回保留读点|J05
-R.06|后台运行 → 关闭呈现 → 退出 → 重开|use-app-session-persistence.ts,main-window-close-lifecycle.ts,NativeChatResumeRuntimeModal.tsx|现版退出保护与恢复存在，含原生终端/文件生命周期|改造|恢复用户布局独立于执行；关闭与结束可分别验证；不可用对象保留可恢复位置|J06
-R.07|固定 SidePanel → 换 Session → 移入移出|right-sidebar-panel-content.tsx,right-sidebar-route.ts,TabGroupSplitNodeTree.tsx|现版 Dock 跟随上下文，按类型有内部状态|新增|同一 Panel 的 scope、内部 Tab 和结果连续，旧宿主卸载、取消回原位|J07
+R.06|后台运行 → 关闭呈现 → 退出 → 重开|use-app-session-persistence.ts,main-window-close-lifecycle.ts,NativeChatResumeRuntimeModal.tsx|现版退出保护与 `porpita-workspaces.json` v3 冷启动恢复已在默认生产包集成（含损坏 JSON 的 Retry／Reset layout 回退）|改造|恢复用户布局独立于执行；关闭与结束可分别验证；不可用对象保留可恢复位置|J06
+R.07|固定 SidePanel → 换 Session → 移入移出|right-sidebar-panel-content.tsx,right-sidebar-route.ts,TabGroupSplitNodeTree.tsx|Explorer 已在默认生产包支持 Standalone 与 Embedded 固定 scope 往返移动，切至其他仓库保持原绑定；其余 Dock 面板按能力保留 Dock|新增|同一 Panel 的 scope、内部 Tab 和结果连续，旧宿主卸载、取消回原位|J07
 R.08|文件与任务来源 → 编辑、Diff/Review → 原会话|FileExplorer.tsx,EditorContent.tsx,DiffViewer.tsx,PullRequestPage.tsx|工作区内容工具和 Review 在原宿主链路呈现|保留|保持 scope 和原生 owner；保存、阅读、提交、评论和打开任务按各权威结果反馈|J08
 R.09|任务/协作/自动化 → 结果 → 源工作对象|TaskPage.tsx,CollaborationConversation.tsx,AutomationsPage.tsx|不同工作任务和状态有独立表面，来源路径由实际能力决定|改造|以稳定 Session/任务/消息引用返回；来源保持，投递和运行结果不混合|J09
 R.10|扩展发现 → 权限 → 承载 → 撤销|PluginsSettingsSection.tsx,PluginPanel.tsx,SkillsPage.tsx|安装、授权、启用、运行和卸载状态独立|保留|新导航不绕过原授权，Panel 在失权后退役，工作区可继续|J10

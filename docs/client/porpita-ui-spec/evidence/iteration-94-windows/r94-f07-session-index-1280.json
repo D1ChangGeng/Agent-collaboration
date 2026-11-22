@@ -1,0 +1,25 @@
+{
+  "name": "r94-f07-session-index-1280",
+  "imageFile": "r94-f07-session-index-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "sessionIndexVisible": true,
+  "worktreeCount": 2,
+  "sessionRowCount": 0,
+  "sessionSearchZeroMatchText": "No chats match your search and filters",
+  "historyHandoffVisible": true,
+  "sessionIndexGeo1280": {
+    "found": true,
+    "ok": true,
+    "scrollWidth": 280,
+    "clientWidth": 280,
+    "overflowX": false,
+    "itemCount": 4,
+    "issues": []
+  }
+}

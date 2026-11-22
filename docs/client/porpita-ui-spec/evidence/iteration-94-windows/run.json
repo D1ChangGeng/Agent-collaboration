@@ -1,0 +1,384 @@
+{
+  "mode": "strict",
+  "source": "D:\\Chatgpt\\Agent-collaboration\\.tmp\\porpita-ui-spec-03",
+  "outputDir": "D:\\Chatgpt\\Agent-collaboration\\.worktrees\\porpita-ui-spec-run\\docs\\client\\porpita-ui-spec\\evidence\\iteration-94-windows",
+  "findings": [],
+  "checks": {
+    "emptyShell1280": {
+      "shell1280": {
+        "previewToggle": false,
+        "hasWorkspaceTabs": true,
+        "hasSettingsBtn": true,
+        "hasCollabBtn": true,
+        "hasSidebar": true,
+        "integrated": true
+      },
+      "hasLandingAddProject": true,
+      "generalDeleteProtected": true
+    },
+    "narrowSelector600": {
+      "found": true,
+      "width": 44,
+      "stripWidth": 142,
+      "maxAllowed": 134,
+      "insideViewport": true,
+      "overflowX": false
+    },
+    "sessionIndex1280": {
+      "sessionIndexVisible": true,
+      "worktreeCount": 2,
+      "sessionRowCount": 0,
+      "sessionSearchZeroMatchText": "No chats match your search and filters",
+      "historyHandoffVisible": true,
+      "sessionIndexGeo1280": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 280,
+        "clientWidth": 280,
+        "overflowX": false,
+        "itemCount": 4,
+        "issues": []
+      }
+    },
+    "sessionIndex600": {
+      "sidebarGeo600": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 265,
+        "clientWidth": 265,
+        "overflowX": false,
+        "itemCount": 3,
+        "issues": []
+      },
+      "sessionIndexGeo600": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 280,
+        "clientWidth": 280,
+        "overflowX": false,
+        "itemCount": 3,
+        "issues": []
+      },
+      "firstWorktreeVisible600": {
+        "found": true,
+        "cardHeight": 49,
+        "listHeight": 112
+      }
+    },
+    "dualPaneSplit": {
+      "split1280Visible": true,
+      "splitAttr1280": "side-by-side",
+      "dividerArrowShifted": true,
+      "dividerEscReverted": true,
+      "splitAttr640": "focused",
+      "splitAttr820": "side-by-side"
+    },
+    "fixedExplorerContinuity": {
+      "standaloneVisible": true,
+      "scopeInitial": "r94-repo-beta",
+      "scopeAfterRepoSwitch": "r94-repo-beta",
+      "embeddedVisible": true,
+      "scopeEmbedded": "r94-repo-beta"
+    },
+    "tabGroupsOverflow": {
+      "tabCount": 20,
+      "stripScrollable": true,
+      "docOverflowX": false,
+      "escTabDragUnchanged": true
+    },
+    "closeUnsaved": {
+      "unsavedEditorDialogVisible": true,
+      "editorCancelKeptDirty": true
+    },
+    "persistenceAndCorruptRecovery": {
+      "cleanExitCode": 0,
+      "layoutExists": true,
+      "layoutVersion": 3,
+      "tabsBeforeQuit": 2,
+      "tabsAfterRestore": 2,
+      "coldStartRestored": true,
+      "corruptShell": {
+        "previewToggle": false,
+        "hasWorkspaceTabs": true,
+        "hasSettingsBtn": true,
+        "hasCollabBtn": true,
+        "hasSidebar": true,
+        "integrated": true
+      },
+      "corruptNoticeCheck": {
+        "hasNotice": true,
+        "noticeText": "Could not open saved workspaces.RetryReset layout",
+        "hasRetry": true,
+        "hasResetLayout": true,
+        "tabCount": 0
+      }
+    },
+    "zhShellParity": {
+      "previewToggle": false,
+      "hasWorkspaceTabs": true,
+      "hasSettingsBtn": true,
+      "hasCollabBtn": true,
+      "hasSidebar": true,
+      "integrated": true
+    }
+  },
+  "captures": [
+    {
+      "name": "r94-f07-empty-shell-1280",
+      "imageFile": "r94-f07-empty-shell-1280.png",
+      "window": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "overflowX": false
+      },
+      "shell1280": {
+        "previewToggle": false,
+        "hasWorkspaceTabs": true,
+        "hasSettingsBtn": true,
+        "hasCollabBtn": true,
+        "hasSidebar": true,
+        "integrated": true
+      },
+      "hasLandingAddProject": true,
+      "generalDeleteProtected": true
+    },
+    {
+      "name": "r94-f08-narrow-selector-600",
+      "imageFile": "r94-f08-narrow-selector-600.png",
+      "window": {
+        "innerWidth": 600,
+        "innerHeight": 401,
+        "scrollWidth": 600,
+        "clientWidth": 600,
+        "overflowX": false
+      },
+      "narrow600Metrics": {
+        "found": true,
+        "width": 44,
+        "stripWidth": 142,
+        "maxAllowed": 134,
+        "insideViewport": true,
+        "overflowX": false
+      }
+    },
+    {
+      "name": "r94-f07-session-index-1280",
+      "imageFile": "r94-f07-session-index-1280.png",
+      "window": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "overflowX": false
+      },
+      "sessionIndexVisible": true,
+      "worktreeCount": 2,
+      "sessionRowCount": 0,
+      "sessionSearchZeroMatchText": "No chats match your search and filters",
+      "historyHandoffVisible": true,
+      "sessionIndexGeo1280": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 280,
+        "clientWidth": 280,
+        "overflowX": false,
+        "itemCount": 4,
+        "issues": []
+      }
+    },
+    {
+      "name": "r94-f08-session-index-600",
+      "imageFile": "r94-f08-session-index-600.png",
+      "window": {
+        "innerWidth": 600,
+        "innerHeight": 401,
+        "scrollWidth": 600,
+        "clientWidth": 600,
+        "overflowX": false
+      },
+      "sidebarGeo600": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 265,
+        "clientWidth": 265,
+        "overflowX": false,
+        "itemCount": 3,
+        "issues": []
+      },
+      "sessionIndexGeo600": {
+        "found": true,
+        "ok": true,
+        "scrollWidth": 280,
+        "clientWidth": 280,
+        "overflowX": false,
+        "itemCount": 3,
+        "issues": []
+      },
+      "firstWorktreeVisible600": {
+        "found": true,
+        "cardHeight": 49,
+        "listHeight": 112
+      }
+    },
+    {
+      "name": "r94-f08-dual-pane-1280",
+      "imageFile": "r94-f08-dual-pane-1280.png",
+      "window": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "overflowX": false
+      },
+      "split1280Visible": true,
+      "splitAttr1280": "side-by-side",
+      "dividerArrowShifted": true,
+      "dividerEscReverted": true
+    },
+    {
+      "name": "r94-f08-dual-pane-640-focused",
+      "imageFile": "r94-f08-dual-pane-640-focused.png",
+      "window": {
+        "innerWidth": 640,
+        "innerHeight": 580,
+        "scrollWidth": 640,
+        "clientWidth": 640,
+        "overflowX": false
+      },
+      "splitAttr640": "focused"
+    },
+    {
+      "name": "r94-f08-dual-pane-820",
+      "imageFile": "r94-f08-dual-pane-820.png",
+      "window": {
+        "innerWidth": 820,
+        "innerHeight": 580,
+        "scrollWidth": 820,
+        "clientWidth": 820,
+        "overflowX": false
+      },
+      "splitAttr820": "side-by-side"
+    },
+    {
+      "name": "r94-f08-explorer-standalone-1280",
+      "imageFile": "r94-f08-explorer-standalone-1280.png",
+      "window": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "overflowX": false
+      },
+      "standaloneVisible": true,
+      "scopeInitial": "r94-repo-beta",
+      "activeSwitchedLabel": "Active\nmain\nprimary\nmain",
+      "scopeAfterRepoSwitch": "r94-repo-beta"
+    },
+    {
+      "name": "r94-f08-explorer-embedded-1280",
+      "imageFile": "r94-f08-explorer-embedded-1280.png",
+      "window": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "overflowX": false
+      },
+      "embeddedVisible": true,
+      "scopeEmbedded": "r94-repo-beta"
+    },
+    {
+      "name": "r94-f08-tab-groups-overflow-1280",
+      "imageFile": "r94-f08-tab-groups-overflow-1280.png",
+      "window": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "overflowX": false
+      },
+      "tabOverflowStats": {
+        "tabCount": 20,
+        "stripScrollable": true,
+        "docOverflowX": false
+      },
+      "escTabDragUnchanged": true
+    },
+    {
+      "name": "r94-f08-close-unsaved-1280",
+      "imageFile": "r94-f08-close-unsaved-1280.png",
+      "window": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "overflowX": false
+      },
+      "unsavedEditorDialogVisible": true
+    },
+    {
+      "name": "r94-f08-corrupt-layout-recovery-1280",
+      "imageFile": "r94-f08-corrupt-layout-recovery-1280.png",
+      "window": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "overflowX": false
+      },
+      "cleanExitCode": 0,
+      "layoutExists": true,
+      "layoutVersion": 3,
+      "tabsBeforeQuit": 2,
+      "tabsAfterRestore": 2,
+      "coldStartRestored": true,
+      "corruptShell": {
+        "previewToggle": false,
+        "hasWorkspaceTabs": true,
+        "hasSettingsBtn": true,
+        "hasCollabBtn": true,
+        "hasSidebar": true,
+        "integrated": true
+      },
+      "corruptNoticeCheck": {
+        "hasNotice": true,
+        "noticeText": "Could not open saved workspaces.RetryReset layout",
+        "hasRetry": true,
+        "hasResetLayout": true,
+        "tabCount": 0
+      }
+    },
+    {
+      "name": "r94-f07-zh-shell-1280",
+      "imageFile": "r94-f07-zh-shell-1280.png",
+      "window": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "overflowX": false
+      },
+      "shellZh1280": {
+        "previewToggle": false,
+        "hasWorkspaceTabs": true,
+        "hasSettingsBtn": true,
+        "hasCollabBtn": true,
+        "hasSidebar": true,
+        "integrated": true
+      }
+    }
+  ],
+  "isolation": {
+    "userData": "C:\\Users\\D26FO\\AppData\\Local\\Temp\\porpita-r94-cDCjiD\\zh-parity\\userData",
+    "home": "C:\\Users\\D26FO\\AppData\\Local\\Temp\\porpita-r94-cDCjiD\\zh-parity\\home",
+    "version": "43.8.6",
+    "windows": [
+      {
+        "visible": false,
+        "focused": false
+      }
+    ]
+  }
+}

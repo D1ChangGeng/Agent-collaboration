@@ -4,27 +4,35 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import {
+  activateWorkspaceTab,
   addLocalFolderProject,
+  addSessionToActiveWorkspace,
   assertAllWindowsHidden,
   assertNotificationStackNonBlocking,
   closeCollaborationDialogWithFocusCheck,
   closeElectronApp,
   connectCollaborationViaSettings,
+  createIsolatedProfileDirs,
   disablePluginAndVerify,
   disconnectCollaborationViaSettings,
+  dismissNotificationCards,
+  ensureDualPaneWorkspace,
   hasIntegratedWorkspaceShell,
   installAndEnableFolderPlugin,
   isCollaborationConnectedText,
   launchElectronApp,
   M3_SELECTOR_CONTRACT,
   openAndVerifyPluginPanel,
+  openCodexChatViaVault,
   openCollaborationDialog,
   openMarkdownPreviewAndVerify,
   openSettingsPage,
+  primaryModifierKey,
   quitElectronGracefully,
   reconnectCollaborationViaSettings,
   returnFromSettings,
   selectCollaborationContact,
+  selectWorktreeById,
   setViewportSize,
   sleep,
   stubOpenDialog,
@@ -190,14 +198,45 @@ export const TIER4_TESTS = [
     featureArea: 'E2E-F01+E2E-F03',
     refs: ['J03', 'J04', 'J06', 'J07', 'UI_SPEC_BRIEF:E', 'UX02', 'UX15'],
     async run(ctx) {
-      const repoA = createTempGitRepo({ name: 't4-02-repo-a', files: { 'shared.md': '# Repo A\n' } })
-      const repoB = createTempGitRepo({ name: 't4-02-repo-b', files: { 'shared.md': '# Repo B\n' } })
-      let inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const repoA = createTempGitRepo({
+        name: 't4-02-repo-a',
+        files: { 'repo-a-only.txt': 'Repo A unique file\n', 'shared.md': '# Repo A\n' }
+      })
+      const repoB = createTempGitRepo({
+        name: 't4-02-repo-b',
+        files: { 'repo-b-only.txt': 'Repo B unique file\n', 'shared.md': '# Repo B\n' }
+      })
+      const dirs = createIsolatedProfileDirs()
+      createCodexHistoryFixture({
+        homeDir: dirs.homeDir,
+        repoPath: repoA.repoPath,
+        id: '019f1000-1111-7222-8333-4444444444a1',
+        prompt: 'Session Alpha checklist',
+        reply: 'Alpha session transcript ready.',
+        clock: '06'
+      })
+      createCodexHistoryFixture({
+        homeDir: dirs.homeDir,
+        repoPath: repoB.repoPath,
+        id: '019f1000-1111-7222-8333-4444444444b2',
+        prompt: 'Session Beta build',
+        reply: 'Beta session transcript ready.',
+        clock: '07'
+      })
+      let inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot, tempRoot: dirs.tempRoot })
       const tempRoot = inst.tempRoot
       try {
         const { app, page } = inst
         await addLocalFolderProject(app, page, repoA.repoPath)
+        const repoAId = await page.evaluate(
+          () => document.querySelector('[data-worktree-sidebar-layout] [role="option"][data-worktree-id][aria-current="page"]')?.getAttribute('data-worktree-id') || null
+        )
+        assert.ok(repoAId, 'Failed to resolve active worktree ID for repoA')
         await addLocalFolderProject(app, page, repoB.repoPath)
+        const repoBId = await page.evaluate(
+          () => document.querySelector('[data-worktree-sidebar-layout] [role="option"][data-worktree-id][aria-current="page"]')?.getAttribute('data-worktree-id') || null
+        )
+        assert.ok(repoBId && repoBId !== repoAId, 'Failed to resolve distinct active worktree ID for repoB')
         if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
@@ -206,32 +245,144 @@ export const TIER4_TESTS = [
             'Integrated Workspace Tab Groups, Session Index, Split Panes & Pinned SidePanel pending M3'
           )
         }
-        await page.getByText(path.basename(repoA.repoPath)).first().click()
+
+        // Open real Session A (repoA) and Session B (repoB) via Vault -> combine in Dual-Pane Workspace 1
+        const closeRightInit = page.locator('[data-workspace-sidebar-toggle="right"][aria-expanded="true"]').first()
+        if (await waitForVisible(closeRightInit, 800)) {
+          await closeRightInit.click()
+        }
+        await selectWorktreeById(page, repoAId)
+        await openCodexChatViaVault(page, { searchQuery: 'Session Alpha', expectedReply: 'Alpha session transcript ready.' })
+        await selectWorktreeById(page, repoBId)
+        await openCodexChatViaVault(page, { searchQuery: 'Session Beta', expectBackgroundTabText: 'Session Beta' })
+        const closeRightAfterVault = page.locator('[data-workspace-sidebar-toggle="right"][aria-expanded="true"]').first()
+        if (await waitForVisible(closeRightAfterVault, 800)) {
+          await closeRightAfterVault.click()
+        }
+
+        await activateWorkspaceTab(page, 0)
+        const panes = page.locator('[data-workspace-preview-session]')
+        if ((await panes.count()) < 2) {
+          await addSessionToActiveWorkspace(page, { pickExistingText: 'Session Beta' })
+        }
+        await page.waitForFunction(
+          () =>
+            document.querySelector('[data-workspace-preview-chat-layout]')?.getAttribute('data-preview-split') === 'side-by-side' &&
+            document.querySelectorAll('[data-workspace-preview-session]').length === 2,
+          null,
+          { timeout: 10000 }
+        )
+
+        const paneA = panes.nth(0)
+        const paneB = panes.nth(1)
+        await paneA.getByText('Alpha session transcript ready.', { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await paneB.getByText('Beta session transcript ready.', { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 })
+        await dismissNotificationCards(page)
+        const compA = paneA.locator('[data-native-chat-composer-scope] [contenteditable="true"]').first()
+        const compB = paneB.locator('[data-native-chat-composer-scope] [contenteditable="true"]').first()
+        await compA.click()
+        await page.keyboard.type('Scenario E Draft A')
+        await compB.click()
+        await page.keyboard.type('Scenario E Draft B')
+
+        // Keyboard split resize 50 -> 55, narrow collapse + Switch pane, wide restore
+        const sep = page.getByRole('separator').first()
+        await sep.focus()
+        await page.keyboard.press('ArrowRight')
+        await page.waitForFunction(
+          () => document.querySelector('[role="separator"]')?.getAttribute('aria-valuenow') === '55',
+          null,
+          { timeout: 5000 }
+        )
+        const leftToggle = page.locator('[data-workspace-sidebar-toggle="left"]').first()
+        const leftWasOpen = (await waitForVisible(leftToggle, 1000)) && (await leftToggle.getAttribute('aria-expanded')) === 'true'
+        if (leftWasOpen) await leftToggle.click()
+        await setViewportSize(app, page, 630, 560)
+        await page.waitForFunction(
+          () => document.querySelector('[data-workspace-preview-chat-layout]')?.getAttribute('data-preview-split') === 'focused',
+          null,
+          { timeout: 6000 }
+        )
+        await setViewportSize(app, page, 1280, 800)
+        await page.waitForFunction(
+          () => document.querySelector('[data-workspace-preview-chat-layout]')?.getAttribute('data-preview-split') === 'side-by-side',
+          null,
+          { timeout: 6000 }
+        )
+        if (leftWasOpen) await leftToggle.click()
+
+        // Create second Tab Group + Workspace 2, then return to General Workspace 1
+        const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
+        await groupBtn.click()
+        await page.getByRole('menuitem', { name: /New tab group|新建标签组/i }).first().click()
+        await page.getByRole('dialog').locator('input').first().fill('Group Two')
+        await page
+          .getByRole('dialog')
+          .getByRole('button', { name: /^(Create group|Create|创建分组|创建|确认)$/i })
+          .first()
+          .click()
+        await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i }).first().click()
+        await groupBtn.click()
+        await page.getByRole('menuitemradio', { name: /^(General|常规|通用)$/i }).first().click()
+        await activateWorkspaceTab(page, 0)
+
+        // Open Standalone Explorer pinned to repoA -> embed in Workspace 1 -> focus Session B -> detach -> open shared.md
         await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
         await page.getByRole('menuitem', { name: /^(Open Explorer|打开资源管理器)$/i }).first().click()
+        const folderPicker = page.getByRole('dialog').filter({ hasText: /Choose a folder for Explorer|选择资源管理器的目录/i }).first()
+        await folderPicker.waitFor({ state: 'visible', timeout: 6000 })
+        await folderPicker.getByRole('option').filter({ hasText: path.basename(repoA.repoPath) }).first().click()
+
         const standaloneExplorer = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="standalone"]`).first()
         await standaloneExplorer.waitFor({ state: 'visible', timeout: 8000 })
+        await standaloneExplorer.getByText('repo-a-only.txt', { exact: false }).first().waitFor({ state: 'visible', timeout: 8000 })
         const pinnedScope = (await standaloneExplorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
+
         await standaloneExplorer.getByRole('button', { name: /Explorer placement|资源管理器位置/i }).first().click()
-        await page.getByRole('menuitem', { name: /^(Move to |移动到)/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(Move to |移至 |移动到)/i }).first().click()
         const embedded = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="embedded"]`).first()
         await embedded.waitFor({ state: 'visible', timeout: 8000 })
-        assert.equal(
-          (await embedded.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim(),
-          pinnedScope
-        )
+        assert.equal((await embedded.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim(), pinnedScope)
+
+        await compB.click()
+        assert.equal(await embedded.getByText('repo-a-only.txt').count() > 0, true)
+        assert.equal(await embedded.getByText('repo-b-only.txt').count(), 0)
+
+        await embedded.getByRole('button', { name: /Explorer placement|资源管理器位置/i }).first().click()
+        await page.getByRole('menuitem', { name: /Open as a tab|作为标签打开/i }).first().click()
+        await standaloneExplorer.waitFor({ state: 'visible', timeout: 8000 })
+        await standaloneExplorer.getByRole('option', { name: 'shared.md' }).first().dblclick()
+        const editorView = page.locator('.tiptap, .ProseMirror, .monaco-editor .view-lines').first()
+        await editorView.waitFor({ state: 'visible', timeout: 10000 })
+        await editorView.getByText('Repo A', { exact: true }).first().waitFor({ state: 'visible', timeout: 10000 })
+        assert.equal(await editorView.getByText('Repo B').count(), 0)
+
+        // Return to Workspace 1 -> Clean quit -> Verify v3 persistence & cold relaunch
+        await activateWorkspaceTab(page, 0)
         const tabCountBefore = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
         const exitCode = await quitElectronGracefully(inst)
         assert.equal(exitCode, 0)
+
+        const layoutPath = path.join(inst.userDataDir, 'porpita-workspaces.json')
+        const savedLayout = JSON.parse(readFileSync(layoutPath, 'utf8'))
+        assert.equal(savedLayout.version, 3, `Expected strict version 3 layout, got ${savedLayout.version}`)
+
         inst = await launchElectronApp({
           porpitaRoot: ctx.porpitaRoot,
           tempRoot,
           seedCompletedOnboarding: false
         })
         await inst.page.locator(M3_SELECTOR_CONTRACT.workspaceTab).first().waitFor({ state: 'visible', timeout: 15000 })
+        await activateWorkspaceTab(inst.page, 0)
+        await inst.page.waitForFunction(
+          () => document.querySelector('[role="separator"]')?.getAttribute('aria-valuenow') === '55',
+          null,
+          { timeout: 10000 }
+        )
         const tabCountAfter = await inst.page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
         assert.ok(tabCountAfter >= tabCountBefore, `Expected >=${tabCountBefore} tabs after relaunch, got ${tabCountAfter}`)
-        return { pinnedScope, tabCountBefore, tabCountAfter }
+        return { pinnedScope, tabCountBefore, tabCountAfter, splitRatioRestored: 55 }
       } finally {
         await closeElectronApp(inst, { removeTempDir: true })
         repoA.cleanup()

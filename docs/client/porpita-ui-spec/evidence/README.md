@@ -1,5 +1,16 @@
 # 现版观察与回放证据
 
+## 第 94 轮
+
+Windows x64 在隔离档案与隐藏 Electron 窗口（`ORCA_BACKGROUND_LAUNCH=1`、全部 `!visible && !focused`、剥离 `VITE_PORPITA_WORKSPACE_PREVIEW`）下运行跨平台 `tools/observe-round-94.cjs`，在 `codex/porpita-ui-spec-91` 最终提交 `ab899ffee48ff6263a2422b96e59d24a06c2d436` 的 `--mode e2e` 构建上以严格模式（`findings: []`、退出码 `0`）采集 13 组英/简中宽窄窗（`1280×800`、`820×580`、`640×580`、`600×400`）证据，覆盖 **F07 默认生产集成** 与 **F08 工作区／会话目录收口**（`A.02`、`A.05`、`C.10`–`C.10.05`、`D`、`D.01`、`D.03.01`、`D.05`、`D.07`–`D.08.02`、`G.09`、`G.09.01`、`G.09.03`、`P.01`、`P.10`、`Q.03`、`R.04`、`R.06`、`R.07`、`S.09`、`T.03`、`T.06`）。 [最终运行记录](iteration-94-windows/run.json) · [构建与测试条件](../SOURCE_BASELINE.md#第-94-轮来源)
+
+| 范围 | 证据 |
+| --- | --- |
+| 默认集成外壳、组保护与 `600×400` 组选择器收窄（`A.02`、`D`、`D.07`、`D.08`、`D.08.01`） | [英文空态 1280](iteration-94-windows/r94-f07-empty-shell-1280.json) · [极窄选择器 600](iteration-94-windows/r94-f08-narrow-selector-600.json) · [简中集成外壳 1280](iteration-94-windows/r94-f07-zh-shell-1280.json) |
+| 左栏 `SidebarSessionIndex` 两行头区、`Search history` 转交与 `600×400` 共生（`C.10`–`C.10.05`、`P.01`、`P.10`） | [左栏目录 1280](iteration-94-windows/r94-f07-session-index-1280.json) · [短窗目录几何 600](iteration-94-windows/r94-f08-session-index-600.json) |
+| 双 Codex Chat `< 646px` 容器阈值、`ArrowRight`/Esc 调宽及 Standalone↔Embedded Explorer（`D.03.01`、`D.07.01`、`G.09`、`G.09.01`、`G.09.03`、`R.04`、`R.07`） | [双窗格 1280](iteration-94-windows/r94-f08-dual-pane-1280.json) · [聚焦 640](iteration-94-windows/r94-f08-dual-pane-640-focused.json) · [恢复并排 820](iteration-94-windows/r94-f08-dual-pane-820.json) · [Standalone 1280](iteration-94-windows/r94-f08-explorer-standalone-1280.json) · [Embedded 1280](iteration-94-windows/r94-f08-explorer-embedded-1280.json) |
+| 20 标签溢出/自定义组重命名与 Esc 拖拽、未保存 Editor 护栏、v3 冷启动恢复及损坏 JSON 横幅（`A.05`、`D.01`、`D.05`、`D.07.02`、`D.08.02`、`R.06`、`S.09`、`T.03`） | [20 标签溢出](iteration-94-windows/r94-f08-tab-groups-overflow-1280.json) · [未保存关闭护栏](iteration-94-windows/r94-f08-close-unsaved-1280.json) · [损坏档案恢复](iteration-94-windows/r94-f08-corrupt-layout-recovery-1280.json) |
+
 ## 第 93 轮
 
 Windows x64 在隔离档案、隐藏 Electron 窗口（`ORCA_BACKGROUND_LAUNCH=1`、全部 `!visible && !focused`）与临时 PostgreSQL 16 环回 `acs_loopback_server.py`（`mode: 'full'`）下运行跨平台 `tools/observe-round-93.cjs`，在 `codex/porpita-ui-spec-91` 最终提交 `1b27aeb1142a98ba4ac5aae1be711d441a42f9f8` 的 `--mode e2e` 构建上以严格模式（`findings: []`、退出码 `0`）采集 12 组简/英宽窄窗（`1280×800`、`600×400`）证据，覆盖 **F05 + F06** 协作状态同步、术语对齐与核心全链（`C.10.08`、`K`、`K.01`–`K.04`、`N.general.01`、`R.09`、`R.12`、`S.04`、`S.07`、`S.08`）。 [最终运行记录](iteration-93-windows/run.json) · [构建与测试条件](../SOURCE_BASELINE.md#第-93-轮来源)

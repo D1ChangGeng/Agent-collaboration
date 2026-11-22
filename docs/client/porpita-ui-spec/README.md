@@ -1,6 +1,6 @@
 # Porpita 桌面客户端 · 全覆盖 UI SPEC
 
-**设计已推进至第 93 轮。** 覆盖 20 个功能域、371 个条目。第 87–92 轮已归档，第 93 轮在 `codex/porpita-ui-spec-91` 提交 `1b27aeb1142a98ba4ac5aae1be711d441a42f9f8` 上完成 **F05 + F06** ACS 协作长驻状态同步、跨视图未读实时保活、`协作项目 / Collaboration project` 术语统一、Draft/附件/回复、`NativeLink` 与 `CommunicationSource`、检索清理与告警、`Notice` 已读、503 掉包只读核查与同请求幂等重试、以及 `600×400` 紧凑历史适配的源码修复与 Windows 隐藏窗口实机核对（`C.10.08`、`K`、`K.01`–`K.04`、`N.general.01`、`R.09`、`R.12`、`S.04`、`S.07`、`S.08`）。 [第 89 轮](ITERATION_89.md) · [第 90 轮](ITERATION_90.md) · [第 91 轮](ITERATION_91.md) · [第 92 轮](ITERATION_92.md) · [第 93 轮](ITERATION_93.md)
+**设计已推进至第 94 轮。** 覆盖 20 个功能域、371 个条目。第 87–93 轮已归档，第 94 轮在 `codex/porpita-ui-spec-91` 提交 `ab899ffee48ff6263a2422b96e59d24a06c2d436` 上完成 **F07（默认生产构建原生集成一体化 Workspace Chrome 与 Sidebar Session Index，移除预览开关）** 与 **F08（左栏会话目录两行紧凑头区与 `600×400` WorktreeList 共生、双会话 `< 646px` 容器阈值与键盘/Esc 调宽、Standalone↔Embedded 固定 Explorer 连续性、20 标签溢出/自定义组管理与 Esc 拖拽安全、未保存编辑器护栏及 `porpita-workspaces.json` v3 冷启动恢复／损坏 JSON 安全降级）** 的源码收敛、13 步 Windows 隐藏窗口严格实机核对（`findings: []`、退出码 `0`）与 28 项 M3 E2E `--mode full` 验真。 [第 89 轮](ITERATION_89.md) · [第 90 轮](ITERATION_90.md) · [第 91 轮](ITERATION_91.md) · [第 92 轮](ITERATION_92.md) · [第 93 轮](ITERATION_93.md) · [第 94 轮](ITERATION_94.md)
 
 | 查什么 | 入口 |
 | --- | --- |

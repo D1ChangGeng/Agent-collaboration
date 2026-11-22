@@ -3524,5 +3524,96 @@
     "path": "iteration-93-windows/r93-k01-collab-en-1280.json",
     "claim": "1280×800 英文深色二次重连后立即打开标题栏协作弹窗，实时呈现「Collaboration · 1」、「Connected」状态与 slot-b/slot-c 历史消息及附件下载入口（enCollabProjectCopyOk=true、enReconnectSyncedImmediate=true），Escape 退场精准回焦（enEscapeFocusRestored=true）。",
     "rows": ["K", "K.01", "C.10.08"]
+  },
+  {
+    "id": "I9401",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f07-empty-shell-1280.json",
+    "claim": "1280×800 英文深色默认集成生产构建（无 VITE_PORPITA_WORKSPACE_PREVIEW）直接挂载一体式 Group Picker、Workspace Tabs 与 Add project 入口（integrated=true、previewToggle=false），内建 General 组屏蔽重命名与删除项（generalDeleteProtected=true、overflowX=false）。",
+    "rows": ["A.02", "D", "D.07", "D.08"]
+  },
+  {
+    "id": "I9402",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f08-narrow-selector-600.json",
+    "claim": "600×400（Window 最小宽实测 600×401）窄标题栏下 max-w-[min(132px,31%)] 将组选择器稳定收窄为 44px（stripWidth=142、maxAllowed=134、insideViewport=true、overflowX=false），右侧新建与窗口控件均完整可读。",
+    "rows": ["A.02", "D.08.01"]
+  },
+  {
+    "id": "I9403",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f07-session-index-1280.json",
+    "claim": "1280×800 添加 r94-repo-alpha 与 r94-repo-beta（worktreeCount=2）后验证左栏 SidebarSessionIndex 两行紧凑头区零碰撞（sessionIndexGeo1280.ok=true、issues=[]），零匹配检索显示「No chats match your search and filters」并经 clear-filters 清空，输入「Release checklist」点击 Search history 实时转交右侧 Agent Session History 命中本地 Codex 历史（historyHandoffVisible=true）。",
+    "rows": ["C.10", "C.10.03", "C.10.04", "C.10.05"]
+  },
+  {
+    "id": "I9404",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f08-session-index-600.json",
+    "claim": "600×400 短窗关闭右侧栏后实测左栏 SidebarNav 与 SidebarSessionIndex 共存几何全通（sidebarGeo600.ok=true、sessionIndexGeo600.ok=true、issues=[]），WorktreeList 保留 112px 可用列表高度（cardHeight=49、overflowX=false）。",
+    "rows": ["C.10", "C.10.04", "P.01", "P.10"]
+  },
+  {
+    "id": "I9405",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f08-dual-pane-1280.json",
+    "claim": "1280×800 新建 Workspace 并添加两个 Codex Chat 窗格呈并排分屏（splitAttr1280=side-by-side），收起右栏后实测分隔线 ArrowRight 键盘调宽递增（dividerArrowShifted=true）及拖动中途按 Escape 精准还原比例（dividerEscReverted=true）。",
+    "rows": ["D.03.01", "D.07.01", "Q.03", "R.04", "T.03"]
+  },
+  {
+    "id": "I9406",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f08-dual-pane-640-focused.json",
+    "claim": "收起侧栏后将窗口缩窄至 640×580（容器宽低于 646px 断点），双会话布局即时切为单窗格聚焦视图与切换下拉（splitAttr640=focused、overflowX=false）。",
+    "rows": ["D.07.01", "G.09.03", "R.04"]
+  },
+  {
+    "id": "I9407",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f08-dual-pane-820.json",
+    "claim": "在同状态下将窗口放宽至 820×580（容器宽越过 646px 断点），双 Codex Chat 布局即刻还原并排双窗格（splitAttr820=side-by-side、overflowX=false）。",
+    "rows": ["D.07.01", "G.09.03", "R.04"]
+  },
+  {
+    "id": "I9408",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f08-explorer-standalone-1280.json",
+    "claim": "1280×800 从 Workspace 打开 Standalone Fixed-Scope Explorer 绑定 r94-repo-beta 后切换左栏激活相反仓库 r94-repo-alpha，Explorer 顶栏范围与文件树仍稳定锁定 r94-repo-beta（scopeInitial=scopeAfterRepoSwitch=r94-repo-beta）。",
+    "rows": ["G.09", "G.09.01", "R.07"]
+  },
+  {
+    "id": "I9409",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f08-explorer-embedded-1280.json",
+    "claim": "1280×800 将该 Standalone Explorer 通过 placement 菜单移回所属 Workspace Embedded 右侧停靠，固定范围连续保持 r94-repo-beta 不丢失（embeddedVisible=true、scopeEmbedded=r94-repo-beta）。",
+    "rows": ["G.09", "G.09.01", "R.07"]
+  },
+  {
+    "id": "I9410",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f08-tab-groups-overflow-1280.json",
+    "claim": "1280×800 创建自定义组「Sprint Overflow」并验证 rename/delete 钩子与改名为「Sprint Renamed」后，新建 20 个 Workspace 顶层标签确认标签条横向可滚（tabCount=20、stripScrollable=true、docOverflowX=false）且可见标签拖拽中按 Escape 安全退回无误移（escTabDragUnchanged=true）。",
+    "rows": ["D.01", "D.08", "D.08.01", "D.08.02", "P.10", "Q.03", "T.03"]
+  },
+  {
+    "id": "I9411",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f08-close-unsaved-1280.json",
+    "claim": "1280×800 经「Show worktree tools」打开右侧 Explorer 双击 notes.md 在富文本编辑器键入未保存文本并点击标签关闭，清晰弹出「Unsaved Changes」保存确认（unsavedEditorDialogVisible=true），点击 Cancel 完整保留未保存修改（editorCancelKeptDirty=true）。",
+    "rows": ["D", "D.05", "S.09"]
+  },
+  {
+    "id": "I9412",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f08-corrupt-layout-recovery-1280.json",
+    "claim": "独立档案添加仓库并创建 Workspace 后优雅退出（cleanExitCode=0）落盘 porpita-workspaces.json（layoutVersion=3），冷启动复原原 2 个顶层 Tab（coldStartRestored=true）；随后注入损坏 JSON 重启不崩溃且呈集成外壳，工作区顶栏显示「Could not open saved workspaces.」与 Retry / Reset layout 恢复动作（hasNotice=true、hasRetry=true、hasResetLayout=true）。",
+    "rows": ["A.05", "D.07.02", "R.06"]
+  },
+  {
+    "id": "I9413",
+    "kind": "iteration-build",
+    "path": "iteration-94-windows/r94-f07-zh-shell-1280.json",
+    "claim": "1280×800 简中深色默认集成生产构建冷启动确认完整一体化外壳、通用组选择器、两行式会话目录头区与底部工作区/工具栏中文化一致性（integrated=true、previewToggle=false）。",
+    "rows": ["A.02", "C.10", "C.10.04", "D.07", "D.08", "T.06"]
   }
 ]

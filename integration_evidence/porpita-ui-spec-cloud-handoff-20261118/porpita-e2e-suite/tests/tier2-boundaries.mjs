@@ -3,14 +3,18 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import {
+  activateWorkspaceTab,
   addLocalFolderProject,
+  addSessionToActiveWorkspace,
   assertAllWindowsHidden,
   assertImeCompositionKeepsDialogOpen,
   closeCollaborationDialogWithFocusCheck,
   closeElectronApp,
   connectCollaborationViaSettings,
   disablePluginAndVerify,
+  dismissNotificationCards,
   dismissStartupDialogs,
+  ensureDualPaneWorkspace,
   hasIntegratedWorkspaceShell,
   installAndEnableFolderPlugin,
   launchElectronApp,
@@ -20,8 +24,10 @@ import {
   openMarkdownPreviewAndVerify,
   openSettingsPage,
   primaryModifierKey,
+  quitElectronGracefully,
   returnFromSettings,
   selectCollaborationContact,
+  selectWorktreeById,
   setViewportSize,
   sleep,
   stubOpenDialog,
@@ -108,13 +114,16 @@ export const TIER2_TESTS = [
         }
         const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
         await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
-        await setViewportSize(app, page, 360, 400)
+        await setViewportSize(app, page, 600, 400)
         const narrowMetrics = await page.evaluate((sel) => {
           const el = document.querySelector(sel)
           const r = el?.getBoundingClientRect()
+          const strip = el?.parentElement?.getBoundingClientRect()
+          const stripWidth = strip ? strip.width : window.innerWidth
           return {
             width: r ? r.width : 0,
-            maxAllowed: Math.min(132, window.innerWidth * 0.31) + 2,
+            stripWidth,
+            maxAllowed: Math.min(132, stripWidth * 0.31) + 2,
             insideViewport: Boolean(r && r.left >= 0 && r.right <= window.innerWidth + 1),
             overflowX: document.documentElement.scrollWidth > window.innerWidth + 2
           }
@@ -125,6 +134,16 @@ export const TIER2_TESTS = [
         )
         assert.equal(narrowMetrics.insideViewport, true, 'Group selector clipped out of narrow viewport')
         assert.equal(narrowMetrics.overflowX, false, 'Horizontal overflow at narrow group selector width')
+
+        await groupBtn.click()
+        const menu = page.getByRole('menu').first()
+        await menu.waitFor({ state: 'visible', timeout: 5000 })
+        const menuBox = await menu.boundingBox()
+        assert.ok(
+          menuBox && menuBox.x >= -1 && menuBox.x + menuBox.width <= 602 && menuBox.y + menuBox.height <= 402,
+          `Group menu clipped outside 600x400: ${JSON.stringify(menuBox)}`
+        )
+        await page.keyboard.press('Escape')
         return narrowMetrics
       } finally {
         await closeElectronApp(inst)
@@ -153,6 +172,9 @@ export const TIER2_TESTS = [
         const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
         await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
         await groupBtn.click()
+        await page.getByRole('menu').first().waitFor({ state: 'visible', timeout: 5000 })
+        assert.equal(await page.locator(M3_SELECTOR_CONTRACT.groupDelete).count(), 0, 'General group must not expose delete')
+        assert.equal(await page.locator(M3_SELECTOR_CONTRACT.groupRename).count(), 0, 'General group must not expose rename')
         const deleteGeneral = page.getByRole('menuitem', { name: /Delete.*General|删除.*通用/i })
         assert.equal(await deleteGeneral.count(), 0, 'General group must not expose a delete action')
         await page.keyboard.press('Escape')
@@ -185,19 +207,31 @@ export const TIER2_TESTS = [
           await groupBtn.click()
           await page.getByRole('menuitem', { name: /New tab group|新建标签组/i }).first().click()
           const input = page.getByRole('dialog').locator('input').first()
+          await input.waitFor({ state: 'visible', timeout: 5000 })
           await input.fill('Alpha')
-          await page.getByRole('dialog').getByRole('button', { name: /^(Create group|Create|创建|确认)$/i }).first().click()
-          await sleep(100)
+          await page
+            .getByRole('dialog')
+            .getByRole('button', { name: /^(Create group|Create|创建分组|创建|确认)$/i })
+            .first()
+            .click()
+          await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 5000 })
         }
         await groupBtn.click()
-        const alphaCount = await page.getByRole('menuitemradio', { name: /Alpha/i }).count()
-        assert.ok(alphaCount >= 1, 'Duplicate group creation broke group picker')
+        const alpha1 = await page.getByRole('menuitemradio', { name: 'Alpha', exact: true }).count()
+        const alpha2 = await page.getByRole('menuitemradio', { name: 'Alpha (2)', exact: true }).count()
+        assert.equal(alpha1, 1, 'First Alpha group missing')
+        assert.equal(alpha2, 1, 'Duplicate group name should disambiguate to Alpha (2)')
         await page.keyboard.press('Escape')
 
         for (let t = 0; t < 20; t++) {
           await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
           await page.getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i }).first().click()
         }
+        await page.waitForFunction(
+          () => document.querySelectorAll('[data-workspace-preview-tab], [data-workspace-tab]').length >= 20,
+          null,
+          { timeout: 10000 }
+        )
         const overflowCheck = await page.evaluate((stripSel) => {
           const strip = document.querySelector(stripSel)
           return {
@@ -220,7 +254,8 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F01',
     refs: ['D.07.02', 'D.07.04'],
     async run(ctx) {
-      const inst = await launchElectronApp({
+      const repo = createTempGitRepo({ name: 't2-f01-05' })
+      let inst = await launchElectronApp({
         porpitaRoot: ctx.porpitaRoot,
         seedCompletedOnboarding: true
       })
@@ -228,43 +263,106 @@ export const TIER2_TESTS = [
       const userDataDir = inst.userDataDir
       try {
         await closeElectronApp(inst, { removeTempDir: false })
-        // Inject corrupt porpita-workspaces.json
-        const layoutPath = path.join(userDataDir, 'porpita-workspaces.json')
-        writeFileSync(layoutPath, '{ "corrupt": [invalid json', 'utf8')
 
-        const relaunched = await launchElectronApp({
+        // Part A: Inject corrupt porpita-workspaces.json -> assert non-blocking recovery banner + file preserved intact + Reset recovers cleanly
+        const layoutPath = path.join(userDataDir, 'porpita-workspaces.json')
+        const corruptRaw = '{ "corrupt": [invalid json'
+        writeFileSync(layoutPath, corruptRaw, 'utf8')
+
+        inst = await launchElectronApp({
           porpitaRoot: ctx.porpitaRoot,
           tempRoot,
           seedCompletedOnboarding: false
         })
-        try {
-          await relaunched.page
-            .locator('[data-contextual-tour-target="sidebar-navigation"]')
-            .waitFor({ state: 'visible', timeout: 12000 })
-          await assertAllWindowsHidden(relaunched.app)
-          if (!(await hasIntegratedWorkspaceShell(relaunched.page))) {
-            pendingIfSmoke(
-              ctx.mode,
-              'M3',
-              'Corrupt porpita-workspaces.json triggers recoverable notice & v1/v2 migrates to v3',
-              'App survived corrupt porpita-workspaces.json cleanly; Workspace v3 layout reader pending M3 integration'
-            )
-          }
-          const retryOrNotice = await relaunched.page.evaluate(() => ({
-            hasNotice: Boolean(document.querySelector('[data-workspace-preview] [role="status"], [role="alert"]')),
-            hasTabs: document.querySelectorAll('[data-workspace-preview-tab], [data-workspace-tab]').length > 0
-          }))
-          assert.ok(
-            retryOrNotice.hasNotice || retryOrNotice.hasTabs,
-            'Expected recoverable status notice or recovered workspace shell after corrupt layout JSON'
+        await inst.page
+          .locator('[data-contextual-tour-target="sidebar-navigation"]')
+          .waitFor({ state: 'visible', timeout: 12000 })
+        await assertAllWindowsHidden(inst.app)
+        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'Corrupt porpita-workspaces.json triggers recoverable notice & v1/v2 migrates to v3',
+            'App survived corrupt porpita-workspaces.json cleanly; Workspace v3 layout reader pending M3 integration'
           )
-          return { survivedCorruptLayout: true, ...retryOrNotice }
-        } finally {
-          await closeElectronApp(relaunched, { removeTempDir: true })
         }
-      } catch (err) {
-        await closeElectronApp(inst, { removeTempDir: true }).catch(() => {})
-        throw err
+        const statusNotice = inst.page
+          .locator('[data-workspace-preview] [role="status"]')
+          .filter({ hasText: /Could not open saved workspaces|无法打开|Retry|重试/i })
+          .first()
+        await statusNotice.waitFor({ state: 'visible', timeout: 8000 })
+        assert.equal(
+          readFileSync(layoutPath, 'utf8'),
+          corruptRaw,
+          'Corrupt porpita-workspaces.json must be preserved intact on disk until explicit reset'
+        )
+        const resetBtn = inst.page.getByRole('button', { name: /Reset layout|重置布局/i }).first()
+        await resetBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await resetBtn.click()
+        await inst.page.locator(M3_SELECTOR_CONTRACT.groupSelector).first().waitFor({ state: 'visible', timeout: 8000 })
+
+        // Part B: Write valid v1 layout & verify clean load + v1 -> v3 migration on write
+        await addLocalFolderProject(inst.app, inst.page, repo.repoPath)
+        await ensureDualPaneWorkspace(inst.page)
+        await quitElectronGracefully(inst)
+
+        const v3Saved = JSON.parse(readFileSync(layoutPath, 'utf8'))
+        const wsObj = (v3Saved.objects || []).find((o) => o.kind === 'workspace' && o.sessions?.length > 0)
+        assert.ok(wsObj, 'Expected workspace object before v1 conversion')
+        const v1Layout = {
+          version: 1,
+          groups: v3Saved.groups,
+          activeGroup: v3Saved.activeGroup,
+          activeId: wsObj.id,
+          visit: v3Saved.visit,
+          objects: [
+            {
+              kind: 'workspace',
+              id: wsObj.id,
+              title: 'Migrated Workspace',
+              groupId: wsObj.groupId,
+              open: true,
+              visited: wsObj.visited,
+              ratio: wsObj.ratio,
+              sessions: wsObj.sessions.map(({ worktreeId, tabId, conversationId }) => ({
+                worktreeId,
+                tabId,
+                conversationId
+              })),
+              focusedTab: wsObj.sessions[0].tabId
+            }
+          ]
+        }
+        writeFileSync(layoutPath, JSON.stringify(v1Layout), 'utf8')
+
+        inst = await launchElectronApp({
+          porpitaRoot: ctx.porpitaRoot,
+          tempRoot,
+          seedCompletedOnboarding: false
+        })
+        await inst.page
+          .locator(M3_SELECTOR_CONTRACT.workspaceTab)
+          .filter({ hasText: 'Migrated Workspace' })
+          .first()
+          .waitFor({ state: 'visible', timeout: 12000 })
+
+        // Trigger a layout write (resize separator ArrowRight) -> verifies v1 migrates to schema version 3
+        const sep = inst.page.getByRole('separator').first()
+        await sep.waitFor({ state: 'visible', timeout: 8000 })
+        await sep.focus()
+        await inst.page.keyboard.press('ArrowRight')
+        await quitElectronGracefully(inst)
+
+        const migrated = JSON.parse(readFileSync(layoutPath, 'utf8'))
+        assert.equal(migrated.version, 3, `Expected v1 layout to upgrade to version 3, got ${migrated.version}`)
+        const migratedWs = migrated.objects.find((o) => o.id === wsObj.id)
+        assert.equal(migratedWs.sessions[0].executionHostId, 'local')
+        assert.equal(migratedWs.sessions[0].pairingRevision, null)
+        assert.ok('focusedSession' in migratedWs, 'Migrated workspace missing focusedSession')
+        return { corruptNoticeShown: true, corruptFilePreserved: true, v1MigratedToV3: migrated.version }
+      } finally {
+        await closeElectronApp(inst, { removeTempDir: true })
+        repo.cleanup()
       }
     }
   },
@@ -275,11 +373,12 @@ export const TIER2_TESTS = [
     refs: ['D.07.05', 'J12'],
     async run(ctx) {
       const repo = createTempGitRepo({ name: 't2-f01-06' })
-      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      let inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const tempRoot = inst.tempRoot
+      const userDataDir = inst.userDataDir
       try {
-        const { app, page } = inst
-        await addLocalFolderProject(app, page, repo.repoPath)
-        if (!(await hasIntegratedWorkspaceShell(page))) {
+        await addLocalFolderProject(inst.app, inst.page, repo.repoPath)
+        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -287,16 +386,94 @@ export const TIER2_TESTS = [
             'Integrated multi-host Workspace layout pending M3'
           )
         }
-        const activePane = page.locator('[data-workspace-preview-session], [data-workspace-session]').first()
-        await activePane.waitFor({ state: 'visible', timeout: 8000 })
-        const interactive = await page.evaluate(() => {
-          const settingsBtn = document.querySelector('button[aria-label="Settings"], button[aria-label="设置"]')
-          return Boolean(settingsBtn && !settingsBtn.hasAttribute('disabled'))
+        await activateWorkspaceTab(inst.page, 0)
+        await addSessionToActiveWorkspace(inst.page)
+        await quitElectronGracefully(inst)
+
+        // Seed unreachable paired runtime environment + append paired offline session as Pane 2 beside local Pane 1
+        const envPath = path.join(userDataDir, 'orca-environments.json')
+        writeFileSync(
+          envPath,
+          JSON.stringify({
+            version: 1,
+            environments: [
+              {
+                id: 'offline-studio',
+                name: 'Offline Studio',
+                createdAt: 1000,
+                updatedAt: 1000,
+                pairingRevision: 1,
+                lastUsedAt: null,
+                runtimeId: 'offline-studio',
+                endpoints: [
+                  {
+                    id: 'ep-offline',
+                    kind: 'websocket',
+                    label: 'Offline Endpoint',
+                    endpoint: 'ws://127.0.0.1:1',
+                    deviceToken: 'tok-offline',
+                    publicKeyB64: 'cGstb2ZmbGluZQ=='
+                  }
+                ],
+                preferredEndpointId: 'ep-offline'
+              }
+            ]
+          }),
+          'utf8'
+        )
+        const layoutPath = path.join(userDataDir, 'porpita-workspaces.json')
+        const layout = JSON.parse(readFileSync(layoutPath, 'utf8'))
+        const targetWs = layout.objects.find((o) => o.kind === 'workspace' && o.sessions?.length > 0)
+        assert.ok(targetWs, 'Expected local session workspace before seeding offline pane')
+        targetWs.sessions = [
+          targetWs.sessions[0],
+          {
+            worktreeId: 'remote-wt-offline',
+            tabId: 'remote-pane-tab',
+            conversationId: 'remote-conv-offline',
+            executionHostId: 'runtime:offline-studio',
+            pairingRevision: 1
+          }
+        ]
+        layout.activeId = targetWs.id
+        targetWs.open = true
+        writeFileSync(layoutPath, JSON.stringify(layout), 'utf8')
+
+        inst = await launchElectronApp({
+          porpitaRoot: ctx.porpitaRoot,
+          tempRoot,
+          seedCompletedOnboarding: false
         })
-        assert.equal(interactive, true, 'Workbench controls must remain interactive')
-        return { unaffectedPaneInteractive: interactive }
+        const { page } = inst
+        const offlinePane = page.locator('[data-workspace-preview-session="remote-pane-tab"]').first()
+        await offlinePane.waitFor({ state: 'visible', timeout: 15000 })
+        await offlinePane.locator('[role="status"]').first().waitFor({ state: 'visible', timeout: 15000 })
+        const hostState = await offlinePane.getAttribute('data-session-host-state')
+        assert.ok(
+          hostState === 'disconnected' || hostState === 'unavailable',
+          `Expected offline pane host state disconnected/unavailable, got ${hostState}`
+        )
+        const removeBtn = offlinePane.getByRole('button', { name: /Remove pane from workspace|从工作空间移除窗格/i }).first()
+        await removeBtn.waitFor({ state: 'visible', timeout: 5000 })
+
+        // Verify unaffected local Pane 1 composer accepts input cleanly while Pane 2 is disconnected/revoked
+        const localPane = page
+          .locator('[data-workspace-preview-session]:not([data-workspace-preview-session="remote-pane-tab"])')
+          .first()
+        await localPane.waitFor({ state: 'visible', timeout: 8000 })
+        const composer = localPane.locator('[data-native-chat-composer-scope] [contenteditable="true"]').first()
+        await composer.waitFor({ state: 'visible', timeout: 8000 })
+        await composer.click()
+        await page.keyboard.type('Unaffected local pane works')
+        assert.match(await composer.innerText(), /Unaffected local pane works/)
+
+        // Remove offline Pane 2 -> verifies local Pane 1 & typed draft remain intact
+        await removeBtn.click()
+        await offlinePane.waitFor({ state: 'hidden', timeout: 6000 })
+        assert.match(await composer.innerText(), /Unaffected local pane works/)
+        return { hostState, unaffectedPaneInteractive: true, removedOfflinePaneCleanly: true }
       } finally {
-        await closeElectronApp(inst)
+        await closeElectronApp(inst, { removeTempDir: true })
         repo.cleanup()
       }
     }
@@ -460,12 +637,7 @@ export const TIER2_TESTS = [
         }
 
         // Dismiss any overlay notification card (e.g. Codex shared-settings card) so 600x400 controls stay unobstructed
-        const cardDismissBtn = page
-          .locator('[data-notification-card-stack] button[aria-label="Dismiss"], [data-notification-card-stack] button[aria-label="关闭"]')
-          .first()
-        for (let i = 0; i < 3 && (await waitForVisible(cardDismissBtn, 500)); i += 1) {
-          await cardDismissBtn.click().catch(() => {})
-        }
+        await dismissNotificationCards(page, 3)
 
         // 3. Resize to 600x400 with the persistent Sonner toast active
         await setViewportSize(app, page, 600, 400)
@@ -731,20 +903,43 @@ export const TIER2_TESTS = [
             'Integrated dual-pane Workspace layout pending M3'
           )
         }
-        const addSessionBtn = page.getByRole('button', { name: /Add session|添加会话/i }).first()
-        if (await waitForVisible(addSessionBtn, 3000)) await addSessionBtn.click()
-        const splitBox = page.locator(M3_SELECTOR_CONTRACT.splitLayout).first()
-        await splitBox.waitFor({ state: 'visible', timeout: 8000 })
-        assert.equal(await splitBox.getAttribute('data-preview-split'), 'side-by-side')
-        await setViewportSize(app, page, 640, 600)
+        const splitBox = await ensureDualPaneWorkspace(page)
         await page.waitForFunction(
-          (sel) => document.querySelector(sel)?.getAttribute('data-preview-split') === 'focused',
+          (sel) => {
+            const el = document.querySelector(sel)
+            return el && el.getBoundingClientRect().width >= 646 && el.getAttribute('data-preview-split') === 'side-by-side'
+          },
+          M3_SELECTOR_CONTRACT.splitLayout,
+          { timeout: 8000 }
+        )
+        assert.equal(await splitBox.getAttribute('data-preview-split'), 'side-by-side')
+
+        // Collapse both sidebars so window width directly controls the 646px split container cutoff
+        const leftToggle = page.locator('[data-workspace-sidebar-toggle="left"]').first()
+        if ((await waitForVisible(leftToggle, 1000)) && (await leftToggle.getAttribute('aria-expanded')) === 'true') {
+          await leftToggle.click()
+        }
+        const rightToggle = page.locator('[data-workspace-sidebar-toggle="right"][aria-expanded="true"]').first()
+        if (await waitForVisible(rightToggle, 800)) {
+          await rightToggle.click()
+        }
+        await setViewportSize(app, page, 635, 600)
+        await page.waitForFunction(
+          (sel) => {
+            const el = document.querySelector(sel)
+            return el && el.getBoundingClientRect().width < 646 && el.getAttribute('data-preview-split') === 'focused'
+          },
           M3_SELECTOR_CONTRACT.splitLayout,
           { timeout: 6000 }
         )
-        await setViewportSize(app, page, 1280, 800)
+        await page.getByRole('button', { name: /Switch pane|切换窗格/i }).first().waitFor({ state: 'visible', timeout: 5000 })
+
+        await setViewportSize(app, page, 680, 600)
         await page.waitForFunction(
-          (sel) => document.querySelector(sel)?.getAttribute('data-preview-split') === 'side-by-side',
+          (sel) => {
+            const el = document.querySelector(sel)
+            return el && el.getBoundingClientRect().width >= 646 && el.getAttribute('data-preview-split') === 'side-by-side'
+          },
           M3_SELECTOR_CONTRACT.splitLayout,
           { timeout: 6000 }
         )
@@ -774,27 +969,74 @@ export const TIER2_TESTS = [
             'Integrated Workspace split divider pending M3'
           )
         }
-        const addSessionBtn = page.getByRole('button', { name: /Add session|添加会话/i }).first()
-        if (await waitForVisible(addSessionBtn, 3000)) await addSessionBtn.click()
+        const closeRight = page.locator('[data-workspace-sidebar-toggle="right"][aria-expanded="true"]').first()
+        if (await waitForVisible(closeRight, 800)) {
+          await closeRight.click()
+        }
+        await ensureDualPaneWorkspace(page)
         const separator = page.getByRole('separator').first()
         await separator.waitFor({ state: 'visible', timeout: 8000 })
         const minVal = Number.parseFloat((await separator.getAttribute('aria-valuemin')) || '15')
         const maxVal = Number.parseFloat((await separator.getAttribute('aria-valuemax')) || '85')
         assert.ok(minVal >= 15 && maxVal <= 85, `Expected divider bounds within 15..85, got ${minVal}..${maxVal}`)
+
         await separator.focus()
+        await page.keyboard.press('End')
+        await page.waitForFunction(
+          (maxExpected) => {
+            const v = Number.parseFloat(document.querySelector('[role="separator"]')?.getAttribute('aria-valuenow') || '0')
+            return v === maxExpected
+          },
+          maxVal,
+          { timeout: 5000 }
+        )
+        const highVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
+        assert.ok(highVal <= maxVal && highVal >= 50, `End clamped outside maxVal: ${highVal} > ${maxVal}`)
+
         await page.keyboard.press('Home')
+        await page.waitForFunction(
+          (minExpected) => {
+            const v = Number.parseFloat(document.querySelector('[role="separator"]')?.getAttribute('aria-valuenow') || '0')
+            return v === minExpected
+          },
+          minVal,
+          { timeout: 5000 }
+        )
         const lowVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
         assert.ok(lowVal >= minVal, `Home clamped below minVal: ${lowVal} < ${minVal}`)
+
+        const expectedAfterRight = Math.min(maxVal, lowVal + 5)
+        await page.keyboard.press('ArrowRight')
+        await page.waitForFunction(
+          (expected) => Number.parseFloat(document.querySelector('[role="separator"]')?.getAttribute('aria-valuenow') || '0') === expected,
+          expectedAfterRight,
+          { timeout: 5000 }
+        )
+        const preDragVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
+
+        // 1. Escape mid-drag reverts ratio cleanly
         const box = await separator.boundingBox()
         assert.ok(box, 'Separator missing bounding box')
         await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
         await page.mouse.down()
-        await page.mouse.move(box.x + 150, box.y + box.height / 2)
+        await page.mouse.move(box.x + 150, box.y + box.height / 2, { steps: 6 })
         await page.keyboard.press('Escape')
         await page.mouse.up()
-        const revertedVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
-        assert.equal(revertedVal, lowVal, `Escape mid-drag must revert ratio (${revertedVal} !== ${lowVal})`)
-        return { minVal, maxVal, lowVal, revertedVal }
+        const escapedVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
+        assert.equal(escapedVal, preDragVal, `Escape mid-drag must revert ratio (${escapedVal} !== ${preDragVal})`)
+
+        // 2. Pointercancel mid-drag reverts ratio cleanly without committing
+        const box2 = await separator.boundingBox()
+        await page.mouse.move(box2.x + box2.width / 2, box2.y + box2.height / 2)
+        await page.mouse.down()
+        await page.mouse.move(box2.x + 150, box2.y + box2.height / 2, { steps: 6 })
+        await separator.evaluate((el) => {
+          el.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: 1 }))
+        })
+        await page.mouse.up()
+        const cancelledVal = Number.parseFloat((await separator.getAttribute('aria-valuenow')) || '0')
+        assert.equal(cancelledVal, preDragVal, `pointercancel mid-drag must revert ratio (${cancelledVal} !== ${preDragVal})`)
+        return { minVal, maxVal, lowVal, highVal, preDragVal, escapedVal, cancelledVal }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -808,11 +1050,12 @@ export const TIER2_TESTS = [
     refs: ['C.10', 'S.02', 'C.10.09'],
     async run(ctx) {
       const repo = createTempGitRepo({ name: 't2-f03-03' })
-      const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      let inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
+      const tempRoot = inst.tempRoot
+      const userDataDir = inst.userDataDir
       try {
-        const { app, page } = inst
-        await addLocalFolderProject(app, page, repo.repoPath)
-        if (!(await hasIntegratedWorkspaceShell(page))) {
+        await addLocalFolderProject(inst.app, inst.page, repo.repoPath)
+        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
           pendingIfSmoke(
             ctx.mode,
             'M3',
@@ -820,18 +1063,76 @@ export const TIER2_TESTS = [
             'Session Index integration pending M3'
           )
         }
-        const sessionIndex = page.locator(M3_SELECTOR_CONTRACT.sessionIndex).first()
+        await activateWorkspaceTab(inst.page, 0)
+        await addSessionToActiveWorkspace(inst.page)
+
+        // Verify 0-match status + Clear filters CTA restores rows
+        const sessionIndex = inst.page.locator(M3_SELECTOR_CONTRACT.sessionIndex).first()
         await sessionIndex.waitFor({ state: 'visible', timeout: 8000 })
+        const rows = sessionIndex.locator(M3_SELECTOR_CONTRACT.sessionIndexRow)
+        await rows.first().waitFor({ state: 'visible', timeout: 8000 })
         const searchInput = sessionIndex.locator('input').first()
         await searchInput.fill('__zero_match_probe__')
         const status = sessionIndex.locator('[role="status"]').first()
         await status.waitFor({ state: 'visible', timeout: 5000 })
         const statusText = (await status.innerText()).trim()
         assert.ok(statusText.length > 0, 'Session Index 0-match status message empty')
-        await searchInput.fill('')
-        return { zeroMatchStatusText: statusText }
+        const clearBtn = sessionIndex.locator(M3_SELECTOR_CONTRACT.sessionIndexClearFilters).first()
+        await clearBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await clearBtn.click()
+        await rows.first().waitFor({ state: 'visible', timeout: 5000 })
+        assert.equal(await searchInput.inputValue(), '', 'Clear filters must empty query and restore rows')
+
+        // Relaunch with an unreachable paired runtime environment -> verify offline host notice & Reconnect CTA
+        await quitElectronGracefully(inst)
+        writeFileSync(
+          path.join(userDataDir, 'orca-environments.json'),
+          JSON.stringify({
+            version: 1,
+            environments: [
+              {
+                id: 'offline-host-idx',
+                name: 'Offline Index Host',
+                createdAt: 1000,
+                updatedAt: 1000,
+                pairingRevision: 1,
+                lastUsedAt: null,
+                runtimeId: 'offline-host-idx',
+                endpoints: [
+                  {
+                    id: 'ep-idx',
+                    kind: 'websocket',
+                    label: 'Offline',
+                    endpoint: 'ws://127.0.0.1:1',
+                    deviceToken: 'tok-idx',
+                    publicKeyB64: 'cGstaWR4'
+                  }
+                ],
+                preferredEndpointId: 'ep-idx'
+              }
+            ]
+          }),
+          'utf8'
+        )
+        inst = await launchElectronApp({
+          porpitaRoot: ctx.porpitaRoot,
+          tempRoot,
+          seedCompletedOnboarding: false
+        })
+        const { page } = inst
+        const idx2 = page.locator(M3_SELECTOR_CONTRACT.sessionIndex).first()
+        await idx2.waitFor({ state: 'visible', timeout: 12000 })
+        const scopeBtn = idx2.locator('[data-session-index-scope]').first()
+        await scopeBtn.click()
+        const offlineChoice = page.getByRole('menuitemradio', { name: 'Offline Index Host', exact: true }).first()
+        await offlineChoice.waitFor({ state: 'visible', timeout: 8000 })
+        await offlineChoice.click()
+        await idx2.getByText(/Could not confirm a connection to Offline Index Host|无法确认与 Offline Index Host 的连接/i).first().waitFor({ state: 'visible', timeout: 8000 })
+        const reconnectBtn = idx2.getByRole('button', { name: /^(Reconnect|重新连接)$/i }).first()
+        await reconnectBtn.waitFor({ state: 'visible', timeout: 5000 })
+        return { zeroMatchStatusText: statusText, clearFilterRestored: true, offlineHostNoticeAndReconnect: true }
       } finally {
-        await closeElectronApp(inst)
+        await closeElectronApp(inst, { removeTempDir: true })
         repo.cleanup()
       }
     }
@@ -855,19 +1156,67 @@ export const TIER2_TESTS = [
             'Session Index & Workspace drag-drop integration pending M3'
           )
         }
-        const tab = page.locator(M3_SELECTOR_CONTRACT.workspaceTab).first()
-        await tab.waitFor({ state: 'visible', timeout: 8000 })
-        const beforeCount = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
-        const box = await tab.boundingBox()
+        // Enable drag sensor (`groups.length > 1`) & create 2 tabs
+        const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
+        await groupBtn.click()
+        await page.getByRole('menuitem', { name: /New tab group|新建标签组/i }).first().click()
+        await page.getByRole('dialog').locator('input').first().fill('Other Group')
+        await page.getByRole('dialog').getByRole('button', { name: /^(Create group|Create|创建分组|创建|确认)$/i }).first().click()
+        await groupBtn.click()
+        await page.getByRole('menuitemradio', { name: /^(General|常规|通用)$/i }).first().click()
+        await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i }).first().click()
+        await addSessionToActiveWorkspace(page)
+
+        const readStripState = () =>
+          page.evaluate(
+            ({ tabSel, grpSel }) => ({
+              tabIds: [...document.querySelectorAll(tabSel)].map(
+                (el) => el.getAttribute('data-workspace-preview-tab') || el.getAttribute('data-workspace-tab')
+              ),
+              activeTabId:
+                document.querySelector(`${tabSel}[aria-current="page"]`)?.getAttribute('data-workspace-preview-tab') || null,
+              groupText: (document.querySelector(grpSel)?.textContent || '').trim()
+            }),
+            { tabSel: M3_SELECTOR_CONTRACT.workspaceTab, grpSel: M3_SELECTOR_CONTRACT.groupSelector }
+          )
+
+        const beforeState = await readStripState()
+        assert.ok(beforeState.tabIds.length >= 2, 'Expected >=2 tabs before invalid drag test')
+        const firstTab = page.locator(M3_SELECTOR_CONTRACT.workspaceTab).first()
+        const box = await firstTab.boundingBox()
         assert.ok(box, 'Workspace tab missing bounding box')
+
+        // 1. Drop onto invalid target (workbench body) WITHOUT Escape -> zero side effects
         await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
         await page.mouse.down()
-        await page.mouse.move(box.x + box.width / 2, box.y + 200)
+        await page.mouse.move(box.x + box.width / 2, box.y + 220, { steps: 10 })
+        await page.mouse.up()
+        assert.equal(await page.locator('[data-workspace-preview-move-heading]').count(), 0, 'Invalid drop must not open move menu')
+        assert.deepEqual(await readStripState(), beforeState, 'Invalid drop mutated tab order/group state')
+
+        // 2. Escape mid-drag -> zero side effects
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+        await page.mouse.down()
+        await page.mouse.move(box.x + box.width / 2, box.y + 200, { steps: 8 })
         await page.keyboard.press('Escape')
         await page.mouse.up()
-        const afterCount = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
-        assert.equal(afterCount, beforeCount, 'Aborted drag must leave tab count unchanged')
-        return { beforeCount, afterCount }
+        assert.deepEqual(await readStripState(), beforeState, 'Escaped tab drag mutated state')
+
+        // 3. Drag Session Index row outside & release -> zero side effects
+        const row = page.locator(`${M3_SELECTOR_CONTRACT.sessionIndex} ${M3_SELECTOR_CONTRACT.sessionIndexRow}`).first()
+        if (await waitForVisible(row, 2500)) {
+          const rBox = await row.boundingBox()
+          if (rBox) {
+            await page.mouse.move(rBox.x + rBox.width / 2, rBox.y + rBox.height / 2)
+            await page.mouse.down()
+            await page.mouse.move(rBox.x + 220, rBox.y + 80, { steps: 8 })
+            await page.keyboard.press('Escape')
+            await page.mouse.up()
+          }
+        }
+        assert.deepEqual(await readStripState(), beforeState, 'Session index drag mutated state')
+        return { beforeCount: beforeState.tabIds.length, zeroSideEffects: true }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -880,13 +1229,27 @@ export const TIER2_TESTS = [
     featureArea: 'E2E-F03',
     refs: ['G.09.02'],
     async run(ctx) {
-      const repoA = createTempGitRepo({ name: 't2-f03-05-a', files: { 'shared.md': '# Repo A Unique\n' } })
-      const repoB = createTempGitRepo({ name: 't2-f03-05-b', files: { 'shared.md': '# Repo B Unique\n' } })
+      const repoA = createTempGitRepo({
+        name: 't2-f03-05-a',
+        files: { 'alpha-only.txt': 'Alpha unique\n', 'shared.md': '# Repo A Unique\n' }
+      })
+      const repoB = createTempGitRepo({
+        name: 't2-f03-05-b',
+        files: { 'beta-only.txt': 'Beta unique\n', 'shared.md': '# Repo B Unique\n' }
+      })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
         const { app, page } = inst
         await addLocalFolderProject(app, page, repoA.repoPath)
+        const repoAId = await page.evaluate(
+          () => document.querySelector('[data-worktree-sidebar-layout] [role="option"][data-worktree-id][aria-current="page"]')?.getAttribute('data-worktree-id') || null
+        )
+        assert.ok(repoAId, 'Failed to resolve active worktree ID for repoA')
         await addLocalFolderProject(app, page, repoB.repoPath)
+        const repoBId = await page.evaluate(
+          () => document.querySelector('[data-worktree-sidebar-layout] [role="option"][data-worktree-id][aria-current="page"]')?.getAttribute('data-worktree-id') || null
+        )
+        assert.ok(repoBId && repoBId !== repoAId, 'Failed to resolve distinct active worktree ID for repoB')
         if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
@@ -895,17 +1258,32 @@ export const TIER2_TESTS = [
             'Pinned Fixed-Scope SidePanel Explorer integration pending M3'
           )
         }
-        // Switch back to Repo A worktree, open Explorer pinned to Repo A, then switch active worktree to Repo B
-        await page.getByText(path.basename(repoA.repoPath)).first().click()
+        // Activate repoA worktree, open Explorer pinned to repoA
+        await selectWorktreeById(page, repoAId)
         await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
         await page.getByRole('menuitem', { name: /^(Open Explorer|打开资源管理器)$/i }).first().click()
+        const folderPicker = page.getByRole('dialog').filter({ hasText: /Choose a folder for Explorer|选择资源管理器的目录/i }).first()
+        if (await waitForVisible(folderPicker, 1500)) {
+          await folderPicker.getByRole('option').filter({ hasText: path.basename(repoA.repoPath) }).first().click()
+        }
+
         const explorer = page.locator(M3_SELECTOR_CONTRACT.explorer).first()
         await explorer.waitFor({ state: 'visible', timeout: 8000 })
+        await explorer.getByText('alpha-only.txt', { exact: false }).first().waitFor({ state: 'visible', timeout: 8000 })
+        assert.equal(await explorer.getByText('beta-only.txt').count(), 0)
         const scopeBefore = (await explorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
-        await page.getByText(path.basename(repoB.repoPath)).first().click()
+
+        // Switch active worktree in Sidebar to repoB -> Explorer must remain pinned to repoA and open Repo A's shared.md
+        await selectWorktreeById(page, repoBId)
         const scopeAfter = (await explorer.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
         assert.equal(scopeAfter, scopeBefore, 'Pinned Explorer scope drifted after switching active RepoB')
-        return { scopeBefore, scopeAfter }
+        assert.equal(await explorer.getByText('alpha-only.txt').count() > 0, true)
+        assert.equal(await explorer.getByText('beta-only.txt').count(), 0)
+
+        await explorer.getByRole('option', { name: 'shared.md' }).first().dblclick()
+        await page.getByText('Repo A Unique', { exact: false }).first().waitFor({ state: 'visible', timeout: 10000 })
+        assert.equal(await page.getByText('Repo B Unique').count(), 0)
+        return { scopeBefore, scopeAfter, openedRepoASharedMd: true }
       } finally {
         await closeElectronApp(inst)
         repoA.cleanup()

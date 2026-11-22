@@ -1,0 +1,17 @@
+{
+  "name": "r94-f08-tab-groups-overflow-1280",
+  "imageFile": "r94-f08-tab-groups-overflow-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "tabOverflowStats": {
+    "tabCount": 20,
+    "stripScrollable": true,
+    "docOverflowX": false
+  },
+  "escTabDragUnchanged": true
+}

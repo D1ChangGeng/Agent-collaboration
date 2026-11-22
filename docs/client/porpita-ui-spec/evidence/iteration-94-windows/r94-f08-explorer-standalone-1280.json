@@ -1,0 +1,15 @@
+{
+  "name": "r94-f08-explorer-standalone-1280",
+  "imageFile": "r94-f08-explorer-standalone-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "standaloneVisible": true,
+  "scopeInitial": "r94-repo-beta",
+  "activeSwitchedLabel": "Active\nmain\nprimary\nmain",
+  "scopeAfterRepoSwitch": "r94-repo-beta"
+}

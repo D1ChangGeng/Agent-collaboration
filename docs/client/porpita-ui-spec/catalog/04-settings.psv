@@ -21,7 +21,7 @@ N.appearance|外观、主题、字体与窗口|AppearancePane.tsx,AppearanceInte
 N.chat|Chat UI 默认值、权限及外观|ChatSettingsSection.tsx,ChatAgentLaunchSettings.tsx,AppearanceChatSection.tsx,ChatPermissionSetting.tsx|Chat/Terminal 默认与每 Agent 行、文字/代码大小、权限链接|保留|保留原生执行方式，区分当前会话与未来默认；改字体不重置 Composer|J05,J13
 N.input|输入、编辑与 IME|InputPane.tsx,EditorTypographySettings.tsx|编辑/输入偏好、字体与按键相关行为|保留|中文 IME、终端和 Monaco 路由保持边界；按键标签反映实际选择|J05,J08,J13
 N.notifications|通知、音效和投递|NotificationsPane.tsx,notification-sound-options.ts|可选择通知/声音，按设备和系统设置生效|保留|本机通知与会话未读分开；权限不可用状态显式|J05,J09,J13
-N.shortcuts|快捷键、搜索、冲突、重置|ShortcutsPane.tsx,settings-navigation-foundations.ts,use-global-keybindings.ts|按组编辑并检测冲突；录制状态下 Escape 有特定优先级|改造|新增顶层动作命令空间，不覆盖终端/编辑器/浏览器；提供键盘的拖放替代路径|J03,J04,J13
+N.shortcuts|快捷键、搜索、冲突、重置|ShortcutsPane.tsx,settings-navigation-foundations.ts,use-global-keybindings.ts|按组编辑并检测冲突；录制状态下 Escape 有特定优先级（第94轮默认生产包保留原生快捷键路由不抢占编辑器／终端按键）|改造|新增顶层动作命令空间，不覆盖终端/编辑器/浏览器；提供键盘的拖放替代路径|J03,J04,J13
 N.stats|统计和用量|StatsPane.tsx,StatusBarProviderSegment.tsx|统计与配额按账号和已有数据源，可能未就绪|保留|区分计量窗口、缺数据与零，保留状态栏到设置的路径|J11,J12
 N.servers|远程 Porpita、运行时环境、更新|RuntimeEnvironmentsPane.tsx,GeneralRemoteServerUpdates.tsx,RemoteServerUpdateDialog.tsx|服务器可注册、连接、更新，状态按环境|保留|配对服务与执行 Host 分开；显示局部失败和恢复来源|J07,J11,J12
 N.ssh|SSH Hosts、口令、配置与路径|SshPane.tsx,SshPaneToolbar.tsx,SshPassphraseDialog.tsx|主机列表、增改、连接/认证和浏览；与 WSL 入口有条件关系|保留|断开一台 Host 只影响其对象，离线提示和请求归属稳定|J07,J11,J12

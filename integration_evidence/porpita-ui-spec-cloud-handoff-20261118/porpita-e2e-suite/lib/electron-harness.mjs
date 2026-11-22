@@ -754,6 +754,18 @@ export async function dismissStartupDialogs(page) {
   }
 }
 
+export async function dismissNotificationCards(page, maxDismiss = 4) {
+  const cardDismissBtn = page
+    .locator(
+      '[data-notification-card-stack] button[aria-label="Dismiss"], [data-notification-card-stack] button[aria-label="关闭"]'
+    )
+    .first()
+  for (let i = 0; i < maxDismiss && (await waitForVisible(cardDismissBtn, 500)); i += 1) {
+    await cardDismissBtn.click().catch(() => {})
+    await sleep(150)
+  }
+}
+
 export async function addLocalFolderProject(app, page, folderPath) {
   await stubOpenDialog(app, folderPath)
   await dismissStartupDialogs(page)
@@ -842,10 +854,15 @@ export const M3_SELECTOR_CONTRACT = {
     '[data-workspace-preview], [data-workspace-tab-strip], [data-workspace-group-selector], [data-session-index]',
   tabStrip: '[data-workspace-tab-strip], .terminal-tab-strip',
   workspaceTab: 'button[data-workspace-preview-tab], button[data-workspace-tab]',
-  groupSelector: '[data-workspace-preview-group], [data-workspace-group-selector]',
+  tabClose: '[data-workspace-preview-close]',
+  groupSelector: '[data-workspace-group-selector], [data-workspace-preview-group]',
+  groupRename: '[data-workspace-group-rename]',
+  groupDelete: '[data-workspace-group-delete]',
   sessionIndex: '[data-session-index]',
+  sessionIndexToggle: '[data-session-index-toggle]',
   sessionIndexRow: '[data-session-index-row]',
   sessionIndexHistory: '[data-session-index-history]',
+  sessionIndexClearFilters: '[data-session-index-clear-filters]',
   splitLayout: '[data-workspace-preview-chat-layout], [data-workspace-split-layout]',
   explorer: '[data-workspace-preview-explorer], [data-workspace-explorer]',
   explorerScope: '[data-workspace-preview-scope], [data-workspace-explorer-scope]'
@@ -875,6 +892,132 @@ export async function detectWorkspaceShell(page) {
 export async function hasIntegratedWorkspaceShell(page) {
   const ws = await detectWorkspaceShell(page)
   return ws.integrated
+}
+
+export async function activateWorkspaceTab(page, index = 0) {
+  const tabs = page.locator(M3_SELECTOR_CONTRACT.workspaceTab)
+  await tabs.nth(index).waitFor({ state: 'visible', timeout: 10000 })
+  await tabs.nth(index).click()
+  await page.locator('[data-workspace-preview-object]').first().waitFor({ state: 'visible', timeout: 8000 })
+}
+
+export async function addSessionToActiveWorkspace(page, { pickExistingText = null } = {}) {
+  const beforeCount = await page.locator('[data-workspace-preview-session]').count()
+  const addBtn = page.getByRole('button', { name: /Add session|添加会话/i }).first()
+  if (!(await waitForVisible(addBtn, 1500))) {
+    await activateWorkspaceTab(page, 0)
+  }
+  await addBtn.waitFor({ state: 'visible', timeout: 8000 })
+  await addBtn.click()
+
+  const pickerDialog = page
+    .getByRole('dialog')
+    .filter({ hasText: /Choose a session|选择会话/i })
+    .first()
+  if (await waitForVisible(pickerDialog, 1500)) {
+    if (pickExistingText) {
+      await pickerDialog.locator('[cmdk-input]').fill(pickExistingText)
+      await pickerDialog.getByText(pickExistingText, { exact: false }).first().click()
+    } else {
+      const newChatItem = pickerDialog
+        .locator('[cmdk-item]')
+        .filter({ hasText: /New chat in active worktree|在当前工作树新建聊天/i })
+        .first()
+      await newChatItem.waitFor({ state: 'visible', timeout: 5000 })
+      await newChatItem.click()
+    }
+    await pickerDialog.waitFor({ state: 'hidden', timeout: 8000 })
+  }
+
+  await page.waitForFunction(
+    (expectedMin) => document.querySelectorAll('[data-workspace-preview-session]').length >= expectedMin,
+    beforeCount + 1,
+    { timeout: 15000 }
+  )
+}
+
+export async function ensureDualPaneWorkspace(page) {
+  const layout = page.locator(M3_SELECTOR_CONTRACT.splitLayout).first()
+  if (!(await waitForVisible(layout, 1200))) {
+    await activateWorkspaceTab(page, 0)
+  }
+  while ((await page.locator('[data-workspace-preview-session]').count()) < 2) {
+    await addSessionToActiveWorkspace(page)
+  }
+  await layout.waitFor({ state: 'visible', timeout: 10000 })
+  return layout
+}
+
+export async function selectWorktreeById(page, worktreeId) {
+  const row = page
+    .locator(`[data-worktree-sidebar-layout] [role="option"][data-worktree-id=${JSON.stringify(worktreeId)}]`)
+    .first()
+  await row.waitFor({ state: 'visible', timeout: 8000 })
+  await row.click()
+  await page.waitForFunction(
+    (id) =>
+      document
+        .querySelector('[data-worktree-sidebar-layout] [role="option"][data-worktree-id][aria-current="page"]')
+        ?.getAttribute('data-worktree-id') === id,
+    worktreeId,
+    { timeout: 5000 }
+  )
+}
+
+export async function openCodexChatViaVault(page, { searchQuery, expectedReply, expectBackgroundTabText } = {}) {
+  const agentsBtn = page.getByRole('button', { name: /^(Agents|智能体)(?:\s|$)/i }).first()
+  if (!(await waitForVisible(agentsBtn, 1500))) {
+    const rightToggle = page.locator('[data-workspace-sidebar-toggle="right"]').first()
+    if (await waitForVisible(rightToggle, 3000)) {
+      await rightToggle.click()
+    }
+  }
+  await agentsBtn.waitFor({ state: 'visible', timeout: 8000 })
+  await agentsBtn.click()
+  const searchBox = page.getByRole('textbox', { name: /^(Search sessions|搜索会话)$/i }).first()
+  await searchBox.waitFor({ state: 'visible', timeout: 8000 })
+  if (searchQuery) {
+    await searchBox.fill(searchQuery)
+  }
+  const rows = page.locator('.ai-vault-session-row')
+  const row = searchQuery ? rows.filter({ hasText: searchQuery }).first() : rows.first()
+  if (!(await waitForVisible(row, 3000))) {
+    const refreshBtn = page
+      .getByRole('button', { name: /Refresh Session History|刷新会话历史/i })
+      .first()
+    if (await waitForVisible(refreshBtn, 1500)) {
+      await refreshBtn.click()
+    }
+  }
+  await row.waitFor({ state: 'visible', timeout: 15000 })
+  await row.getByTestId('ai-vault-session-more-actions').click()
+  await page.getByRole('menuitem', { name: /^(Resume in New Chat|在新聊天中恢复)$/i }).first().click()
+  const trustBtn = page
+    .getByRole('button', { name: /^(Trust repository|信任仓库|Let agents ask|让智能体询问)$/i })
+    .first()
+  if (await waitForVisible(trustBtn, 3000)) {
+    await trustBtn.click()
+  }
+  if (expectBackgroundTabText) {
+    await page.waitForFunction(
+      (needle) =>
+        [...document.querySelectorAll('[data-tab-id]')].some((el) =>
+          (el.textContent || '').includes(needle)
+        ),
+      expectBackgroundTabText,
+      { timeout: 15000 }
+    )
+    return
+  }
+  if (expectedReply) {
+    await page
+      .locator('[data-native-chat-root="true"]')
+      .filter({ hasText: expectedReply })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 })
+  } else {
+    await page.locator('[data-native-chat-root="true"]').first().waitFor({ state: 'visible', timeout: 15000 })
+  }
 }
 
 export async function openSettingsPage(page) {

@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict'
 import {
+  activateWorkspaceTab,
   addLocalFolderProject,
+  addSessionToActiveWorkspace,
   assertImeCompositionKeepsDialogOpen,
   closeCollaborationDialogWithFocusCheck,
   closeElectronApp,
   connectCollaborationViaSettings,
   disablePluginAndVerify,
+  ensureDualPaneWorkspace,
   hasIntegratedWorkspaceShell,
   installAndEnableFolderPlugin,
   isCollaborationConnectedText,
@@ -104,9 +107,6 @@ export const TIER3_TESTS = [
       try {
         const { app, page } = inst
         await addLocalFolderProject(app, page, repo.repoPath)
-        await setViewportSize(app, page, 640, 580)
-        await sleep(150)
-        await setViewportSize(app, page, 820, 580)
         if (!(await hasIntegratedWorkspaceShell(page))) {
           pendingIfSmoke(
             ctx.mode,
@@ -115,21 +115,37 @@ export const TIER3_TESTS = [
             'Integrated DualPane & Fixed SidePanel pending M3'
           )
         }
-        const addSessionBtn = page.getByRole('button', { name: /Add session|添加会话/i }).first()
-        if (await waitForVisible(addSessionBtn, 2500)) await addSessionBtn.click()
+        await ensureDualPaneWorkspace(page)
         await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
         await page.getByRole('menuitem', { name: /^(Open Explorer|打开资源管理器)$/i }).first().click()
         const standaloneExplorer = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="standalone"]`).first()
         await standaloneExplorer.waitFor({ state: 'visible', timeout: 8000 })
         await standaloneExplorer.getByRole('button', { name: /Explorer placement|资源管理器位置/i }).first().click()
-        await page.getByRole('menuitem', { name: /^(Move to |移动到)/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(Move to |移至 |移动到)/i }).first().click()
         const embedded = page.locator(`${M3_SELECTOR_CONTRACT.explorer}[data-presentation="embedded"]`).first()
         await embedded.waitFor({ state: 'visible', timeout: 8000 })
         const scopeBefore = (await embedded.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
+
+        // Collapse left sidebar and shrink container below 646px -> verify focused via waitForFunction
+        const leftToggle = page.locator('[data-workspace-sidebar-toggle="left"]').first()
+        if ((await waitForVisible(leftToggle, 1000)) && (await leftToggle.getAttribute('aria-expanded')) === 'true') {
+          await leftToggle.click()
+        }
         await setViewportSize(app, page, 640, 580)
+        await page.waitForFunction(
+          (sel) => document.querySelector(sel)?.getAttribute('data-preview-split') === 'focused',
+          M3_SELECTOR_CONTRACT.splitLayout,
+          { timeout: 6000 }
+        )
         const modeNarrow = await page.locator(M3_SELECTOR_CONTRACT.splitLayout).first().getAttribute('data-preview-split')
         assert.equal(modeNarrow, 'focused', `Expected focused mode below 646px, got ${modeNarrow}`)
+
         await setViewportSize(app, page, 1280, 800)
+        await page.waitForFunction(
+          (sel) => document.querySelector(sel)?.getAttribute('data-preview-split') === 'side-by-side',
+          M3_SELECTOR_CONTRACT.splitLayout,
+          { timeout: 6000 }
+        )
         const modeWide = await page.locator(M3_SELECTOR_CONTRACT.splitLayout).first().getAttribute('data-preview-split')
         assert.equal(modeWide, 'side-by-side', `Expected side-by-side mode at 1280px, got ${modeWide}`)
         const scopeAfter = (await embedded.locator(M3_SELECTOR_CONTRACT.explorerScope).first().innerText()).trim()
@@ -160,24 +176,97 @@ export const TIER3_TESTS = [
             'Top-level Workspace Tab Groups pending M3 integration'
           )
         }
+        // 1. Activate Workspace 1 in General, add session + preserve draft text
+        await activateWorkspaceTab(page, 0)
+        await addSessionToActiveWorkspace(page)
+        const paneComposer = page
+          .locator('[data-workspace-preview-session] [data-native-chat-composer-scope] [contenteditable="true"]')
+          .first()
+        await paneComposer.waitFor({ state: 'visible', timeout: 8000 })
+        await paneComposer.click()
+        await page.keyboard.type('Preserve workspace 1 draft')
+
+        // 2. Create Group Two with a new Workspace 2 tab
         const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
-        await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
         await groupBtn.click()
         await page.getByRole('menuitem', { name: /New tab group|新建标签组/i }).first().click()
         await page.getByRole('dialog').locator('input').first().fill('Group Two')
-        await page.getByRole('dialog').getByRole('button', { name: /^(Create group|Create|创建|确认)$/i }).first().click()
+        await page
+          .getByRole('dialog')
+          .getByRole('button', { name: /^(Create group|Create|创建分组|创建|确认)$/i })
+          .first()
+          .click()
         await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
         await page.getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i }).first().click()
-        const tabsInGroup2 = await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count()
-        assert.ok(tabsInGroup2 >= 1, 'Expected new workspace tab in Group Two')
-        const closeTabBtn = page.locator('[aria-label^="Close "], [aria-label^="关闭 "]').last()
-        await closeTabBtn.click()
-        assert.equal(
-          await page.locator(M3_SELECTOR_CONTRACT.workspaceTab).count(),
-          tabsInGroup2 - 1,
-          'Closing workspace tab in Group Two should remove it cleanly'
+        await page.waitForFunction(
+          (sel) => document.querySelectorAll(sel).length >= 1,
+          M3_SELECTOR_CONTRACT.workspaceTab,
+          { timeout: 6000 }
         )
-        return { closedWorkspaceTabCleanly: true }
+
+        // 3. Open notes.md in worktree editor, dirty it, and verify Close Unsaved Editor Tab guard
+        const rightToggle = page.locator('[data-workspace-sidebar-toggle="right"][aria-expanded="false"]').first()
+        if (await waitForVisible(rightToggle, 1200)) {
+          await rightToggle.click()
+        }
+        const notesTreeItem = page.locator('[data-right-sidebar-layout]').getByText('notes.md', { exact: true }).first()
+        if (!(await waitForVisible(notesTreeItem, 2000))) {
+          const explorerTabBtn = page.getByRole('button', { name: /^(Explorer|Files|File Explorer|文件|资源管理器)(?:\s|$)/i }).first()
+          if (await waitForVisible(explorerTabBtn, 2000)) {
+            await explorerTabBtn.click()
+          }
+        }
+        await notesTreeItem.waitFor({ state: 'visible', timeout: 8000 })
+        await notesTreeItem.dblclick()
+        const editorContent = page.locator('.tiptap, .ProseMirror, .monaco-editor .view-lines').first()
+        await editorContent.waitFor({ state: 'visible', timeout: 10000 })
+        await editorContent.click()
+        await page.keyboard.type('Unsaved editor edit ')
+
+        const notesTab = page.locator('[data-tab-id]').filter({ hasText: 'notes.md' }).first()
+        await notesTab.waitFor({ state: 'visible', timeout: 5000 })
+        await notesTab.hover()
+        const editorCloseBtn = notesTab.locator('[data-tab-close-button="true"]').first()
+        await editorCloseBtn.click()
+        const unsavedDialog = page
+          .getByRole('alertdialog')
+          .or(page.getByRole('dialog'))
+          .filter({ hasText: /Unsaved Changes|unsaved changes|未保存/i })
+          .first()
+        await unsavedDialog.waitFor({ state: 'visible', timeout: 6000 })
+        await unsavedDialog.getByRole('button', { name: /^(Cancel|取消)$/i }).first().click()
+        await unsavedDialog.waitFor({ state: 'hidden', timeout: 5000 })
+        await notesTab.waitFor({ state: 'visible', timeout: 5000 })
+
+        // Discard editor cleanly after verifying guard
+        await notesTab.hover()
+        await editorCloseBtn.click()
+        await unsavedDialog.waitFor({ state: 'visible', timeout: 6000 })
+        await unsavedDialog
+          .getByRole('button', { name: /^(Don't Save|Discard changes|不保存|放弃更改)$/i })
+          .first()
+          .click()
+        await unsavedDialog.waitFor({ state: 'hidden', timeout: 5000 })
+
+        // 4. Close Workspace 2 in Group Two cleanly (zero prompt) -> verify Group One Workspace 1 & draft intact
+        const tabs = page.locator(M3_SELECTOR_CONTRACT.workspaceTab)
+        const tabsInGroup2 = await tabs.count()
+        assert.ok(tabsInGroup2 >= 1, 'Expected Workspace 2 tab in Group Two')
+        await tabs.first().hover()
+        const wsCloseBtn = page.locator(M3_SELECTOR_CONTRACT.tabClose).first()
+        await wsCloseBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await wsCloseBtn.click()
+        await page.waitForFunction(
+          ({ sel, expected }) => document.querySelectorAll(sel).length === expected,
+          { sel: M3_SELECTOR_CONTRACT.workspaceTab, expected: tabsInGroup2 - 1 },
+          { timeout: 6000 }
+        )
+
+        await groupBtn.click()
+        await page.getByRole('menuitemradio', { name: /^(General|常规|通用)$/i }).first().click()
+        await activateWorkspaceTab(page, 0)
+        assert.match(await paneComposer.innerText(), /Preserve workspace 1 draft/)
+        return { unsavedEditorPromptVerified: true, closedWorkspaceTabCleanly: true, group1DraftPreserved: true }
       } finally {
         await closeElectronApp(inst)
         repo.cleanup()
@@ -190,10 +279,32 @@ export const TIER3_TESTS = [
     featureArea: 'E2E-F03+E2E-F05',
     refs: ['K.04', 'C.10.08', 'UX10'],
     async run(ctx) {
+      const repoA = createTempGitRepo({ name: 't3-04-a' })
+      const repoB = createTempGitRepo({ name: 't3-04-b' })
       const core = await startLoopbackAcsCore({ mode: 'full', agentCollabRoot: ctx.agentCollabRoot })
       const inst = await launchElectronApp({ porpitaRoot: ctx.porpitaRoot })
       try {
-        // Verify NativeLink + include_native_source=true protocol layer on loopback Core
+        const { app, page } = inst
+        await addLocalFolderProject(app, page, repoA.repoPath)
+        await addLocalFolderProject(app, page, repoB.repoPath)
+        if (!(await hasIntegratedWorkspaceShell(page))) {
+          pendingIfSmoke(
+            ctx.mode,
+            'M3',
+            'SourceJump navigates to exact bound Session 2 across 2 Workspaces sharing Identity',
+            'Multi-Workspace SourceJump pending M3 integration'
+          )
+        }
+        // Prepare Workspace 1 & Workspace 2 cleanly in desktop shell
+        await activateWorkspaceTab(page, 0)
+        await addSessionToActiveWorkspace(page)
+        await page.getByRole('button', { name: /^(New work object|新建工作对象)$/i }).first().click()
+        await page.getByRole('menuitem', { name: /^(New workspace|新建工作空间)$/i }).first().click()
+        await addSessionToActiveWorkspace(page)
+        // Return focus to Workspace 1 before Collaboration check
+        await activateWorkspaceTab(page, 0)
+
+        // Bind NativeLink & dispatch invoke on loopback Core
         const pid = core.info.project_id
         const putLink = await core.request('PUT', `/projects/${pid}/native-links/t3-04-link`, {
           token: core.tokens.client,
@@ -221,18 +332,21 @@ export const TIER3_TESTS = [
           JSON.stringify({ disp, nativeSource: read.json.native_source })
         )
 
-        if (!(await hasIntegratedWorkspaceShell(inst.page))) {
-          pendingIfSmoke(
-            ctx.mode,
-            'M3',
-            'SourceJump navigates to exact bound Session 2 across 2 Workspaces sharing Identity',
-            'Backend NativeLink/include_native_source verified; multi-Workspace SourceJump pending M2/M3'
-          )
-        }
-        return { backendSourceAvailable: true }
+        await connectCollaborationViaSettings(page, core)
+        await returnFromSettings(page)
+        const dlg = await openCollaborationDialog(page)
+        await selectCollaborationContact(dlg, 'slot-b')
+        const invokeArticle = dlg.locator('article').filter({ hasText: 'SourceJump pairwise check' }).first()
+        await invokeArticle.waitFor({ state: 'visible', timeout: 10000 })
+        await invokeArticle.locator('details summary').first().click()
+        await invokeArticle.getByRole('button', { name: /View execution|查看执行/i }).first().waitFor({ state: 'visible', timeout: 6000 })
+        await closeCollaborationDialogWithFocusCheck(page, dlg)
+        return { backendSourceAvailable: true, viewExecutionRenderedAcrossTwoWorkspaces: true }
       } finally {
         await closeElectronApp(inst)
         await core.cleanup()
+        repoA.cleanup()
+        repoB.cleanup()
       }
     }
   },

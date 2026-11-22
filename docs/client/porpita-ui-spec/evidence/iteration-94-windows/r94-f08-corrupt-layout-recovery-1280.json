@@ -1,0 +1,32 @@
+{
+  "name": "r94-f08-corrupt-layout-recovery-1280",
+  "imageFile": "r94-f08-corrupt-layout-recovery-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "cleanExitCode": 0,
+  "layoutExists": true,
+  "layoutVersion": 3,
+  "tabsBeforeQuit": 2,
+  "tabsAfterRestore": 2,
+  "coldStartRestored": true,
+  "corruptShell": {
+    "previewToggle": false,
+    "hasWorkspaceTabs": true,
+    "hasSettingsBtn": true,
+    "hasCollabBtn": true,
+    "hasSidebar": true,
+    "integrated": true
+  },
+  "corruptNoticeCheck": {
+    "hasNotice": true,
+    "noticeText": "Could not open saved workspaces.RetryReset layout",
+    "hasRetry": true,
+    "hasResetLayout": true,
+    "tabCount": 0
+  }
+}

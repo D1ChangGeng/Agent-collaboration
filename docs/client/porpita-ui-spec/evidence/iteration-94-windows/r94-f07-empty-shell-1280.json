@@ -1,0 +1,21 @@
+{
+  "name": "r94-f07-empty-shell-1280",
+  "imageFile": "r94-f07-empty-shell-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "shell1280": {
+    "previewToggle": false,
+    "hasWorkspaceTabs": true,
+    "hasSettingsBtn": true,
+    "hasCollabBtn": true,
+    "hasSidebar": true,
+    "integrated": true
+  },
+  "hasLandingAddProject": true,
+  "generalDeleteProtected": true
+}

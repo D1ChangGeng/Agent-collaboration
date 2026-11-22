@@ -1,0 +1,13 @@
+{
+  "name": "r94-f08-explorer-embedded-1280",
+  "imageFile": "r94-f08-explorer-embedded-1280.png",
+  "window": {
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflowX": false
+  },
+  "embeddedVisible": true,
+  "scopeEmbedded": "r94-repo-beta"
+}

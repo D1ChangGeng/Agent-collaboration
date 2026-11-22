@@ -1,0 +1,34 @@
+{
+  "name": "r94-f08-session-index-600",
+  "imageFile": "r94-f08-session-index-600.png",
+  "window": {
+    "innerWidth": 600,
+    "innerHeight": 401,
+    "scrollWidth": 600,
+    "clientWidth": 600,
+    "overflowX": false
+  },
+  "sidebarGeo600": {
+    "found": true,
+    "ok": true,
+    "scrollWidth": 265,
+    "clientWidth": 265,
+    "overflowX": false,
+    "itemCount": 3,
+    "issues": []
+  },
+  "sessionIndexGeo600": {
+    "found": true,
+    "ok": true,
+    "scrollWidth": 280,
+    "clientWidth": 280,
+    "overflowX": false,
+    "itemCount": 3,
+    "issues": []
+  },
+  "firstWorktreeVisible600": {
+    "found": true,
+    "cardHeight": 49,
+    "listHeight": 112
+  }
+}
