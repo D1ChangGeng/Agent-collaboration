@@ -1,6 +1,6 @@
 # Porpita 桌面客户端 · 全覆盖 UI SPEC
 
-**设计已推进至第 94 轮。** 覆盖 20 个功能域、371 个条目。第 87–93 轮已归档，第 94 轮在 `codex/porpita-ui-spec-91` 提交 `ab899ffee48ff6263a2422b96e59d24a06c2d436` 上完成 **F07（默认生产构建原生集成一体化 Workspace Chrome 与 Sidebar Session Index，移除预览开关）** 与 **F08（左栏会话目录两行紧凑头区与 `600×400` WorktreeList 共生、双会话 `< 646px` 容器阈值与键盘/Esc 调宽、Standalone↔Embedded 固定 Explorer 连续性、20 标签溢出/自定义组管理与 Esc 拖拽安全、未保存编辑器护栏及 `porpita-workspaces.json` v3 冷启动恢复／损坏 JSON 安全降级）** 的源码收敛、13 步 Windows 隐藏窗口严格实机核对（`findings: []`、退出码 `0`）与 28 项 M3 E2E `--mode full` 验真。 [第 89 轮](ITERATION_89.md) · [第 90 轮](ITERATION_90.md) · [第 91 轮](ITERATION_91.md) · [第 92 轮](ITERATION_92.md) · [第 93 轮](ITERATION_93.md) · [第 94 轮](ITERATION_94.md)
+**设计已推进至第 94 轮（并完成 Phase 5 / M4 全域交叉收口）。** 覆盖 20 个功能域、371 个条目。第 87–93 轮已归档，第 94 轮在 `codex/porpita-ui-spec-91` 提交 `ab899ffee48ff6263a2422b96e59d24a06c2d436` 上完成 **F07（默认生产构建原生集成一体化 Workspace Chrome 与 Sidebar Session Index，移除预览开关）** 与 **F08（左栏会话目录两行紧凑头区与 `600×400` WorktreeList 共生、双会话 `< 646px` 容器阈值与键盘/Esc 调宽、Standalone↔Embedded 固定 Explorer 连续性、20 标签溢出/自定义组管理与 Esc 拖拽安全、未保存编辑器护栏及 `porpita-workspaces.json` v3 冷启动恢复／损坏 JSON 安全降级）** 的源码收敛、13 步 Windows 隐藏窗口严格实机核对（`findings: []`、退出码 `0`）与 28 项 M3 E2E `--mode full` 验真；Phase 5 完成 [ORCA-FIRST 双向交叉映射](../ORCA-FIRST.zh-CN.md#11-现行实现状态与双向交叉引用)、参考包 11 项交付物与 Open #1–#12 收敛对照及 [.ui-spec/design-evidence.json](../../../.ui-spec/design-evidence.json) 结构验证。 [第 89 轮](ITERATION_89.md) · [第 90 轮](ITERATION_90.md) · [第 91 轮](ITERATION_91.md) · [第 92 轮](ITERATION_92.md) · [第 93 轮](ITERATION_93.md) · [第 94 轮](ITERATION_94.md)
 
 | 查什么 | 入口 |
 | --- | --- |
@@ -9,8 +9,9 @@
 | Session、Workspace、顶层 Tab、Tab Group、SidePanel | [对象与完整交互规范](WORKSPACE_INTERACTION_SPEC.md)；[各 SidePanel 能力与复用](SIDEPANEL_CAPABILITY_MATRIX.md)；[分组对照试验](GROUP_TRIAL.md) |
 | 组件、布局、文字、状态与动效 | [共享视觉与交互规范](VISUAL_INTERACTION_SYSTEM.md) |
 | 使用路径、结果、证据缺口 | [回放与验收](PLAYBACK_SCENARIOS.md)；[观察证据](evidence/README.md) |
-| 来源、现版差异、覆盖边界 | [版本与证据身份](SOURCE_BASELINE.md)；[待闭环项](COVERAGE_CLOSURE.md) |
-| 决策、Orca 复用与实施顺序 | [决策与分批](DECISIONS_AND_SEQUENCE.md) |
+| 来源、现版差异、覆盖边界 | [版本与证据身份](SOURCE_BASELINE.md)；[待闭环项](COVERAGE_CLOSURE.md)；[设计证据记录](../../../.ui-spec/design-evidence.json) |
+| 决策、Orca 复用、参考包 Open #1–#12 与实施顺序 | [决策与分批](DECISIONS_AND_SEQUENCE.md) |
+| Client 路线、T01–T12 / UX01–UX22 与 ACS 通信合同 | [ORCA-FIRST](../ORCA-FIRST.zh-CN.md)；[OpenAPI](../communication-openapi.yaml) · [P1 子集](../communication-p1-openapi.yaml) · [操作范围](../communication-api-scope.json) · [合同采纳](../communication-contract-adoption.json) |
 
 工作循环：用户在 Session Index 找到实际 Harness Session，在 Workspace 打开并和其他会话/工具并行工作，经顶层 Tab 切换与恢复上下文。原生 Chat、Terminal、文件、Diff、Browser 继续拥有各自的内容与操作；Project、Route、Identity、Harness 和 Machine 提供关联与筛选。设置、任务、自动化、插件和远程工具以它们现有的业务对象为中心。
 

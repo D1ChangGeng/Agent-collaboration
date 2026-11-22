@@ -612,3 +612,10 @@ Windows x64 使用最终提交 `1b27aeb114` 的 `--mode e2e` 构建、Electron 4
 | `out/renderer/assets/App-BQAcjRgX.js` | `0431996cdf1a18359da9f118a9b709ea7166a7884d0ddf699717af96f75101ed` |
 
 Windows x64 使用最终提交 `ab899ffee4` 的 `--mode e2e` 构建、Electron 43.8.6、`ORCA_BACKGROUND_LAUNCH=1`（全部 `!visible && !focused`、显式剥离 `VITE_PORPITA_WORKSPACE_PREVIEW`）运行跨平台 `tools/observe-round-94.cjs`：13 组严格门禁全过（`findings: []`、退出码 `0`）且 13/13 人工视觉复核通过。真实在线模型流式、物理多机配对断线／撤权切换（归 M4 Phase 5）、系统可见前台窗口、物理读屏器与 macOS/Linux 三端继续保持在各自边界外待验。 [第 94 轮记录](ITERATION_94.md) · [回放工具](tools/observe-round-94.cjs) · [严格终版运行](evidence/iteration-94-windows/run.json) · [覆盖核对](coverage-audit.json)
+
+## Phase 5（F09 / F10）跨文档与结构化证据对齐
+
+Phase 5（Milestone M4）继续锁定上述 Porpita 源码基线 `ab899ffee48ff6263a2422b96e59d24a06c2d436`（tree `a7c5abba9e212d36f55d6a0769212aa0b24c6152`），无新增源码构建改动；`coverage-audit.json` 与 `source-index/` 重新基于同一提交核算并保持零误差。文档侧建立跨规范双向索引：
+- [ORCA-FIRST.zh-CN.md](../ORCA-FIRST.zh-CN.md)：保留原第 1–10 节历史基线及第 9 节原位归档（**5 份旧 `.zh-CN.md`、3 份 `.html` 与 3 个归档目录维持零字节改动**），新增第 11 节将全部 `T01`–`T12` 与 `UX01`–`UX22` 双向映射至 `porpita-ui-spec/`；
+- [DECISIONS_AND_SEQUENCE.md](DECISIONS_AND_SEQUENCE.md)：补全参考包 11 项交付物、全部 `Open #1`–`#12` 开放问题、以及 [communication-openapi.yaml](../communication-openapi.yaml)、[communication-p1-openapi.yaml](../communication-p1-openapi.yaml)、[communication-api-scope.json](../communication-api-scope.json) 与 [communication-contract-adoption.json](../communication-contract-adoption.json) 的对照映射；
+- [.ui-spec/design-evidence.json](../../../.ui-spec/design-evidence.json)：按 `ui-spec-evidence/1` 格式建立全量设计对象、证据与边界索引，并通过 `check_design_evidence.py` `overview` / `detail` / `execution` 全视图检查。

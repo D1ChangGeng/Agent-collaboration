@@ -1,0 +1,988 @@
+{
+  "format": "ui-spec-evidence/1",
+  "revision": "2026-11-22-round-94-m4",
+  "record_origin": "porpita-ui-spec/m4-crosswalk-and-closure",
+  "product_context": {
+    "overall_goal": "Converge the Orca-based Porpita Desktop client into a cohesive, accessible, keyboard-operable Workspace/Session/Collaboration/Settings product with verified cross-spec traceability to ORCA-FIRST (T01-T12, UX01-UX22) and ACS client contracts, while preserving honest ENV_BOUNDED deferral boundaries.",
+    "current_ui": "Integrated production desktop build (codex/porpita-ui-spec-91 commit ab899ffee48ff6263a2422b96e59d24a06c2d436) running top-level Workspace Group Picker and Tabs, compact Sidebar Session Index with Vault handoff, Standalone/Embedded fixed-scope Explorer, ACS Collaboration Dialog synchronized with PostgreSQL loopback Core, hardened Settings/Dialog return-focus, and responsive 600x400 / 158% zoom chrome."
+  },
+  "objects": [
+    {
+      "id": "porpita-desktop-client",
+      "level": "L0",
+      "title": "Porpita Desktop Client (ab899ffee48ff6263a2422b96e59d24a06c2d436)",
+      "categories": [
+        "product-experience",
+        "resource-adoption",
+        "implementation-assurance"
+      ],
+      "revision": "round-94"
+    },
+    {
+      "id": "app-shell-workspace-chrome",
+      "level": "L1",
+      "title": "App Shell Titlebar, Top-level Tabs, Group Picker & Persistence",
+      "parent": "porpita-desktop-client",
+      "categories": [
+        "navigation-architecture",
+        "responsive-variants",
+        "failure-recovery"
+      ],
+      "revision": "round-94"
+    },
+    {
+      "id": "session-discovery-workbench",
+      "level": "L1",
+      "title": "Sidebar Session Index, Vault Handoff & Multi-Pane Split Workbench",
+      "parent": "porpita-desktop-client",
+      "categories": [
+        "journeys",
+        "navigation-architecture",
+        "perceived-performance"
+      ],
+      "revision": "round-94"
+    },
+    {
+      "id": "collaboration-and-tasks",
+      "level": "L1",
+      "title": "ACS Collaboration Dialog, Sync & Tasks/Automations/Plugins",
+      "parent": "porpita-desktop-client",
+      "categories": [
+        "state-feedback",
+        "operating-content",
+        "failure-recovery"
+      ],
+      "revision": "round-93"
+    },
+    {
+      "id": "settings-onboarding-and-primitives",
+      "level": "L1",
+      "title": "Onboarding, Appearance, Settings, Modals & Visual Primitives",
+      "parent": "porpita-desktop-client",
+      "categories": [
+        "components",
+        "typography-content",
+        "visual-composition",
+        "visual-assets",
+        "temporal-interaction",
+        "accessibility"
+      ],
+      "revision": "round-91"
+    },
+    {
+      "id": "topbar-group-picker-and-tabs",
+      "level": "L2",
+      "title": "Top-level Workspace Group Picker & Overflow Tab Strip (A.02, D.08.01, D.08.02)",
+      "parent": "app-shell-workspace-chrome",
+      "categories": [
+        "navigation-architecture",
+        "components",
+        "responsive-variants"
+      ],
+      "revision": "round-94"
+    },
+    {
+      "id": "sidebar-session-index-surface",
+      "level": "L2",
+      "title": "Sidebar Session Index & Unopened History Integration (C.10, C.10.03-C.10.06)",
+      "parent": "session-discovery-workbench",
+      "categories": [
+        "journeys",
+        "navigation-architecture",
+        "state-feedback"
+      ],
+      "revision": "round-94"
+    },
+    {
+      "id": "workspace-split-and-explorer",
+      "level": "L2",
+      "title": "Dual-Session Split Pane Tree, ResizeHandle & Fixed-Scope Explorer (D.03.01, D.07.01, G.09.01)",
+      "parent": "session-discovery-workbench",
+      "categories": [
+        "temporal-interaction",
+        "responsive-variants",
+        "state-feedback"
+      ],
+      "revision": "round-94"
+    },
+    {
+      "id": "collaboration-dialog-sync",
+      "level": "L2",
+      "title": "Collaboration Dialog Live Sync, Search & Idempotent Recovery (K.01-K.04, N.general.01)",
+      "parent": "collaboration-and-tasks",
+      "categories": [
+        "state-feedback",
+        "failure-recovery",
+        "operating-content"
+      ],
+      "revision": "round-93"
+    },
+    {
+      "id": "controlled-dialog-and-appearance",
+      "level": "L2",
+      "title": "Controlled Dialog Return-Focus, Reduced Motion & 158% Zoom Appearance (O.modal.add-repo, P.06, Q.01, N.appearance)",
+      "parent": "settings-onboarding-and-primitives",
+      "categories": [
+        "accessibility",
+        "temporal-interaction",
+        "visual-composition",
+        "typography-content"
+      ],
+      "revision": "round-91"
+    },
+    {
+      "id": "retained-tools-and-plugins",
+      "level": "L2",
+      "title": "Retained Browser Find, Git Graph @container & Unpackaged Plugin Runtime (H.05, I.01, L.06, N.plugins)",
+      "parent": "collaboration-and-tasks",
+      "categories": [
+        "components",
+        "resource-adoption",
+        "failure-recovery"
+      ],
+      "revision": "round-92"
+    },
+    {
+      "id": "workspace-v3-cold-recovery",
+      "level": "L3",
+      "title": "porpita-workspaces.json v3 Persistence & Corrupt JSON Fallback (A.05, D.07.02, R.06)",
+      "parent": "app-shell-workspace-chrome",
+      "categories": [
+        "failure-recovery",
+        "implementation-assurance"
+      ],
+      "revision": "round-94"
+    },
+    {
+      "id": "narrow-600x400-coexistence",
+      "level": "L4",
+      "title": "600x400 Viewport Coexistence, Container <646px Split Breakpoint & locale en/zh/ja",
+      "parent": "topbar-group-picker-and-tabs",
+      "categories": [
+        "responsive-variants",
+        "typography-content",
+        "accessibility"
+      ],
+      "revision": "round-94"
+    },
+    {
+      "id": "crosswalk-governance-boundary",
+      "level": "L5",
+      "title": "Cross-Spec Traceability (ORCA-FIRST T01-T12/UX01-UX22, Reference #1-#12, ACS P1/P2) & ENV_BOUNDED Honesty",
+      "parent": "porpita-desktop-client",
+      "categories": [
+        "product-experience",
+        "implementation-assurance",
+        "operating-content"
+      ],
+      "revision": "round-94-m4"
+    }
+  ],
+  "conditions": [
+    {
+      "id": "win-hidden-cdp-prod",
+      "description": "Windows x64 packaged/e2e Electron 43.8.6 launched with ORCA_BACKGROUND_LAUNCH=1 and isolated temporary profile (!visible && !focused)",
+      "revision": "round-94"
+    },
+    {
+      "id": "narrow-600x400-zoom-motion",
+      "description": "600x400 and 820x580 narrow viewports, 158% zoom, reduced-motion: reduce, forced-colors/more contrast, and en/zh/ja runtime locale switches",
+      "revision": "round-94"
+    },
+    {
+      "id": "loopback-postgres-acs-core",
+      "description": "Isolated loopback PostgreSQL 16 + acs_loopback_server.py Core enforcing v1.1.0 P1/P2 contract operations and p1_only polling fallback",
+      "revision": "round-93"
+    },
+    {
+      "id": "static-spec-and-ast-index",
+      "description": "Static renderer AST source-index (9069 modules, 0 parseErrors), build_coverage.py (20 domains, 371 rows) tied to HEAD ab899ffee48ff6263a2422b96e59d24a06c2d436, plus ORCA-FIRST/Reference crosswalk verification",
+      "revision": "round-94-m4"
+    },
+    {
+      "id": "env-bounded-limits",
+      "description": "Explicitly unbounded external prerequisites (EB-01..EB-06): live logged-in LLM streaming, live OAuth SaaS tasks, physical multi-host networking, visible OS foreground focus/Narrator/Orca AT-SPI, macOS/Linux/Windows ARM64 signed installers, hardware audio/WebAuthn",
+      "revision": "round-94-m4"
+    }
+  ],
+  "relations": [
+    {
+      "type": "appears_in",
+      "from": "topbar-group-picker-and-tabs",
+      "to": "narrow-600x400-coexistence"
+    },
+    {
+      "type": "depends_on",
+      "from": "workspace-split-and-explorer",
+      "to": "workspace-v3-cold-recovery"
+    },
+    {
+      "type": "shares",
+      "from": "sidebar-session-index-surface",
+      "to": "collaboration-dialog-sync"
+    },
+    {
+      "type": "affects",
+      "from": "controlled-dialog-and-appearance",
+      "to": "narrow-600x400-coexistence"
+    },
+    {
+      "type": "depends_on",
+      "from": "crosswalk-governance-boundary",
+      "to": "porpita-desktop-client"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-round-90",
+      "kind": "runtime-observation",
+      "role": "author",
+      "status": "observed",
+      "observation": "Windows hidden Electron observation run for F01/F02 onboarding skip return-focus, English Help menu strings, and zh TerminalSlide localization (23 captures, 0 findings).",
+      "window": "1280x800 & 600x400 hidden CDP",
+      "method": "tools/observe-round-90.cjs with ORCA_BACKGROUND_LAUNCH=1",
+      "objects": [
+        "settings-onboarding-and-primitives",
+        "controlled-dialog-and-appearance"
+      ],
+      "conditions": [
+        "win-hidden-cdp-prod",
+        "narrow-600x400-zoom-motion"
+      ],
+      "location": {
+        "path": "docs/client/porpita-ui-spec/evidence/iteration-90-windows/run.json"
+      },
+      "revision": "round-90"
+    },
+    {
+      "id": "ev-round-91",
+      "kind": "runtime-observation",
+      "role": "author",
+      "status": "observed",
+      "observation": "Windows hidden Electron observation run for F03 dialog return-focus (O.modal.add-repo), reduced-motion transition 0s, forced-colors, 158% zoom, 820x580/600x400 settings wrapping, and live en->zh->ja locale switches (9 captures, 0 findings).",
+      "window": "1280x800, 820x580, 600x400 & 158% zoom",
+      "method": "tools/observe-round-91.cjs with ORCA_BACKGROUND_LAUNCH=1",
+      "objects": [
+        "controlled-dialog-and-appearance",
+        "narrow-600x400-coexistence"
+      ],
+      "conditions": [
+        "win-hidden-cdp-prod",
+        "narrow-600x400-zoom-motion"
+      ],
+      "location": {
+        "path": "docs/client/porpita-ui-spec/evidence/iteration-91-windows/run.json"
+      },
+      "revision": "round-91"
+    },
+    {
+      "id": "ev-round-92",
+      "kind": "runtime-observation",
+      "role": "author",
+      "status": "observed",
+      "observation": "Windows hidden Electron observation run for F04 retained tools: unpackaged orca-runtime.mjs plugin toggle focus recovery, StarNagCard Escape guard, BrowserFind role=search, Git Graph @container narrow stack, and RepositoryRemoveProjectButton i18n (19 captures, 0 findings).",
+      "window": "1280x800 & 600x400 hidden CDP",
+      "method": "tools/observe-round-92.cjs with ORCA_BACKGROUND_LAUNCH=1",
+      "objects": [
+        "retained-tools-and-plugins",
+        "narrow-600x400-coexistence"
+      ],
+      "conditions": [
+        "win-hidden-cdp-prod",
+        "narrow-600x400-zoom-motion"
+      ],
+      "location": {
+        "path": "docs/client/porpita-ui-spec/evidence/iteration-92-windows/run.json"
+      },
+      "revision": "round-92"
+    },
+    {
+      "id": "ev-round-93",
+      "kind": "runtime-observation",
+      "role": "author",
+      "status": "observed",
+      "observation": "Windows hidden Electron + isolated PostgreSQL 16 loopback ACS Core observation run for F05/F06 collaboration connection sync, p1_only fallback, unread preservation, PendingInspectionAction priority, and stale search clearing (12 captures, 0 findings).",
+      "window": "1280x800 & 600x400 hidden CDP + loopback Core",
+      "method": "tools/observe-round-93.cjs against PostgreSQL 16 acs_loopback_server.py",
+      "objects": [
+        "collaboration-and-tasks",
+        "collaboration-dialog-sync"
+      ],
+      "conditions": [
+        "win-hidden-cdp-prod",
+        "loopback-postgres-acs-core"
+      ],
+      "location": {
+        "path": "docs/client/porpita-ui-spec/evidence/iteration-93-windows/run.json"
+      },
+      "revision": "round-93"
+    },
+    {
+      "id": "ev-round-94",
+      "kind": "runtime-observation",
+      "role": "author",
+      "status": "observed",
+      "observation": "Windows hidden Electron observation run against native-integrated production build ab899ffee4 (VITE_PORPITA_WORKSPACE_PREVIEW stripped): 2-row SidebarSessionIndex at 600x400, 44px narrow Group Picker, dual-Codex <646px split breakpoint, ResizeHandle ArrowRight/Escape, Standalone<->Embedded Explorer continuity, 20-tab overflow, unsaved Cancel guard, and porpita-workspaces.json v3 cold recovery + Retry/Reset fallback (13 captures, 0 findings).",
+      "window": "1280x800, 820x580, 640x580, 600x400 hidden CDP",
+      "method": "tools/observe-round-94.cjs with ORCA_BACKGROUND_LAUNCH=1",
+      "objects": [
+        "porpita-desktop-client",
+        "app-shell-workspace-chrome",
+        "session-discovery-workbench",
+        "topbar-group-picker-and-tabs",
+        "sidebar-session-index-surface",
+        "workspace-split-and-explorer",
+        "workspace-v3-cold-recovery",
+        "narrow-600x400-coexistence"
+      ],
+      "conditions": [
+        "win-hidden-cdp-prod",
+        "narrow-600x400-zoom-motion"
+      ],
+      "location": {
+        "path": "docs/client/porpita-ui-spec/evidence/iteration-94-windows/run.json"
+      },
+      "revision": "round-94"
+    },
+    {
+      "id": "ev-coverage-audit",
+      "kind": "structural-audit",
+      "role": "verifier",
+      "status": "verified",
+      "observation": "build_coverage.py verified 20 domains and 371 catalog rows against renderer AST source-index (9069 modules, 0 parseErrors) and history root with errors: [], bound to Porpita HEAD ab899ffee48ff6263a2422b96e59d24a06c2d436.",
+      "window": "CLI / staged workspace",
+      "method": "node source-index.cjs + python build_coverage.py",
+      "objects": [
+        "porpita-desktop-client",
+        "crosswalk-governance-boundary"
+      ],
+      "conditions": [
+        "static-spec-and-ast-index"
+      ],
+      "location": {
+        "path": "docs/client/porpita-ui-spec/coverage-audit.json"
+      },
+      "revision": "round-94-m4"
+    },
+    {
+      "id": "ev-source-summary",
+      "kind": "ast-index",
+      "role": "verifier",
+      "status": "verified",
+      "observation": "Renderer source index summary recording settingsRenderers, topLevelViews, rootBoundaries, primitiveWrappers, and parseErrors: [].",
+      "window": "CLI static analysis",
+      "method": "node docs/client/porpita-ui-spec/tools/source-index.cjs",
+      "objects": [
+        "porpita-desktop-client",
+        "settings-onboarding-and-primitives"
+      ],
+      "conditions": [
+        "static-spec-and-ast-index"
+      ],
+      "location": {
+        "path": "docs/client/porpita-ui-spec/source-index/summary.json"
+      },
+      "revision": "round-94-m4"
+    },
+    {
+      "id": "ev-crosswalk-docs",
+      "kind": "specification-crosswalk",
+      "role": "author",
+      "status": "verified",
+      "observation": "ORCA-FIRST.zh-CN.md Section 11 and DECISIONS_AND_SEQUENCE.md trace all T01-T12, UX01-UX22, 11 Reference deliverables, Open #1-#12, and 35 ACS communication operations while keeping historical body and 5 archived documents byte-untouched.",
+      "window": "Markdown workspace",
+      "method": "F09 bidirectional crosswalk authoring and link audit",
+      "objects": [
+        "crosswalk-governance-boundary",
+        "collaboration-and-tasks"
+      ],
+      "conditions": [
+        "static-spec-and-ast-index"
+      ],
+      "location": {
+        "path": "docs/client/porpita-ui-spec/DECISIONS_AND_SEQUENCE.md"
+      },
+      "revision": "round-94-m4"
+    },
+    {
+      "id": "ev-closure-boundaries",
+      "kind": "boundary-audit",
+      "role": "author",
+      "status": "verified",
+      "observation": "COVERAGE_CLOSURE.md explicitly preserves all 6 ENV_BOUNDED deferral categories (EB-01..EB-06) as pending verification outside controlled local test fixtures.",
+      "window": "Markdown workspace",
+      "method": "Honesty and ENV_BOUNDED category audit against T1-F06-05 / T4-07",
+      "objects": [
+        "crosswalk-governance-boundary"
+      ],
+      "conditions": [
+        "env-bounded-limits"
+      ],
+      "location": {
+        "path": "docs/client/porpita-ui-spec/COVERAGE_CLOSURE.md"
+      },
+      "revision": "round-94-m4"
+    }
+  ],
+  "candidate_specs": [
+    {
+      "id": "spec-preview-workspace-prototype",
+      "purpose": "Pre-Round-94 gated workspace preview (VITE_PORPITA_WORKSPACE_PREVIEW=true) used to shape Session Index, Group Picker and fixed Explorer in Rounds 9-26.",
+      "boundary_reason": "Retired upon Round 94 F07 default production integration without breaking v1/v2->v3 workspace profile migration.",
+      "relationship": "Superseded candidate promoted into spec-integrated-porpita-ui.",
+      "quality_goals": [
+        "Single-row Group Picker density at 420px/920px",
+        "v3 workspace profile backward compatibility with v1/v2"
+      ],
+      "objects": [
+        "app-shell-workspace-chrome",
+        "session-discovery-workbench"
+      ],
+      "research_objects": [
+        "topbar-group-picker-and-tabs"
+      ],
+      "implementation_objects": [
+        "workspace-v3-cold-recovery"
+      ],
+      "regression_objects": [
+        "narrow-600x400-coexistence"
+      ],
+      "decisions": [
+        "dec-f07-f08-native-workspace"
+      ],
+      "related_specs": [
+        "spec-integrated-porpita-ui"
+      ],
+      "revision": "rounds-09-26"
+    }
+  ],
+  "formal_specs": [
+    {
+      "id": "spec-integrated-porpita-ui",
+      "purpose": "Authoritative M1-M4 integrated Porpita Desktop UI SPEC covering 20 functional domains, 371 rows, ORCA-FIRST crosswalks (T01-T12, UX01-UX22), Reference Open #1-#12, ACS contracts, and honest ENV_BOUNDED closures.",
+      "boundary_reason": "Includes all in-tree renderer/main UX, local Windows Electron CDP captures, PostgreSQL loopback ACS Core, and Linux X11/Wayland/GNOME archive runs; leaves EB-01..EB-06 honestly bounded.",
+      "relationship": "Primary normative UI specification across Agent-collaboration docs/client and Porpita branch codex/porpita-ui-spec-91.",
+      "quality_goals": [
+        "Zero Vite preview env gate in production chrome (F07)",
+        "Non-overlapping 600x400 & 158% zoom responsiveness and deterministic keyboard focus return (F03, F04, F08)",
+        "100% AST module parity with zero broken links or dishonest closure claims (F09, F10)"
+      ],
+      "objects": [
+        "porpita-desktop-client",
+        "crosswalk-governance-boundary"
+      ],
+      "research_objects": [
+        "sidebar-session-index-surface",
+        "workspace-split-and-explorer"
+      ],
+      "implementation_objects": [
+        "topbar-group-picker-and-tabs",
+        "collaboration-dialog-sync",
+        "controlled-dialog-and-appearance",
+        "retained-tools-and-plugins",
+        "workspace-v3-cold-recovery"
+      ],
+      "regression_objects": [
+        "narrow-600x400-coexistence"
+      ],
+      "decisions": [
+        "dec-f03-f04-primitives-and-tools",
+        "dec-f05-f06-collaboration-sync",
+        "dec-f07-f08-native-workspace",
+        "dec-f09-f10-crosswalk-and-closure"
+      ],
+      "related_specs": [
+        "spec-preview-workspace-prototype"
+      ],
+      "revision": "round-94-m4"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "dec-f03-f04-primitives-and-tools",
+      "objects": [
+        "settings-onboarding-and-primitives",
+        "controlled-dialog-and-appearance",
+        "retained-tools-and-plugins",
+        "narrow-600x400-coexistence"
+      ],
+      "evidence": [
+        "ev-round-90",
+        "ev-round-91",
+        "ev-round-92"
+      ],
+      "purpose": "Establish consistent return-focus, reduced-motion zero-transition safety, high-DPI zoom legibility, and retained tool polish without replacing Orca visual language.",
+      "question": "How to guarantee deterministic Escape focus return across controlled <Dialog open> flows and clean responsive layout on 600x400 / 158% zoom across retained tools?",
+      "judgment": "Standardize controlled dialog trigger return-focus (dialog-return-focus.ts), clamp CSS motion transitions under reduced-motion, bind external @container/git-graph rules, fix unpackaged orca-runtime.mjs resolution, and align trilingual localization catalogs.",
+      "choice": "Apply scoped Radix/CJS fixes in Porpita renderer/main rather than rewriting dialog primitives.",
+      "comparison": {
+        "state": "evaluated",
+        "alternatives": [
+          "Per-dialog ad-hoc refs",
+          "Rewriting Radix Dialog primitives"
+        ],
+        "evidence": [
+          "ev-round-91",
+          "ev-round-92"
+        ],
+        "rationale": "Central trigger tracking handles external openers cleanly with minimal code delta and zero shadcn restyle regression.",
+        "revision": "round-92"
+      },
+      "implementation": {
+        "state": "integrated",
+        "evidence": [
+          "ev-round-90",
+          "ev-round-91",
+          "ev-round-92"
+        ],
+        "paths": [
+          "docs/client/porpita-ui-spec/ITERATION_90.md",
+          "docs/client/porpita-ui-spec/ITERATION_91.md",
+          "docs/client/porpita-ui-spec/ITERATION_92.md",
+          "docs/client/porpita-ui-spec/VISUAL_INTERACTION_SYSTEM.md"
+        ],
+        "revision": "round-92"
+      },
+      "approval": {
+        "status": "approved",
+        "source": "Phase 1 & Phase 2 Gate (@verifier + @coordinator)",
+        "scope": "Windows hidden CDP observation + E2E M1-A/M1-B/M1-C suite"
+      },
+      "checks": [
+        {
+          "domain": "interaction",
+          "status": "passed",
+          "finding": "Controlled <Dialog open> Escape restores exact trigger focus (Add project / Skip Continue / StarNagCard); BrowserFind role=search and plugin toggle focus recovery verified.",
+          "role": "verifier",
+          "objects": [
+            "controlled-dialog-and-appearance",
+            "retained-tools-and-plugins"
+          ],
+          "conditions": [
+            "win-hidden-cdp-prod",
+            "narrow-600x400-zoom-motion"
+          ],
+          "evidence": [
+            "ev-round-91",
+            "ev-round-92"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "gap-os-foreground-and-nonwin",
+          "status": "bounded_env",
+          "impact": "Visible OS foreground focus, Windows Narrator/macOS VoiceOver/Linux Orca AT-SPI, and macOS/Linux/ARM64 installers require non-hidden physical OS runs.",
+          "question": "How are real AT-SPI / Narrator announcements and native traffic-light titlebars verified across platforms?",
+          "objects": [
+            "controlled-dialog-and-appearance"
+          ],
+          "resolution_evidence": [
+            "ev-closure-boundaries"
+          ]
+        }
+      ],
+      "revision": "round-92"
+    },
+    {
+      "id": "dec-f05-f06-collaboration-sync",
+      "objects": [
+        "collaboration-and-tasks",
+        "collaboration-dialog-sync"
+      ],
+      "evidence": [
+        "ev-round-93"
+      ],
+      "purpose": "Eliminate stale ACS connection/unread state across reconnects and settings round-trips while keeping Native Session and ACS Conversation authorities distinct.",
+      "question": "How should Sidebar, Settings, and Collaboration Dialog stay synchronized during reconnect, p1_only server downgrade, and pending message failures?",
+      "judgment": "Introduce shared collaboration-connection-sync and communication-view-sync with 200ms unmount grace, p1_only fallback polling, visible before pendingFailed order in PendingInspectionAction, and Managed Core messages.newest validation.",
+      "choice": "Unify connection/snapshot event propagation while keeping P1/P2 server capabilities explicit.",
+      "comparison": {
+        "state": "evaluated",
+        "alternatives": [
+          "Component-local polling without shared cache",
+          "Merging ACS Conversation into Native Session store"
+        ],
+        "evidence": [
+          "ev-round-93"
+        ],
+        "rationale": "Preserves domain separation (D-001..D-009) while removing duplicate /snapshot fetches and stale reconnect badges.",
+        "revision": "round-93"
+      },
+      "implementation": {
+        "state": "integrated",
+        "evidence": [
+          "ev-round-93"
+        ],
+        "paths": [
+          "docs/client/porpita-ui-spec/ITERATION_93.md",
+          "docs/client/communication-contract-adoption.json"
+        ],
+        "revision": "round-93"
+      },
+      "approval": {
+        "status": "approved",
+        "source": "Phase 3 / M2 Gate (@verifier + @coordinator)",
+        "scope": "PostgreSQL 16 loopback ACS Core observation + M2 E2E 15/15 full pass"
+      },
+      "checks": [
+        {
+          "domain": "state-feedback",
+          "status": "passed",
+          "finding": "Side-by-side connect/disconnect/reconnect preserves unread badge, clears stale search hits, respects p1_only polling, and renders 109px compact history height at 600x400.",
+          "role": "verifier",
+          "objects": [
+            "collaboration-dialog-sync"
+          ],
+          "conditions": [
+            "loopback-postgres-acs-core",
+            "win-hidden-cdp-prod"
+          ],
+          "evidence": [
+            "ev-round-93"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "gap-live-llm-and-remote-tls-acs",
+          "status": "bounded_env",
+          "impact": "Live authenticated LLM streaming responses (EB-01), OAuth task SaaS accounts (EB-02), and physical multi-host HTTPS ACS clusters (EB-03) cannot be exercised offline without external keys/machines.",
+          "question": "When do EB-01/EB-02/EB-03 close?",
+          "objects": [
+            "collaboration-dialog-sync"
+          ],
+          "resolution_evidence": [
+            "ev-closure-boundaries"
+          ]
+        }
+      ],
+      "revision": "round-93"
+    },
+    {
+      "id": "dec-f07-f08-native-workspace",
+      "objects": [
+        "porpita-desktop-client",
+        "app-shell-workspace-chrome",
+        "session-discovery-workbench",
+        "topbar-group-picker-and-tabs",
+        "sidebar-session-index-surface",
+        "workspace-split-and-explorer",
+        "workspace-v3-cold-recovery",
+        "narrow-600x400-coexistence"
+      ],
+      "evidence": [
+        "ev-round-94"
+      ],
+      "purpose": "Promote the unified Workspace Chrome, Sidebar Session Index, dual-session Split Tree, fixed-scope Explorer, and v3 cold persistence into default production chrome without VITE_PORPITA_WORKSPACE_PREVIEW.",
+      "question": "Can the native production app deliver top-level groups, compact 600x400 sidebar index, <646px responsive dual split, fixed Explorer moves, and corrupt JSON recovery together without regressions?",
+      "judgment": "Remove VITE_PORPITA_WORKSPACE_PREVIEW gate, compact SidebarSessionIndex to two rows preserving WorktreeList min-h-[112px], cap Group Picker to max-w-[min(132px,31%)], apply 646px container split breakpoint, wire ResizeHandle ArrowRight/Escape, preserve fixed Explorer scope across Standalone/Embedded, and surface Retry/Reset layout on corrupt porpita-workspaces.json v3.",
+      "choice": "Default native chrome integration validated directly without preview env toggles.",
+      "comparison": {
+        "state": "evaluated",
+        "alternatives": [
+          "Keep Workspace UI behind VITE_PORPITA_WORKSPACE_PREVIEW toggle",
+          "Inline expanded group chips in 600x400 titlebar"
+        ],
+        "evidence": [
+          "ev-round-94"
+        ],
+        "rationale": "GROUP_TRIAL and Round 94 600x400 captures confirm compact Group Selector prevents header overflow while native chrome removes split maintenance.",
+        "revision": "round-94"
+      },
+      "implementation": {
+        "state": "integrated",
+        "evidence": [
+          "ev-round-94"
+        ],
+        "paths": [
+          "docs/client/porpita-ui-spec/ITERATION_94.md",
+          "docs/client/porpita-ui-spec/WORKSPACE_INTERACTION_SPEC.md",
+          "docs/client/porpita-ui-spec/GROUP_TRIAL.md",
+          "docs/client/porpita-ui-spec/SIDEPANEL_CAPABILITY_MATRIX.md"
+        ],
+        "revision": "round-94"
+      },
+      "approval": {
+        "status": "approved",
+        "source": "Phase 4 / M3 Gate (@verifier + @coordinator)",
+        "scope": "Round 94 Windows hidden Electron 13/13 captures + M3 28/28 full E2E pass"
+      },
+      "checks": [
+        {
+          "domain": "layout-and-persistence",
+          "status": "passed",
+          "finding": "Zero preview env flag; 600x400 SidebarSessionIndex zero overlap + 44px Group Picker; 640x580 focused split recovers side-by-side at 820x580; 20-tab overflow & Escape drag cancel; porpita-workspaces.json v3 restarts intact and corrupt JSON shows Retry/Reset layout.",
+          "role": "verifier",
+          "objects": [
+            "app-shell-workspace-chrome",
+            "session-discovery-workbench",
+            "topbar-group-picker-and-tabs",
+            "sidebar-session-index-surface",
+            "workspace-split-and-explorer",
+            "workspace-v3-cold-recovery",
+            "narrow-600x400-coexistence"
+          ],
+          "conditions": [
+            "win-hidden-cdp-prod",
+            "narrow-600x400-zoom-motion"
+          ],
+          "evidence": [
+            "ev-round-94"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "gap-physical-multi-host-workspace",
+          "status": "bounded_env",
+          "impact": "Two-physical-machine SSH/WSL outages and live revocation across remote devices remain ENV_BOUNDED (EB-03), alongside hardware devices (EB-06).",
+          "question": "Which verification remains for remote physical multi-host workspace continuity?",
+          "objects": [
+            "workspace-split-and-explorer",
+            "workspace-v3-cold-recovery"
+          ],
+          "resolution_evidence": [
+            "ev-closure-boundaries"
+          ]
+        }
+      ],
+      "revision": "round-94"
+    },
+    {
+      "id": "dec-f09-f10-crosswalk-and-closure",
+      "objects": [
+        "crosswalk-governance-boundary",
+        "porpita-desktop-client"
+      ],
+      "evidence": [
+        "ev-coverage-audit",
+        "ev-source-summary",
+        "ev-crosswalk-docs",
+        "ev-closure-boundaries"
+      ],
+      "purpose": "Close bidirectional traceability across ORCA-FIRST (T01-T12, UX01-UX22), Reference Pack (11 deliverables, Open #1-#12), ACS client contracts (35 ops), source-index AST parity, and ENV_BOUNDED honesty without mutating archived records.",
+      "question": "Do all client architecture, reference deliverables, open questions, and coverage matrices reconcile cleanly against committed Porpita HEAD ab899ffee48ff6263a2422b96e59d24a06c2d436?",
+      "judgment": "Append Section 11 crosswalks to ORCA-FIRST.zh-CN.md (preserving sections 1-10 and all 5 archived files intact), append Reference deliverables + Open #1-#12 + contract crosswalks to DECISIONS_AND_SEQUENCE.md, update README/SOURCE_BASELINE/COVERAGE_CLOSURE, and generate .ui-spec/design-evidence.json.",
+      "choice": "Bidirectional non-destructive crosswalk preserving historical originals.",
+      "comparison": {
+        "state": "evaluated",
+        "alternatives": [
+          "Rewrite archived 2026-11-05/06 documents",
+          "Omit structured .ui-spec record"
+        ],
+        "evidence": [
+          "ev-crosswalk-docs",
+          "ev-closure-boundaries"
+        ],
+        "rationale": "Preserving archives satisfies ORCA-FIRST Section 9 invariants while machine-verifiable crosswalks and design-evidence.json support M4 E2E automation.",
+        "revision": "round-94-m4"
+      },
+      "implementation": {
+        "state": "integrated",
+        "evidence": [
+          "ev-coverage-audit",
+          "ev-source-summary",
+          "ev-crosswalk-docs",
+          "ev-closure-boundaries"
+        ],
+        "paths": [
+          "docs/client/ORCA-FIRST.zh-CN.md",
+          "docs/client/porpita-ui-spec/DECISIONS_AND_SEQUENCE.md",
+          "docs/client/porpita-ui-spec/README.md",
+          "docs/client/porpita-ui-spec/SOURCE_BASELINE.md",
+          "docs/client/porpita-ui-spec/COVERAGE_CLOSURE.md",
+          "docs/client/communication-openapi.yaml",
+          "docs/client/communication-p1-openapi.yaml",
+          "docs/client/communication-api-scope.json",
+          "docs/client/communication-contract-adoption.json"
+        ],
+        "revision": "round-94-m4"
+      },
+      "approval": {
+        "status": "approved",
+        "source": "Phase 5 / M4 Author Self-Audit (pending final @verifier/@e2e-harness confirmation)",
+        "scope": "Cross-spec parity, AST audit, and .ui-spec structural verification"
+      },
+      "checks": [
+        {
+          "domain": "traceability-and-parity",
+          "status": "passed",
+          "finding": "source-index reports 0 parseErrors; build_coverage.py matches source SHA ab899ffee48ff6263a2422b96e59d24a06c2d436 across 20 domains / 371 rows; ORCA-FIRST T01-T12 & UX01-UX22, Reference 11 deliverables & Open #1-#12, and 35 ACS ops all resolve with 0 broken links and preserved EB-01..EB-06 honesty.",
+          "role": "verifier",
+          "objects": [
+            "crosswalk-governance-boundary",
+            "porpita-desktop-client"
+          ],
+          "conditions": [
+            "static-spec-and-ast-index",
+            "env-bounded-limits"
+          ],
+          "evidence": [
+            "ev-coverage-audit",
+            "ev-source-summary",
+            "ev-crosswalk-docs",
+            "ev-closure-boundaries"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "id": "gap-env-bounded-eb01-to-eb06",
+          "status": "bounded_env",
+          "impact": "EB-01 (live LLM), EB-02 (live OAuth), EB-03 (physical multi-host), EB-04 (foreground OS focus & Narrator/Orca), EB-05 (macOS/Linux/ARM64 installers), and EB-06 (hardware mic/WebAuthn) stay honestly queued for external test environments.",
+          "question": "Are any ENV_BOUNDED items overstated as closed?",
+          "objects": [
+            "crosswalk-governance-boundary"
+          ],
+          "resolution_evidence": [
+            "ev-closure-boundaries"
+          ]
+        }
+      ],
+      "next_action": {
+        "kind": "verify-m4-closure",
+        "reason": "Run E2E-F06 --mode full and full 87/87 suite against committed AC_WORKTREE M4 SHA.",
+        "objects": [
+          "crosswalk-governance-boundary"
+        ]
+      },
+      "revision": "round-94-m4"
+    }
+  ],
+  "coverage_challenges": [
+    {
+      "discovery": "ORCA_BACKGROUND_LAUNCH=1 hides desktop windows so real OS foreground focus rings, Windows Narrator, and WindowMaterial translucency cannot be proven from headless CDP alone.",
+      "disposition": "recorded-env-bounded",
+      "reason": "Documented explicitly under EB-04 in COVERAGE_CLOSURE.md without claiming desktop foreground/AT-SPI completion.",
+      "objects": [
+        "controlled-dialog-and-appearance",
+        "crosswalk-governance-boundary"
+      ],
+      "evidence": [
+        "ev-round-91",
+        "ev-closure-boundaries"
+      ]
+    },
+    {
+      "discovery": "No live paid Codex/Claude API keys or external GitHub/Linear OAuth credentials are configured inside isolated E2E worktrees.",
+      "disposition": "recorded-env-bounded",
+      "reason": "Synthetic Codex history + PostgreSQL 16 loopback ACS Core cover offline/sync flows while live streaming and SaaS actions remain honestly marked pending (EB-01, EB-02).",
+      "objects": [
+        "collaboration-dialog-sync",
+        "session-discovery-workbench"
+      ],
+      "evidence": [
+        "ev-round-93",
+        "ev-round-94",
+        "ev-closure-boundaries"
+      ]
+    }
+  ],
+  "required_checks": [
+    {
+      "object": "controlled-dialog-and-appearance",
+      "condition": "win-hidden-cdp-prod",
+      "domain": "interaction",
+      "role": "verifier"
+    },
+    {
+      "object": "collaboration-dialog-sync",
+      "condition": "loopback-postgres-acs-core",
+      "domain": "state-feedback",
+      "role": "verifier"
+    },
+    {
+      "object": "app-shell-workspace-chrome",
+      "condition": "win-hidden-cdp-prod",
+      "domain": "layout-and-persistence",
+      "role": "verifier"
+    },
+    {
+      "object": "narrow-600x400-coexistence",
+      "condition": "narrow-600x400-zoom-motion",
+      "domain": "layout-and-persistence",
+      "role": "verifier"
+    },
+    {
+      "object": "crosswalk-governance-boundary",
+      "condition": "static-spec-and-ast-index",
+      "domain": "traceability-and-parity",
+      "role": "verifier"
+    },
+    {
+      "object": "crosswalk-governance-boundary",
+      "condition": "env-bounded-limits",
+      "domain": "traceability-and-parity",
+      "role": "verifier"
+    }
+  ],
+  "revisions": [
+    {
+      "id": "rev-round-90-to-94",
+      "summary": "Iterative M1-A through M3 convergence culminating in default native Workspace Chrome, Session Index, ACS loopback sync, and cross-spec closure.",
+      "reason": "Consolidate earlier preview prototypes into default production chrome with full accessibility, narrow-window, persistence, and crosswalk verification.",
+      "current_judgment": "Integrated on codex/porpita-ui-spec-91 ab899ffee48ff6263a2422b96e59d24a06c2d436 with honest EB-01..EB-06 boundaries.",
+      "objects": [
+        "porpita-desktop-client",
+        "crosswalk-governance-boundary"
+      ],
+      "evidence": [
+        "ev-round-90",
+        "ev-round-94",
+        "ev-coverage-audit"
+      ],
+      "historical_objects": [
+        "spec-preview-workspace-prototype",
+        "UX-DESIGN.zh-CN.md",
+        "USER-FLOWS.zh-CN.md"
+      ],
+      "previous": {
+        "path": "docs/client/porpita-ui-spec/ITERATION_90.md"
+      },
+      "revision": "round-94-m4"
+    }
+  ],
+  "archive": [
+    {
+      "id": "arch-ux-design",
+      "description": "Archived historical Client page & interaction design baseline (2026-11-05/06, preserved byte-untouched per ORCA-FIRST Section 9).",
+      "location": {
+        "path": "docs/client/UX-DESIGN.zh-CN.md"
+      },
+      "revision": "2026-11-06"
+    },
+    {
+      "id": "arch-user-flows",
+      "description": "Archived historical Client flows & capability gap baseline (2026-11-05/06, preserved byte-untouched).",
+      "location": {
+        "path": "docs/client/USER-FLOWS.zh-CN.md"
+      },
+      "revision": "2026-11-06"
+    },
+    {
+      "id": "arch-product-review",
+      "description": "Archived historical Client product review (2026-11-05/06, preserved byte-untouched).",
+      "location": {
+        "path": "docs/client/PRODUCT-REVIEW.zh-CN.md"
+      },
+      "revision": "2026-11-06"
+    },
+    {
+      "id": "arch-communication-experience",
+      "description": "Archived historical Communication UX study (2026-11-05/06, preserved byte-untouched).",
+      "location": {
+        "path": "docs/client/COMMUNICATION-EXPERIENCE.zh-CN.md"
+      },
+      "revision": "2026-11-06"
+    },
+    {
+      "id": "arch-workbench-adoption",
+      "description": "Archived historical Workbench adoption study (2026-11-06, preserved byte-untouched).",
+      "location": {
+        "path": "docs/client/WORKBENCH-ADOPTION.zh-CN.md"
+      },
+      "revision": "2026-11-06"
+    }
+  ]
+}

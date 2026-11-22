@@ -200,3 +200,55 @@ Core／Runtime 的现行独立合同继续由 [UPGRADE-CONTRACT](../runtime/UPGR
 固定可安装 ORCA 版本及源码对应关系，完成原版代表任务和真实插件接入边界试验，形成第 8 节所列证据。优先回答多机状态归属、各 Harness 的原生通信、恢复与身份连续性；存在入口缺口时再验证原生 panel／commands 插件及其合法通信路径。
 
 验收结果用于决定采用原版、插件或进入 Fork 评估，并独立决定 Core 的必要性。本阶段成果是能力验收证据与采用判断。
+
+## 11. 现行实现状态与双向交叉引用
+
+> **现行说明（2026-11-22 · Phase 5 / M4 收口）：** 上述第 1–10 节完整保留 2026-11-06 架构研究基线及第 9 节原位归档。桌面客户端工程演进已基于 Orca 上游 Fork 基线落地为 Porpita 桌面客户端（Porpita 隔离工作树 `codex/porpita-ui-spec-91` 提交 `ab899ffee48ff6263a2422b96e59d24a06c2d436`，tree `a7c5abba9e212d36f55d6a0769212aa0b24c6152`），并与现行 ACS 通信客户端合同（[communication-openapi.yaml](communication-openapi.yaml) · [communication-p1-openapi.yaml](communication-p1-openapi.yaml) · [communication-api-scope.json](communication-api-scope.json) · [communication-contract-adoption.json](communication-contract-adoption.json)，共 35 个操作：`22` 个 `P1_required`、`13` 个 `P2_optional`）及全覆盖 UI SPEC 目录协同治理：
+> - 全覆盖总览与规范入口：[porpita-ui-spec/README.md](porpita-ui-spec/README.md)
+> - 决策、参考包交付物与 Open Questions #1–#12 对照：[porpita-ui-spec/DECISIONS_AND_SEQUENCE.md](porpita-ui-spec/DECISIONS_AND_SEQUENCE.md)
+> - 全覆盖矩阵与回放场景：[porpita-ui-spec/COVERAGE_MATRIX.md](porpita-ui-spec/COVERAGE_MATRIX.md) · [porpita-ui-spec/PLAYBACK_SCENARIOS.md](porpita-ui-spec/PLAYBACK_SCENARIOS.md)
+> - 源码基线、诚实边界与结构化设计证据：[porpita-ui-spec/SOURCE_BASELINE.md](porpita-ui-spec/SOURCE_BASELINE.md) · [porpita-ui-spec/COVERAGE_CLOSURE.md](porpita-ui-spec/COVERAGE_CLOSURE.md) · [design-evidence.json](../../.ui-spec/design-evidence.json)
+
+### 11.1 `T01`–`T12` 实机验收基准 ↔ `porpita-ui-spec` 与第 90–94 轮收口映射
+
+| 编号／优先级 | `porpita-ui-spec` 对应目录与旅程 | 现行集成与实机证据状态 | 诚实保留的 `ENV_BOUNDED` 边界 |
+| --- | --- | --- | --- |
+| `T01`／P0 通信 | `K`、`K.01`–`K.04`、`R.09` · `J05` / `J09` | 第 93 轮已在隔离 PostgreSQL 回环 ACS Core 完成连接、会话、未读与投递状态流实机验证（[第 93 轮](porpita-ui-spec/ITERATION_93.md)） | 真实在线大模型流式问答与跨外网在线会话归属 `EB-01`／`EB-02`（[覆盖边界](porpita-ui-spec/COVERAGE_CLOSURE.md)） |
+| `T02`／P0 并行 | `C.10`、`D.07.01`、`D.07.03`、`K.02`、`R.04` / `R.05` / `R.09` · `J04` / `J05` / `J09` | 第 94 轮默认生产构建完成双 Codex 会话分屏、`ResizeHandle` 键盘／Esc 与窄窗聚焦切换实机闭环（[第 94 轮](porpita-ui-spec/ITERATION_94.md)） | 真实双在线 LLM 工具并行执行与额度配额消费归属 `EB-01` |
+| `T03`／P0 重连 | `A.05`、`D.07.02`、`D.07.04`、`D.07.05`、`F.04`、`K.01`、`N.general.01`、`R.06` / `R.12`、`S.08` · `J06` / `J12` | 第 93 轮二次重连／`p1_only` 降级同步通过；第 94 轮 `porpita-workspaces.json` v3 冷启动恢复与损坏档案安全降级通过 | 跨两台物理机器网络断开／远端 HTTPS 集群重连归属 `EB-03` |
+| `T04`／P0 历史 | `C.10.08`、`K.02`、`K.04`、`R.09`、`S.04` / `S.07` · `J09` | 第 93 轮 `/snapshot` 去重、过期搜索命中清空与未读回执同步在回环 ACS Core 实机闭环 | 跨多物理设备实时历史与远端 SaaS 托管工作流归属 `EB-02` / `EB-03` |
+| `T05`／P0 重试 | `E.10`、`K.03`、`K.04`、`R.12`、`S.07` · `J05` / `J09` / `J12` | 第 93 轮 Managed Core `messages.newest` 校验与 `PendingInspectionAction`（`visible` 先于 `pendingFailed`）幂等状态核查通过 | 真实外网长链路并发超时与在线 LLM 发送中断归属 `EB-01` / `EB-03` |
+| `T06`／P0 常用会话接续 | `C.10.03`、`C.10.05`、`C.10.06`、`E.01`、`G.06`、`G.06.01`、`N.session-history`、`R.03` · `J03` / `J05` / `J06` | 第 94 轮默认集成左栏 `SidebarSessionIndex` ↔ Vault 双向检索、`Unopened history` 未打开历史续接与回原 Workspace 通过 | 跨物理机器或跨用户真实在线账号历史迁徙归属 `EB-01` / `EB-03` |
+| `T07`／P0 基础权限 | `A.03.05`、`A.03.07`、`C.10.09`、`G.09.04`、`K.01`、`M.02.25`–`M.02.36`、`S.06` / `S.08` · `J03` / `J07` / `J11` / `J12` | 同机回环配对、配对代次校验、撤权后界面锁定移除及 Linux X11/Wayland/GNOME 第 66–89 轮证据已归档 | 两台独立物理机异地配对实时撤权专项与远端 Core 部署归属 `EB-03` |
+| `T08`／P0 知识接续 | `C.10`、`H.02` · `J08` / `J10` 及完整基线文档链 | `SOURCE_BASELINE.md`、`coverage-audit.json` 与 `source-index` 严格对齐提交 `ab899ffee48ff6263a2422b96e59d24a06c2d436`，M4 建立与 `ORCA-FIRST.zh-CN.md`、11 份参考交付物及 `.ui-spec/design-evidence.json` 双向闭环 | 无额外硬件阻塞；跨机 Git 基线仍须交接核对提交哈希 |
+| `T09`／P1 插件入口 | `A.03.02`、`G.08`、`L`、`L.05`、`L.06`、`N.plugins`、`R.10` · `J10` | 第 92 轮修复非打包 `orca-runtime.mjs` 路径解析、禁用开关焦点恢复与 Porpita 安全提示（[第 92 轮](porpita-ui-spec/ITERATION_92.md)） | 第三方在线插件市场实时下载与远端 SaaS 扩展归属 `EB-02` |
+| `T10`／P1 插件 API | `F.01`–`F.05`、`G.08`、`L.06`、`N.plugins`、`S.06` · `J05` / `J10` / `J12` | 第 92 轮验证插件 frame 会话隔离（`plugin-frame-guest-sessions`）与停用卸载边界 | 第三方任意外部插件内部权限行为由各提供方按第 10 节边界实测 |
+| `T11`／P1 直接通信 adapter | `G.08`、`L.06`、`K.04`、`R.10` · `J09` / `J10` | 规范明确保持 `Native Session` 与 `ACS Conversation` 独立身份（参见 `communication-contract-adoption.json` `NativeSourceLookup`）；禁止绕过身份映射 | 外部未信任直接调用仍按第 2 节条件需求受服务端 ACL 约束 |
+| `T12`／条件 P0 强边界 | `C.10.08`、`E.09`、`I.02`、`K.01`、`N.developer-permissions`、`P.06`、`S.06` · `J09` / `J10` / `J12` | 第 90–93 轮覆盖 `SecuritySurface` 信任避让、`add-repo` 受控弹窗回焦与 `p1_only` 作用域边界 | 外部不可信威胁模型下服务端／OS 边界须在目标部署集群独立验真（第 2 节） |
+
+### 11.2 `UX01`–`UX22` 用户体验场景 ↔ `porpita-ui-spec` 双向交叉对照
+
+| 场景编号 | 场景名称 | `porpita-ui-spec` 目录条目与旅程 | 现行状态与待验边界 |
+| --- | --- | --- | --- |
+| `UX01` | 安装并首次启动 | `A.01`、`A.04`、`B`、`B.01` · `J01` | 第 90 轮完成 Onboarding 品牌/焦点/文案修复（[第 90 轮](porpita-ui-spec/ITERATION_90.md)）；macOS、Linux、Windows ARM64 与正式签名安装升级归 `EB-05` |
+| `UX02` | 原生工作台完整 | `A`、`D`、`D.01`–`D.08`、`E`、`F`、`G`、`H`、`I` · `J02` / `J04` / `J08` | 第 92/94 轮默认生产构建集成一体化顶栏、分屏与保留工具且 0 回归 |
+| `UX03` | 原生Agent执行体验 | `E.01`–`E.10`、`F.01`–`F.05`、`R.05` · `J05` | Native Chat 界面、Vault 回源与本地合成会话已测；真实登录 LLM 流式与审批执行归 `EB-01` |
+| `UX04` | 两个Agent自动接入 | `C.10`、`D.07.01`、`D.07.03`、`K.01` · `J03` / `J04` / `J09` | 第 93 轮回环 ACS 接入 + 第 94 轮双 Codex 分屏已测；双真实在线大模型自动并发归 `EB-01` |
+| `UX05` | 真实跨Harness来回通信 | `K`、`K.01`–`K.04`、`R.09` · `J09` | 对应 `T01`/`T02`；第 93 轮隔离 PostgreSQL 回环 ACS Core 实机闭环，真实大模型在线执行归 `EB-01` |
+| `UX06` | 无任务通信与最小协作入口 | `C.10.08`、`K.01`–`K.02`、`N.general.01`、`R.09` · `J09` | 第 93 轮标题栏协作 Dialog、术语统一与设置页同步实机闭环 |
+| `UX07` | 忙时消息和原生队列 | `E.10`、`K.03`、`K.04`、`S.04` · `J05` / `J09` | 本地排队 UI 与 ACS 投递状态分层就绪；真实在线模型忙时插队流式归 `EB-01` |
+| `UX08` | 提问与人类审批 | `E.09`、`K.04`、`O.local.trust`、`S.05` · `J01` / `J05` / `J09` | 第 90/91 轮完成信任交互与受控 `<Dialog open>` 回焦；真实线上工具审批流归 `EB-01` |
+| `UX09` | 消息历史/实时/搜索 | `K.02`、`C.10.08` · `J09` | 对应 `T04`；第 93 轮 `CollaborationSearchResults`、`/snapshot` 与未读同步实机闭环 |
+| `UX10` | 消息跳到实际执行 | `C.10.02`、`C.10.05`、`K.04`、`R.09` · `J03` / `J05` / `J09` | 按 [communication-contract-adoption.json](communication-contract-adoption.json) `ReadMessageResponse.native_source` 合同与第 93/94 轮定位路径实现；在线运行定位归 `EB-01` |
+| `UX11` | 私人阅读与草稿 | `E.04`、`K.02`、`K.03` · `J05` / `J09` | 符合合同 `Draft` revision 0 `updated_at: null` 与 Native Chat 会话级草稿隔离 |
+| `UX12` | 文件与图片分享 | `E.05`、`H.03`、`K.03` · `J05` / `J08` / `J09` | 第 93 轮协作附件与 Meta 字节预算合同对齐；真实在线收发归 `EB-01` |
+| `UX13` | 可选任务编排仍可用 | `J`、`J.01`–`J.06`、`L.01`–`L.02`、`N.tasks`、`N.orchestration`、`R.09` · `J09` | 第 92 轮 Automations/Tasks UI 收口；真实外部 GitHub/GitLab/Linear/Jira OAuth 账号归 `EB-02`（在线执行归 `EB-01`） |
+| `UX14` | Gate与群组语义保留 | `D.08`、`D.08.01`、`D.08.02`、`K.01`、`S.06` · `J03` / `J09` / `J12` | 第 94 轮验证 `General/通用` 内建组防删改与标签组隔离；第 93 轮验证 ACS 项目边界 |
+| `UX15` | 退出重开与短暂断开 | `A.05`、`D.07.02`、`D.07.05`、`K.01`、`R.06` / `R.12`、`S.08` · `J06` / `J12` | 对应 `T03`；第 93 轮重连 + 第 94 轮 `porpita-workspaces.json` v3 冷恢复与损坏 JSON 降级闭环 |
+| `UX16` | 目标更换与重复提交 | `A.03.05`、`D.07.04`、`K.01`、`K.03`、`S.07` · `J09` / `J12` | 对应 `T05`/`T06`；遵守 `NativeLink` `expected_host_ref` / `expected_provider_generation` 校验与第 93 轮幂等确认 |
+| `UX17` | 已有Core服务登录 | `K.01`、`N.general.01` · `J01` / `J09` / `J12` | 第 93 轮隔离 ACS Core 连接/断开/重连实机通过；外网远端 HTTPS/TLS 物理集群归 `EB-03` |
+| `UX18` | 品牌和服务出口 | `B.01`、`L.04`、`L.05`、`M.01`、`N.orca-account`、`N.repo` · `J01` / `J10` / `J11` | 第 90/92 轮全量清理 Porpita 品牌文案与 `zh`/`en`/`ja` 词典；跨端发行包出口归 `EB-05` |
+| `UX19` | 原生UI与响应体验 | `A.02`、`N.appearance`、`O.modal.*`、`P` (`P.01`–`P.13`)、`Q` (`Q.01`–`Q.05`)、`R.13`、`S`、`T` · `J13` | 第 91/92/94 轮 `158%` 缩放、高对比、减少动效、`600×400` 与键盘焦点全通；OS 前台聚焦与物理读屏归 `EB-04`，硬件语音/WebAuthn 归 `EB-06` |
+| `UX20` | 同一候选升级/卸载交付 | `A.05`、`N.general`、`N.servers` · `J01` / `J06` | 第 94 轮源码基线与 Windows 候选 11 交付对照保留；签名安装包实机升级/卸载及跨 OS 平台归 `EB-05` |
+| `UX21` | 实际远端Host链路 | `A.03.03`–`A.03.14`、`C.03`、`C.10.09`、`D.07.03`–`D.07.05`、`G.06.01`、`G.09.01`、`M.02.25`–`M.02.37`、`N.servers`、`N.ssh`、`R.11` · `J07` / `J11` / `J12` | 同机双 Runtime 配对与物理 Linux OpenSSH/Wayland/GNOME 第 66–89 轮已取证；物理双机异地网络与真机移动配对归 `EB-03` |
+| `UX22` | 最终功能与路径收口 | `R` (`R.01`–`R.13`)、`J01`–`J13` · [覆盖边界](porpita-ui-spec/COVERAGE_CLOSURE.md) · [设计证据](../../.ui-spec/design-evidence.json) | 20 域、371 项条目通过第 90–94 轮与 M4 跨文档收口；6 类 `ENV_BOUNDED` 条目（`EB-01`–`EB-06`）严格保持诚实待验 |

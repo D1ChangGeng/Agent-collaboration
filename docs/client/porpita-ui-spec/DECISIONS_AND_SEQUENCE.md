@@ -58,3 +58,53 @@
 | 05 全域复核 | 适用主题/语言/平台/状态、动效和跨对象流程逐项闭环；修复回放发现并复查同族 | A–T / 全部 |
 
 无改动的面保留各自目标、理由、源码和回归。迁移时先读取旧 Worktree 布局，保留原 profile 保存和回退；目标布局的保存失败不能破坏原生会话/旧布局。每次变更核对覆盖的条件与状态。第二轮已先修复现有工作台宽度和工作区信任遮挡，目标组织模型按表中依赖推进。
+
+## 参考包交付物、开放问题与决策交叉对照
+
+### 参考包 11 项交付物映射
+
+`RFC_TEMP_SOURCE/Porpita-Workspace-UI-Spec-Reference-v1.0.0/` 中规定的 11 项 UI SPEC 交付物已全部落入现行 `porpita-ui-spec/` 目录与设计证据链，逐一映射如下：
+
+| 参考包交付物 | 现行权威文档与落位 | 覆盖核心内容与轮次收口 |
+| --- | --- | --- |
+| `UI_SPEC_SUMMARY.md` | [README.md](README.md) · [COVERAGE_CLOSURE.md](COVERAGE_CLOSURE.md) | 20 域 371 项全客户端范围总结、M1–M4 分批收敛结果与 `ENV_BOUNDED` 诚实边界 |
+| `OBJECT_MODEL.md` | [WORKSPACE_INTERACTION_SPEC.md](WORKSPACE_INTERACTION_SPEC.md) | `Native Session`、`ACS Conversation`、`Porpita Workspace`、`Pane`、`Top-level Tab`、`Tab Group` 与 `SidePanel Definition/Instance` 权威边界 |
+| `INTERACTION_SPEC.md` | [WORKSPACE_INTERACTION_SPEC.md](WORKSPACE_INTERACTION_SPEC.md) · [VISUAL_INTERACTION_SYSTEM.md](VISUAL_INTERACTION_SYSTEM.md) | 点击、键盘焦点、Split 调宽/Esc、IME、覆盖层退让与错误/离线/草稿保护契约（第 90–94 轮） |
+| `ORCA_REUSE_MAP.md` | [COVERAGE_MATRIX.md](COVERAGE_MATRIX.md) · [VISUAL_INTERACTION_SYSTEM.md](VISUAL_INTERACTION_SYSTEM.md) | 保留／改造／新增处置矩阵（`A`–`T`）及 32 项基础组件包装使用索引 |
+| `SIDEPANEL_CAPABILITY_MATRIX.md` | [SIDEPANEL_CAPABILITY_MATRIX.md](SIDEPANEL_CAPABILITY_MATRIX.md) | 保留同名的独立与嵌入能力矩阵（`G.01`–`G.09`），率先落地固定 Scope Explorer |
+| `SESSION_INDEX_SPEC.md` | [WORKSPACE_INTERACTION_SPEC.md](WORKSPACE_INTERACTION_SPEC.md) | Sidebar `SidebarSessionIndex` 发现、位置/项目/Host 筛选与 ↔ Vault 历史接续（第 94 轮 `C.10`–`C.10.09`、`R.03`） |
+| `TAB_GROUP_SPEC.md` | [GROUP_TRIAL.md](GROUP_TRIAL.md) · [WORKSPACE_INTERACTION_SPEC.md](WORKSPACE_INTERACTION_SPEC.md) | 一行 Group Selector 对照实验与 `General/通用` 防误删、溢出及拖拽防误移（第 94 轮 `D.08`–`D.08.02`） |
+| `WORKSPACE_LAYOUT_SPEC.md` | [WORKSPACE_INTERACTION_SPEC.md](WORKSPACE_INTERACTION_SPEC.md) | 双会话分屏、`< 646px` 容器切换与 `porpita-workspaces.json` v3 冷启动恢复／损坏回退（第 94 轮 `D.07`–`D.07.05`、`A.05`） |
+| `PLAYBACK_SCENARIOS.md` | [PLAYBACK_SCENARIOS.md](PLAYBACK_SCENARIOS.md) · [evidence/README.md](evidence/README.md) | 保留同名的 `J01`–`J13` 验收旅程规范与第 02–94 轮实机运行记录及截图 |
+| `OPEN_QUESTIONS.md` | 本文下节「Open #1–#12 研究收敛矩阵」与 [COVERAGE_CLOSURE.md](COVERAGE_CLOSURE.md) | 对 `DECISIONS_AND_OPEN_QUESTIONS.md` 全部 12 项开放问题的实验选择、源码落位与待验边界 |
+| `DECISION_LOG.md` | 本文 `DDU-01`–`DDU-08` 与 `F01`–`F26`（承接参考包 `D-001`–`D-009`） | 产品裁决理由、实机回放促成的 26 项迭代调整与实施顺序 `00`–`05` |
+
+### 参考包 Open Questions（Open #1–#12）研究收敛矩阵
+
+以下对应参考包 `DECISIONS_AND_OPEN_QUESTIONS.md` 全部 12 项 `Open #1`–`Open #12` 待研究问题：
+
+| 开放问题 | 原始研究问题 | 现行设计与集成结论 | 证据／矩阵锚点与保留边界 |
+| --- | --- | --- | --- |
+| Open #1 | Tab Group 是 Group Selector 还是同一横向 Tab Strip 分组呈现？ | 已确定采用标题栏单行 **Group Selector**（[GROUP_TRIAL.md](GROUP_TRIAL.md) 420px/920px 对照实验与 `DDU-03`），第 94 轮已纳入默认生产构建 | `A.02`、`D.08.01`、`[第 94 轮](ITERATION_94.md)`；窄窗收缩至 44px 无溢出 |
+| Open #2 | 现有 Orca Tabs 是 per-worktree 内容 Tab；如何最小化抽取为 Porpita top-level Workspace Tab？ | 保留内容层 per-worktree Tabs，引入独立顶层 `Workspace` / `Standalone SidePanel` Tab 模型并区分两层命令；第 94 轮已移除 `VITE_PORPITA_WORKSPACE_PREVIEW` 门控并原生集成 | `D.01`、`D.07`、`D.08`、`A.02`、`T.06`；内容层与顶层快捷键各自独立 |
+| Open #3 | 跨 Worktree / Project Session 能否复用当前 Pane Tree？是否需要独立 Layout Owner？ | 引入独立 Porpita Workspace Layout Owner，按 Host + Worktree + Session 稳定引用绑定每个 Pane，复用现有 Split 绘制与键盘逻辑（`DDU-04`） | `D`、`D.03`、`D.07.03`、`D.07.04`；跨两台真实物理机异网分屏继续归 `EB-03` |
+| Open #4 | Session 单击的最终默认：替换焦点 Pane、打开新 Tab 还是复用/激活？ | 已激活对应会话时直达原 Workspace 与 Pane；未打开时默认加入当前焦点 Pane（保留已有内容 Tab），无 Workspace 时新建单 Session Workspace（`DDU-02`） | `C.10`、`C.10.02`、`C.10.03`、`R.03`；支持右键与拖拽显式分屏／新工作空间 |
+| Open #5 | SidePanel 哪些类型具备 Standalone / Embedded 资格？ | 按 `SIDEPANEL_CAPABILITY_MATRIX.md` 分批收敛：第 94 轮已默认集成具备 Standalone ↔ Embedded 能力的 **Explorer**；Source Control/Checks/Ports/Vault 先评估固定 Scope，Plugin Panels/Attached worktrees/PR Checks 初代维持 Dock only（`DDU-05`） | `G.01`–`G.09`、`G.09.01`、`R.07`、`[能力矩阵](SIDEPANEL_CAPABILITY_MATRIX.md)` |
+| Open #6 | Explorer / Source Control 等依赖 activeWorktree 的面板如何固定 Scope？ | 将显式 `Host + Worktree/Repo/Root` 提升至 `SidePanel Instance` 元数据与 v3 持久化结构中，禁止默认跟随焦点会话切换；切到其他仓库时 Explorer 保持原 Scope（第 94 轮实测通过） | `G.02`、`G.09.01`–`G.09.04`、`R.07`；多级完整树写回与 Source Control 独立宿主按 `G.03` 推进 |
+| Open #7 | Plugin Panel 能否安全重挂载到不同 Host？ | 当前保持 Dock only 与按 `tabKey` + session token 隔离的 iframe/声明式生命周期（第 92 轮修复 `orca-runtime.mjs` 与停用恢复焦点），在尚未通过多实例桥接卸载验真前禁止跨宿主移动（`G.08`） | `G.08`、`L.06`、`N.plugins`、`[第 92 轮](ITERATION_92.md)` |
+| Open #8 | 同一 SidePanel Definition 多 Instance 的状态隔离策略。 | 采用 `Definition + Explicit Scope` 复用与独立 `Instance ID` 隔离内部查询、筛选、选中与滚动，同一 Instance 仅允许唯一活跃宿主呈现（`G.09`） | `G.02.02`、`G.09`–`G.09.04`、`[能力矩阵](SIDEPANEL_CAPABILITY_MATRIX.md)` |
+| Open #9 | Tab Group 在窄窗口和大量 Tab 下的最佳视觉形态。 | Group Selector 限制 `max-w-[min(132px,31%)]` 并于 600×400 窄窗压缩至 `44px`，配合 20+ 标签横向可滚动溢出与「打开工作对象」全量列表，完整组名保留于下拉菜单与可访问名称（第 94 轮实测） | `A.02`、`D.01`、`D.08`、`D.08.01`、`[第 94 轮](ITERATION_94.md)` |
+| Open #10 | 多窗口下 Workspace / Session 的唯一性与恢复策略。 | 初代维持单主 Workspace 窗口 owner（Dashboard / Space 为独立辅助工具窗口，`DDU-07`），由主进程 `porpita-workspaces.json` v3 原子持久化并在损坏 JSON 时提示 Retry / Reset layout；同一稳定 Session 引用禁止多处并发输入 | `A.05`、`A.06`、`D.07.02`、`D.07.04`、`R.06`；物理多主窗口并发协同留待真多窗阶段验证 |
+| Open #11 | Workspace 默认命名、重命名与 Project affinity 提示。 | 默认命名取首次进入的会话/范围，允许用户显式重命名；`General` / `通用` 为默认系统保护组禁止改名或删除；协作对话框区分「协作项目」与「执行工作区」，工作空间不强制绑定 Project（`F04`） | `C.05`、`D.07`、`D.08`、`D.08.01`、`K.01` |
+| Open #12 | Session Index 的状态摘要、未读归属和 Needs Attention 规则。 | 将 **运行**（Native/Host）、**通信**（ACS 未读/投递阶段）与 **Host 可用性** 三轴分离投影（`DDU-08`），Needs Attention 聚合待处理原生输入、未读协作与恢复阻断，点击已读不篡改运行状态；第 93/94 轮集成左栏索引、RunState 徽标及 ACS 未读实时同步 | `C.10`、`C.10.07`、`C.10.08`、`K.02`、`K.04`、`R.03`、`R.09` |
+
+## ORCA-FIRST 架构基线、UX01–UX22 与 ACS 通信合同交叉引用
+
+1. **Client 路线基线双向对照（[ORCA-FIRST.zh-CN.md](../ORCA-FIRST.zh-CN.md)）**：完整保留 2026-11-06 建筑原则及第 9 节原位归档，并在该文档第 11 节将全部 **12 项路线实机基线（`T01`–`T12`）** 与 **22 项交付验收场景（`UX01`–`UX22`）** 双向映射至本目录的 `J01`–`J13`、`K.*`、`C.10.*`、`D.*`、`G.09.*` 与第 90–94 轮证据及 `COVERAGE_CLOSURE.md`（参见 [ORCA-FIRST 双向映射](../ORCA-FIRST.zh-CN.md#11-现行实现状态与双向交叉引用)）：
+   - 核心对应概览：`T01`、`T02`（`UX04`、`UX05`）→ `K`、`K.01`–`K.04`、`D.07.01`、`D.07.03`、`J04`/`J05`/`J09`；`T03`、`T04`、`T05`（`UX06`、`UX07`、`UX08`、`UX09`、`UX11`、`UX15`、`UX16`、`UX17`）→ `A.05`、`D.07.02`/`D.07.05`、`K.01`–`K.04`、`N.general.01`、`S.07`/`S.08`、`J06`/`J09`/`J12`；`T06`（`UX02`、`UX03`、`UX10`、`UX14`）→ `C.10.03`–`C.10.06`、`G.06`、`D.08`、`J03`/`J05`/`J06`；`T07`、`T12`（`UX01`、`UX13`、`UX18`、`UX19`、`UX20`、`UX21`）→ `A.03.05`、`C.10.09`、`E.09`、`G.09.04`、`M.02.25`–`M.02.37`、`P`/`Q`、`J01`/`J07`/`J10`–`J13`；`T08`（`UX22`）→ [SOURCE_BASELINE.md](SOURCE_BASELINE.md)、[COVERAGE_CLOSURE.md](COVERAGE_CLOSURE.md) 与 [design-evidence.json](../../../.ui-spec/design-evidence.json)；`T09`、`T10`、`T11`（`UX12`、`UX18`）→ `A.03.02`、`G.08`、`L.05`/`L.06`、`N.plugins`、`J10`。
+2. **ACS 通信客户端合同锚点**：
+   - 全量客户端通信合同：[communication-openapi.yaml](../communication-openapi.yaml)
+   - P1 核心必需子集合同：[communication-p1-openapi.yaml](../communication-p1-openapi.yaml)
+   - 操作范围分级清单：[communication-api-scope.json](../communication-api-scope.json)（总计 `35` 个 `operationId`，其中 `22` 个 `P1_required`、`13` 个 `P2_optional`，`K.01`–`K.04` 与第 93 轮 `p1_only` 轮询降级严格遵循该范围划分）
+   - 契约采纳与字段修正声明：[communication-contract-adoption.json](../communication-contract-adoption.json)（Schema `acs-client-contract-adoption/1`，锁定 `Draft` rev-0 `updated_at: null`、`Notice` 历史空值、`Meta.limits` 配额与原生链接预算、`NativeLinkWrite` 主机代次防错写，以及 `ReadMessageResponse.native_source` 只读溯源边界，对应 `K.03`、`K.04` 与 `UX10`/`UX11`/`UX12`/`UX16`）
+3. **机器可读结构化设计证据**：[.ui-spec/design-evidence.json](../../../.ui-spec/design-evidence.json)（由 `check_design_evidence.py` 验证通过 `overview` / `detail` / `execution` 全视图，零结构发现项 `structural_findings: []`）。
