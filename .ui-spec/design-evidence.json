@@ -4,13 +4,13 @@
   "record_origin": "porpita-ui-spec/m4-m5-final-closure",
   "product_context": {
     "overall_goal": "Converge the Orca-based Porpita Desktop client into a cohesive, accessible, keyboard-operable Workspace/Session/Collaboration/Settings product with verified cross-spec traceability to ORCA-FIRST (T01-T12, UX01-UX22) and ACS client contracts, while preserving honest ENV_BOUNDED deferral boundaries.",
-    "current_ui": "Integrated production desktop build (codex/porpita-ui-spec-91 final commit 0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad, tree 394dd70c6c8c236afe948a8e315dad54c4a76701, after 87/87 full E2E verification on ab899ffee48ff6263a2422b96e59d24a06c2d436) running top-level Workspace Group Picker and Tabs, compact Sidebar Session Index with Vault handoff, Standalone/Embedded fixed-scope Explorer, ACS Collaboration Dialog synchronized with PostgreSQL loopback Core, hardened Settings/Dialog return-focus, and responsive 600x400 / 158% zoom chrome."
+    "current_ui": "Integrated production desktop build (codex/porpita-ui-spec-91 final commit 3f30f4d81a6e0da0cbdde74025f0db30baf1d5b6, tree 9a3e1fb5400fe270f1ad0c0bbd7ef9ec0c76a029, following 87/87 full E2E verification on ab899ffee48ff6263a2422b96e59d24a06c2d436 and Stage 6B surgical hygiene + bridge-absence persistence fallback) running top-level Workspace Group Picker and Tabs, compact Sidebar Session Index with Vault handoff, Standalone/Embedded fixed-scope Explorer, ACS Collaboration Dialog synchronized with PostgreSQL loopback Core, hardened Settings/Dialog return-focus, and responsive 600x400 / 158% zoom chrome."
   },
   "objects": [
     {
       "id": "porpita-desktop-client",
       "level": "L0",
-      "title": "Porpita Desktop Client (0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad)",
+      "title": "Porpita Desktop Client (3f30f4d81a6e0da0cbdde74025f0db30baf1d5b6)",
       "categories": [
         "product-experience",
         "resource-adoption",
@@ -196,7 +196,7 @@
     },
     {
       "id": "static-spec-and-ast-index",
-      "description": "Static renderer AST source-index (9069 modules, 0 parseErrors), build_coverage.py (20 domains, 371 rows) tied to HEAD 0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad, plus ORCA-FIRST/Reference crosswalk verification",
+      "description": "Static renderer AST source-index (9069 modules, 0 parseErrors), build_coverage.py (20 domains, 371 rows) tied to HEAD 3f30f4d81a6e0da0cbdde74025f0db30baf1d5b6, plus ORCA-FIRST/Reference crosswalk verification",
       "revision": "round-94-m4"
     },
     {
@@ -349,7 +349,7 @@
       "kind": "structural-audit",
       "role": "verifier",
       "status": "verified",
-      "observation": "build_coverage.py verified 20 domains and 371 catalog rows against renderer AST source-index (0 parseErrors) and history root with errors: [], bound to final Porpita HEAD 0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad (with 87/87 --mode full E2E pass verified across Stage 6A on ab899ffee4).",
+      "observation": "build_coverage.py verified 20 domains and 371 catalog rows against renderer AST source-index (0 parseErrors) and history root with errors: [], bound to final Porpita HEAD 3f30f4d81a6e0da0cbdde74025f0db30baf1d5b6 (with 87/87 --mode full E2E pass verified across Stage 6A on ab899ffee4).",
       "window": "CLI / staged workspace",
       "method": "node source-index.cjs + python build_coverage.py",
       "objects": [
@@ -762,7 +762,7 @@
         "ev-closure-boundaries"
       ],
       "purpose": "Close bidirectional traceability across ORCA-FIRST (T01-T12, UX01-UX22), Reference Pack (11 deliverables, Open #1-#12), ACS client contracts (35 ops), source-index AST parity, and ENV_BOUNDED honesty without mutating archived records.",
-      "question": "Do all client architecture, reference deliverables, open questions, and coverage matrices reconcile cleanly against final Porpita HEAD 0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad?",
+      "question": "Do all client architecture, reference deliverables, open questions, and coverage matrices reconcile cleanly against final Porpita HEAD 3f30f4d81a6e0da0cbdde74025f0db30baf1d5b6?",
       "judgment": "Append Section 11 crosswalks to ORCA-FIRST.zh-CN.md (preserving sections 1-10 and all 5 archived files intact), append Reference deliverables + Open #1-#12 + contract crosswalks to DECISIONS_AND_SEQUENCE.md, update README/SOURCE_BASELINE/COVERAGE_CLOSURE, and generate .ui-spec/design-evidence.json.",
       "choice": "Bidirectional non-destructive crosswalk preserving historical originals.",
       "comparison": {
@@ -808,7 +808,7 @@
         {
           "domain": "traceability-and-parity",
           "status": "passed",
-          "finding": "source-index reports 0 parseErrors; build_coverage.py matches final source SHA 0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad across 20 domains / 371 rows; ORCA-FIRST T01-T12 & UX01-UX22, Reference 11 deliverables & Open #1-#12, and 35 ACS ops all resolve with 0 broken links and preserved EB-01..EB-06 honesty.",
+          "finding": "source-index reports 0 parseErrors; build_coverage.py matches final source SHA 3f30f4d81a6e0da0cbdde74025f0db30baf1d5b6 across 20 domains / 371 rows; ORCA-FIRST T01-T12 & UX01-UX22, Reference 11 deliverables & Open #1-#12, and 35 ACS ops all resolve with 0 broken links and preserved EB-01..EB-06 honesty.",
           "role": "verifier",
           "objects": [
             "crosswalk-governance-boundary",
@@ -922,7 +922,7 @@
       "id": "rev-round-90-to-94",
       "summary": "Iterative M1-A through M3 convergence culminating in default native Workspace Chrome, Session Index, ACS loopback sync, and cross-spec closure.",
       "reason": "Consolidate earlier preview prototypes into default production chrome with full accessibility, narrow-window, persistence, and crosswalk verification.",
-      "current_judgment": "Integrated on codex/porpita-ui-spec-91 final commit 0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad (following 87/87 full E2E on ab899ffee48ff6263a2422b96e59d24a06c2d436) with honest EB-01..EB-06 boundaries.",
+      "current_judgment": "Integrated on codex/porpita-ui-spec-91 final commit 3f30f4d81a6e0da0cbdde74025f0db30baf1d5b6 (following 87/87 full E2E on ab899ffee48ff6263a2422b96e59d24a06c2d436) with honest EB-01..EB-06 boundaries.",
       "objects": [
         "porpita-desktop-client",
         "crosswalk-governance-boundary"

@@ -624,12 +624,12 @@ Phase 5（Milestone M4）继续锁定上述 Porpita 源码基线 `ab899ffee48ff6
 
 Phase 6 Stage 6A 在 `ab899ffee48ff6263a2422b96e59d24a06c2d436`（`--mode e2e` 构建）与 `da956c6cf09c94cbf9553f4d113d37c3aa12510f` 上完成 `node run-e2e.mjs --tier all --mode full` 全量验收：**`total=87 passed=87 pendingMilestone=0 failed=0 passed=true`**（`Tier 1: 36/36`、`Tier 2: 36/36`、`Tier 3: 8/8`、`Tier 4: 7/7`）。
 
-Stage 6B 在 `codex/porpita-ui-spec-91` 生成最终发布基线提交 **`0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad`**（tree `394dd70c6c8c236afe948a8e315dad54c4a76701`，7 项精确清理：删除 `en.json`/`zh.json` 3 条废弃 `porpitaWorkspacePreview.*` 键值并重新同步运行时目录、`CollaborationSearchResults.tsx` 与 `CommunicationMessage.tsx` 接入 `useIntlLocale()` 消除全部 `renderer-intl-ui-locale` 告警、`WorkspacePreviewSessionPane.tsx` 接入 `useTranslate()` 通过翻译订阅门禁、`AppWorkspaceShell.tsx` 将动态导入改为静态导入消除 React Compiler bailout），并通过 `corepack pnpm tc`（5 配置 0 错）、`verify:localization-catalogs`（21,925 条引用）、`check-changed-code-quality.mjs 50a1e8645a`（0 新增发现）、目标 Vitest 10 套件 27/27 通过、默认 `corepack pnpm exec electron-vite build`（退出码 `0`）以及最终 `--mode e2e` 重建；`source-index/` 与 `coverage-audit.json` 已重新核算并绑定至 `0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad`。
+Stage 6B 在 `codex/porpita-ui-spec-91` 经 `0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad`（7 项国际化／翻译订阅／静态导入精确清理）后追加局部 IPC 缺失回退修复，生成最终发布基线提交 **`3f30f4d81a6e0da0cbdde74025f0db30baf1d5b6`**（tree `9a3e1fb5400fe270f1ad0c0bbd7ef9ec0c76a029`：`workspace-preview-persistence.ts` 在 `window.api?.ui?.readPorpitaWorkspaceLayout` / `writePorpitaWorkspaceLayout` 未注入的局部 mock 场景下安全回落并保持 `readPorpitaWorkspaceLayout` reject 时 `readFailed: true`，配套 `workspace-preview-groups.test.ts` 新增回归测试），并通过 `corepack pnpm tc`（5 配置 0 错）、`verify:localization-catalogs`（21,925 条引用）、`check-changed-code-quality.mjs 50a1e8645a`（0 新增发现）、`app-shell/` + `workspace-preview/` Vitest 14 套件 48/48 通过、提交后定向 Vitest 2 套件 9/9 通过、默认 `corepack pnpm exec electron-vite build`（退出码 `0`）以及最终 `--mode e2e` 重建；`source-index/` 与 `coverage-audit.json` 已重新核算并绑定至 `3f30f4d81a6e0da0cbdde74025f0db30baf1d5b6`。
 
-| Stage 6B 最终 `--mode e2e` 构建文件（`0d285b0e5f`） | SHA-256 |
+| Stage 6B 最终 `--mode e2e` 构建文件（`3f30f4d81a`） | SHA-256 |
 | --- | --- |
 | `out/main/index.js` | `f738854937911ef383a7843ff3b3fd6e33d24842415f9b88b45bd0de76bea93a` |
 | `out/preload/index.js` | `b93f9d0cc8a190c5d5831687fd718a030d348de3754bf9776093e56f2ca839d3` |
-| `out/renderer/index.html` | `cf1fed6748a2c36bf3f66efa3d9e3b4ac9a0ac6bc1269aa7748d0a46f41a2155` |
-| `out/renderer/assets/App-CVtHXZKx.js` | `e5cd7c8003a9f0a41d7309ff73c3d85ac71202cee1c0be792e985761824a6c0c` |
+| `out/renderer/index.html` | `229beebd0316a11b578a999b0422b74ee40740f97c8684deb98fd59216f867a9` |
+| `out/renderer/assets/App-B07Nx7kE.js` | `b18ad52fbd4f90b9d8ff9da817ada3d8b5c502d899b75402301a3d113349048f` |
 | `out/renderer/assets/app-command-dispatch-CDnAG8lM.js` | `d3d9b080b23e4525a2caebd970db2ae935de953b440a77d32c5e3b547565b58a` |
