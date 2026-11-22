@@ -619,3 +619,17 @@ Phase 5（Milestone M4）继续锁定上述 Porpita 源码基线 `ab899ffee48ff6
 - [ORCA-FIRST.zh-CN.md](../ORCA-FIRST.zh-CN.md)：保留原第 1–10 节历史基线及第 9 节原位归档（**5 份旧 `.zh-CN.md`、3 份 `.html` 与 3 个归档目录维持零字节改动**），新增第 11 节将全部 `T01`–`T12` 与 `UX01`–`UX22` 双向映射至 `porpita-ui-spec/`；
 - [DECISIONS_AND_SEQUENCE.md](DECISIONS_AND_SEQUENCE.md)：补全参考包 11 项交付物、全部 `Open #1`–`#12` 开放问题、以及 [communication-openapi.yaml](../communication-openapi.yaml)、[communication-p1-openapi.yaml](../communication-p1-openapi.yaml)、[communication-api-scope.json](../communication-api-scope.json) 与 [communication-contract-adoption.json](../communication-contract-adoption.json) 的对照映射；
 - [.ui-spec/design-evidence.json](../../../.ui-spec/design-evidence.json)：按 `ui-spec-evidence/1` 格式建立全量设计对象、证据与边界索引，并通过 `check_design_evidence.py` `overview` / `detail` / `execution` 全视图检查。
+
+## Phase 6（M5）全量 `--mode full` 验收与 Stage 6B 终版对齐
+
+Phase 6 Stage 6A 在 `ab899ffee48ff6263a2422b96e59d24a06c2d436`（`--mode e2e` 构建）与 `da956c6cf09c94cbf9553f4d113d37c3aa12510f` 上完成 `node run-e2e.mjs --tier all --mode full` 全量验收：**`total=87 passed=87 pendingMilestone=0 failed=0 passed=true`**（`Tier 1: 36/36`、`Tier 2: 36/36`、`Tier 3: 8/8`、`Tier 4: 7/7`）。
+
+Stage 6B 在 `codex/porpita-ui-spec-91` 生成最终发布基线提交 **`0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad`**（tree `394dd70c6c8c236afe948a8e315dad54c4a76701`，7 项精确清理：删除 `en.json`/`zh.json` 3 条废弃 `porpitaWorkspacePreview.*` 键值并重新同步运行时目录、`CollaborationSearchResults.tsx` 与 `CommunicationMessage.tsx` 接入 `useIntlLocale()` 消除全部 `renderer-intl-ui-locale` 告警、`WorkspacePreviewSessionPane.tsx` 接入 `useTranslate()` 通过翻译订阅门禁、`AppWorkspaceShell.tsx` 将动态导入改为静态导入消除 React Compiler bailout），并通过 `corepack pnpm tc`（5 配置 0 错）、`verify:localization-catalogs`（21,925 条引用）、`check-changed-code-quality.mjs 50a1e8645a`（0 新增发现）、目标 Vitest 10 套件 27/27 通过、默认 `corepack pnpm exec electron-vite build`（退出码 `0`）以及最终 `--mode e2e` 重建；`source-index/` 与 `coverage-audit.json` 已重新核算并绑定至 `0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad`。
+
+| Stage 6B 最终 `--mode e2e` 构建文件（`0d285b0e5f`） | SHA-256 |
+| --- | --- |
+| `out/main/index.js` | `f738854937911ef383a7843ff3b3fd6e33d24842415f9b88b45bd0de76bea93a` |
+| `out/preload/index.js` | `b93f9d0cc8a190c5d5831687fd718a030d348de3754bf9776093e56f2ca839d3` |
+| `out/renderer/index.html` | `cf1fed6748a2c36bf3f66efa3d9e3b4ac9a0ac6bc1269aa7748d0a46f41a2155` |
+| `out/renderer/assets/App-CVtHXZKx.js` | `e5cd7c8003a9f0a41d7309ff73c3d85ac71202cee1c0be792e985761824a6c0c` |
+| `out/renderer/assets/app-command-dispatch-CDnAG8lM.js` | `d3d9b080b23e4525a2caebd970db2ae935de953b440a77d32c5e3b547565b58a` |

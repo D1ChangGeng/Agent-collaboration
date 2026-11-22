@@ -1,6 +1,6 @@
 # UI SPEC Coverage Matrix
 
-Porpita 源码锚点使用当前工作树，HEAD 为 `ab899ffee48ff6263a2422b96e59d24a06c2d436`。Windows 0.1.0 候选 11 的交付源树为 `2c1447f1e54c9deed41af5108a7f402d429e5c9a`。各开发构建和试验的身份见 [来源](SOURCE_BASELINE.md)。
+Porpita 源码锚点使用当前工作树，HEAD 为 `0d285b0e5f98a5a672847f7ea56e08ffaf63c5ad`。Windows 0.1.0 候选 11 的交付源树为 `2c1447f1e54c9deed41af5108a7f402d429e5c9a`。各开发构建和试验的身份见 [来源](SOURCE_BASELINE.md)。
 
 首轮判定保留当时的事实。本轮分别记录设计、源码进度与验证范围。局部通过只覆盖列明的条件，后续场景见 [回放](PLAYBACK_SCENARIOS.md)。
 

@@ -115,6 +115,18 @@ export const TIER2_TESTS = [
         const groupBtn = page.locator(M3_SELECTOR_CONTRACT.groupSelector).first()
         await groupBtn.waitFor({ state: 'visible', timeout: 8000 })
         await setViewportSize(app, page, 600, 400)
+        await page
+          .waitForFunction(
+            (sel) => {
+              const el = document.querySelector(sel)
+              const r = el?.getBoundingClientRect()
+              const strip = el?.parentElement?.getBoundingClientRect()
+              return Boolean(r && r.width > 0 && strip && strip.width >= 40)
+            },
+            M3_SELECTOR_CONTRACT.groupSelector,
+            { timeout: 8000 }
+          )
+          .catch(() => {})
         const narrowMetrics = await page.evaluate((sel) => {
           const el = document.querySelector(sel)
           const r = el?.getBoundingClientRect()
@@ -447,7 +459,20 @@ export const TIER2_TESTS = [
         const { page } = inst
         const offlinePane = page.locator('[data-workspace-preview-session="remote-pane-tab"]').first()
         await offlinePane.waitFor({ state: 'visible', timeout: 15000 })
-        await offlinePane.locator('[role="status"]').first().waitFor({ state: 'visible', timeout: 15000 })
+        await page.waitForFunction(
+          () => {
+            const pane = document.querySelector('[data-workspace-preview-session="remote-pane-tab"]')
+            if (!pane) return false
+            const state = pane.getAttribute('data-session-host-state')
+            const status = pane.querySelector('[role="status"]')
+            return (
+              (state === 'disconnected' || state === 'unavailable') &&
+              Boolean(status && status.getBoundingClientRect().height > 0)
+            )
+          },
+          undefined,
+          { timeout: 15000 }
+        )
         const hostState = await offlinePane.getAttribute('data-session-host-state')
         assert.ok(
           hostState === 'disconnected' || hostState === 'unavailable',

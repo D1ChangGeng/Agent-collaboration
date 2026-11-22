@@ -103,7 +103,9 @@ async function ensureSharedDockerPg(agentCollabRoot) {
           '-c',
           'synchronous_commit=off',
           '-c',
-          'full_page_writes=off'
+          'full_page_writes=off',
+          '-c',
+          'max_connections=200'
         ],
         { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 45000 }
       )
@@ -185,7 +187,17 @@ async function provisionPostgres(agentCollabRoot) {
   runPythonSync(
     [
       '-c',
-      `import psycopg, sys; conn = psycopg.connect(sys.argv[1], autocommit=True); conn.execute(f'CREATE SCHEMA "{sys.argv[2]}"'); conn.close()`,
+      `import psycopg, sys, time
+for i in range(4):
+    try:
+        conn = psycopg.connect(sys.argv[1], autocommit=True, connect_timeout=15)
+        conn.execute(f'CREATE SCHEMA "{sys.argv[2]}"')
+        conn.close()
+        break
+    except psycopg.OperationalError:
+        if i == 3:
+            raise
+        time.sleep(0.2 * (2 ** i))`,
       baseDsn,
       schema
     ],
@@ -280,9 +292,20 @@ export async function startLoopbackAcsCore({ mode = 'full', agentCollabRoot = nu
     async adminPost(relPath, body = {}) {
       const res = await this.request('POST', relPath, { token: adminToken, body })
       if (res.status >= 400) {
-        throw new Error(`Admin POST ${relPath} failed (${res.status}): ${res.text}`)
+        const stderrTail = stderrChunks.length ? ` | stderr: ${stderrChunks.join('').slice(-1500)}` : ''
+        throw new Error(`Admin POST ${relPath} failed (${res.status}): ${res.text}${stderrTail}`)
       }
       return res.json
+    },
+    async adminGet(relPath) {
+      const res = await this.request('GET', relPath, { token: adminToken })
+      if (res.status >= 400) {
+        throw new Error(`Admin GET ${relPath} failed (${res.status}): ${res.text}`)
+      }
+      return res.json
+    },
+    getStderr() {
+      return stderrChunks.join('')
     },
     peerSend(opts) {
       return this.adminPost('/__e2e/peer-send', opts)

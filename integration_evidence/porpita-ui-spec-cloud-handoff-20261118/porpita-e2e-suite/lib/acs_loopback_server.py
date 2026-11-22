@@ -91,6 +91,66 @@ RECEIVER_B = "endpoint-b"
 RECEIVER_C = "endpoint-c"
 
 
+def _install_loopback_pg_connect_resilience():
+    """Retry bounded TCP handshake stalls (e.g., WSL2 port-relay timeouts) before any query runs."""
+    import sys as _sys
+    import time as _time
+    import psycopg as _psycopg
+    from psycopg.conninfo import conninfo_to_dict as _conninfo_to_dict
+
+    if getattr(_psycopg.connect, "_e2e_loopback_wrapped", False):
+        return
+    _orig_connect = _psycopg.connect
+
+    def _resilient_connect(*args, **kwargs):
+        merged = dict(kwargs)
+        dsn_str = args[0] if args else merged.get("conninfo", "")
+        dsn_timeout = 0
+        try:
+            raw_t = _conninfo_to_dict(str(dsn_str)).get("connect_timeout")
+            if raw_t is not None:
+                dsn_timeout = int(raw_t)
+        except Exception:
+            dsn_timeout = 0
+        kw_timeout = merged.get("connect_timeout")
+        try:
+            eff_timeout = int(kw_timeout) if kw_timeout is not None else dsn_timeout
+        except Exception:
+            eff_timeout = 0
+        if eff_timeout < 15:
+            merged["connect_timeout"] = 15
+        last_err = None
+        for attempt in range(6):
+            try:
+                return _orig_connect(*args, **merged)
+            except _psycopg.OperationalError as err:
+                msg = str(err).lower()
+                transient = err.sqlstate is None and any(
+                    frag in msg
+                    for frag in (
+                        "connection timeout expired",
+                        "timeout expired",
+                        "server closed the connection unexpectedly",
+                        "connection reset by peer",
+                        "ssl syscall error: eof detected",
+                        "connection refused",
+                        "cannot assign requested address",
+                    )
+                )
+                if not transient or attempt == 5:
+                    raise
+                last_err = err
+                _sys.stderr.write(
+                    f"[e2e-loopback] pg connect retry {attempt + 1}/5: {type(err).__name__}: {err}\n"
+                )
+                _sys.stderr.flush()
+                _time.sleep(0.1 * (2**attempt))
+        raise last_err
+
+    _resilient_connect._e2e_loopback_wrapped = True
+    _psycopg.connect = _resilient_connect
+
+
 class InProcessCodexWire:
     """Controlled in-process JSON-RPC wire for DriverJournal native-source provenance."""
 
@@ -364,6 +424,7 @@ def _build_native_driver(state: Path, node_journal: NodeJournal, slot: str, cloc
 
 
 def create_server_app(dsn: str, state: Path, mode: str):
+    _install_loopback_pg_connect_resilience()
     meta_path = state / "e2e-state.json"
     if not meta_path.exists():
         meta = _setup_state(dsn, state)
@@ -582,13 +643,76 @@ def create_server_app(dsn: str, state: Path, mode: str):
         "event_protocol": "acs-event/1",
     }
 
+    import runtime.communication_http as _comm_http_mod
+    import sys as _sys
+    import traceback as _traceback
+
+    recent_server_errors = []
+    if not getattr(_comm_http_mod._problem, "_e2e_logged", False):
+        _orig_problem = _comm_http_mod._problem
+
+        def _logging_problem(request, error):
+            if not isinstance(error, CommunicationHttpError):
+                tb = "".join(_traceback.format_exception(type(error), error, error.__traceback__))
+                _sys.stderr.write(f"[e2e-loopback] unhandled {request.method} {request.url.path}: {tb}\n")
+                _sys.stderr.flush()
+                recent_server_errors.append(
+                    {
+                        "method": request.method,
+                        "path": request.url.path,
+                        "type": type(error).__name__,
+                        "error": str(error),
+                        "traceback": tb[-4000:],
+                    }
+                )
+                if len(recent_server_errors) > 20:
+                    del recent_server_errors[:-20]
+            return _orig_problem(request, error)
+
+        _logging_problem._e2e_logged = True
+        _comm_http_mod._problem = _logging_problem
+        _comm_http_mod._problem._e2e_errors_sink = recent_server_errors
+    elif hasattr(_comm_http_mod._problem, "_e2e_errors_sink"):
+        recent_server_errors = _comm_http_mod._problem._e2e_errors_sink
+
     app = create_communication_app(project_provider, limits=limits, public_meta=public_meta)
 
+    @app.get("/__e2e/errors")
+    async def e2e_errors(request: Request):
+        _require_admin(request)
+        return {
+            "errors": list(recent_server_errors),
+            "httpErrors": list(recent_http_errors),
+            "recentHttp": list(recent_http_trace),
+        }
+
+    recent_http_errors = []
+    recent_http_trace = []
     fault_state = {"drop_next_send_response": False}
 
     @app.middleware("http")
     async def fault_injector(request: Request, call_next):
         response = await call_next(request)
+        if not request.url.path.startswith("/__e2e"):
+            recent_http_trace.append(
+                {
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": response.status_code,
+                }
+            )
+            if len(recent_http_trace) > 30:
+                del recent_http_trace[:-30]
+        if response.status_code >= 400 and not request.url.path.startswith("/__e2e"):
+            recent_http_errors.append(
+                {
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": response.status_code,
+                }
+            )
+            if len(recent_http_errors) > 30:
+                del recent_http_errors[:-30]
         if (
             fault_state["drop_next_send_response"]
             and request.method == "POST"
@@ -644,52 +768,117 @@ def create_server_app(dsn: str, state: Path, mode: str):
             },
         }
 
+    async def _run_db_retry(fn, *, max_attempts=6):
+        import psycopg
+
+        transient_pg = (
+            psycopg.errors.SerializationFailure,
+            psycopg.errors.DeadlockDetected,
+            psycopg.errors.LockNotAvailable,
+            psycopg.OperationalError,
+        )
+        for attempt in range(max_attempts):
+            try:
+                return await anyio.to_thread.run_sync(fn)
+            except transient_pg:
+                if attempt + 1 < max_attempts:
+                    await anyio.sleep(0.05 * (attempt + 1))
+                    continue
+                raise
+
+    async def _send_with_committed_resume(comm_svc, body, req_id, *, max_attempts=8):
+        import psycopg
+
+        transient_pg = (
+            psycopg.errors.SerializationFailure,
+            psycopg.errors.DeadlockDetected,
+            psycopg.errors.LockNotAvailable,
+            psycopg.OperationalError,
+        )
+        for attempt in range(max_attempts):
+            try:
+                return await anyio.to_thread.run_sync(
+                    lambda: comm_svc.send(PROJECT_ID, body, client_request_id=req_id)
+                )
+            except CommunicationHttpError as err:
+                if (
+                    err.code == "observation_unavailable"
+                    and err.effect_state == "committed"
+                    and attempt + 1 < max_attempts
+                ):
+                    await anyio.sleep(0.05 * (attempt + 1))
+                    continue
+                raise
+            except transient_pg:
+                if attempt + 1 < max_attempts:
+                    await anyio.sleep(0.05 * (attempt + 1))
+                    continue
+                raise
+
+    def _drain_event_intents():
+        with owner_auth._connect() as conn:
+            published = 0
+            while publish_event_intents(conn, client_ctx.tenant_id, PROJECT_ID, limit=100):
+                published += 1
+            return published
+
     @app.post("/__e2e/peer-send")
     async def e2e_peer_send(request: Request):
+        import sys
+        import traceback
+
         _require_admin(request)
-        payload = await request.json()
-        actor = payload.get("actor", "peer_b")
-        if actor == "peer_c":
-            svc, tok = peer_c_projects, tokens["peer_c"]
-        elif actor == "client":
-            svc, tok = owner_projects, tokens["client"]
-        else:
-            svc, tok = peer_b_projects, tokens["peer_b"]
-        comm_svc = CommunicationClientService(svc, tok)
-        body = {
-            "to": payload.get("to", meta["client_address"]),
-            "content": payload["content"],
-            "activation": payload.get("activation", "message_only"),
-        }
-        if payload.get("reply_to"):
-            body["reply_to"] = payload["reply_to"]
-        res = await anyio.to_thread.run_sync(
-            lambda: comm_svc.send(
-                PROJECT_ID,
-                body,
-                client_request_id=payload.get("client_request_id") or f"e2e-peer-{uuid.uuid4().hex[:12]}",
-            )
-        )
-        # Dispatch pending & publish event intents deterministically
-        dispatcher = DeliveryDispatcher(DeliveryService(owner_auth, endpoints))
-        with owner_auth._connect() as conn:
-            rows = conn.execute(
-                "SELECT tenant_id, message_id, operation_id FROM delivery_messages "
-                "WHERE tenant_id=%s AND state IN ('queued','retry_wait')",
-                (client_ctx.tenant_id,),
-            ).fetchall()
-        for t_id, m_id, o_id in rows:
-            try:
-                await anyio.to_thread.run_sync(
-                    dispatcher.dispatch,
-                    {"tenant_id": t_id, "message_id": m_id, "operation_id": o_id},
-                )
-            except Exception:
-                pass
-        with owner_auth._connect() as conn:
-            while publish_event_intents(conn, client_ctx.tenant_id, PROJECT_ID, limit=100):
-                pass
-        return res
+        try:
+            payload = await request.json()
+            actor = payload.get("actor", "peer_b")
+            if actor == "peer_c":
+                svc, tok = peer_c_projects, tokens["peer_c"]
+            elif actor == "client":
+                svc, tok = owner_projects, tokens["client"]
+            else:
+                svc, tok = peer_b_projects, tokens["peer_b"]
+            comm_svc = CommunicationClientService(svc, tok)
+            body = {
+                "to": payload.get("to", meta["client_address"]),
+                "content": payload["content"],
+                "activation": payload.get("activation", "message_only"),
+            }
+            if payload.get("reply_to"):
+                body["reply_to"] = payload["reply_to"]
+            req_id = payload.get("client_request_id") or f"e2e-peer-{uuid.uuid4().hex[:12]}"
+            res = await _send_with_committed_resume(comm_svc, body, req_id)
+            # Dispatch pending & publish event intents deterministically
+            dispatcher = DeliveryDispatcher(DeliveryService(owner_auth, endpoints))
+
+            def _pending_rows():
+                with owner_auth._connect() as conn:
+                    return conn.execute(
+                        "SELECT tenant_id, message_id, operation_id FROM delivery_messages "
+                        "WHERE tenant_id=%s AND state IN ('queued','retry_wait')",
+                        (client_ctx.tenant_id,),
+                    ).fetchall()
+
+            rows = await _run_db_retry(_pending_rows)
+            for t_id, m_id, o_id in rows:
+                try:
+                    await anyio.to_thread.run_sync(
+                        dispatcher.dispatch,
+                        {"tenant_id": t_id, "message_id": m_id, "operation_id": o_id},
+                    )
+                except Exception:
+                    pass
+            await _run_db_retry(_drain_event_intents)
+            return res
+        except CommunicationHttpError:
+            raise
+        except Exception as err:
+            traceback.print_exc(file=sys.stderr)
+            raise CommunicationHttpError(
+                "receiver_unavailable",
+                f"E2E peer-send error: {type(err).__name__}",
+                status_code=503,
+                details={"exception": f"{type(err).__name__}: {err}"},
+            ) from err
 
     @app.post("/__e2e/dispatch-pending")
     async def e2e_dispatch_pending(request: Request):
@@ -720,76 +909,93 @@ def create_server_app(dsn: str, state: Path, mode: str):
 
     @app.post("/__e2e/emit-notice")
     async def e2e_emit_notice(request: Request):
-        _require_admin(request)
-        payload = await request.json()
-        legacy_null = bool(payload.get("legacy_null_created_at", False))
-        recipient = payload.get("recipient", meta["client_address"])
-        code = payload.get("reason_code", "delivery_unconfirmed")
-        notice_state = payload.get("state", "blocked")
+        import sys
+        import traceback
 
-        # Create a genuine communication_messages + delivery_messages record first
-        comm_svc = CommunicationClientService(owner_projects, tokens["client"])
-        sent = await anyio.to_thread.run_sync(
-            lambda: comm_svc.send(
-                PROJECT_ID,
+        _require_admin(request)
+        try:
+            payload = await request.json()
+            legacy_null = bool(payload.get("legacy_null_created_at", False))
+            recipient = payload.get("recipient", meta["client_address"])
+            code = payload.get("reason_code", "delivery_unconfirmed")
+            notice_state = payload.get("state", "blocked")
+
+            # Create a genuine communication_messages + delivery_messages record first
+            comm_svc = CommunicationClientService(owner_projects, tokens["client"])
+            notice_req_id = f"e2e-notice-origin-{uuid.uuid4().hex[:12]}"
+            sent = await _send_with_committed_resume(
+                comm_svc,
                 {
                     "to": meta["peer_b_address"],
                     "content": "Notice origin message",
                     "activation": "message_only",
                 },
-                client_request_id=f"e2e-notice-origin-{uuid.uuid4().hex[:12]}",
+                notice_req_id,
             )
-        )
-        msg_handle = sent["message"]["message_handle"]
-        msg_id = msg_handle.rsplit(":", 1)[-1]
-        now_ts = None if legacy_null else owner_auth.canonical_now()
-        with owner_auth._connect() as conn:
-            seq_row = conn.execute(
-                "INSERT INTO communication_notices(tenant_id,project_id,message_id,recipient,state,code) "
-                "VALUES (%s,%s,%s,%s,%s,%s) RETURNING sequence",
-                (
-                    client_ctx.tenant_id,
-                    PROJECT_ID,
-                    msg_id,
-                    recipient,
-                    notice_state,
-                    code,
-                ),
-            ).fetchone()
-            conn.execute(
-                "UPDATE communication_client_notice_versions SET created_at=%s "
-                "WHERE tenant_id=%s AND project_id=%s AND message_id=%s AND recipient=%s",
-                (now_ts, client_ctx.tenant_id, PROJECT_ID, msg_id, recipient),
-            )
-            ref_row = conn.execute(
-                "SELECT notice_ref FROM communication_client_notice_versions "
-                "WHERE tenant_id=%s AND project_id=%s AND message_id=%s AND recipient=%s",
-                (client_ctx.tenant_id, PROJECT_ID, msg_id, recipient),
-            ).fetchone()
-            notice_ref = ref_row[0]
-            if p2_enabled:
-                from runtime.communication_notice_projection_storage import sync_notice_projection
-                from runtime.communication_client_notice_storage import NoticeStateIdentity
+            msg_handle = sent["message"]["message_handle"]
+            msg_id = msg_handle.rsplit(":", 1)[-1]
+            now_ts = None if legacy_null else owner_auth.canonical_now()
 
-                with conn.cursor() as cur:
-                    sync_notice_projection(
-                        cur,
-                        NoticeStateIdentity(
+            def _insert_notice():
+                with owner_auth._connect() as conn:
+                    seq_row = conn.execute(
+                        "INSERT INTO communication_notices(tenant_id,project_id,message_id,recipient,state,code) "
+                        "VALUES (%s,%s,%s,%s,%s,%s) RETURNING sequence",
+                        (
                             client_ctx.tenant_id,
                             PROJECT_ID,
-                            client_ctx.principal_ref,
                             msg_id,
                             recipient,
+                            notice_state,
+                            code,
                         ),
+                    ).fetchone()
+                    conn.execute(
+                        "UPDATE communication_client_notice_versions SET created_at=%s "
+                        "WHERE tenant_id=%s AND project_id=%s AND message_id=%s AND recipient=%s",
+                        (now_ts, client_ctx.tenant_id, PROJECT_ID, msg_id, recipient),
                     )
-            while publish_event_intents(conn, client_ctx.tenant_id, PROJECT_ID, limit=100):
-                pass
-        return {
-            "message_id": msg_id,
-            "sequence": seq_row[0] if seq_row else None,
-            "notice_handle": f"notification:{PROJECT_ID}:{notice_ref}",
-            "legacy_null_created_at": legacy_null,
-        }
+                    ref_row = conn.execute(
+                        "SELECT notice_ref FROM communication_client_notice_versions "
+                        "WHERE tenant_id=%s AND project_id=%s AND message_id=%s AND recipient=%s",
+                        (client_ctx.tenant_id, PROJECT_ID, msg_id, recipient),
+                    ).fetchone()
+                    notice_ref = ref_row[0]
+                    if p2_enabled:
+                        from runtime.communication_notice_projection_storage import sync_notice_projection
+                        from runtime.communication_client_notice_storage import NoticeStateIdentity
+
+                        with conn.cursor() as cur:
+                            sync_notice_projection(
+                                cur,
+                                NoticeStateIdentity(
+                                    client_ctx.tenant_id,
+                                    PROJECT_ID,
+                                    client_ctx.principal_ref,
+                                    msg_id,
+                                    recipient,
+                                ),
+                            )
+                    return seq_row[0] if seq_row else None, notice_ref
+
+            seq_num, notice_ref = await _run_db_retry(_insert_notice)
+            await _run_db_retry(_drain_event_intents)
+            return {
+                "message_id": msg_id,
+                "sequence": seq_num,
+                "notice_handle": f"notification:{PROJECT_ID}:{notice_ref}",
+                "legacy_null_created_at": legacy_null,
+            }
+        except CommunicationHttpError:
+            raise
+        except Exception as err:
+            traceback.print_exc(file=sys.stderr)
+            raise CommunicationHttpError(
+                "receiver_unavailable",
+                f"E2E emit-notice error: {type(err).__name__}",
+                status_code=503,
+                details={"exception": f"{type(err).__name__}: {err}"},
+            ) from err
 
     @app.post("/__e2e/revoke-token")
     async def e2e_revoke_token(request: Request):
@@ -851,6 +1057,7 @@ def main():
     parser.add_argument("--port", type=int, default=0)
     parser.add_argument("--mode", choices=("full", "p1_only"), default="full")
     args = parser.parse_args()
+    _install_loopback_pg_connect_resilience()
 
     if args.action == "setup":
         meta = _setup_state(args.dsn, args.state)
@@ -867,6 +1074,7 @@ def main():
         log_level="error",
         access_log=False,
         proxy_headers=False,
+        timeout_keep_alive=65,
     )
     return 0
 

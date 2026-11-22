@@ -30,82 +30,82 @@
       {
         "id": "settings",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 106
+        "line": 107
       },
       {
         "id": "skills",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 107
+        "line": 108
       },
       {
         "id": "artifacts",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 108
+        "line": 109
       },
       {
         "id": "tasks",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 109
+        "line": 110
       },
       {
         "id": "automations",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 110
+        "line": 111
       },
       {
         "id": "activity",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 111
+        "line": 112
       },
       {
         "id": "space",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 112
-      },
-      {
-        "id": "mobile",
-        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
         "line": 113
       },
       {
-        "id": "terminal",
+        "id": "mobile",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
         "line": 114
       },
       {
         "id": "terminal",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 120
+        "line": 115
       },
       {
         "id": "terminal",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 136
+        "line": 121
+      },
+      {
+        "id": "terminal",
+        "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
+        "line": 137
       },
       {
         "id": "settings",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 180
+        "line": 169
       },
       {
         "id": "skills",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 181
+        "line": 170
       },
       {
         "id": "artifacts",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 182
+        "line": 171
       },
       {
         "id": "automations",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 183
+        "line": 172
       },
       {
         "id": "activity",
         "path": "src/renderer/src/app-shell/AppWorkspaceShell.tsx",
-        "line": 184
+        "line": 173
       }
     ],
     "modal": [

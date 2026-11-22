@@ -929,17 +929,28 @@ export const TIER1_TESTS = [
         await agentsBtn.click()
         const searchBox = page.getByRole('textbox', { name: /^(Search sessions|搜索会话)$/i }).first()
         await searchBox.waitFor({ state: 'visible', timeout: 8000 })
-        await searchBox.fill('release checklist')
-        const vaultRow = page.locator('.ai-vault-session-row').filter({ hasText: /release checklist/i }).first()
-        if (!(await waitForVisible(vaultRow, 3000))) {
+        // Wait for initial vault history scan to load before filtering so Refresh isn't disabled by searching&&loading
+        const initialRow = page.locator('.ai-vault-session-row').filter({ hasText: /release checklist/i }).first()
+        if (!(await waitForVisible(initialRow, 6000))) {
           const refreshBtn = page
             .getByRole('button', { name: /Refresh Session History|刷新会话历史/i })
             .first()
-          if (await waitForVisible(refreshBtn, 1500)) {
+          if ((await waitForVisible(refreshBtn, 1500)) && (await refreshBtn.isEnabled().catch(() => false))) {
+            await refreshBtn.click()
+          }
+          await initialRow.waitFor({ state: 'visible', timeout: 12000 }).catch(() => {})
+        }
+        await searchBox.fill('release checklist')
+        const vaultRow = page.locator('.ai-vault-session-row').filter({ hasText: /release checklist/i }).first()
+        if (!(await waitForVisible(vaultRow, 4000))) {
+          const refreshBtn = page
+            .getByRole('button', { name: /Refresh Session History|刷新会话历史/i })
+            .first()
+          if ((await waitForVisible(refreshBtn, 1500)) && (await refreshBtn.isEnabled().catch(() => false))) {
             await refreshBtn.click()
           }
         }
-        await vaultRow.waitFor({ state: 'visible', timeout: 10000 })
+        await vaultRow.waitFor({ state: 'visible', timeout: 15000 })
 
         // Close right sidebar so Session Index history handoff is unambiguously tested
         const closeRightBtn = page.locator('[data-workspace-sidebar-toggle="right"][aria-expanded="true"]').first()
@@ -1641,6 +1652,14 @@ export const TIER1_TESTS = [
           { timeout: 6000 }
         )
         const dlgConnected = await openCollaborationDialog(page)
+        await page.waitForFunction(
+          () => {
+            const text = document.querySelector('[role="dialog"] [role="status"]')?.textContent?.trim() || ''
+            return /^(Connected|已连接)$/i.test(text)
+          },
+          undefined,
+          { timeout: 10000 }
+        ).catch(() => {})
         const connectedStatus = (await dlgConnected.locator('[role="status"]').first().innerText()).trim()
         const connectedSelect = (await dlgConnected.locator('select').first().innerText()).trim()
         assert.equal(isCollaborationConnectedText(connectedStatus), true, `Expected immediate Titlebar Connected sync, got: ${connectedStatus}`)
@@ -1761,7 +1780,7 @@ export const TIER1_TESTS = [
         })
         assert.ok(reply.message?.message_handle, 'Peer reply handle missing')
 
-        await dlg.locator('article').getByText('Explicit peer reply needle-alpha', { exact: false }).first().waitFor({ state: 'visible', timeout: 15000 })
+        await dlg.locator('article').getByText('Explicit peer reply needle-alpha', { exact: false }).first().waitFor({ state: 'visible', timeout: 25000 })
         await dlg.getByText(/Reply linked to the original message|回复已关联原消息/i).first().waitFor({ state: 'visible', timeout: 8000 })
 
         // 3. Real UI Search -> hit list -> click hit back to conversation
@@ -2054,17 +2073,57 @@ export const TIER1_TESTS = [
         await connectCollaborationViaSettings(page, core)
         await returnFromSettings(page)
         const trigger = getCollaborationTrigger(page)
-        await page.locator('[data-collaboration-state="connected"]').first().waitFor({ state: 'visible', timeout: 10000 })
-        await sleep(300)
+        const waitForCollabAttrs = async (predicate, timeout, label) => {
+          try {
+            await page.waitForFunction(predicate, undefined, { timeout })
+          } catch (err) {
+            const diag = await page
+              .evaluate(() => {
+                const el = document.querySelector('[data-collaboration-state]')
+                return el
+                  ? {
+                      state: el.getAttribute('data-collaboration-state'),
+                      unread: el.getAttribute('data-collaboration-unread'),
+                      notices: el.getAttribute('data-collaboration-notices'),
+                      ariaLabel: el.getAttribute('aria-label'),
+                      ariaDescription: el.getAttribute('aria-description'),
+                      title: el.getAttribute('title')
+                    }
+                  : null
+              })
+              .catch(() => null)
+            const errs = await core.adminGet('/__e2e/errors').catch(() => null)
+            const collabStatus = await page
+              .evaluate(() => window.api.runtime.call({ method: 'collaboration.status' }))
+              .catch((e) => ({ evalErr: String(e) }))
+            throw new Error(
+              `${label}: ${err.message} | dom=${JSON.stringify(diag)} | collabStatus=${JSON.stringify(collabStatus)} | serverErrs=${JSON.stringify(errs)}`,
+              { cause: err }
+            )
+          }
+        }
+        await page.locator('[data-collaboration-state="connected"]').first().waitFor({ state: 'visible', timeout: 15000 })
+        await waitForCollabAttrs(
+          () => {
+            const el = document.querySelector('[data-collaboration-state="connected"]')
+            return Boolean(el) && Number(el.getAttribute('data-collaboration-unread') || 0) >= 1
+          },
+          25000,
+          'Initial SSE snapshot unread >= 1'
+        )
+        await sleep(500)
         await core.emitNotice({ legacy_null_created_at: false })
         await core.peerSend({ actor: 'peer_b', to: core.addresses.client, content: 'SSE UI live unread ping' })
-        await page.waitForFunction(
+        await waitForCollabAttrs(
           () => {
             const el = document.querySelector('[data-collaboration-unread]')
-            return Number(el?.getAttribute('data-collaboration-unread') || 0) >= 1 && Number(el?.getAttribute('data-collaboration-notices') || 0) >= 1
+            return (
+              Number(el?.getAttribute('data-collaboration-unread') || 0) >= 2 &&
+              Number(el?.getAttribute('data-collaboration-notices') || 0) >= 1
+            )
           },
-          undefined,
-          { timeout: 20000 }
+          25000,
+          'Live SSE unread >= 2 && notices >= 1'
         )
         await trigger.locator('span').first().waitFor({ state: 'visible', timeout: 5000 })
 
@@ -2084,7 +2143,7 @@ export const TIER1_TESTS = [
         await page.waitForFunction(
           () => Boolean(document.querySelector('[role="dialog"] button[aria-pressed="true"]')),
           undefined,
-          { timeout: 6000 }
+          { timeout: 15000 }
         )
         await closeCollaborationDialogWithFocusCheck(page, dlg)
         return { sseDelivered: true, noticeSeen: seenRes.json.seen, uiLiveUnreadDotSynced: true }
