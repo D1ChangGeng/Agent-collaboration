@@ -30,6 +30,7 @@ acs-receiver-provision = "runtime.receiver_provision:main"
 
 [dependency-groups]
 dev = [
+  "PyYAML>=6,<7",
   "httpx>=0.28,<1",
   "pytest>=8.3,<9",
   "pytest-cov>=6,<7",

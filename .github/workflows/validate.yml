@@ -99,6 +99,8 @@ jobs:
           runtime_tests/test_native_attachment_host_delivery_pg.py
       - name: Gate tooling tests
         run: uv run --frozen python -m unittest discover -s tools/runtime/tests -q
+      - name: OpenAPI contract scope tests
+        run: uv run --frozen pytest tools/runtime/tests/test_communication_scope_contract.py -q
 
   package:
     runs-on: ubuntu-latest
