@@ -408,9 +408,11 @@ def create_communication_app(project_provider, *, service_factory=None, limits=N
     @app.get(PREFIX + "/projects/{project_id}/messages")
     async def messages(project_id: str, request: Request):
         instance = await service(request)
-        params = _page(request, limits, {"with", "conversation_id", "reply_root", "direction"})
+        params = _page(request, limits, {"with", "conversation_id", "reply_root", "direction", "order"})
         if params.get("direction", "both") not in {"both", "incoming", "outgoing"}:
             raise CommunicationHttpError("invalid_argument", "Invalid message direction.")
+        if params.get("order", "oldest") not in {"oldest", "newest"}:
+            raise CommunicationHttpError("invalid_argument", "Invalid message order.")
         return await result(request, instance, "messages", "MessagePage", project_id, **params)
 
     @app.get(PREFIX + "/projects/{project_id}/search")

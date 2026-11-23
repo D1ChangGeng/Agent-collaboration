@@ -170,7 +170,7 @@ def test_project_context_cross_project_isolation_source_and_skills(tmp_path):
     assert state["data"]["current_commit"] == source["commit_id"]
     listing = ok(value, "list_files", {
         "project_id": "project-alpha", "source_id": "source-main", "path": "runtime",
-        "revision": source["commit_id"], "depth": 1,
+        "revision": source["commit_id"], "depth": 1, "limit": 500,
     })
     assert any(item["path"].endswith("mcp_runtime.py") for item in listing["data"]["items"])
     read = ok(value, "read_file", {

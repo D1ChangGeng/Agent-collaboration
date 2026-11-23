@@ -48,7 +48,7 @@ Codex Shared 真实双模型和 OS 边界验证。Windows 直连 WSL 测试库�
 用法及采用命令见 [COMMUNICATION.md](COMMUNICATION.md)，机器可读接口见
 [工具目录](p2-mcp-tool-contract.json)。目录版本为 12（v2.2.0 发行目录为 11），Message 为
 `acs-message/1`，Core/Project Schema 为 2。现有旧库需要显式采用；正常启动
-只读校验，不执行迁移。软件包版本为 2.3.1；开发包 v2.33 是文档版本。
+只读校验，不执行迁移。软件包版本为 2.3.2；开发包 v2.33 是文档版本。
 
 ## 支持声明和验证层次
 

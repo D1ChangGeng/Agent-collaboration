@@ -248,7 +248,8 @@ class InProcessHttpWire:
 @pytest.mark.parametrize("complete", [True, False], ids=["exact-provider-readback", "204-only"])
 def test_opencode_link_requires_real_driver_exact_readback_not_http204(original, tmp_path, monkeypatch, complete):
     folder = tmp_path / "opencode-controlled"
-    folder.mkdir()
+    folder.mkdir(mode=0o700)
+    folder.chmod(0o700)
     profile = replace(opencode_profile.__wrapped__(folder), execution_mode="native")
     journal = DriverJournal(folder / "original-driver.sqlite")
     driver = OpenCodeNativeDriver("original-open-binding", profile, journal, identity=original.driver.identity,

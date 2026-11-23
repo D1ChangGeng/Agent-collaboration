@@ -227,6 +227,11 @@ class CommunicationClientService(ClientConversationViews, ClientStateService, Cl
         direction = filters.get("direction", "both")
         if direction not in {"both", "incoming", "outgoing"}:
             raise ValueError("invalid message direction")
+        order = filters.get("order", "oldest")
+        if order not in {"oldest", "newest"}:
+            raise ValueError("invalid message order")
+        newest = order == "newest"
+        position, initial = ("before", None) if newest else ("after", 0)
         conversation = filters.get("conversation_id")
         reply_root = filters.get("reply_root")
 
@@ -234,9 +239,11 @@ class CommunicationClientService(ClientConversationViews, ClientStateService, Cl
             from runtime.communication_client_storage import cursor_secret
 
             address = self.project_service._communication_address(cur, project)
-            query = digest({"tenant": bound.tenant_id, "project": project, "actor": address,
+            filters_key = {"tenant": bound.tenant_id, "project": project, "actor": address,
                             "authorization": self._cursor_binding(bound, cur, project), "peer": peer,
-                            "direction": direction, "conversation": conversation, "reply_root": reply_root})
+                            "direction": direction, "conversation": conversation, "reply_root": reply_root}
+            # The default keeps its existing cursor namespace for older clients.
+            query = digest(filters_key | {"order": order} if newest else filters_key)
             codec = Fernet(base64.urlsafe_b64encode(cursor_secret(cur.connection)))
             token = cursor or snapshot_id
             if token:
@@ -246,8 +253,8 @@ class CommunicationClientService(ClientConversationViews, ClientStateService, Cl
             else:
                 cur.execute("SELECT COALESCE(MAX(sequence),0) FROM communication_messages WHERE tenant_id=%s AND project_id=%s AND (sender=%s OR recipient=%s)",
                             (bound.tenant_id, project, address, address))
-                state = {"query": query, "high": cur.fetchone()[0], "after": 0}
-            snapshot = client_snapshot_token(codec, snapshot_id, query, state, position="after", initial=0)
+                state = {"query": query, "high": cur.fetchone()[0], position: initial}
+            snapshot = client_snapshot_token(codec, snapshot_id, query, state, position=position, initial=initial)
             if conversation and not peer:
                 # Resolve a conversation ref only among this actor's own pairs.
                 cur.execute("SELECT DISTINCT CASE WHEN sender=%s THEN recipient ELSE sender END FROM communication_messages "
@@ -265,15 +272,18 @@ class CommunicationClientService(ClientConversationViews, ClientStateService, Cl
             root_id = parse_handle(reply_root, "message", project) if reply_root else None
             if root_id:
                 self.project_service._communication_row(bound, cur, {"project_id": project}, root_id)
+            fence = "AND (%s::bigint IS NULL OR c.sequence<%s) " if newest else "AND c.sequence>%s "
+            bounds = (state[position], state[position]) if newest else (state[position],)
+            sequence_order = "ORDER BY c.sequence DESC" if newest else "ORDER BY c.sequence ASC"
             cur.execute("SELECT c.message_id,c.sequence FROM communication_messages c WHERE c.tenant_id=%s AND c.project_id=%s "
-                "AND c.sequence>%s AND c.sequence<=%s AND ((%s='both' AND (c.sender=%s OR c.recipient=%s)) "
+                + fence + "AND c.sequence<=%s AND ((%s='both' AND (c.sender=%s OR c.recipient=%s)) "
                 "OR (%s='incoming' AND c.recipient=%s) OR (%s='outgoing' AND c.sender=%s)) "
                 "AND (%s::text IS NULL OR c.sender=%s OR c.recipient=%s) AND (%s::text IS NULL OR c.message_id=%s OR EXISTS "
                 "(SELECT 1 FROM communication_replies r WHERE r.tenant_id=c.tenant_id AND r.project_id=c.project_id AND r.reply_id=c.message_id AND r.request_id=%s)) "
-                "ORDER BY c.sequence LIMIT %s", (bound.tenant_id, project, state["after"], state["high"], direction, address, address,
+                + sequence_order + " LIMIT %s", (bound.tenant_id, project, *bounds, state["high"], direction, address, address,
                     direction, address, direction, address, chosen_peer, chosen_peer, chosen_peer, root_id, root_id, root_id, limit + 1))
             rows = cur.fetchall()
-            next_cursor = codec.encrypt(json.dumps(state | {"after": rows[limit - 1][1]}).encode()).decode() if len(rows) > limit else None
+            next_cursor = codec.encrypt(json.dumps(state | {position: rows[limit - 1][1]}).encode()).decode() if len(rows) > limit else None
             return [handle("message", project, row[0]) for row in rows[:limit]], {"next_cursor": next_cursor, "snapshot_id": snapshot}, state["high"]
 
         references, page, high = self._transaction(project, "list_messages", selected)

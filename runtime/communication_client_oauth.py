@@ -74,7 +74,7 @@ def create_oauth_communication_app(shared, catalog, settings, *, sources=None, c
     event_features = ["snapshot", "events"] if settings.communication_event_stream else []
     attachment_features = ["attachment_uploads", "attachments"] if enabled else []
     native_features = ["native_links", "native_source"] if native_enabled else []
-    app = create_communication_app(provider, limits=limits, public_meta={"schema_version": "acs-client/1", "server_version": "2.3.1",
+    app = create_communication_app(provider, limits=limits, public_meta={"schema_version": "acs-client/1", "server_version": "2.3.2",
         "authority_id": shared.authority.context.authority_id, "authority_incarnation": shared.authority.context.authority_incarnation,
         "features": ["profile", "projects", "routes", "contacts", "messages", "send", "wait", "delivery", "operations",
                      "conversations", "conversation_resolve", "conversation_detail", "read_state", "preferences", "drafts", "search", "receivers", "receiver_recovery", "notices", *event_features, *attachment_features, *native_features],

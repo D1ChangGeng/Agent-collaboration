@@ -41,6 +41,8 @@ jobs:
           --health-retries 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
         with:
           version: "0.8.9"
@@ -93,6 +95,8 @@ jobs:
           runtime_tests/test_project_http.py
           runtime_tests/test_owner_enrollment_pg.py
           runtime_tests/test_machine_filesystem_pg.py
+          runtime_tests/test_communication_http_queries.py
+          runtime_tests/test_native_attachment_host_delivery_pg.py
       - name: Gate tooling tests
         run: uv run --frozen python -m unittest discover -s tools/runtime/tests -q
 
@@ -101,6 +105,8 @@ jobs:
     needs: [validate, runtime]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
         with:
           version: "0.8.9"

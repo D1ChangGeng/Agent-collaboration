@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented here.
 
+## 2.3.2 - 2026-11-23
+
+- Support Porpita native attachment delivery (`runtime/native_attachment_delivery.py`),
+  durable source-link recovery, receiver selection instant comparison across
+  timezones, and newest-first conversation history paging (`order=newest` on
+  `/projects/{project_id}/messages`, preserving default `oldest` cursors).
+- Complete Porpita Desktop UI SPEC M1-M5 integration evidence archive, client
+  specification crosswalks (`docs/client/ORCA-FIRST.zh-CN.md`,
+  `docs/client/porpita-ui-spec/`), and portable black-box E2E suite.
+- Fix `Validate ACS` CI failures: use `fetch-depth: 0` in the `runtime` job
+  for historical blob checks, request explicit `limit: 500` in the legacy
+  `list_files` fixture test, enforce `0o700` parent directory mode for
+  POSIX `KernelClaim` in the OpenCode native-source-link test, and add
+  `test_communication_http_queries.py` and
+  `test_native_attachment_host_delivery_pg.py` to PostgreSQL CI checks.
+
 ## 2.1.0 - 2026-11-01
 
 - Allow concurrent Shared authorization and receiver enrollment reads while

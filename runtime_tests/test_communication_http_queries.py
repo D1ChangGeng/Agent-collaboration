@@ -61,6 +61,36 @@ def domain_counts(f):
             "delivery_receipts", "operations", "outbox")}
 
 
+def test_http_newest_messages_page_is_order_and_snapshot_bound(comm, monkeypatch):
+    async def exercise():
+        async with authenticated_http(comm, monkeypatch) as http:
+            first = send(comm, content="First in the pair", activation="message_only")["data"]
+            send(comm, to="c", content="Another pair", activation="message_only")
+            second = send(comm, "b", "a", "Second in the pair", activation="message_only")["data"]
+            params = {"with": "collaborator:project-alpha:slot-b", "limit": 1, "order": "newest"}
+            route = BASE + "/messages"
+            result = await http.get(route, params=params)
+            assert result.status_code == 200, result.text
+            initial = result.json()
+            assert [item["message_handle"] for item in initial["items"]] == [second["message_handle"]]
+            late = send(comm, content="Arrived after the page", activation="message_only")["data"]
+            anchored = params | {"cursor": initial["page"]["next_cursor"],
+                                 "snapshot_id": initial["page"]["snapshot_id"]}
+            older = (await http.get(route, params=anchored)).json()
+            assert [item["message_handle"] for item in older["items"]] == [first["message_handle"]]
+            assert older["page"]["next_cursor"] is None
+            assert older["page"]["snapshot_id"] == initial["page"]["snapshot_id"]
+            changed_order = await http.get(route, params=anchored | {"order": "oldest"})
+            assert changed_order.status_code == 409
+            assert changed_order.json()["error"]["code"] == "cursor_invalid"
+            refreshed = (await http.get(route, params=params)).json()
+            assert refreshed["items"][0]["message_handle"] == late["message_handle"]
+            default = (await http.get(route, params={key: val for key, val in params.items() if key != "order"})).json()
+            assert default["items"][0]["message_handle"] == first["message_handle"]
+
+    asyncio.run(exercise())
+
+
 def test_meta_advertises_real_query_routes_and_unbound_or_wrong_scope_tokens_never_inherit_context(comm, monkeypatch):
     f = comm
 
